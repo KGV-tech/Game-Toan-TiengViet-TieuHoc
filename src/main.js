@@ -66,7 +66,7 @@ const app = {
         
         // Ensure Admin exists
         if (!this.users.find(u => u.username === 'admin')) {
-          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
+          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
           this.users.push(adminUser);
           await supabaseClient.from('game_users').insert([adminUser]);
         }
@@ -121,7 +121,7 @@ const app = {
         // Fallback to avoid breaking UI completely
         this.users = this.users || [];
         if (!this.users.find(u => u.username === 'admin')) {
-           this.users.push({ username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true });
+           this.users.push({ username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true });
         }
         this.libraryQuestions = this.libraryQuestions || [];
         this.exams = this.exams || [];
@@ -130,12 +130,12 @@ const app = {
       // Inject Mock Data if empty
       if (this.libraryQuestions.length === 0) {
           const mockQ = [
-              { type: 'Trắc nghiệm', subject: 'Toán', classLevel: 'Lớp 5', topic: 'Số thập phân', q: 'Kết quả của 2.5 + 3.7 là?', ans: '6.2', options: ['5.2', '6.2', '6.5', '7.2'] },
-              { type: 'Điền khuyết', subject: 'Tiếng Việt', classLevel: 'Lớp 5', topic: 'Từ vựng', q: 'Từ trái nghĩa với "Rộng lớn" là chật ...', ans: 'hẹp', options: [] },
-              { type: 'Đúng/Sai', subject: 'Toán', classLevel: 'Lớp 5', topic: 'Phân số', q: 'Phân số 1/2 bằng phân số 2/4. Đúng hay Sai?', ans: 'Đúng', options: ['Đúng', 'Sai'] },
-              { type: 'So sánh', subject: 'Toán', classLevel: 'Lớp 5', topic: 'Số thập phân', q: 'So sánh: 5.09 ... 5.1', ans: '<', options: ['<', '>', '='] },
-              { type: 'Chuỗi Quy luật', subject: 'Toán', classLevel: 'Lớp 5', topic: 'Dãy số', q: 'Điền số tiếp theo: 2, 4, 6, 8, ...', ans: '10', options: [] },
-              { type: 'Kéo thả', subject: 'Tiếng Việt', classLevel: 'Lớp 5', topic: 'Cấu tạo từ', q: 'Chọn từ ghép thích hợp: [xanh biếc, xanh xao, xanh tươi]', ans: 'xanh tươi', options: ['xanh biếc', 'xanh xao', 'xanh tươi'] }
+              { type: 'Trắc nghiệm', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'Kết quả của 2.5 + 3.7 là?', ans: '6.2', options: ['5.2', '6.2', '6.5', '7.2'] },
+              { type: 'Điền khuyết', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Từ vựng', q: 'Từ trái nghĩa với "Rộng lớn" là chật ...', ans: 'hẹp', options: [] },
+              { type: 'Đúng/Sai', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Phân số', q: 'Phân số 1/2 bằng phân số 2/4. Đúng hay Sai?', ans: 'Đúng', options: ['Đúng', 'Sai'] },
+              { type: 'So sánh', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'So sánh: 5.09 ... 5.1', ans: '<', options: ['<', '>', '='] },
+              { type: 'Chuỗi Quy luật', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Dãy số', q: 'Điền số tiếp theo: 2, 4, 6, 8, ...', ans: '10', options: [] },
+              { type: 'Kéo thả', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Cấu tạo từ', q: 'Chọn từ ghép thích hợp: [xanh biếc, xanh xao, xanh tươi]', ans: 'xanh tươi', options: ['xanh biếc', 'xanh xao', 'xanh tươi'] }
           ];
           this.libraryQuestions = mockQ;
           await this.saveLibrary();
@@ -144,7 +144,7 @@ const app = {
           this.exams.push({
               name: 'Đề mẫu Toán & TV',
               subject: 'Toán',
-              classLevel: 'Lớp 5',
+              classlevel: 'Lớp 5',
               period: 'Giữa kỳ 1',
               questions: JSON.parse(JSON.stringify(this.libraryQuestions))
           });
@@ -189,7 +189,7 @@ const app = {
       if (!this.currentUser || this.currentUser.role === 'admin') return;
       let total = 0;
       (this.currentUser.history || []).forEach(h => total += parseFloat(h.score || 0));
-      this.currentUser.totalScore = Math.round(total * 10) / 10;
+      this.currentUser.totalscore = Math.round(total * 10) / 10;
       
       const idx = this.users.findIndex(u => u.username === this.currentUser.username);
       if (idx > -1) {
@@ -261,7 +261,7 @@ const app = {
       
       // Ensure admin exists in case of DB sync issues
       if (!app.data.users.find(u => u.username === 'admin')) {
-          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
+          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
           app.data.users.push(adminUser);
           // Try to insert again just in case
           supabaseClient.from('game_users').insert([adminUser]).then(({error}) => {
@@ -312,11 +312,11 @@ const app = {
         fullname: fn,
         username: un,
         password: pw,
-        classLevel: cl,
+        classlevel: cl,
         role: 'student',
         approved: false,
         history: [],
-        totalScore: 0,
+        totalscore: 0,
         lollipops: 0
       };
       
@@ -344,8 +344,8 @@ const app = {
     updateHeader() {
       if (!app.data.currentUser) return;
       const html = `
-        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classLevel})<br>
-        ${app.data.currentUser.role !== 'admin' ? `Điểm: ${app.data.currentUser.totalScore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
+        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
+        ${app.data.currentUser.role !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
       `;
       document.getElementById('player-info').innerHTML = html;
     }
@@ -421,12 +421,12 @@ const app = {
                 const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
                 const examAdminSelector = document.getElementById('exam-admin-class-selector');
                 if (examAdminSelector) examAdminSelector.style.display = isAdmin ? 'block' : 'none';
-                if (isAdmin && !app.exam.state.adminClassLevel) {
-                    app.exam.state.adminClassLevel = '5';
+                if (isAdmin && !app.exam.state.adminclasslevel) {
+                    app.exam.state.adminclasslevel = '5';
                 }
                 if (isAdmin) {
                     document.querySelectorAll('#exam-admin-class-btns .btn-opt').forEach(b => {
-                        b.classList.toggle('active', b.textContent.trim() === app.exam.state.adminClassLevel);
+                        b.classList.toggle('active', b.textContent.trim() === app.exam.state.adminclasslevel);
                     });
                 }
                 app.router.open('exam-select-screen');
@@ -447,12 +447,12 @@ const app = {
       const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
       const adminSelector = document.getElementById('admin-class-selector');
       if (adminSelector) adminSelector.style.display = isAdmin ? 'block' : 'none';
-      if (isAdmin && !this.state.adminClassLevel) {
-          this.state.adminClassLevel = '5';
+      if (isAdmin && !this.state.adminclasslevel) {
+          this.state.adminclasslevel = '5';
       }
       if (isAdmin) {
           document.querySelectorAll('#admin-class-btns .btn-opt').forEach(b => {
-              b.classList.toggle('active', b.textContent.trim() === this.state.adminClassLevel);
+              b.classList.toggle('active', b.textContent.trim() === this.state.adminclasslevel);
           });
       }
 
@@ -482,7 +482,7 @@ const app = {
       this.state.count = 10;
     },
     setAdminClass(level, btn) {
-       this.state.adminClassLevel = level;
+       this.state.adminclasslevel = level;
        const group = btn.parentElement;
        group.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
        btn.classList.add('active');
@@ -496,7 +496,7 @@ const app = {
     },
     renderTopics() {
       const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
-      let clLevel = isAdmin ? (this.state.adminClassLevel || '5') : (app.data.currentUser ? app.data.currentUser.classLevel : '5');
+      let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
       
       const topicDict = app.constants.topics[clLevel] || { math: [], vietnamese: [] };
@@ -541,7 +541,7 @@ const app = {
       }
       
       const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
-      let clLevel = isAdmin ? (this.state.adminClassLevel || '5') : (app.data.currentUser ? app.data.currentUser.classLevel : '5');
+      let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
 
       const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
@@ -551,7 +551,7 @@ const app = {
         const qSub = String(q.subject || '').trim().toLowerCase();
         const mSub = mappedSubject.toLowerCase();
         
-        const qClass = String(q.classLevel || '').trim().toLowerCase();
+        const qClass = String(q.classlevel || '').trim().toLowerCase();
         const clLvl = String(clLevel).toLowerCase();
         
         const qDiff = String(q.difficulty || '').trim().toLowerCase();
@@ -1229,10 +1229,10 @@ const app = {
 
   exam: {
     filters: { subject: '', period: '' },
-    state: { questions: [], name: '', historyDetails: [], score: 0, adminClassLevel: '5' },
+    state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5' },
     
     setAdminClass(level, btn) {
-       this.state.adminClassLevel = level;
+       this.state.adminclasslevel = level;
        const group = btn.parentElement;
        group.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
        btn.classList.add('active');
@@ -1254,14 +1254,14 @@ const app = {
       }
       
       const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
-      let clLevel = isAdmin ? (this.state.adminClassLevel || '5') : (app.data.currentUser ? app.data.currentUser.classLevel : '5');
+      let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
       
       const mappedSubject = this.filters.subject === 'math' ? 'Toán' : 'Tiếng Việt';
 
       const filtered = app.data.exams.filter(e => {
           const eSub = String(e.subject||'').trim().toLowerCase();
-          const eClass = String(e.classLevel||'').trim().toLowerCase().replace('lớp ', '');
+          const eClass = String(e.classlevel||'').trim().toLowerCase().replace('lớp ', '');
           const ePer = String(e.period||'').trim().toLowerCase();
           return (eSub === mappedSubject.toLowerCase() || eSub.includes(mappedSubject.toLowerCase())) &&
                  eClass === clLevel &&
@@ -1555,7 +1555,7 @@ const app = {
           ];
           let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
             return `<tr>
-              <td>${q.classLevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.topic}</td>
+              <td>${q.classlevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.topic}</td>
               <td>${q.difficulty||'Dễ'}</td><td>${q.type||'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation||''}</td>
               <td>
@@ -1576,11 +1576,11 @@ const app = {
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
                   <select id="add-q-class" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateTopicDropdown()">
-                     <option value="Lớp 1" ${q && q.classLevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
-                     <option value="Lớp 2" ${q && q.classLevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
-                     <option value="Lớp 3" ${q && q.classLevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
-                     <option value="Lớp 4" ${q && q.classLevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
-                     <option value="Lớp 5" ${q && q.classLevel === 'Lớp 5' ? 'selected' : (!q ? 'selected' : '')}>Lớp 5</option>
+                     <option value="Lớp 1" ${q && q.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
+                     <option value="Lớp 2" ${q && q.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
+                     <option value="Lớp 3" ${q && q.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
+                     <option value="Lớp 4" ${q && q.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
+                     <option value="Lớp 5" ${q && q.classlevel === 'Lớp 5' ? 'selected' : (!q ? 'selected' : '')}>Lớp 5</option>
                   </select>
                </div>
 
@@ -1784,7 +1784,7 @@ const app = {
     },
     exportQuestions() {
         const data = app.data.libraryQuestions.map(q => ({
-            "Cấp lớp": q.classLevel,
+            "Cấp lớp": q.classlevel,
             "Môn học": q.subject,
             "Chủ đề": q.topic,
             "Mức độ khó": q.difficulty,
@@ -1807,7 +1807,7 @@ const app = {
     },
     exportExams() {
         const data = app.data.exams.map(e => ({
-            "Cấp lớp": e.classLevel,
+            "Cấp lớp": e.classlevel,
             "Môn": e.subject,
             "Kỳ kiểm tra": e.period,
             "Tên đề": e.name,
@@ -1820,7 +1820,7 @@ const app = {
             type: document.getElementById('add-q-type').value,
             difficulty: document.getElementById('add-q-diff').value,
             subject: document.getElementById('add-q-sub').value,
-            classLevel: document.getElementById('add-q-class').value,
+            classlevel: document.getElementById('add-q-class').value,
             topic: document.getElementById('add-q-topic').value,
             q: document.getElementById('add-q-q').value,
             ans: document.getElementById('add-q-ans').value,
@@ -1874,7 +1874,7 @@ const app = {
                     app.data.libraryQuestions.push({
                         type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
                         subject: row["Môn học"] || row["Môn"] || 'Toán',
-                        classLevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
+                        classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
                         topic: row["Chủ đề"] || 'Khác',
                         difficulty: row["Mức độ khó"] || 'Vừa',
                         q: row["Câu hỏi"],
@@ -1921,7 +1921,7 @@ const app = {
           ];
           let html = app.ui.renderTable(cols, app.data.exams, (e, i) => {
             return `<tr>
-              <td>${e.classLevel||'Lớp 5'}</td><td>${e.subject}</td>
+              <td>${e.classlevel||'Lớp 5'}</td><td>${e.subject}</td>
               <td>${e.period}</td><td>${e.name}</td><td>${(e.questions||[]).length}</td>
               <td>
                 <button class="btn-primary action-btn" onclick="app.admin.viewExam(${i})">Xem</button>
@@ -1940,11 +1940,11 @@ const app = {
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
                   <select id="add-e-class" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
-                     <option value="Lớp 1" ${e && e.classLevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
-                     <option value="Lớp 2" ${e && e.classLevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
-                     <option value="Lớp 3" ${e && e.classLevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
-                     <option value="Lớp 4" ${e && e.classLevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
-                     <option value="Lớp 5" ${e && e.classLevel === 'Lớp 5' ? 'selected' : (!e ? 'selected' : '')}>Lớp 5</option>
+                     <option value="Lớp 1" ${e && e.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
+                     <option value="Lớp 2" ${e && e.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
+                     <option value="Lớp 3" ${e && e.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
+                     <option value="Lớp 4" ${e && e.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
+                     <option value="Lớp 5" ${e && e.classlevel === 'Lớp 5' ? 'selected' : (!e ? 'selected' : '')}>Lớp 5</option>
                   </select>
                </div>
 
@@ -2080,11 +2080,11 @@ const app = {
       else if (tab === 'select_for_q') {
           let qIdx = editIdx;
           let q = app.data.libraryQuestions[qIdx];
-          let matchingExams = app.data.exams.map((e, i) => ({e, i})).filter(x => x.e.classLevel === q.classLevel && x.e.subject === q.subject);
+          let matchingExams = app.data.exams.map((e, i) => ({e, i})).filter(x => x.e.classlevel === q.classlevel && x.e.subject === q.subject);
           
           let html = `<div style="margin-bottom:15px;"><button class="btn-opt" onclick="app.admin.switchTab('questions'); setTimeout(()=>app.admin.renderQSubTab('lib'), 50);">Quay lại Kho Câu hỏi</button></div>`;
           html += `<h3>Chọn đề kiểm tra để thêm câu hỏi</h3>`;
-          html += `<p>Đang lọc đề kiểm tra: <strong>${q.classLevel} - ${q.subject}</strong></p>`;
+          html += `<p>Đang lọc đề kiểm tra: <strong>${q.classlevel} - ${q.subject}</strong></p>`;
           
           if (matchingExams.length === 0) {
               html += `<p style="color:#aaa;">Không có đề kiểm tra nào phù hợp với Cấp lớp và Môn của câu hỏi này.</p>`;
@@ -2163,7 +2163,7 @@ const app = {
         const eObj = {
             name: document.getElementById('add-e-name').value,
             subject: document.getElementById('add-e-sub').value,
-            classLevel: document.getElementById('add-e-class').value,
+            classlevel: document.getElementById('add-e-class').value,
             period: document.getElementById('add-e-period').value,
             questions: []
         };
@@ -2179,7 +2179,7 @@ const app = {
             if (qText && ansText) {
                 const typeVal = document.getElementById(`add-e-q-type-${i}`).value;
                 const newQ = {
-                    classLevel: eObj.classLevel,
+                    classlevel: eObj.classlevel,
                     subject: eObj.subject,
                     topic: document.getElementById(`add-e-q-topic-${i}`).value,
                     difficulty: document.getElementById(`add-e-q-diff-${i}`).value,
@@ -2280,7 +2280,7 @@ const app = {
                     app.data.exams.push({
                         name: row["Tên đề"],
                         subject: row["Môn"],
-                        classLevel: row["Cấp lớp"] || 'Lớp 5',
+                        classlevel: row["Cấp lớp"] || 'Lớp 5',
                         period: row["Kỳ kiểm tra"] || 'Giữa kỳ 1',
                         questions: []
                     });
@@ -2304,7 +2304,7 @@ const app = {
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
              <h2 style="text-align:center;">BÀI KIỂM TRA ${exam.period.toUpperCase()}</h2>
-             <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classLevel}</p>
+             <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classlevel}</p>
              <hr style="margin:20px 0;">
        `;
        if (!exam.questions || exam.questions.length === 0) {
@@ -2364,7 +2364,7 @@ const app = {
                           <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
         }
         return `<tr>
-          <td>${u.classLevel||''}</td><td>${u.fullname||''}</td>
+          <td>${u.classlevel||''}</td><td>${u.fullname||''}</td>
           <td>${u.username}</td><td>${u.password||''}</td>
           <td>${actionBtns}</td>
         </tr>`;
@@ -2407,11 +2407,11 @@ const app = {
              <div style="display:flex; align-items:center; margin-bottom:15px;">
                 <label style="width:130px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
                 <select id="add-class" class="form-input" style="flex:1; padding:8px;">
-                   <option value="1" ${u && u.classLevel === '1' ? 'selected' : ''}>Lớp 1</option>
-                   <option value="2" ${u && u.classLevel === '2' ? 'selected' : ''}>Lớp 2</option>
-                   <option value="3" ${u && u.classLevel === '3' ? 'selected' : ''}>Lớp 3</option>
-                   <option value="4" ${u && u.classLevel === '4' ? 'selected' : ''}>Lớp 4</option>
-                   <option value="5" ${u && u.classLevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option>
+                   <option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option>
+                   <option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option>
+                   <option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option>
+                   <option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option>
+                   <option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option>
                 </select>
              </div>
              
@@ -2435,12 +2435,12 @@ const app = {
                 user.fullname = fn;
                 user.username = un;
                 user.password = pw;
-                user.classLevel = cl;
+                user.classlevel = cl;
                 alert('Đã cập nhật thông tin học sinh!');
             }
         } else {
             if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
-            app.data.users.push({ fullname: fn, username: un, password: pw, classLevel: cl, role: 'student', approved: true, history: [], totalScore: 0, lollipops: 0 });
+            app.data.users.push({ fullname: fn, username: un, password: pw, classlevel: cl, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0 });
             alert('Đã tạo tài khoản học sinh!');
         }
         app.data.saveUsers();
@@ -2560,7 +2560,7 @@ const app = {
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
-          students = students.filter(u => String(u.classLevel) === cls);
+          students = students.filter(u => String(u.classlevel) === cls);
       }
       
       let fromTime = fromDate ? new Date(fromDate).getTime() : 0;
@@ -2574,8 +2574,8 @@ const app = {
                   return ht >= fromTime && ht <= toTime;
               });
           }
-          let totalScore = hist.reduce((sum, h) => sum + parseFloat(h.score || 0), 0);
-          return { ...s, filteredHistory: hist, filteredScore: totalScore };
+          let totalscore = hist.reduce((sum, h) => sum + parseFloat(h.score || 0), 0);
+          return { ...s, filteredHistory: hist, filteredScore: totalscore };
       });
       
       if (fromDate || toDate) {
@@ -2632,7 +2632,7 @@ const app = {
       let allHist = [];
       app.data.users.filter(u => u.role !== 'admin').forEach(u => {
          (u.history || []).forEach(h => {
-             allHist.push({ ...h, studentName: u.fullname, username: u.username, classLevel: u.classLevel || '' });
+             allHist.push({ ...h, studentName: u.fullname, username: u.username, classlevel: u.classlevel || '' });
          });
       });
       // Sort by latest
@@ -2642,8 +2642,8 @@ const app = {
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
-          allHist = allHist.filter(h => String(h.classLevel) === cls);
-          classFilteredUsers = classFilteredUsers.filter(u => String(u.classLevel) === cls);
+          allHist = allHist.filter(h => String(h.classlevel) === cls);
+          classFilteredUsers = classFilteredUsers.filter(u => String(u.classlevel) === cls);
       }
       
       let searchStr = studentFilter.trim().toLowerCase();
@@ -2708,7 +2708,7 @@ const app = {
          }
          
          const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
-         const clsDisplay = h.classLevel ? (String(h.classLevel).includes('Lớp') ? h.classLevel : 'Lớp ' + h.classLevel) : '';
+         const clsDisplay = h.classlevel ? (String(h.classlevel).includes('Lớp') ? h.classlevel : 'Lớp ' + h.classlevel) : '';
          
          return `<tr><td>${clsDisplay}</td><td>${h.studentName}</td><td>${h.title}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
@@ -2720,7 +2720,7 @@ const app = {
     renderStudentTreasure(box, u) {
       let html = `<div style="text-align:center; padding: 30px 0;">
          <h3 style="font-size: 1.5rem;">Kho báu của ${u.fullname}</h3>
-         <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalScore||0}</span></p>
+         <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore||0}</span></p>
          <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
       const lolli = u.lollipops || 0;
       if (lolli === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có kẹo nào. Hãy hoàn thành bài để nhận kẹo nhé!</p>`;
