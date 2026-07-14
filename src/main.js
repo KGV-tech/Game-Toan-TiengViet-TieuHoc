@@ -61,7 +61,7 @@ const app = {
           console.error('Error fetching users:', usersErr);
           this.users = [];
         } else {
-          this.users = usersData || [];
+          this.users = usersData || []; this.users.forEach(u => { if (!Array.isArray(u.history)) u.history = []; });
         }
         
         // Ensure Admin exists
@@ -93,9 +93,9 @@ const app = {
         supabaseClient.channel('custom-all-channel')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
               console.log('Realtime DB Change received!', payload);
-              if (payload.eventType === 'INSERT') {
+              if (payload.eventType === 'INSERT') { if (!Array.isArray(payload.new.history)) payload.new.history = [];
                   if (!this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
-              } else if (payload.eventType === 'UPDATE') {
+              } else if (payload.eventType === 'UPDATE') { if (!Array.isArray(payload.new.history)) payload.new.history = [];
                   const idx = this.users.findIndex(u => u.id === payload.new.id);
                   if (idx > -1) this.users[idx] = payload.new;
                   
@@ -186,9 +186,9 @@ const app = {
     },
     
     async updateUserScore() {
-      if (!this.currentUser || this.currentUser.role === 'admin') return;
+      if (!this.currentUser || this.currentUser.role?.toLowerCase() === 'admin') return;
       let total = 0;
-      (this.currentUser.history || []).forEach(h => total += parseFloat(h.score || 0));
+      (Array.isArray(this.currentUser.history) ? this.currentUser.history : []).forEach(h => total += parseFloat(h.score || 0));
       this.currentUser.totalscore = Math.round(total * 10) / 10;
       
       const idx = this.users.findIndex(u => u.username === this.currentUser.username);
@@ -253,7 +253,7 @@ const app = {
               console.error("Login fetch error:", fetchErr);
           }
           if (freshUsers) {
-              app.data.users = freshUsers;
+              freshUsers.forEach(u => { if (!Array.isArray(u.history)) u.history = []; }); app.data.users = freshUsers;
           }
       } catch (err) {
           console.error("Supabase failed during login:", err);
@@ -272,7 +272,7 @@ const app = {
       const user = app.data.users.find(x => (x.username === u || x.fullname === u) && x.password === p);
       
       if (user) {
-        if (user.role !== 'admin' && user.approved === false) {
+        if (user.role?.toLowerCase() !== 'admin' && user.approved === false) {
            alert('Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!');
            return;
         }
@@ -280,7 +280,7 @@ const app = {
         await app.data.updateUserScore();
         this.updateHeader();
         
-        if (user.role === 'admin') {
+        if (user.role?.toLowerCase() === 'admin') {
           document.getElementById('admin-station').style.display = 'flex';
         } else {
           document.getElementById('admin-station').style.display = 'none';
@@ -344,8 +344,8 @@ const app = {
     updateHeader() {
       if (!app.data.currentUser) return;
       const html = `
-        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
-        ${app.data.currentUser.role !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
+        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
+        ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
       `;
       document.getElementById('player-info').innerHTML = html;
     }
@@ -418,7 +418,7 @@ const app = {
         el.onclick = () => {
           app.router.animateCatTo(el, () => {
             if (el.dataset.subject === 'exam') {
-                const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+                const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
                 const examAdminSelector = document.getElementById('exam-admin-class-selector');
                 if (examAdminSelector) examAdminSelector.style.display = isAdmin ? 'block' : 'none';
                 if (isAdmin && !app.exam.state.adminclasslevel) {
@@ -444,7 +444,7 @@ const app = {
       document.getElementById('game-config-title').textContent = subject === 'math' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
       document.getElementById('start-adv-icon').src = subject === 'math' ? './public/torch_new.png' : './public/watering_can.png';
       
-      const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+      const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       const adminSelector = document.getElementById('admin-class-selector');
       if (adminSelector) adminSelector.style.display = isAdmin ? 'block' : 'none';
       if (isAdmin && !this.state.adminclasslevel) {
@@ -495,7 +495,7 @@ const app = {
       this.renderTopics();
     },
     renderTopics() {
-      const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+      const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
       
@@ -540,7 +540,7 @@ const app = {
         return;
       }
       
-      const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+      const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
 
@@ -1158,7 +1158,7 @@ const app = {
       const btnCheck = document.getElementById('submit-ans-btn');
       
       const isLast = this.state.currentIdx === this.state.questions.length - 1;
-      const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+      const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       document.getElementById('submit-ans-text').textContent = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp tục';
       
       btnCheck.onclick = () => {
@@ -1203,8 +1203,8 @@ const app = {
       document.getElementById('result-modal').classList.add('active');
     },
     async recordHistory(title, score, lollipop) {
-      if (!app.data.currentUser || app.data.currentUser.role === 'admin') return;
-      app.data.currentUser.history.push({
+      if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
+      if (!Array.isArray(app.data.currentUser.history)) app.data.currentUser.history = []; app.data.currentUser.history.push({
         date: new Date().toISOString().split('T')[0],
         module: title,
         score: score,
@@ -1253,7 +1253,7 @@ const app = {
         return alert('Vui lòng chọn môn học và thời gian!');
       }
       
-      const isAdmin = app.data.currentUser && app.data.currentUser.role === 'admin';
+      const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
       
@@ -2347,7 +2347,7 @@ const app = {
         { label: 'Hành động', filterable: false }
       ];
       
-      let users = app.data.users.filter(u => u.role !== 'admin');
+      let users = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
       if (isPending) {
          users = users.filter(u => u.approved === false);
       } else {
@@ -2492,7 +2492,7 @@ const app = {
       const u = app.data.currentUser;
       if (!u) return;
       
-      if (u.role === 'admin') {
+      if (u.role?.toLowerCase() === 'admin') {
          this.switchTab('leaderboard');
       } else {
          this.switchTab('my_treasure');
@@ -2502,7 +2502,7 @@ const app = {
       const u = app.data.currentUser;
       const box = document.getElementById('treasure-content-area');
       
-      if (u.role === 'admin') {
+      if (u.role?.toLowerCase() === 'admin') {
          const tabs = [
             { id: 'leaderboard', label: 'Bảng thành tích' },
             { id: 'history', label: 'Lịch sử làm bài' }
@@ -2556,7 +2556,7 @@ const app = {
          { label: 'Điểm', filterable: false },
          { label: 'Kẹo', filterable: false }
       ];
-      let students = app.data.users.filter(u => u.role !== 'admin');
+      let students = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
@@ -2630,7 +2630,7 @@ const app = {
          { label: 'Chi tiết', filterable: false }
       ];
       let allHist = [];
-      app.data.users.filter(u => u.role !== 'admin').forEach(u => {
+      app.data.users.filter(u => u.role?.toLowerCase() !== 'admin').forEach(u => {
          (u.history || []).forEach(h => {
              allHist.push({ ...h, studentName: u.fullname, username: u.username, classlevel: u.classlevel || '' });
          });
@@ -2638,7 +2638,7 @@ const app = {
       // Sort by latest
       allHist.sort((a,b) => new Date(b.date) - new Date(a.date));
       
-      let classFilteredUsers = app.data.users.filter(u => u.role !== 'admin');
+      let classFilteredUsers = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
