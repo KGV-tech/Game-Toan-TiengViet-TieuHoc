@@ -3,6 +3,23 @@ const defaultLibraryQuestions = [];
 const defaultExams = [];
 
 const app = {
+  safeStorage: {
+    getItem(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        console.warn('localStorage is blocked:', e);
+        return null;
+      }
+    },
+    setItem(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('localStorage is blocked:', e);
+      }
+    }
+  },
   data: {
     users: [],
     libraryQuestions: [],
@@ -10,7 +27,7 @@ const app = {
     currentUser: null,
     
     init() {
-      const storedUsers = localStorage.getItem('gameUsers');
+      const storedUsers = app.safeStorage.getItem('gameUsers');
       if (storedUsers) {
         this.users = JSON.parse(storedUsers);
       } else {
@@ -22,10 +39,10 @@ const app = {
         this.saveUsers();
       }
       
-      const storedLib = localStorage.getItem('libraryQuestions');
+      const storedLib = app.safeStorage.getItem('libraryQuestions');
       this.libraryQuestions = storedLib ? JSON.parse(storedLib) : [];
       
-      const storedExams = localStorage.getItem('libraryExams');
+      const storedExams = app.safeStorage.getItem('libraryExams');
       this.exams = storedExams ? JSON.parse(storedExams) : [];
       
       // Inject Mock Data if empty
@@ -52,9 +69,9 @@ const app = {
           this.saveExams();
       }
     },
-    saveUsers() { localStorage.setItem('gameUsers', JSON.stringify(this.users)); },
-    saveLibrary() { localStorage.setItem('libraryQuestions', JSON.stringify(this.libraryQuestions)); },
-    saveExams() { localStorage.setItem('libraryExams', JSON.stringify(this.exams)); },
+    saveUsers() { app.safeStorage.setItem('gameUsers', JSON.stringify(this.users)); },
+    saveLibrary() { app.safeStorage.setItem('libraryQuestions', JSON.stringify(this.libraryQuestions)); },
+    saveExams() { app.safeStorage.setItem('libraryExams', JSON.stringify(this.exams)); },
     
     updateUserScore() {
       if (!this.currentUser || this.currentUser.role === 'admin') return;
