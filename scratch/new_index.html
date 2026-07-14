@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hành Trình Tri Thức Lớp 5</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    
+    <!-- Màn hình Đăng nhập -->
+    <div id="login-screen" class="screen active">
+      <img src="./public/login_bg.jpg" alt="Background" class="bg-img">
+      <div class="glass-container">
+        <h2>Đăng nhập để bắt đầu</h2>
+        <input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass">
+        <input type="password" id="password" placeholder="Mật khẩu" class="input-glass">
+        <button id="login-btn" class="btn-primary">Bắt Đầu</button>
+        <a href="#" id="link-to-register" class="link-glass">Đăng ký tài khoản mới</a>
+      </div>
+    </div>
+
+    <!-- Màn hình Đăng ký -->
+    <div id="register-screen" class="screen">
+      <img src="./public/login_bg.jpg" alt="Background" class="bg-img">
+      <div class="glass-container">
+        <h2>Đăng Ký Tài Khoản</h2>
+        <input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass">
+        <input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass">
+        <input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass">
+        <select id="reg-class" class="input-glass">
+          <option value="">-- Chọn Cấp Lớp --</option>
+          <option value="1">Lớp 1</option><option value="2">Lớp 2</option>
+          <option value="3">Lớp 3</option><option value="4">Lớp 4</option>
+          <option value="5">Lớp 5</option>
+        </select>
+        <button id="register-btn" class="btn-success">Đăng Ký</button>
+        <a href="#" id="link-to-login" class="link-glass">⬅ Quay lại đăng nhập</a>
+      </div>
+    </div>
+
+    <!-- Bản đồ -->
+    <div id="map-screen" class="screen">
+      <div class="top-nav">
+        <button id="logout-btn" class="btn-danger">Đăng Xuất</button>
+        <div id="player-info" class="player-info-card"></div>
+      </div>
+      
+      <div class="map-title-container">
+        <img src="./public/title.png" alt="Vùng Đất Bí Ẩn" class="map-title">
+      </div>
+      
+      <div class="map-container">
+        <img src="./public/game_map_background.png" alt="Map" class="map-bg">
+        
+        <div class="station" data-subject="math" style="top: 15%; left: 20%;">
+          <div class="station-icon">
+            <img src="./public/math_subject_badge.png" alt="Math">
+            <div class="sparkle"></div>
+          </div>
+          <span class="station-label">Toán Học</span>
+        </div>
+        
+        <div class="station" data-subject="vietnamese" style="top: 40%; left: 70%;">
+          <div class="station-icon">
+            <img src="./public/vietnamese_badge.png" alt="Vietnamese">
+            <div class="sparkle"></div>
+          </div>
+          <span class="station-label">Tiếng Việt</span>
+        </div>
+        
+        <div class="station" data-subject="exam" style="top: 75%; left: 35%;">
+          <div class="station-icon">
+            <img src="./public/exam_badge.png" alt="Exam">
+            <div class="sparkle"></div>
+          </div>
+          <span class="station-label">Làm Đề Thi</span>
+        </div>
+
+        <div id="admin-station" class="station" style="top: 10%; right: 10%; display:none;" onclick="app.admin.openTreasure()">
+          <div class="station-icon">
+            <img src="./public/treasure_box.png" alt="Admin">
+          </div>
+          <span class="station-label">Quản Trị / Kho Báu</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Màn hình chơi chung (Luyện Tập) -->
+    <div id="game-screen" class="screen">
+      <div class="game-bg-layer"></div>
+      
+      <!-- Cấu hình (chọn độ khó) -->
+      <div id="game-config-view" class="game-view active glass-container-large">
+        <button class="btn-back" onclick="app.router.open('map-screen')">⬅ Bản đồ</button>
+        <h1 id="game-config-title" class="title-glow"></h1>
+        
+        <div class="difficulty-cards">
+          <div class="diff-card" onclick="app.game.setDifficulty('easy', this)">
+            <h3>Dễ</h3>
+            <p>Ôn tập cơ bản</p>
+          </div>
+          <div class="diff-card" onclick="app.game.setDifficulty('medium', this)">
+            <h3>Vừa</h3>
+            <p>Rèn luyện tư duy</p>
+          </div>
+          <div class="diff-card" onclick="app.game.setDifficulty('hard', this)">
+            <h3>Khó</h3>
+            <p>Thử thách bản thân</p>
+          </div>
+        </div>
+        
+        <button id="game-start-btn" class="btn-start-massive" onclick="app.game.startPlay()">
+          Bắt Đầu Ngay
+        </button>
+      </div>
+
+      <!-- Play View -->
+      <div id="game-play-view" class="game-view">
+        <button class="btn-back" onclick="app.router.open('map-screen')">Thoát</button>
+        <div class="play-container">
+          <div class="question-header">
+            <div class="progress-bar"><div id="game-progress" class="progress-fill"></div></div>
+            <h2 id="game-q-text"></h2>
+          </div>
+          
+          <div id="game-q-content" class="question-content">
+            <!-- Nơi render options -->
+          </div>
+          
+          <div id="game-feedback" class="feedback-box"></div>
+          
+          <div class="action-buttons">
+            <button id="game-check-btn" class="btn-primary" onclick="app.game.checkAnswer()">Kiểm tra</button>
+            <button id="game-next-btn" class="btn-success" style="display:none;" onclick="app.game.nextQuestion()">Tiếp tục ➡</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Màn hình Chọn Đề Thi -->
+    <div id="exam-select-screen" class="screen">
+      <div class="glass-container-large" style="max-width: 900px; text-align: center;">
+        <button class="btn-back" onclick="app.router.open('map-screen')">⬅ Bản đồ</button>
+        <h2 class="title-glow">Chọn Đề Thi</h2>
+        
+        <div class="exam-filters">
+          <div class="filter-group">
+            <label>Môn học:</label>
+            <div class="btn-group">
+              <button class="btn-filter" onclick="app.exam.setFilter('subject', 'math', this)">Toán</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('subject', 'vietnamese', this)">Tiếng Việt</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Lớp:</label>
+            <div class="btn-group">
+              <button class="btn-filter" onclick="app.exam.setFilter('classLevel', '1', this)">1</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('classLevel', '2', this)">2</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('classLevel', '3', this)">3</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('classLevel', '4', this)">4</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('classLevel', '5', this)">5</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Kỳ thi:</label>
+            <div class="btn-group">
+              <button class="btn-filter" onclick="app.exam.setFilter('period', 'Giữa kỳ 1', this)">Giữa kỳ 1</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('period', 'Cuối kỳ 1', this)">Cuối kỳ 1</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('period', 'Giữa kỳ 2', this)">Giữa kỳ 2</button>
+              <button class="btn-filter" onclick="app.exam.setFilter('period', 'Cuối kỳ 2', this)">Cuối kỳ 2</button>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn-start-massive" onclick="app.exam.start()">Bắt Đầu Làm Bài</button>
+      </div>
+    </div>
+
+    <!-- Màn hình Làm Đề Thi -->
+    <div id="exam-play-screen" class="screen" style="background:#1e293b; overflow-y:auto; align-items:flex-start;">
+      <div class="exam-paper" id="exam-paper">
+        <div class="exam-header">
+          <h1 id="exam-title">Đề Thi</h1>
+          <p id="exam-meta">Họ tên: <span id="exam-student-name"></span></p>
+        </div>
+        <div id="exam-questions-container"></div>
+        <div style="text-align:center; margin-top: 30px;">
+          <button class="btn-success" style="padding: 15px 40px; font-size:1.2rem;" onclick="app.exam.submit()">Nộp Bài</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Kết Quả Chung -->
+    <div id="result-modal" class="modal">
+      <div class="modal-content glass-card">
+        <h2 style="color:#fcd34d; font-size:2.5rem; text-shadow:0 0 10px rgba(252,211,77,0.5);">Hoàn Thành!</h2>
+        <div id="result-score-display" style="font-size: 3rem; color: #fff; font-weight: 900;">10/10</div>
+        
+        <div id="result-lollipop-reward" style="display:none; text-align:center; margin: 15px 0;">
+          <img src="./public/lollipop.png" alt="Lollipop" style="width:100px; animation: bounce 2s infinite;">
+          <p style="color:#fff; font-weight:bold;">Chúc mừng bạn nhận được 1 Kẹo Mút! 🍭</p>
+        </div>
+        
+        <div id="result-details-list" class="scroll-box"></div>
+        
+        <button class="btn-primary" style="margin-top:20px; width:100%;" onclick="app.game.closeResult()">Đóng</button>
+      </div>
+    </div>
+
+    <!-- Modal Admin / Kho Báu -->
+    <div id="treasure-modal" class="modal">
+      <div class="modal-content admin-panel glass-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+          <h2 style="color:white; margin:0;">Khu Vực Quản Trị</h2>
+          <button class="btn-danger" style="padding:5px 15px;" onclick="document.getElementById('treasure-modal').style.display='none'">Đóng</button>
+        </div>
+        
+        <div class="admin-tabs">
+          <button class="tab-btn active" onclick="app.admin.switchTab('library')">Ngân Hàng Câu Hỏi</button>
+          <button class="tab-btn" onclick="app.admin.switchTab('exams')">Quản Lý Đề Thi</button>
+          <button class="tab-btn" onclick="app.admin.switchTab('history')">Lịch Sử Làm Bài</button>
+          <button class="tab-btn" onclick="app.admin.switchTab('leaderboard')">Bảng Xếp Hạng</button>
+        </div>
+        
+        <div id="admin-content-area" class="admin-content scroll-box"></div>
+      </div>
+    </div>
+
+    <!-- Canvas for Confetti -->
+    <canvas id="confetti-canvas"></canvas>
+
+  </div>
+  <script src="./src/main.js"></script>
+</body>
+</html>
