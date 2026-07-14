@@ -212,9 +212,22 @@ const app = {
       const p = document.getElementById('password').value.trim();
       
       // Pull fresh data from DB on login just to be sure we have the latest approved status
-      const { data: freshUsers } = await supabase.from('game_users').select('*');
+      const { data: freshUsers, error: fetchErr } = await supabase.from('game_users').select('*');
+      if (fetchErr) {
+          console.error("Login fetch error:", fetchErr);
+      }
       if (freshUsers) {
           app.data.users = freshUsers;
+      }
+      
+      // Ensure admin exists in case of DB sync issues
+      if (!app.data.users.find(u => u.username === 'admin')) {
+          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
+          app.data.users.push(adminUser);
+          // Try to insert again just in case
+          supabase.from('game_users').insert([adminUser]).then(({error}) => {
+              if (error) console.error("Admin insert error:", error);
+          });
       }
       
       const user = app.data.users.find(x => (x.username === u || x.fullname === u) && x.password === p);
