@@ -1,7 +1,30 @@
 const supabaseUrl = 'https://bjgbbrufnryrtimtzvhn.supabase.co';
 const supabaseKey = 'sb_publishable_ElY4p6z3HMpmD5NKsmXZEA_Hh7OsDTk';
-const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+// Safe wrapper for Supabase client to prevent crash when offline (no CDN)
+const dummyQuery = {
+    then(resolve) { resolve({ data: null, error: 'Offline' }); },
+    eq() { return this; },
+    single() { return this; },
+    select() { return this; },
+    insert() { return this; },
+    update() { return this; },
+    upsert() { return this; },
+    delete() { return this; }
+};
+const dummySupabase = {
+    from: () => dummyQuery,
+    channel: () => ({
+        on: () => ({ subscribe: () => {} })
+    })
+};
+
+let supabaseClient = dummySupabase;
+if (window.supabase) {
+    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+} else {
+    console.warn("Supabase SDK not loaded. Chạy ở chế độ Offline (Local) hoàn toàn.");
+}
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
