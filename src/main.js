@@ -1,3 +1,7 @@
+const supabaseUrl = 'https://bjgbbrufnryrtimtzvhn.supabase.co';
+const supabaseKey = 'sb_publishable_ElY4p6z3HMpmD5NKsmXZEA_Hh7OsDTk';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
@@ -26,24 +30,40 @@ const app = {
     exams: [],
     currentUser: null,
     
-    init() {
-      const storedUsers = app.safeStorage.getItem('gameUsers');
-      if (storedUsers) {
-        this.users = JSON.parse(storedUsers);
-      } else {
+    async init() {
+      // 1. Fetch Users
+      const { data: usersData, error: usersErr } = await supabase.from('game_users').select('*');
+      if (usersErr) {
+        console.error('Error fetching users:', usersErr);
         this.users = [];
+      } else {
+        this.users = usersData || [];
       }
       
+      // Ensure Admin exists
       if (!this.users.find(u => u.username === 'admin')) {
-        this.users.push({ username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5' });
-        this.saveUsers();
+        const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
+        this.users.push(adminUser);
+        await supabase.from('game_users').insert([adminUser]);
       }
       
-      const storedLib = app.safeStorage.getItem('libraryQuestions');
-      this.libraryQuestions = storedLib ? JSON.parse(storedLib) : [];
+      // 2. Fetch Questions
+      const { data: qData, error: qErr } = await supabase.from('game_questions').select('*');
+      if (qErr) {
+        console.error('Error fetching questions:', qErr);
+        this.libraryQuestions = [];
+      } else {
+        this.libraryQuestions = qData || [];
+      }
       
-      const storedExams = app.safeStorage.getItem('libraryExams');
-      this.exams = storedExams ? JSON.parse(storedExams) : [];
+      // 3. Fetch Exams
+      const { data: eData, error: eErr } = await supabase.from('game_exams').select('*');
+      if (eErr) {
+        console.error('Error fetching exams:', eErr);
+        this.exams = [];
+      } else {
+        this.exams = eData || [];
+      }
       
       // Inject Mock Data if empty
       if (this.libraryQuestions.length === 0) {
@@ -56,7 +76,7 @@ const app = {
               { type: 'Kéo thả', subject: 'Tiếng Việt', classLevel: 'Lớp 5', topic: 'Cấu tạo từ', q: 'Chọn từ ghép thích hợp: [xanh biếc, xanh xao, xanh tươi]', ans: 'xanh tươi', options: ['xanh biếc', 'xanh xao', 'xanh tươi'] }
           ];
           this.libraryQuestions = mockQ;
-          this.saveLibrary();
+          await this.saveLibrary();
       }
       if (this.exams.length === 0) {
           this.exams.push({
@@ -66,14 +86,71 @@ const app = {
               period: 'Giữa kỳ 1',
               questions: JSON.parse(JSON.stringify(this.libraryQuestions))
           });
-          this.saveExams();
+          await this.saveExams();
       }
+
+      // Realtime subscription
+      supabase.channel('custom-all-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
+            console.log('Realtime DB Change received!', payload);
+            if (payload.eventType === 'INSERT') {
+                if (!this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
+            } else if (payload.eventType === 'UPDATE') {
+                const idx = this.users.findIndex(u => u.id === payload.new.id);
+                if (idx > -1) this.users[idx] = payload.new;
+                
+                // If it's the current user, update their header (e.g. admin approved them, or points changed from another device)
+                if (this.currentUser && this.currentUser.id === payload.new.id) {
+                    this.currentUser = payload.new;
+                    app.auth.updateHeader();
+                }
+            } else if (payload.eventType === 'DELETE') {
+                this.users = this.users.filter(u => u.id !== payload.old.id);
+            }
+            // Auto-refresh admin panel if open
+            if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
+                if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
+                    app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chờ duyệt'));
+                }
+            }
+        })
+        .subscribe();
     },
-    saveUsers() { app.safeStorage.setItem('gameUsers', JSON.stringify(this.users)); },
-    saveLibrary() { app.safeStorage.setItem('libraryQuestions', JSON.stringify(this.libraryQuestions)); },
-    saveExams() { app.safeStorage.setItem('libraryExams', JSON.stringify(this.exams)); },
     
-    updateUserScore() {
+    // Instead of bulk saving everything, we now upsert the whole array (or in real-world we'd do precise updates). 
+    // To keep it simple and compatible with existing logic:
+    async saveUsers() {
+       // Only save the changes, but since the old code mutated the array directly, we upsert the entire array.
+       // Upsert requires primary key matching. If objects have `id`, it updates. Otherwise inserts.
+       for (const u of this.users) {
+           const { error } = await supabase.from('game_users').upsert([u], { onConflict: 'username' });
+           if (error) console.error("Error saving user:", error);
+       }
+    },
+    async saveLibrary() {
+       for (const q of this.libraryQuestions) {
+           // We might not have unique constraints other than id. If we don't have id, we shouldn't insert all every time.
+           // Let's assume if it doesn't have an ID, we insert it.
+           if (q.id) {
+               await supabase.from('game_questions').update(q).eq('id', q.id);
+           } else {
+               const { data } = await supabase.from('game_questions').insert([q]).select();
+               if (data && data[0]) q.id = data[0].id;
+           }
+       }
+    },
+    async saveExams() {
+       for (const e of this.exams) {
+           if (e.id) {
+               await supabase.from('game_exams').update(e).eq('id', e.id);
+           } else {
+               const { data } = await supabase.from('game_exams').insert([e]).select();
+               if (data && data[0]) e.id = data[0].id;
+           }
+       }
+    },
+    
+    async updateUserScore() {
       if (!this.currentUser || this.currentUser.role === 'admin') return;
       let total = 0;
       (this.currentUser.history || []).forEach(h => total += parseFloat(h.score || 0));
@@ -82,7 +159,13 @@ const app = {
       const idx = this.users.findIndex(u => u.username === this.currentUser.username);
       if (idx > -1) {
         this.users[idx] = this.currentUser;
-        this.saveUsers();
+        // Direct DB update for this user to avoid concurrency issues
+        if (this.currentUser.id) {
+           const { error } = await supabase.from('game_users').update(this.currentUser).eq('id', this.currentUser.id);
+           if (error) console.error("Error updating score:", error);
+        } else {
+           await this.saveUsers(); // fallback
+        }
       }
     }
   },
@@ -124,9 +207,16 @@ const app = {
       document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
       document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
     },
-    login() {
+    async login() {
       const u = document.getElementById('username').value.trim();
       const p = document.getElementById('password').value.trim();
+      
+      // Pull fresh data from DB on login just to be sure we have the latest approved status
+      const { data: freshUsers } = await supabase.from('game_users').select('*');
+      if (freshUsers) {
+          app.data.users = freshUsers;
+      }
+      
       const user = app.data.users.find(x => (x.username === u || x.fullname === u) && x.password === p);
       
       if (user) {
@@ -135,7 +225,7 @@ const app = {
            return;
         }
         app.data.currentUser = user;
-        app.data.updateUserScore();
+        await app.data.updateUserScore();
         this.updateHeader();
         
         if (user.role === 'admin') {
@@ -148,7 +238,7 @@ const app = {
         alert('Sai tên đăng nhập hoặc mật khẩu!');
       }
     },
-    register() {
+    async register() {
       const fn = document.getElementById('reg-fullname').value.trim();
       const un = document.getElementById('reg-username').value.trim();
       const pw = document.getElementById('reg-password').value.trim();
@@ -158,12 +248,15 @@ const app = {
         alert('Vui lòng điền đầy đủ thông tin!');
         return;
       }
-      if (app.data.users.find(x => x.username === un)) {
+      
+      // Check in DB to be absolutely sure
+      const { data: existingUser } = await supabase.from('game_users').select('username').eq('username', un).single();
+      if (existingUser || app.data.users.find(x => x.username === un)) {
         alert('Tên đăng nhập đã tồn tại!');
         return;
       }
       
-      app.data.users.push({
+      const newUser = {
         fullname: fn,
         username: un,
         password: pw,
@@ -173,8 +266,20 @@ const app = {
         history: [],
         totalScore: 0,
         lollipops: 0
-      });
-      app.data.saveUsers();
+      };
+      
+      const { data, error } = await supabase.from('game_users').insert([newUser]).select();
+      if (error) {
+          alert('Có lỗi xảy ra khi kết nối máy chủ!');
+          console.error(error);
+          return;
+      }
+      
+      if (data && data[0]) {
+          newUser.id = data[0].id;
+      }
+      
+      app.data.users.push(newUser);
       alert('Đăng ký thành công!');
       app.router.open('login-screen');
     },
@@ -1045,7 +1150,7 @@ const app = {
       
       document.getElementById('result-modal').classList.add('active');
     },
-    recordHistory(title, score, lollipop) {
+    async recordHistory(title, score, lollipop) {
       if (!app.data.currentUser || app.data.currentUser.role === 'admin') return;
       app.data.currentUser.history.push({
         date: new Date().toISOString().split('T')[0],
@@ -1054,7 +1159,7 @@ const app = {
         details: this.state.historyDetails
       });
       if (lollipop) app.data.currentUser.lollipops = (app.data.currentUser.lollipops || 0) + 1;
-      app.data.updateUserScore();
+      await app.data.updateUserScore();
       app.auth.updateHeader();
     },
     claimBonus() {
@@ -2214,11 +2319,15 @@ const app = {
       }, isPending ? "Không có học sinh nào chờ duyệt" : "Chưa có học sinh nào");
       subBox.innerHTML = html;
     },
-    approveUser(username) {
+    async approveUser(username) {
         let user = app.data.users.find(u => u.username === username);
         if (user) {
             user.approved = true;
-            app.data.saveUsers();
+            if (user.id) {
+                await supabase.from('game_users').update({ approved: true }).eq('id', user.id);
+            } else {
+                await app.data.saveUsers();
+            }
             this.renderPlayersList(true);
         }
     },
@@ -2307,10 +2416,15 @@ const app = {
     deleteExam(idx) {
       if(confirm('Xóa đề kiểm tra này?')) { app.data.exams.splice(idx, 1); app.data.saveExams(); this.renderESubTab('lib'); }
     },
-    deleteUser(username) {
+    async deleteUser(username) {
       if(confirm('Xóa học sinh này?')) { 
-        app.data.users = app.data.users.filter(u => u.username !== username); 
-        app.data.saveUsers(); 
+        const user = app.data.users.find(u => u.username === username);
+        app.data.users = app.data.users.filter(u => u.username !== username);
+        if (user && user.id) {
+            await supabase.from('game_users').delete().eq('id', user.id);
+        } else {
+            await app.data.saveUsers();
+        }
         this.switchTab('players'); 
       }
     }
@@ -2718,8 +2832,8 @@ const app = {
   }
 };
 
-window.onload = () => {
-  app.data.init();
+window.onload = async () => {
+  await app.data.init();
   app.auth.init();
   app.game.init();
 };
