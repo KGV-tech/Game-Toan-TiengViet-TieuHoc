@@ -1,6 +1,6 @@
 const supabaseUrl = 'https://bjgbbrufnryrtimtzvhn.supabase.co';
 const supabaseKey = 'sb_publishable_ElY4p6z3HMpmD5NKsmXZEA_Hh7OsDTk';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
@@ -31,40 +31,79 @@ const app = {
     currentUser: null,
     
     async init() {
-      // 1. Fetch Users
-      const { data: usersData, error: usersErr } = await supabase.from('game_users').select('*');
-      if (usersErr) {
-        console.error('Error fetching users:', usersErr);
-        this.users = [];
-      } else {
-        this.users = usersData || [];
+      try {
+        // 1. Fetch Users
+        const { data: usersData, error: usersErr } = await supabaseClient.from('game_users').select('*');
+        if (usersErr) {
+          console.error('Error fetching users:', usersErr);
+          this.users = [];
+        } else {
+          this.users = usersData || [];
+        }
+        
+        // Ensure Admin exists
+        if (!this.users.find(u => u.username === 'admin')) {
+          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
+          this.users.push(adminUser);
+          await supabaseClient.from('game_users').insert([adminUser]);
+        }
+        
+        // 2. Fetch Questions
+        const { data: qData, error: qErr } = await supabaseClient.from('game_questions').select('*');
+        if (qErr) {
+          console.error('Error fetching questions:', qErr);
+          this.libraryQuestions = [];
+        } else {
+          this.libraryQuestions = qData || [];
+        }
+        
+        // 3. Fetch Exams
+        const { data: eData, error: eErr } = await supabaseClient.from('game_exams').select('*');
+        if (eErr) {
+          console.error('Error fetching exams:', eErr);
+          this.exams = [];
+        } else {
+          this.exams = eData || [];
+        }
+        
+        // Realtime subscription
+        supabaseClient.channel('custom-all-channel')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
+              console.log('Realtime DB Change received!', payload);
+              if (payload.eventType === 'INSERT') {
+                  if (!this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
+              } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.users.findIndex(u => u.id === payload.new.id);
+                  if (idx > -1) this.users[idx] = payload.new;
+                  
+                  // If it's the current user, update their header (e.g. admin approved them, or points changed from another device)
+                  if (this.currentUser && this.currentUser.id === payload.new.id) {
+                      this.currentUser = payload.new;
+                      app.auth.updateHeader();
+                  }
+              } else if (payload.eventType === 'DELETE') {
+                  this.users = this.users.filter(u => u.id !== payload.old.id);
+              }
+              // Auto-refresh admin panel if open
+              if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
+                  if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
+                      app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chờ duyệt'));
+                  }
+              }
+          })
+          .subscribe();
+          
+      } catch (err) {
+        console.error("Critical DB error during init:", err);
+        // Fallback to avoid breaking UI completely
+        this.users = this.users || [];
+        if (!this.users.find(u => u.username === 'admin')) {
+           this.users.push({ username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true });
+        }
+        this.libraryQuestions = this.libraryQuestions || [];
+        this.exams = this.exams || [];
       }
-      
-      // Ensure Admin exists
-      if (!this.users.find(u => u.username === 'admin')) {
-        const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
-        this.users.push(adminUser);
-        await supabase.from('game_users').insert([adminUser]);
-      }
-      
-      // 2. Fetch Questions
-      const { data: qData, error: qErr } = await supabase.from('game_questions').select('*');
-      if (qErr) {
-        console.error('Error fetching questions:', qErr);
-        this.libraryQuestions = [];
-      } else {
-        this.libraryQuestions = qData || [];
-      }
-      
-      // 3. Fetch Exams
-      const { data: eData, error: eErr } = await supabase.from('game_exams').select('*');
-      if (eErr) {
-        console.error('Error fetching exams:', eErr);
-        this.exams = [];
-      } else {
-        this.exams = eData || [];
-      }
-      
+
       // Inject Mock Data if empty
       if (this.libraryQuestions.length === 0) {
           const mockQ = [
@@ -88,33 +127,6 @@ const app = {
           });
           await this.saveExams();
       }
-
-      // Realtime subscription
-      supabase.channel('custom-all-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
-            console.log('Realtime DB Change received!', payload);
-            if (payload.eventType === 'INSERT') {
-                if (!this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
-            } else if (payload.eventType === 'UPDATE') {
-                const idx = this.users.findIndex(u => u.id === payload.new.id);
-                if (idx > -1) this.users[idx] = payload.new;
-                
-                // If it's the current user, update their header (e.g. admin approved them, or points changed from another device)
-                if (this.currentUser && this.currentUser.id === payload.new.id) {
-                    this.currentUser = payload.new;
-                    app.auth.updateHeader();
-                }
-            } else if (payload.eventType === 'DELETE') {
-                this.users = this.users.filter(u => u.id !== payload.old.id);
-            }
-            // Auto-refresh admin panel if open
-            if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
-                if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
-                    app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chờ duyệt'));
-                }
-            }
-        })
-        .subscribe();
     },
     
     // Instead of bulk saving everything, we now upsert the whole array (or in real-world we'd do precise updates). 
@@ -123,7 +135,7 @@ const app = {
        // Only save the changes, but since the old code mutated the array directly, we upsert the entire array.
        // Upsert requires primary key matching. If objects have `id`, it updates. Otherwise inserts.
        for (const u of this.users) {
-           const { error } = await supabase.from('game_users').upsert([u], { onConflict: 'username' });
+           const { error } = await supabaseClient.from('game_users').upsert([u], { onConflict: 'username' });
            if (error) console.error("Error saving user:", error);
        }
     },
@@ -132,9 +144,9 @@ const app = {
            // We might not have unique constraints other than id. If we don't have id, we shouldn't insert all every time.
            // Let's assume if it doesn't have an ID, we insert it.
            if (q.id) {
-               await supabase.from('game_questions').update(q).eq('id', q.id);
+               await supabaseClient.from('game_questions').update(q).eq('id', q.id);
            } else {
-               const { data } = await supabase.from('game_questions').insert([q]).select();
+               const { data } = await supabaseClient.from('game_questions').insert([q]).select();
                if (data && data[0]) q.id = data[0].id;
            }
        }
@@ -142,9 +154,9 @@ const app = {
     async saveExams() {
        for (const e of this.exams) {
            if (e.id) {
-               await supabase.from('game_exams').update(e).eq('id', e.id);
+               await supabaseClient.from('game_exams').update(e).eq('id', e.id);
            } else {
-               const { data } = await supabase.from('game_exams').insert([e]).select();
+               const { data } = await supabaseClient.from('game_exams').insert([e]).select();
                if (data && data[0]) e.id = data[0].id;
            }
        }
@@ -161,7 +173,7 @@ const app = {
         this.users[idx] = this.currentUser;
         // Direct DB update for this user to avoid concurrency issues
         if (this.currentUser.id) {
-           const { error } = await supabase.from('game_users').update(this.currentUser).eq('id', this.currentUser.id);
+           const { error } = await supabaseClient.from('game_users').update(this.currentUser).eq('id', this.currentUser.id);
            if (error) console.error("Error updating score:", error);
         } else {
            await this.saveUsers(); // fallback
@@ -211,13 +223,17 @@ const app = {
       const u = document.getElementById('username').value.trim();
       const p = document.getElementById('password').value.trim();
       
-      // Pull fresh data from DB on login just to be sure we have the latest approved status
-      const { data: freshUsers, error: fetchErr } = await supabase.from('game_users').select('*');
-      if (fetchErr) {
-          console.error("Login fetch error:", fetchErr);
-      }
-      if (freshUsers) {
-          app.data.users = freshUsers;
+      try {
+          // Pull fresh data from DB on login just to be sure we have the latest approved status
+          const { data: freshUsers, error: fetchErr } = await supabaseClient.from('game_users').select('*');
+          if (fetchErr) {
+              console.error("Login fetch error:", fetchErr);
+          }
+          if (freshUsers) {
+              app.data.users = freshUsers;
+          }
+      } catch (err) {
+          console.error("Supabase failed during login:", err);
       }
       
       // Ensure admin exists in case of DB sync issues
@@ -225,7 +241,7 @@ const app = {
           const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalScore: 0, lollipops: 0, classLevel: '5', approved: true };
           app.data.users.push(adminUser);
           // Try to insert again just in case
-          supabase.from('game_users').insert([adminUser]).then(({error}) => {
+          supabaseClient.from('game_users').insert([adminUser]).then(({error}) => {
               if (error) console.error("Admin insert error:", error);
           });
       }
@@ -263,7 +279,7 @@ const app = {
       }
       
       // Check in DB to be absolutely sure
-      const { data: existingUser } = await supabase.from('game_users').select('username').eq('username', un).single();
+      const { data: existingUser } = await supabaseClient.from('game_users').select('username').eq('username', un).single();
       if (existingUser || app.data.users.find(x => x.username === un)) {
         alert('Tên đăng nhập đã tồn tại!');
         return;
@@ -281,7 +297,7 @@ const app = {
         lollipops: 0
       };
       
-      const { data, error } = await supabase.from('game_users').insert([newUser]).select();
+      const { data, error } = await supabaseClient.from('game_users').insert([newUser]).select();
       if (error) {
           alert('Có lỗi xảy ra khi kết nối máy chủ!');
           console.error(error);
@@ -2337,7 +2353,7 @@ const app = {
         if (user) {
             user.approved = true;
             if (user.id) {
-                await supabase.from('game_users').update({ approved: true }).eq('id', user.id);
+                await supabaseClient.from('game_users').update({ approved: true }).eq('id', user.id);
             } else {
                 await app.data.saveUsers();
             }
@@ -2434,7 +2450,7 @@ const app = {
         const user = app.data.users.find(u => u.username === username);
         app.data.users = app.data.users.filter(u => u.username !== username);
         if (user && user.id) {
-            await supabase.from('game_users').delete().eq('id', user.id);
+            await supabaseClient.from('game_users').delete().eq('id', user.id);
         } else {
             await app.data.saveUsers();
         }
@@ -2846,8 +2862,16 @@ const app = {
 };
 
 window.onload = async () => {
-  await app.data.init();
-  app.auth.init();
-  app.game.init();
+  try {
+    await app.data.init();
+  } catch(e) {
+    console.error("Error during app init:", e);
+  }
+  try {
+    app.auth.init();
+    app.game.init();
+  } catch(e) {
+    console.error("Error binding UI:", e);
+  }
 };
 
