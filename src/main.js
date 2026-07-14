@@ -560,12 +560,12 @@ const app = {
         const qTopic = String(q.topic || '').trim().toLowerCase();
         
         const matchSub = (qSub === mSub || qSub === this.state.subject.toLowerCase() || qSub.includes(mSub) || mSub.includes(qSub));
-        const matchClass = (qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
-        const matchDiff = (this.state.difficulty === 'shuffle' || qDiff === mDiff || qDiff === this.state.difficulty.toLowerCase());
-        const matchTopic = this.state.selectedTopics.some(t => {
+        const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
+        const matchDiff = (!qDiff || this.state.difficulty === 'shuffle' || qDiff === mDiff || qDiff === this.state.difficulty.toLowerCase());
+        const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
             const tNorm = String(t).toLowerCase();
             return tNorm.includes(qTopic) || qTopic.includes(tNorm);
-        });
+        }));
         
         return matchSub && matchClass && matchDiff && matchTopic;
       });
@@ -2741,7 +2741,7 @@ const app = {
          const encoded = encodeURIComponent(JSON.stringify(h));
          return `<tr><td>${h.title}</td><td>${h.score}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
-      });
+      }, "Chưa có dữ liệu lịch sử");
     },
     exportToImage(mode) {
         document.getElementById('print-modal').style.display = 'none';
