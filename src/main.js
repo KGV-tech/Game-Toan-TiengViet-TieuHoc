@@ -1222,6 +1222,19 @@ const app = {
                  slot.appendChild(icon);
              }
          });
+         
+         if (!isCorrect) {
+             const optContainer = document.getElementById('game-options-container');
+             const corr = document.createElement('div');
+             corr.className = 'fill-input correct';
+             corr.style.marginTop = '20px';
+             corr.style.pointerEvents = 'none';
+             corr.style.width = 'auto';
+             corr.style.display = 'inline-block';
+             corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+             corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
+             optContainer.appendChild(corr);
+         }
       } else if (qType === 'Chuỗi quy luật') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
@@ -1250,6 +1263,19 @@ const app = {
                  slot.appendChild(icon);
              }
          });
+         
+         if (!isCorrect) {
+             const optContainer = document.getElementById('game-options-container');
+             const corr = document.createElement('div');
+             corr.className = 'fill-input correct';
+             corr.style.marginTop = '20px';
+             corr.style.pointerEvents = 'none';
+             corr.style.width = 'auto';
+             corr.style.display = 'inline-block';
+             corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+             corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
+             optContainer.appendChild(corr);
+         }
       }
       
       const bubble = document.getElementById('cat-speech-bubble');
