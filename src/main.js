@@ -116,6 +116,38 @@ const app = {
                   }
               }
           })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_questions' }, async (payload) => {
+              console.log('Realtime DB Change received (Questions)!', payload);
+              if (payload.eventType === 'INSERT') {
+                  if (!this.libraryQuestions.find(q => q.id === payload.new.id)) this.libraryQuestions.push(payload.new);
+              } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.libraryQuestions.findIndex(q => q.id === payload.new.id);
+                  if (idx > -1) this.libraryQuestions[idx] = payload.new;
+              } else if (payload.eventType === 'DELETE') {
+                  this.libraryQuestions = this.libraryQuestions.filter(q => q.id !== payload.old.id);
+              }
+              if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
+                  if (document.querySelector('.tab-btn.active').textContent.includes('Kho Câu hỏi')) {
+                      app.admin.renderLibrary();
+                  }
+              }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_exams' }, async (payload) => {
+              console.log('Realtime DB Change received (Exams)!', payload);
+              if (payload.eventType === 'INSERT') {
+                  if (!this.exams.find(e => e.id === payload.new.id)) this.exams.push(payload.new);
+              } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.exams.findIndex(e => e.id === payload.new.id);
+                  if (idx > -1) this.exams[idx] = payload.new;
+              } else if (payload.eventType === 'DELETE') {
+                  this.exams = this.exams.filter(e => e.id !== payload.old.id);
+              }
+              if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
+                  if (document.querySelector('.tab-btn.active').textContent.includes('Kho Đề')) {
+                      app.admin.renderExams();
+                  }
+              }
+          })
           .subscribe();
           
       } catch (err) {
@@ -129,29 +161,7 @@ const app = {
         this.exams = this.exams || [];
       }
 
-      // Inject Mock Data if empty
-      if (this.libraryQuestions.length === 0) {
-          const mockQ = [
-              { type: 'Trắc nghiệm', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'Kết quả của 2.5 + 3.7 là?', ans: '6.2', options: ['5.2', '6.2', '6.5', '7.2'] },
-              { type: 'Điền khuyết', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Từ vựng', q: 'Từ trái nghĩa với "Rộng lớn" là chật ...', ans: 'hẹp', options: [] },
-              { type: 'Đúng/Sai', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Phân số', q: 'Phân số 1/2 bằng phân số 2/4. Đúng hay Sai?', ans: 'Đúng', options: ['Đúng', 'Sai'] },
-              { type: 'So sánh', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'So sánh: 5.09 ... 5.1', ans: '<', options: ['<', '>', '='] },
-              { type: 'Chuỗi Quy luật', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Dãy số', q: 'Điền số tiếp theo: 2, 4, 6, 8, ...', ans: '10', options: [] },
-              { type: 'Kéo thả', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Cấu tạo từ', q: 'Chọn từ ghép thích hợp: [xanh biếc, xanh xao, xanh tươi]', ans: 'xanh tươi', options: ['xanh biếc', 'xanh xao', 'xanh tươi'] }
-          ];
-          this.libraryQuestions = mockQ;
-          await this.saveLibrary();
-      }
-      if (this.exams.length === 0) {
-          this.exams.push({
-              name: 'Đề mẫu Toán & TV',
-              subject: 'Toán',
-              classlevel: 'Lớp 5',
-              period: 'Giữa kỳ 1',
-              questions: JSON.parse(JSON.stringify(this.libraryQuestions))
-          });
-          await this.saveExams();
-      }
+      // Mock data injection has been removed to prevent overwriting production databases during network glitches.
     },
     
     // Instead of bulk saving everything, we now upsert the whole array (or in real-world we'd do precise updates). 
