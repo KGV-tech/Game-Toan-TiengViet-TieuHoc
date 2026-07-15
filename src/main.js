@@ -1,4 +1,4 @@
-const supabaseUrl = 'https://bjgbbrufnryrtimtzvhn.supabase.co';
+﻿const supabaseUrl = 'https://bjgbbrufnryrtimtzvhn.supabase.co';
 const supabaseKey = 'sb_publishable_ElY4p6z3HMpmD5NKsmXZEA_Hh7OsDTk';
 
 // Safe wrapper for Supabase client to prevent crash when offline (no CDN)
@@ -23,7 +23,7 @@ let supabaseClient = dummySupabase;
 if (window.supabase) {
     supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 } else {
-    console.warn("Supabase SDK not loaded. Chạy ở chế độ Offline (Local) hoàn toàn.");
+    console.warn("Supabase SDK not loaded. Cháº¡y á»Ÿ cháº¿ Ä‘á»™ Offline (Local) hoÃ n toÃ n.");
 }
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
@@ -109,8 +109,8 @@ const app = {
               }
               // Auto-refresh admin panel if open
               if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
-                  if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
-                      app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chờ duyệt'));
+                  if (document.querySelector('.tab-btn.active').textContent.includes('Há»c Sinh')) {
+                      app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chá» duyá»‡t'));
                   }
               }
           })
@@ -130,22 +130,22 @@ const app = {
       // Inject Mock Data if empty
       if (this.libraryQuestions.length === 0) {
           const mockQ = [
-              { type: 'Trắc nghiệm', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'Kết quả của 2.5 + 3.7 là?', ans: '6.2', options: ['5.2', '6.2', '6.5', '7.2'] },
-              { type: 'Điền khuyết', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Từ vựng', q: 'Từ trái nghĩa với "Rộng lớn" là chật ...', ans: 'hẹp', options: [] },
-              { type: 'Đúng/Sai', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Phân số', q: 'Phân số 1/2 bằng phân số 2/4. Đúng hay Sai?', ans: 'Đúng', options: ['Đúng', 'Sai'] },
-              { type: 'So sánh', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Số thập phân', q: 'So sánh: 5.09 ... 5.1', ans: '<', options: ['<', '>', '='] },
-              { type: 'Chuỗi Quy luật', subject: 'Toán', classlevel: 'Lớp 5', topic: 'Dãy số', q: 'Điền số tiếp theo: 2, 4, 6, 8, ...', ans: '10', options: [] },
-              { type: 'Kéo thả', subject: 'Tiếng Việt', classlevel: 'Lớp 5', topic: 'Cấu tạo từ', q: 'Chọn từ ghép thích hợp: [xanh biếc, xanh xao, xanh tươi]', ans: 'xanh tươi', options: ['xanh biếc', 'xanh xao', 'xanh tươi'] }
+              { type: 'Tráº¯c nghiá»‡m', subject: 'ToÃ¡n', classlevel: 'Lá»›p 5', topic: 'Sá»‘ tháº­p phÃ¢n', q: 'Káº¿t quáº£ cá»§a 2.5 + 3.7 lÃ ?', ans: '6.2', options: ['5.2', '6.2', '6.5', '7.2'] },
+              { type: 'Äiá»n khuyáº¿t', subject: 'Tiáº¿ng Viá»‡t', classlevel: 'Lá»›p 5', topic: 'Tá»« vá»±ng', q: 'Tá»« trÃ¡i nghÄ©a vá»›i "Rá»™ng lá»›n" lÃ  cháº­t ...', ans: 'háº¹p', options: [] },
+              { type: 'ÄÃºng/Sai', subject: 'ToÃ¡n', classlevel: 'Lá»›p 5', topic: 'PhÃ¢n sá»‘', q: 'PhÃ¢n sá»‘ 1/2 báº±ng phÃ¢n sá»‘ 2/4. ÄÃºng hay Sai?', ans: 'ÄÃºng', options: ['ÄÃºng', 'Sai'] },
+              { type: 'So sÃ¡nh', subject: 'ToÃ¡n', classlevel: 'Lá»›p 5', topic: 'Sá»‘ tháº­p phÃ¢n', q: 'So sÃ¡nh: 5.09 ... 5.1', ans: '<', options: ['<', '>', '='] },
+              { type: 'Chuá»—i Quy luáº­t', subject: 'ToÃ¡n', classlevel: 'Lá»›p 5', topic: 'DÃ£y sá»‘', q: 'Äiá»n sá»‘ tiáº¿p theo: 2, 4, 6, 8, ...', ans: '10', options: [] },
+              { type: 'KÃ©o tháº£', subject: 'Tiáº¿ng Viá»‡t', classlevel: 'Lá»›p 5', topic: 'Cáº¥u táº¡o tá»«', q: 'Chá»n tá»« ghÃ©p thÃ­ch há»£p: [xanh biáº¿c, xanh xao, xanh tÆ°Æ¡i]', ans: 'xanh tÆ°Æ¡i', options: ['xanh biáº¿c', 'xanh xao', 'xanh tÆ°Æ¡i'] }
           ];
           this.libraryQuestions = mockQ;
           await this.saveLibrary();
       }
       if (this.exams.length === 0) {
           this.exams.push({
-              name: 'Đề mẫu Toán & TV',
-              subject: 'Toán',
-              classlevel: 'Lớp 5',
-              period: 'Giữa kỳ 1',
+              name: 'Äá» máº«u ToÃ¡n & TV',
+              subject: 'ToÃ¡n',
+              classlevel: 'Lá»›p 5',
+              period: 'Giá»¯a ká»³ 1',
               questions: JSON.parse(JSON.stringify(this.libraryQuestions))
           });
           await this.saveExams();
@@ -313,7 +313,7 @@ const app = {
       
       if (user) {
         if (user.role?.toLowerCase() !== 'admin' && user.approved === false) {
-           alert('Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!');
+           alert('TÃ i khoáº£n cá»§a báº¡n Ä‘ang chá» phÃª duyá»‡t tá»« GiÃ¡o viÃªn!');
            return;
         }
         app.data.currentUser = user;
@@ -327,7 +327,7 @@ const app = {
         }
         app.router.open('map-screen');
       } else {
-        alert('Sai tên đăng nhập hoặc mật khẩu!');
+        alert('Sai tÃªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u!');
       }
     },
     async register() {
@@ -337,14 +337,14 @@ const app = {
       const cl = document.getElementById('reg-class').value;
       
       if (!fn || !un || !pw) {
-        alert('Vui lòng điền đầy đủ thông tin!');
+        alert('Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin!');
         return;
       }
       
       // Check in DB to be absolutely sure
       const { data: existingUser } = await supabaseClient.from('game_users').select('username').eq('username', un).single();
       if (existingUser || app.data.users.find(x => x.username === un)) {
-        alert('Tên đăng nhập đã tồn tại!');
+        alert('TÃªn Ä‘Äƒng nháº­p Ä‘Ã£ tá»“n táº¡i!');
         return;
       }
       
@@ -362,7 +362,7 @@ const app = {
       
       const { data, error } = await supabaseClient.from('game_users').insert([newUser]).select();
       if (error) {
-          alert('Có lỗi xảy ra khi kết nối máy chủ!');
+          alert('CÃ³ lá»—i xáº£y ra khi káº¿t ná»‘i mÃ¡y chá»§!');
           console.error(error);
           return;
       }
@@ -372,7 +372,7 @@ const app = {
       }
       
       app.data.users.push(newUser);
-      alert('Đăng ký thành công!');
+      alert('ÄÄƒng kÃ½ thÃ nh cÃ´ng!');
       app.router.open('login-screen');
     },
     logout() {
@@ -384,8 +384,8 @@ const app = {
     updateHeader() {
       if (!app.data.currentUser) return;
       const html = `
-        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
-        ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
+        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lá»›p ' + app.data.currentUser.classlevel})<br>
+        ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Äiá»ƒm: ${app.data.currentUser.totalscore} | Káº¹o: ${app.data.currentUser.lollipops} ðŸ­` : ''}
       `;
       document.getElementById('player-info').innerHTML = html;
     }
@@ -395,56 +395,56 @@ const app = {
     topics: {
       "1": {
         math: [
-          'Các số đến 10', 'Các số đến 100', 'Làm quen với hình khối', 'Làm quen với một số hình phẳng',
-          'Phép cộng trừ không nhớ phạm vi 100', 'Phép cộng trừ phạm vi 10', 'Thời gian và lịch',
-          'Ôn tập Toán Lớp 1', 'Độ dài và Đo độ dài'
+          'CÃ¡c sá»‘ Ä‘áº¿n 10', 'CÃ¡c sá»‘ Ä‘áº¿n 100', 'LÃ m quen vá»›i hÃ¬nh khá»‘i', 'LÃ m quen vá»›i má»™t sá»‘ hÃ¬nh pháº³ng',
+          'PhÃ©p cá»™ng trá»« khÃ´ng nhá»› pháº¡m vi 100', 'PhÃ©p cá»™ng trá»« pháº¡m vi 10', 'Thá»i gian vÃ  lá»‹ch',
+          'Ã”n táº­p ToÃ¡n Lá»›p 1', 'Äá»™ dÃ i vÃ  Äo Ä‘á»™ dÃ i'
         ],
         vietnamese: [
-          'Mái trường mến yêu', 'Mái ấm gia đình', 'Những bài học nhỏ', 'Tôi và các bạn', 'Điều kì diệu quanh ta'
+          'MÃ¡i trÆ°á»ng máº¿n yÃªu', 'MÃ¡i áº¥m gia Ä‘Ã¬nh', 'Nhá»¯ng bÃ i há»c nhá»', 'TÃ´i vÃ  cÃ¡c báº¡n', 'Äiá»u kÃ¬ diá»‡u quanh ta'
         ]
       },
       "2": {
         math: [
-          'Các số đến 1000', 'Cộng trừ có nhớ phạm vi 100', 'Cộng trừ có nhớ phạm vi 1000',
-          'Cộng trừ không nhớ phạm vi 1000', 'Hình phẳng, hình khối Lớp 2', 'Khối lượng, dung tích',
-          'Ngày - Tháng - Giờ - Phút', 'Phép nhân, phép chia', 'Thống kê, xác suất Lớp 2', 'Ôn tập Toán Lớp 2'
+          'CÃ¡c sá»‘ Ä‘áº¿n 1000', 'Cá»™ng trá»« cÃ³ nhá»› pháº¡m vi 100', 'Cá»™ng trá»« cÃ³ nhá»› pháº¡m vi 1000',
+          'Cá»™ng trá»« khÃ´ng nhá»› pháº¡m vi 1000', 'HÃ¬nh pháº³ng, hÃ¬nh khá»‘i Lá»›p 2', 'Khá»‘i lÆ°á»£ng, dung tÃ­ch',
+          'NgÃ y - ThÃ¡ng - Giá» - PhÃºt', 'PhÃ©p nhÃ¢n, phÃ©p chia', 'Thá»‘ng kÃª, xÃ¡c suáº¥t Lá»›p 2', 'Ã”n táº­p ToÃ¡n Lá»›p 2'
         ],
         vietnamese: [
-          'Em lớn lên từng ngày', 'Giao tiếp và kết nối', 'Hành tinh của chúng mình', 'Mái ấm gia đình Lớp 2',
-          'Niềm vui tuổi thơ', 'Việt Nam quê hương em', 'Vẻ đẹp quanh em', 'Đi học vui sao'
+          'Em lá»›n lÃªn tá»«ng ngÃ y', 'Giao tiáº¿p vÃ  káº¿t ná»‘i', 'HÃ nh tinh cá»§a chÃºng mÃ¬nh', 'MÃ¡i áº¥m gia Ä‘Ã¬nh Lá»›p 2',
+          'Niá»m vui tuá»•i thÆ¡', 'Viá»‡t Nam quÃª hÆ°Æ¡ng em', 'Váº» Ä‘áº¹p quanh em', 'Äi há»c vui sao'
         ]
       },
       "3": {
         math: [
-          'Bảng nhân, bảng chia', 'Chu vi, diện tích hình phẳng', 'Các số đến 10 000', 'Các số đến 100 000',
-          'Cộng trừ phạm vi 10 000', 'Nhân chia phạm vi 10 000', 'Phép nhân, chia phạm vi 1000',
-          'Thống kê và Xác suất Lớp 3', 'Ôn tập Toán Lớp 3', 'Điểm, đoạn thẳng, góc', 'Đơn vị đo độ dài, khối lượng, nhiệt độ'
+          'Báº£ng nhÃ¢n, báº£ng chia', 'Chu vi, diá»‡n tÃ­ch hÃ¬nh pháº³ng', 'CÃ¡c sá»‘ Ä‘áº¿n 10 000', 'CÃ¡c sá»‘ Ä‘áº¿n 100 000',
+          'Cá»™ng trá»« pháº¡m vi 10 000', 'NhÃ¢n chia pháº¡m vi 10 000', 'PhÃ©p nhÃ¢n, chia pháº¡m vi 1000',
+          'Thá»‘ng kÃª vÃ  XÃ¡c suáº¥t Lá»›p 3', 'Ã”n táº­p ToÃ¡n Lá»›p 3', 'Äiá»ƒm, Ä‘oáº¡n tháº³ng, gÃ³c', 'ÄÆ¡n vá»‹ Ä‘o Ä‘á»™ dÃ i, khá»‘i lÆ°á»£ng, nhiá»‡t Ä‘á»™'
         ],
         vietnamese: [
-          'Bài học từ cuộc sống', 'Cổng trường rộng mở', 'Cộng đồng gắn bó', 'Mái ấm gia đình Lớp 3',
-          'Những sắc màu thiên nhiên', 'Những trải nghiệm thú vị', 'Trái Đất của chúng mình', 'Đất nước ngàn năm'
+          'BÃ i há»c tá»« cuá»™c sá»‘ng', 'Cá»•ng trÆ°á»ng rá»™ng má»Ÿ', 'Cá»™ng Ä‘á»“ng gáº¯n bÃ³', 'MÃ¡i áº¥m gia Ä‘Ã¬nh Lá»›p 3',
+          'Nhá»¯ng sáº¯c mÃ u thiÃªn nhiÃªn', 'Nhá»¯ng tráº£i nghiá»‡m thÃº vá»‹', 'TrÃ¡i Äáº¥t cá»§a chÃºng mÃ¬nh', 'Äáº¥t nÆ°á»›c ngÃ n nÄƒm'
         ]
       },
       "4": {
         math: [
-          'Bốn phép tính với Phân số', 'Dãy số liệu, biểu đồ cột', 'Góc và đơn vị đo góc', 'Hình bình hành, Hình thoi',
-          'Phân số', 'Phép cộng, trừ số tự nhiên', 'Phép nhân, chia số tự nhiên', 'Số có nhiều chữ số',
-          'Tìm hai số khi biết Tổng và Hiệu', 'Ôn tập Toán Lớp 4', 'Đại lượng (Yến, tạ, tấn, thế kỉ)'
+          'Bá»‘n phÃ©p tÃ­nh vá»›i PhÃ¢n sá»‘', 'DÃ£y sá»‘ liá»‡u, biá»ƒu Ä‘á»“ cá»™t', 'GÃ³c vÃ  Ä‘Æ¡n vá»‹ Ä‘o gÃ³c', 'HÃ¬nh bÃ¬nh hÃ nh, HÃ¬nh thoi',
+          'PhÃ¢n sá»‘', 'PhÃ©p cá»™ng, trá»« sá»‘ tá»± nhiÃªn', 'PhÃ©p nhÃ¢n, chia sá»‘ tá»± nhiÃªn', 'Sá»‘ cÃ³ nhiá»u chá»¯ sá»‘',
+          'TÃ¬m hai sá»‘ khi biáº¿t Tá»•ng vÃ  Hiá»‡u', 'Ã”n táº­p ToÃ¡n Lá»›p 4', 'Äáº¡i lÆ°á»£ng (Yáº¿n, táº¡, táº¥n, tháº¿ ká»‰)'
         ],
         vietnamese: [
-          'Chắp cánh ước mơ', 'Mỗi người một vẻ', 'Niềm vui sáng tạo', 'Sống để yêu thương',
-          'Thế giới quanh ta', 'Trải nghiệm và khám phá', 'Tình yêu cuộc sống', 'Uống nước nhớ nguồn'
+          'Cháº¯p cÃ¡nh Æ°á»›c mÆ¡', 'Má»—i ngÆ°á»i má»™t váº»', 'Niá»m vui sÃ¡ng táº¡o', 'Sá»‘ng Ä‘á»ƒ yÃªu thÆ°Æ¡ng',
+          'Tháº¿ giá»›i quanh ta', 'Tráº£i nghiá»‡m vÃ  khÃ¡m phÃ¡', 'TÃ¬nh yÃªu cuá»™c sá»‘ng', 'Uá»‘ng nÆ°á»›c nhá»› nguá»“n'
         ]
       },
       "5": {
         math: [
-          'Bốn phép tính số thập phân', 'Chu vi & Diện tích hình tròn', 'Hình lập phương, Hộp CN',
-          'Hình tam giác, Hình thang', 'Số thập phân', 'Thống kê & Biểu đồ', 'Toán chuyển động đều',
-          'Tỉ số phần trăm', 'Ôn tập Toán Lớp 5', 'Ôn tập số tự nhiên và phân số', 'Đo lường & Đại lượng'
+          'Bá»‘n phÃ©p tÃ­nh sá»‘ tháº­p phÃ¢n', 'Chu vi & Diá»‡n tÃ­ch hÃ¬nh trÃ²n', 'HÃ¬nh láº­p phÆ°Æ¡ng, Há»™p CN',
+          'HÃ¬nh tam giÃ¡c, HÃ¬nh thang', 'Sá»‘ tháº­p phÃ¢n', 'Thá»‘ng kÃª & Biá»ƒu Ä‘á»“', 'ToÃ¡n chuyá»ƒn Ä‘á»™ng Ä‘á»u',
+          'Tá»‰ sá»‘ pháº§n trÄƒm', 'Ã”n táº­p ToÃ¡n Lá»›p 5', 'Ã”n táº­p sá»‘ tá»± nhiÃªn vÃ  phÃ¢n sá»‘', 'Äo lÆ°á»ng & Äáº¡i lÆ°á»£ng'
         ],
         vietnamese: [
-          'Hương sắc trăm miền', 'Nghệ thuật muôn màu', 'Thiên nhiên kì thú', 'Thế giới của chúng ta',
-          'Thế giới tuổi thơ', 'Tiếp bước cha ông', 'Trên con đường học tập', 'Vẻ đẹp cuộc sống'
+          'HÆ°Æ¡ng sáº¯c trÄƒm miá»n', 'Nghá»‡ thuáº­t muÃ´n mÃ u', 'ThiÃªn nhiÃªn kÃ¬ thÃº', 'Tháº¿ giá»›i cá»§a chÃºng ta',
+          'Tháº¿ giá»›i tuá»•i thÆ¡', 'Tiáº¿p bÆ°á»›c cha Ã´ng', 'TrÃªn con Ä‘Æ°á»ng há»c táº­p', 'Váº» Ä‘áº¹p cuá»™c sá»‘ng'
         ]
       }
     }
@@ -481,7 +481,7 @@ const app = {
       this.state.selectedTopics = [];
       this.state.topicMode = 'single';
       
-      document.getElementById('game-config-title').textContent = subject === 'math' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
+      document.getElementById('game-config-title').textContent = subject === 'math' ? 'VUI Há»ŒC TOÃN' : 'VUI Há»ŒC TIáº¾NG VIá»†T';
       document.getElementById('start-adv-icon').src = subject === 'math' ? './public/torch_new.png' : './public/watering_can.png';
       
       const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
@@ -537,7 +537,7 @@ const app = {
     renderTopics() {
       const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
-      clLevel = String(clLevel).replace('Lớp ', '').trim();
+      clLevel = String(clLevel).replace('Lá»›p ', '').trim();
       
       const topicDict = app.constants.topics[clLevel] || { math: [], vietnamese: [] };
       const topics = this.state.subject === 'math' ? topicDict.math : topicDict.vietnamese;
@@ -576,16 +576,16 @@ const app = {
     },
     startPlay() {
       if (this.state.selectedTopics.length === 0) {
-        alert('Vui lòng chọn ít nhất 1 chủ đề!');
+        alert('Vui lÃ²ng chá»n Ã­t nháº¥t 1 chá»§ Ä‘á»!');
         return;
       }
       
       const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
-      clLevel = String(clLevel).replace('Lớp ', '').trim();
+      clLevel = String(clLevel).replace('Lá»›p ', '').trim();
 
-      const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
-      const mappedDiff = this.state.difficulty === 'easy' ? 'Dễ' : (this.state.difficulty === 'medium' ? 'Vừa' : 'Khó');
+      const mappedSubject = this.state.subject === 'math' ? 'ToÃ¡n' : 'Tiáº¿ng Viá»‡t';
+      const mappedDiff = this.state.difficulty === 'easy' ? 'Dá»…' : (this.state.difficulty === 'medium' ? 'Vá»«a' : 'KhÃ³');
       
       let pool = app.data.libraryQuestions.filter(q => {
         const qSub = String(q.subject || '').trim().toLowerCase();
@@ -600,7 +600,7 @@ const app = {
         const qTopic = String(q.topic || '').trim().toLowerCase();
         
         const matchSub = (qSub === mSub || qSub === this.state.subject.toLowerCase() || qSub.includes(mSub) || mSub.includes(qSub));
-        const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
+        const matchClass = (!qClass || qClass === clLvl || qClass === ('lá»›p ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
         const matchDiff = (!qDiff || this.state.difficulty === 'shuffle' || qDiff === mDiff || qDiff === this.state.difficulty.toLowerCase());
         const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
             const tNorm = String(t).toLowerCase();
@@ -611,13 +611,13 @@ const app = {
       });
       
       if (pool.length < this.state.count) {
-        alert('Ngân hàng không đủ ' + this.state.count + ' câu hỏi, sẽ lấy tất cả câu hiện có!');
+        alert('NgÃ¢n hÃ ng khÃ´ng Ä‘á»§ ' + this.state.count + ' cÃ¢u há»i, sáº½ láº¥y táº¥t cáº£ cÃ¢u hiá»‡n cÃ³!');
       }
       
       if (pool.length > this.state.count) {
           const byType = {};
           pool.forEach(q => {
-              const t = (q.type || 'Trắc nghiệm').trim();
+              const t = (q.type || 'Tráº¯c nghiá»‡m').trim();
               if (!byType[t]) byType[t] = [];
               byType[t].push(q);
           });
@@ -644,7 +644,7 @@ const app = {
       }
       
       if (pool.length === 0) {
-        alert('Không có câu hỏi phù hợp! Vui lòng nhập thêm dữ liệu vào thư viện.');
+        alert('KhÃ´ng cÃ³ cÃ¢u há»i phÃ¹ há»£p! Vui lÃ²ng nháº­p thÃªm dá»¯ liá»‡u vÃ o thÆ° viá»‡n.');
         return;
       }
       
@@ -657,7 +657,7 @@ const app = {
       this.loadQuestion();
     },
     confirmExit() {
-      if (confirm('Bạn chưa hoàn thành, thoát giữa chừng sẽ không được ghi nhận điểm!')) {
+      if (confirm('Báº¡n chÆ°a hoÃ n thÃ nh, thoÃ¡t giá»¯a chá»«ng sáº½ khÃ´ng Ä‘Æ°á»£c ghi nháº­n Ä‘iá»ƒm!')) {
         app.router.open('map-screen');
       }
     },
@@ -687,20 +687,20 @@ const app = {
       
       const btnCheck = document.getElementById('submit-ans-btn');
       btnCheck.disabled = true;
-      document.getElementById('submit-ans-text').textContent = 'Kiểm Tra';
+      document.getElementById('submit-ans-text').textContent = 'Kiá»ƒm Tra';
       btnCheck.onclick = () => this.submitAnswer();
       
-      let qType = (q.type || 'Trắc nghiệm').trim();
+      let qType = (q.type || 'Tráº¯c nghiá»‡m').trim();
       let opts = q.options || [];
       
       if (opts.length === 0) {
-          if (qType === 'Đúng/Sai') opts = ['Đúng', 'Sai'];
-          else if (qType === 'So sánh') opts = ['>', '<', '='];
-          else if (qType === 'Trắc nghiệm') opts = [q.ans];
-          else qType = 'Điền khuyết';
+          if (qType === 'ÄÃºng/Sai') opts = ['ÄÃºng', 'Sai'];
+          else if (qType === 'So sÃ¡nh') opts = ['>', '<', '='];
+          else if (qType === 'Tráº¯c nghiá»‡m') opts = [q.ans];
+          else qType = 'Äiá»n khuyáº¿t';
       }
       
-      if (qType === 'Trắc nghiệm') {
+      if (qType === 'Tráº¯c nghiá»‡m') {
         optContainer.className = 'options-grid multiple_choice';
         const labels = ['A', 'B', 'C', 'D'];
         opts.forEach((opt, idx) => {
@@ -715,13 +715,13 @@ const app = {
           };
           optContainer.appendChild(btn);
         });
-      } else if (qType === 'Đúng/Sai') {
+      } else if (qType === 'ÄÃºng/Sai') {
         optContainer.className = 'options-grid true_false';
         opts.forEach((opt) => {
           const btn = document.createElement('div');
-          const isTrue = opt.toLowerCase() === 'đúng';
+          const isTrue = opt.toLowerCase() === 'Ä‘Ãºng';
           btn.className = `tf-card ${isTrue ? 'tf-true' : 'tf-false'}`;
-          btn.innerHTML = `<div>${isTrue ? '✔️' : '❌'}</div><div class="ans-text">${opt}</div>`;
+          btn.innerHTML = `<div>${isTrue ? 'âœ”ï¸' : 'âŒ'}</div><div class="ans-text">${opt}</div>`;
           btn.onclick = () => {
             optContainer.querySelectorAll('.tf-card').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
@@ -730,7 +730,7 @@ const app = {
           };
           optContainer.appendChild(btn);
         });
-      } else if (qType === 'So sánh') {
+      } else if (qType === 'So sÃ¡nh') {
          optContainer.className = '';
          const slotWrapper = document.createElement('div');
          slotWrapper.style.display = 'flex';
@@ -756,7 +756,7 @@ const app = {
              controls.appendChild(btn);
          });
          optContainer.appendChild(controls);
-      } else if (qType === 'Kéo thả') {
+      } else if (qType === 'KÃ©o tháº£') {
           optContainer.className = '';
           let html = '';
           let numSlots = 0;
@@ -774,17 +774,17 @@ const app = {
               const parts = q.q.split('|');
               html += `<div style="display:flex; flex-direction:column; gap: 15px; margin-top:10px;">`;
               for (let i = 0; i < parts.length; i++) {
-                  // Text might have colon like "Nối mỗi phép tính: 18.3 + 8.2". We want to keep the text, just add a slot.
+                  // Text might have colon like "Ná»‘i má»—i phÃ©p tÃ­nh: 18.3 + 8.2". We want to keep the text, just add a slot.
                   let label = parts[i].trim();
                   if (i === 0 && label.includes(':')) {
-                      // e.g. "Nối mỗi phép tính: 18.3 + 8.2"
+                      // e.g. "Ná»‘i má»—i phÃ©p tÃ­nh: 18.3 + 8.2"
                       const spl = label.split(':');
                       html += `<span>${spl[0]}:</span>`;
                       label = spl.slice(1).join(':').trim();
                   }
                   html += `<div style="display:flex; align-items:center; gap:10px; font-size:1.5rem; justify-content:center;">
                              <span>${label}</span>
-                             <span style="color:#fde047;">➔</span>
+                             <span style="color:#fde047;">âž”</span>
                              <div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}"></div>
                            </div>`;
                   numSlots++;
@@ -877,7 +877,7 @@ const app = {
                   if (filledAnswers.every(ans => ans !== null)) btnCheck.disabled = false;
               };
           });
-      } else if (qType === 'Chuỗi quy luật') {
+      } else if (qType === 'Chuá»—i quy luáº­t') {
           optContainer.className = '';
           const parts = (q.q || '').split(/\.\.\.|___/);
           
@@ -893,9 +893,9 @@ const app = {
               const text = parts[i].trim();
               if (text) html += `<div class="train-node">${text}</div>`;
               if (i < parts.length - 1) {
-                  if (text) html += `<div class="train-arrow">➔</div>`;
+                  if (text) html += `<div class="train-arrow">âž”</div>`;
                   html += `<div class="train-node train-slot seq-slot" data-index="${i}">?</div>`;
-                  if (i < parts.length - 2) html += `<div class="train-arrow">➔</div>`;
+                  if (i < parts.length - 2) html += `<div class="train-arrow">âž”</div>`;
               }
           }
           html += '</div>';
@@ -925,19 +925,19 @@ const app = {
           
           const numpad = document.createElement('div');
           numpad.className = 'numpad';
-          const buttons = ['7','8','9','4','5','6','1','2','3','Xóa','0'];
+          const buttons = ['7','8','9','4','5','6','1','2','3','XÃ³a','0'];
           buttons.forEach(btnText => {
               const btn = document.createElement('button');
               btn.className = 'num-btn';
               if (btnText === '0') btn.classList.add('zero');
-              if (btnText === 'Xóa') btn.classList.add('del');
+              if (btnText === 'XÃ³a') btn.classList.add('del');
               btn.textContent = btnText;
               btn.onclick = () => {
                   const idx = this.state.focusedSeqSlot;
                   if (idx < 0 || idx >= numSlots) return;
                   
                   let currentVal = this.state.seqAnswers[idx];
-                  if (btnText === 'Xóa') {
+                  if (btnText === 'XÃ³a') {
                       currentVal = currentVal.slice(0, -1);
                   } else if (currentVal.length < 5) {
                       currentVal += btnText;
@@ -963,7 +963,7 @@ const app = {
               numpad.appendChild(btn);
           });
           optContainer.appendChild(numpad);
-      } else if (qType === 'Điền khuyết') {
+      } else if (qType === 'Äiá»n khuyáº¿t') {
           optContainer.className = '';
           const parts = (q.q || '').split(/\.\.\.|___/);
           let inputs = [];
@@ -1001,16 +1001,16 @@ const app = {
     submitAnswer() {
       const q = this.state.questions[this.state.currentIdx];
       let isCorrect = false;
-      let qType = q.type || 'Trắc nghiệm';
+      let qType = q.type || 'Tráº¯c nghiá»‡m';
       let opts = q.options || [];
       
       if (opts.length === 0) {
-          if (qType !== 'Đúng/Sai' && qType !== 'So sánh' && qType !== 'Trắc nghiệm') {
-              qType = 'Điền khuyết';
+          if (qType !== 'ÄÃºng/Sai' && qType !== 'So sÃ¡nh' && qType !== 'Tráº¯c nghiá»‡m') {
+              qType = 'Äiá»n khuyáº¿t';
           }
       }
       
-      if (qType === 'Điền khuyết') {
+      if (qType === 'Äiá»n khuyáº¿t') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
          isCorrect = selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
@@ -1043,10 +1043,10 @@ const app = {
              corr.style.width = 'auto';
              corr.style.display = 'inline-block';
              corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.display = 'inline-block'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-             corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
+             corr.innerHTML = `âœ… ÄÃ¡p Ã¡n Ä‘Ãºng: <b>${q.ans}</b>`;
              optContainer.appendChild(corr);
          }
-      } else if (qType === 'Trắc nghiệm') {
+      } else if (qType === 'Tráº¯c nghiá»‡m') {
          isCorrect = this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.ans-btn').forEach(btn => {
@@ -1055,17 +1055,17 @@ const app = {
                  btn.classList.add('correct');
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-v';
-                 icon.textContent = '✔️';
+                 icon.textContent = 'âœ”ï¸';
                  btn.appendChild(icon);
              } else if (btn.classList.contains('selected')) {
                  btn.classList.add('wrong');
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-x';
-                 icon.textContent = '❌';
+                 icon.textContent = 'âŒ';
                  btn.appendChild(icon);
              }
          });
-      } else if (qType === 'Đúng/Sai') {
+      } else if (qType === 'ÄÃºng/Sai') {
          isCorrect = this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.tf-card').forEach(btn => {
@@ -1074,17 +1074,17 @@ const app = {
                  btn.classList.add('correct-fill');
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-v';
-                 icon.textContent = '✔️';
+                 icon.textContent = 'âœ”ï¸';
                  btn.appendChild(icon);
              } else if (btn.classList.contains('selected')) {
                  btn.classList.add('wrong-fill');
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-x';
-                 icon.textContent = '❌';
+                 icon.textContent = 'âŒ';
                  btn.appendChild(icon);
              }
          });
-      } else if (qType === 'So sánh') {
+      } else if (qType === 'So sÃ¡nh') {
          isCorrect = this.state.selectedAns === q.ans;
          const slot = document.querySelector('.compare-slot');
          if (slot) {
@@ -1093,13 +1093,13 @@ const app = {
                  slot.style.background = 'linear-gradient(180deg, #4ade80, #16a34a)';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-v';
-                 icon.textContent = '✔️';
+                 icon.textContent = 'âœ”ï¸';
                  slot.appendChild(icon);
              } else {
                  slot.style.background = 'linear-gradient(180deg, #f87171, #dc2626)';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-x';
-                 icon.textContent = '❌';
+                 icon.textContent = 'âŒ';
                  slot.appendChild(icon);
                  const btns = document.querySelectorAll('.cmp-btn');
                  btns.forEach(b => {
@@ -1109,14 +1109,14 @@ const app = {
                          b.style.borderColor = '#22c55e';
                          const correctIcon = document.createElement('div');
                          correctIcon.className = 'result-icon icon-v';
-                         correctIcon.textContent = '✔️';
+                         correctIcon.textContent = 'âœ”ï¸';
                          b.style.position = 'relative';
                          b.appendChild(correctIcon);
                      }
                  });
              }
          }
-      } else if (qType === 'Kéo thả') {
+      } else if (qType === 'KÃ©o tháº£') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
          isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
@@ -1129,7 +1129,7 @@ const app = {
                  slot.style.color = '#16a34a';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-v';
-                 icon.textContent = '✔️';
+                 icon.textContent = 'âœ”ï¸';
                  slot.appendChild(icon);
              } else {
                  slot.style.borderColor = '#f87171';
@@ -1137,11 +1137,11 @@ const app = {
                  slot.style.color = '#dc2626';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-x';
-                 icon.textContent = '❌';
+                 icon.textContent = 'âŒ';
                  slot.appendChild(icon);
              }
          });
-      } else if (qType === 'Chuỗi quy luật') {
+      } else if (qType === 'Chuá»—i quy luáº­t') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
          isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
@@ -1156,7 +1156,7 @@ const app = {
                  slot.style.textShadow = 'none';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-v';
-                 icon.textContent = '✔️';
+                 icon.textContent = 'âœ”ï¸';
                  slot.appendChild(icon);
              } else {
                  slot.style.borderColor = '#f87171';
@@ -1165,7 +1165,7 @@ const app = {
                  slot.style.textShadow = 'none';
                  const icon = document.createElement('div');
                  icon.className = 'result-icon icon-x';
-                 icon.textContent = '❌';
+                 icon.textContent = 'âŒ';
                  slot.appendChild(icon);
              }
          });
@@ -1176,17 +1176,17 @@ const app = {
       if (isCorrect) {
         this.state.score += 10 / this.state.questions.length;
         document.getElementById('play-cat-img').src = './public/cat_happy.png';
-        bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
+        bubble.innerHTML = `<span style="color:#16a34a;">Hoan hÃ´!<br>Báº¡n giá»i quÃ¡!</span>`;
       } else {
         document.getElementById('play-cat-img').src = './public/cat_sad.png';
-        bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
+        bubble.innerHTML = `<span style="color:#dc2626;">Tiáº¿c quÃ¡!<br>Báº¡n sai rá»“i!</span>`;
       }
       
       const explanation = q.explanation || q.hint;
       const explBox = document.getElementById('explanation-box');
       if (explanation) {
           explBox.style.display = 'block';
-          explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanation}`;
+          explBox.innerHTML = `ðŸŒŸ <b>Lá»i giáº£i:</b><br>${explanation}`;
       } else {
           explBox.style.display = 'none';
       }
@@ -1199,7 +1199,7 @@ const app = {
       
       const isLast = this.state.currentIdx === this.state.questions.length - 1;
       const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
-      document.getElementById('submit-ans-text').textContent = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp tục';
+      document.getElementById('submit-ans-text').textContent = isLast ? (isAdmin ? 'Káº¿t thÃºc' : 'Káº¿t quáº£') : 'Tiáº¿p tá»¥c';
       
       btnCheck.onclick = () => {
         this.state.currentIdx++;
@@ -1213,13 +1213,13 @@ const app = {
       let giveLollipop = false;
       
       if (finalScore === 10) {
-        msg = 'Bạn xứng đáng nhận được phần thưởng này';
+        msg = 'Báº¡n xá»©ng Ä‘Ã¡ng nháº­n Ä‘Æ°á»£c pháº§n thÆ°á»Ÿng nÃ y';
         giveLollipop = true;
       } else {
-        msg = 'Cố gắng thêm nữa bạn nhé';
+        msg = 'Cá»‘ gáº¯ng thÃªm ná»¯a báº¡n nhÃ©';
       }
       
-      this.recordHistory(this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt', finalScore, giveLollipop);
+      this.recordHistory(this.state.subject === 'math' ? 'ToÃ¡n' : 'Tiáº¿ng Viá»‡t', finalScore, giveLollipop);
       
       document.getElementById('result-score').textContent = finalScore;
       document.getElementById('result-msg').textContent = msg;
@@ -1235,8 +1235,8 @@ const app = {
         const div = document.createElement('div');
         div.style.padding = '10px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
         div.innerHTML = `<b>${i+1}.</b> ${d.q} <br>
-                         Bạn chọn: <span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? '✔' : '✘'} ${d.selected || 'Bỏ trống'}</span> <br>
-                         ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${d.correct}</span>` : ''}`;
+                         Báº¡n chá»n: <span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? 'âœ”' : 'âœ˜'} ${d.selected || 'Bá» trá»‘ng'}</span> <br>
+                         ${!d.isCorrect ? `<span style="color:#4ade80">ÄÃ¡p Ã¡n: ${d.correct}</span>` : ''}`;
         detailsBox.appendChild(div);
       });
       
@@ -1259,7 +1259,7 @@ const app = {
       chest.src = './public/lollipop.png';
       chest.style.width = '100px';
       chest.onclick = null;
-      alert('Nhận Kẹo Mút Thành Công! Kẹo đã được lưu vào Kho Báu.');
+      alert('Nháº­n Káº¹o MÃºt ThÃ nh CÃ´ng! Káº¹o Ä‘Ã£ Ä‘Æ°á»£c lÆ°u vÃ o Kho BÃ¡u.');
     },
     closeResult() {
       document.getElementById('result-modal').classList.remove('active');
@@ -1290,24 +1290,24 @@ const app = {
     
     start() {
       if (!this.filters.subject || !this.filters.period) {
-        return alert('Vui lòng chọn môn học và thời gian!');
+        return alert('Vui lÃ²ng chá»n mÃ´n há»c vÃ  thá»i gian!');
       }
       
       const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
-      clLevel = String(clLevel).replace('Lớp ', '').trim();
+      clLevel = String(clLevel).replace('Lá»›p ', '').trim();
       
-      const mappedSubject = this.filters.subject === 'math' ? 'Toán' : 'Tiếng Việt';
+      const mappedSubject = this.filters.subject === 'math' ? 'ToÃ¡n' : 'Tiáº¿ng Viá»‡t';
 
       const filtered = app.data.exams.filter(e => {
           const eSub = String(e.subject||'').trim().toLowerCase();
-          const eClass = String(e.classlevel||'').trim().toLowerCase().replace('lớp ', '');
+          const eClass = String(e.classlevel||'').trim().toLowerCase().replace('lá»›p ', '');
           const ePer = String(e.period||'').trim().toLowerCase();
           return (eSub === mappedSubject.toLowerCase() || eSub.includes(mappedSubject.toLowerCase())) &&
                  eClass === clLevel &&
                  ePer === this.filters.period.toLowerCase();
       });
-      if (filtered.length === 0) return alert('Không tìm thấy đề kiểm tra phù hợp trong Kho Đề Kiểm tra.');
+      if (filtered.length === 0) return alert('KhÃ´ng tÃ¬m tháº¥y Ä‘á» kiá»ƒm tra phÃ¹ há»£p trong Kho Äá» Kiá»ƒm tra.');
       
       const exam = filtered[0];
       this.state.questions = exam.questions || [];
@@ -1316,7 +1316,7 @@ const app = {
       this.state.score = 0;
       
       document.getElementById('exam-title').textContent = exam.name;
-      document.getElementById('exam-student-name').textContent = app.data.currentUser ? app.data.currentUser.fullname : 'Khách';
+      document.getElementById('exam-student-name').textContent = app.data.currentUser ? app.data.currentUser.fullname : 'KhÃ¡ch';
       
       const container = document.getElementById('exam-questions-container');
       container.innerHTML = '';
@@ -1324,13 +1324,13 @@ const app = {
       this.state.questions.forEach((q, idx) => {
         const qBlock = document.createElement('div');
         qBlock.className = 'exam-q-block';
-        qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type||'Trắc nghiệm'}): ${q.q}</div>`;
+        qBlock.innerHTML = `<div class="exam-q-text">CÃ¢u ${idx + 1} (${q.type||'Tráº¯c nghiá»‡m'}): ${q.q}</div>`;
         if (q.imageUrl) qBlock.innerHTML += `<img src="${q.imageUrl}" style="max-height:150px; margin-bottom:10px;"><br>`;
         
         const optsContainer = document.createElement('div');
         optsContainer.className = 'exam-options';
         
-        if (q.type === 'Trắc nghiệm' || q.type === 'Đúng/Sai' || q.type === 'So sánh' || q.type === 'Kéo thả' || !q.type) {
+        if (q.type === 'Tráº¯c nghiá»‡m' || q.type === 'ÄÃºng/Sai' || q.type === 'So sÃ¡nh' || q.type === 'KÃ©o tháº£' || !q.type) {
           const opts = q.options || [];
           opts.forEach(opt => {
             const lbl = document.createElement('label');
@@ -1338,8 +1338,8 @@ const app = {
             lbl.innerHTML = `<input type="radio" name="exam_q_${idx}" value="${opt}"> ${opt}`;
             optsContainer.appendChild(lbl);
           });
-        } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật') {
-          optsContainer.innerHTML = `<input type="text" class="fill-input" name="exam_q_${idx}" style="width:100%; max-width:400px;" placeholder="Nhập câu trả lời...">`;
+        } else if (q.type === 'Äiá»n khuyáº¿t' || q.type === 'Chuá»—i Quy luáº­t') {
+          optsContainer.innerHTML = `<input type="text" class="fill-input" name="exam_q_${idx}" style="width:100%; max-width:400px;" placeholder="Nháº­p cÃ¢u tráº£ lá»i...">`;
         }
         
         qBlock.appendChild(optsContainer);
@@ -1350,13 +1350,13 @@ const app = {
     },
     
     confirmExit() {
-      if (confirm('Bạn chưa nộp bài, thoát giữa chừng sẽ mất kết quả!')) {
+      if (confirm('Báº¡n chÆ°a ná»™p bÃ i, thoÃ¡t giá»¯a chá»«ng sáº½ máº¥t káº¿t quáº£!')) {
         app.router.open('map-screen');
       }
     },
 
     submit() {
-      if (!confirm('Bạn có chắc chắn muốn nộp bài?')) return;
+      if (!confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n ná»™p bÃ i?')) return;
       
       let totalPts = 0;
       const ptsPerQ = 10 / (this.state.questions.length || 1);
@@ -1365,13 +1365,13 @@ const app = {
         let isCorrect = false;
         let selected = '';
         
-        if (q.type === 'Trắc nghiệm' || q.type === 'Đúng/Sai' || q.type === 'So sánh' || q.type === 'Kéo thả' || !q.type) {
+        if (q.type === 'Tráº¯c nghiá»‡m' || q.type === 'ÄÃºng/Sai' || q.type === 'So sÃ¡nh' || q.type === 'KÃ©o tháº£' || !q.type) {
            const checked = document.querySelector(`input[name="exam_q_${idx}"]:checked`);
            if (checked) {
               selected = checked.value;
               isCorrect = (selected === q.ans);
            }
-        } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật') {
+        } else if (q.type === 'Äiá»n khuyáº¿t' || q.type === 'Chuá»—i Quy luáº­t') {
            const inp = document.querySelector(`input[name="exam_q_${idx}"]`);
            if (inp) {
               selected = inp.value.trim();
@@ -1403,7 +1403,7 @@ const app = {
       document.getElementById('admin-tabs').innerHTML = html;
       document.getElementById('admin-tabs').style.display = 'flex';
     },
-    renderTable(cols, data, rowRenderer, emptyMsg = "Không có dữ liệu") {
+    renderTable(cols, data, rowRenderer, emptyMsg = "KhÃ´ng cÃ³ dá»¯ liá»‡u") {
       if (!data || data.length === 0) return `<p style="text-align:center; padding: 20px;">${emptyMsg}</p>`;
       
       let html = `<table class="data-table"><thead><tr>`;
@@ -1413,7 +1413,7 @@ const app = {
       html += `</tr><tr>`;
       cols.forEach((c, idx) => {
          if (c.filterable) {
-            html += `<th><input type="text" class="filter-input" data-col="${idx}" placeholder="Tìm kiếm..." onkeyup="app.ui.filterTable(this)"></th>`;
+            html += `<th><input type="text" class="filter-input" data-col="${idx}" placeholder="TÃ¬m kiáº¿m..." onkeyup="app.ui.filterTable(this)"></th>`;
          } else {
             html += `<th></th>`;
          }
@@ -1459,14 +1459,14 @@ const app = {
         if (table.closest('#admin-q-subarea')) {
             const ind = document.getElementById('q-count-indicator');
             if (ind) {
-                if (filters.length === 0) ind.textContent = `Tổng: ${rows.length} câu`;
-                else ind.textContent = `Lọc: ${visibleCount}/${rows.length} câu`;
+                if (filters.length === 0) ind.textContent = `Tá»•ng: ${rows.length} cÃ¢u`;
+                else ind.textContent = `Lá»c: ${visibleCount}/${rows.length} cÃ¢u`;
             }
         } else if (table.closest('#admin-e-subarea')) {
             const ind = document.getElementById('e-count-indicator');
             if (ind) {
-                if (filters.length === 0) ind.textContent = `Tổng: ${rows.length} đề`;
-                else ind.textContent = `Lọc: ${visibleCount}/${rows.length} đề`;
+                if (filters.length === 0) ind.textContent = `Tá»•ng: ${rows.length} Ä‘á»`;
+                else ind.textContent = `Lá»c: ${visibleCount}/${rows.length} Ä‘á»`;
             }
         }
     },
@@ -1474,8 +1474,8 @@ const app = {
       const recordStr = decodeURIComponent(btn.getAttribute('data-record'));
       const record = JSON.parse(recordStr);
       let html = `<div style="text-align:left;">
-        <h3 style="margin-bottom: 15px;">Chi tiết: ${record.title}</h3>
-        <p><strong>Ngày làm:</strong> ${record.date} | <strong>Điểm:</strong> ${record.score}</p>
+        <h3 style="margin-bottom: 15px;">Chi tiáº¿t: ${record.title}</h3>
+        <p><strong>NgÃ y lÃ m:</strong> ${record.date} | <strong>Äiá»ƒm:</strong> ${record.score}</p>
         <hr style="border-color: rgba(255,255,255,0.2); margin: 15px 0;">
         <div class="scroll-box" style="max-height: 400px; padding-right: 10px;">
       `;
@@ -1484,28 +1484,28 @@ const app = {
            const isOk = d.isCorrect;
            const color = isOk ? '#4ade80' : '#f87171';
            html += `<div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 5px solid ${color};">
-              <p style="margin-bottom: 5px;"><strong>Câu ${i+1}:</strong> ${d.q}</p>
-              <p style="margin-bottom: 5px; color: #ccc;">Đã chọn: <span style="color:${color}">${d.userAns}</span></p>
-              ${!isOk ? `<p style="margin-bottom: 0; color: #4ade80;">Đáp án đúng: ${d.correctAns}</p>` : ''}
+              <p style="margin-bottom: 5px;"><strong>CÃ¢u ${i+1}:</strong> ${d.q}</p>
+              <p style="margin-bottom: 5px; color: #ccc;">ÄÃ£ chá»n: <span style="color:${color}">${d.userAns}</span></p>
+              ${!isOk ? `<p style="margin-bottom: 0; color: #4ade80;">ÄÃ¡p Ã¡n Ä‘Ãºng: ${d.correctAns}</p>` : ''}
            </div>`;
         });
       } else {
-        html += `<p>Không có dữ liệu chi tiết cho bài làm này.</p>`;
+        html += `<p>KhÃ´ng cÃ³ dá»¯ liá»‡u chi tiáº¿t cho bÃ i lÃ m nÃ y.</p>`;
       }
       html += `</div></div>`;
       
       const box = document.getElementById('treasure-content-area');
-      box.innerHTML = html + `<br><button class="btn-primary" onclick="app.treasure.switchTab('history')">Quay lại</button>`;
+      box.innerHTML = html + `<br><button class="btn-primary" onclick="app.treasure.switchTab('history')">Quay láº¡i</button>`;
     },
     exportToExcel(dataArray, filename) {
-        if (!window.XLSX) return alert("Thư viện Excel chưa được tải! Kiểm tra lại kết nối mạng.");
+        if (!window.XLSX) return alert("ThÆ° viá»‡n Excel chÆ°a Ä‘Æ°á»£c táº£i! Kiá»ƒm tra láº¡i káº¿t ná»‘i máº¡ng.");
         const ws = XLSX.utils.json_to_sheet(dataArray);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
         XLSX.writeFile(wb, filename);
     },
     importFromExcel(file, callback) {
-        if (!window.XLSX) return alert("Thư viện Excel chưa được tải!");
+        if (!window.XLSX) return alert("ThÆ° viá»‡n Excel chÆ°a Ä‘Æ°á»£c táº£i!");
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
@@ -1525,11 +1525,11 @@ const app = {
        const sub = subEl.value;
        
        const clsEl = document.getElementById('add-q-class');
-       const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
+       const clsNum = clsEl ? clsEl.value.replace('Lá»›p ', '').trim() : '5';
        
        const topicEl = document.getElementById('add-q-topic');
        const topicDict = app.constants.topics[clsNum] || { math: [], vietnamese: [] };
-       const topics = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : []);
+       const topics = sub === 'ToÃ¡n' ? topicDict.math : (sub === 'Tiáº¿ng Viá»‡t' ? topicDict.vietnamese : []);
        
        const selected = topicEl.getAttribute('data-selected');
        topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
@@ -1539,10 +1539,10 @@ const app = {
        const clsEl = document.getElementById('add-e-class');
        if (!subEl) return;
        const sub = subEl.value;
-       const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
+       const clsNum = clsEl ? clsEl.value.replace('Lá»›p ', '').trim() : '5';
        
        const topicDict = app.constants.topics[clsNum] || { math: [], vietnamese: [] };
-       const topics = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : []);
+       const topics = sub === 'ToÃ¡n' ? topicDict.math : (sub === 'Tiáº¿ng Viá»‡t' ? topicDict.vietnamese : []);
        
        let i = 0;
        while (true) {
@@ -1558,21 +1558,21 @@ const app = {
         const wrapper = document.getElementById(`add-e-q-opts-wrapper-${idx}`);
         if (typeEl && wrapper) {
             const val = typeEl.value;
-            wrapper.style.display = (val === 'Trắc nghiệm' || val === 'Kéo thả') ? 'block' : 'none';
+            wrapper.style.display = (val === 'Tráº¯c nghiá»‡m' || val === 'KÃ©o tháº£') ? 'block' : 'none';
         }
     },
     openAdmin() {
       const modal = document.getElementById('treasure-modal');
       modal.style.display = 'flex';
       modal.classList.add('active');
-      document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
+      document.getElementById('treasure-title').textContent = 'CÃ i Äáº·t Há»‡ Thá»‘ng';
       this.switchTab('players');
     },
     switchTab(tab) {
       const tabs = [
-        { id: 'players', label: 'Quản Lý Học Sinh' },
-        { id: 'questions', label: 'Kho Câu Hỏi' },
-        { id: 'exams', label: 'Kho Đề Kiểm tra' }
+        { id: 'players', label: 'Quáº£n LÃ½ Há»c Sinh' },
+        { id: 'questions', label: 'Kho CÃ¢u Há»i' },
+        { id: 'exams', label: 'Kho Äá» Kiá»ƒm tra' }
       ];
       app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
       
@@ -1585,13 +1585,13 @@ const app = {
         box.innerHTML = `
           <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
              <div style="display:flex; width:100%; gap: 10px;">
-                 <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')" >Thư viện</button>
+                 <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')" >ThÆ° viá»‡n</button>
                  <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
              </div>
-             <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
-             <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
-             <button class="btn-opt" id="btn-q-exp" onclick="app.admin.renderQSubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
-             <button class="btn-opt" id="btn-q-imp" onclick="app.admin.renderQSubTab('imp')">Nhập từ file (*.xlsx)</button>
+             <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soáº¡n cÃ¢u há»i</button>
+             <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuáº¥t file máº«u (*.xlsx)</button>
+             <button class="btn-opt" id="btn-q-exp" onclick="app.admin.renderQSubTab('exp')">Xuáº¥t dá»¯ liá»‡u (*.xlsx)</button>
+             <button class="btn-opt" id="btn-q-imp" onclick="app.admin.renderQSubTab('imp')">Nháº­p tá»« file (*.xlsx)</button>
           </div>
           <div id="admin-q-subarea"></div>
         `;
@@ -1606,143 +1606,143 @@ const app = {
       
       if (tab === 'lib') {
           const cols = [
-            { label: 'Cấp lớp', filterable: true },
-            { label: 'Môn', filterable: true },
-            { label: 'Chủ đề', filterable: true },
-            { label: 'Mức độ khó', filterable: true },
-            { label: 'Loại câu hỏi', filterable: true },
-            { label: 'Câu hỏi', filterable: true },
-            { label: 'Đáp án', filterable: false },
-            { label: 'Lời giải', filterable: false },
-            { label: 'Hành động', filterable: false }
+            { label: 'Cáº¥p lá»›p', filterable: true },
+            { label: 'MÃ´n', filterable: true },
+            { label: 'Chá»§ Ä‘á»', filterable: true },
+            { label: 'Má»©c Ä‘á»™ khÃ³', filterable: true },
+            { label: 'Loáº¡i cÃ¢u há»i', filterable: true },
+            { label: 'CÃ¢u há»i', filterable: true },
+            { label: 'ÄÃ¡p Ã¡n', filterable: false },
+            { label: 'Lá»i giáº£i', filterable: false },
+            { label: 'HÃ nh Ä‘á»™ng', filterable: false }
           ];
           let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
             return `<tr>
-              <td>${q.classlevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.topic}</td>
-              <td>${q.difficulty||'Dễ'}</td><td>${q.type||'Trắc nghiệm'}</td>
+              <td>${q.classlevel||'Lá»›p 5'}</td><td>${q.subject}</td><td>${q.topic}</td>
+              <td>${q.difficulty||'Dá»…'}</td><td>${q.type||'Tráº¯c nghiá»‡m'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation||''}</td>
               <td>
-                <button class="btn-success action-btn" onclick="app.admin.addToExamPrompt(${i})">Thêm vào đề</button>
-                <button class="btn-opt action-btn" onclick="app.admin.editQuestion(${i})">Sửa</button>
-                <button class="btn-danger action-btn" onclick="app.admin.deleteQuestion(${i})">Xóa</button>
+                <button class="btn-success action-btn" onclick="app.admin.addToExamPrompt(${i})">ThÃªm vÃ o Ä‘á»</button>
+                <button class="btn-opt action-btn" onclick="app.admin.editQuestion(${i})">Sá»­a</button>
+                <button class="btn-danger action-btn" onclick="app.admin.deleteQuestion(${i})">XÃ³a</button>
               </td>
             </tr>`;
           });
           subBox.innerHTML = html;
           const ind = document.getElementById('q-count-indicator');
-          if (ind) ind.textContent = `Tổng: ${app.data.libraryQuestions.length} câu`;
+          if (ind) ind.textContent = `Tá»•ng: ${app.data.libraryQuestions.length} cÃ¢u`;
       } 
       else if (tab === 'add') {
           let q = editIdx !== undefined ? app.data.libraryQuestions[editIdx] : null;
           subBox.innerHTML = `
             <div style="max-width: 600px; margin: 0 auto; text-align:left;">
-               <h3>${q ? 'Sửa thông tin câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+               <h3>${q ? 'Sá»­a thÃ´ng tin cÃ¢u há»i' : 'ThÃªm cÃ¢u há»i má»›i'}</h3>
                
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Cáº¥p lá»›p</label>
                   <select id="add-q-class" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateTopicDropdown()">
-                     <option value="Lớp 1" ${q && q.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
-                     <option value="Lớp 2" ${q && q.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
-                     <option value="Lớp 3" ${q && q.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
-                     <option value="Lớp 4" ${q && q.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
-                     <option value="Lớp 5" ${q && q.classlevel === 'Lớp 5' ? 'selected' : (!q ? 'selected' : '')}>Lớp 5</option>
+                     <option value="Lá»›p 1" ${q && q.classlevel === 'Lá»›p 1' ? 'selected' : ''}>Lá»›p 1</option>
+                     <option value="Lá»›p 2" ${q && q.classlevel === 'Lá»›p 2' ? 'selected' : ''}>Lá»›p 2</option>
+                     <option value="Lá»›p 3" ${q && q.classlevel === 'Lá»›p 3' ? 'selected' : ''}>Lá»›p 3</option>
+                     <option value="Lá»›p 4" ${q && q.classlevel === 'Lá»›p 4' ? 'selected' : ''}>Lá»›p 4</option>
+                     <option value="Lá»›p 5" ${q && q.classlevel === 'Lá»›p 5' ? 'selected' : (!q ? 'selected' : '')}>Lá»›p 5</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Môn học</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">MÃ´n há»c</label>
                   <select id="add-q-sub" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateTopicDropdown()">
-                     <option value="Toán" ${q && q.subject === 'Toán' ? 'selected' : (!q ? 'selected' : '')}>Toán</option>
-                     <option value="Tiếng Việt" ${q && q.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
+                     <option value="ToÃ¡n" ${q && q.subject === 'ToÃ¡n' ? 'selected' : (!q ? 'selected' : '')}>ToÃ¡n</option>
+                     <option value="Tiáº¿ng Viá»‡t" ${q && q.subject === 'Tiáº¿ng Viá»‡t' ? 'selected' : ''}>Tiáº¿ng Viá»‡t</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Chủ đề</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Chá»§ Ä‘á»</label>
                   <select id="add-q-topic" class="form-input" style="flex:1; padding:8px;" data-selected="${q ? q.topic : ''}">
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Mức độ khó</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Má»©c Ä‘á»™ khÃ³</label>
                   <select id="add-q-diff" class="form-input" style="flex:1; padding:8px;">
-                     <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                     <option value="Vừa" ${q && q.difficulty === 'Vừa' ? 'selected' : ''}>Vừa</option>
-                     <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
+                     <option value="Dá»…" ${q && q.difficulty === 'Dá»…' ? 'selected' : (!q ? 'selected' : '')}>Dá»…</option>
+                     <option value="Vá»«a" ${q && q.difficulty === 'Vá»«a' ? 'selected' : ''}>Vá»«a</option>
+                     <option value="KhÃ³" ${q && q.difficulty === 'KhÃ³' ? 'selected' : ''}>KhÃ³</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Loại câu hỏi</label>
-                  <select id="add-q-type" class="form-input" style="flex:1; padding:8px;" onchange="document.getElementById('add-q-opts-wrapper').style.display = (this.value === 'Trắc nghiệm' || this.value === 'Kéo thả') ? 'block' : 'none';">
-                     <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
-                     <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
-                     <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
-                     <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
-                     <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
-                     <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Loáº¡i cÃ¢u há»i</label>
+                  <select id="add-q-type" class="form-input" style="flex:1; padding:8px;" onchange="document.getElementById('add-q-opts-wrapper').style.display = (this.value === 'Tráº¯c nghiá»‡m' || this.value === 'KÃ©o tháº£') ? 'block' : 'none';">
+                     <option value="Tráº¯c nghiá»‡m" ${q && q.type === 'Tráº¯c nghiá»‡m' ? 'selected' : (!q ? 'selected' : '')}>Tráº¯c nghiá»‡m</option>
+                     <option value="Äiá»n khuyáº¿t" ${q && q.type === 'Äiá»n khuyáº¿t' ? 'selected' : ''}>Äiá»n khuyáº¿t</option>
+                     <option value="ÄÃºng/Sai" ${q && q.type === 'ÄÃºng/Sai' ? 'selected' : ''}>ÄÃºng/Sai</option>
+                     <option value="So sÃ¡nh" ${q && q.type === 'So sÃ¡nh' ? 'selected' : ''}>So sÃ¡nh</option>
+                     <option value="Chuá»—i Quy luáº­t" ${q && q.type === 'Chuá»—i Quy luáº­t' ? 'selected' : ''}>Chuá»—i Quy luáº­t</option>
+                     <option value="KÃ©o tháº£" ${q && q.type === 'KÃ©o tháº£' ? 'selected' : ''}>KÃ©o tháº£</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Nội dung câu hỏi</label>
-                  <textarea id="add-q-q" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.q : ''}</textarea>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Ná»™i dung cÃ¢u há»i</label>
+                  <textarea id="add-q-q" placeholder="Ná»™i dung cÃ¢u há»i" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.q : ''}</textarea>
                </div>
 
-               <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+               <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Tráº¯c nghiá»‡m' && q.type !== 'KÃ©o tháº£' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
-                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 1</label>
-                     <input type="text" id="add-q-opt1" placeholder="Trả lời 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lá»±a chá»n 1</label>
+                     <input type="text" id="add-q-opt1" placeholder="Tráº£ lá»i 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
-                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 2</label>
-                     <input type="text" id="add-q-opt2" placeholder="Trả lời 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lá»±a chá»n 2</label>
+                     <input type="text" id="add-q-opt2" placeholder="Tráº£ lá»i 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
-                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 3</label>
-                     <input type="text" id="add-q-opt3" placeholder="Trả lời 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lá»±a chá»n 3</label>
+                     <input type="text" id="add-q-opt3" placeholder="Tráº£ lá»i 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
-                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 4</label>
-                     <input type="text" id="add-q-opt4" placeholder="Trả lời 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0;">Lá»±a chá»n 4</label>
+                     <input type="text" id="add-q-opt4" placeholder="Tráº£ lá»i 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
                   </div>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Đáp án đúng</label>
-                  <input type="text" id="add-q-ans" placeholder="Đáp án đúng (nếu trắc nghiệm phải ghi đúng 1 trong 4 lựa chọn ở trên)" class="form-input" style="flex:1; padding:8px;" value="${q ? q.ans : ''}">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">ÄÃ¡p Ã¡n Ä‘Ãºng</label>
+                  <input type="text" id="add-q-ans" placeholder="ÄÃ¡p Ã¡n Ä‘Ãºng (náº¿u tráº¯c nghiá»‡m pháº£i ghi Ä‘Ãºng 1 trong 4 lá»±a chá»n á»Ÿ trÃªn)" class="form-input" style="flex:1; padding:8px;" value="${q ? q.ans : ''}">
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Lời giải chi tiết</label>
-                  <textarea id="add-q-exp" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.explanation || '' : ''}</textarea>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Lá»i giáº£i chi tiáº¿t</label>
+                  <textarea id="add-q-exp" placeholder="Lá»i giáº£i (tÃ¹y chá»n)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.explanation || '' : ''}</textarea>
                </div>
 
-               <button class="btn-success" onclick="app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${q ? 'Lưu chỉnh sửa' : 'Lưu câu hỏi'}</button>
+               <button class="btn-success" onclick="app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${q ? 'LÆ°u chá»‰nh sá»­a' : 'LÆ°u cÃ¢u há»i'}</button>
             </div>
           `;
           setTimeout(() => app.admin.updateTopicDropdown(), 0);
       }
       else if (tab === 'tpl') {
-          subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
+          subBox.innerHTML = `<p>Äang chuáº©n bá»‹ file máº«u...</p>`;
           app.admin.downloadQTemplate();
           setTimeout(() => app.admin.renderQSubTab('lib'), 1000);
       }
       else if (tab === 'exp') {
-          subBox.innerHTML = `<p>Đang xuất dữ liệu...</p>`;
+          subBox.innerHTML = `<p>Äang xuáº¥t dá»¯ liá»‡u...</p>`;
           app.admin.exportQuestions();
           setTimeout(() => app.admin.renderQSubTab('lib'), 1000);
       }
       else if (tab === 'imp') {
           subBox.innerHTML = `
             <div style="max-width: 400px; margin: 0 auto; text-align:center;">
-               <h3>Nhập dữ liệu từ Excel (.xlsx)</h3>
+               <h3>Nháº­p dá»¯ liá»‡u tá»« Excel (.xlsx)</h3>
                <div style="text-align: left; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="q-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>Thêm mới</strong> (Giữ nguyên dữ liệu cũ, thêm dữ liệu mới)</label>
-                  <label style="display:block; cursor:pointer;"><input type="radio" name="q-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ dữ liệu cũ, thay bằng mới)</label>
+                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="q-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>ThÃªm má»›i</strong> (Giá»¯ nguyÃªn dá»¯ liá»‡u cÅ©, thÃªm dá»¯ liá»‡u má»›i)</label>
+                  <label style="display:block; cursor:pointer;"><input type="radio" name="q-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi Ä‘Ã¨</strong> (XÃ³a toÃ n bá»™ dá»¯ liá»‡u cÅ©, thay báº±ng má»›i)</label>
                </div>
                <input type="file" id="q-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
-               <button class="btn-success" onclick="app.admin.submitImportQuestions()" style="width:100%;">Tải lên</button>
+               <button class="btn-success" onclick="app.admin.submitImportQuestions()" style="width:100%;">Táº£i lÃªn</button>
             </div>
           `;
       }
@@ -1750,81 +1750,81 @@ const app = {
     downloadQTemplate() {
         const data = [
             {
-                "Cấp lớp": "Lớp 1",
-                "Môn học": "Toán",
-                "Chủ đề": "Phép cộng trừ không nhớ phạm vi 100",
-                "Mức độ khó": "Dễ",
-                "Loại câu hỏi": "Trắc nghiệm",
-                "Câu hỏi": "1 + 1 = ?",
-                "Lựa chọn": "1, 2, 3, 4",
-                "Đáp án đúng": "2",
-                "Lời giải chi tiết": "1 cộng 1 bằng 2"
+                "Cáº¥p lá»›p": "Lá»›p 1",
+                "MÃ´n há»c": "ToÃ¡n",
+                "Chá»§ Ä‘á»": "PhÃ©p cá»™ng trá»« khÃ´ng nhá»› pháº¡m vi 100",
+                "Má»©c Ä‘á»™ khÃ³": "Dá»…",
+                "Loáº¡i cÃ¢u há»i": "Tráº¯c nghiá»‡m",
+                "CÃ¢u há»i": "1 + 1 = ?",
+                "Lá»±a chá»n": "1, 2, 3, 4",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "2",
+                "Lá»i giáº£i chi tiáº¿t": "1 cá»™ng 1 báº±ng 2"
             },
             {
-                "Cấp lớp": "Lớp 1",
-                "Môn học": "Tiếng Việt",
-                "Chủ đề": "Mái trường mến yêu",
-                "Mức độ khó": "Vừa",
-                "Loại câu hỏi": "Kéo thả",
-                "Câu hỏi": "Con chó sủa gâu ___, con mèo kêu meo ___.",
-                "Lựa chọn": "gâu, meo, quác, chiếp",
-                "Đáp án đúng": "gâu, meo",
-                "Lời giải chi tiết": "Kéo thả 'gâu' vào chỗ trống thứ nhất, 'meo' vào thứ 2"
+                "Cáº¥p lá»›p": "Lá»›p 1",
+                "MÃ´n há»c": "Tiáº¿ng Viá»‡t",
+                "Chá»§ Ä‘á»": "MÃ¡i trÆ°á»ng máº¿n yÃªu",
+                "Má»©c Ä‘á»™ khÃ³": "Vá»«a",
+                "Loáº¡i cÃ¢u há»i": "KÃ©o tháº£",
+                "CÃ¢u há»i": "Con chÃ³ sá»§a gÃ¢u ___, con mÃ¨o kÃªu meo ___.",
+                "Lá»±a chá»n": "gÃ¢u, meo, quÃ¡c, chiáº¿p",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "gÃ¢u, meo",
+                "Lá»i giáº£i chi tiáº¿t": "KÃ©o tháº£ 'gÃ¢u' vÃ o chá»— trá»‘ng thá»© nháº¥t, 'meo' vÃ o thá»© 2"
             },
             {
-                "Cấp lớp": "Lớp 2",
-                "Môn học": "Toán",
-                "Chủ đề": "Phép nhân, phép chia",
-                "Mức độ khó": "Dễ",
-                "Loại câu hỏi": "Đúng/Sai",
-                "Câu hỏi": "5 - 3 = 2, đúng hay sai?",
-                "Lựa chọn": "",
-                "Đáp án đúng": "Đúng",
-                "Lời giải chi tiết": "Phép trừ chính xác"
+                "Cáº¥p lá»›p": "Lá»›p 2",
+                "MÃ´n há»c": "ToÃ¡n",
+                "Chá»§ Ä‘á»": "PhÃ©p nhÃ¢n, phÃ©p chia",
+                "Má»©c Ä‘á»™ khÃ³": "Dá»…",
+                "Loáº¡i cÃ¢u há»i": "ÄÃºng/Sai",
+                "CÃ¢u há»i": "5 - 3 = 2, Ä‘Ãºng hay sai?",
+                "Lá»±a chá»n": "",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "ÄÃºng",
+                "Lá»i giáº£i chi tiáº¿t": "PhÃ©p trá»« chÃ­nh xÃ¡c"
             },
             {
-                "Cấp lớp": "Lớp 3",
-                "Môn học": "Tiếng Việt",
-                "Chủ đề": "Cộng đồng gắn bó",
-                "Mức độ khó": "Khó",
-                "Loại câu hỏi": "Điền khuyết",
-                "Câu hỏi": "Gần mực thì đen, gần ___ thì sáng.",
-                "Lựa chọn": "",
-                "Đáp án đúng": "đèn",
-                "Lời giải chi tiết": "Tục ngữ"
+                "Cáº¥p lá»›p": "Lá»›p 3",
+                "MÃ´n há»c": "Tiáº¿ng Viá»‡t",
+                "Chá»§ Ä‘á»": "Cá»™ng Ä‘á»“ng gáº¯n bÃ³",
+                "Má»©c Ä‘á»™ khÃ³": "KhÃ³",
+                "Loáº¡i cÃ¢u há»i": "Äiá»n khuyáº¿t",
+                "CÃ¢u há»i": "Gáº§n má»±c thÃ¬ Ä‘en, gáº§n ___ thÃ¬ sÃ¡ng.",
+                "Lá»±a chá»n": "",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "Ä‘Ã¨n",
+                "Lá»i giáº£i chi tiáº¿t": "Tá»¥c ngá»¯"
             },
             {
-                "Cấp lớp": "Lớp 4",
-                "Môn học": "Toán",
-                "Chủ đề": "Phân số",
-                "Mức độ khó": "Vừa",
-                "Loại câu hỏi": "So sánh",
-                "Câu hỏi": "Điền dấu thích hợp: 1/2 ___ 1/3",
-                "Lựa chọn": "",
-                "Đáp án đúng": ">",
-                "Lời giải chi tiết": "1/2 > 1/3"
+                "Cáº¥p lá»›p": "Lá»›p 4",
+                "MÃ´n há»c": "ToÃ¡n",
+                "Chá»§ Ä‘á»": "PhÃ¢n sá»‘",
+                "Má»©c Ä‘á»™ khÃ³": "Vá»«a",
+                "Loáº¡i cÃ¢u há»i": "So sÃ¡nh",
+                "CÃ¢u há»i": "Äiá»n dáº¥u thÃ­ch há»£p: 1/2 ___ 1/3",
+                "Lá»±a chá»n": "",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": ">",
+                "Lá»i giáº£i chi tiáº¿t": "1/2 > 1/3"
             },
             {
-                "Cấp lớp": "Lớp 5",
-                "Môn học": "Toán",
-                "Chủ đề": "Số thập phân",
-                "Mức độ khó": "Khó",
-                "Loại câu hỏi": "Chuỗi quy luật",
-                "Câu hỏi": "2, ___, 6, ___, 10",
-                "Lựa chọn": "",
-                "Đáp án đúng": "4, 8",
-                "Lời giải chi tiết": "Điền 2 số còn thiếu"
+                "Cáº¥p lá»›p": "Lá»›p 5",
+                "MÃ´n há»c": "ToÃ¡n",
+                "Chá»§ Ä‘á»": "Sá»‘ tháº­p phÃ¢n",
+                "Má»©c Ä‘á»™ khÃ³": "KhÃ³",
+                "Loáº¡i cÃ¢u há»i": "Chuá»—i quy luáº­t",
+                "CÃ¢u há»i": "2, ___, 6, ___, 10",
+                "Lá»±a chá»n": "",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "4, 8",
+                "Lá»i giáº£i chi tiáº¿t": "Äiá»n 2 sá»‘ cÃ²n thiáº¿u"
             },
             {
-                "Cấp lớp": "=> HƯỚNG DẪN CÁCH NHẬP:",
-                "Môn học": "(1) Cấp lớp, Môn học",
-                "Chủ đề": "(2) Copy chính xác Chủ đề bên dưới",
-                "Mức độ khó": "(3) Dễ, Vừa, Khó",
-                "Loại câu hỏi": "(4) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
-                "Câu hỏi": "(5) Kéo thả, So sánh, Điền khuyết, Chuỗi quy luật: Bắt buộc dùng ___ hoặc ... để làm chỗ trống.",
-                "Lựa chọn": "(6) Trắc nghiệm / Kéo thả: Các lựa chọn & đáp án nhiễu (ngăn cách bởi dấu phẩy).",
-                "Đáp án đúng": "(7) Kéo thả, Chuỗi quy luật: Cho phép 1->4 đáp án (ngăn cách bởi dấu phẩy). So sánh: <,>,=",
-                "Lời giải chi tiết": "(8) Có thể để trống"
+                "Cáº¥p lá»›p": "=> HÆ¯á»šNG DáºªN CÃCH NHáº¬P:",
+                "MÃ´n há»c": "(1) Cáº¥p lá»›p, MÃ´n há»c",
+                "Chá»§ Ä‘á»": "(2) Copy chÃ­nh xÃ¡c Chá»§ Ä‘á» bÃªn dÆ°á»›i",
+                "Má»©c Ä‘á»™ khÃ³": "(3) Dá»…, Vá»«a, KhÃ³",
+                "Loáº¡i cÃ¢u há»i": "(4) Ghi chÃ­nh xÃ¡c: Tráº¯c nghiá»‡m, Äiá»n khuyáº¿t, ÄÃºng/Sai, So sÃ¡nh, Chuá»—i quy luáº­t, KÃ©o tháº£",
+                "CÃ¢u há»i": "(5) KÃ©o tháº£, So sÃ¡nh, Äiá»n khuyáº¿t, Chuá»—i quy luáº­t: Báº¯t buá»™c dÃ¹ng ___ hoáº·c ... Ä‘á»ƒ lÃ m chá»— trá»‘ng.",
+                "Lá»±a chá»n": "(6) Tráº¯c nghiá»‡m / KÃ©o tháº£: CÃ¡c lá»±a chá»n & Ä‘Ã¡p Ã¡n nhiá»…u (ngÄƒn cÃ¡ch bá»Ÿi dáº¥u pháº©y).",
+                "ÄÃ¡p Ã¡n Ä‘Ãºng": "(7) KÃ©o tháº£, Chuá»—i quy luáº­t: Cho phÃ©p 1->4 Ä‘Ã¡p Ã¡n (ngÄƒn cÃ¡ch bá»Ÿi dáº¥u pháº©y). So sÃ¡nh: <,>,=",
+                "Lá»i giáº£i chi tiáº¿t": "(8) CÃ³ thá»ƒ Ä‘á»ƒ trá»‘ng"
             }
         ];
         
@@ -1832,15 +1832,15 @@ const app = {
             const t = app.constants.topics[String(i)];
             if (t) {
                 data.push({
-                    "Cấp lớp": "=> COPY CHỦ ĐỀ LỚP " + i + ":",
-                    "Môn học": "Môn Toán Lớp " + i + ":",
-                    "Chủ đề": t.math.join(", "),
-                    "Mức độ khó": "Môn Tiếng Việt Lớp " + i + ":",
-                    "Loại câu hỏi": t.vietnamese.join(", "),
-                    "Câu hỏi": "",
-                    "Lựa chọn": "",
-                    "Đáp án đúng": "",
-                    "Lời giải chi tiết": ""
+                    "Cáº¥p lá»›p": "=> COPY CHá»¦ Äá»€ Lá»šP " + i + ":",
+                    "MÃ´n há»c": "MÃ´n ToÃ¡n Lá»›p " + i + ":",
+                    "Chá»§ Ä‘á»": t.math.join(", "),
+                    "Má»©c Ä‘á»™ khÃ³": "MÃ´n Tiáº¿ng Viá»‡t Lá»›p " + i + ":",
+                    "Loáº¡i cÃ¢u há»i": t.vietnamese.join(", "),
+                    "CÃ¢u há»i": "",
+                    "Lá»±a chá»n": "",
+                    "ÄÃ¡p Ã¡n Ä‘Ãºng": "",
+                    "Lá»i giáº£i chi tiáº¿t": ""
                 });
             }
         }
@@ -1849,34 +1849,34 @@ const app = {
     },
     exportQuestions() {
         const data = app.data.libraryQuestions.map(q => ({
-            "Cấp lớp": q.classlevel,
-            "Môn học": q.subject,
-            "Chủ đề": q.topic,
-            "Mức độ khó": q.difficulty,
-            "Loại câu hỏi": q.type,
-            "Câu hỏi": q.q,
-            "Lựa chọn": (q.options || []).join(', '),
-            "Đáp án đúng": q.ans,
-            "Lời giải chi tiết": q.explanation || ''
+            "Cáº¥p lá»›p": q.classlevel,
+            "MÃ´n há»c": q.subject,
+            "Chá»§ Ä‘á»": q.topic,
+            "Má»©c Ä‘á»™ khÃ³": q.difficulty,
+            "Loáº¡i cÃ¢u há»i": q.type,
+            "CÃ¢u há»i": q.q,
+            "Lá»±a chá»n": (q.options || []).join(', '),
+            "ÄÃ¡p Ã¡n Ä‘Ãºng": q.ans,
+            "Lá»i giáº£i chi tiáº¿t": q.explanation || ''
         }));
         app.ui.exportToExcel(data, "Du_Lieu_Cau_Hoi.xlsx");
     },
     downloadETemplate() {
         const data = [{
-            "Cấp lớp": "Lớp 5",
-            "Môn": "Toán",
-            "Kỳ kiểm tra": "Giữa kỳ 1",
-            "Tên đề": "Đề kiểm tra giữa kỳ 1 Môn Toán Lớp 5"
+            "Cáº¥p lá»›p": "Lá»›p 5",
+            "MÃ´n": "ToÃ¡n",
+            "Ká»³ kiá»ƒm tra": "Giá»¯a ká»³ 1",
+            "TÃªn Ä‘á»": "Äá» kiá»ƒm tra giá»¯a ká»³ 1 MÃ´n ToÃ¡n Lá»›p 5"
         }];
         app.ui.exportToExcel(data, "Mau_Nhap_De_Kiem_Tra.xlsx");
     },
     exportExams() {
         const data = app.data.exams.map(e => ({
-            "Cấp lớp": e.classlevel,
-            "Môn": e.subject,
-            "Kỳ kiểm tra": e.period,
-            "Tên đề": e.name,
-            "Số câu hỏi": (e.questions || []).length
+            "Cáº¥p lá»›p": e.classlevel,
+            "MÃ´n": e.subject,
+            "Ká»³ kiá»ƒm tra": e.period,
+            "TÃªn Ä‘á»": e.name,
+            "Sá»‘ cÃ¢u há»i": (e.questions || []).length
         }));
         app.ui.exportToExcel(data, "Du_Lieu_De_Kiem_Tra.xlsx");
     },
@@ -1897,20 +1897,20 @@ const app = {
             ].filter(s => s),
             explanation: document.getElementById('add-q-exp').value
         };
-        if(!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
+        if(!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lÃ²ng Ä‘iá»n Ä‘á»§ MÃ´n, CÃ¢u há»i vÃ  ÄÃ¡p Ã¡n');
         
         if (editIdx !== null && editIdx !== undefined) {
              app.data.libraryQuestions[editIdx] = qObj;
-             alert('Đã cập nhật câu hỏi!');
+             alert('ÄÃ£ cáº­p nháº­t cÃ¢u há»i!');
         } else {
              app.data.libraryQuestions.push(qObj);
-             alert('Đã thêm câu hỏi!');
+             alert('ÄÃ£ thÃªm cÃ¢u há»i!');
         }
         app.data.saveLibrary();
         this.renderQSubTab('lib');
     },
     addToExamPrompt(qIdx) {
-        if (!app.data.exams || app.data.exams.length === 0) return alert('Chưa có đề kiểm tra nào. Vui lòng tạo đề kiểm tra trước trong Kho Đề Kiểm tra!');
+        if (!app.data.exams || app.data.exams.length === 0) return alert('ChÆ°a cÃ³ Ä‘á» kiá»ƒm tra nÃ o. Vui lÃ²ng táº¡o Ä‘á» kiá»ƒm tra trÆ°á»›c trong Kho Äá» Kiá»ƒm tra!');
         app.admin.switchTab('exams');
         setTimeout(() => {
             app.admin.renderESubTab('select_for_q', qIdx);
@@ -1918,12 +1918,12 @@ const app = {
     },
     submitImportQuestions() {
         const fileInput = document.getElementById('q-file-upload');
-        if (!fileInput.files.length) return alert('Vui lòng chọn file!');
+        if (!fileInput.files.length) return alert('Vui lÃ²ng chá»n file!');
         
         const modeInput = document.querySelector('input[name="q-import-mode"]:checked');
         const mode = modeInput ? modeInput.value : 'append';
         if (mode === 'overwrite') {
-            if (!confirm("CẢNH BÁO: Bạn đã chọn GHI ĐÈ. Toàn bộ câu hỏi hiện có sẽ bị xóa sạch và thay bằng dữ liệu mới! Bạn có chắc chắn muốn tiếp tục? (Bấm OK để Ghi đè, Cancel để Hủy)")) {
+            if (!confirm("Cáº¢NH BÃO: Báº¡n Ä‘Ã£ chá»n GHI ÄÃˆ. ToÃ n bá»™ cÃ¢u há»i hiá»‡n cÃ³ sáº½ bá»‹ xÃ³a sáº¡ch vÃ  thay báº±ng dá»¯ liá»‡u má»›i! Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c? (Báº¥m OK Ä‘á»ƒ Ghi Ä‘Ã¨, Cancel Ä‘á»ƒ Há»§y)")) {
                 return;
             }
         }
@@ -1931,36 +1931,36 @@ const app = {
         const btn = document.querySelector('button[onclick="app.admin.submitImportQuestions()"]');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'Đang xử lý và tải lên... Vui lòng chờ';
+            btn.textContent = 'Äang xá»­ lÃ½ vÃ  táº£i lÃªn... Vui lÃ²ng chá»';
         }
 
         app.ui.importFromExcel(fileInput.files[0], async (data) => {
             if (mode === 'overwrite') {
-                app.data.libraryQuestions = [];
+                app.data.libraryQuestions = []; if (window.supabase) await supabaseClient.from('game_questions').delete().neq('id', 0);
             }
             let count = 0;
             data.forEach(row => {
-                const ansStr = row["Đáp án đúng"] || row["Đáp án"];
-                if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
+                const ansStr = row["ÄÃ¡p Ã¡n Ä‘Ãºng"] || row["ÄÃ¡p Ã¡n"];
+                if (row["CÃ¢u há»i"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
                     app.data.libraryQuestions.push({
-                        type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
-                        subject: row["Môn học"] || row["Môn"] || 'Toán',
-                        classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
-                        topic: row["Chủ đề"] || 'Khác',
-                        difficulty: row["Mức độ khó"] || 'Vừa',
-                        q: row["Câu hỏi"],
+                        type: row["Loáº¡i cÃ¢u há»i"] || row["Loáº¡i"] || 'Tráº¯c nghiá»‡m',
+                        subject: row["MÃ´n há»c"] || row["MÃ´n"] || 'ToÃ¡n',
+                        classlevel: row["Cáº¥p lá»›p"] || row["Lá»›p"] || 'Lá»›p 5',
+                        topic: row["Chá»§ Ä‘á»"] || 'KhÃ¡c',
+                        difficulty: row["Má»©c Ä‘á»™ khÃ³"] || 'Vá»«a',
+                        q: row["CÃ¢u há»i"],
                         ans: String(ansStr),
-                        options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(',').map(s=>s.trim()) : [],
-                        explanation: row["Lời giải chi tiết"] || ''
+                        options: row["Lá»±a chá»n"] ? String(row["Lá»±a chá»n"]).split(',').map(s=>s.trim()) : [],
+                        explanation: row["Lá»i giáº£i chi tiáº¿t"] || ''
                     });
                     count++;
                 }
             });
             await app.data.saveLibrary();
-            alert(`Đã nhập thành công ${count} câu hỏi!`);
+            alert(`ÄÃ£ nháº­p thÃ nh cÃ´ng ${count} cÃ¢u há»i!`);
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = 'Tải lên';
+                btn.textContent = 'Táº£i lÃªn';
             }
             this.renderQSubTab('lib');
         });
@@ -1968,11 +1968,11 @@ const app = {
     renderExams(box) {
       box.innerHTML = `
         <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-           <div style="display:flex; width:100%; gap: 10px;"><button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">Thư viện</button><div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div></div>
-           <button class="btn-opt" id="btn-e-add" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
-           <button class="btn-opt" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-e-imp" onclick="app.admin.renderESubTab('imp')">Nhập từ file (*.xlsx)</button>
+           <div style="display:flex; width:100%; gap: 10px;"><button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">ThÆ° viá»‡n</button><div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div></div>
+           <button class="btn-opt" id="btn-e-add" onclick="app.admin.renderESubTab('add')">Soáº¡n Ä‘á»</button>
+           <button class="btn-opt" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">Xuáº¥t file máº«u (*.xlsx)</button>
+           <button class="btn-opt" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">Xuáº¥t dá»¯ liá»‡u (*.xlsx)</button>
+           <button class="btn-opt" id="btn-e-imp" onclick="app.admin.renderESubTab('imp')">Nháº­p tá»« file (*.xlsx)</button>
         </div>
         <div id="admin-e-subarea"></div>
       `;
@@ -1987,78 +1987,78 @@ const app = {
       
       if (tab === 'lib') {
           const cols = [
-            { label: 'Cấp lớp', filterable: true },
-            { label: 'Môn', filterable: true },
-            { label: 'Kỳ kiểm tra', filterable: true },
-            { label: 'Tên đề', filterable: true },
-            { label: 'Số câu', filterable: false },
-            { label: 'Hành động', filterable: false }
+            { label: 'Cáº¥p lá»›p', filterable: true },
+            { label: 'MÃ´n', filterable: true },
+            { label: 'Ká»³ kiá»ƒm tra', filterable: true },
+            { label: 'TÃªn Ä‘á»', filterable: true },
+            { label: 'Sá»‘ cÃ¢u', filterable: false },
+            { label: 'HÃ nh Ä‘á»™ng', filterable: false }
           ];
           let html = app.ui.renderTable(cols, app.data.exams, (e, i) => {
             return `<tr>
-              <td>${e.classlevel||'Lớp 5'}</td><td>${e.subject}</td>
+              <td>${e.classlevel||'Lá»›p 5'}</td><td>${e.subject}</td>
               <td>${e.period}</td><td>${e.name}</td><td>${(e.questions||[]).length}</td>
               <td>
                 <button class="btn-primary action-btn" onclick="app.admin.viewExam(${i})">Xem</button>
-                <button class="btn-opt action-btn" onclick="app.admin.editExam(${i})">Sửa</button>
-                <button class="btn-danger action-btn" onclick="app.admin.deleteExam(${i})">Xóa</button>
+                <button class="btn-opt action-btn" onclick="app.admin.editExam(${i})">Sá»­a</button>
+                <button class="btn-danger action-btn" onclick="app.admin.deleteExam(${i})">XÃ³a</button>
               </td>
             </tr>`;
           });
           subBox.innerHTML = html;
           const ind = document.getElementById('e-count-indicator');
-          if (ind) ind.textContent = `Tổng: ${app.data.exams.length} đề`;
+          if (ind) ind.textContent = `Tá»•ng: ${app.data.exams.length} Ä‘á»`;
       }
       else if (tab === 'add') {
           let e = editIdx !== undefined ? app.data.exams[editIdx] : null;
           subBox.innerHTML = `
             <div style="max-width: 600px; margin: 0 auto; text-align:left;">
-               <h3>${e ? 'Sửa đề kiểm tra' : 'Thêm đề kiểm tra mới'}</h3>
+               <h3>${e ? 'Sá»­a Ä‘á» kiá»ƒm tra' : 'ThÃªm Ä‘á» kiá»ƒm tra má»›i'}</h3>
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Cáº¥p lá»›p</label>
                   <select id="add-e-class" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
-                     <option value="Lớp 1" ${e && e.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
-                     <option value="Lớp 2" ${e && e.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
-                     <option value="Lớp 3" ${e && e.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
-                     <option value="Lớp 4" ${e && e.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
-                     <option value="Lớp 5" ${e && e.classlevel === 'Lớp 5' ? 'selected' : (!e ? 'selected' : '')}>Lớp 5</option>
+                     <option value="Lá»›p 1" ${e && e.classlevel === 'Lá»›p 1' ? 'selected' : ''}>Lá»›p 1</option>
+                     <option value="Lá»›p 2" ${e && e.classlevel === 'Lá»›p 2' ? 'selected' : ''}>Lá»›p 2</option>
+                     <option value="Lá»›p 3" ${e && e.classlevel === 'Lá»›p 3' ? 'selected' : ''}>Lá»›p 3</option>
+                     <option value="Lá»›p 4" ${e && e.classlevel === 'Lá»›p 4' ? 'selected' : ''}>Lá»›p 4</option>
+                     <option value="Lá»›p 5" ${e && e.classlevel === 'Lá»›p 5' ? 'selected' : (!e ? 'selected' : '')}>Lá»›p 5</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Môn học</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">MÃ´n há»c</label>
                   <select id="add-e-sub" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
-                     <option value="Toán" ${e && e.subject === 'Toán' ? 'selected' : (!e ? 'selected' : '')}>Toán</option>
-                     <option value="Tiếng Việt" ${e && e.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
+                     <option value="ToÃ¡n" ${e && e.subject === 'ToÃ¡n' ? 'selected' : (!e ? 'selected' : '')}>ToÃ¡n</option>
+                     <option value="Tiáº¿ng Viá»‡t" ${e && e.subject === 'Tiáº¿ng Viá»‡t' ? 'selected' : ''}>Tiáº¿ng Viá»‡t</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Kỳ kiểm tra</label>
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Ká»³ kiá»ƒm tra</label>
                   <select id="add-e-period" class="form-input" style="flex:1; padding:8px;">
-                     <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
-                     <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
-                     <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
-                     <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
+                     <option value="Giá»¯a ká»³ 1" ${e && e.period === 'Giá»¯a ká»³ 1' ? 'selected' : ''}>Giá»¯a ká»³ 1</option>
+                     <option value="Cuá»‘i ká»³ 1" ${e && e.period === 'Cuá»‘i ká»³ 1' ? 'selected' : ''}>Cuá»‘i ká»³ 1</option>
+                     <option value="Giá»¯a ká»³ 2" ${e && e.period === 'Giá»¯a ká»³ 2' ? 'selected' : ''}>Giá»¯a ká»³ 2</option>
+                     <option value="Cuá»‘i ká»³ 2" ${e && e.period === 'Cuá»‘i ká»³ 2' ? 'selected' : ''}>Cuá»‘i ká»³ 2</option>
                   </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Tên đề kiểm tra</label>
-                  <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" style="flex:1; padding:8px;" value="${e ? e.name : ''}">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">TÃªn Ä‘á» kiá»ƒm tra</label>
+                  <input type="text" id="add-e-name" placeholder="TÃªn Äá» (VD: Äá» kiá»ƒm tra há»c kÃ¬ 1 ToÃ¡n)" class="form-input" style="flex:1; padding:8px;" value="${e ? e.name : ''}">
                </div>
 
                ${e && e.questions && e.questions.length > 0 ? `
                <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
-                  <h4 style="margin-bottom: 10px; color:#4ade80;">Danh sách câu hỏi hiện có trong đề:</h4>
+                  <h4 style="margin-bottom: 10px; color:#4ade80;">Danh sÃ¡ch cÃ¢u há»i hiá»‡n cÃ³ trong Ä‘á»:</h4>
                   <table style="width:100%; border-collapse: collapse; text-align: left;">
                      ${e.questions.map((q, i) => `
                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px 5px;"><strong>Câu ${i+1}:</strong> ${q.q}</td>
+                        <td style="padding: 10px 5px;"><strong>CÃ¢u ${i+1}:</strong> ${q.q}</td>
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
-                            ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
-                            ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
-                            <button class="btn-danger action-btn" style="padding:4px 8px;" onclick="app.admin.removeQuestionFromExam(${editIdx}, ${i})">Xóa</button>
+                            ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">LÃªn</button>` : ''}
+                            ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuá»‘ng</button>` : ''}
+                            <button class="btn-danger action-btn" style="padding:4px 8px;" onclick="app.admin.removeQuestionFromExam(${editIdx}, ${i})">XÃ³a</button>
                         </td>
                      </tr>
                      `).join('')}
@@ -2067,90 +2067,90 @@ const app = {
                ` : ''}
 
                <div style="margin-top: 20px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
-                  <h4 style="margin-bottom: 15px; color:#ffcc00;">Soạn câu hỏi cho đề kiểm tra này</h4>
+                  <h4 style="margin-bottom: 15px; color:#ffcc00;">Soáº¡n cÃ¢u há»i cho Ä‘á» kiá»ƒm tra nÃ y</h4>
                   ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
                      let q = e && e.questions && e.questions[i] ? e.questions[i] : null;
                      return `
                     <div style="background: rgba(0,0,0,0.2); padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #ffcc00;">
-                       <h5 style="margin-top:0; margin-bottom: 10px;">Câu hỏi ${i + 1}</h5>
+                       <h5 style="margin-top:0; margin-bottom: 10px;">CÃ¢u há»i ${i + 1}</h5>
                        
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Chủ đề</label>
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Chá»§ Ä‘á»</label>
                           <select id="add-e-q-topic-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" data-selected="${q ? q.topic : ''}">
                           </select>
                        </div>
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Mức độ khó</label>
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Má»©c Ä‘á»™ khÃ³</label>
                           <select id="add-e-q-diff-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;">
-                             <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                             <option value="Vừa" ${q && q.difficulty === 'Vừa' ? 'selected' : ''}>Vừa</option>
-                             <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
+                             <option value="Dá»…" ${q && q.difficulty === 'Dá»…' ? 'selected' : (!q ? 'selected' : '')}>Dá»…</option>
+                             <option value="Vá»«a" ${q && q.difficulty === 'Vá»«a' ? 'selected' : ''}>Vá»«a</option>
+                             <option value="KhÃ³" ${q && q.difficulty === 'KhÃ³' ? 'selected' : ''}>KhÃ³</option>
                           </select>
                        </div>
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Loại câu hỏi</label>
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Loáº¡i cÃ¢u há»i</label>
                           <select id="add-e-q-type-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" onchange="app.admin.toggleExamOptionsWrapper(${i})">
-                             <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
-                             <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
-                             <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
-                             <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
-                             <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
-                             <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
+                             <option value="Tráº¯c nghiá»‡m" ${q && q.type === 'Tráº¯c nghiá»‡m' ? 'selected' : (!q ? 'selected' : '')}>Tráº¯c nghiá»‡m</option>
+                             <option value="Äiá»n khuyáº¿t" ${q && q.type === 'Äiá»n khuyáº¿t' ? 'selected' : ''}>Äiá»n khuyáº¿t</option>
+                             <option value="ÄÃºng/Sai" ${q && q.type === 'ÄÃºng/Sai' ? 'selected' : ''}>ÄÃºng/Sai</option>
+                             <option value="So sÃ¡nh" ${q && q.type === 'So sÃ¡nh' ? 'selected' : ''}>So sÃ¡nh</option>
+                             <option value="Chuá»—i Quy luáº­t" ${q && q.type === 'Chuá»—i Quy luáº­t' ? 'selected' : ''}>Chuá»—i Quy luáº­t</option>
+                             <option value="KÃ©o tháº£" ${q && q.type === 'KÃ©o tháº£' ? 'selected' : ''}>KÃ©o tháº£</option>
                           </select>
                        </div>
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Nội dung câu</label>
-                          <textarea id="add-e-q-q-${i}" placeholder="Nhập nội dung câu hỏi (để trống nếu không muốn tạo câu này)" class="form-input" style="flex:1; padding:6px; height:50px; font-size:0.9rem;">${q ? q.q : ''}</textarea>
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Ná»™i dung cÃ¢u</label>
+                          <textarea id="add-e-q-q-${i}" placeholder="Nháº­p ná»™i dung cÃ¢u há»i (Ä‘á»ƒ trá»‘ng náº¿u khÃ´ng muá»‘n táº¡o cÃ¢u nÃ y)" class="form-input" style="flex:1; padding:6px; height:50px; font-size:0.9rem;">${q ? q.q : ''}</textarea>
                        </div>
 
-                       <div id="add-e-q-opts-wrapper-${i}" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                       <div id="add-e-q-opts-wrapper-${i}" style="display: ${q && q.type && q.type !== 'Tráº¯c nghiá»‡m' && q.type !== 'KÃ©o tháº£' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 1</label>
-                             <input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lá»±a chá»n 1</label>
+                             <input type="text" id="add-e-q-opt1-${i}" placeholder="Lá»±a chá»n 1" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 2</label>
-                             <input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lá»±a chá»n 2</label>
+                             <input type="text" id="add-e-q-opt2-${i}" placeholder="Lá»±a chá»n 2" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 3</label>
-                             <input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lá»±a chá»n 3</label>
+                             <input type="text" id="add-e-q-opt3-${i}" placeholder="Lá»±a chá»n 3" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:0;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 4</label>
-                             <input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lá»±a chá»n 4</label>
+                             <input type="text" id="add-e-q-opt4-${i}" placeholder="Lá»±a chá»n 4" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
                           </div>
                        </div>
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Đáp án đúng</label>
-                          <input type="text" id="add-e-q-ans-${i}" placeholder="Đáp án đúng" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" value="${q ? q.ans : ''}">
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">ÄÃ¡p Ã¡n Ä‘Ãºng</label>
+                          <input type="text" id="add-e-q-ans-${i}" placeholder="ÄÃ¡p Ã¡n Ä‘Ãºng" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" value="${q ? q.ans : ''}">
                        </div>
                        
                        <div style="display:flex; align-items:center; margin-bottom:0;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Lời giải chi tiết</label>
-                          <textarea id="add-e-q-exp-${i}" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:6px; height:40px; font-size:0.9rem;">${q ? q.explanation || '' : ''}</textarea>
+                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Lá»i giáº£i chi tiáº¿t</label>
+                          <textarea id="add-e-q-exp-${i}" placeholder="Lá»i giáº£i (tÃ¹y chá»n)" class="form-input" style="flex:1; padding:6px; height:40px; font-size:0.9rem;">${q ? q.explanation || '' : ''}</textarea>
                        </div>
                     </div>
                   `;
                   }).join('')}
                </div>
 
-               <button class="btn-success" onclick="app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${e ? 'Lưu chỉnh sửa đề kiểm tra' : 'Tạo đề kiểm tra mới'}</button>
+               <button class="btn-success" onclick="app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${e ? 'LÆ°u chá»‰nh sá»­a Ä‘á» kiá»ƒm tra' : 'Táº¡o Ä‘á» kiá»ƒm tra má»›i'}</button>
             </div>
           `;
           setTimeout(() => app.admin.updateExamTopics(), 0);
       }
       else if (tab === 'tpl') {
-          subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
+          subBox.innerHTML = `<p>Äang chuáº©n bá»‹ file máº«u...</p>`;
           app.admin.downloadETemplate();
           setTimeout(() => this.renderESubTab('lib'), 1000);
       }
       else if (tab === 'exp') {
-          subBox.innerHTML = `<p>Đang xuất dữ liệu...</p>`;
+          subBox.innerHTML = `<p>Äang xuáº¥t dá»¯ liá»‡u...</p>`;
           app.admin.exportExams();
           setTimeout(() => this.renderESubTab('lib'), 1000);
       }
@@ -2159,18 +2159,18 @@ const app = {
           let q = app.data.libraryQuestions[qIdx];
           let matchingExams = app.data.exams.map((e, i) => ({e, i})).filter(x => x.e.classlevel === q.classlevel && x.e.subject === q.subject);
           
-          let html = `<div style="margin-bottom:15px;"><button class="btn-opt" onclick="app.admin.switchTab('questions'); setTimeout(()=>app.admin.renderQSubTab('lib'), 50);">Quay lại Kho Câu hỏi</button></div>`;
-          html += `<h3>Chọn đề kiểm tra để thêm câu hỏi</h3>`;
-          html += `<p>Đang lọc đề kiểm tra: <strong>${q.classlevel} - ${q.subject}</strong></p>`;
+          let html = `<div style="margin-bottom:15px;"><button class="btn-opt" onclick="app.admin.switchTab('questions'); setTimeout(()=>app.admin.renderQSubTab('lib'), 50);">Quay láº¡i Kho CÃ¢u há»i</button></div>`;
+          html += `<h3>Chá»n Ä‘á» kiá»ƒm tra Ä‘á»ƒ thÃªm cÃ¢u há»i</h3>`;
+          html += `<p>Äang lá»c Ä‘á» kiá»ƒm tra: <strong>${q.classlevel} - ${q.subject}</strong></p>`;
           
           if (matchingExams.length === 0) {
-              html += `<p style="color:#aaa;">Không có đề kiểm tra nào phù hợp với Cấp lớp và Môn của câu hỏi này.</p>`;
+              html += `<p style="color:#aaa;">KhÃ´ng cÃ³ Ä‘á» kiá»ƒm tra nÃ o phÃ¹ há»£p vá»›i Cáº¥p lá»›p vÃ  MÃ´n cá»§a cÃ¢u há»i nÃ y.</p>`;
           } else {
               const cols = [
-                  { label: 'Kỳ kiểm tra', filterable: true },
-                  { label: 'Tên đề', filterable: true },
-                  { label: 'Số câu', filterable: false },
-                  { label: 'Hành động', filterable: false }
+                  { label: 'Ká»³ kiá»ƒm tra', filterable: true },
+                  { label: 'TÃªn Ä‘á»', filterable: true },
+                  { label: 'Sá»‘ cÃ¢u', filterable: false },
+                  { label: 'HÃ nh Ä‘á»™ng', filterable: false }
               ];
               html += app.ui.renderTable(cols, matchingExams, (item, idx) => {
                   return `<tr>
@@ -2178,7 +2178,7 @@ const app = {
                       <td>${item.e.name}</td>
                       <td>${(item.e.questions||[]).length}</td>
                       <td>
-                          <button class="btn-success action-btn" onclick="app.admin.renderESubTab('inject_q', {qIdx: ${qIdx}, eIdx: ${item.i}})">Chọn đề này</button>
+                          <button class="btn-success action-btn" onclick="app.admin.renderESubTab('inject_q', {qIdx: ${qIdx}, eIdx: ${item.i}})">Chá»n Ä‘á» nÃ y</button>
                       </td>
                   </tr>`;
               });
@@ -2190,48 +2190,48 @@ const app = {
           let q = app.data.libraryQuestions[qIdx];
           let e = app.data.exams[eIdx];
           
-          let existingOpts = (e.questions||[]).map((eq, i) => `<option value="${i}">Ghi đè Câu ${i+1}: ${eq.q.substring(0, 30)}...</option>`).join('');
+          let existingOpts = (e.questions||[]).map((eq, i) => `<option value="${i}">Ghi Ä‘Ã¨ CÃ¢u ${i+1}: ${eq.q.substring(0, 30)}...</option>`).join('');
           
           subBox.innerHTML = `
              <div style="max-width: 600px; margin: 0 auto; text-align:left;">
-                <div style="margin-bottom:15px;"><button class="btn-opt" onclick="app.admin.renderESubTab('select_for_q', ${qIdx})">Quay lại chọn đề</button></div>
-                <h3>Thêm câu hỏi vào đề: ${e.name}</h3>
+                <div style="margin-bottom:15px;"><button class="btn-opt" onclick="app.admin.renderESubTab('select_for_q', ${qIdx})">Quay láº¡i chá»n Ä‘á»</button></div>
+                <h3>ThÃªm cÃ¢u há»i vÃ o Ä‘á»: ${e.name}</h3>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p><strong>Nội dung câu hỏi sẽ thêm:</strong></p>
+                    <p><strong>Ná»™i dung cÃ¢u há»i sáº½ thÃªm:</strong></p>
                     <p><i>${q.q}</i></p>
-                    <p><strong>Đáp án:</strong> ${q.ans}</p>
+                    <p><strong>ÄÃ¡p Ã¡n:</strong> ${q.ans}</p>
                 </div>
                 
                 <div style="display:flex; align-items:center; margin-bottom:15px;">
-                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Hành động</label>
+                   <label style="width:150px; font-weight:bold; flex-shrink:0;">HÃ nh Ä‘á»™ng</label>
                    <select id="inject-mode" class="form-input" style="flex:1; padding:8px;" onchange="document.getElementById('inject-target-wrap').style.display = this.value === 'overwrite' ? 'flex' : 'none'">
-                      <option value="append">Thêm mới vào cuối đề</option>
-                      ${existingOpts ? `<option value="overwrite">Ghi đè lên câu hỏi hiện có</option>` : ''}
+                      <option value="append">ThÃªm má»›i vÃ o cuá»‘i Ä‘á»</option>
+                      ${existingOpts ? `<option value="overwrite">Ghi Ä‘Ã¨ lÃªn cÃ¢u há»i hiá»‡n cÃ³</option>` : ''}
                    </select>
                 </div>
                 
                 <div id="inject-target-wrap" style="display:none; align-items:center; margin-bottom:20px;">
-                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Chọn câu để ghi đè</label>
+                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Chá»n cÃ¢u Ä‘á»ƒ ghi Ä‘Ã¨</label>
                    <select id="inject-target" class="form-input" style="flex:1; padding:8px;">
                       ${existingOpts}
                    </select>
                 </div>
                 
-                <button class="btn-success" onclick="app.admin.submitInjectQ(${qIdx}, ${eIdx})" style="width:100%; padding:10px;">Xác nhận thêm vào đề</button>
+                <button class="btn-success" onclick="app.admin.submitInjectQ(${qIdx}, ${eIdx})" style="width:100%; padding:10px;">XÃ¡c nháº­n thÃªm vÃ o Ä‘á»</button>
              </div>
           `;
       }
       else if (tab === 'imp') {
           subBox.innerHTML = `
             <div style="max-width: 400px; margin: 0 auto; text-align:center;">
-               <h3>Nhập đề kiểm tra từ Excel (.xlsx)</h3>
-               <p style="color:#aaa; font-size:0.9rem;">Chỉ nhập thông tin vỏ đề kiểm tra (chưa có câu hỏi).</p>
+               <h3>Nháº­p Ä‘á» kiá»ƒm tra tá»« Excel (.xlsx)</h3>
+               <p style="color:#aaa; font-size:0.9rem;">Chá»‰ nháº­p thÃ´ng tin vá» Ä‘á» kiá»ƒm tra (chÆ°a cÃ³ cÃ¢u há»i).</p>
                <div style="text-align: left; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="e-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>Thêm mới</strong> (Giữ nguyên đề cũ, thêm đề mới)</label>
-                  <label style="display:block; cursor:pointer;"><input type="radio" name="e-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ đề cũ, thay bằng mới)</label>
+                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="e-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>ThÃªm má»›i</strong> (Giá»¯ nguyÃªn Ä‘á» cÅ©, thÃªm Ä‘á» má»›i)</label>
+                  <label style="display:block; cursor:pointer;"><input type="radio" name="e-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi Ä‘Ã¨</strong> (XÃ³a toÃ n bá»™ Ä‘á» cÅ©, thay báº±ng má»›i)</label>
                </div>
                <input type="file" id="e-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
-               <button class="btn-success" onclick="app.admin.submitImportExams()" style="width:100%;">Tải lên</button>
+               <button class="btn-success" onclick="app.admin.submitImportExams()" style="width:100%;">Táº£i lÃªn</button>
             </div>
           `;
       }
@@ -2244,7 +2244,7 @@ const app = {
             period: document.getElementById('add-e-period').value,
             questions: []
         };
-        if(!eObj.name || !eObj.subject) return alert('Vui lòng điền đủ Tên Đề và Môn');
+        if(!eObj.name || !eObj.subject) return alert('Vui lÃ²ng Ä‘iá»n Ä‘á»§ TÃªn Äá» vÃ  MÃ´n');
         
         let i = 0;
         let newQuestionsCount = 0;
@@ -2266,7 +2266,7 @@ const app = {
                     explanation: document.getElementById(`add-e-q-exp-${i}`).value.trim(),
                     options: []
                 };
-                if (typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') {
+                if (typeVal === 'Tráº¯c nghiá»‡m' || typeVal === 'KÃ©o tháº£') {
                     newQ.options = [
                         document.getElementById(`add-e-q-opt1-${i}`).value.trim(),
                         document.getElementById(`add-e-q-opt2-${i}`).value.trim(),
@@ -2290,10 +2290,10 @@ const app = {
 
         if (editIdx !== null && editIdx !== undefined) {
              app.data.exams[editIdx] = eObj;
-             alert('Đã cập nhật đề kiểm tra!');
+             alert('ÄÃ£ cáº­p nháº­t Ä‘á» kiá»ƒm tra!');
         } else {
              app.data.exams.push(eObj);
-             alert('Đã tạo đề kiểm tra mới!');
+             alert('ÄÃ£ táº¡o Ä‘á» kiá»ƒm tra má»›i!');
         }
         app.data.saveExams();
         this.renderESubTab('lib');
@@ -2308,10 +2308,10 @@ const app = {
         
         if (mode === 'overwrite' && !isNaN(targetIdx) && targetIdx >= 0 && targetIdx < e.questions.length) {
             e.questions[targetIdx] = qClone;
-            alert(`Đã ghi đè lên câu hỏi ${targetIdx + 1} thành công!`);
+            alert(`ÄÃ£ ghi Ä‘Ã¨ lÃªn cÃ¢u há»i ${targetIdx + 1} thÃ nh cÃ´ng!`);
         } else {
             e.questions.push(qClone);
-            alert(`Đã thêm mới câu hỏi vào cuối đề kiểm tra!`);
+            alert(`ÄÃ£ thÃªm má»›i cÃ¢u há»i vÃ o cuá»‘i Ä‘á» kiá»ƒm tra!`);
         }
         
         app.data.saveExams();
@@ -2337,35 +2337,35 @@ const app = {
     },
     submitImportExams() {
         const fileInput = document.getElementById('e-file-upload');
-        if (!fileInput.files.length) return alert('Vui lòng chọn file!');
+        if (!fileInput.files.length) return alert('Vui lÃ²ng chá»n file!');
         
         const modeInput = document.querySelector('input[name="e-import-mode"]:checked');
         const mode = modeInput ? modeInput.value : 'append';
         if (mode === 'overwrite') {
-            if (!confirm("CẢNH BÁO: Bạn đã chọn GHI ĐÈ. Toàn bộ đề kiểm tra hiện có sẽ bị xóa sạch và thay bằng dữ liệu mới! Bạn có chắc chắn muốn tiếp tục? (Bấm OK để Ghi đè, Cancel để Hủy)")) {
+            if (!confirm("Cáº¢NH BÃO: Báº¡n Ä‘Ã£ chá»n GHI ÄÃˆ. ToÃ n bá»™ Ä‘á» kiá»ƒm tra hiá»‡n cÃ³ sáº½ bá»‹ xÃ³a sáº¡ch vÃ  thay báº±ng dá»¯ liá»‡u má»›i! Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c? (Báº¥m OK Ä‘á»ƒ Ghi Ä‘Ã¨, Cancel Ä‘á»ƒ Há»§y)")) {
                 return;
             }
         }
 
-        app.ui.importFromExcel(fileInput.files[0], (data) => {
+        app.ui.importFromExcel(fileInput.files[0], async (data) => {
             if (mode === 'overwrite') {
-                app.data.exams = [];
+                app.data.exams = []; if (window.supabase) await supabaseClient.from('game_exams').delete().neq('id', 0);
             }
             let count = 0;
             data.forEach(row => {
-                if (row["Tên đề"] && row["Môn"]) {
+                if (row["TÃªn Ä‘á»"] && row["MÃ´n"]) {
                     app.data.exams.push({
-                        name: row["Tên đề"],
-                        subject: row["Môn"],
-                        classlevel: row["Cấp lớp"] || 'Lớp 5',
-                        period: row["Kỳ kiểm tra"] || 'Giữa kỳ 1',
+                        name: row["TÃªn Ä‘á»"],
+                        subject: row["MÃ´n"],
+                        classlevel: row["Cáº¥p lá»›p"] || 'Lá»›p 5',
+                        period: row["Ká»³ kiá»ƒm tra"] || 'Giá»¯a ká»³ 1',
                         questions: []
                     });
                     count++;
                 }
             });
             app.data.saveExams();
-            alert(`Đã nhập thành công ${count} đề kiểm tra (vỏ)!`);
+            alert(`ÄÃ£ nháº­p thÃ nh cÃ´ng ${count} Ä‘á» kiá»ƒm tra (vá»)!`);
             this.renderESubTab('lib');
         });
     },
@@ -2373,26 +2373,26 @@ const app = {
        const exam = app.data.exams[idx];
        let html = `
           <div style="display:flex; justify-content:space-between; align-items:center;">
-             <h3>Chi tiết đề: ${exam.name}</h3>
+             <h3>Chi tiáº¿t Ä‘á»: ${exam.name}</h3>
              <div>
                 <button class="btn-primary" onclick="window.print()">In PDF / A4</button>
-                <button class="btn-opt" onclick="app.admin.renderESubTab('lib')">Quay lại</button>
+                <button class="btn-opt" onclick="app.admin.renderESubTab('lib')">Quay láº¡i</button>
              </div>
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
-             <h2 style="text-align:center;">BÀI KIỂM TRA ${exam.period.toUpperCase()}</h2>
-             <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classlevel}</p>
+             <h2 style="text-align:center;">BÃ€I KIá»‚M TRA ${exam.period.toUpperCase()}</h2>
+             <p style="text-align:center;"><strong>MÃ´n:</strong> ${exam.subject} - <strong>Lá»›p:</strong> ${exam.classlevel}</p>
              <hr style="margin:20px 0;">
        `;
        if (!exam.questions || exam.questions.length === 0) {
-           html += `<p style="text-align:center;">Đề kiểm tra này chưa có câu hỏi nào.</p>`;
+           html += `<p style="text-align:center;">Äá» kiá»ƒm tra nÃ y chÆ°a cÃ³ cÃ¢u há»i nÃ o.</p>`;
        } else {
            exam.questions.forEach((q, i) => {
                html += `
                   <div style="margin-bottom: 20px;">
-                     <p><strong>Câu ${i+1} (${q.type}):</strong> ${q.q}</p>
+                     <p><strong>CÃ¢u ${i+1} (${q.type}):</strong> ${q.q}</p>
                      ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${o}</li>`).join('')}</ul>` : ''}
-                     ${q.type === 'Điền khuyết' ? `<p>....................................................................</p>` : ''}
+                     ${q.type === 'Äiá»n khuyáº¿t' ? `<p>....................................................................</p>` : ''}
                   </div>
                `;
            });
@@ -2403,9 +2403,9 @@ const app = {
     renderPlayers(box) {
       box.innerHTML = `
         <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px;">
-           <button class="btn-primary" id="btn-sub-players" style="flex:1;" onclick="app.admin.renderPlayersList(false)">Danh sách học sinh</button>
-           <button class="btn-opt" id="btn-sub-pending" style="flex:1;" onclick="app.admin.renderPlayersList(true)">Phê duyệt</button>
-           <button class="btn-success" id="btn-sub-add" style="flex:1;" onclick="app.admin.showAddPlayerForm()">+ Thêm mới</button>
+           <button class="btn-primary" id="btn-sub-players" style="flex:1;" onclick="app.admin.renderPlayersList(false)">Danh sÃ¡ch há»c sinh</button>
+           <button class="btn-opt" id="btn-sub-pending" style="flex:1;" onclick="app.admin.renderPlayersList(true)">PhÃª duyá»‡t</button>
+           <button class="btn-success" id="btn-sub-add" style="flex:1;" onclick="app.admin.showAddPlayerForm()">+ ThÃªm má»›i</button>
         </div>
         <div id="admin-subcontent-area"></div>
       `;
@@ -2417,11 +2417,11 @@ const app = {
       
       const subBox = document.getElementById('admin-subcontent-area');
       const cols = [
-        { label: 'Cấp lớp', filterable: true },
-        { label: 'Họ tên', filterable: true },
-        { label: 'Tên đăng nhập', filterable: true },
-        { label: 'Mật khẩu', filterable: false },
-        { label: 'Hành động', filterable: false }
+        { label: 'Cáº¥p lá»›p', filterable: true },
+        { label: 'Há» tÃªn', filterable: true },
+        { label: 'TÃªn Ä‘Äƒng nháº­p', filterable: true },
+        { label: 'Máº­t kháº©u', filterable: false },
+        { label: 'HÃ nh Ä‘á»™ng', filterable: false }
       ];
       
       let users = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
@@ -2434,18 +2434,18 @@ const app = {
       let html = app.ui.renderTable(cols, users, (u, i) => {
         let actionBtns = '';
         if (isPending) {
-            actionBtns = `<button class="btn-success action-btn" onclick="app.admin.approveUser('${u.username}')">Duyệt</button>
-                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
+            actionBtns = `<button class="btn-success action-btn" onclick="app.admin.approveUser('${u.username}')">Duyá»‡t</button>
+                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">XÃ³a</button>`;
         } else {
-            actionBtns = `<button class="btn-opt action-btn" onclick="app.admin.showAddPlayerForm('${u.username}')">Sửa</button>
-                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
+            actionBtns = `<button class="btn-opt action-btn" onclick="app.admin.showAddPlayerForm('${u.username}')">Sá»­a</button>
+                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">XÃ³a</button>`;
         }
         return `<tr>
           <td>${u.classlevel||''}</td><td>${u.fullname||''}</td>
           <td>${u.username}</td><td>${u.password||''}</td>
           <td>${actionBtns}</td>
         </tr>`;
-      }, isPending ? "Không có học sinh nào chờ duyệt" : "Chưa có học sinh nào");
+      }, isPending ? "KhÃ´ng cÃ³ há»c sinh nÃ o chá» duyá»‡t" : "ChÆ°a cÃ³ há»c sinh nÃ o");
       subBox.innerHTML = html;
     },
     async approveUser(username) {
@@ -2464,35 +2464,35 @@ const app = {
         const subBox = document.getElementById('admin-subcontent-area');
         let u = (editUsername && typeof editUsername === 'string') ? app.data.users.find(x => x.username === editUsername) : null;
         subBox.innerHTML = `
-          <h3>${u ? 'Sửa thông tin học sinh' : 'Thêm học sinh mới'}</h3>
+          <h3>${u ? 'Sá»­a thÃ´ng tin há»c sinh' : 'ThÃªm há»c sinh má»›i'}</h3>
           <div style="max-width: 500px; margin: 0 auto; text-align:left;">
              <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Họ và tên</label>
-                <input type="text" id="add-fullname" placeholder="Họ và tên" class="form-input" style="flex:1; padding:8px;" value="${u ? u.fullname : ''}">
+                <label style="width:130px; font-weight:bold; flex-shrink:0;">Há» vÃ  tÃªn</label>
+                <input type="text" id="add-fullname" placeholder="Há» vÃ  tÃªn" class="form-input" style="flex:1; padding:8px;" value="${u ? u.fullname : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Tên đăng nhập</label>
-                <input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" style="flex:1; padding:8px;" value="${u ? u.username : ''}">
+                <label style="width:130px; font-weight:bold; flex-shrink:0;">TÃªn Ä‘Äƒng nháº­p</label>
+                <input type="text" id="add-username" placeholder="TÃªn Ä‘Äƒng nháº­p" class="form-input" style="flex:1; padding:8px;" value="${u ? u.username : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Mật khẩu</label>
-                <input type="text" id="add-password" placeholder="Mật khẩu" class="form-input" style="flex:1; padding:8px;" value="${u ? u.password : ''}">
+                <label style="width:130px; font-weight:bold; flex-shrink:0;">Máº­t kháº©u</label>
+                <input type="text" id="add-password" placeholder="Máº­t kháº©u" class="form-input" style="flex:1; padding:8px;" value="${u ? u.password : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:15px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
+                <label style="width:130px; font-weight:bold; flex-shrink:0;">Cáº¥p lá»›p</label>
                 <select id="add-class" class="form-input" style="flex:1; padding:8px;">
-                   <option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option>
-                   <option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option>
-                   <option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option>
-                   <option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option>
-                   <option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option>
+                   <option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lá»›p 1</option>
+                   <option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lá»›p 2</option>
+                   <option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lá»›p 3</option>
+                   <option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lá»›p 4</option>
+                   <option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lá»›p 5</option>
                 </select>
              </div>
              
-             <button class="btn-success" onclick="app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')" style="width:100%; padding:10px;">${u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản'}</button>
+             <button class="btn-success" onclick="app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')" style="width:100%; padding:10px;">${u ? 'LÆ°u chá»‰nh sá»­a' : 'Táº¡o tÃ i khoáº£n'}</button>
           </div>
         `;
     },
@@ -2501,24 +2501,24 @@ const app = {
         const un = document.getElementById('add-username').value.trim();
         const pw = document.getElementById('add-password').value.trim();
         const cl = document.getElementById('add-class').value;
-        if (!fn || !un || !pw) return alert('Điền đủ thông tin!');
+        if (!fn || !un || !pw) return alert('Äiá»n Ä‘á»§ thÃ´ng tin!');
         
         if (editUsername) {
             let user = app.data.users.find(x => x.username === editUsername);
             if (user) {
                 if (un !== editUsername && app.data.users.find(x => x.username === un)) {
-                    return alert('Tên đăng nhập mới đã tồn tại!');
+                    return alert('TÃªn Ä‘Äƒng nháº­p má»›i Ä‘Ã£ tá»“n táº¡i!');
                 }
                 user.fullname = fn;
                 user.username = un;
                 user.password = pw;
                 user.classlevel = cl;
-                alert('Đã cập nhật thông tin học sinh!');
+                alert('ÄÃ£ cáº­p nháº­t thÃ´ng tin há»c sinh!');
             }
         } else {
-            if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
+            if (app.data.users.find(x => x.username === un)) return alert('TÃªn Ä‘Äƒng nháº­p Ä‘Ã£ tá»“n táº¡i!');
             app.data.users.push({ fullname: fn, username: un, password: pw, classlevel: cl, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0 });
-            alert('Đã tạo tài khoản học sinh!');
+            alert('ÄÃ£ táº¡o tÃ i khoáº£n há»c sinh!');
         }
         app.data.saveUsers();
         this.renderPlayersList(false);
@@ -2529,24 +2529,20 @@ const app = {
     editQuestion(idx) {
         this.renderQSubTab('add', idx);
     },
-    deleteQuestion(idx) {
-      if(confirm('Xóa câu hỏi này?')) { app.data.libraryQuestions.splice(idx, 1); app.data.saveLibrary(); this.renderQSubTab('lib'); }
-    },
+    async deleteQuestion(idx) { if(confirm('Xác nhận xóa?')) { const q = app.data.libraryQuestions[idx]; app.data.libraryQuestions.splice(idx, 1); if (q && q.id && window.supabase) { await supabaseClient.from('game_questions').delete().eq('id', q.id); } app.data.saveLibrary(); this.renderQSubTab('lib'); } },
     editExam(idx) {
         this.renderESubTab('add', idx);
     },
     removeQuestionFromExam(examIdx, qIdx) {
-        if(confirm('Xóa câu hỏi này khỏi đề kiểm tra?')) {
+        if(confirm('XÃ³a cÃ¢u há»i nÃ y khá»i Ä‘á» kiá»ƒm tra?')) {
             app.data.exams[examIdx].questions.splice(qIdx, 1);
             app.data.saveExams();
             this.renderESubTab('add', examIdx);
         }
     },
-    deleteExam(idx) {
-      if(confirm('Xóa đề kiểm tra này?')) { app.data.exams.splice(idx, 1); app.data.saveExams(); this.renderESubTab('lib'); }
-    },
+    async deleteExam(idx) { if(confirm('Xác nhận xóa?')) { const e = app.data.exams[idx]; app.data.exams.splice(idx, 1); if (e && e.id && window.supabase) { await supabaseClient.from('game_exams').delete().eq('id', e.id); } app.data.saveExams(); this.renderESubTab('lib'); } },
     async deleteUser(username) {
-      if(confirm('Xóa học sinh này?')) { 
+      if(confirm('XÃ³a há»c sinh nÃ y?')) { 
         const user = app.data.users.find(u => u.username === username);
         app.data.users = app.data.users.filter(u => u.username !== username);
         if (user && user.id) {
@@ -2564,7 +2560,7 @@ const app = {
       const modal = document.getElementById('treasure-modal');
       modal.style.display = 'flex';
       modal.classList.add('active');
-      document.getElementById('treasure-title').textContent = 'Kho Báu';
+      document.getElementById('treasure-title').textContent = 'Kho BÃ¡u';
       
       const u = app.data.currentUser;
       if (!u) return;
@@ -2581,8 +2577,8 @@ const app = {
       
       if (u.role?.toLowerCase() === 'admin') {
          const tabs = [
-            { id: 'leaderboard', label: 'Bảng thành tích' },
-            { id: 'history', label: 'Lịch sử làm bài' }
+            { id: 'leaderboard', label: 'Báº£ng thÃ nh tÃ­ch' },
+            { id: 'history', label: 'Lá»‹ch sá»­ lÃ m bÃ i' }
          ];
          app.ui.renderTabs(tabs, tab, 'app.treasure.switchTab');
          
@@ -2590,8 +2586,8 @@ const app = {
          else if (tab === 'history') this.renderAdminHistory(box);
       } else {
          const tabs = [
-            { id: 'my_treasure', label: 'Thành tích' },
-            { id: 'history', label: 'Lịch sử làm bài' }
+            { id: 'my_treasure', label: 'ThÃ nh tÃ­ch' },
+            { id: 'history', label: 'Lá»‹ch sá»­ lÃ m bÃ i' }
          ];
          app.ui.renderTabs(tabs, tab, 'app.treasure.switchTab');
          
@@ -2625,18 +2621,18 @@ const app = {
         const mode = document.querySelector('input[name="print_mode"]:checked').value;
         this.exportToImage(mode);
     },
-    renderAdminLeaderboard(box, classFilter = 'Tất cả', limitFilter = 'Tất cả theo cấp lớp', fromDate = '', toDate = '', updateTableOnly = false) {
+    renderAdminLeaderboard(box, classFilter = 'Táº¥t cáº£', limitFilter = 'Táº¥t cáº£ theo cáº¥p lá»›p', fromDate = '', toDate = '', updateTableOnly = false) {
       const cols = [
-         { label: 'Hạng', filterable: false },
-         { label: 'Học sinh', filterable: false },
-         { label: 'Số bài đã làm', filterable: false },
-         { label: 'Điểm', filterable: false },
-         { label: 'Kẹo', filterable: false }
+         { label: 'Háº¡ng', filterable: false },
+         { label: 'Há»c sinh', filterable: false },
+         { label: 'Sá»‘ bÃ i Ä‘Ã£ lÃ m', filterable: false },
+         { label: 'Äiá»ƒm', filterable: false },
+         { label: 'Káº¹o', filterable: false }
       ];
       let students = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
       
-      if (classFilter !== 'Tất cả') {
-          const cls = classFilter.replace('Lớp ', '');
+      if (classFilter !== 'Táº¥t cáº£') {
+          const cls = classFilter.replace('Lá»›p ', '');
           students = students.filter(u => String(u.classlevel) === cls);
       }
       
@@ -2666,22 +2662,22 @@ const app = {
       
       if (!updateTableOnly) {
           let html = `<div class="admin-control-panel">
-             <button class="acp-btn" onclick="app.treasure.renderAdminLeaderboard(document.getElementById('treasure-content-area'))">Tất cả</button>
+             <button class="acp-btn" onclick="app.treasure.renderAdminLeaderboard(document.getElementById('treasure-content-area'))">Táº¥t cáº£</button>
              <div class="acp-center">
                  <div class="acp-row">
                      <input type="hidden" id="admin-lb-class" value="${classFilter}">
-                     ${['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'].map(c => `<button class="${c===classFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-lb-class').value='${c}'; app.treasure.applyFilters('leaderboard', false)">${c}</button>`).join('')}
+                     ${['Lá»›p 1','Lá»›p 2','Lá»›p 3','Lá»›p 4','Lá»›p 5'].map(c => `<button class="${c===classFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-lb-class').value='${c}'; app.treasure.applyFilters('leaderboard', false)">${c}</button>`).join('')}
                  </div>
                  <div class="acp-row">
                      <input type="hidden" id="admin-lb-limit" value="${limitFilter}">
-                     ${['Top 10','Top 20','Tất cả theo cấp lớp'].map(l => `<button class="${l===limitFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-lb-limit').value='${l}'; app.treasure.applyFilters('leaderboard', false)">${l}</button>`).join('')}
+                     ${['Top 10','Top 20','Táº¥t cáº£ theo cáº¥p lá»›p'].map(l => `<button class="${l===limitFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-lb-limit').value='${l}'; app.treasure.applyFilters('leaderboard', false)">${l}</button>`).join('')}
                  </div>
                  <div class="acp-row" style="margin-top:5px;">
-                     <label>Từ ngày:</label><input type="date" id="admin-lb-from" value="${fromDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('leaderboard', true)">
-                     <label>Đến ngày:</label><input type="date" id="admin-lb-to" value="${toDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('leaderboard', true)">
+                     <label>Tá»« ngÃ y:</label><input type="date" id="admin-lb-from" value="${fromDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('leaderboard', true)">
+                     <label>Äáº¿n ngÃ y:</label><input type="date" id="admin-lb-to" value="${toDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('leaderboard', true)">
                  </div>
              </div>
-             <button class="acp-btn btn-success" onclick="app.treasure.showPrintModal('leaderboard')">In danh sách</button>
+             <button class="acp-btn btn-success" onclick="app.treasure.showPrintModal('leaderboard')">In danh sÃ¡ch</button>
           </div>
           <div id="admin-lb-table-container"></div>`;
           box.innerHTML = html;
@@ -2697,14 +2693,14 @@ const app = {
       const container = document.getElementById('admin-lb-table-container');
       if (container) container.innerHTML = tableHtml;
     },
-    renderAdminHistory(box, classFilter = 'Tất cả', studentFilter = '', fromDate = '', toDate = '', updateTableOnly = false) {
+    renderAdminHistory(box, classFilter = 'Táº¥t cáº£', studentFilter = '', fromDate = '', toDate = '', updateTableOnly = false) {
       const cols = [
-         { label: 'Cấp lớp', filterable: false },
-         { label: 'Học sinh', filterable: false },
-         { label: 'Bài làm', filterable: false },
-         { label: 'Điểm', filterable: false },
-         { label: 'Ngày', filterable: false },
-         { label: 'Chi tiết', filterable: false }
+         { label: 'Cáº¥p lá»›p', filterable: false },
+         { label: 'Há»c sinh', filterable: false },
+         { label: 'BÃ i lÃ m', filterable: false },
+         { label: 'Äiá»ƒm', filterable: false },
+         { label: 'NgÃ y', filterable: false },
+         { label: 'Chi tiáº¿t', filterable: false }
       ];
       let allHist = [];
       app.data.users.filter(u => u.role?.toLowerCase() !== 'admin').forEach(u => {
@@ -2717,8 +2713,8 @@ const app = {
       
       let classFilteredUsers = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
       
-      if (classFilter !== 'Tất cả') {
-          const cls = classFilter.replace('Lớp ', '');
+      if (classFilter !== 'Táº¥t cáº£') {
+          const cls = classFilter.replace('Lá»›p ', '');
           allHist = allHist.filter(h => String(h.classlevel) === cls);
           classFilteredUsers = classFilteredUsers.filter(u => String(u.classlevel) === cls);
       }
@@ -2745,24 +2741,24 @@ const app = {
       
       if (!updateTableOnly) {
           let html = `<div class="admin-control-panel">
-             <button class="acp-btn" onclick="app.treasure.renderAdminHistory(document.getElementById('treasure-content-area'))">Tất cả</button>
+             <button class="acp-btn" onclick="app.treasure.renderAdminHistory(document.getElementById('treasure-content-area'))">Táº¥t cáº£</button>
              <div class="acp-center">
                  <div class="acp-row">
                      <input type="hidden" id="admin-hist-class" value="${classFilter}">
-                     ${['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'].map(c => `<button class="${c===classFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-hist-class').value='${c}'; document.getElementById('admin-hist-student').value=''; app.treasure.applyFilters('history', false)">${c}</button>`).join('')}
+                     ${['Lá»›p 1','Lá»›p 2','Lá»›p 3','Lá»›p 4','Lá»›p 5'].map(c => `<button class="${c===classFilter?'btn-primary':'btn-opt'}" onclick="document.getElementById('admin-hist-class').value='${c}'; document.getElementById('admin-hist-student').value=''; app.treasure.applyFilters('history', false)">${c}</button>`).join('')}
                  </div>
                  <div class="acp-row">
-                     <input list="admin-hist-student-list" id="admin-hist-student" class="form-input" placeholder="🔍 Nhập tìm kiếm học sinh..." value="${studentFilter}" style="width:100%; max-width:300px; padding:5px;" oninput="app.treasure.applyFilters('history', true)">
+                     <input list="admin-hist-student-list" id="admin-hist-student" class="form-input" placeholder="ðŸ” Nháº­p tÃ¬m kiáº¿m há»c sinh..." value="${studentFilter}" style="width:100%; max-width:300px; padding:5px;" oninput="app.treasure.applyFilters('history', true)">
                      <datalist id="admin-hist-student-list">
                          ${studentOptions}
                      </datalist>
                  </div>
                  <div class="acp-row" style="margin-top:5px;">
-                     <label>Từ ngày:</label><input type="date" id="admin-hist-from" value="${fromDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('history', true)">
-                     <label>Đến ngày:</label><input type="date" id="admin-hist-to" value="${toDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('history', true)">
+                     <label>Tá»« ngÃ y:</label><input type="date" id="admin-hist-from" value="${fromDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('history', true)">
+                     <label>Äáº¿n ngÃ y:</label><input type="date" id="admin-hist-to" value="${toDate}" class="form-input" style="padding:5px;" onchange="app.treasure.applyFilters('history', true)">
                  </div>
              </div>
-             <button class="acp-btn btn-success" onclick="app.treasure.showPrintModal('history')">In danh sách</button>
+             <button class="acp-btn btn-success" onclick="app.treasure.showPrintModal('history')">In danh sÃ¡ch</button>
           </div>
           <div id="admin-hist-table-container"></div>`;
           box.innerHTML = html;
@@ -2781,11 +2777,11 @@ const app = {
          else if (s === 10) {
              scoreColor = '#22c55e'; // Bold Green
              scoreStyle = 'font-weight:bold; font-size:1.1em;';
-             star = ' 🍭';
+             star = ' ðŸ­';
          }
          
          const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
-         const clsDisplay = h.classlevel ? (String(h.classlevel).includes('Lớp') ? h.classlevel : 'Lớp ' + h.classlevel) : '';
+         const clsDisplay = h.classlevel ? (String(h.classlevel).includes('Lá»›p') ? h.classlevel : 'Lá»›p ' + h.classlevel) : '';
          
          return `<tr><td>${clsDisplay}</td><td>${h.studentName}</td><td>${h.title}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
@@ -2796,21 +2792,21 @@ const app = {
     },
     renderStudentTreasure(box, u) {
       let html = `<div style="text-align:center; padding: 30px 0;">
-         <h3 style="font-size: 1.5rem;">Kho báu của ${u.fullname}</h3>
-         <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore||0}</span></p>
+         <h3 style="font-size: 1.5rem;">Kho bÃ¡u cá»§a ${u.fullname}</h3>
+         <p style="color: #ccc; margin-top: 10px;">Tá»•ng Ä‘iá»ƒm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore||0}</span></p>
          <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
       const lolli = u.lollipops || 0;
-      if (lolli === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có kẹo nào. Hãy hoàn thành bài để nhận kẹo nhé!</p>`;
+      if (lolli === 0) html += `<p style="font-size: 1rem; color: #888;">Báº¡n chÆ°a cÃ³ káº¹o nÃ o. HÃ£y hoÃ n thÃ nh bÃ i Ä‘á»ƒ nháº­n káº¹o nhÃ©!</p>`;
       for(let i=0; i<lolli; i++) html += '<img src="./public/lollipop.png" style="width:50px; margin:2px;" class="bounce">';
       html += '</div></div>';
       box.innerHTML = html;
     },
     renderStudentHistory(box, u) {
       const cols = [
-         { label: 'Bài làm', filterable: true },
-         { label: 'Điểm', filterable: false },
-         { label: 'Ngày', filterable: true },
-         { label: 'Chi tiết', filterable: false }
+         { label: 'BÃ i lÃ m', filterable: true },
+         { label: 'Äiá»ƒm', filterable: false },
+         { label: 'NgÃ y', filterable: true },
+         { label: 'Chi tiáº¿t', filterable: false }
       ];
       let myHist = [...(u.history || [])];
       myHist.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -2818,13 +2814,13 @@ const app = {
          const encoded = encodeURIComponent(JSON.stringify(h));
          return `<tr><td>${h.title}</td><td>${h.score}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
-      }, "Chưa có dữ liệu lịch sử");
+      }, "ChÆ°a cÃ³ dá»¯ liá»‡u lá»‹ch sá»­");
     },
     exportToImage(mode) {
         document.getElementById('print-modal').style.display = 'none';
         const type = window.printContext; // 'leaderboard' or 'history'
         
-        let fromDate = '', toDate = '', classFilter = 'Tất cả';
+        let fromDate = '', toDate = '', classFilter = 'Táº¥t cáº£';
         let studentNameStr = '';
         
         if (type === 'leaderboard') {
@@ -2844,15 +2840,15 @@ const app = {
             }
         }
         
-        const dateStr = (fromDate || toDate) ? `Từ ngày ${fromDate || '...'} đến ngày ${toDate || '...'}` : 'Tất cả thời gian';
-        const classStr = classFilter !== 'Tất cả' ? `Cấp ${classFilter}` : 'Tất cả cấp lớp';
+        const dateStr = (fromDate || toDate) ? `Tá»« ngÃ y ${fromDate || '...'} Ä‘áº¿n ngÃ y ${toDate || '...'}` : 'Táº¥t cáº£ thá»i gian';
+        const classStr = classFilter !== 'Táº¥t cáº£' ? `Cáº¥p ${classFilter}` : 'Táº¥t cáº£ cáº¥p lá»›p';
         
         // Setup simple print vs graphic print
         if (mode === 'simple') {
             const tableHTML = document.querySelector('#treasure-content-area .data-table').outerHTML;
             const printWin = window.open('', '_blank');
             printWin.document.write(`
-                <html><head><title>In danh sách</title>
+                <html><head><title>In danh sÃ¡ch</title>
                 <style>
                     body { font-family: sans-serif; padding: 20px; }
                     h2, h3 { text-align: center; }
@@ -2861,10 +2857,10 @@ const app = {
                     th { background-color: #f2f2f2; }
                 </style>
                 </head><body>
-                <h2>${type === 'leaderboard' ? 'BẢNG THÀNH TÍCH' : 'LỊCH SỬ LÀM BÀI'}</h2>
+                <h2>${type === 'leaderboard' ? 'Báº¢NG THÃ€NH TÃCH' : 'Lá»ŠCH Sá»¬ LÃ€M BÃ€I'}</h2>
                 <h3>${dateStr}</h3>
                 <h3>${classStr}</h3>
-                ${studentNameStr ? `<h3>Họ tên: ${studentNameStr}</h3>` : ''}
+                ${studentNameStr ? `<h3>Há» tÃªn: ${studentNameStr}</h3>` : ''}
                 ${tableHTML}
                 </body></html>
             `);
@@ -2894,14 +2890,14 @@ const app = {
         classEl.textContent = classStr;
         if (studentNameStr) {
             studentEl.style.display = 'block';
-            studentEl.textContent = `Họ tên: ${studentNameStr}`;
+            studentEl.textContent = `Há» tÃªn: ${studentNameStr}`;
         } else {
             studentEl.style.display = 'none';
         }
         
         // Clone table and apply huge font styling for 2K
         const sourceTable = document.querySelector('#treasure-content-area .data-table');
-        if (!sourceTable) return alert("Không có dữ liệu để in.");
+        if (!sourceTable) return alert("KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ in.");
         
         const clonedTable = sourceTable.cloneNode(true);
         clonedTable.style.width = '100%';
@@ -2910,11 +2906,11 @@ const app = {
         clonedTable.style.fontSize = '2rem';
         clonedTable.style.borderCollapse = 'collapse';
         
-        // Remove Action column (Chi tiết / Xem) if exists
+        // Remove Action column (Chi tiáº¿t / Xem) if exists
         const headerRow = clonedTable.querySelector('thead tr');
         if (headerRow && headerRow.children.length > 0) {
            const lastHeader = headerRow.children[headerRow.children.length - 1];
-           if (lastHeader.textContent.includes('Chi tiết') || lastHeader.textContent.includes('Hành động')) {
+           if (lastHeader.textContent.includes('Chi tiáº¿t') || lastHeader.textContent.includes('HÃ nh Ä‘á»™ng')) {
                lastHeader.remove();
                clonedTable.querySelectorAll('tbody tr').forEach(row => {
                   if(row.children.length > 0) row.children[row.children.length - 1].remove();
@@ -2939,10 +2935,10 @@ const app = {
         
         // Render canvas
         if (!window.html2canvas) {
-            return alert("Lỗi: Không tìm thấy thư viện html2canvas. Hãy kiểm tra kết nối mạng.");
+            return alert("Lá»—i: KhÃ´ng tÃ¬m tháº¥y thÆ° viá»‡n html2canvas. HÃ£y kiá»ƒm tra káº¿t ná»‘i máº¡ng.");
         }
         
-        alert("Hệ thống đang trích xuất ảnh 2K, vui lòng chờ trong giây lát...");
+        alert("Há»‡ thá»‘ng Ä‘ang trÃ­ch xuáº¥t áº£nh 2K, vui lÃ²ng chá» trong giÃ¢y lÃ¡t...");
         
         html2canvas(container, {
             scale: 1,
@@ -2954,8 +2950,8 @@ const app = {
             link.href = canvas.toDataURL('image/png');
             link.click();
         }).catch(err => {
-            console.error("Lỗi xuất ảnh:", err);
-            alert("Đã xảy ra lỗi khi tạo ảnh.");
+            console.error("Lá»—i xuáº¥t áº£nh:", err);
+            alert("ÄÃ£ xáº£y ra lá»—i khi táº¡o áº£nh.");
         });
     }
   }
@@ -2974,6 +2970,8 @@ window.onload = async () => {
     console.error("Error binding UI:", e);
   }
 };
+
+
 
 
 
