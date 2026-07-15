@@ -504,7 +504,7 @@ const app = {
   },
 
   game: {
-    state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'medium', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+    state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'shuffle', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
     
     init() {
       document.querySelectorAll('.station[data-subject]').forEach(el => {
@@ -1776,7 +1776,6 @@ const app = {
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Mức độ khó</label>
                   <select id="add-q-diff" class="form-input" style="flex:1; padding:8px;">
                      <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                     <option value="Vừa" ${q && q.difficulty === 'Vừa' ? 'selected' : ''}>Vừa</option>
                      <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
                   </select>
                </div>
@@ -1875,7 +1874,7 @@ const app = {
                 "Môn học": "Tiếng Việt",
                 "Học kỳ": "Học kỳ 2",
                 "Chủ đề": "Mái trường mến yêu",
-                "Mức độ khó": "Vừa",
+                "Mức độ khó": "Khó",
                 "Loại câu hỏi": "Kéo thả",
                 "Câu hỏi": "Con chó sủa gâu ___, con mèo kêu meo ___.",
                 "Lựa chọn": "gâu, meo, quác, chiếp",
@@ -1911,7 +1910,7 @@ const app = {
                 "Môn học": "Toán",
                 "Học kỳ": "Học kỳ 2",
                 "Chủ đề": "Phân số",
-                "Mức độ khó": "Vừa",
+                "Mức độ khó": "Dễ",
                 "Loại câu hỏi": "So sánh",
                 "Câu hỏi": "Điền dấu thích hợp: 1/2 ___ 1/3",
                 "Lựa chọn": "",
@@ -1935,7 +1934,7 @@ const app = {
                 "Môn học": "(1) Cấp lớp, Môn học, Học kỳ (Học kỳ 1 hoặc Học kỳ 2)",
                 "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "(2) Copy chính xác Chủ đề bên dưới",
-                "Mức độ khó": "(3) Dễ, Vừa, Khó",
+                "Mức độ khó": "(3) Dễ, Khó",
                 "Loại câu hỏi": "(4) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
                 "Câu hỏi": "(5) Kéo thả, So sánh, Điền khuyết, Chuỗi quy luật: Bắt buộc dùng ___ hoặc ... để làm chỗ trống.",
                 "Lựa chọn": "(6) Trắc nghiệm / Kéo thả: Các lựa chọn & đáp án nhiễu (ngăn cách bởi dấu phẩy).",
@@ -2073,7 +2072,7 @@ const app = {
                         classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
                         semester: row["Học kỳ"] || '',
                         topic: row["Chủ đề"] || 'Khác',
-                        difficulty: row["Mức độ khó"] || 'Vừa',
+                        difficulty: row["Mức độ khó"] || 'Dễ',
                         q: row["Câu hỏi"],
                         ans: String(ansStr),
                         options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(',').map(s=>s.trim()) : [],
@@ -2213,7 +2212,6 @@ const app = {
                           <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Mức độ khó</label>
                           <select id="add-e-q-diff-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;">
                              <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                             <option value="Vừa" ${q && q.difficulty === 'Vừa' ? 'selected' : ''}>Vừa</option>
                              <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
                           </select>
                        </div>
