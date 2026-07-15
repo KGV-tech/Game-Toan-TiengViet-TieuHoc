@@ -2101,7 +2101,7 @@ const app = {
                         difficulty: row["Mức độ khó"] || 'Dễ',
                         q: row["Câu hỏi"],
                         ans: String(ansStr),
-                        options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(',').map(s=>s.trim()) : [],
+                        options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(/[,;\|]/).map(s=>s.trim()).filter(Boolean) : [],
                         explanation: row["Lời giải chi tiết"] || ''
                     });
                     count++;
