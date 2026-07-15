@@ -247,12 +247,14 @@ const app = {
            return;
        }
        
-       const settingsWithId = { id: 1, data: this.settings };
-       const { error } = await supabaseClient.from('game_settings').upsert([settingsWithId], { onConflict: 'id' });
+       const settingsWithId = { data: this.settings };
+       const { error } = await supabaseClient.from('game_settings').update(settingsWithId).eq('id', 1);
        if (error) {
            console.error("Error saving settings to supabase:", error);
+           alert("Lỗi khi lưu lên Supabase: " + error.message);
            app.safeStorage.setItem('game_settings', JSON.stringify(this.settings)); // fallback
        }
+       return error;
     },
     async saveLibrary() {
        if (!window.supabase) {
@@ -1845,11 +1847,13 @@ const app = {
        btn.textContent = 'Đang lưu...';
        btn.disabled = true;
        
-       await app.data.saveSettings();
+       const error = await app.data.saveSettings();
        
        btn.textContent = oldText;
        btn.disabled = false;
-       alert('Đã lưu cài đặt thành công!');
+       if (!error) {
+           alert('Đã lưu cài đặt thành công!');
+       }
     },
     renderQuestions(box) {
         box.innerHTML = `
