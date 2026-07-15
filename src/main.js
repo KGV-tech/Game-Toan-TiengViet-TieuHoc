@@ -2895,7 +2895,7 @@ const app = {
          if (s < 5) scoreColor = '#ef4444';
          else if (s >= 5 && s < 8) scoreColor = '#facc15';
          else if (s >= 8 && s < 10) scoreColor = '#4ade80';
-         else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' ⭐'; }
+         else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' 🍭'; }
          const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
          return `<tr><td>${h.title || h.module || 'Bài tập'}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
