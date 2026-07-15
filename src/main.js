@@ -1708,6 +1708,7 @@ const app = {
           const cols = [
             { label: 'Cấp lớp', filterable: true },
             { label: 'Môn', filterable: true },
+            { label: 'Học kỳ', filterable: true },
             { label: 'Chủ đề', filterable: true },
             { label: 'Mức độ khó', filterable: true },
             { label: 'Loại câu hỏi', filterable: true },
@@ -1718,7 +1719,7 @@ const app = {
           ];
           let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
             return `<tr>
-              <td>${q.classlevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.topic}</td>
+              <td>${q.classlevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester||''}</td><td>${q.topic}</td>
               <td>${q.difficulty||'Dễ'}</td><td>${q.type||'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation||''}</td>
               <td>
@@ -1860,6 +1861,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 1",
                 "Môn học": "Toán",
+                "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "Phép cộng trừ không nhớ phạm vi 100",
                 "Mức độ khó": "Dễ",
                 "Loại câu hỏi": "Trắc nghiệm",
@@ -1871,6 +1873,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 1",
                 "Môn học": "Tiếng Việt",
+                "Học kỳ": "Học kỳ 2",
                 "Chủ đề": "Mái trường mến yêu",
                 "Mức độ khó": "Vừa",
                 "Loại câu hỏi": "Kéo thả",
@@ -1882,6 +1885,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 2",
                 "Môn học": "Toán",
+                "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "Phép nhân, phép chia",
                 "Mức độ khó": "Dễ",
                 "Loại câu hỏi": "Đúng/Sai",
@@ -1893,6 +1897,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 3",
                 "Môn học": "Tiếng Việt",
+                "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "Cộng đồng gắn bó",
                 "Mức độ khó": "Khó",
                 "Loại câu hỏi": "Điền khuyết",
@@ -1904,6 +1909,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 4",
                 "Môn học": "Toán",
+                "Học kỳ": "Học kỳ 2",
                 "Chủ đề": "Phân số",
                 "Mức độ khó": "Vừa",
                 "Loại câu hỏi": "So sánh",
@@ -1915,6 +1921,7 @@ const app = {
             {
                 "Cấp lớp": "Lớp 5",
                 "Môn học": "Toán",
+                "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "Số thập phân",
                 "Mức độ khó": "Khó",
                 "Loại câu hỏi": "Chuỗi quy luật",
