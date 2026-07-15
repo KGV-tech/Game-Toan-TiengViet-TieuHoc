@@ -1968,7 +1968,7 @@ const app = {
     renderExams(box) {
       box.innerHTML = `
         <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-           <button class="btn-primary" id="btn-e-lib" onclick="app.admin.renderESubTab('lib')">Thư viện</button>
+           <div style="display:flex; width:100%; gap: 10px;"><button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">Thư viện</button><div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div></div>
            <button class="btn-opt" id="btn-e-add" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
            <button class="btn-opt" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
            <button class="btn-opt" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
@@ -2006,6 +2006,8 @@ const app = {
             </tr>`;
           });
           subBox.innerHTML = html;
+          const ind = document.getElementById('e-count-indicator');
+          if (ind) ind.textContent = `Tổng: ${app.data.exams.length} đề`;
       }
       else if (tab === 'add') {
           let e = editIdx !== undefined ? app.data.exams[editIdx] : null;
@@ -2972,4 +2974,6 @@ window.onload = async () => {
     console.error("Error binding UI:", e);
   }
 };
+
+
 
