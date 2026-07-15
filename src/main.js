@@ -1146,7 +1146,7 @@ const app = {
       if (qType === 'Điền khuyết') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = !isTimeout && selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
+         isCorrect = selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
          const parts = (q.q || '').split(/\.\.\.|___/);
          if(parts.length > 1) {
             for(let i = 0; i < parts.length - 1; i++) {
@@ -1180,7 +1180,7 @@ const app = {
              optContainer.appendChild(corr);
          }
       } else if (qType === 'Trắc nghiệm') {
-         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
+         isCorrect = this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.ans-btn').forEach(btn => {
              const text = btn.querySelector('.ans-text').textContent;
@@ -1199,7 +1199,7 @@ const app = {
              }
          });
       } else if (qType === 'Đúng/Sai') {
-         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
+         isCorrect = this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.tf-card').forEach(btn => {
              const text = btn.querySelector('.ans-text').textContent;
@@ -1218,7 +1218,7 @@ const app = {
              }
          });
       } else if (qType === 'So sánh') {
-         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
+         isCorrect = this.state.selectedAns === q.ans;
          const slot = document.querySelector('.compare-slot');
          if (slot) {
              slot.style.position = 'relative';
@@ -1252,7 +1252,7 @@ const app = {
       } else if (qType === 'Kéo thả') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = !isTimeout && selectedArr.every((val, i) => val === ansArr[i]);
+         isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
          const slots = document.querySelectorAll('.drag-slot');
          slots.forEach((slot, i) => {
              slot.style.position = 'relative';
@@ -1290,7 +1290,7 @@ const app = {
       } else if (qType === 'Chuỗi quy luật') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = !isTimeout && selectedArr.every((val, i) => val === ansArr[i]);
+         isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
          
          const slots = document.querySelectorAll('.seq-slot');
          slots.forEach((slot, i) => {
