@@ -451,58 +451,54 @@ const app = {
   constants: {
     topics: {
       "1": {
-        math: [
-          'Các số đến 10', 'Các số đến 100', 'Làm quen với hình khối', 'Làm quen với một số hình phẳng',
-          'Phép cộng trừ không nhớ phạm vi 100', 'Phép cộng trừ phạm vi 10', 'Thời gian và lịch',
-          'Ôn tập Toán Lớp 1', 'Độ dài và Đo độ dài'
-        ],
-        vietnamese: [
-          'Mái trường mến yêu', 'Mái ấm gia đình', 'Những bài học nhỏ', 'Tôi và các bạn', 'Điều kì diệu quanh ta'
-        ]
+        math: {
+          hk1: ['1. Các số từ 0 đến 10', '2. Làm quen với một số hình phẳng', '3. Phép cộng, phép trừ trong phạm vi 10', '4. Làm quen với một số hình khối', '5. Ôn tập Học kì 1'],
+          hk2: ['6. Các số đến 100', '7. Độ dài và Đo độ dài', '8. Phép cộng, phép trừ (không nhớ) trong phạm vi 100', '9. Thời gian. Giờ và lịch', '10. Ôn tập cuối năm']
+        },
+        vietnamese: {
+          hk1: ['Lớp 1 tập trung hoàn toàn vào việc học Âm, Vần, Chữ Cái'],
+          hk2: ['1. Tôi và các bạn', '2. Mái ấm gia đình', '3. Mái trường mến yêu', '4. Điều em cần biết', '5. Bài học từ cuộc sống', '6. Thiên nhiên kỳ thú', '7. Thế giới trong mắt em', '8. Đất nước và con người']
+        }
       },
       "2": {
-        math: [
-          'Các số đến 1000', 'Cộng trừ có nhớ phạm vi 100', 'Cộng trừ có nhớ phạm vi 1000',
-          'Cộng trừ không nhớ phạm vi 1000', 'Hình phẳng, hình khối Lớp 2', 'Khối lượng, dung tích',
-          'Ngày - Tháng - Giờ - Phút', 'Phép nhân, phép chia', 'Thống kê, xác suất Lớp 2', 'Ôn tập Toán Lớp 2'
-        ],
-        vietnamese: [
-          'Em lớn lên từng ngày', 'Giao tiếp và kết nối', 'Hành tinh của chúng mình', 'Mái ấm gia đình Lớp 2',
-          'Niềm vui tuổi thơ', 'Việt Nam quê hương em', 'Vẻ đẹp quanh em', 'Đi học vui sao'
-        ]
+        math: {
+          hk1: ['1. Ôn tập và bổ sung', '2. Phép cộng, phép trừ trong phạm vi 20', '3. Làm quen với khối lượng, dung tích', '4. Phép cộng, phép trừ (có nhớ) trong phạm vi 100', '5. Làm quen với hình phẳng', '6. Ngày - Giờ, Giờ - Phút, Ngày - Tháng', '7. Ôn tập Học kì 1'],
+          hk2: ['8. Phép nhân, phép chia', '9. Làm quen với hình khối', '10. Các số trong phạm vi 1 000', '11. Độ dài và đơn vị đo độ dài, tiền Việt Nam', '12. Phép cộng, phép trừ trong phạm vi 1 000', '13. Làm quen với yếu tố thống kê, xác suất', '14. Ôn tập cuối năm']
+        },
+        vietnamese: {
+          hk1: ['1. Em lớn lên từng ngày', '2. Đi học vui sao', '3. Niềm vui tuổi thơ', '4. Mái ấm gia đình'],
+          hk2: ['5. Vẻ đẹp quanh em', '6. Hành tinh xanh của em', '7. Giao tiếp và kết nối', '8. Con người Việt Nam', '9. Việt Nam quê hương em']
+        }
       },
       "3": {
-        math: [
-          'Bảng nhân, bảng chia', 'Chu vi, diện tích hình phẳng', 'Các số đến 10 000', 'Các số đến 100 000',
-          'Cộng trừ phạm vi 10 000', 'Nhân chia phạm vi 10 000', 'Phép nhân, chia phạm vi 1000',
-          'Thống kê và Xác suất Lớp 3', 'Ôn tập Toán Lớp 3', 'Điểm, đoạn thẳng, góc', 'Đơn vị đo độ dài, khối lượng, nhiệt độ'
-        ],
-        vietnamese: [
-          'Bài học từ cuộc sống', 'Cổng trường rộng mở', 'Cộng đồng gắn bó', 'Mái ấm gia đình Lớp 3',
-          'Những sắc màu thiên nhiên', 'Những trải nghiệm thú vị', 'Trái Đất của chúng mình', 'Đất nước ngàn năm'
-        ]
+        math: {
+          hk1: ['1. Ôn tập và bổ sung', '2. Bảng nhân, bảng chia', '3. Làm quen với hình phẳng, hình khối', '4. Phép nhân, phép chia trong phạm vi 100', '5. Một số đơn vị đo độ dài, khối lượng, dung tích, nhiệt độ', '6. Phép nhân, phép chia trong phạm vi 1 000', '7. Ôn tập Học kì 1'],
+          hk2: ['8. Các số đến 10 000', '9. Chu vi, diện tích một số hình phẳng', '10. Cộng, trừ, nhân, chia trong phạm vi 10 000', '11. Các số đến 100 000', '12. Cộng, trừ trong phạm vi 100 000', '13. Xem đồng hồ. Tháng - năm. Tiền Việt Nam', '14. Nhân, chia trong phạm vi 100 000', '15. Làm quen với yếu tố Thống kê, Xác suất', '16. Ôn tập cuối năm']
+        },
+        vietnamese: {
+          hk1: ['1. Những trải nghiệm thú vị', '2. Cổng trường rộng mở', '3. Mái nhà yêu thương', '4. Cộng đồng gắn bó'],
+          hk2: ['5. Những sắc màu thiên nhiên', '6. Bài học từ cuộc sống', '7. Đất nước ngàn năm', '8. Trái Đất của chúng mình']
+        }
       },
       "4": {
-        math: [
-          'Bốn phép tính với Phân số', 'Dãy số liệu, biểu đồ cột', 'Góc và đơn vị đo góc', 'Hình bình hành, Hình thoi',
-          'Phân số', 'Phép cộng, trừ số tự nhiên', 'Phép nhân, chia số tự nhiên', 'Số có nhiều chữ số',
-          'Tìm hai số khi biết Tổng và Hiệu', 'Ôn tập Toán Lớp 4', 'Đại lượng (Yến, tạ, tấn, thế kỉ)'
-        ],
-        vietnamese: [
-          'Chắp cánh ước mơ', 'Mỗi người một vẻ', 'Niềm vui sáng tạo', 'Sống để yêu thương',
-          'Thế giới quanh ta', 'Trải nghiệm và khám phá', 'Tình yêu cuộc sống', 'Uống nước nhớ nguồn'
-        ]
+        math: {
+          hk1: ['1. Ôn tập và bổ sung', '2. Góc và đơn vị đo góc', '3. Số có nhiều chữ số', '4. Một số đơn vị đo Đại lượng', '5. Phép cộng và phép trừ', '6. Đường thẳng vuông góc. Đường thẳng song song', '7. Ôn tập Học kì 1'],
+          hk2: ['8. Phép nhân và phép chia', '9. Làm quen với yếu tố Thống kê, Xác suất', '10. Phân số', '11. Phép cộng, phép trừ Phân số', '12. Phép nhân, phép chia Phân số', '13. Ôn tập cuối năm']
+        },
+        vietnamese: {
+          hk1: ['1. Mỗi người một vẻ', '2. Trải nghiệm và khám phá', '3. Niềm vui sáng tạo', '4. Chắp cánh ước mơ'],
+          hk2: ['5. Sống để yêu thương', '6. Uống nước nhớ nguồn', '7. Quê hương trong tôi', '8. Vì một thế giới bình yên']
+        }
       },
       "5": {
-        math: [
-          'Bốn phép tính số thập phân', 'Chu vi & Diện tích hình tròn', 'Hình lập phương, Hộp CN',
-          'Hình tam giác, Hình thang', 'Số thập phân', 'Thống kê & Biểu đồ', 'Toán chuyển động đều',
-          'Tỉ số phần trăm', 'Ôn tập Toán Lớp 5', 'Ôn tập số tự nhiên và phân số', 'Đo lường & Đại lượng'
-        ],
-        vietnamese: [
-          'Hương sắc trăm miền', 'Nghệ thuật muôn màu', 'Thiên nhiên kì thú', 'Thế giới của chúng ta',
-          'Thế giới tuổi thơ', 'Tiếp bước cha ông', 'Trên con đường học tập', 'Vẻ đẹp cuộc sống'
-        ]
+        math: {
+          hk1: ['1. Ôn tập và bổ sung', '2. Số thập phân', '3. Một số đơn vị đo diện tích', '4. Các phép tính với số thập phân', '5. Một số hình phẳng. Chu vi và Diện tích', '6. Ôn tập Học kỳ 1'],
+          hk2: ['7. Tỉ số và các Bài toán liên quan', '8. Thể tích, đơn vị đo Thể tích', '9. Diện tích và Thể tích của một số hình khối', '10. Số đo Thời gian, Vận tốc. Các bài toán liên quan đến Chuyển động đều', '11. Một số yếu tố Thống kê và Xác suất', '12. Ôn tập cuối năm']
+        },
+        vietnamese: {
+          hk1: ['1. Thế giới tuổi thơ', '2. Thiên nhiên kì thú', '3. Trên con đường học tập', '4. Nghệ thuật muôn màu'],
+          hk2: ['5. Vẻ đẹp cuộc sống', '6. Hương sắc trăm miền', '7. Tiếp bước cha ông', '8. Thế giới của chúng ta']
+        }
       }
     }
   },
@@ -596,30 +592,69 @@ const app = {
       let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
       clLevel = String(clLevel).replace('Lớp ', '').trim();
       
-      const topicDict = app.constants.topics[clLevel] || { math: [], vietnamese: [] };
+      const topicDict = app.constants.topics[clLevel] || { math: {hk1:[], hk2:[]}, vietnamese: {hk1:[], hk2:[]} };
       const topics = this.state.subject === 'math' ? topicDict.math : topicDict.vietnamese;
       
       const container = document.getElementById('topics-list');
       container.innerHTML = '';
-      topics.forEach(t => {
-        const lbl = document.createElement('label');
-        lbl.className = 'topic-card';
-        const inp = document.createElement('input');
-        inp.type = this.state.topicMode === 'single' ? 'radio' : 'checkbox';
-        inp.name = 'topic-selection';
-        inp.value = t;
-        inp.onchange = (e) => {
-          if (this.state.topicMode === 'single') {
-            this.state.selectedTopics = [t];
-          } else {
-            if (e.target.checked) this.state.selectedTopics.push(t);
-            else this.state.selectedTopics = this.state.selectedTopics.filter(x => x !== t);
-          }
-        };
-        lbl.appendChild(inp);
-        lbl.appendChild(document.createTextNode(t));
-        container.appendChild(lbl);
-      });
+      
+      const wrapper = document.createElement('div');
+      wrapper.style.display = 'flex';
+      wrapper.style.gap = '20px';
+      wrapper.style.width = '100%';
+      wrapper.style.alignItems = 'flex-start';
+      
+      const createColumn = (title, topicList) => {
+          const col = document.createElement('div');
+          col.style.flex = '1';
+          col.style.display = 'flex';
+          col.style.flexDirection = 'column';
+          col.style.gap = '10px';
+          col.style.background = 'rgba(0,0,0,0.2)';
+          col.style.padding = '15px';
+          col.style.borderRadius = '10px';
+          
+          const header = document.createElement('h4');
+          header.textContent = title;
+          header.style.textAlign = 'center';
+          header.style.color = '#fbbf24';
+          header.style.margin = '0 0 10px 0';
+          header.style.borderBottom = '1px dashed rgba(255,255,255,0.3)';
+          header.style.paddingBottom = '10px';
+          col.appendChild(header);
+          
+          const grid = document.createElement('div');
+          grid.style.display = 'flex';
+          grid.style.flexDirection = 'column';
+          grid.style.gap = '8px';
+          
+          topicList.forEach(t => {
+            const lbl = document.createElement('label');
+            lbl.className = 'topic-card';
+            const inp = document.createElement('input');
+            inp.type = this.state.topicMode === 'single' ? 'radio' : 'checkbox';
+            inp.name = 'topic-selection';
+            inp.value = t;
+            inp.onchange = (e) => {
+              if (this.state.topicMode === 'single') {
+                this.state.selectedTopics = [t];
+              } else {
+                if (e.target.checked) this.state.selectedTopics.push(t);
+                else this.state.selectedTopics = this.state.selectedTopics.filter(x => x !== t);
+              }
+            };
+            lbl.appendChild(inp);
+            lbl.appendChild(document.createTextNode(' ' + t));
+            grid.appendChild(lbl);
+          });
+          
+          col.appendChild(grid);
+          return col;
+      };
+      
+      wrapper.appendChild(createColumn('Học kỳ 1', topics.hk1 || []));
+      wrapper.appendChild(createColumn('Học kỳ 2', topics.hk2 || []));
+      container.appendChild(wrapper);
     },
     setDifficulty(val, btn) {
       this.state.difficulty = val;
@@ -1603,8 +1638,9 @@ const app = {
        const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
        
        const topicEl = document.getElementById('add-q-topic');
-       const topicDict = app.constants.topics[clsNum] || { math: [], vietnamese: [] };
-       const topics = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : []);
+       const topicDict = app.constants.topics[clsNum] || { math: {hk1:[], hk2:[]}, vietnamese: {hk1:[], hk2:[]} };
+       const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : {hk1:[], hk2:[]});
+       const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
        
        const selected = topicEl.getAttribute('data-selected');
        topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
@@ -1616,8 +1652,9 @@ const app = {
        const sub = subEl.value;
        const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
        
-       const topicDict = app.constants.topics[clsNum] || { math: [], vietnamese: [] };
-       const topics = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : []);
+       const topicDict = app.constants.topics[clsNum] || { math: {hk1:[], hk2:[]}, vietnamese: {hk1:[], hk2:[]} };
+       const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : {hk1:[], hk2:[]});
+       const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
        
        let i = 0;
        while (true) {
@@ -1729,6 +1766,14 @@ const app = {
                   <select id="add-q-sub" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateTopicDropdown()">
                      <option value="Toán" ${q && q.subject === 'Toán' ? 'selected' : (!q ? 'selected' : '')}>Toán</option>
                      <option value="Tiếng Việt" ${q && q.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
+                  </select>
+               </div>
+
+               <div style="display:flex; align-items:center; margin-bottom:10px;">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Học kỳ</label>
+                  <select id="add-q-sem" class="form-input" style="flex:1; padding:8px;">
+                     <option value="Học kỳ 1" ${q && q.semester === 'Học kỳ 1' ? 'selected' : (!q ? 'selected' : '')}>Học kỳ 1</option>
+                     <option value="Học kỳ 2" ${q && q.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option>
                   </select>
                </div>
 
@@ -1892,7 +1937,8 @@ const app = {
             },
             {
                 "Cấp lớp": "=> HƯỚNG DẪN CÁCH NHẬP:",
-                "Môn học": "(1) Cấp lớp, Môn học",
+                "Môn học": "(1) Cấp lớp, Môn học, Học kỳ (Học kỳ 1 hoặc Học kỳ 2)",
+                "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "(2) Copy chính xác Chủ đề bên dưới",
                 "Mức độ khó": "(3) Dễ, Vừa, Khó",
                 "Loại câu hỏi": "(4) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
@@ -1906,12 +1952,15 @@ const app = {
         for (let i = 1; i <= 5; i++) {
             const t = app.constants.topics[String(i)];
             if (t) {
+                const mathTopics = [...(t.math.hk1 || []), ...(t.math.hk2 || [])].join(", ");
+                const vietTopics = [...(t.vietnamese.hk1 || []), ...(t.vietnamese.hk2 || [])].join(", ");
                 data.push({
                     "Cấp lớp": "=> COPY CHỦ ĐỀ LỚP " + i + ":",
                     "Môn học": "Môn Toán Lớp " + i + ":",
-                    "Chủ đề": t.math.join(", "),
+                    "Học kỳ": "",
+                    "Chủ đề": mathTopics,
                     "Mức độ khó": "Môn Tiếng Việt Lớp " + i + ":",
-                    "Loại câu hỏi": t.vietnamese.join(", "),
+                    "Loại câu hỏi": vietTopics,
                     "Câu hỏi": "",
                     "Lựa chọn": "",
                     "Đáp án đúng": "",
@@ -1926,6 +1975,7 @@ const app = {
         const data = app.data.libraryQuestions.map(q => ({
             "Cấp lớp": q.classlevel,
             "Môn học": q.subject,
+            "Học kỳ": q.semester || '',
             "Chủ đề": q.topic,
             "Mức độ khó": q.difficulty,
             "Loại câu hỏi": q.type,
@@ -1961,6 +2011,7 @@ const app = {
             difficulty: document.getElementById('add-q-diff').value,
             subject: document.getElementById('add-q-sub').value,
             classlevel: document.getElementById('add-q-class').value,
+            semester: document.getElementById('add-q-sem').value,
             topic: document.getElementById('add-q-topic').value,
             q: document.getElementById('add-q-q').value,
             ans: document.getElementById('add-q-ans').value,
@@ -2025,6 +2076,7 @@ const app = {
                         type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
                         subject: row["Môn học"] || row["Môn"] || 'Toán',
                         classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
+                        semester: row["Học kỳ"] || '',
                         topic: row["Chủ đề"] || 'Khác',
                         difficulty: row["Mức độ khó"] || 'Vừa',
                         q: row["Câu hỏi"],
