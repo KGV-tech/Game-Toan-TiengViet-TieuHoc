@@ -53,7 +53,7 @@ const app = {
     exams: [],
     currentUser: null,
     async fetchAllFromSupabase(table) {
-      if (!window.supabaseClient) return [];
+      if (!window.supabase) return [];
       let allData = [];
       let from = 0;
       const step = 1000;
