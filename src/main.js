@@ -163,24 +163,68 @@ const app = {
        }
     },
     async saveLibrary() {
+       if (!window.supabase) {
+           localStorage.setItem('game_libraryQuestions', JSON.stringify(this.libraryQuestions));
+           return;
+       }
+       
+       const toUpdate = [];
+       const toInsert = [];
+       
        for (const q of this.libraryQuestions) {
-           // We might not have unique constraints other than id. If we don't have id, we shouldn't insert all every time.
-           // Let's assume if it doesn't have an ID, we insert it.
-           if (q.id) {
-               await supabaseClient.from('game_questions').update(q).eq('id', q.id);
-           } else {
-               const { data } = await supabaseClient.from('game_questions').insert([q]).select();
-               if (data && data[0]) q.id = data[0].id;
+           if (q.id) toUpdate.push(q);
+           else {
+               const { id, ...rest } = q;
+               toInsert.push(rest);
+           }
+       }
+       
+       if (toUpdate.length > 0) {
+           const batchSize = 500;
+           for (let i = 0; i < toUpdate.length; i += batchSize) {
+               await supabaseClient.from('game_questions').upsert(toUpdate.slice(i, i + batchSize));
+           }
+       }
+       
+       if (toInsert.length > 0) {
+           const batchSize = 500;
+           for (let i = 0; i < toInsert.length; i += batchSize) {
+               const originalBatch = this.libraryQuestions.filter(q => !q.id).slice(i, i + batchSize);
+               const batch = originalBatch.map(q => { const { id, ...rest } = q; return rest; });
+               
+               const { data, error } = await supabaseClient.from('game_questions').insert(batch).select();
+               if (!error && data && data.length === originalBatch.length) {
+                   for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
+               }
            }
        }
     },
     async saveExams() {
+       if (!window.supabase) {
+           localStorage.setItem('game_exams', JSON.stringify(this.exams));
+           return;
+       }
+       
+       const toUpdate = [];
+       const toInsert = [];
+       
        for (const e of this.exams) {
-           if (e.id) {
-               await supabaseClient.from('game_exams').update(e).eq('id', e.id);
-           } else {
-               const { data } = await supabaseClient.from('game_exams').insert([e]).select();
-               if (data && data[0]) e.id = data[0].id;
+           if (e.id) toUpdate.push(e);
+           else {
+               const { id, ...rest } = e;
+               toInsert.push(rest);
+           }
+       }
+       
+       if (toUpdate.length > 0) {
+           await supabaseClient.from('game_exams').upsert(toUpdate);
+       }
+       
+       if (toInsert.length > 0) {
+           const originalBatch = this.exams.filter(e => !e.id);
+           const { data, error } = await supabaseClient.from('game_exams').insert(toInsert).select();
+           if (!error && data && data.length === originalBatch.length) {
+               for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
            }
        }
     },
@@ -1863,13 +1907,19 @@ const app = {
             }
         }
 
-        app.ui.importFromExcel(fileInput.files[0], (data) => {
+        const btn = document.querySelector('button[onclick="app.admin.submitImportQuestions()"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý và tải lên... Vui lòng chờ';
+        }
+
+        app.ui.importFromExcel(fileInput.files[0], async (data) => {
             if (mode === 'overwrite') {
                 app.data.libraryQuestions = [];
             }
             let count = 0;
             data.forEach(row => {
-                const ansStr = row["Đáp án đúng"];
+                const ansStr = row["Đáp án đúng"] || row["Đáp án"];
                 if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
                     app.data.libraryQuestions.push({
                         type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
@@ -1878,15 +1928,19 @@ const app = {
                         topic: row["Chủ đề"] || 'Khác',
                         difficulty: row["Mức độ khó"] || 'Vừa',
                         q: row["Câu hỏi"],
-                        ans: String(row["Đáp án đúng"]),
+                        ans: String(ansStr),
                         options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(',').map(s=>s.trim()) : [],
                         explanation: row["Lời giải chi tiết"] || ''
                     });
                     count++;
                 }
             });
-            app.data.saveLibrary();
+            await app.data.saveLibrary();
             alert(`Đã nhập thành công ${count} câu hỏi!`);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Tải lên';
+            }
             this.renderQSubTab('lib');
         });
     },
