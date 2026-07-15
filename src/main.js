@@ -175,9 +175,7 @@ const app = {
            if (q.id) toUpdate.push(q);
            else {
                const { id, ...rest } = q;
-               toInsert.push(rest);
-           }
-       }
+       const toUpdate = this.libraryQuestions.filter(q => q.id);
        
        if (toUpdate.length > 0) {
            const batchSize = 500;
@@ -186,10 +184,11 @@ const app = {
            }
        }
        
-       if (toInsert.length > 0) {
+       const uninserted = this.libraryQuestions.filter(q => !q.id);
+       if (uninserted.length > 0) {
            const batchSize = 500;
-           for (let i = 0; i < toInsert.length; i += batchSize) {
-               const originalBatch = this.libraryQuestions.filter(q => !q.id).slice(i, i + batchSize);
+           for (let i = 0; i < uninserted.length; i += batchSize) {
+               const originalBatch = uninserted.slice(i, i + batchSize);
                const batch = originalBatch.map(q => { const { id, ...rest } = q; return rest; });
                
                const { data, error } = await supabaseClient.from('game_questions').insert(batch).select();
@@ -1430,29 +1429,49 @@ const app = {
       return html;
     },
     filterTable(inputEl) {
-      const table = inputEl.closest('table');
-      const tbody = table.querySelector('tbody');
-      const rows = tbody.querySelectorAll('tr');
-      // Calculate all filters
-      const filterInputs = table.querySelectorAll('.filter-input');
-      const filters = [];
-      filterInputs.forEach(inp => {
-          if (inp.value.trim() !== '') {
-              filters.push({ col: parseInt(inp.getAttribute('data-col')), term: inp.value.toLowerCase() });
-          }
-      });
-      
-      rows.forEach(tr => {
-         let match = true;
-         filters.forEach(f => {
-             const td = tr.cells[f.col];
-             if (td) {
-                 const txt = td.textContent || td.innerText;
-                 if (txt.toLowerCase().indexOf(f.term) === -1) match = false;
-             }
-         });
-         tr.style.display = match ? '' : 'none';
-      });
+        const table = inputEl.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        // Calculate all filters
+        const filterInputs = table.querySelectorAll('.filter-input');
+        const filters = [];
+        filterInputs.forEach(inp => {
+            if (inp.value.trim() !== '') {
+                filters.push({ col: parseInt(inp.getAttribute('data-col')), val: inp.value.trim().toLowerCase() });
+            }
+        });
+        
+        let visibleCount = 0;
+        rows.forEach(r => {
+            let match = true;
+            for (let f of filters) {
+                const cell = r.children[f.col];
+                if (!cell || !cell.textContent.toLowerCase().includes(f.val)) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+               r.style.display = '';
+               visibleCount++;
+            } else {
+               r.style.display = 'none';
+            }
+        });
+
+        if (table.closest('#admin-q-subarea')) {
+            const ind = document.getElementById('q-count-indicator');
+            if (ind) {
+                if (filters.length === 0) ind.textContent = `Tổng: ${rows.length} câu`;
+                else ind.textContent = `Lọc: ${visibleCount}/${rows.length} câu`;
+            }
+        } else if (table.closest('#admin-e-subarea')) {
+            const ind = document.getElementById('e-count-indicator');
+            if (ind) {
+                if (filters.length === 0) ind.textContent = `Tổng: ${rows.length} đề`;
+                else ind.textContent = `Lọc: ${visibleCount}/${rows.length} đề`;
+            }
+        }
     },
     showHistoryDetails(btn) {
       const recordStr = decodeURIComponent(btn.getAttribute('data-record'));
@@ -1566,18 +1585,21 @@ const app = {
       else if (tab === 'players') this.renderPlayers(box);
     },
     renderQuestions(box) {
-      box.innerHTML = `
-        <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-           <button class="btn-primary" id="btn-q-lib" onclick="app.admin.renderQSubTab('lib')">Thư viện</button>
-           <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
-           <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-q-exp" onclick="app.admin.renderQSubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-q-imp" onclick="app.admin.renderQSubTab('imp')">Nhập từ file (*.xlsx)</button>
-        </div>
-        <div id="admin-q-subarea"></div>
-      `;
-      this.renderQSubTab('lib');
-    },
+        box.innerHTML = `
+          <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
+             <div style="display:flex; width:220px; gap: 5px;">
+                 <button class="btn-primary" id="btn-q-lib" style="flex:1;" onclick="app.admin.renderQSubTab('lib')">Thư viện</button>
+                 <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 0.9rem;"></div>
+             </div>
+             <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
+             <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
+             <button class="btn-opt" id="btn-q-exp" onclick="app.admin.renderQSubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
+             <button class="btn-opt" id="btn-q-imp" onclick="app.admin.renderQSubTab('imp')">Nhập từ file (*.xlsx)</button>
+          </div>
+          <div id="admin-q-subarea"></div>
+        `;
+        this.renderQSubTab('lib');
+      },
     renderQSubTab(tab, editIdx) {
       ['lib','add','tpl','exp','imp'].forEach(t => {
          const el = document.getElementById('btn-q-'+t);
@@ -1610,6 +1632,8 @@ const app = {
             </tr>`;
           });
           subBox.innerHTML = html;
+          const ind = document.getElementById('q-count-indicator');
+          if (ind) ind.textContent = `Tổng: ${app.data.libraryQuestions.length} câu`;
       } 
       else if (tab === 'add') {
           let q = editIdx !== undefined ? app.data.libraryQuestions[editIdx] : null;
