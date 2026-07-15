@@ -129,7 +129,7 @@ const app = {
         // 4. Fetch Settings
         const settingsData = await this.fetchAllFromSupabase('game_settings');
         if (settingsData && settingsData.length > 0) {
-            this.settings = settingsData[0];
+            this.settings = settingsData[0].data || settingsData[0];
         } else {
             // Check localStorage fallback
             const localSettings = app.safeStorage.getItem('game_settings');
@@ -198,6 +198,23 @@ const app = {
                   }
               }
           })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_settings' }, async (payload) => {
+              console.log('Realtime DB Change received (Settings)!', payload);
+              if (payload.new && payload.new.data) {
+                  this.settings = payload.new.data;
+                  app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+                  // Auto-refresh settings UI if admin is viewing it
+                  if (app.admin && document.getElementById('treasure-modal').classList.contains('active')) {
+                      const activeTab = document.querySelector('.tab-btn.active');
+                      if (activeTab && activeTab.textContent.includes('Điều chỉnh')) {
+                          const timeHard = document.getElementById('setting-hard-time');
+                          const timeExam = document.getElementById('setting-exam-time');
+                          if (timeHard) timeHard.value = this.settings.hardTimeLimit || 10;
+                          if (timeExam) timeExam.value = this.settings.examTimeLimit || 30;
+                      }
+                  }
+              }
+          })
           .subscribe();
           
       } catch (err) {
@@ -230,7 +247,7 @@ const app = {
            return;
        }
        
-       const settingsWithId = { id: 1, hardTimeLimit: this.settings.hardTimeLimit, examTimeLimit: this.settings.examTimeLimit };
+       const settingsWithId = { id: 1, data: this.settings };
        const { error } = await supabaseClient.from('game_settings').upsert([settingsWithId]);
        if (error) {
            console.error("Error saving settings to supabase:", error);
