@@ -1584,9 +1584,9 @@ const app = {
     renderQuestions(box) {
         box.innerHTML = `
           <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-             <div style="display:flex; width:220px; gap: 5px;">
-                 <button class="btn-primary" id="btn-q-lib" style="flex:1;" onclick="app.admin.renderQSubTab('lib')">Thư viện</button>
-                 <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 0.9rem;"></div>
+             <div style="display:flex; width:100%; gap: 10px;">
+                 <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')" >Thư viện</button>
+                 <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
              </div>
              <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
              <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
