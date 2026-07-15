@@ -1260,7 +1260,8 @@ const app = {
         msg = 'Cố gắng thêm nữa bạn nhé';
       }
       
-      this.recordHistory(this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt', finalScore, giveLollipop);
+      let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
+      this.recordHistory(title, finalScore, giveLollipop);
       
       document.getElementById('result-score').textContent = finalScore;
       document.getElementById('result-msg').textContent = msg;
@@ -1284,10 +1285,10 @@ const app = {
       document.getElementById('result-modal').classList.add('active');
     },
     async recordHistory(title, score, lollipop) {
-      if (!app.data.currentUser) return;
+      if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
       if (!Array.isArray(app.data.currentUser.history)) app.data.currentUser.history = []; app.data.currentUser.history.push({
-        date: new Date().toISOString().split('T')[0],
-        module: title,
+        date: new Date().toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'}),
+        title: title,
         score: score,
         details: this.state.historyDetails
       });
@@ -1429,6 +1430,7 @@ const app = {
       app.game.state.historyDetails = this.state.historyDetails;
       app.game.state.questions = this.state.questions;
       app.game.state.subject = this.filters.subject;
+      app.game.state.examName = this.state.name;
       
       app.game.finishPlay();
     }
@@ -2783,7 +2785,6 @@ const app = {
              allHist.push({ ...h, studentName: u.fullname, username: u.username, classlevel: u.classlevel || '' });
          });
       });
-      // Sort by latest
       allHist.sort((a,b) => new Date(b.date) - new Date(a.date));
       
       let classFilteredUsers = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true);
@@ -2887,7 +2888,16 @@ const app = {
       myHist.sort((a,b) => new Date(b.date) - new Date(a.date));
       box.innerHTML = app.ui.renderTable(cols, myHist, (h, i) => {
          const encoded = encodeURIComponent(JSON.stringify(h));
-         return `<tr><td>${h.title}</td><td>${h.score}</td><td>${h.date}</td>
+         const s = parseFloat(h.score || 0);
+         let scoreColor = '#fff';
+         let scoreStyle = '';
+         let star = '';
+         if (s < 5) scoreColor = '#ef4444';
+         else if (s >= 5 && s < 8) scoreColor = '#facc15';
+         else if (s >= 8 && s < 10) scoreColor = '#4ade80';
+         else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' ⭐'; }
+         const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
+         return `<tr><td>${h.title || h.module || 'Bài tập'}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
       }, "Chưa có dữ liệu lịch sử");
     },
