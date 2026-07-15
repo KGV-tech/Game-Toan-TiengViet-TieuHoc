@@ -169,13 +169,10 @@ const app = {
        }
        
        const toUpdate = [];
-       const toInsert = [];
        
        for (const q of this.libraryQuestions) {
            if (q.id) toUpdate.push(q);
-           else {
-               const { id, ...rest } = q;
-       const toUpdate = this.libraryQuestions.filter(q => q.id);
+       }
        
        if (toUpdate.length > 0) {
            const batchSize = 500;
