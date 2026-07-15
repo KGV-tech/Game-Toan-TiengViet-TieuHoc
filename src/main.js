@@ -52,17 +52,31 @@ const app = {
     libraryQuestions: [],
     exams: [],
     currentUser: null,
+    async fetchAllFromSupabase(table) {
+      if (!window.supabaseClient) return [];
+      let allData = [];
+      let from = 0;
+      const step = 1000;
+      while (true) {
+          const { data, error } = await supabaseClient.from(table).select('*').range(from, from + step - 1);
+          if (error) {
+              console.error(`Error fetching ${table}:`, error);
+              break;
+          }
+          if (!data || data.length === 0) break;
+          allData = allData.concat(data);
+          if (data.length < step) break;
+          from += step;
+      }
+      return allData;
+    },
     
     async init() {
       try {
         // 1. Fetch Users
-        const { data: usersData, error: usersErr } = await supabaseClient.from('game_users').select('*');
-        if (usersErr) {
-          console.error('Error fetching users:', usersErr);
-          this.users = [];
-        } else {
-          this.users = usersData || []; this.users.forEach(u => { if (!Array.isArray(u.history)) u.history = []; });
-        }
+        const usersData = await this.fetchAllFromSupabase('game_users');
+        this.users = usersData || []; 
+        this.users.forEach(u => { if (!Array.isArray(u.history)) u.history = []; });
         
         // Ensure Admin exists
         if (!this.users.find(u => u.username === 'admin')) {
@@ -72,22 +86,10 @@ const app = {
         }
         
         // 2. Fetch Questions
-        const { data: qData, error: qErr } = await supabaseClient.from('game_questions').select('*');
-        if (qErr) {
-          console.error('Error fetching questions:', qErr);
-          this.libraryQuestions = [];
-        } else {
-          this.libraryQuestions = qData || [];
-        }
+        this.libraryQuestions = await this.fetchAllFromSupabase('game_questions');
         
         // 3. Fetch Exams
-        const { data: eData, error: eErr } = await supabaseClient.from('game_exams').select('*');
-        if (eErr) {
-          console.error('Error fetching exams:', eErr);
-          this.exams = [];
-        } else {
-          this.exams = eData || [];
-        }
+        this.exams = await this.fetchAllFromSupabase('game_exams');
         
         // Realtime subscription
         supabaseClient.channel('custom-all-channel')
@@ -288,12 +290,10 @@ const app = {
       
       try {
           // Pull fresh data from DB on login just to be sure we have the latest approved status
-          const { data: freshUsers, error: fetchErr } = await supabaseClient.from('game_users').select('*');
-          if (fetchErr) {
-              console.error("Login fetch error:", fetchErr);
-          }
+          const freshUsers = await app.data.fetchAllFromSupabase('game_users');
           if (freshUsers) {
-              freshUsers.forEach(u => { if (!Array.isArray(u.history)) u.history = []; }); app.data.users = freshUsers;
+              freshUsers.forEach(u => { if (!Array.isArray(u.history)) u.history = []; }); 
+              app.data.users = freshUsers;
           }
       } catch (err) {
           console.error("Supabase failed during login:", err);
