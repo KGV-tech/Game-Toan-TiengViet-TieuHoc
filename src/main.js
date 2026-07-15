@@ -864,6 +864,7 @@ const app = {
                   }
               };
               
+              slot.ondragenter = (e) => { e.preventDefault(); };
               slot.ondragover = (e) => { e.preventDefault(); slot.classList.add('drag-over'); };
               slot.ondragleave = () => slot.classList.remove('drag-over');
               slot.ondrop = (e) => {
