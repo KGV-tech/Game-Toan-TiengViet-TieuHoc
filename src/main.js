@@ -1938,7 +1938,8 @@ const app = {
             if (mode === 'overwrite') {
                 app.data.libraryQuestions = [];
                 if (window.supabase) {
-                    await supabaseClient.from('game_questions').delete().neq('id', 0);
+                    const { error } = await supabaseClient.from('game_questions').delete().not('id', 'is', null);
+                    if (error) console.error('Delete questions error:', error);
                 }
             }
             let count = 0;
@@ -2357,7 +2358,8 @@ const app = {
             if (mode === 'overwrite') {
                 app.data.exams = [];
                 if (window.supabase) {
-                    await supabaseClient.from('game_exams').delete().neq('id', 0);
+                    const { error } = await supabaseClient.from('game_exams').delete().not('id', 'is', null);
+                    if (error) console.error('Delete exams error:', error);
                 }
             }
             let count = 0;
