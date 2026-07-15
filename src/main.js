@@ -136,6 +136,11 @@ const app = {
               } else if (payload.eventType === 'DELETE') {
                   this.users = this.users.filter(u => u.id !== payload.old.id);
               }
+              
+              if (this.currentUser && this.currentUser.role?.toLowerCase() === 'admin') {
+                  app.auth.updateHeader();
+              }
+              
               // Auto-refresh admin panel if open
               if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
                   if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
@@ -425,6 +430,21 @@ const app = {
         ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
       `;
       document.getElementById('player-info').innerHTML = html;
+      
+      const adminNotif = document.getElementById('admin-notification');
+      if (adminNotif) {
+          if (app.data.currentUser.role?.toLowerCase() === 'admin') {
+              const pendingUsers = app.data.users ? app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === false).length : 0;
+              if (pendingUsers > 0) {
+                  adminNotif.textContent = `Tin nhắn: có ${pendingUsers} hồ sơ mới cần duyệt`;
+                  adminNotif.style.display = 'block';
+              } else {
+                  adminNotif.style.display = 'none';
+              }
+          } else {
+              adminNotif.style.display = 'none';
+          }
+      }
     }
   },
 
