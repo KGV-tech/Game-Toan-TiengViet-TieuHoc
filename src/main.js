@@ -1287,9 +1287,10 @@ const app = {
     async recordHistory(title, score, lollipop) {
       if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
       
-      let diffMap = { 'easy': 'Dễ', 'medium': 'Vừa', 'hard': 'Khó', 'shuffle': 'Trộn lẫn' };
+      let diffMap = { 'easy': 'Dễ', 'medium': 'Vừa', 'hard': 'Khó', 'shuffle': 'Trộn' };
       let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Vừa');
       let top = this.state.examName ? 'Tổng hợp' : ((this.state.selectedTopics && this.state.selectedTopics.length) ? this.state.selectedTopics.join(', ') : 'Tất cả');
+      let qCount = this.state.questions ? this.state.questions.length : (this.state.historyDetails ? this.state.historyDetails.length : 10);
       
       let d = new Date();
       let dStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ' ' + d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth()+1).toString().padStart(2, '0') + '/' + d.getFullYear();
@@ -1299,6 +1300,7 @@ const app = {
         title: title,
         topic: top,
         difficulty: diff,
+        questionCount: qCount,
         score: score,
         details: this.state.historyDetails
       });
@@ -2787,6 +2789,7 @@ const app = {
          { label: 'Bài làm', filterable: false },
          { label: 'Chủ đề', filterable: false },
          { label: 'Độ khó', filterable: false },
+         { label: 'Số câu', filterable: false },
          { label: 'Điểm', filterable: false },
          { label: 'Ngày', filterable: false },
          { label: 'Chi tiết', filterable: false }
@@ -2871,7 +2874,7 @@ const app = {
          const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
          const clsDisplay = h.classlevel ? (String(h.classlevel).includes('Lớp') ? h.classlevel : 'Lớp ' + h.classlevel) : '';
          
-         return `<tr><td>${clsDisplay}</td><td>${h.studentName}</td><td>${h.title || h.module || 'Bài tập'}</td><td>${h.topic || '---'}</td><td>${h.difficulty || '---'}</td><td>${scoreHtml}</td><td>${h.date}</td>
+         return `<tr><td>${clsDisplay}</td><td>${h.studentName}</td><td>${h.title || h.module || 'Bài tập'}</td><td>${h.topic || '---'}</td><td>${h.difficulty || '---'}</td><td>${h.questionCount || h.details?.length || 10}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
       });
       
@@ -2894,6 +2897,7 @@ const app = {
          { label: 'Bài làm', filterable: true },
          { label: 'Chủ đề', filterable: true },
          { label: 'Độ khó', filterable: true },
+         { label: 'Số câu', filterable: false },
          { label: 'Điểm', filterable: false },
          { label: 'Ngày', filterable: true },
          { label: 'Chi tiết', filterable: false }
@@ -2911,7 +2915,7 @@ const app = {
          else if (s >= 8 && s < 10) scoreColor = '#4ade80';
          else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' 🍭'; }
          const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
-         return `<tr><td>${h.title || h.module || 'Bài tập'}</td><td>${h.topic || '---'}</td><td>${h.difficulty || '---'}</td><td>${scoreHtml}</td><td>${h.date}</td>
+         return `<tr><td>${h.title || h.module || 'Bài tập'}</td><td>${h.topic || '---'}</td><td>${h.difficulty || '---'}</td><td>${h.questionCount || h.details?.length || 10}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
       }, "Chưa có dữ liệu lịch sử");
     },
