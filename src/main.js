@@ -597,36 +597,25 @@ const app = {
       
       const container = document.getElementById('topics-list');
       container.innerHTML = '';
-      
-      const wrapper = document.createElement('div');
-      wrapper.style.display = 'flex';
-      wrapper.style.gap = '20px';
-      wrapper.style.width = '100%';
-      wrapper.style.alignItems = 'flex-start';
+      container.style.display = 'flex';
+      container.style.gap = '20px';
+      container.style.alignItems = 'flex-start';
+      container.style.width = '100%';
       
       const createColumn = (title, topicList) => {
           const col = document.createElement('div');
           col.style.flex = '1';
-          col.style.display = 'flex';
-          col.style.flexDirection = 'column';
-          col.style.gap = '10px';
-          col.style.background = 'rgba(0,0,0,0.2)';
-          col.style.padding = '15px';
-          col.style.borderRadius = '10px';
           
-          const header = document.createElement('h4');
+          const header = document.createElement('h3');
           header.textContent = title;
           header.style.textAlign = 'center';
-          header.style.color = '#fbbf24';
-          header.style.margin = '0 0 10px 0';
-          header.style.borderBottom = '1px dashed rgba(255,255,255,0.3)';
-          header.style.paddingBottom = '10px';
+          header.style.color = '#fff';
+          header.style.marginBottom = '15px';
           col.appendChild(header);
           
           const grid = document.createElement('div');
-          grid.style.display = 'flex';
-          grid.style.flexDirection = 'column';
-          grid.style.gap = '8px';
+          grid.className = 'topics-grid';
+          grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
           
           topicList.forEach(t => {
             const lbl = document.createElement('label');
@@ -652,9 +641,8 @@ const app = {
           return col;
       };
       
-      wrapper.appendChild(createColumn('Học kỳ 1', topics.hk1 || []));
-      wrapper.appendChild(createColumn('Học kỳ 2', topics.hk2 || []));
-      container.appendChild(wrapper);
+      container.appendChild(createColumn('Học kỳ 1', topics.hk1 || []));
+      container.appendChild(createColumn('Học kỳ 2', topics.hk2 || []));
     },
     setDifficulty(val, btn) {
       this.state.difficulty = val;
