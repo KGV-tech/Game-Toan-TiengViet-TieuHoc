@@ -2463,8 +2463,11 @@ const app = {
         let user = app.data.users.find(u => u.username === username);
         if (user) {
             user.approved = true;
+            user.history = [];
+            user.totalscore = 0;
+            user.lollipops = 0;
             if (user.id) {
-                await supabaseClient.from('game_users').update({ approved: true }).eq('id', user.id);
+                await supabaseClient.from('game_users').update({ approved: true, history: [], totalscore: 0, lollipops: 0 }).eq('id', user.id);
             } else {
                 await app.data.saveUsers();
             }
@@ -2660,7 +2663,7 @@ const app = {
          { label: 'Điểm', filterable: false },
          { label: 'Kẹo', filterable: false }
       ];
-      let students = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
+      let students = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true);
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
@@ -2734,7 +2737,7 @@ const app = {
          { label: 'Chi tiết', filterable: false }
       ];
       let allHist = [];
-      app.data.users.filter(u => u.role?.toLowerCase() !== 'admin').forEach(u => {
+      app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true).forEach(u => {
          (u.history || []).forEach(h => {
              allHist.push({ ...h, studentName: u.fullname, username: u.username, classlevel: u.classlevel || '' });
          });
@@ -2742,7 +2745,7 @@ const app = {
       // Sort by latest
       allHist.sort((a,b) => new Date(b.date) - new Date(a.date));
       
-      let classFilteredUsers = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
+      let classFilteredUsers = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true);
       
       if (classFilter !== 'Tất cả') {
           const cls = classFilter.replace('Lớp ', '');
