@@ -1585,7 +1585,7 @@ const app = {
         box.innerHTML = `
           <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
              <div style="display:flex; width:100%; gap: 10px;">
-                 <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')" >Thư viện</button>
+                 <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')">Thư viện</button>
                  <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
              </div>
              <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
@@ -1937,6 +1937,9 @@ const app = {
         app.ui.importFromExcel(fileInput.files[0], async (data) => {
             if (mode === 'overwrite') {
                 app.data.libraryQuestions = [];
+                if (window.supabase) {
+                    await supabaseClient.from('game_questions').delete().neq('id', 0);
+                }
             }
             let count = 0;
             data.forEach(row => {
@@ -1968,7 +1971,10 @@ const app = {
     renderExams(box) {
       box.innerHTML = `
         <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-           <div style="display:flex; width:100%; gap: 10px;"><button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">Thư viện</button><div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div></div>
+           <div style="display:flex; width:100%; gap: 10px;">
+               <button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">Thư viện</button>
+               <div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
+           </div>
            <button class="btn-opt" id="btn-e-add" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
            <button class="btn-opt" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
            <button class="btn-opt" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
@@ -2347,9 +2353,12 @@ const app = {
             }
         }
 
-        app.ui.importFromExcel(fileInput.files[0], (data) => {
+        app.ui.importFromExcel(fileInput.files[0], async (data) => {
             if (mode === 'overwrite') {
                 app.data.exams = [];
+                if (window.supabase) {
+                    await supabaseClient.from('game_exams').delete().neq('id', 0);
+                }
             }
             let count = 0;
             data.forEach(row => {
@@ -2529,8 +2538,16 @@ const app = {
     editQuestion(idx) {
         this.renderQSubTab('add', idx);
     },
-    deleteQuestion(idx) {
-      if(confirm('Xóa câu hỏi này?')) { app.data.libraryQuestions.splice(idx, 1); app.data.saveLibrary(); this.renderQSubTab('lib'); }
+    async deleteQuestion(idx) {
+      if(confirm('Xác nhận xóa câu hỏi này?')) {
+          const q = app.data.libraryQuestions[idx];
+          app.data.libraryQuestions.splice(idx, 1);
+          if (q && q.id && window.supabase) {
+              await supabaseClient.from('game_questions').delete().eq('id', q.id);
+          }
+          app.data.saveLibrary();
+          this.renderQSubTab('lib');
+      }
     },
     editExam(idx) {
         this.renderESubTab('add', idx);
@@ -2542,8 +2559,16 @@ const app = {
             this.renderESubTab('add', examIdx);
         }
     },
-    deleteExam(idx) {
-      if(confirm('Xóa đề kiểm tra này?')) { app.data.exams.splice(idx, 1); app.data.saveExams(); this.renderESubTab('lib'); }
+    async deleteExam(idx) {
+      if(confirm('Xác nhận xóa đề kiểm tra này?')) {
+          const e = app.data.exams[idx];
+          app.data.exams.splice(idx, 1);
+          if (e && e.id && window.supabase) {
+              await supabaseClient.from('game_exams').delete().eq('id', e.id);
+          }
+          app.data.saveExams();
+          this.renderESubTab('lib');
+      }
     },
     async deleteUser(username) {
       if(confirm('Xóa học sinh này?')) { 
@@ -2974,6 +2999,4 @@ window.onload = async () => {
     console.error("Error binding UI:", e);
   }
 };
-
-
 
