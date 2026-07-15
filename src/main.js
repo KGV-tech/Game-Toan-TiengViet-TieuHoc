@@ -1875,7 +1875,7 @@ const app = {
                   <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="q-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>Thêm mới</strong> (Giữ nguyên dữ liệu cũ, thêm dữ liệu mới)</label>
                   <label style="display:block; cursor:pointer;"><input type="radio" name="q-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ dữ liệu cũ, thay bằng mới)</label>
                </div>
-               <input type="file" id="q-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
+               <input type="file" id="q-file-upload" accept=".xlsx, .csv" multiple style="margin: 10px 0 20px 0;">
                <button class="btn-success" onclick="app.admin.submitImportQuestions()" style="width:100%;">Tải lên</button>
             </div>
           `;
@@ -2080,41 +2080,57 @@ const app = {
             btn.textContent = 'Đang xử lý và tải lên... Vui lòng chờ';
         }
 
-        app.ui.importFromExcel(fileInput.files[0], async (data) => {
-            if (mode === 'overwrite') {
-                app.data.libraryQuestions = [];
-                if (window.supabase) {
-                    const { error } = await supabaseClient.from('game_questions').delete().not('id', 'is', null);
-                    if (error) console.error('Delete questions error:', error);
+        const files = Array.from(fileInput.files);
+        let totalCount = 0;
+        let processedFiles = 0;
+
+        const processNextFile = async (index) => {
+            if (index >= files.length) {
+                await app.data.saveLibrary();
+                alert(`Đã nhập thành công ${totalCount} câu hỏi từ ${files.length} file!`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Tải lên';
                 }
+                this.renderQSubTab('lib');
+                return;
             }
-            let count = 0;
-            data.forEach(row => {
-                const ansStr = row["Đáp án đúng"] || row["Đáp án"];
-                if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
-                    app.data.libraryQuestions.push({
-                        type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
-                        subject: row["Môn học"] || row["Môn"] || 'Toán',
-                        classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
-                        semester: row["Học kỳ"] || '',
-                        topic: row["Chủ đề"] || 'Khác',
-                        difficulty: row["Mức độ khó"] || 'Dễ',
-                        q: row["Câu hỏi"],
-                        ans: String(ansStr),
-                        options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(/[,;\|]/).map(s=>s.trim()).filter(Boolean) : [],
-                        explanation: row["Lời giải chi tiết"] || ''
-                    });
-                    count++;
-                }
+            app.ui.importFromExcel(files[index], (data) => {
+                data.forEach(row => {
+                    const ansStr = row["Đáp án đúng"] || row["Đáp án"];
+                    if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
+                        app.data.libraryQuestions.push({
+                            type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
+                            subject: row["Môn học"] || row["Môn"] || 'Toán',
+                            classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
+                            semester: row["Học kỳ"] || '',
+                            topic: row["Chủ đề"] || 'Khác',
+                            difficulty: row["Mức độ khó"] || 'Dễ',
+                            q: row["Câu hỏi"],
+                            ans: String(ansStr),
+                            options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(/[,;\|]/).map(s=>s.trim()).filter(Boolean) : [],
+                            explanation: row["Lời giải chi tiết"] || ''
+                        });
+                        totalCount++;
+                    }
+                });
+                processNextFile(index + 1);
             });
-            await app.data.saveLibrary();
-            alert(`Đã nhập thành công ${count} câu hỏi!`);
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Tải lên';
+        };
+
+        if (mode === 'overwrite') {
+            app.data.libraryQuestions = [];
+            if (window.supabase) {
+                supabaseClient.from('game_questions').delete().not('id', 'is', null).then(({ error }) => {
+                    if (error) console.error('Delete questions error:', error);
+                    processNextFile(0);
+                });
+            } else {
+                processNextFile(0);
             }
-            this.renderQSubTab('lib');
-        });
+        } else {
+            processNextFile(0);
+        }
     },
     renderExams(box) {
       box.innerHTML = `
