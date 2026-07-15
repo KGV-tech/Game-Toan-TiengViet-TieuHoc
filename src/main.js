@@ -1609,7 +1609,7 @@ const app = {
             const data = new Uint8Array(e.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             const ws = wb.Sheets[wb.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(ws);
+            const json = XLSX.utils.sheet_to_json(ws, {raw: false});
             callback(json);
         };
         reader.readAsArrayBuffer(file);
