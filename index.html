@@ -157,9 +157,8 @@
                   <div class="config-section" style="flex: 1;">
                     <h3 style="margin: 0;">2. Mức độ khó</h3>
                     <div class="diff-options">
-                      <button class="btn-opt" onclick="app.game.setDifficulty('easy', this)">Dễ</button>
+                      <button class="btn-opt active" onclick="app.game.setDifficulty('easy', this)">Dễ</button>
                       <button class="btn-opt" onclick="app.game.setDifficulty('hard', this)">Khó</button>
-                      <button class="btn-opt active" onclick="app.game.setDifficulty('shuffle', this)">Trộn</button>
                     </div>
                   </div>
                   
@@ -199,7 +198,7 @@
               <div class="game-header">
                 <div class="question-progress">Câu <span id="current-q-index">1</span>/<span id="total-q-count">10</span>
                 </div>
-                <div class="score-display">Điểm: <span id="game-score">0</span></div>
+                <div class="score-display">Điểm: <span id="game-score">0</span> <span id="hard-timer-display" style="display:none; color:#ff4444; margin-left:10px; font-weight:bold;"></span></div>
               </div>
   
               <div id="game-question-container" class="question-box"></div>
@@ -267,7 +266,7 @@
           về</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
-          <p id="exam-meta">Họ tên: <span id="exam-student-name"></span></p>
+          <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display" style="color:#ff4444; font-weight:bold; margin-left:15px; font-size:1.2rem; display:none;"></span></p>
         </div>
         <div id="exam-questions-container" class="exam-scroll-area"></div>
         <div style="text-align:center; margin-top: 30px;">

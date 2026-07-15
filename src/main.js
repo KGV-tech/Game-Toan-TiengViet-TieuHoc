@@ -63,6 +63,13 @@ const app = {
           gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
           osc.connect(gainNode); gainNode.connect(this.audioCtx.destination);
           osc.start(); osc.stop(this.audioCtx.currentTime + 0.5);
+      } else if (type === 'tick') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(1000, this.audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
+          osc.connect(gainNode); gainNode.connect(this.audioCtx.destination);
+          osc.start(); osc.stop(this.audioCtx.currentTime + 0.05);
       } else {
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
@@ -78,6 +85,7 @@ const app = {
     users: [],
     libraryQuestions: [],
     exams: [],
+    settings: { hardTimeLimit: 10, examTimeLimit: 30 },
     currentUser: null,
     async fetchAllFromSupabase(table) {
       if (!window.supabase) return [];
@@ -117,6 +125,16 @@ const app = {
         
         // 3. Fetch Exams
         this.exams = await this.fetchAllFromSupabase('game_exams');
+
+        // 4. Fetch Settings
+        const settingsData = await this.fetchAllFromSupabase('game_settings');
+        if (settingsData && settingsData.length > 0) {
+            this.settings = settingsData[0];
+        } else {
+            // Check localStorage fallback
+            const localSettings = app.safeStorage.getItem('game_settings');
+            if (localSettings) this.settings = JSON.parse(localSettings);
+        }
         
         // Realtime subscription
         supabaseClient.channel('custom-all-channel')
@@ -204,6 +222,19 @@ const app = {
        for (const u of this.users) {
            const { error } = await supabaseClient.from('game_users').upsert([u], { onConflict: 'username' });
            if (error) console.error("Error saving user:", error);
+       }
+    },
+    async saveSettings() {
+       if (!window.supabase) {
+           app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+           return;
+       }
+       
+       const settingsWithId = { id: 1, hardTimeLimit: this.settings.hardTimeLimit, examTimeLimit: this.settings.examTimeLimit };
+       const { error } = await supabaseClient.from('game_settings').upsert([settingsWithId]);
+       if (error) {
+           console.error("Error saving settings to supabase:", error);
+           app.safeStorage.setItem('game_settings', JSON.stringify(this.settings)); // fallback
        }
     },
     async saveLibrary() {
@@ -504,7 +535,7 @@ const app = {
   },
 
   game: {
-    state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'shuffle', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+    state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
     
     init() {
       document.querySelectorAll('.station[data-subject]').forEach(el => {
@@ -564,14 +595,14 @@ const app = {
               b.classList.remove('active');
           }
       });
-      // Set 'medium' active
+      // Set 'easy' active
       const difficultyBtns = document.querySelectorAll('.config-section .diff-options:not(#admin-class-btns) .btn-opt');
-      if (difficultyBtns.length > 1) difficultyBtns[1].classList.add('active');
+      if (difficultyBtns.length > 0) difficultyBtns[0].classList.add('active');
       
       const countOpts = document.querySelectorAll('.count-options .btn-opt');
       if (countOpts.length) countOpts[0].classList.add('active');
       
-      this.state.difficulty = 'medium';
+      this.state.difficulty = 'easy';
       this.state.count = 10;
     },
     setAdminClass(level, btn) {
@@ -665,7 +696,6 @@ const app = {
       clLevel = String(clLevel).replace('Lớp ', '').trim();
 
       const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
-      const mappedDiff = this.state.difficulty === 'easy' ? 'Dễ' : (this.state.difficulty === 'medium' ? 'Vừa' : 'Khó');
       
       let pool = app.data.libraryQuestions.filter(q => {
         const qSub = String(q.subject || '').trim().toLowerCase();
@@ -674,20 +704,16 @@ const app = {
         const qClass = String(q.classlevel || '').trim().toLowerCase();
         const clLvl = String(clLevel).toLowerCase();
         
-        const qDiff = String(q.difficulty || '').trim().toLowerCase();
-        const mDiff = mappedDiff.toLowerCase();
-        
         const qTopic = String(q.topic || '').trim().toLowerCase();
         
         const matchSub = (qSub === mSub || qSub === this.state.subject.toLowerCase() || qSub.includes(mSub) || mSub.includes(qSub));
         const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
-        const matchDiff = (!qDiff || this.state.difficulty === 'shuffle' || qDiff === mDiff || qDiff === this.state.difficulty.toLowerCase());
         const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
             const tNorm = String(t).toLowerCase();
             return tNorm.includes(qTopic) || qTopic.includes(tNorm);
         }));
         
-        return matchSub && matchClass && matchDiff && matchTopic;
+        return matchSub && matchClass && matchTopic;
       });
       
       if (pool.length < this.state.count) {
@@ -1078,8 +1104,34 @@ const app = {
             optContainer.appendChild(inp);
           }
       }
+      
+      const timerDisplay = document.getElementById('hard-timer-display');
+      if (this.state.difficulty === 'hard') {
+          timerDisplay.style.display = 'inline';
+          let timeLeft = app.data.settings.hardTimeLimit || 10;
+          timerDisplay.textContent = `(00:${timeLeft.toString().padStart(2, '0')})`;
+          
+          if (this.hardTimer) clearInterval(this.hardTimer);
+          this.hardTimer = setInterval(() => {
+              timeLeft--;
+              timerDisplay.textContent = `(00:${timeLeft.toString().padStart(2, '0')})`;
+              
+              if (timeLeft <= 3 && timeLeft > 0) {
+                  app.playSound('tick');
+              }
+              
+              if (timeLeft <= 0) {
+                  clearInterval(this.hardTimer);
+                  this.submitAnswer(true);
+              }
+          }, 1000);
+      } else {
+          timerDisplay.style.display = 'none';
+          if (this.hardTimer) clearInterval(this.hardTimer);
+      }
     },
-    submitAnswer() {
+    submitAnswer(isTimeout = false) {
+      if (this.hardTimer) clearInterval(this.hardTimer);
       const q = this.state.questions[this.state.currentIdx];
       let isCorrect = false;
       let qType = q.type || 'Trắc nghiệm';
@@ -1094,7 +1146,7 @@ const app = {
       if (qType === 'Điền khuyết') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
+         isCorrect = !isTimeout && selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
          const parts = (q.q || '').split(/\.\.\.|___/);
          if(parts.length > 1) {
             for(let i = 0; i < parts.length - 1; i++) {
@@ -1128,7 +1180,7 @@ const app = {
              optContainer.appendChild(corr);
          }
       } else if (qType === 'Trắc nghiệm') {
-         isCorrect = this.state.selectedAns === q.ans;
+         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.ans-btn').forEach(btn => {
              const text = btn.querySelector('.ans-text').textContent;
@@ -1147,7 +1199,7 @@ const app = {
              }
          });
       } else if (qType === 'Đúng/Sai') {
-         isCorrect = this.state.selectedAns === q.ans;
+         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
          const optContainer = document.getElementById('game-options-container');
          optContainer.querySelectorAll('.tf-card').forEach(btn => {
              const text = btn.querySelector('.ans-text').textContent;
@@ -1166,7 +1218,7 @@ const app = {
              }
          });
       } else if (qType === 'So sánh') {
-         isCorrect = this.state.selectedAns === q.ans;
+         isCorrect = !isTimeout && this.state.selectedAns === q.ans;
          const slot = document.querySelector('.compare-slot');
          if (slot) {
              slot.style.position = 'relative';
@@ -1200,7 +1252,7 @@ const app = {
       } else if (qType === 'Kéo thả') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
+         isCorrect = !isTimeout && selectedArr.every((val, i) => val === ansArr[i]);
          const slots = document.querySelectorAll('.drag-slot');
          slots.forEach((slot, i) => {
              slot.style.position = 'relative';
@@ -1238,7 +1290,7 @@ const app = {
       } else if (qType === 'Chuỗi quy luật') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
+         isCorrect = !isTimeout && selectedArr.every((val, i) => val === ansArr[i]);
          
          const slots = document.querySelectorAll('.seq-slot');
          slots.forEach((slot, i) => {
@@ -1356,8 +1408,8 @@ const app = {
     async recordHistory(title, score, lollipop) {
       if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
       
-      let diffMap = { 'easy': 'Dễ', 'medium': 'Vừa', 'hard': 'Khó', 'shuffle': 'Trộn' };
-      let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Vừa');
+      let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
+      let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Dễ');
       let top = this.state.examName ? 'Tổng hợp' : ((this.state.selectedTopics && this.state.selectedTopics.length) ? this.state.selectedTopics.join(', ') : 'Tất cả');
       let qCount = this.state.questions ? this.state.questions.length : (this.state.historyDetails ? this.state.historyDetails.length : 10);
       
@@ -1433,6 +1485,12 @@ const app = {
       if (filtered.length === 0) return alert('Không tìm thấy đề kiểm tra phù hợp trong Kho Đề Kiểm tra.');
       
       const exam = filtered[0];
+      
+      const timeLimitMinutes = app.data.settings.examTimeLimit || 30;
+      if (!confirm(`Bạn có thời gian ${timeLimitMinutes} phút để làm bài kiểm tra này.\n\nBấm OK để bắt đầu tính giờ, hoặc Cancel để hủy bỏ.`)) {
+          return;
+      }
+      
       this.state.questions = exam.questions || [];
       this.state.name = exam.name;
       this.state.historyDetails = [];
@@ -1470,16 +1528,41 @@ const app = {
       });
       
       app.router.open('exam-play-screen');
+      
+      const timerDisplay = document.getElementById('exam-timer-display');
+      timerDisplay.style.display = 'inline';
+      let timeLeft = timeLimitMinutes * 60;
+      
+      const formatTime = (seconds) => {
+          const m = Math.floor(seconds / 60);
+          const s = seconds % 60;
+          return `(${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')})`;
+      };
+      
+      timerDisplay.textContent = formatTime(timeLeft);
+      if (this.examTimer) clearInterval(this.examTimer);
+      
+      this.examTimer = setInterval(() => {
+          timeLeft--;
+          timerDisplay.textContent = formatTime(timeLeft);
+          if (timeLeft <= 0) {
+              clearInterval(this.examTimer);
+              alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
+              this.submit(true);
+          }
+      }, 1000);
     },
     
     confirmExit() {
       if (confirm('Bạn chưa nộp bài, thoát giữa chừng sẽ mất kết quả!')) {
+        if (this.examTimer) clearInterval(this.examTimer);
         app.router.open('map-screen');
       }
     },
 
-    submit() {
-      if (!confirm('Bạn có chắc chắn muốn nộp bài?')) return;
+    submit(isTimeout = false) {
+      if (!isTimeout && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
+      if (this.examTimer) clearInterval(this.examTimer);
       
       let totalPts = 0;
       const ptsPerQ = 10 / (this.state.questions.length || 1);
@@ -1697,6 +1780,7 @@ const app = {
     switchTab(tab) {
       const tabs = [
         { id: 'players', label: 'Quản Lý Học Sinh' },
+        { id: 'settings', label: 'Điều chỉnh' },
         { id: 'questions', label: 'Kho Câu Hỏi' },
         { id: 'exams', label: 'Kho Đề Kiểm tra' }
       ];
@@ -1706,6 +1790,49 @@ const app = {
       if (tab === 'questions') this.renderQuestions(box);
       else if (tab === 'exams') this.renderExams(box);
       else if (tab === 'players') this.renderPlayers(box);
+      else if (tab === 'settings') this.renderSettings(box);
+    },
+    renderSettings(box) {
+      box.innerHTML = `
+        <div style="max-width: 600px; margin: 0 auto; text-align: left; padding: 20px;">
+           <h3 style="margin-bottom: 20px; color: #ffeb3b;">Điều Chỉnh Hệ Thống</h3>
+           
+           <div style="display:flex; align-items:center; margin-bottom:15px;">
+              <label style="flex:1; font-weight:bold; font-size: 1.1rem;">Thời gian đếm ngược mức độ Khó (giây):</label>
+              <input type="number" id="setting-hard-time" class="form-input" min="5" max="30" value="${app.data.settings.hardTimeLimit || 10}" style="width: 100px; padding:8px; text-align:center;">
+           </div>
+           
+           <div style="display:flex; align-items:center; margin-bottom:25px;">
+              <label style="flex:1; font-weight:bold; font-size: 1.1rem;">Thời gian đếm ngược Giải đề Kiểm tra (phút):</label>
+              <input type="number" id="setting-exam-time" class="form-input" min="1" max="99" value="${app.data.settings.examTimeLimit || 30}" style="width: 100px; padding:8px; text-align:center;">
+           </div>
+           
+           <div style="text-align:center;">
+              <button class="btn-success" onclick="app.admin.saveSettings()">Lưu thay đổi</button>
+           </div>
+        </div>
+      `;
+    },
+    async saveSettings() {
+       const hardTime = parseInt(document.getElementById('setting-hard-time').value, 10);
+       const examTime = parseInt(document.getElementById('setting-exam-time').value, 10);
+       
+       if (isNaN(hardTime) || hardTime < 5 || hardTime > 30) return alert('Thời gian mức độ Khó phải từ 5 đến 30 giây!');
+       if (isNaN(examTime) || examTime < 1 || examTime > 99) return alert('Thời gian Giải đề Kiểm tra phải từ 1 đến 99 phút!');
+       
+       app.data.settings.hardTimeLimit = hardTime;
+       app.data.settings.examTimeLimit = examTime;
+       
+       const btn = document.querySelector('button[onclick="app.admin.saveSettings()"]');
+       const oldText = btn.textContent;
+       btn.textContent = 'Đang lưu...';
+       btn.disabled = true;
+       
+       await app.data.saveSettings();
+       
+       btn.textContent = oldText;
+       btn.disabled = false;
+       alert('Đã lưu cài đặt thành công!');
     },
     renderQuestions(box) {
         box.innerHTML = `
@@ -1736,7 +1863,6 @@ const app = {
             { label: 'Môn', filterable: true },
             { label: 'Học kỳ', filterable: true },
             { label: 'Chủ đề', filterable: true },
-            { label: 'Mức độ khó', filterable: true },
             { label: 'Loại câu hỏi', filterable: true },
             { label: 'Câu hỏi', filterable: true },
             { label: 'Đáp án', filterable: false },
@@ -1746,7 +1872,7 @@ const app = {
           let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
             return `<tr>
               <td>${q.classlevel||'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester||''}</td><td>${q.topic}</td>
-              <td>${q.difficulty||'Dễ'}</td><td>${q.type||'Trắc nghiệm'}</td>
+              <td>${q.type||'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation||''}</td>
               <td>
                 <button class="btn-success action-btn" onclick="app.admin.addToExamPrompt(${i})">Thêm vào đề</button>
@@ -1798,12 +1924,6 @@ const app = {
                   </select>
                </div>
 
-               <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Mức độ khó</label>
-                  <select id="add-q-diff" class="form-input" style="flex:1; padding:8px;">
-                     <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                     <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
-                  </select>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
@@ -1960,12 +2080,11 @@ const app = {
                 "Môn học": "(1) Cấp lớp, Môn học, Học kỳ (Học kỳ 1 hoặc Học kỳ 2)",
                 "Học kỳ": "Học kỳ 1",
                 "Chủ đề": "(2) Copy chính xác Chủ đề bên dưới",
-                "Mức độ khó": "(3) Dễ, Khó",
-                "Loại câu hỏi": "(4) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
-                "Câu hỏi": "(5) Kéo thả, So sánh, Điền khuyết, Chuỗi quy luật: Bắt buộc dùng ___ hoặc ... để làm chỗ trống.",
-                "Lựa chọn": "(6) Trắc nghiệm / Kéo thả: Các lựa chọn & đáp án nhiễu (ngăn cách bởi dấu phẩy).",
-                "Đáp án đúng": "(7) Kéo thả, Chuỗi quy luật: Cho phép 1->4 đáp án (ngăn cách bởi dấu phẩy). So sánh: <,>,=",
-                "Lời giải chi tiết": "(8) Có thể để trống"
+                "Loại câu hỏi": "(3) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
+                "Câu hỏi": "(4) Kéo thả, So sánh, Điền khuyết, Chuỗi quy luật: Bắt buộc dùng ___ hoặc ... để làm chỗ trống.",
+                "Lựa chọn": "(5) Trắc nghiệm / Kéo thả: Các lựa chọn & đáp án nhiễu (ngăn cách bởi dấu phẩy).",
+                "Đáp án đúng": "(6) Kéo thả, Chuỗi quy luật: Cho phép 1->4 đáp án (ngăn cách bởi dấu phẩy). So sánh: <,>,=",
+                "Lời giải chi tiết": "(7) Có thể để trống"
             }
         ];
         
@@ -1979,8 +2098,7 @@ const app = {
                     "Môn học": "Môn Toán Lớp " + i + ":",
                     "Học kỳ": "",
                     "Chủ đề": mathTopics,
-                    "Mức độ khó": "Môn Tiếng Việt Lớp " + i + ":",
-                    "Loại câu hỏi": vietTopics,
+                    "Loại câu hỏi": "Môn Tiếng Việt Lớp " + i + ": " + vietTopics,
                     "Câu hỏi": "",
                     "Lựa chọn": "",
                     "Đáp án đúng": "",
@@ -1997,7 +2115,6 @@ const app = {
             "Môn học": q.subject,
             "Học kỳ": q.semester || '',
             "Chủ đề": q.topic,
-            "Mức độ khó": q.difficulty,
             "Loại câu hỏi": q.type,
             "Câu hỏi": q.q,
             "Lựa chọn": (q.options || []).join(', '),
@@ -2028,7 +2145,6 @@ const app = {
     submitAddQuestion(editIdx) {
         const qObj = {
             type: document.getElementById('add-q-type').value,
-            difficulty: document.getElementById('add-q-diff').value,
             subject: document.getElementById('add-q-sub').value,
             classlevel: document.getElementById('add-q-class').value,
             semester: document.getElementById('add-q-sem').value,
@@ -2105,7 +2221,6 @@ const app = {
                             classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
                             semester: row["Học kỳ"] || '',
                             topic: row["Chủ đề"] || 'Khác',
-                            difficulty: row["Mức độ khó"] || 'Dễ',
                             q: row["Câu hỏi"],
                             ans: String(ansStr),
                             options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(/[,;\|]/).map(s=>s.trim()).filter(Boolean) : [],
