@@ -248,7 +248,7 @@ const app = {
        }
        
        const settingsWithId = { id: 1, data: this.settings };
-       const { error } = await supabaseClient.from('game_settings').upsert([settingsWithId]);
+       const { error } = await supabaseClient.from('game_settings').upsert([settingsWithId], { onConflict: 'id' });
        if (error) {
            console.error("Error saving settings to supabase:", error);
            app.safeStorage.setItem('game_settings', JSON.stringify(this.settings)); // fallback
