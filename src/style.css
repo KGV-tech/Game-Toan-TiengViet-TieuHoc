@@ -571,3 +571,13 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .drop-zone { font-size: 1.1rem; min-height: 60px; }
   .game-header { font-size: 1rem; flex-direction: column; align-items: center; gap: 5px; }
 }
+/* Result Modal Fixes */
+.result-left { min-width: 250px; }
+.result-right { overflow-y: auto; max-height: 60vh; }
+.details-box { word-break: break-word; }
+
+@media (max-width: 768px) {
+  .result-layout { flex-direction: column; gap: 15px; }
+  .result-left { border-right: none; border-bottom: 2px solid rgba(255,255,255,0.2); padding-right: 0; padding-bottom: 15px; }
+  .result-right { padding-left: 0; }
+}

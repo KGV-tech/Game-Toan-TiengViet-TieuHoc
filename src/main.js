@@ -47,6 +47,33 @@ const app = {
       }
     }
   },
+  
+  audioCtx: null,
+  playSound(type) {
+    try {
+      if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+      const osc = this.audioCtx.createOscillator();
+      const gainNode = this.audioCtx.createGain();
+      if (type === 'correct') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, this.audioCtx.currentTime); // A5
+          osc.frequency.exponentialRampToValueAtTime(1760, this.audioCtx.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+          osc.connect(gainNode); gainNode.connect(this.audioCtx.destination);
+          osc.start(); osc.stop(this.audioCtx.currentTime + 0.5);
+      } else {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+          osc.connect(gainNode); gainNode.connect(this.audioCtx.destination);
+          osc.start(); osc.stop(this.audioCtx.currentTime + 0.3);
+      }
+    } catch (e) { console.warn("Web Audio API not supported", e); }
+  },
+
   data: {
     users: [],
     libraryQuestions: [],
@@ -1185,10 +1212,13 @@ const app = {
       const bubble = document.getElementById('cat-speech-bubble');
       bubble.style.display = 'flex';
       if (isCorrect) {
+        if (window.confetti) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        app.playSound('correct');
         this.state.score += 10 / this.state.questions.length;
         document.getElementById('play-cat-img').src = './public/cat_happy.png';
         bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
       } else {
+        app.playSound('wrong');
         document.getElementById('play-cat-img').src = './public/cat_sad.png';
         bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
       }
@@ -1254,7 +1284,7 @@ const app = {
       document.getElementById('result-modal').classList.add('active');
     },
     async recordHistory(title, score, lollipop) {
-      if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
+      if (!app.data.currentUser) return;
       if (!Array.isArray(app.data.currentUser.history)) app.data.currentUser.history = []; app.data.currentUser.history.push({
         date: new Date().toISOString().split('T')[0],
         module: title,
