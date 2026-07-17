@@ -10,10 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
   <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
   <script defer>
@@ -85,32 +81,32 @@
 
         <!-- Tiếng Việt: Rừng xanh bí ẩn (góc trái dưới) -->
         <div class="station" data-subject="vietnamese" style="top: 70%; left: 14%;" onclick="app.router.animateCatTo(this, () => app.game.openSubject('vietnamese'))">
-          <img src="./public/icon_tiengviet.png" alt="Tiếng Việt" class="station-img" loading="lazy">
+          <img src="./public/icon_tiengviet.png" alt="Tiếng Việt" class="station-img">
         </div>
 
         <!-- Toán học: Kim tự tháp -->
         <div class="station" data-subject="math" style="top: 47%; left: 35%;" onclick="app.router.animateCatTo(this, () => app.game.openSubject('math'))">
-          <img src="./public/icon_toan.png" alt="Toán Học" class="station-img" loading="lazy">
+          <img src="./public/icon_toan.png" alt="Toán Học" class="station-img">
         </div>
 
         <!-- Đề Kiểm tra -->
         <div class="station" data-subject="exam" style="top: 41%; left: 64%;" onclick="app.router.animateCatTo(this, () => app.exam.openExamStation())">
-          <img src="./public/dethi_icon.png" alt="Đề Kiểm tra" class="station-img" loading="lazy">
+          <img src="./public/dethi_icon.png" alt="Đề Kiểm tra" class="station-img">
         </div>
 
         <!-- Cài Đặt (Admin) -->
         <div id="admin-station" class="station" style="top: 22%; left: 51%; display:none;"
           onclick="app.router.animateCatTo(this, () => app.admin.openAdmin())">
-          <img src="./public/icon_caidat.png" alt="Cài Đặt" class="station-img" loading="lazy">
+          <img src="./public/icon_caidat.png" alt="Cài Đặt" class="station-img">
         </div>
 
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
         <div id="treasure-station" class="station" style="top: 75%; left: 75%;" onclick="app.router.animateCatTo(this, () => app.treasure.open())">
-          <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img" loading="lazy">
+          <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img">
         </div>
 
         <div class="map-title-container">
-          <img src="./public/title.png" alt="Vùng Đất Bí Ẩn" class="map-title" loading="lazy">
+          <img src="./public/title.png" alt="Vùng Đất Bí Ẩn" class="map-title">
         </div>
         
         <div id="map-cat-wrapper" style="position:absolute; top: 75%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">

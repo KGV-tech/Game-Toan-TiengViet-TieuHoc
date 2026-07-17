@@ -30,6 +30,21 @@ const defaultLibraryQuestions = [];
 const defaultExams = [];
 
 const app = {
+  utils: {
+    async loadScript(src, globalVar) {
+      if (window[globalVar]) return true;
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve(true);
+        script.onerror = () => {
+          console.error(`Failed to load ${src}`);
+          resolve(false); // resolve false instead of reject to avoid unhandled promise crashes
+        };
+        document.head.appendChild(script);
+      });
+    }
+  },
   safeStorage: {
     getItem(key) {
       try {
@@ -1379,6 +1394,9 @@ const app = {
       const bubble = document.getElementById('cat-speech-bubble');
       bubble.style.display = 'flex';
       if (isCorrect) {
+        if (!window.confetti) {
+            await app.utils.loadScript('https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js', 'confetti');
+        }
         if (window.confetti) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         app.playSound('correct');
         this.state.score += 10 / this.state.questions.length;
@@ -1749,15 +1767,23 @@ const app = {
       const box = document.getElementById('treasure-content-area');
       box.innerHTML = html + `<br><button class="btn-primary" onclick="app.treasure.switchTab('history')">Quay lại</button>`;
     },
-    exportToExcel(dataArray, filename) {
-        if (!window.XLSX) return alert("Thư viện Excel chưa được tải! Kiểm tra lại kết nối mạng.");
+    async exportToExcel(dataArray, filename) {
+        if (!window.XLSX) {
+            alert("Đang tải thư viện Excel, vui lòng chờ...");
+            const loaded = await app.utils.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'XLSX');
+            if (!loaded) return alert("Thư viện Excel chưa được tải! Kiểm tra lại kết nối mạng.");
+        }
         const ws = XLSX.utils.json_to_sheet(dataArray);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
         XLSX.writeFile(wb, filename);
     },
-    importFromExcel(file, callback) {
-        if (!window.XLSX) return alert("Thư viện Excel chưa được tải!");
+    async importFromExcel(file, callback) {
+        if (!window.XLSX) {
+            alert("Đang tải thư viện Excel, vui lòng chờ...");
+            const loaded = await app.utils.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'XLSX');
+            if (!loaded) return alert("Thư viện Excel chưa được tải! Kiểm tra lại kết nối mạng.");
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
@@ -2975,7 +3001,7 @@ const app = {
         modal.style.display = 'flex';
         modal.classList.add('active');
     },
-    executePrint() {
+    async executePrint() {
         const mode = document.querySelector('input[name="print_mode"]:checked').value;
         this.exportToImage(mode);
     },
@@ -3307,7 +3333,9 @@ const app = {
         
         // Render canvas
         if (!window.html2canvas) {
-            return alert("Lỗi: Không tìm thấy thư viện html2canvas. Hãy kiểm tra kết nối mạng.");
+            alert("Đang tải thư viện xuất ảnh, vui lòng chờ...");
+            const loaded = await app.utils.loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas');
+            if (!loaded) return alert("Lỗi: Không tìm thấy thư viện html2canvas. Hãy kiểm tra kết nối mạng.");
         }
         
         alert("Hệ thống đang trích xuất ảnh 2K, vui lòng chờ trong giây lát...");

@@ -581,3 +581,48 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .result-left { border-right: none; border-bottom: 2px solid rgba(255,255,255,0.2); padding-right: 0; padding-bottom: 15px; min-width: 100%; }
   .result-right { padding-left: 0; }
 }
+
+/* Prevent Portrait Mode */
+#portrait-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  z-index: 999999;
+  color: white;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+#portrait-overlay h2 {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+#portrait-overlay p {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+@media screen and (orientation: portrait) {
+  #app {
+    display: none !important;
+  }
+  #portrait-overlay {
+    display: flex !important;
+  }
+}
+
+/* Fix Input Zoom on Mobile/iOS */
+input[type="text"], input[type="password"], select, textarea {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
