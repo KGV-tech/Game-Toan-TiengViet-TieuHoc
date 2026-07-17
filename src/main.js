@@ -1396,9 +1396,12 @@ const app = {
       bubble.style.display = 'flex';
       if (isCorrect) {
         if (!window.confetti) {
-            await app.utils.loadScript('https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js', 'confetti');
+            app.utils.loadScript('https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js', 'confetti').then(() => {
+                if (window.confetti) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            });
+        } else {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
-        if (window.confetti) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         app.playSound('correct');
         this.state.score += 10 / this.state.questions.length;
         document.getElementById('play-cat-img').src = './public/cat_happy.png';
@@ -3215,7 +3218,7 @@ const app = {
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
       }, "Chưa có dữ liệu lịch sử");
     },
-    exportToImage(mode) {
+    async exportToImage(mode) {
         document.getElementById('print-modal').style.display = 'none';
         const type = window.printContext; // 'leaderboard' or 'history'
         
