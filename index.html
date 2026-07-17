@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Hành Trình Tri Thức Lớp 5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +29,11 @@
 </head>
 
 <body>
+  <div id="portrait-overlay">
+    <div style="font-size: 60px; margin-bottom: 20px;">🔄</div>
+    <h2>Vui lòng xoay ngang màn hình</h2>
+    <p>Trò chơi được thiết kế tối ưu nhất ở chế độ nằm ngang.</p>
+  </div>
   <div id="app">
 
     <!-- Màn hình Đăng nhập -->
@@ -79,17 +84,17 @@
         <img src="./public/map.png" alt="Map" class="map-bg">
 
         <!-- Tiếng Việt: Rừng xanh bí ẩn (góc trái dưới) -->
-        <div class="station" data-subject="vietnamese" style="top: 70%; left: 14%;">
+        <div class="station" data-subject="vietnamese" style="top: 70%; left: 14%;" onclick="app.router.animateCatTo(this, () => app.game.openSubject('vietnamese'))">
           <img src="./public/icon_tiengviet.png" alt="Tiếng Việt" class="station-img" loading="lazy">
         </div>
 
         <!-- Toán học: Kim tự tháp -->
-        <div class="station" data-subject="math" style="top: 47%; left: 35%;">
+        <div class="station" data-subject="math" style="top: 47%; left: 35%;" onclick="app.router.animateCatTo(this, () => app.game.openSubject('math'))">
           <img src="./public/icon_toan.png" alt="Toán Học" class="station-img" loading="lazy">
         </div>
 
         <!-- Đề Kiểm tra -->
-        <div class="station" data-subject="exam" style="top: 41%; left: 64%;">
+        <div class="station" data-subject="exam" style="top: 41%; left: 64%;" onclick="app.router.animateCatTo(this, () => app.exam.openExamStation())">
           <img src="./public/dethi_icon.png" alt="Đề Kiểm tra" class="station-img" loading="lazy">
         </div>
 
