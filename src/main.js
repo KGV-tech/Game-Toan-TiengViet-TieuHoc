@@ -82,18 +82,26 @@ const app = {
   },
 
   data: {
+    sanitizeHTML(str) {
+      if (!str) return '';
+      return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    },
     users: [],
     libraryQuestions: [],
     exams: [],
     settings: { hardTimeLimit: 10, examTimeLimit: 30 },
     currentUser: null,
-    async fetchAllFromSupabase(table) {
+    async fetchAllFromSupabase(table, filterCol, filterVal) {
       if (!window.supabase) return [];
       let allData = [];
       let from = 0;
       const step = 1000;
       while (true) {
-          const { data, error } = await supabaseClient.from(table).select('*').range(from, from + step - 1);
+          let query = supabaseClient.from(table).select('*');
+          if (filterCol && filterVal) {
+              query = query.ilike(filterCol, `%${filterVal}%`);
+          }
+          const { data, error } = await query.range(from, from + step - 1);
           if (error) {
               console.error(`Error fetching ${table}:`, error);
               break;
@@ -120,8 +128,8 @@ const app = {
           await supabaseClient.from('game_users').insert([adminUser]);
         }
         
-        // 2. Fetch Questions
-        this.libraryQuestions = await this.fetchAllFromSupabase('game_questions');
+        // 2. Fetch Questions (Deferred to login to save memory/bandwidth for students)
+        this.libraryQuestions = [];
         
         // 3. Fetch Exams
         this.exams = await this.fetchAllFromSupabase('game_exams');
@@ -341,10 +349,14 @@ const app = {
 
   router: {
     open(screenId) {
+      if (app.game && app.game.hardTimer) clearInterval(app.game.hardTimer);
+      if (app.exam && app.exam.examTimer) clearInterval(app.exam.examTimer);
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
     },
     openGameView(viewId) {
+      if (app.game && app.game.hardTimer) clearInterval(app.game.hardTimer);
+      if (app.exam && app.exam.examTimer) clearInterval(app.exam.examTimer);
       document.querySelectorAll('.game-view').forEach(v => v.classList.remove('active'));
       document.getElementById(viewId).classList.add('active');
     },
@@ -376,6 +388,12 @@ const app = {
       document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
       document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
     },
+    async hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    },
     async login() {
       const u = document.getElementById('username').value.trim();
       const p = document.getElementById('password').value.trim();
@@ -401,7 +419,8 @@ const app = {
           });
       }
       
-      const user = app.data.users.find(x => (x.username === u || x.fullname === u) && x.password === p);
+      const hashedP = await this.hashPassword(p);
+      const user = app.data.users.find(x => (x.username === u || x.fullname === u) && (x.password === p || x.password === hashedP));
       
       if (user) {
         if (user.role?.toLowerCase() !== 'admin' && user.approved === false) {
@@ -409,6 +428,15 @@ const app = {
            return;
         }
         app.data.currentUser = user;
+        
+        // Lazy load questions based on role
+        if (user.role?.toLowerCase() === 'admin') {
+            app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions');
+        } else {
+            const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
+            app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
+        }
+        
         await app.data.updateUserScore();
         this.updateHeader();
         
@@ -440,10 +468,12 @@ const app = {
         return;
       }
       
+      const hashedPw = await this.hashPassword(pw);
+      
       const newUser = {
         fullname: fn,
         username: un,
-        password: pw,
+        password: hashedPw,
         classlevel: cl,
         role: 'student',
         approved: false,
@@ -476,7 +506,7 @@ const app = {
     updateHeader() {
       if (!app.data.currentUser) return;
       const html = `
-        <strong>${app.data.currentUser.fullname}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
+        <strong>${app.data.sanitizeHTML(app.data.currentUser.fullname)}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
         ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
       `;
       document.getElementById('player-info').innerHTML = html;
@@ -1165,13 +1195,13 @@ const app = {
       if (qType === 'Điền khuyết') {
          const ansArr = this.getAnsArr(q.ans);
          const selectedArr = this.getAnsArr(this.state.selectedAns);
-         isCorrect = selectedArr.every((val, i) => val.toLowerCase() === (ansArr[i] || '').toString().toLowerCase());
+         isCorrect = selectedArr.every((val, i) => val.replace(/\s+/g, ' ').trim().toLowerCase() === (ansArr[i] || '').toString().replace(/\s+/g, ' ').trim().toLowerCase());
          const parts = (q.q || '').split(/\.\.\.|___/);
          if(parts.length > 1) {
             for(let i = 0; i < parts.length - 1; i++) {
                const inp = document.getElementById(`fill-input-${i}`);
                if(inp) {
-                  if((inp.value.trim().toLowerCase()) === (ansArr[i] || '').toString().toLowerCase()) {
+                  if((inp.value.replace(/\s+/g, ' ').trim().toLowerCase()) === (ansArr[i] || '').toString().replace(/\s+/g, ' ').trim().toLowerCase()) {
                      inp.classList.add('correct');
                   } else {
                      inp.classList.add('wrong');
@@ -1599,8 +1629,8 @@ const app = {
         } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật') {
            const inp = document.querySelector(`input[name="exam_q_${idx}"]`);
            if (inp) {
-              selected = inp.value.trim();
-              isCorrect = (selected.toLowerCase() === (q.ans||'').toString().toLowerCase());
+              selected = inp.value.replace(/\s+/g, ' ').trim();
+              isCorrect = (selected.toLowerCase() === (q.ans||'').toString().replace(/\s+/g, ' ').trim().toLowerCase());
            }
         }
         
@@ -2750,8 +2780,8 @@ const app = {
                           <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
         }
         return `<tr>
-          <td>${u.classlevel||''}</td><td>${u.fullname||''}</td>
-          <td>${u.username}</td><td>${u.password||''}</td>
+          <td>${app.data.sanitizeHTML(u.classlevel||'')}</td><td>${app.data.sanitizeHTML(u.fullname||'')}</td>
+          <td>${app.data.sanitizeHTML(u.username)}</td><td>${app.data.sanitizeHTML(u.password||'')}</td>
           <td>${actionBtns}</td>
         </tr>`;
       }, isPending ? "Không có học sinh nào chờ duyệt" : "Chưa có học sinh nào");
@@ -2780,17 +2810,17 @@ const app = {
           <div style="max-width: 500px; margin: 0 auto; text-align:left;">
              <div style="display:flex; align-items:center; margin-bottom:10px;">
                 <label style="width:130px; font-weight:bold; flex-shrink:0;">Họ và tên</label>
-                <input type="text" id="add-fullname" placeholder="Họ và tên" class="form-input" style="flex:1; padding:8px;" value="${u ? u.fullname : ''}">
+                <input type="text" id="add-fullname" placeholder="Họ và tên" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.fullname) : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:10px;">
                 <label style="width:130px; font-weight:bold; flex-shrink:0;">Tên đăng nhập</label>
-                <input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" style="flex:1; padding:8px;" value="${u ? u.username : ''}">
+                <input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.username) : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:10px;">
                 <label style="width:130px; font-weight:bold; flex-shrink:0;">Mật khẩu</label>
-                <input type="text" id="add-password" placeholder="Mật khẩu" class="form-input" style="flex:1; padding:8px;" value="${u ? u.password : ''}">
+                <input type="text" id="add-password" placeholder="Mật khẩu" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.password) : ''}">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:15px;">
@@ -3019,7 +3049,7 @@ const app = {
          const totalExams = s.filteredHistory.length;
          const maxScore = totalExams * 10;
          const scoreDisplay = `${s.filteredScore}/${maxScore}`;
-         return `<tr><td>${i+1}</td><td>${s.fullname}</td><td>${totalExams}</td><td>${scoreDisplay}</td><td>${s.lollipops||0}</td></tr>`;
+         return `<tr><td>${i+1}</td><td>${app.data.sanitizeHTML(s.fullname)}</td><td>${totalExams}</td><td>${scoreDisplay}</td><td>${s.lollipops||0}</td></tr>`;
       });
       
       const container = document.getElementById('admin-lb-table-container');
@@ -3040,7 +3070,7 @@ const app = {
       let allHist = [];
       app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true).forEach(u => {
          (u.history || []).forEach(h => {
-             allHist.push({ ...h, studentName: u.fullname, username: u.username, classlevel: u.classlevel || '' });
+             allHist.push({ ...h, studentName: app.data.sanitizeHTML(u.fullname), username: u.username, classlevel: u.classlevel || '' });
          });
       });
       allHist.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -3126,7 +3156,7 @@ const app = {
     },
     renderStudentTreasure(box, u) {
       let html = `<div style="text-align:center; padding: 30px 0;">
-         <h3 style="font-size: 1.5rem;">Kho báu của ${u.fullname}</h3>
+         <h3 style="font-size: 1.5rem;">Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
          <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore||0}</span></p>
          <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
       const lolli = u.lollipops || 0;
@@ -3315,5 +3345,23 @@ window.onload = async () => {
   } catch(e) {
     console.error("Error binding UI:", e);
   }
+  
+  const handleNetworkChange = () => {
+      const isOnline = navigator.onLine;
+      const noti = document.getElementById('admin-notification');
+      if (noti) {
+          if (!isOnline) {
+              noti.style.display = 'block';
+              noti.textContent = '⚠ Mất kết nối mạng! Trò chơi tạm ngưng để bảo toàn dữ liệu.';
+              document.querySelectorAll('.station').forEach(el => el.style.pointerEvents = 'none');
+          } else {
+              noti.style.display = 'none';
+              document.querySelectorAll('.station').forEach(el => el.style.pointerEvents = 'auto');
+          }
+      }
+  };
+  window.addEventListener('offline', handleNetworkChange);
+  window.addEventListener('online', handleNetworkChange);
+  handleNetworkChange();
 };
 
