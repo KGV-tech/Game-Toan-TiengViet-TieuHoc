@@ -116,17 +116,8 @@ const app = {
     
     async init() {
       try {
-        // 1. Fetch Users
-        const usersData = await this.fetchAllFromSupabase('game_users');
-        this.users = usersData || []; 
-        this.users.forEach(u => { if (!Array.isArray(u.history)) u.history = []; });
-        
-        // Ensure Admin exists
-        if (!this.users.find(u => u.username === 'admin')) {
-          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
-          this.users.push(adminUser);
-          await supabaseClient.from('game_users').insert([adminUser]);
-        }
+        // 1. Fetch Users (Deferred to login to save memory/bandwidth)
+        this.users = [];
         
         // 2. Fetch Questions (Deferred to login to save memory/bandwidth for students)
         this.libraryQuestions = [];
@@ -148,11 +139,18 @@ const app = {
         supabaseClient.channel('custom-all-channel')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
               console.log('Realtime DB Change received!', payload);
-              if (payload.eventType === 'INSERT') { if (!Array.isArray(payload.new.history)) payload.new.history = [];
-                  if (!this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
-              } else if (payload.eventType === 'UPDATE') { if (!Array.isArray(payload.new.history)) payload.new.history = [];
-                  const idx = this.users.findIndex(u => u.id === payload.new.id);
-                  if (idx > -1) this.users[idx] = payload.new;
+              // Only process realtime updates if admin is logged in or for currentUser
+              const isAdmin = this.currentUser && this.currentUser.role?.toLowerCase() === 'admin';
+              
+              if (payload.eventType === 'INSERT') { 
+                  if (!Array.isArray(payload.new.history)) payload.new.history = [];
+                  if (isAdmin && !this.users.find(u => u.id === payload.new.id)) this.users.push(payload.new);
+              } else if (payload.eventType === 'UPDATE') { 
+                  if (!Array.isArray(payload.new.history)) payload.new.history = [];
+                  if (isAdmin) {
+                      const idx = this.users.findIndex(u => u.id === payload.new.id);
+                      if (idx > -1) this.users[idx] = payload.new;
+                  }
                   
                   // If it's the current user, update their header (e.g. admin approved them, or points changed from another device)
                   if (this.currentUser && this.currentUser.id === payload.new.id) {
@@ -160,10 +158,10 @@ const app = {
                       app.auth.updateHeader();
                   }
               } else if (payload.eventType === 'DELETE') {
-                  this.users = this.users.filter(u => u.id !== payload.old.id);
+                  if (isAdmin) this.users = this.users.filter(u => u.id !== payload.old.id);
               }
               
-              if (this.currentUser && this.currentUser.role?.toLowerCase() === 'admin') {
+              if (isAdmin) {
                   app.auth.updateHeader();
               }
               
@@ -398,29 +396,29 @@ const app = {
       const u = document.getElementById('username').value.trim();
       const p = document.getElementById('password').value.trim();
       
+      let user = null;
+      let hashedP = await this.hashPassword(p);
+      
       try {
-          // Pull fresh data from DB on login just to be sure we have the latest approved status
-          const freshUsers = await app.data.fetchAllFromSupabase('game_users');
-          if (freshUsers) {
-              freshUsers.forEach(u => { if (!Array.isArray(u.history)) u.history = []; }); 
-              app.data.users = freshUsers;
+          // Fetch directly from DB
+          const { data: dbUser } = await supabaseClient.from('game_users')
+              .select('*')
+              .or(`username.eq.${u},fullname.eq.${u}`);
+              
+          if (dbUser && dbUser.length > 0) {
+              user = dbUser.find(x => x.password === p || x.password === hashedP);
           }
       } catch (err) {
           console.error("Supabase failed during login:", err);
       }
       
-      // Ensure admin exists in case of DB sync issues
-      if (!app.data.users.find(u => u.username === 'admin')) {
-          const adminUser = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
-          app.data.users.push(adminUser);
-          // Try to insert again just in case
-          supabaseClient.from('game_users').insert([adminUser]).then(({error}) => {
+      // Ensure admin exists in DB just in case
+      if (!user && u === 'admin' && p === '123') {
+          user = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
+          supabaseClient.from('game_users').insert([user]).then(({error}) => {
               if (error) console.error("Admin insert error:", error);
           });
       }
-      
-      const hashedP = await this.hashPassword(p);
-      const user = app.data.users.find(x => (x.username === u || x.fullname === u) && (x.password === p || x.password === hashedP));
       
       if (user) {
         if (user.role?.toLowerCase() !== 'admin' && user.approved === false) {
@@ -429,22 +427,21 @@ const app = {
         }
         app.data.currentUser = user;
         
-        // Lazy load questions based on role
+        // Lazy load based on role
         if (user.role?.toLowerCase() === 'admin') {
+            app.data.users = await app.data.fetchAllFromSupabase('game_users');
+            app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions');
+            document.getElementById('admin-station').style.display = 'flex';
         } else {
             const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
+            document.getElementById('admin-station').style.display = 'none';
         }
         
         await app.data.updateUserScore();
         this.updateHeader();
         
-        if (user.role?.toLowerCase() === 'admin') {
-          document.getElementById('admin-station').style.display = 'flex';
-        } else {
-          document.getElementById('admin-station').style.display = 'none';
-        }
         app.router.open('map-screen');
       } else {
         alert('Sai tên đăng nhập hoặc mật khẩu!');
@@ -1442,15 +1439,14 @@ const app = {
       chest.onclick = () => this.claimBonus();
       
       const detailsBox = document.getElementById('result-details');
-      detailsBox.innerHTML = '';
-      this.state.historyDetails.forEach((d, i) => {
-        const div = document.createElement('div');
-        div.style.padding = '10px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
-        div.innerHTML = `<b>${i+1}.</b> ${d.q} <br>
-                         Bạn chọn: <span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? '✔' : '✘'} ${d.selected || 'Bỏ trống'}</span> <br>
-                         ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${d.correct}</span>` : ''}`;
-        detailsBox.appendChild(div);
-      });
+      const htmlString = this.state.historyDetails.map((d, i) => `
+        <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <b>${i+1}.</b> ${app.data.sanitizeHTML(d.q)} <br>
+          Bạn chọn: <span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? '✔' : '✘'} ${app.data.sanitizeHTML(d.selected || 'Bỏ trống')}</span> <br>
+          ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${app.data.sanitizeHTML(d.correct)}</span>` : ''}
+        </div>
+      `).join('');
+      detailsBox.innerHTML = htmlString;
       
       document.getElementById('result-modal').classList.add('active');
     },
