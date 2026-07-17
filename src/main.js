@@ -661,6 +661,7 @@ const app = {
       if (difficultyBtns.length > 0) difficultyBtns[0].classList.add('active');
       
       const countOpts = document.querySelectorAll('.count-options .btn-opt');
+      countOpts.forEach(b => b.classList.remove('active'));
       if (countOpts.length) countOpts[0].classList.add('active');
       
       this.state.difficulty = 'easy';
