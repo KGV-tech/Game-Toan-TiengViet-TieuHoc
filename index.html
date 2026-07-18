@@ -327,6 +327,42 @@
 
         <div id="treasure-content-area" class="admin-content scroll-box"></div>
       </div>
+      </div>
+    </div>
+
+    <!-- Modal Nhiệm vụ -->
+    <div id="quest-modal" class="modal">
+      <div class="modal-content glass-container-xl" style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
+        <button class="btn-danger" style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
+          onclick="document.getElementById('quest-modal').style.display='none'">Đóng</button>
+        <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
+          <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
+        </div>
+        <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
+           <!-- Quests rendered here by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Cửa hàng & Gacha -->
+    <div id="shop-modal" class="modal">
+      <div class="modal-content glass-container-xl" style="position:relative; background: rgba(253, 230, 138, 0.95); max-width: 900px; padding: 20px;">
+        <button class="btn-danger" style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
+          onclick="document.getElementById('shop-modal').style.display='none'">Đóng</button>
+        <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
+          <h2 class="title-glow" style="margin:0; color: #9333ea; text-shadow: 2px 2px 0px #e9d5ff;">Cửa Tiệm Phép Thuật</h2>
+        </div>
+        
+        <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+            <button class="tab-btn active" onclick="app.shop.switchTab('kiosk', this)">Ki-ốt Đổi Kẹo</button>
+            <button class="tab-btn" onclick="app.shop.switchTab('gacha', this)">Vòng Quay May Mắn</button>
+            <button class="tab-btn" onclick="app.shop.switchTab('pets', this)">Thú Cưng Của Tôi</button>
+        </div>
+
+        <div id="shop-content-area" class="scroll-box" style="height: 400px;">
+            <!-- Shop content rendered by JS -->
+        </div>
+      </div>
     </div>
 
     <!-- Modal In Ấn -->

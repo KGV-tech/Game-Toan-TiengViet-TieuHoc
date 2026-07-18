@@ -136,6 +136,10 @@ const app = {
         
         // 2. Fetch Questions (Deferred to login to save memory/bandwidth for students)
         this.libraryQuestions = [];
+        this.quests = [];
+        this.userQuests = [];
+        this.candyRequests = [];
+        this.userPets = [];
         
         // 3. Fetch Exams
         this.exams = await this.fetchAllFromSupabase('game_exams');
@@ -447,11 +451,17 @@ const app = {
             app.data.users = await app.data.fetchAllFromSupabase('game_users');
             app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions');
+            app.data.quests = await app.data.fetchAllFromSupabase('game_quests');
+            app.data.candyRequests = await app.data.fetchAllFromSupabase('candy_requests');
             document.getElementById('admin-station').style.display = 'flex';
             if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
         } else {
             const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
+            app.data.quests = await app.data.fetchAllFromSupabase('game_quests');
+            app.data.userQuests = await app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username);
+            app.data.candyRequests = await app.data.fetchAllFromSupabase('candy_requests', 'user_username', user.username);
+            app.data.userPets = await app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username);
             document.getElementById('admin-station').style.display = 'none';
             if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
         }
@@ -1467,6 +1477,11 @@ const app = {
       let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
       this.recordHistory(title, finalScore, giveLollipop);
       
+      // Update quests progress
+      if (app.quest && typeof app.quest.updateProgress === 'function') {
+          app.quest.updateProgress(this.state.subject, finalScore);
+      }
+      
       document.getElementById('result-score').textContent = finalScore;
       document.getElementById('result-msg').textContent = msg;
       
@@ -1872,7 +1887,8 @@ const app = {
         { id: 'players', label: 'Quản Lý Học Sinh' },
         { id: 'settings', label: 'Điều chỉnh' },
         { id: 'questions', label: 'Kho Câu Hỏi' },
-        { id: 'exams', label: 'Kho Đề Kiểm tra' }
+        { id: 'exams', label: 'Kho Đề Kiểm tra' },
+        { id: 'quests', label: 'Quản lý Nhiệm vụ' }
       ];
       app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
       
@@ -1881,6 +1897,168 @@ const app = {
       else if (tab === 'exams') this.renderExams(box);
       else if (tab === 'players') this.renderPlayers(box);
       else if (tab === 'settings') this.renderSettings(box);
+      else if (tab === 'quests') this.renderQuests(box);
+    },
+    renderQuests(box) {
+      let html = `<div style="margin-bottom: 20px; text-align: right;">
+          <button class="btn-success" onclick="app.admin.showAddQuestForm()">+ Tạo Nhiệm vụ Mới</button>
+      </div>`;
+      
+      const cols = [
+          { label: 'Tên NV' },
+          { label: 'Môn/Điểm' },
+          { label: 'Số lượt' },
+          { label: 'Thưởng' },
+          { label: 'Chỉ định' },
+          { label: 'Trạng thái' },
+          { label: 'Hành động' }
+      ];
+      
+      const quests = app.data.quests || [];
+      html += app.ui.renderTable(cols, quests, (q, i) => {
+          const status = q.is_active ? '<span style="color:#16a34a; font-weight:bold;">Đang chạy</span>' : '<span style="color:#dc2626; font-weight:bold;">Tạm dừng</span>';
+          let target = q.target_subject === 'any' ? 'Bất kỳ' : (q.target_subject === 'math' ? 'Toán' : 'Tiếng Việt');
+          target += ` (>= ${q.target_score}đ)`;
+          
+          let assign = 'Toàn trường';
+          if (q.assign_type === 'class') assign = `Lớp ${q.assign_target}`;
+          if (q.assign_type === 'user') assign = `HS: ${q.assign_target}`;
+
+          return `<tr>
+              <td>${app.data.sanitizeHTML(q.title)}</td>
+              <td>${target}</td>
+              <td>${q.target_count}</td>
+              <td>${q.reward_lollipops} 🍭</td>
+              <td>${assign}</td>
+              <td>${status}</td>
+              <td>
+                  <button class="action-btn btn-danger" onclick="app.admin.toggleQuest(${i})">${q.is_active ? 'Dừng' : 'Bật'}</button>
+                  <button class="action-btn btn-danger" onclick="app.admin.deleteQuest(${i})">Xoá</button>
+              </td>
+          </tr>`;
+      }, "Chưa có nhiệm vụ nào được tạo.");
+      
+      box.innerHTML = html;
+    },
+    showAddQuestForm() {
+      const box = document.getElementById('treasure-content-area');
+      let classOpts = [1,2,3,4,5].map(c => `<option value="${c}">Lớp ${c}</option>`).join('');
+      box.innerHTML = `
+        <div style="max-width: 600px; margin: 0 auto; text-align: left; padding: 20px;">
+           <h3 style="margin-bottom: 20px; color: #ffeb3b; text-align:center;">Tạo Nhiệm Vụ Mới</h3>
+           <div class="form-group" style="margin-bottom:15px;">
+              <label style="display:block; font-weight:bold; margin-bottom:5px;">Tên nhiệm vụ:</label>
+              <input type="text" id="quest-title" class="form-input" style="width:100%;" placeholder="VD: Hoàn thành 3 bài Toán xuất sắc">
+           </div>
+           <div style="display:flex; gap:15px; margin-bottom:15px;">
+              <div class="form-group" style="flex:1;">
+                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Môn học:</label>
+                 <select id="quest-subject" class="form-input" style="width:100%;">
+                    <option value="any">Bất kỳ</option>
+                    <option value="math">Toán</option>
+                    <option value="vietnamese">Tiếng Việt</option>
+                 </select>
+              </div>
+              <div class="form-group" style="flex:1;">
+                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Điểm tối thiểu:</label>
+                 <input type="number" id="quest-score" class="form-input" style="width:100%;" value="80" min="0" max="100">
+              </div>
+           </div>
+           <div style="display:flex; gap:15px; margin-bottom:15px;">
+              <div class="form-group" style="flex:1;">
+                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Số lượt yêu cầu:</label>
+                 <input type="number" id="quest-count" class="form-input" style="width:100%;" value="3" min="1">
+              </div>
+              <div class="form-group" style="flex:1;">
+                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Phần thưởng (Kẹo):</label>
+                 <input type="number" id="quest-reward" class="form-input" style="width:100%;" value="20" min="1">
+              </div>
+           </div>
+           <div class="form-group" style="margin-bottom:15px;">
+              <label style="display:block; font-weight:bold; margin-bottom:5px;">Chỉ định cho:</label>
+              <select id="quest-assign-type" class="form-input" style="width:100%;" onchange="document.getElementById('quest-assign-target').style.display = this.value === 'all' ? 'none' : 'block'">
+                 <option value="all">Toàn trường</option>
+                 <option value="class">Theo Lớp</option>
+                 <option value="user">Đích danh Học sinh (Username)</option>
+              </select>
+              <input type="text" id="quest-assign-target" class="form-input" style="width:100%; margin-top:10px; display:none;" placeholder="Nhập tên lớp (VD: 5) hoặc Username">
+           </div>
+           
+           <div style="text-align:center; margin-top: 20px;">
+              <button class="btn-primary" style="width:45%; display:inline-block;" onclick="app.admin.switchTab('quests')">Hủy</button>
+              <button class="btn-success" style="width:45%; display:inline-block;" onclick="app.admin.submitQuest()">Lưu Nhiệm Vụ</button>
+           </div>
+        </div>
+      `;
+    },
+    async submitQuest() {
+        const title = document.getElementById('quest-title').value.trim();
+        const subject = document.getElementById('quest-subject').value;
+        const score = parseInt(document.getElementById('quest-score').value) || 80;
+        const count = parseInt(document.getElementById('quest-count').value) || 1;
+        const reward = parseInt(document.getElementById('quest-reward').value) || 10;
+        const assignType = document.getElementById('quest-assign-type').value;
+        const assignTarget = document.getElementById('quest-assign-target').value.trim();
+        
+        if (!title) return alert("Vui lòng nhập tên nhiệm vụ!");
+        if (assignType !== 'all' && !assignTarget) return alert("Vui lòng nhập đích danh (Lớp/Username)!");
+        
+        const newQuest = {
+            title, target_subject: subject, target_score: score, target_count: count,
+            reward_lollipops: reward, assign_type: assignType, assign_target: assignTarget, is_active: true
+        };
+        
+        if (window.supabase) {
+            const { data, error } = await supabaseClient.from('game_quests').insert([newQuest]).select();
+            if (error) {
+                console.error("Lỗi tạo nhiệm vụ:", error);
+                alert("Có lỗi khi tạo nhiệm vụ trên server!");
+            } else if (data && data.length > 0) {
+                app.data.quests.push(data[0]);
+                this.switchTab('quests');
+            }
+        } else {
+            newQuest.id = 'temp_' + new Date().getTime();
+            app.data.quests.push(newQuest);
+            this.switchTab('quests');
+        }
+    },
+    async toggleQuest(idx) {
+        const q = app.data.quests[idx];
+        if (!q) return;
+        const newState = !q.is_active;
+        if (window.supabase && !q.id.startsWith('temp_')) {
+            const { error } = await supabaseClient.from('game_quests').update({ is_active: newState }).eq('id', q.id);
+            if (!error) {
+                q.is_active = newState;
+                this.renderQuests(document.getElementById('treasure-content-area'));
+            } else {
+                console.error(error);
+                alert("Lỗi server!");
+            }
+        } else {
+            q.is_active = newState;
+            this.renderQuests(document.getElementById('treasure-content-area'));
+        }
+    },
+    async deleteQuest(idx) {
+        if (!confirm("Bạn có chắc chắn muốn xoá nhiệm vụ này? Tiến trình của HS cho nhiệm vụ này cũng sẽ bị xoá.")) return;
+        const q = app.data.quests[idx];
+        if (!q) return;
+        
+        if (window.supabase && !q.id.startsWith('temp_')) {
+            const { error } = await supabaseClient.from('game_quests').delete().eq('id', q.id);
+            if (!error) {
+                app.data.quests.splice(idx, 1);
+                this.renderQuests(document.getElementById('treasure-content-area'));
+            } else {
+                console.error(error);
+                alert("Lỗi server!");
+            }
+        } else {
+            app.data.quests.splice(idx, 1);
+            this.renderQuests(document.getElementById('treasure-content-area'));
+        }
     },
     renderSettings(box) {
       box.innerHTML = `
@@ -3378,14 +3556,445 @@ const app = {
   quest: {
     init() {},
     open() {
-      alert("Chức năng Nhiệm vụ đang được xây dựng!");
+      const modal = document.getElementById('quest-modal');
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+      this.render();
+    },
+    render() {
+        const container = document.getElementById('quest-list-container');
+        const user = app.data.currentUser;
+        if (!user || user.role === 'admin') return;
+        
+        const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
+        const activeQuests = (app.data.quests || []).filter(q => {
+            if (!q.is_active) return false;
+            if (q.assign_type === 'all') return true;
+            if (q.assign_type === 'class' && q.assign_target === clLvl) return true;
+            if (q.assign_type === 'user' && q.assign_target === user.username) return true;
+            return false;
+        });
+        
+        if (activeQuests.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding: 20px;">Hiện tại chưa có nhiệm vụ nào.</p>';
+            return;
+        }
+        
+        let html = '';
+        activeQuests.forEach(q => {
+            let uq = (app.data.userQuests || []).find(x => x.quest_id === q.id);
+            let progress = uq ? uq.progress : 0;
+            let isCompleted = uq ? uq.is_completed : false;
+            
+            let btnHtml = '';
+            if (isCompleted) {
+                btnHtml = `<button class="btn-success" style="opacity:0.5; cursor:not-allowed;" disabled>Đã nhận</button>`;
+            } else if (progress >= q.target_count) {
+                btnHtml = `<button class="btn-success" style="box-shadow: 0 0 10px #4ade80;" onclick="app.quest.claimReward('${q.id}')">Nhận ${q.reward_lollipops} 🍭</button>`;
+            } else {
+                btnHtml = `<button class="btn-primary" style="opacity:0.5; cursor:not-allowed;" disabled>${progress}/${q.target_count}</button>`;
+            }
+            
+            html += `<div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h4 style="margin:0 0 5px 0; color:#b45309; font-size: 1.2rem;">${app.data.sanitizeHTML(q.title)}</h4>
+                    <p style="margin:0; font-size:0.9rem; color:#666;">Yêu cầu: ${q.target_subject === 'any'?'Môn bất kỳ':(q.target_subject==='math'?'Môn Toán':'Môn Tiếng Việt')} đạt >= ${q.target_score} điểm</p>
+                </div>
+                <div>
+                    ${btnHtml}
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    },
+    async claimReward(questId) {
+        const user = app.data.currentUser;
+        if (!user) return;
+        
+        const q = app.data.quests.find(x => x.id === questId);
+        if (!q) return;
+        
+        let uq = app.data.userQuests.find(x => x.quest_id === questId);
+        if (!uq || uq.is_completed || uq.progress < q.target_count) return;
+        
+        // Cập nhật local
+        uq.is_completed = true;
+        user.lollipops = (user.lollipops || 0) + q.reward_lollipops;
+        app.auth.updateHeader();
+        
+        // Hiệu ứng pháo hoa
+        if (!window.confetti) {
+            app.utils.loadScript('https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js', 'confetti').then(() => {
+                if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            });
+        } else {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+        
+        this.render();
+        
+        // Cập nhật server
+        if (window.supabase) {
+            await supabaseClient.from('user_quests').update({ is_completed: true }).eq('id', uq.id);
+            await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+        } else {
+            app.data.saveUsers();
+        }
+    },
+    async updateProgress(subject, score) {
+        const user = app.data.currentUser;
+        if (!user || user.role === 'admin') return;
+        
+        const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
+        const activeQuests = (app.data.quests || []).filter(q => {
+            if (!q.is_active) return false;
+            if (q.assign_type === 'all' || (q.assign_type === 'class' && q.assign_target === clLvl) || (q.assign_type === 'user' && q.assign_target === user.username)) {
+                if (q.target_subject === 'any' || q.target_subject === subject) {
+                    if (score >= q.target_score) return true;
+                }
+            }
+            return false;
+        });
+        
+        for (const q of activeQuests) {
+            let uq = app.data.userQuests.find(x => x.quest_id === q.id);
+            if (uq && uq.is_completed) continue;
+            
+            if (uq) {
+                uq.progress += 1;
+                if (window.supabase) {
+                    await supabaseClient.from('user_quests').update({ progress: uq.progress }).eq('id', uq.id);
+                }
+            } else {
+                uq = { user_username: user.username, quest_id: q.id, progress: 1, is_completed: false };
+                if (window.supabase) {
+                    const { data } = await supabaseClient.from('user_quests').insert([uq]).select();
+                    if (data && data.length > 0) uq = data[0];
+                } else {
+                    uq.id = 'temp_' + new Date().getTime();
+                }
+                app.data.userQuests.push(uq);
+            }
+        }
     }
   },
 
   shop: {
     init() {},
     open() {
-      alert("Chức năng Cửa hàng & Gacha đang được xây dựng!");
+      const modal = document.getElementById('shop-modal');
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+      this.switchTab('kiosk', document.querySelector('#shop-modal .tab-btn.active') || document.querySelector('#shop-modal .tab-btn'));
+    },
+    switchTab(tab, btnEl) {
+      if (btnEl) {
+          document.querySelectorAll('#shop-modal .tab-btn').forEach(b => b.classList.remove('active'));
+          btnEl.classList.add('active');
+      }
+      const box = document.getElementById('shop-content-area');
+      const user = app.data.currentUser;
+      if (!user) return;
+      
+      if (tab === 'kiosk') {
+          this.renderKiosk(box, user);
+      } else if (tab === 'gacha') {
+          if (user.role === 'admin') box.innerHTML = '<p style="text-align:center; padding: 20px;">Chức năng này dành cho Học sinh.</p>';
+          else this.renderGacha(box, user);
+      } else if (tab === 'pets') {
+          if (user.role === 'admin') box.innerHTML = '<p style="text-align:center; padding: 20px;">Chức năng này dành cho Học sinh.</p>';
+          else this.renderPets(box, user);
+      }
+    },
+    renderKiosk(box, user) {
+        if (user.role === 'admin') {
+            // Admin View
+            let html = `<h3 style="text-align:center; margin-bottom:15px; color:#9333ea;">Quản lý Yêu cầu Đổi Kẹo</h3>`;
+            const cols = [{label:'Học sinh'}, {label:'Số kẹo (thật)'}, {label:'Đã trừ (🍭)'}, {label:'Trạng thái'}, {label:'Hành động'}];
+            const reqs = app.data.candyRequests || [];
+            
+            html += app.ui.renderTable(cols, reqs, (r, i) => {
+                let status = '';
+                if (r.status === 'pending') status = '<span style="color:#eab308;font-weight:bold;">Chờ duyệt</span>';
+                else if (r.status === 'approved') status = '<span style="color:#22c55e;font-weight:bold;">Đã duyệt</span>';
+                else status = '<span style="color:#ef4444;font-weight:bold;">Từ chối</span>';
+                
+                let actions = '';
+                if (r.status === 'pending') {
+                    actions = `<button class="btn-success action-btn" onclick="app.shop.approveRequest('${r.id}')">Duyệt</button>
+                               <button class="btn-danger action-btn" onclick="app.shop.rejectRequest('${r.id}')">Từ chối</button>`;
+                }
+                
+                return `<tr>
+                    <td>${app.data.sanitizeHTML(r.user_username)}</td>
+                    <td>${r.candy_count}</td>
+                    <td>${r.amount}</td>
+                    <td>${status}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            }, "Chưa có yêu cầu nào.");
+            box.innerHTML = html;
+        } else {
+            // Student View
+            const rate = 10; // 1 real candy = 10 lollipops
+            let myReqs = (app.data.candyRequests || []).filter(x => x.user_username === user.username);
+            
+            let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="font-size: 1.2rem; font-weight: bold; color: #b45309;">
+                    Bạn đang có: <span style="font-size:1.5rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
+                </div>
+                <div style="font-size: 1rem; color: #666;">
+                    Tỷ lệ đổi: <b style="color:#9333ea;">${rate} 🍭 = 1 🍬 (Kẹo thật)</b>
+                </div>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                <h4 style="margin-top:0; color:#9333ea;">Tạo Yêu Cầu Đổi Kẹo</h4>
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    <input type="number" id="kiosk-candy-count" class="form-input" min="1" placeholder="Số lượng kẹo thật muốn đổi" style="flex:1;">
+                    <button class="btn-success" onclick="app.shop.submitCandyRequest()">Gửi Yêu Cầu</button>
+                </div>
+            </div>
+            
+            <h4 style="color:#9333ea;">Lịch sử Đổi Kẹo</h4>
+            `;
+            
+            const cols = [{label:'Số kẹo'}, {label:'Đã dùng (🍭)'}, {label:'Trạng thái'}];
+            html += app.ui.renderTable(cols, myReqs, (r, i) => {
+                let status = r.status === 'pending' ? '<span style="color:#eab308">Chờ Cô duyệt</span>' : 
+                            (r.status === 'approved' ? '<span style="color:#22c55e">Thành công! Gặp Cô để nhận</span>' : 
+                            '<span style="color:#ef4444">Bị từ chối (Đã hoàn lại 🍭)</span>');
+                return `<tr>
+                    <td>${r.candy_count} 🍬</td>
+                    <td>${r.amount} 🍭</td>
+                    <td>${status}</td>
+                </tr>`;
+            }, "Bạn chưa đổi kẹo lần nào.");
+            
+            box.innerHTML = html;
+        }
+    },
+    async submitCandyRequest() {
+        const user = app.data.currentUser;
+        if (!user) return;
+        
+        const count = parseInt(document.getElementById('kiosk-candy-count').value);
+        if (!count || count < 1) return alert("Vui lòng nhập số kẹo hợp lệ!");
+        
+        const cost = count * 10;
+        if ((user.lollipops || 0) < cost) {
+            return alert(`Bạn không đủ Kẹo mút! Cần ${cost} 🍭 để đổi ${count} kẹo thật.`);
+        }
+        
+        // Deduct locally
+        user.lollipops -= cost;
+        app.auth.updateHeader();
+        
+        const req = {
+            user_username: user.username,
+            amount: cost,
+            candy_count: count,
+            status: 'pending'
+        };
+        
+        if (window.supabase) {
+            const { data, error } = await supabaseClient.from('candy_requests').insert([req]).select();
+            if (error) {
+                console.error(error);
+                user.lollipops += cost; // revert
+                app.auth.updateHeader();
+                return alert("Lỗi gửi yêu cầu!");
+            }
+            if (data && data.length > 0) app.data.candyRequests.push(data[0]);
+            
+            await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+        } else {
+            req.id = 'temp_' + new Date().getTime();
+            app.data.candyRequests.push(req);
+            app.data.saveUsers();
+        }
+        
+        this.switchTab('kiosk');
+        alert("Gửi yêu cầu thành công! Vui lòng chờ Giáo viên duyệt.");
+    },
+    async approveRequest(reqId) {
+        if (!confirm("Xác nhận duyệt yêu cầu đổi kẹo này?")) return;
+        const req = app.data.candyRequests.find(x => x.id === reqId);
+        if (!req) return;
+        
+        if (window.supabase && !req.id.startsWith('temp_')) {
+            const { error } = await supabaseClient.from('candy_requests').update({ status: 'approved' }).eq('id', reqId);
+            if (error) return alert("Lỗi server!");
+            req.status = 'approved';
+        } else {
+            req.status = 'approved';
+        }
+        this.switchTab('kiosk');
+    },
+    async rejectRequest(reqId) {
+        if (!confirm("Xác nhận từ chối? Số kẹo 🍭 sẽ được hoàn lại cho học sinh.")) return;
+        const req = app.data.candyRequests.find(x => x.id === reqId);
+        if (!req) return;
+        
+        const user = app.data.users.find(u => u.username === req.user_username);
+        
+        if (window.supabase && !req.id.startsWith('temp_')) {
+            const { error } = await supabaseClient.from('candy_requests').update({ status: 'rejected' }).eq('id', reqId);
+            if (error) return alert("Lỗi server!");
+            
+            if (user) {
+                user.lollipops = (user.lollipops || 0) + req.amount;
+                await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+            }
+            req.status = 'rejected';
+        } else {
+            req.status = 'rejected';
+            if (user) {
+                user.lollipops = (user.lollipops || 0) + req.amount;
+                app.data.saveUsers();
+            }
+        }
+        this.switchTab('kiosk');
+    },
+    renderGacha(box, user) {
+        const cost = 5;
+        let html = `
+        <div style="text-align:center; padding: 20px;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: #b45309; margin-bottom: 20px;">
+                Kẹo của bạn: <span style="font-size:1.5rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
+            </div>
+            
+            <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; position: relative; overflow: hidden;">
+                <div style="font-size: 4rem; margin-bottom: 20px;" id="gacha-machine-icon">🎁</div>
+                <h3 style="color:#9333ea; margin-top:0;">Vòng Quay Thú Cưng</h3>
+                <p style="color:#666; margin-bottom:20px;">Mỗi lần quay tiêu tốn ${cost} 🍭. Bạn có cơ hội nhận Thú Cưng Hiếm và Truyền Thuyết!</p>
+                <button class="btn-success" style="font-size: 1.2rem; padding: 10px 30px; border-radius: 50px; box-shadow: 0 4px 6px rgba(74,222,128,0.4);" onclick="app.shop.spinGacha()">Quay Ngay (${cost} 🍭)</button>
+                <div id="gacha-result-overlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:10;">
+                    <div id="gacha-result-img" style="font-size: 5rem; animation: bounce 1s infinite;">🥚</div>
+                    <h2 id="gacha-result-name" style="color:#9333ea; margin: 10px 0;">Đang ấp trứng...</h2>
+                    <p id="gacha-result-rarity" style="font-weight:bold;"></p>
+                    <button class="btn-primary" style="margin-top:20px;" onclick="document.getElementById('gacha-result-overlay').style.display='none'">Tiếp Tục</button>
+                </div>
+            </div>
+        </div>
+        `;
+        box.innerHTML = html;
+    },
+    async spinGacha() {
+        const user = app.data.currentUser;
+        if (!user) return;
+        const cost = 5;
+        if ((user.lollipops || 0) < cost) {
+            return alert(`Bạn không đủ Kẹo mút! Cần ${cost} 🍭 để quay.`);
+        }
+        
+        // Deduct
+        user.lollipops -= cost;
+        app.auth.updateHeader();
+        
+        // Pick rarity
+        const rand = Math.random() * 100;
+        let rarity = 'common';
+        let rarityName = 'Thường';
+        let rarityColor = '#94a3b8';
+        if (rand < 1) { rarity = 'legendary'; rarityName = 'Truyền Thuyết'; rarityColor = '#eab308'; }
+        else if (rand < 10) { rarity = 'epic'; rarityName = 'Sử Thi'; rarityColor = '#a855f7'; }
+        else if (rand < 40) { rarity = 'rare'; rarityName = 'Hiếm'; rarityColor = '#3b82f6'; }
+        
+        // Pick pet (using emojis for now)
+        const petPools = {
+            'common': ['🐶','🐱','🐭','🐹','🐰'],
+            'rare': ['🦊','🐻','🐼','🐨','🐯'],
+            'epic': ['🦁','🐮','🐷','🐸','🐵'],
+            'legendary': ['🦄','🐲','🐉','🦖','🦕']
+        };
+        const pool = petPools[rarity];
+        const petImg = pool[Math.floor(Math.random() * pool.length)];
+        const petName = `Thú Cưng ${petImg}`;
+        
+        const overlay = document.getElementById('gacha-result-overlay');
+        const imgEl = document.getElementById('gacha-result-img');
+        const nameEl = document.getElementById('gacha-result-name');
+        const rarityEl = document.getElementById('gacha-result-rarity');
+        
+        overlay.style.display = 'flex';
+        imgEl.textContent = '🥚';
+        nameEl.textContent = 'Đang ấp trứng...';
+        rarityEl.textContent = '';
+        
+        // Update user on server
+        if (window.supabase) await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+        else app.data.saveUsers();
+        
+        // Simulate animation
+        setTimeout(async () => {
+            imgEl.textContent = petImg;
+            nameEl.textContent = petName;
+            rarityEl.textContent = rarityName;
+            rarityEl.style.color = rarityColor;
+            
+            if (window.confetti && (rarity === 'legendary' || rarity === 'epic')) {
+                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+            }
+            
+            const newPet = {
+                user_username: user.username, pet_name: petName, pet_image: petImg, rarity: rarity
+            };
+            
+            if (window.supabase) {
+                const { data } = await supabaseClient.from('user_pets').insert([newPet]).select();
+                if (data && data.length > 0) app.data.userPets.push(data[0]);
+            } else {
+                newPet.id = 'temp_' + new Date().getTime();
+                app.data.userPets.push(newPet);
+            }
+        }, 1500);
+        
+        // Update lollipop count in UI behind overlay
+        document.querySelector('#shop-content-area span').textContent = user.lollipops;
+    },
+    renderPets(box, user) {
+        let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
+        if (myPets.length === 0) {
+            box.innerHTML = '<p style="text-align:center; padding: 20px;">Bạn chưa có thú cưng nào. Hãy thử Vận May ở vòng quay nhé!</p>';
+            return;
+        }
+        
+        const rarityColors = {
+            'common': '#f1f5f9',
+            'rare': '#eff6ff',
+            'epic': '#faf5ff',
+            'legendary': '#fefce8'
+        };
+        const rarityBorders = {
+            'common': '#cbd5e1',
+            'rare': '#93c5fd',
+            'epic': '#d8b4fe',
+            'legendary': '#fde047'
+        };
+        const rarityLabels = {
+            'common': 'Thường',
+            'rare': 'Hiếm',
+            'epic': 'Sử Thi',
+            'legendary': 'Truyền Thuyết'
+        };
+        
+        let html = `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; padding: 10px;">`;
+        myPets.forEach(p => {
+            const bg = rarityColors[p.rarity] || '#fff';
+            const bd = rarityBorders[p.rarity] || '#ccc';
+            const lbl = rarityLabels[p.rarity] || 'Thường';
+            
+            html += `
+            <div style="background: ${bg}; border: 2px solid ${bd}; border-radius: 12px; padding: 15px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="font-size: 3rem; margin-bottom: 10px;">${p.pet_image}</div>
+                <div style="font-weight:bold; color: #333; font-size: 0.9rem;">${app.data.sanitizeHTML(p.pet_name)}</div>
+                <div style="font-size: 0.8rem; color: #666; margin-top: 5px; background: white; border-radius: 20px; padding: 2px 5px; display:inline-block; border: 1px solid ${bd};">${lbl}</div>
+            </div>`;
+        });
+        html += `</div>`;
+        box.innerHTML = html;
     }
   }
 };
