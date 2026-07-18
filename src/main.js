@@ -448,10 +448,12 @@ const app = {
             app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions');
             document.getElementById('admin-station').style.display = 'flex';
+            if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
         } else {
             const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
             app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
             document.getElementById('admin-station').style.display = 'none';
+            if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
         }
         
         await app.data.updateUserScore();
@@ -620,6 +622,19 @@ const app = {
           });
         };
       });
+
+      // Binds for fixed stations
+      const adminSt = document.getElementById('admin-station');
+      if (adminSt) adminSt.onclick = () => app.router.animateCatTo(adminSt, () => app.admin.openAdmin());
+      
+      const treasureSt = document.getElementById('treasure-station');
+      if (treasureSt) treasureSt.onclick = () => app.router.animateCatTo(treasureSt, () => app.treasure.open());
+      
+      const questSt = document.getElementById('quest-station');
+      if (questSt) questSt.onclick = () => app.router.animateCatTo(questSt, () => app.quest.open()); // Will implement app.quest
+      
+      const shopSt = document.getElementById('shop-station');
+      if (shopSt) shopSt.onclick = () => app.router.animateCatTo(shopSt, () => app.shop.open()); // Will implement app.shop
     },
     openConfig(subject) {
       this.state.subject = subject;
@@ -3357,6 +3372,20 @@ const app = {
             console.error("Lỗi xuất ảnh:", err);
             alert("Đã xảy ra lỗi khi tạo ảnh.");
         });
+    }
+  },
+
+  quest: {
+    init() {},
+    open() {
+      alert("Chức năng Nhiệm vụ đang được xây dựng!");
+    }
+  },
+
+  shop: {
+    init() {},
+    open() {
+      alert("Chức năng Cửa hàng & Gacha đang được xây dựng!");
     }
   }
 };

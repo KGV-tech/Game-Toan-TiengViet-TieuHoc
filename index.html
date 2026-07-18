@@ -95,14 +95,23 @@
         </div>
 
         <!-- Cài Đặt (Admin) -->
-        <div id="admin-station" class="station" style="top: 22%; left: 51%; display:none;"
-          onclick="app.router.animateCatTo(this, () => app.admin.openAdmin())">
+        <div id="admin-station" class="station" style="top: 22%; left: 51%; display:none;">
           <img src="./public/icon_caidat.png" alt="Cài Đặt" class="station-img">
         </div>
 
+        <!-- Nhiệm vụ (Học sinh) - Cùng tọa độ với Cài đặt -->
+        <div id="quest-station" class="station" style="top: 22%; left: 51%; display:none;">
+          <img src="./public/icon_nhiemvu.png" alt="Nhiệm vụ" class="station-img">
+        </div>
+
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
-        <div id="treasure-station" class="station" style="top: 75%; left: 75%;" onclick="app.router.animateCatTo(this, () => app.treasure.open())">
+        <div id="treasure-station" class="station" style="top: 75%; left: 75%;">
           <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img">
+        </div>
+
+        <!-- Cửa hàng Shop & Gacha -->
+        <div id="shop-station" class="station" style="top: 75%; left: 60%;">
+          <img src="./public/icon_shop.png" alt="Cửa hàng" class="station-img">
         </div>
 
         <div class="map-title-container">
