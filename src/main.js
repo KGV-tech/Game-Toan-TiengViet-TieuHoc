@@ -3878,17 +3878,17 @@ const app = {
         this.switchTab('kiosk');
     },
     shopData: [
-        { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 50 },
-        { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 50 },
-        { id: 'pet_3', name: 'Pet 3', image: 'pet_3.jpg', cost: 50 },
-        { id: 'pet_4', name: 'Pet 4', image: 'pet_4.jpg', cost: 50 },
-        { id: 'pet_5', name: 'Pet 5', image: 'pet_5.jpg', cost: 50 },
-        { id: 'pet_6', name: 'Pet 6', image: 'pet_6.jpg', cost: 50 },
-        { id: 'pet_7', name: 'Pet 7', image: 'pet_7.jpg', cost: 50 },
-        { id: 'pet_8', name: 'Pet 8', image: 'pet_8.jpg', cost: 50 },
-        { id: 'pet_9', name: 'Pet 9', image: 'pet_9.jpg', cost: 50 },
-        { id: 'pet_10', name: 'Pet 10', image: 'pet_10.jpg', cost: 50 },
-        { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 100 }
+        { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10 },
+        { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 10 },
+        { id: 'pet_3', name: 'Pet 3', image: 'pet_3.jpg', cost: 10 },
+        { id: 'pet_4', name: 'Pet 4', image: 'pet_4.jpg', cost: 10 },
+        { id: 'pet_5', name: 'Pet 5', image: 'pet_5.jpg', cost: 10 },
+        { id: 'pet_6', name: 'Pet 6', image: 'pet_6.jpg', cost: 10 },
+        { id: 'pet_7', name: 'Pet 7', image: 'pet_7.jpg', cost: 10 },
+        { id: 'pet_8', name: 'Pet 8', image: 'pet_8.jpg', cost: 10 },
+        { id: 'pet_9', name: 'Pet 9', image: 'pet_9.jpg', cost: 10 },
+        { id: 'pet_10', name: 'Pet 10', image: 'pet_10.jpg', cost: 10 },
+        { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 50 }
     ],
     currentTrainIndex: 0,
     trainAnimationDir: 0,
@@ -3913,15 +3913,15 @@ const app = {
         let remainingKey = 'pet_rem_' + currentPet.id;
         let remaining = localStorage.getItem(remainingKey);
         if (remaining === null) {
-            remaining = Math.floor(Math.random() * 5) + 1;
+            remaining = (currentPet.id === 'pet_dragon') ? 5 : 8;
             localStorage.setItem(remainingKey, remaining);
         }
         const hasPet = myPets.some(p => p.pet_image === currentPet.image);
         
         let html = `
-        <div style="display: flex; gap: 20px; height: 100%; min-height: 450px;">
+        <div style="display: flex; gap: 15px; height: 100%; max-height: 85vh;">
             <!-- Left: Train Carousel -->
-            <div style="flex: 3; background: #e0f2fe; border-radius: 15px; padding: 15px; border: 2px solid #bae6fd; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+            <div style="flex: 3.5; background: #e0f2fe; border-radius: 15px; padding: 10px; border: 2px solid #bae6fd; display:flex; flex-direction:column; position:relative; overflow:hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; z-index:1;">
                     <h3 style="color:#0369a1; margin:0; text-shadow: 1px 1px 2px white;">Đoàn Tàu Thú Cưng</h3>
                     ${isAdmin ? `
@@ -3942,7 +3942,7 @@ const app = {
                     </style>
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">◀</button>
                     
-                    <div style="position:relative; width: 100%; max-width: 350px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 45px; ${this.trainAnimationDir === 1 ? 'animation: slideInRight 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInLeft 0.3s ease-out;' : '')}">
+                    <div style="position:relative; width: 100%; max-width: 450px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 35px; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
                         <!-- Train Background -->
                         <img src="./public/train_car.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">
                         
