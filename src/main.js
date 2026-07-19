@@ -3891,7 +3891,9 @@ const app = {
         { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 100 }
     ],
     currentTrainIndex: 0,
+    trainAnimationDir: 0,
     nextTrainCar(dir) {
+        this.trainAnimationDir = dir;
         this.currentTrainIndex += dir;
         if (this.currentTrainIndex < 0) this.currentTrainIndex = this.shopData.length - 1;
         if (this.currentTrainIndex >= this.shopData.length) this.currentTrainIndex = 0;
@@ -3933,19 +3935,23 @@ const app = {
                     `}
                 </div>
                 
-                <div style="flex:1; display:flex; justify-content:center; align-items:center; position:relative; width:100%;">
+                <div style="flex:1; display:flex; justify-content:center; align-items:center; position:relative; width:100%; overflow:hidden;">
+                    <style>
+                        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                        @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                    </style>
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">◀</button>
                     
-                    <div style="position:relative; width: 100%; max-width: 350px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 45px;">
+                    <div style="position:relative; width: 100%; max-width: 350px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 45px; ${this.trainAnimationDir === 1 ? 'animation: slideInRight 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInLeft 0.3s ease-out;' : '')}">
                         <!-- Train Background -->
                         <img src="./public/train_car.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">
                         
-                        <!-- Pet Inside Window -->
-                        <div style="position:absolute; width: 35%; height: 35%; top: 50%; left: 55%; transform: translate(-50%, -50%); z-index:1; display:flex; justify-content:center; align-items:center;">
+                        <!-- Pet Inside Window (Z-index 3 to be on top) -->
+                        <div style="position:absolute; width: 35%; height: 35%; top: 50%; left: 55%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center;">
                             <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 4px 4px rgba(0,0,0,0.4)); animation: heartbeat 2s infinite;">
                         </div>
                         
-                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:-10px; right:10px; background:#22c55e; color:white; font-size:0.9rem; font-weight:bold; padding:4px 10px; border-radius:10px; z-index:3; box-shadow:0 2px 4px rgba(0,0,0,0.2);">Đã sở hữu</div>` : ''}
+                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:-10px; right:10px; background:#22c55e; color:white; font-size:0.9rem; font-weight:bold; padding:4px 10px; border-radius:10px; z-index:4; box-shadow:0 2px 4px rgba(0,0,0,0.2);">Đã sở hữu</div>` : ''}
                     </div>
                     
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">▶</button>
