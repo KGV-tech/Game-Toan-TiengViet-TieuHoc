@@ -3891,46 +3891,61 @@ const app = {
         { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 100 }
     ],
     renderPets(box, user) {
+        let isAdmin = (user.role === 'admin');
         let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
         let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
         
         let html = `
         <div style="display: flex; gap: 20px; height: 100%; min-height: 450px;">
             <!-- Left: Supermarket -->
-            <div style="flex: 3; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 15px; border: 2px solid #e2e8f0; display:flex; flex-direction:column;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <h3 style="color:#b45309; margin:0;">Siêu Thị Thú Cưng</h3>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #d97706; background: #fef3c7; padding: 5px 15px; border-radius: 20px;">
+            <div style="flex: 3; background: url('./public/supermarket_bg.png') center/cover no-repeat; border-radius: 15px; padding: 15px; border: 2px solid #e2e8f0; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+                <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.7); z-index:0;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; z-index:1;">
+                    <h3 style="color:#b45309; margin:0; text-shadow: 1px 1px 2px white;">Siêu Thị Thú Cưng</h3>
+                    ${isAdmin ? `
+                    <div style="font-size: 1rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 5px 15px; border-radius: 20px;">
+                        Chế độ Admin
+                    </div>
+                    ` : `
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 5px 15px; border-radius: 20px;">
                         Kẹo của bạn: 🍭 ${user.lollipops || 0}
                     </div>
+                    `}
                 </div>
-                <div style="flex:1; overflow-y:auto; display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 5px;" class="scroll-box">
+                <div style="flex:1; overflow-y:auto; display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 5px; z-index:1;" class="scroll-box">
         `;
         
         this.shopData.forEach(pet => {
-            // Fake remaining logic: store in localstorage so it doesn't change every refresh
             let remainingKey = 'pet_rem_' + pet.id;
             let remaining = localStorage.getItem(remainingKey);
             if (remaining === null) {
-                remaining = Math.floor(Math.random() * 5) + 1; // 1 to 5
+                remaining = Math.floor(Math.random() * 5) + 1;
                 localStorage.setItem(remainingKey, remaining);
             }
             
             const hasPet = myPets.some(p => p.pet_image === pet.image);
             
             html += `
-            <div style="background: white; border: 2px solid #cbd5e1; border-radius: 12px; padding: 10px; text-align:center; position:relative; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                ${hasPet ? `<div style="position:absolute; top:5px; right:5px; background:#22c55e; color:white; font-size:0.7rem; padding:2px 5px; border-radius:5px;">Đã sở hữu</div>` : ''}
-                <div style="height:80px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
-                    <img src="./public/${pet.image}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;">
+            <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); border: 2px solid #cbd5e1; border-radius: 12px; padding: 10px; text-align:center; position:relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ${hasPet && !isAdmin ? `<div style="position:absolute; top:5px; right:5px; background:#22c55e; color:white; font-size:0.7rem; padding:2px 5px; border-radius:5px; z-index:2;">Đã sở hữu</div>` : ''}
+                <div style="height:70px; display:flex; justify-content:center; align-items:center; margin-bottom:5px;">
+                    <img src="./public/${pet.image}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
                 </div>
-                <div style="font-weight:bold; color: #333; font-size: 0.9rem;">${pet.name}</div>
-                <div style="font-size: 0.8rem; color: #ef4444; margin-bottom: 5px;">Còn lại: ${remaining}</div>
-                <button class="btn-primary" style="width:100%; padding:5px; font-size:0.85rem;" 
-                    onclick="app.shop.buyPet('${pet.id}')"
-                    ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5;"' : ''}>
-                    Đổi: ${pet.cost} 🍭
-                </button>
+                <div style="font-weight:bold; color: #333; font-size: 0.85rem; margin-bottom: 5px;">${pet.name}</div>
+                ${isAdmin ? `
+                    <div style="display:flex; align-items:center; gap:5px; justify-content:center; margin-bottom:5px;">
+                        <span style="font-size:0.75rem;">Còn:</span>
+                        <input type="number" id="admin_edit_${pet.id}" value="${remaining}" style="width:40px; text-align:center; padding:2px; font-size:0.8rem;">
+                    </div>
+                    <button class="btn-primary" style="width:100%; padding:3px; font-size:0.75rem;" onclick="app.shop.adminSavePet('${pet.id}')">Lưu</button>
+                ` : `
+                    <div style="font-size: 0.8rem; color: #ef4444; margin-bottom: 5px;">Còn lại: ${remaining}</div>
+                    <button class="btn-primary" style="width:100%; padding:5px; font-size:0.85rem;" 
+                        onclick="app.shop.buyPet('${pet.id}')"
+                        ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5;"' : ''}>
+                        Đổi: ${pet.cost} 🍭
+                    </button>
+                `}
             </div>`;
         });
         
@@ -3939,41 +3954,51 @@ const app = {
             </div>
             
             <!-- Right: Your Pets -->
-            <div style="flex: 2; background: rgba(255,255,255,0.8); border-radius: 15px; padding: 15px; border: 2px dashed #9333ea;">
+            <div style="flex: 2; background: rgba(255,255,255,0.8); border-radius: 15px; padding: 15px; border: 2px dashed #9333ea; display:flex; flex-direction:column;">
                 <h3 style="color:#9333ea; margin-top:0; text-align:center;">Thú Cưng Của Bạn</h3>
                 <p style="text-align:center; font-size:0.85rem; color:#666;">(Tối đa 3 Thú cưng)</p>
-                <div style="display:flex; flex-direction:column; gap:15px; margin-top: 15px;">
+                <div style="flex:1; display:flex; flex-direction:column; gap:10px; margin-top: 10px; overflow-y:auto;" class="scroll-box">
         `;
         
-        for (let i = 0; i < 3; i++) {
-            const p = myPets[i];
-            if (p) {
-                const isEquipped = (equippedPet === p.pet_image);
-                const shopInfo = this.shopData.find(x => x.image === p.pet_image) || {cost: 50};
-                const refund = Math.floor(shopInfo.cost / 2);
-                
-                html += `
-                <div style="background: ${isEquipped ? '#fefce8' : 'white'}; border: 2px solid ${isEquipped ? '#eab308' : '#e2e8f0'}; border-radius: 12px; padding: 10px; display:flex; gap:10px; align-items:center; position:relative;">
-                    ${isEquipped ? `<div style="position:absolute; top:-10px; right:-10px; font-size:1.5rem;" class="heartbeat">⭐</div>` : ''}
-                    <div style="width:60px; height:60px; flex-shrink:0;">
-                        <img src="./public/${p.pet_image}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">
-                    </div>
-                    <div style="flex:1;">
-                        <div style="font-weight:bold; font-size:0.9rem;">${p.pet_name}</div>
-                        <div style="display:flex; gap:5px; margin-top:5px;">
-                            <button class="btn-success" style="padding:2px 8px; font-size:0.75rem; flex:1;" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Đang dùng' : 'Sử dụng'}</button>
-                            <button class="btn-danger" style="padding:2px 8px; font-size:0.75rem; flex:1;" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại (+${refund}🍭)</button>
+        if (isAdmin) {
+            html += `<div style="text-align:center; padding: 20px; color:#666;">Giáo viên không cần trang bị thú cưng.</div>`;
+        } else {
+            for (let i = 0; i < 3; i++) {
+                const p = myPets[i];
+                if (p) {
+                    const isEquipped = (equippedPet === p.pet_image);
+                    const shopInfo = this.shopData.find(x => x.image === p.pet_image) || {cost: 50};
+                    const refund = Math.floor(shopInfo.cost / 2);
+                    
+                    html += `
+                    <div style="background: url('./public/pet_house.png') center/cover no-repeat; border-radius: 12px; height: 110px; position:relative; overflow:hidden; border: 2px solid ${isEquipped ? '#eab308' : 'transparent'}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.5); z-index:0;"></div>
+                        ${isEquipped ? `<div style="position:absolute; top:5px; right:5px; font-size:1.5rem; z-index:2;" class="heartbeat">⭐</div>` : ''}
+                        
+                        <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; height:100%; padding:10px;">
+                            <div style="width:70px; height:70px; flex-shrink:0; display:flex; justify-content:center; align-items:center; background:rgba(255,255,255,0.7); border-radius:50%; box-shadow:inset 0 0 10px rgba(0,0,0,0.1);">
+                                <img src="./public/${p.pet_image}" style="max-width:90%; max-height:90%; object-fit:contain; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));">
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:bold; font-size:0.9rem; color:#333; text-shadow:1px 1px 0px #fff;">${p.pet_name}</div>
+                                <div style="display:flex; flex-direction:column; gap:5px; margin-top:5px;">
+                                    <button class="btn-success" style="padding:4px 8px; font-size:0.75rem; border-radius:15px; box-shadow:0 2px 4px rgba(0,0,0,0.2);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Đang dùng (Bấm để cất)' : 'Sử dụng'}</button>
+                                    <button class="btn-danger" style="padding:4px 8px; font-size:0.75rem; border-radius:15px; box-shadow:0 2px 4px rgba(0,0,0,0.2);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại (+${refund}🍭)</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                `;
-            } else {
-                // Empty slot
-                html += `
-                <div style="background: rgba(0,0,0,0.02); border: 2px dashed #cbd5e1; border-radius: 12px; height: 85px; display:flex; justify-content:center; align-items:center; color:#94a3b8; font-size:1.2rem;">
-                    Trống
-                </div>
-                `;
+                    `;
+                } else {
+                    html += `
+                    <div style="background: url('./public/pet_house.png') center/cover no-repeat; border-radius: 12px; height: 110px; position:relative; overflow:hidden; border: 2px dashed #cbd5e1; opacity: 0.7;">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.8); z-index:0;"></div>
+                        <div style="position:relative; z-index:1; display:flex; justify-content:center; align-items:center; height:100%; color:#64748b; font-weight:bold; font-size:1.1rem;">
+                            Nhà Trống
+                        </div>
+                    </div>
+                    `;
+                }
             }
         }
         
@@ -4065,8 +4090,21 @@ const app = {
     equipPet(petImage) {
         const user = app.data.currentUser;
         if (!user) return;
-        localStorage.setItem('equipped_pet_' + user.username, petImage);
+        let currentlyEquipped = localStorage.getItem('equipped_pet_' + user.username);
+        if (currentlyEquipped === petImage) {
+            localStorage.removeItem('equipped_pet_' + user.username); // Unequip
+        } else {
+            localStorage.setItem('equipped_pet_' + user.username, petImage);
+        }
         this.switchTab('pets');
+    },
+    adminSavePet(petId) {
+        const val = document.getElementById('admin_edit_' + petId).value;
+        if (val !== '') {
+            localStorage.setItem('pet_rem_' + petId, parseInt(val));
+            alert('Đã cập nhật số lượng tồn kho!');
+            this.switchTab('pets');
+        }
     }
 
   }
