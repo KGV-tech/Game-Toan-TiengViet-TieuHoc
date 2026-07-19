@@ -3890,18 +3890,38 @@ const app = {
         { id: 'pet_10', name: 'Pet 10', image: 'pet_10.jpg', cost: 50 },
         { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 100 }
     ],
+    currentTrainIndex: 0,
+    nextTrainCar(dir) {
+        this.currentTrainIndex += dir;
+        if (this.currentTrainIndex < 0) this.currentTrainIndex = this.shopData.length - 1;
+        if (this.currentTrainIndex >= this.shopData.length) this.currentTrainIndex = 0;
+        this.switchTab('pets');
+    },
     renderPets(box, user) {
         let isAdmin = (user.role === 'admin');
         let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
         let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
         
+        let currentPet = this.shopData[this.currentTrainIndex];
+        if (!currentPet) {
+            this.currentTrainIndex = 0;
+            currentPet = this.shopData[0];
+        }
+        
+        let remainingKey = 'pet_rem_' + currentPet.id;
+        let remaining = localStorage.getItem(remainingKey);
+        if (remaining === null) {
+            remaining = Math.floor(Math.random() * 5) + 1;
+            localStorage.setItem(remainingKey, remaining);
+        }
+        const hasPet = myPets.some(p => p.pet_image === currentPet.image);
+        
         let html = `
         <div style="display: flex; gap: 20px; height: 100%; min-height: 450px;">
-            <!-- Left: Supermarket -->
-            <div style="flex: 3; background: url('./public/supermarket_bg.png') center/cover no-repeat; border-radius: 15px; padding: 15px; border: 2px solid #e2e8f0; display:flex; flex-direction:column; position:relative; overflow:hidden;">
-                <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.7); z-index:0;"></div>
+            <!-- Left: Train Carousel -->
+            <div style="flex: 3; background: #e0f2fe; border-radius: 15px; padding: 15px; border: 2px solid #bae6fd; display:flex; flex-direction:column; position:relative; overflow:hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; z-index:1;">
-                    <h3 style="color:#b45309; margin:0; text-shadow: 1px 1px 2px white;">Siêu Thị Thú Cưng</h3>
+                    <h3 style="color:#0369a1; margin:0; text-shadow: 1px 1px 2px white;">Đoàn Tàu Thú Cưng</h3>
                     ${isAdmin ? `
                     <div style="font-size: 1rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 5px 15px; border-radius: 20px;">
                         Chế độ Admin
@@ -3912,44 +3932,42 @@ const app = {
                     </div>
                     `}
                 </div>
-                <div style="flex:1; overflow-y:auto; display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 5px; z-index:1;" class="scroll-box">
-        `;
-        
-        this.shopData.forEach(pet => {
-            let remainingKey = 'pet_rem_' + pet.id;
-            let remaining = localStorage.getItem(remainingKey);
-            if (remaining === null) {
-                remaining = Math.floor(Math.random() * 5) + 1;
-                localStorage.setItem(remainingKey, remaining);
-            }
-            
-            const hasPet = myPets.some(p => p.pet_image === pet.image);
-            
-            html += `
-            <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); border: 2px solid #cbd5e1; border-radius: 12px; padding: 10px; text-align:center; position:relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                ${hasPet && !isAdmin ? `<div style="position:absolute; top:5px; right:5px; background:#22c55e; color:white; font-size:0.7rem; padding:2px 5px; border-radius:5px; z-index:2;">Đã sở hữu</div>` : ''}
-                <div style="height:70px; display:flex; justify-content:center; align-items:center; margin-bottom:5px;">
-                    <img src="./public/${pet.image}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-                </div>
-                <div style="font-weight:bold; color: #333; font-size: 0.85rem; margin-bottom: 5px;">${pet.name}</div>
-                ${isAdmin ? `
-                    <div style="display:flex; align-items:center; gap:5px; justify-content:center; margin-bottom:5px;">
-                        <span style="font-size:0.75rem;">Còn:</span>
-                        <input type="number" id="admin_edit_${pet.id}" value="${remaining}" style="width:40px; text-align:center; padding:2px; font-size:0.8rem;">
+                
+                <div style="flex:1; display:flex; justify-content:center; align-items:center; position:relative; width:100%;">
+                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">◀</button>
+                    
+                    <div style="position:relative; width: 100%; max-width: 350px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 45px;">
+                        <!-- Train Background -->
+                        <img src="./public/train_car.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">
+                        
+                        <!-- Pet Inside Window -->
+                        <div style="position:absolute; width: 35%; height: 35%; top: 50%; left: 55%; transform: translate(-50%, -50%); z-index:1; display:flex; justify-content:center; align-items:center;">
+                            <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 4px 4px rgba(0,0,0,0.4)); animation: heartbeat 2s infinite;">
+                        </div>
+                        
+                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:-10px; right:10px; background:#22c55e; color:white; font-size:0.9rem; font-weight:bold; padding:4px 10px; border-radius:10px; z-index:3; box-shadow:0 2px 4px rgba(0,0,0,0.2);">Đã sở hữu</div>` : ''}
                     </div>
-                    <button class="btn-primary" style="width:100%; padding:3px; font-size:0.75rem;" onclick="app.shop.adminSavePet('${pet.id}')">Lưu</button>
-                ` : `
-                    <div style="font-size: 0.8rem; color: #ef4444; margin-bottom: 5px;">Còn lại: ${remaining}</div>
-                    <button class="btn-primary" style="width:100%; padding:5px; font-size:0.85rem;" 
-                        onclick="app.shop.buyPet('${pet.id}')"
-                        ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5;"' : ''}>
-                        Đổi: ${pet.cost} 🍭
-                    </button>
-                `}
-            </div>`;
-        });
-        
-        html += `
+                    
+                    <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">▶</button>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 12px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); mt-2">
+                    <div style="font-weight:bold; color: #333; font-size: 1.2rem; margin-bottom: 10px;">${currentPet.name}</div>
+                    
+                    ${isAdmin ? `
+                        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
+                            <span style="font-size:1rem; font-weight:bold;">Còn tồn:</span>
+                            <input type="number" id="admin_edit_${currentPet.id}" value="${remaining}" style="width:60px; text-align:center; padding:5px; font-size:1rem; border:2px solid #cbd5e1; border-radius:5px;">
+                        </div>
+                        <button class="btn-primary" style="padding:8px 30px; font-size:1rem;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu Kho</button>
+                    ` : `
+                        <div style="font-size: 1rem; color: #ef4444; margin-bottom: 10px; font-weight:bold;">Số lượng còn: ${remaining}</div>
+                        <button class="btn-success" style="padding:10px 30px; font-size:1.1rem; border-radius:25px;" 
+                            onclick="app.shop.buyPet('${currentPet.id}')"
+                            ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                            Đổi Ngay: ${currentPet.cost} 🍭
+                        </button>
+                    `}
                 </div>
             </div>
             
