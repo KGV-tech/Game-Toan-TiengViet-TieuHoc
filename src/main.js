@@ -868,7 +868,10 @@ const app = {
       
       document.getElementById('cat-speech-bubble').style.display = 'none';
       document.getElementById('explanation-box').style.display = 'none';
-      document.getElementById('play-cat-img').src = './public/cat_normal.png';
+      
+      const user = app.data.currentUser;
+      let equipped = user ? (localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png') : 'cat_normal.png';
+      document.getElementById('play-cat-img').src = './public/' + equipped;
       
       let qHtml = q.q;
       if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
@@ -1429,11 +1432,27 @@ const app = {
         }
         app.playSound('correct');
         this.state.score += 10 / this.state.questions.length;
-        document.getElementById('play-cat-img').src = './public/cat_happy.png';
+        
+        const user = app.data.currentUser;
+        let basePet = 'cat';
+        if (user) {
+            let equipped = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+            basePet = equipped.split('.')[0];
+            if (basePet === 'cat_normal') basePet = 'cat';
+        }
+        document.getElementById('play-cat-img').src = `./public/${basePet}_happy.png`;
         bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
       } else {
         app.playSound('wrong');
-        document.getElementById('play-cat-img').src = './public/cat_sad.png';
+        
+        const user = app.data.currentUser;
+        let basePet = 'cat';
+        if (user) {
+            let equipped = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+            basePet = equipped.split('.')[0];
+            if (basePet === 'cat_normal') basePet = 'cat';
+        }
+        document.getElementById('play-cat-img').src = `./public/${basePet}_sad.png`;
         bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
       }
       
@@ -3698,9 +3717,6 @@ const app = {
       
       if (tab === 'kiosk') {
           this.renderKiosk(box, user);
-      } else if (tab === 'gacha') {
-          if (user.role === 'admin') box.innerHTML = '<p style="text-align:center; padding: 20px;">Chức năng này dành cho Học sinh.</p>';
-          else this.renderGacha(box, user);
       } else if (tab === 'pets') {
           if (user.role === 'admin') box.innerHTML = '<p style="text-align:center; padding: 20px;">Chức năng này dành cho Học sinh.</p>';
           else this.renderPets(box, user);
@@ -3749,11 +3765,15 @@ const app = {
                 </div>
             </div>
             
-            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                <h4 style="margin-top:0; color:#9333ea;">Tạo Yêu Cầu Đổi Kẹo</h4>
-                <div style="display:flex; gap: 10px; align-items:center;">
-                    <input type="number" id="kiosk-candy-count" class="form-input" min="1" placeholder="Số lượng kẹo thật muốn đổi" style="flex:1;">
-                    <button class="btn-success" onclick="app.shop.submitCandyRequest()">Gửi Yêu Cầu</button>
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display:flex; gap:20px; align-items:center;">
+                <div style="font-size: 5rem; text-align:center; animation: bounce 2s infinite;">🎰</div>
+                <div style="flex:1;">
+                    <h4 style="margin-top:0; color:#9333ea; font-size:1.2rem;">Máy Đổi Kẹo</h4>
+                    <p style="color:#666; font-size:0.9rem; margin-bottom:10px;">Nhập số lượng kẹo mút muốn đổi thành kẹo thật nhé!</p>
+                    <div style="display:flex; gap: 10px; align-items:center;">
+                        <input type="number" id="kiosk-candy-count" class="form-input" min="1" placeholder="Số lượng kẹo thật" style="flex:1;">
+                        <button class="btn-success" onclick="app.shop.submitCandyRequest()">Đổi Ngay</button>
+                    </div>
                 </div>
             </div>
             
@@ -3857,145 +3877,198 @@ const app = {
         }
         this.switchTab('kiosk');
     },
-    renderGacha(box, user) {
-        const cost = 5;
+    shopData: [
+        { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 50 },
+        { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 50 },
+        { id: 'pet_3', name: 'Pet 3', image: 'pet_3.jpg', cost: 50 },
+        { id: 'pet_4', name: 'Pet 4', image: 'pet_4.jpg', cost: 50 },
+        { id: 'pet_5', name: 'Pet 5', image: 'pet_5.jpg', cost: 50 },
+        { id: 'pet_6', name: 'Pet 6', image: 'pet_6.jpg', cost: 50 },
+        { id: 'pet_7', name: 'Pet 7', image: 'pet_7.jpg', cost: 50 },
+        { id: 'pet_8', name: 'Pet 8', image: 'pet_8.jpg', cost: 50 },
+        { id: 'pet_9', name: 'Pet 9', image: 'pet_9.jpg', cost: 50 },
+        { id: 'pet_10', name: 'Pet 10', image: 'pet_10.jpg', cost: 50 },
+        { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.jpg', cost: 100 }
+    ],
+    renderPets(box, user) {
+        let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
+        let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+        
         let html = `
-        <div style="text-align:center; padding: 20px;">
-            <div style="font-size: 1.2rem; font-weight: bold; color: #b45309; margin-bottom: 20px;">
-                Kẹo của bạn: <span style="font-size:1.5rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
-            </div>
+        <div style="display: flex; gap: 20px; height: 100%; min-height: 450px;">
+            <!-- Left: Supermarket -->
+            <div style="flex: 3; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 15px; border: 2px solid #e2e8f0; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="color:#b45309; margin:0;">Siêu Thị Thú Cưng</h3>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #d97706; background: #fef3c7; padding: 5px 15px; border-radius: 20px;">
+                        Kẹo của bạn: 🍭 ${user.lollipops || 0}
+                    </div>
+                </div>
+                <div style="flex:1; overflow-y:auto; display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 5px;" class="scroll-box">
+        `;
+        
+        this.shopData.forEach(pet => {
+            // Fake remaining logic: store in localstorage so it doesn't change every refresh
+            let remainingKey = 'pet_rem_' + pet.id;
+            let remaining = localStorage.getItem(remainingKey);
+            if (remaining === null) {
+                remaining = Math.floor(Math.random() * 5) + 1; // 1 to 5
+                localStorage.setItem(remainingKey, remaining);
+            }
             
-            <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; position: relative; overflow: hidden;">
-                <div style="font-size: 4rem; margin-bottom: 20px;" id="gacha-machine-icon">🎁</div>
-                <h3 style="color:#9333ea; margin-top:0;">Vòng Quay Thú Cưng</h3>
-                <p style="color:#666; margin-bottom:20px;">Mỗi lần quay tiêu tốn ${cost} 🍭. Bạn có cơ hội nhận Thú Cưng Hiếm và Truyền Thuyết!</p>
-                <button class="btn-success" style="font-size: 1.2rem; padding: 10px 30px; border-radius: 50px; box-shadow: 0 4px 6px rgba(74,222,128,0.4);" onclick="app.shop.spinGacha()">Quay Ngay (${cost} 🍭)</button>
-                <div id="gacha-result-overlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:10;">
-                    <div id="gacha-result-img" style="font-size: 5rem; animation: bounce 1s infinite;">🥚</div>
-                    <h2 id="gacha-result-name" style="color:#9333ea; margin: 10px 0;">Đang ấp trứng...</h2>
-                    <p id="gacha-result-rarity" style="font-weight:bold;"></p>
-                    <button class="btn-primary" style="margin-top:20px;" onclick="document.getElementById('gacha-result-overlay').style.display='none'">Tiếp Tục</button>
+            const hasPet = myPets.some(p => p.pet_image === pet.image);
+            
+            html += `
+            <div style="background: white; border: 2px solid #cbd5e1; border-radius: 12px; padding: 10px; text-align:center; position:relative; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                ${hasPet ? `<div style="position:absolute; top:5px; right:5px; background:#22c55e; color:white; font-size:0.7rem; padding:2px 5px; border-radius:5px;">Đã sở hữu</div>` : ''}
+                <div style="height:80px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
+                    <img src="./public/${pet.image}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;">
+                </div>
+                <div style="font-weight:bold; color: #333; font-size: 0.9rem;">${pet.name}</div>
+                <div style="font-size: 0.8rem; color: #ef4444; margin-bottom: 5px;">Còn lại: ${remaining}</div>
+                <button class="btn-primary" style="width:100%; padding:5px; font-size:0.85rem;" 
+                    onclick="app.shop.buyPet('${pet.id}')"
+                    ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5;"' : ''}>
+                    Đổi: ${pet.cost} 🍭
+                </button>
+            </div>`;
+        });
+        
+        html += `
                 </div>
             </div>
-        </div>
+            
+            <!-- Right: Your Pets -->
+            <div style="flex: 2; background: rgba(255,255,255,0.8); border-radius: 15px; padding: 15px; border: 2px dashed #9333ea;">
+                <h3 style="color:#9333ea; margin-top:0; text-align:center;">Thú Cưng Của Bạn</h3>
+                <p style="text-align:center; font-size:0.85rem; color:#666;">(Tối đa 3 Thú cưng)</p>
+                <div style="display:flex; flex-direction:column; gap:15px; margin-top: 15px;">
         `;
+        
+        for (let i = 0; i < 3; i++) {
+            const p = myPets[i];
+            if (p) {
+                const isEquipped = (equippedPet === p.pet_image);
+                const shopInfo = this.shopData.find(x => x.image === p.pet_image) || {cost: 50};
+                const refund = Math.floor(shopInfo.cost / 2);
+                
+                html += `
+                <div style="background: ${isEquipped ? '#fefce8' : 'white'}; border: 2px solid ${isEquipped ? '#eab308' : '#e2e8f0'}; border-radius: 12px; padding: 10px; display:flex; gap:10px; align-items:center; position:relative;">
+                    ${isEquipped ? `<div style="position:absolute; top:-10px; right:-10px; font-size:1.5rem;" class="heartbeat">⭐</div>` : ''}
+                    <div style="width:60px; height:60px; flex-shrink:0;">
+                        <img src="./public/${p.pet_image}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; font-size:0.9rem;">${p.pet_name}</div>
+                        <div style="display:flex; gap:5px; margin-top:5px;">
+                            <button class="btn-success" style="padding:2px 8px; font-size:0.75rem; flex:1;" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Đang dùng' : 'Sử dụng'}</button>
+                            <button class="btn-danger" style="padding:2px 8px; font-size:0.75rem; flex:1;" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại (+${refund}🍭)</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            } else {
+                // Empty slot
+                html += `
+                <div style="background: rgba(0,0,0,0.02); border: 2px dashed #cbd5e1; border-radius: 12px; height: 85px; display:flex; justify-content:center; align-items:center; color:#94a3b8; font-size:1.2rem;">
+                    Trống
+                </div>
+                `;
+            }
+        }
+        
+        html += `
+                </div>
+            </div>
+        </div>`;
+        
         box.innerHTML = html;
     },
-    async spinGacha() {
+    async buyPet(petId) {
         const user = app.data.currentUser;
         if (!user) return;
-        const cost = 5;
-        if ((user.lollipops || 0) < cost) {
-            return alert(`Bạn không đủ Kẹo mút! Cần ${cost} 🍭 để quay.`);
+        
+        let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
+        if (myPets.length >= 3) {
+            return alert("Bạn đã sở hữu tối đa 3 thú cưng! Hãy trả lại một bé để đổi bé mới.");
+        }
+        
+        const pet = this.shopData.find(x => x.id === petId);
+        if (!pet) return;
+        
+        if ((user.lollipops || 0) < pet.cost) {
+            return alert(`Bạn không đủ Kẹo! Cần ${pet.cost} 🍭.`);
         }
         
         // Deduct
-        user.lollipops -= cost;
+        user.lollipops -= pet.cost;
         app.auth.updateHeader();
         
-        // Pick rarity
-        const rand = Math.random() * 100;
-        let rarity = 'common';
-        let rarityName = 'Thường';
-        let rarityColor = '#94a3b8';
-        if (rand < 1) { rarity = 'legendary'; rarityName = 'Truyền Thuyết'; rarityColor = '#eab308'; }
-        else if (rand < 10) { rarity = 'epic'; rarityName = 'Sử Thi'; rarityColor = '#a855f7'; }
-        else if (rand < 40) { rarity = 'rare'; rarityName = 'Hiếm'; rarityColor = '#3b82f6'; }
+        // Update remaining count
+        let remainingKey = 'pet_rem_' + pet.id;
+        let remaining = parseInt(localStorage.getItem(remainingKey)) || 0;
+        localStorage.setItem(remainingKey, remaining - 1);
         
-        // Pick pet (using emojis for now)
-        const petPools = {
-            'common': ['🐶','🐱','🐭','🐹','🐰'],
-            'rare': ['🦊','🐻','🐼','🐨','🐯'],
-            'epic': ['🦁','🐮','🐷','🐸','🐵'],
-            'legendary': ['🦄','🐲','🐉','🦖','🦕']
+        const newPet = {
+            user_username: user.username, pet_name: pet.name, pet_image: pet.image, rarity: 'common'
         };
-        const pool = petPools[rarity];
-        const petImg = pool[Math.floor(Math.random() * pool.length)];
-        const petName = `Thú Cưng ${petImg}`;
         
-        const overlay = document.getElementById('gacha-result-overlay');
-        const imgEl = document.getElementById('gacha-result-img');
-        const nameEl = document.getElementById('gacha-result-name');
-        const rarityEl = document.getElementById('gacha-result-rarity');
-        
-        overlay.style.display = 'flex';
-        imgEl.textContent = '🥚';
-        nameEl.textContent = 'Đang ấp trứng...';
-        rarityEl.textContent = '';
-        
-        // Update user on server
-        if (window.supabase) await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
-        else app.data.saveUsers();
-        
-        // Simulate animation
-        setTimeout(async () => {
-            imgEl.textContent = petImg;
-            nameEl.textContent = petName;
-            rarityEl.textContent = rarityName;
-            rarityEl.style.color = rarityColor;
-            
-            if (window.confetti && (rarity === 'legendary' || rarity === 'epic')) {
-                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-            }
-            
-            const newPet = {
-                user_username: user.username, pet_name: petName, pet_image: petImg, rarity: rarity
-            };
-            
-            if (window.supabase) {
-                const { data } = await supabaseClient.from('user_pets').insert([newPet]).select();
-                if (data && data.length > 0) app.data.userPets.push(data[0]);
-            } else {
-                newPet.id = 'temp_' + new Date().getTime();
-                app.data.userPets.push(newPet);
-            }
-        }, 1500);
-        
-        // Update lollipop count in UI behind overlay
-        document.querySelector('#shop-content-area span').textContent = user.lollipops;
-    },
-    renderPets(box, user) {
-        let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
-        if (myPets.length === 0) {
-            box.innerHTML = '<p style="text-align:center; padding: 20px;">Bạn chưa có thú cưng nào. Hãy thử Vận May ở vòng quay nhé!</p>';
-            return;
+        if (window.supabase) {
+            await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+            const { data } = await supabaseClient.from('user_pets').insert([newPet]).select();
+            if (data && data.length > 0) app.data.userPets.push(data[0]);
+        } else {
+            app.data.saveUsers();
+            newPet.id = 'temp_' + new Date().getTime();
+            app.data.userPets.push(newPet);
         }
         
-        const rarityColors = {
-            'common': '#f1f5f9',
-            'rare': '#eff6ff',
-            'epic': '#faf5ff',
-            'legendary': '#fefce8'
-        };
-        const rarityBorders = {
-            'common': '#cbd5e1',
-            'rare': '#93c5fd',
-            'epic': '#d8b4fe',
-            'legendary': '#fde047'
-        };
-        const rarityLabels = {
-            'common': 'Thường',
-            'rare': 'Hiếm',
-            'epic': 'Sử Thi',
-            'legendary': 'Truyền Thuyết'
-        };
+        if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        this.switchTab('pets');
+    },
+    async returnPet(userPetId, petImage) {
+        const user = app.data.currentUser;
+        if (!user) return;
         
-        let html = `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; padding: 10px;">`;
-        myPets.forEach(p => {
-            const bg = rarityColors[p.rarity] || '#fff';
-            const bd = rarityBorders[p.rarity] || '#ccc';
-            const lbl = rarityLabels[p.rarity] || 'Thường';
-            
-            html += `
-            <div style="background: ${bg}; border: 2px solid ${bd}; border-radius: 12px; padding: 15px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="font-size: 3rem; margin-bottom: 10px;">${p.pet_image}</div>
-                <div style="font-weight:bold; color: #333; font-size: 0.9rem;">${app.data.sanitizeHTML(p.pet_name)}</div>
-                <div style="font-size: 0.8rem; color: #666; margin-top: 5px; background: white; border-radius: 20px; padding: 2px 5px; display:inline-block; border: 1px solid ${bd};">${lbl}</div>
-            </div>`;
-        });
-        html += `</div>`;
-        box.innerHTML = html;
+        if (!confirm("Bạn có chắc chắn muốn trả lại thú cưng này? Bạn sẽ nhận lại 50% số kẹo mút.")) return;
+        
+        const shopInfo = this.shopData.find(x => x.image === petImage) || {cost: 50, id: 'pet_1'};
+        const refund = Math.floor(shopInfo.cost / 2);
+        
+        // Refund
+        user.lollipops = (user.lollipops || 0) + refund;
+        app.auth.updateHeader();
+        
+        // Increase remaining
+        let remainingKey = 'pet_rem_' + shopInfo.id;
+        let remaining = parseInt(localStorage.getItem(remainingKey)) || 0;
+        localStorage.setItem(remainingKey, remaining + 1);
+        
+        // Remove pet
+        app.data.userPets = app.data.userPets.filter(x => x.id !== userPetId);
+        
+        // Un-equip if equipped
+        let equippedPet = localStorage.getItem('equipped_pet_' + user.username);
+        if (equippedPet === petImage) {
+            localStorage.removeItem('equipped_pet_' + user.username);
+        }
+        
+        if (window.supabase && !userPetId.startsWith('temp_')) {
+            await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+            await supabaseClient.from('user_pets').delete().eq('id', userPetId);
+        } else {
+            app.data.saveUsers();
+        }
+        
+        this.switchTab('pets');
+    },
+    equipPet(petImage) {
+        const user = app.data.currentUser;
+        if (!user) return;
+        localStorage.setItem('equipped_pet_' + user.username, petImage);
+        this.switchTab('pets');
     }
+
   }
 };
 

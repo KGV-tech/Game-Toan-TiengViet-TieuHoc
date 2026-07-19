@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Hành Trình Tri Thức Lớp 5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,13 +15,13 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
   <script defer>
     window.addEventListener('DOMContentLoaded', () => {
-        if (window.MobileDragDrop) {
-            MobileDragDrop.polyfill({
-                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-            });
-        }
+      if (window.MobileDragDrop) {
+        MobileDragDrop.polyfill({
+          dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+      }
     });
-    window.addEventListener('touchmove', function() {}, {passive: false});
+    window.addEventListener('touchmove', function () { }, { passive: false });
   </script>
 </head>
 
@@ -42,7 +43,9 @@
         <button id="login-btn" class="btn-primary">Bắt Đầu</button>
         <a href="#" id="link-to-register" class="link-glass">Đăng ký tài khoản mới</a>
       </div>
-      <div style="position: absolute; bottom: 10px; right: 10px; color: white; font-weight: bold; font-size: 1rem; text-shadow: 1px 1px 2px #000; z-index: 100;">Ver. 1.00</div>
+      <div
+        style="position: absolute; bottom: 10px; right: 10px; color: white; font-weight: bold; font-size: 1rem; text-shadow: 1px 1px 2px #000; z-index: 100;">
+        Ver. 1.00</div>
     </div>
 
     <!-- Màn hình Đăng ký -->
@@ -72,7 +75,9 @@
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <button id="logout-btn" class="btn-danger" style="padding: 5px 15px; font-size: 0.9rem;">Thoát</button>
           <div id="player-info" class="player-info-card"></div>
-          <div id="admin-notification" style="display: none; background: rgba(239, 68, 68, 0.9); color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>
+          <div id="admin-notification"
+            style="display: none; background: rgba(239, 68, 68, 0.9); color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+          </div>
         </div>
       </div>
 
@@ -105,21 +110,23 @@
         </div>
 
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
-        <div id="treasure-station" class="station" style="top: 75%; left: 75%;">
+        <div id="treasure-station" class="station" style="top: 75%; left: 85%;">
           <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img">
         </div>
 
         <!-- Cửa hàng Shop & Gacha -->
-        <div id="shop-station" class="station" style="top: 75%; left: 60%;">
+        <div id="shop-station" class="station" style="top: 75%; left: 70%;">
           <img src="./public/icon_shop.png" alt="Cửa hàng" class="station-img">
         </div>
 
         <div class="map-title-container">
           <img src="./public/title.png" alt="Vùng Đất Bí Ẩn" class="map-title">
         </div>
-        
-        <div id="map-cat-wrapper" style="position:absolute; top: 75%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
-          <img id="map-cat" src="./public/cat.png" alt="Mèo máy" class="floating-cat" style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
+
+        <div id="map-cat-wrapper"
+          style="position:absolute; top: 75%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
+          <img id="map-cat" src="./public/cat.png" alt="Mèo máy" class="floating-cat"
+            style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
       </div>
     </div>
@@ -137,34 +144,44 @@
               <div class="config-left" style="flex: 1; display: flex; justify-content: center; align-items: center;">
                 <img src="./public/cat_normal.png" alt="Mèo máy" class="cat-avatar heartbeat" style="width: 150px;">
               </div>
-              
+
               <div class="config-center" style="flex: 3; display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                   <h1 id="game-config-title" class="title-glow" style="margin: 0; font-size: 2rem;"></h1>
-                  
+
                   <div id="admin-class-selector" style="display:none; text-align:right;">
-                    <span style="color: #fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp để test game:</span>
-                    <div class="diff-options" id="admin-class-btns" style="display:inline-flex; gap:5px; margin:0; padding:0;">
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.game.setAdminClass('1', this)">1</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.game.setAdminClass('2', this)">2</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.game.setAdminClass('3', this)">3</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.game.setAdminClass('4', this)">4</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.game.setAdminClass('5', this)">5</button>
+                    <span style="color: #fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp
+                      để test game:</span>
+                    <div class="diff-options" id="admin-class-btns"
+                      style="display:inline-flex; gap:5px; margin:0; padding:0;">
+                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                        onclick="app.game.setAdminClass('1', this)">1</button>
+                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                        onclick="app.game.setAdminClass('2', this)">2</button>
+                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                        onclick="app.game.setAdminClass('3', this)">3</button>
+                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                        onclick="app.game.setAdminClass('4', this)">4</button>
+                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                        onclick="app.game.setAdminClass('5', this)">5</button>
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="config-section">
-                  <div class="topic-header" style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                  <div class="topic-header"
+                    style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0;">1. Chọn Chủ đề</h3>
                     <div class="topic-mode-toggle">
-                      <label><input type="radio" name="topicMode" value="single" checked onchange="app.game.toggleTopicMode()"> Chọn 1</label>
-                      <label><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()"> Chọn nhiều</label>
+                      <label><input type="radio" name="topicMode" value="single" checked
+                          onchange="app.game.toggleTopicMode()"> Chọn 1</label>
+                      <label><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()">
+                        Chọn nhiều</label>
                     </div>
                   </div>
                   <div id="topics-list" class="topics-grid"></div>
                 </div>
-                
+
                 <div style="display: flex; gap: 15px;">
                   <div class="config-section" style="flex: 1;">
                     <h3 style="margin: 0;">2. Mức độ khó</h3>
@@ -173,7 +190,7 @@
                       <button class="btn-opt" onclick="app.game.setDifficulty('hard', this)">Khó</button>
                     </div>
                   </div>
-                  
+
                   <div class="config-section" style="flex: 1;">
                     <h3 style="margin: 0;">3. Số câu hỏi</h3>
                     <div class="count-options">
@@ -182,8 +199,10 @@
                     </div>
                   </div>
                 </div>
-                
-                <button id="game-start-btn" class="btn-start-adventure" style="width: 100%; flex-direction: row; justify-content: center; margin-top: 5px;" onclick="app.game.startPlay()">
+
+                <button id="game-start-btn" class="btn-start-adventure"
+                  style="width: 100%; flex-direction: row; justify-content: center; margin-top: 5px;"
+                  onclick="app.game.startPlay()">
                   <img id="start-adv-icon" src="./public/torch_new.png" alt="Start" style="width: 40px;">
                   BẮT ĐẦU KHÁM PHÁ
                 </button>
@@ -196,27 +215,30 @@
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
         <button class="btn-back" onclick="app.game.confirmExit()">⬅ Trở về</button>
-        
+
         <div class="glass-container-xl">
           <div class="play-layout">
             <div class="play-left">
-              <div class="cat-wrapper" style="position: relative; display: flex; justify-content: center; align-items: center;">
+              <div class="cat-wrapper"
+                style="position: relative; display: flex; justify-content: center; align-items: center;">
                 <div id="cat-speech-bubble" class="speech-bubble" style="display:none;"></div>
                 <img id="play-cat-img" src="./public/cat_normal.png" alt="Mèo máy" class="cat-avatar-large">
               </div>
             </div>
-  
+
             <div class="play-center">
               <div class="game-header">
-                <div class="question-progress">Câu <span id="current-q-index">1</span>/<span id="total-q-count">10</span>
+                <div class="question-progress">Câu <span id="current-q-index">1</span>/<span
+                    id="total-q-count">10</span>
                 </div>
-                <div class="score-display">Điểm: <span id="game-score">0</span> <span id="hard-timer-display" style="display:none; color:#ff4444; margin-left:10px; font-weight:bold;"></span></div>
+                <div class="score-display">Điểm: <span id="game-score">0</span> <span id="hard-timer-display"
+                    style="display:none; color:#ff4444; margin-left:10px; font-weight:bold;"></span></div>
               </div>
-  
+
               <div id="game-question-container" class="question-box"></div>
               <div id="game-options-container" class="options-grid"></div>
             </div>
-  
+
             <div class="play-right">
               <button id="submit-ans-btn" class="btn-action btn-check" onclick="app.game.submitAnswer()" disabled>
                 <span id="submit-ans-text">Kiểm Tra</span>
@@ -233,39 +255,51 @@
       <div class="glass-container-xl" style="max-width: 900px; text-align: center;">
         <button class="btn-back" onclick="app.router.open('map-screen')">⬅ Trở về</button>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
-            <div id="exam-admin-class-selector" style="display:none; text-align:right;">
-               <span style="color:#fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp để test game:</span>
-               <div class="diff-options" id="exam-admin-class-btns" style="display:inline-flex; gap:5px; margin:0; padding:0;">
-                  <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.exam.setAdminClass('1', this)">1</button>
-                  <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.exam.setAdminClass('2', this)">2</button>
-                  <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.exam.setAdminClass('3', this)">3</button>
-                  <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.exam.setAdminClass('4', this)">4</button>
-                  <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;" onclick="app.exam.setAdminClass('5', this)">5</button>
-               </div>
+          <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
+          <div id="exam-admin-class-selector" style="display:none; text-align:right;">
+            <span style="color:#fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp để test
+              game:</span>
+            <div class="diff-options" id="exam-admin-class-btns"
+              style="display:inline-flex; gap:5px; margin:0; padding:0;">
+              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                onclick="app.exam.setAdminClass('1', this)">1</button>
+              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                onclick="app.exam.setAdminClass('2', this)">2</button>
+              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                onclick="app.exam.setAdminClass('3', this)">3</button>
+              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                onclick="app.exam.setAdminClass('4', this)">4</button>
+              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
+                onclick="app.exam.setAdminClass('5', this)">5</button>
             </div>
+          </div>
         </div>
-        
+
         <div class="exam-select-layout">
           <div class="subject-box" onclick="app.exam.setFilter('subject', 'math', this)">
             <img src="./public/icon_toan.png" alt="Toán">
             <h3>Toán Học</h3>
           </div>
-          <img src="./public/meo_thicuu.png" alt="Mèo" style="height: 180px; width: auto; object-fit: contain; animation: heartbeat 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
+          <img src="./public/meo_thicuu.png" alt="Mèo"
+            style="height: 180px; width: auto; object-fit: contain; animation: heartbeat 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
           <div class="subject-box" onclick="app.exam.setFilter('subject', 'vietnamese', this)">
             <img src="./public/icon_tiengviet.png" alt="Tiếng Việt">
             <h3>Tiếng Việt</h3>
           </div>
         </div>
-        
+
         <div class="period-select" style="display: flex; gap: 15px;">
           <label style="white-space: nowrap; font-weight: bold; font-size: 1.1rem;">Thời gian:</label>
-          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;" onclick="app.exam.setFilter('period', 'Giữa kỳ 1', this)">Giữa kỳ 1</button>
-          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;" onclick="app.exam.setFilter('period', 'Cuối kỳ 1', this)">Cuối kỳ 1</button>
-          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;" onclick="app.exam.setFilter('period', 'Giữa kỳ 2', this)">Giữa kỳ 2</button>
-          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;" onclick="app.exam.setFilter('period', 'Cuối kỳ 2', this)">Cuối kỳ 2</button>
+          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;"
+            onclick="app.exam.setFilter('period', 'Giữa kỳ 1', this)">Giữa kỳ 1</button>
+          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;"
+            onclick="app.exam.setFilter('period', 'Cuối kỳ 1', this)">Cuối kỳ 1</button>
+          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;"
+            onclick="app.exam.setFilter('period', 'Giữa kỳ 2', this)">Giữa kỳ 2</button>
+          <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;"
+            onclick="app.exam.setFilter('period', 'Cuối kỳ 2', this)">Cuối kỳ 2</button>
         </div>
-        
+
         <button class="btn-start-massive" style="margin-top:20px;" onclick="app.exam.start()">Bắt Đầu Làm Bài</button>
       </div>
     </div>
@@ -278,7 +312,8 @@
           về</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
-          <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display" style="color:#ff4444; font-weight:bold; margin-left:15px; font-size:1.2rem; display:none;"></span></p>
+          <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display"
+              style="color:#ff4444; font-weight:bold; margin-left:15px; font-size:1.2rem; display:none;"></span></p>
         </div>
         <div id="exam-questions-container" class="exam-scroll-area"></div>
         <div style="text-align:center; margin-top: 30px;">
@@ -314,9 +349,10 @@
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
     <div id="treasure-modal" class="modal">
       <div class="modal-content admin-panel glass-container-xl" style="position:relative;">
-        <button class="btn-danger" style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
+        <button class="btn-danger"
+          style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
           onclick="document.getElementById('treasure-modal').style.display='none'">Đóng</button>
-        
+
         <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
           <h2 id="treasure-title" class="title-glow" style="margin:0;">Kho Báu</h2>
         </div>
@@ -327,82 +363,98 @@
 
         <div id="treasure-content-area" class="admin-content scroll-box"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Nhiệm vụ -->
+  <div id="quest-modal" class="modal">
+    <div class="modal-content glass-container-xl"
+      style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
+      <button class="btn-danger"
+        style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
+        onclick="document.getElementById('quest-modal').style.display='none'">Đóng</button>
+      <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
+        <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
+      </div>
+      <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Quests rendered here by JS -->
       </div>
     </div>
+  </div>
 
-    <!-- Modal Nhiệm vụ -->
-    <div id="quest-modal" class="modal">
-      <div class="modal-content glass-container-xl" style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
-        <button class="btn-danger" style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
-          onclick="document.getElementById('quest-modal').style.display='none'">Đóng</button>
-        <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
-          <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
-        </div>
-        <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
-           <!-- Quests rendered here by JS -->
-        </div>
+  <!-- Modal Cửa hàng & Gacha -->
+  <div id="shop-modal" class="modal">
+    <div class="modal-content glass-container-xl"
+      style="position:relative; background: rgba(253, 230, 138, 0.95); max-width: 900px; padding: 20px;">
+      <button class="btn-danger"
+        style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
+        onclick="document.getElementById('shop-modal').style.display='none'">Đóng</button>
+      <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px; gap: 10px;">
+        <img src="./public/cat_normal.png" alt="Mèo Phép Thuật" style="height: 60px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));">
+        <h2 class="title-glow" style="margin:0; color: #9333ea; text-shadow: 2px 2px 0px #e9d5ff;">Cửa Tiệm Phép Thuật
+        </h2>
+      </div>
+
+      <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+        <button class="tab-btn active" onclick="app.shop.switchTab('kiosk', this)">Máy Đổi Kẹo</button>
+        <button class="tab-btn" onclick="app.shop.switchTab('pets', this)">Thú Cưng</button>
+      </div>
+
+      <div id="shop-content-area" class="scroll-box" style="height: 400px;">
+        <!-- Shop content rendered by JS -->
       </div>
     </div>
+  </div>
 
-    <!-- Modal Cửa hàng & Gacha -->
-    <div id="shop-modal" class="modal">
-      <div class="modal-content glass-container-xl" style="position:relative; background: rgba(253, 230, 138, 0.95); max-width: 900px; padding: 20px;">
-        <button class="btn-danger" style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
-          onclick="document.getElementById('shop-modal').style.display='none'">Đóng</button>
-        <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
-          <h2 class="title-glow" style="margin:0; color: #9333ea; text-shadow: 2px 2px 0px #e9d5ff;">Cửa Tiệm Phép Thuật</h2>
-        </div>
-        
-        <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-            <button class="tab-btn active" onclick="app.shop.switchTab('kiosk', this)">Ki-ốt Đổi Kẹo</button>
-            <button class="tab-btn" onclick="app.shop.switchTab('gacha', this)">Vòng Quay May Mắn</button>
-            <button class="tab-btn" onclick="app.shop.switchTab('pets', this)">Thú Cưng Của Tôi</button>
-        </div>
+  <!-- Modal In Ấn -->
+  <div id="print-modal" class="modal" style="z-index:9999;">
+    <div class="modal-content glass-container-xl" style="text-align:center; max-width:500px;">
+      <h2 class="title-glow">Tùy Chọn In</h2>
 
-        <div id="shop-content-area" class="scroll-box" style="height: 400px;">
-            <!-- Shop content rendered by JS -->
-        </div>
+      <div style="text-align: left; margin: 20px auto; display: inline-block; font-size: 1.2rem;">
+        <label style="display: block; margin-bottom: 15px; cursor: pointer;">
+          <input type="radio" name="print_mode" value="simple" style="transform: scale(1.5); margin-right: 10px;">
+          🔵 In Đơn Giản (Nhanh, nền trống)
+        </label>
+        <label style="display: block; margin-bottom: 15px; cursor: pointer;">
+          <input type="radio" name="print_mode" value="graphic" checked
+            style="transform: scale(1.5); margin-right: 10px;">
+          🟡 In Có Đồ Họa (Ảnh 2K tuyệt đẹp)
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:15px; margin-top: 10px;">
+        <button class="btn-primary" style="padding:10px 30px; font-size:1.2rem; background:var(--accent-color);"
+          onclick="app.treasure.executePrint()">🖨️ In</button>
+        <button class="btn-danger" style="padding:10px 30px; font-size:1.2rem;"
+          onclick="document.getElementById('print-modal').style.display='none'">Hủy</button>
       </div>
     </div>
+  </div>
 
-    <!-- Modal In Ấn -->
-    <div id="print-modal" class="modal" style="z-index:9999;">
-      <div class="modal-content glass-container-xl" style="text-align:center; max-width:500px;">
-        <h2 class="title-glow">Tùy Chọn In</h2>
-        
-        <div style="text-align: left; margin: 20px auto; display: inline-block; font-size: 1.2rem;">
-           <label style="display: block; margin-bottom: 15px; cursor: pointer;">
-             <input type="radio" name="print_mode" value="simple" style="transform: scale(1.5); margin-right: 10px;">
-             🔵 In Đơn Giản (Nhanh, nền trống)
-           </label>
-           <label style="display: block; margin-bottom: 15px; cursor: pointer;">
-             <input type="radio" name="print_mode" value="graphic" checked style="transform: scale(1.5); margin-right: 10px;">
-             🟡 In Có Đồ Họa (Ảnh 2K tuyệt đẹp)
-           </label>
-        </div>
-
-        <div style="display:flex; justify-content:center; gap:15px; margin-top: 10px;">
-           <button class="btn-primary" style="padding:10px 30px; font-size:1.2rem; background:var(--accent-color);" onclick="app.treasure.executePrint()">🖨️ In</button>
-           <button class="btn-danger" style="padding:10px 30px; font-size:1.2rem;" onclick="document.getElementById('print-modal').style.display='none'">Hủy</button>
-        </div>
+  <!-- Hidden 2K Container for Graphic Print -->
+  <div id="print-2k-container"
+    style="position:fixed; top:-9999px; left:-9999px; width:1440px; height:2560px; z-index:-1000; overflow:hidden;">
+    <!-- Background will be applied dynamically via JS -->
+    <div id="print-2k-content"
+      style="width:100%; height:100%; display:flex; flex-direction:column; padding-top: 500px; align-items:center;">
+      <div
+        style="width: 85%; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 20px; border: 2px solid rgba(255,215,0,0.5); padding: 50px;">
+        <h1 id="print-2k-date"
+          style="text-align:center; font-size: 3rem; margin: 0 0 10px 0; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5);">
+          Từ ngày ... đến ngày ...</h1>
+        <h2 id="print-2k-class"
+          style="text-align:center; font-size: 2.5rem; margin: 0 0 10px 0; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5);">
+          Cấp lớp</h2>
+        <h2 id="print-2k-student"
+          style="text-align:center; font-size: 2.5rem; margin: 0 0 30px 0; color: #4ade80; display:none;">Họ tên: </h2>
+        <div id="print-2k-table-area" style="font-size: 2rem;"></div>
       </div>
     </div>
+  </div>
 
-    <!-- Hidden 2K Container for Graphic Print -->
-    <div id="print-2k-container" style="position:fixed; top:-9999px; left:-9999px; width:1440px; height:2560px; z-index:-1000; overflow:hidden;">
-        <!-- Background will be applied dynamically via JS -->
-        <div id="print-2k-content" style="width:100%; height:100%; display:flex; flex-direction:column; padding-top: 500px; align-items:center;">
-             <div style="width: 85%; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 20px; border: 2px solid rgba(255,215,0,0.5); padding: 50px;">
-                 <h1 id="print-2k-date" style="text-align:center; font-size: 3rem; margin: 0 0 10px 0; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5);">Từ ngày ... đến ngày ...</h1>
-                 <h2 id="print-2k-class" style="text-align:center; font-size: 2.5rem; margin: 0 0 10px 0; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5);">Cấp lớp</h2>
-                 <h2 id="print-2k-student" style="text-align:center; font-size: 2.5rem; margin: 0 0 30px 0; color: #4ade80; display:none;">Họ tên: </h2>
-                 <div id="print-2k-table-area" style="font-size: 2rem;"></div>
-             </div>
-        </div>
-    </div>
-
-    <!-- Canvas for Confetti -->
-    <canvas id="confetti-canvas"></canvas>
+  <!-- Canvas for Confetti -->
+  <canvas id="confetti-canvas"></canvas>
 
   </div>
   <script defer src="./src/main.js"></script>
