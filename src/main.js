@@ -3922,18 +3922,13 @@ const app = {
         <div style="display: flex; gap: 15px; height: 100%; max-height: 85vh;">
             <!-- Left: Train Carousel -->
             <div style="flex: 3.5; background: #0f172a; border-radius: 15px; padding: 10px; border: 2px solid #38bdf8; display:flex; flex-direction:column; position:relative; overflow:hidden;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; z-index:1;">
-                    <h3 style="color:#38bdf8; margin:0; text-shadow: 0px 0px 5px #0284c7;">Cỗ Máy Biến Hình</h3>
-                    ${isAdmin ? `
+                ${isAdmin ? `
+                <div style="display:flex; justify-content:center; align-items:center; margin-bottom:10px; z-index:1;">
                     <div style="font-size: 1rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 5px 15px; border-radius: 20px;">
                         Chế độ Admin
                     </div>
-                    ` : `
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 5px 15px; border-radius: 20px;">
-                        Kẹo của bạn: 🍭 ${user.lollipops || 0}
-                    </div>
-                    `}
                 </div>
+                ` : ''}
                 
                 <div style="flex:1; display:flex; justify-content:center; align-items:center; position:relative; width:100%; overflow:hidden;">
                     <style>
@@ -3942,12 +3937,12 @@ const app = {
                     </style>
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">◀</button>
                     
-                    <div style="position:relative; width: 100%; max-width: 450px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 35px; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
+                    <div style="position:relative; width: 100%; max-width: 450px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 35px;">
                         <!-- Sci-Fi Machine Background -->
                         <img src="./public/scifi_machine.jpg" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));">
                         
                         <!-- Pet Inside Window (Z-index 3 to be on top) -->
-                        <div style="position:absolute; width: 45%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center;">
+                        <div style="position:absolute; width: 45%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
                             <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 10px rgba(56,189,248,0.8)); animation: heartbeat 2s infinite;">
                         </div>
                         
@@ -3957,21 +3952,21 @@ const app = {
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">▶</button>
                 </div>
                 
-                <div style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 12px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); mt-2">
-                    <div style="font-weight:bold; color: #333; font-size: 1.2rem; margin-bottom: 10px;">${currentPet.name}</div>
+                <div style="background: rgba(255,255,255,0.9); padding: 10px; border-radius: 12px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); mt-2; width: 60%; margin: 0 auto; margin-bottom: 5px;">
+                    <div style="font-weight:bold; color: #333; font-size: 1rem; margin-bottom: 5px;">${currentPet.name}</div>
                     
                     ${isAdmin ? `
-                        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
-                            <span style="font-size:1rem; font-weight:bold;">Còn tồn:</span>
-                            <input type="number" id="admin_edit_${currentPet.id}" value="${remaining}" style="width:60px; text-align:center; padding:5px; font-size:1rem; border:2px solid #cbd5e1; border-radius:5px;">
+                        <div style="display:flex; align-items:center; gap:5px; justify-content:center; margin-bottom:5px;">
+                            <span style="font-size:0.9rem; font-weight:bold;">Còn tồn:</span>
+                            <input type="number" id="admin_edit_${currentPet.id}" value="${remaining}" style="width:50px; text-align:center; padding:2px; font-size:0.9rem; border:2px solid #cbd5e1; border-radius:5px;">
                         </div>
-                        <button class="btn-primary" style="padding:8px 30px; font-size:1rem;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu Kho</button>
+                        <button class="btn-primary" style="padding:5px 20px; font-size:0.9rem;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu</button>
                     ` : `
-                        <div style="font-size: 1rem; color: #ef4444; margin-bottom: 10px; font-weight:bold;">Số lượng còn: ${remaining}</div>
-                        <button class="btn-success" style="padding:10px 30px; font-size:1.1rem; border-radius:25px;" 
+                        <div style="font-size: 0.9rem; color: #ef4444; margin-bottom: 5px; font-weight:bold;">Còn lại: ${remaining}</div>
+                        <button class="btn-success" style="padding:5px 20px; font-size:1rem; border-radius:20px;" 
                             onclick="app.shop.buyPet('${currentPet.id}')"
                             ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                            Đổi Ngay: ${currentPet.cost} 🍭
+                            Đổi: ${currentPet.cost} 🍭
                         </button>
                     `}
                 </div>
@@ -3979,8 +3974,15 @@ const app = {
             
             <!-- Right: Your Pets -->
             <div style="flex: 2; background: rgba(255,255,255,0.8); border-radius: 15px; padding: 15px; border: 2px dashed #9333ea; display:flex; flex-direction:column;">
+                ${!isAdmin ? `
+                <div style="display:flex; justify-content:center; margin-bottom:10px;">
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 5px 15px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        Kẹo của bạn: 🍭 ${user.lollipops || 0}
+                    </div>
+                </div>
+                ` : ''}
                 <h3 style="color:#9333ea; margin-top:0; text-align:center;">Thú Cưng Của Bạn</h3>
-                <p style="text-align:center; font-size:0.85rem; color:#666;">(Tối đa 3 Thú cưng)</p>
+                <p style="text-align:center; font-size:0.85rem; color:#666; margin:0;">(Tối đa 3 Thú cưng)</p>
                 <div style="flex:1; display:flex; flex-direction:column; gap:10px; margin-top: 10px; overflow-y:auto;" class="scroll-box">
         `;
         
