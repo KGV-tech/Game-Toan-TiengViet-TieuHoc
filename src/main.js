@@ -3921,9 +3921,9 @@ const app = {
         let html = `
         <div style="display: flex; gap: 15px; height: 100%; max-height: 85vh;">
             <!-- Left: Train Carousel -->
-            <div style="flex: 3.5; background: #e0f2fe; border-radius: 15px; padding: 10px; border: 2px solid #bae6fd; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+            <div style="flex: 3.5; background: #0f172a; border-radius: 15px; padding: 10px; border: 2px solid #38bdf8; display:flex; flex-direction:column; position:relative; overflow:hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; z-index:1;">
-                    <h3 style="color:#0369a1; margin:0; text-shadow: 1px 1px 2px white;">Đoàn Tàu Thú Cưng</h3>
+                    <h3 style="color:#38bdf8; margin:0; text-shadow: 0px 0px 5px #0284c7;">Cỗ Máy Biến Hình</h3>
                     ${isAdmin ? `
                     <div style="font-size: 1rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 5px 15px; border-radius: 20px;">
                         Chế độ Admin
@@ -3943,12 +3943,12 @@ const app = {
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:40px; height:40px; font-size:1.2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 6px rgba(0,0,0,0.2);">◀</button>
                     
                     <div style="position:relative; width: 100%; max-width: 450px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 35px; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
-                        <!-- Train Background -->
-                        <img src="./public/train_car.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">
+                        <!-- Sci-Fi Machine Background -->
+                        <img src="./public/scifi_machine.jpg" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));">
                         
                         <!-- Pet Inside Window (Z-index 3 to be on top) -->
-                        <div style="position:absolute; width: 35%; height: 35%; top: 50%; left: 55%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center;">
-                            <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 4px 4px rgba(0,0,0,0.4)); animation: heartbeat 2s infinite;">
+                        <div style="position:absolute; width: 45%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center;">
+                            <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 10px rgba(56,189,248,0.8)); animation: heartbeat 2s infinite;">
                         </div>
                         
                         ${hasPet && !isAdmin ? `<div style="position:absolute; top:-10px; right:10px; background:#22c55e; color:white; font-size:0.9rem; font-weight:bold; padding:4px 10px; border-radius:10px; z-index:4; box-shadow:0 2px 4px rgba(0,0,0,0.2);">Đã sở hữu</div>` : ''}
