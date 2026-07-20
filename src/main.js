@@ -3978,16 +3978,19 @@ const app = {
                     </style>
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
                     
-                    <div style="position:relative; width: 100%; height: 100%; display:flex; justify-content:center; align-items:center;">
-                        <!-- Sci-Fi Machine Background -->
-                        <img src="./public/scifi_machine.png" style="height:100%; object-fit:contain; position:absolute; top:0; left:50%; transform: translateX(-50%); z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
-                        
-                        <!-- Pet Inside Window -->
-                        <div style="position:absolute; width: 35%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; animation: wipeDown 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;">
-                            <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 15px rgba(56,189,248,0.9)); animation: heartbeat 2s infinite;">
+                    <!-- Vùng chứa tỉ lệ chuẩn khóa cứng máy biến hình và pet -->
+                    <div style="position:relative; width: 100%; max-width: 550px; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
+                        <div style="position:relative; width: 100%;">
+                            <!-- Sci-Fi Machine Background -->
+                            <img src="./public/scifi_machine.png" style="width:100%; height:auto; display:block; z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
+                            
+                            <!-- Pet Inside Window -->
+                            <div style="position:absolute; width: 35%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; animation: wipeDown 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;">
+                                <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 15px rgba(56,189,248,0.9)); animation: heartbeat 2s infinite;">
+                            </div>
+                            
+                            ${hasPet && !isAdmin ? `<div style="position:absolute; top:15%; right:20%; background:#22c55e; color:white; font-size:1.2rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(15deg);">Đã sở hữu</div>` : ''}
                         </div>
-                        
-                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:15%; right:20%; background:#22c55e; color:white; font-size:1.2rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(15deg);">Đã sở hữu</div>` : ''}
                     </div>
                     
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
@@ -4061,29 +4064,40 @@ const app = {
                         const refund = Math.floor(shopInfo.cost / 2);
 
                         html += `
-                    <div style="flex: 1; min-width: 250px; background: url('./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}') center/cover no-repeat; border-radius: 20px; height: 350px; position:relative; overflow:hidden; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease;">
+                    <div style="flex: 1; min-width: 250px; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:0;"></div>
                         ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2; text-shadow: 0 0 10px #10b981;" class="heartbeat">⭐</div>` : ''}
                         
-                        <div style="position:relative; z-index:1; display:flex; flex-direction:column; justify-content:space-between; align-items:center; height:100%; padding:20px 10px;">
-                            <div style="font-weight:900; font-size:1.3rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #10b981;">${p.pet_name}</div>
+                        <!-- Khung tỉ lệ chuẩn cho Khoang và Pet -->
+                        <div style="position:relative; width: 100%;">
+                            <!-- Hình nền Khoang -->
+                            <img src="./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
                             
-                            <div style="width:140px; height:140px; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); margin-top: ${isEquipped ? '0' : '20px'}; opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
+                            <!-- Thú cưng bên trong khoang -->
+                            <div style="position:absolute; width:40%; height:40%; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
                                 <img src="./public/${p.pet_image}" style="max-width:100%; max-height:100%; object-fit:contain; ${isEquipped ? 'animation: heartbeat 2s infinite;' : 'filter: brightness(0.6);'}">
                             </div>
+                        </div>
+
+                        <!-- Lớp đè thông tin và nút bấm -->
+                        <div style="position:absolute; z-index:3; display:flex; flex-direction:column; justify-content:space-between; align-items:center; width:100%; height:100%; padding:15px 10px;">
+                            <div style="font-weight:900; font-size:1.2rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #10b981;">${p.pet_name}</div>
                             
-                            <div style="display:flex; gap:10px; width: 100%; justify-content:center; margin-bottom: 10px;">
-                                <button class="btn-success" style="padding:10px 20px; font-size:1rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
-                                <button class="btn-danger" style="padding:10px 20px; font-size:1rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Thả Tự Do</button>
+                            <div style="display:flex; gap:10px; width: 100%; justify-content:center; margin-bottom: 5px;">
+                                <button class="btn-success" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
+                                <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Thả Tự Do</button>
                             </div>
                         </div>
                     </div>
                     `;
                     } else {
                         html += `
-                    <div style="flex: 1; min-width: 250px; background: url('./public/incubator_closed.png') center/cover no-repeat; border-radius: 20px; height: 350px; position:relative; overflow:hidden; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%);">
+                    <div style="flex: 1; min-width: 250px; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:0;"></div>
-                        <div style="position:relative; z-index:1; display:flex; justify-content:center; align-items:center; height:100%; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                        <div style="position:relative; width:100%;">
+                            <img src="./public/incubator_closed.png" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
+                        </div>
+                        <div style="position:absolute; z-index:3; display:flex; justify-content:center; align-items:center; height:100%; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
                             Khoang Trống
                         </div>
                     </div>
