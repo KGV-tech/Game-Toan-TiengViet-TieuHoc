@@ -3704,7 +3704,7 @@ const app = {
       const modal = document.getElementById('shop-modal');
       modal.style.display = 'flex';
       modal.classList.add('active');
-      this.switchTab('candy', document.querySelector('#shop-modal .notebook-tab.active') || document.querySelector('#shop-modal .notebook-tab'));
+      this.switchTab('pets', document.querySelector('#shop-modal .notebook-tab.active') || document.querySelector('#shop-modal .notebook-tab'));
     },
     switchTab(tab, btnEl) {
       if (btnEl) {
@@ -3715,168 +3715,152 @@ const app = {
       const user = app.data.currentUser;
       if (!user) return;
       
-      if (tab === 'candy' || tab === 'kiosk') {
-          this.renderCandyMachine(box, user);
+      if (tab === 'lucky') {
+          this.renderLuckyStation(box, user);
       } else if (tab === 'pets') {
           this.renderPetStation(box, user);
       } else if (tab === 'mypets') {
           this.renderMyPets(box, user);
       }
     },
-    renderCandyMachine(box, user) {
-        if (user.role === 'admin') {
-            // Admin View
-            let html = `<h3 style="text-align:center; margin-bottom:15px; color:#9333ea;">Quản lý Yêu cầu Đổi Kẹo</h3>`;
-            const cols = [{label:'Học sinh'}, {label:'Số kẹo (thật)'}, {label:'Đã trừ (🍭)'}, {label:'Trạng thái'}, {label:'Hành động'}];
-            const reqs = app.data.candyRequests || [];
-            
-            html += app.ui.renderTable(cols, reqs, (r, i) => {
-                let status = '';
-                if (r.status === 'pending') status = '<span style="color:#eab308;font-weight:bold;">Chờ duyệt</span>';
-                else if (r.status === 'approved') status = '<span style="color:#22c55e;font-weight:bold;">Đã duyệt</span>';
-                else status = '<span style="color:#ef4444;font-weight:bold;">Từ chối</span>';
-                
-                let actions = '';
-                if (r.status === 'pending') {
-                    actions = `<button class="btn-success action-btn" onclick="app.shop.approveRequest('${r.id}')">Duyệt</button>
-                               <button class="btn-danger action-btn" onclick="app.shop.rejectRequest('${r.id}')">Từ chối</button>`;
-                }
-                
-                return `<tr>
-                    <td>${app.data.sanitizeHTML(r.user_username)}</td>
-                    <td>${r.candy_count}</td>
-                    <td>${r.amount}</td>
-                    <td>${status}</td>
-                    <td>${actions}</td>
-                </tr>`;
-            }, "Chưa có yêu cầu nào.");
-            box.innerHTML = html;
-        } else {
-            // Student View
-            const rate = 10; // 1 real candy = 10 lollipops
-            let myReqs = (app.data.candyRequests || []).filter(x => x.user_username === user.username);
-            
-            let html = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="font-size: 1.2rem; font-weight: bold; color: #b45309;">
-                    Bạn đang có: <span style="font-size:1.5rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
-                </div>
-                <div style="font-size: 1rem; color: #666;">
-                    Tỷ lệ đổi: <b style="color:#9333ea;">${rate} 🍭 = 1 🍬 (Kẹo thật)</b>
-                </div>
-            </div>
-            
-            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display:flex; gap:20px; align-items:center;">
-                <div style="font-size: 5rem; text-align:center; animation: bounce 2s infinite;">🎰</div>
-                <div style="flex:1;">
-                    <h4 style="margin-top:0; color:#9333ea; font-size:1.2rem;">Máy Đổi Kẹo</h4>
-                    <p style="color:#666; font-size:0.9rem; margin-bottom:10px;">Nhập số lượng kẹo mút muốn đổi thành kẹo thật nhé!</p>
-                    <div style="display:flex; gap: 10px; align-items:center;">
-                        <input type="number" id="kiosk-candy-count" class="form-input" min="1" placeholder="Số lượng kẹo thật" style="flex:1;">
-                        <button class="btn-success" onclick="app.shop.submitCandyRequest()">Đổi Ngay</button>
+    renderLuckyStation(box, user) {
+        let isSpinning = this.isSpinning || false;
+        
+        let html = `
+        <div style="height: 100%; display:flex; flex-direction:row; gap: 20px;">
+            <!-- Left Side: Wheel (60%) -->
+            <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+                <div style="position:relative; width:100%; height: 75vh; min-height: 500px; max-height: 800px; display:flex; justify-content:center; align-items:center;">
+                    <!-- Wheel Stand -->
+                    <img src="./public/wheel_stand.png" style="height:100%; object-fit:contain; position:absolute; top:0; left:50%; transform: translateX(-50%); z-index:1; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
+                    
+                    <!-- The Wheel -->
+                    <div style="position:absolute; width: 60%; height: 60%; top: 40%; left: 50%; z-index:2; 
+                                transform: translate(-50%, -50%) rotate(${this.currentRotation || 0}deg); 
+                                transition: ${isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)' : 'none'};
+                                transform-origin: center center;">
+                        <img src="./public/wheel_circle.png" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0px 20px rgba(147,51,234,0.6));">
                     </div>
+                    
+                    <!-- Center Pointer/Pin -->
+                    <div style="position:absolute; top: 8%; left: 50%; transform: translateX(-50%); z-index:3; width: 50px; height: 70px; background: linear-gradient(180deg, #ef4444, #991b1b); clip-path: polygon(50% 100%, 10% 0, 90% 0); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));"></div>
                 </div>
             </div>
-            
-            <h4 style="color:#9333ea;">Lịch sử Đổi Kẹo</h4>
-            `;
-            
-            const cols = [{label:'Số kẹo'}, {label:'Đã dùng (🍭)'}, {label:'Trạng thái'}];
-            html += app.ui.renderTable(cols, myReqs, (r, i) => {
-                let status = r.status === 'pending' ? '<span style="color:#eab308">Chờ Cô duyệt</span>' : 
-                            (r.status === 'approved' ? '<span style="color:#22c55e">Thành công! Gặp Cô để nhận</span>' : 
-                            '<span style="color:#ef4444">Bị từ chối (Đã hoàn lại 🍭)</span>');
-                return `<tr>
-                    <td>${r.candy_count} 🍬</td>
-                    <td>${r.amount} 🍭</td>
-                    <td>${status}</td>
-                </tr>`;
-            }, "Bạn chưa đổi kẹo lần nào.");
-            
-            box.innerHTML = html;
-        }
+
+            <!-- Right Side: Details (40%) -->
+            <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+                <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(234, 179, 8, 0.3); backdrop-filter: blur(10px);">
+                    <h2 style="font-weight:900; color: #d97706; font-size: 2.5rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 0 #fef08a; text-align:center;">Trạm May Mắn</h2>
+                    
+                    <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #b45309; background: #fef3c7; padding: 10px 25px; border-radius: 20px; border: 2px solid #fde68a;">
+                            Bạn đang có: <span style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 10px;">
+                        <h3 style="margin-top:0; color: #475569;">Thể lệ Vòng Quay:</h3>
+                        <ul style="padding-left: 20px; margin-bottom:0;">
+                            <li><b style="color:#ef4444;">May mắn lần sau</b> (40%)</li>
+                            <li><b style="color:#22c55e;">Tặng 5 kẹo</b> (5%)</li>
+                            <li><b style="color:#3b82f6;">Tặng 2 kẹo</b> (8%)</li>
+                            <li><b style="color:#a855f7;">Tặng 1 kẹo</b> (24%)</li>
+                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (3%) - Tự động quy đổi thành 8 kẹo nếu đủ bộ sưu tập.</li>
+                            <li><b style="color:#0ea5e9;">Quay lại</b> (20%) - Miễn phí 1 lần quay tới.</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
+                        onclick="app.shop.spinWheel()"
+                        ${isSpinning ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                        QUAY NGAY (1 🍭)
+                    </button>
+                </div>
+            </div>
+        </div>`;
+        box.innerHTML = html;
     },
-    async submitCandyRequest() {
+    
+    spinWheel() {
+        if (this.isSpinning) return;
+        
         const user = app.data.currentUser;
         if (!user) return;
         
-        const count = parseInt(document.getElementById('kiosk-candy-count').value);
-        if (!count || count < 1) return alert("Vui lòng nhập số kẹo hợp lệ!");
-        
-        const cost = count * 10;
-        if ((user.lollipops || 0) < cost) {
-            return alert(`Bạn không đủ Kẹo mút! Cần ${cost} 🍭 để đổi ${count} kẹo thật.`);
+        let freeSpin = this.freeSpin || false;
+        if (!freeSpin && (user.lollipops || 0) < 1) {
+            return alert("Bạn không đủ Kẹo mút để quay!");
         }
         
-        // Deduct locally
-        user.lollipops -= cost;
-        app.auth.updateHeader();
+        if (!freeSpin) {
+            user.lollipops -= 1;
+            app.auth.updateHeader();
+        }
+        this.freeSpin = false;
+        this.isSpinning = true;
         
-        const req = {
-            user_username: user.username,
-            amount: cost,
-            candy_count: count,
-            status: 'pending'
-        };
+        // Re-render to disable button
+        this.switchTab('lucky');
         
-        if (window.supabase) {
-            const { data, error } = await supabaseClient.from('candy_requests').insert([req]).select();
-            if (error) {
-                console.error(error);
-                user.lollipops += cost; // revert
-                app.auth.updateHeader();
-                return alert("Lỗi gửi yêu cầu!");
+        const rand = Math.random() * 100;
+        let segment = 1;
+        let rewardText = "";
+        
+        if (rand < 40) { 
+            segment = Math.floor(Math.random() * 3) + 1; // 1, 2, 3
+            rewardText = "Rất tiếc! May mắn lần sau nhé.";
+        } else if (rand < 45) { 
+            segment = 4;
+            rewardText = "Chúc mừng! Bạn nhận được 5 kẹo 🍭.";
+            user.lollipops += 5;
+        } else if (rand < 53) { 
+            segment = 5;
+            rewardText = "Chúc mừng! Bạn nhận được 2 kẹo 🍭.";
+            user.lollipops += 2;
+        } else if (rand < 77) { 
+            segment = Math.floor(Math.random() * 2) + 6; // 6, 7
+            rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
+            user.lollipops += 1;
+        } else if (rand < 80) { 
+            segment = 8;
+            let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username).map(p => p.pet_image);
+            let unownedPets = this.shopData.filter(p => !myPets.includes(p.image));
+            if (unownedPets.length > 0) {
+                let randomPet = unownedPets[Math.floor(Math.random() * unownedPets.length)];
+                rewardText = `Tuyệt vời! Bạn nhận được Thú cưng: ${randomPet.name}!`;
+                app.data.userPets = app.data.userPets || [];
+                app.data.userPets.push({
+                    id: 'up_' + new Date().getTime(),
+                    user_username: user.username,
+                    pet_name: randomPet.name,
+                    pet_image: randomPet.image,
+                    cost: randomPet.cost
+                });
+            } else {
+                rewardText = "Tuyệt vời! Bạn quay trúng Thú Cưng nhưng đã sở hữu tất cả. Hệ thống đền bù 8 kẹo 🍭!";
+                user.lollipops += 8;
             }
-            if (data && data.length > 0) app.data.candyRequests.push(data[0]);
-            
-            await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
-        } else {
-            req.id = 'temp_' + new Date().getTime();
-            app.data.candyRequests.push(req);
+        } else { 
+            segment = Math.floor(Math.random() * 2) + 9; // 9, 10
+            rewardText = "Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.";
+            this.freeSpin = true;
+        }
+        
+        const segmentCenter = (segment - 1) * 36 + 18; 
+        const targetRotation = 360 - segmentCenter + (360 * 5); // 5 spins + alignment
+        
+        const baseRotation = (this.currentRotation || 0) % 360;
+        this.currentRotation = (this.currentRotation || 0) - baseRotation + targetRotation;
+        
+        this.switchTab('lucky'); // re-render to start transition
+        
+        setTimeout(() => {
             app.data.saveUsers();
-        }
-        
-        this.switchTab('candy');
-        alert("Gửi yêu cầu thành công! Vui lòng chờ Giáo viên duyệt.");
-    },
-    async approveRequest(reqId) {
-        if (!confirm("Xác nhận duyệt yêu cầu đổi kẹo này?")) return;
-        const req = app.data.candyRequests.find(x => x.id === reqId);
-        if (!req) return;
-        
-        if (window.supabase && !req.id.startsWith('temp_')) {
-            const { error } = await supabaseClient.from('candy_requests').update({ status: 'approved' }).eq('id', reqId);
-            if (error) return alert("Lỗi server!");
-            req.status = 'approved';
-        } else {
-            req.status = 'approved';
-        }
-        this.switchTab('candy');
-    },
-    async rejectRequest(reqId) {
-        if (!confirm("Xác nhận từ chối? Số kẹo 🍭 sẽ được hoàn lại cho học sinh.")) return;
-        const req = app.data.candyRequests.find(x => x.id === reqId);
-        if (!req) return;
-        
-        const user = app.data.users.find(u => u.username === req.user_username);
-        
-        if (window.supabase && !req.id.startsWith('temp_')) {
-            const { error } = await supabaseClient.from('candy_requests').update({ status: 'rejected' }).eq('id', reqId);
-            if (error) return alert("Lỗi server!");
-            
-            if (user) {
-                user.lollipops = (user.lollipops || 0) + req.amount;
-                await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
-            }
-            req.status = 'rejected';
-        } else {
-            req.status = 'rejected';
-            if (user) {
-                user.lollipops = (user.lollipops || 0) + req.amount;
-                app.data.saveUsers();
-            }
-        }
-        this.switchTab('candy');
+            app.auth.updateHeader();
+            alert(rewardText);
+            this.isSpinning = false;
+            this.switchTab('lucky'); 
+        }, 4000);
     },
     shopData: [
         { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
