@@ -1511,17 +1511,20 @@ const app = {
         finishPlay() {
             const finalScore = Math.round(this.state.score * 10) / 10;
             let msg = '';
-            let giveLollipop = false;
+            let candiesEarned = 0;
 
             if (finalScore === 10) {
-                msg = 'Bạn xứng đáng nhận được phần thưởng này';
-                giveLollipop = true;
+                msg = 'Tuyệt vời! Bạn nhận được 5 kẹo 🍭';
+                candiesEarned = 5;
+            } else if (finalScore >= 8) {
+                msg = 'Khá lắm! Bạn nhận được 2 kẹo 🍭';
+                candiesEarned = 2;
             } else {
-                msg = 'Cố gắng thêm nữa bạn nhé';
+                msg = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận kẹo)';
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            this.recordHistory(title, finalScore, giveLollipop);
+            this.recordHistory(title, finalScore, candiesEarned);
 
             // Update quests progress
             if (app.quest && typeof app.quest.updateProgress === 'function') {
@@ -1532,7 +1535,7 @@ const app = {
             document.getElementById('result-msg').textContent = msg;
 
             const chest = document.getElementById('bonus-chest-img');
-            chest.style.display = giveLollipop ? 'block' : 'none';
+            chest.style.display = (candiesEarned > 0) ? 'block' : 'none';
             chest.src = './public/lollipop.png';
             chest.onclick = () => this.claimBonus();
 
@@ -1548,7 +1551,7 @@ const app = {
 
             document.getElementById('result-modal').classList.add('active');
         },
-        async recordHistory(title, score, lollipop) {
+        async recordHistory(title, score, candiesEarned) {
             if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
 
             let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
@@ -1568,7 +1571,7 @@ const app = {
                 score: score,
                 details: this.state.historyDetails
             });
-            if (lollipop) app.data.currentUser.lollipops = (app.data.currentUser.lollipops || 0) + 1;
+            if (candiesEarned > 0) app.data.currentUser.lollipops = (app.data.currentUser.lollipops || 0) + candiesEarned;
             await app.data.updateUserScore();
             app.auth.updateHeader();
         },
@@ -3804,7 +3807,7 @@ const app = {
                     <button id="btn-spin-lucky" class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
                         onclick="app.shop.spinWheel()"
                         ${isSpinning ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                        QUAY NGAY (1 🍭)
+                        QUAY NGAY (2 🍭)
                     </button>
                 </div>
             </div>
@@ -3819,12 +3822,12 @@ const app = {
             if (!user) return;
 
             let freeSpin = this.freeSpin || false;
-            if (!freeSpin && (user.lollipops || 0) < 1) {
+            if (!freeSpin && (user.lollipops || 0) < 2) {
                 return alert("Bạn không đủ Kẹo mút để quay!");
             }
 
             if (!freeSpin) {
-                user.lollipops -= 1;
+                user.lollipops -= 2;
                 app.auth.updateHeader();
             }
             this.freeSpin = false;
@@ -3944,17 +3947,17 @@ const app = {
             }, 5100);
         },
         shopData: [
-            { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
-            { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 10, description: 'Cẩu máy phiên bản Mark II. Trang bị bộ khuếch đại âm thanh để giao tiếp sóng âm.' },
-            { id: 'pet_3', name: 'Pet 3', image: 'pet_3.png', cost: 10, description: 'Gấu máy bọc thép titan. Khả năng chịu nhiệt tốt, chuyên gia đào xới kim loại quý.' },
-            { id: 'pet_4', name: 'Pet 4', image: 'pet_4.png', cost: 10, description: 'Cáo sa mạc phiên bản sinh cơ học. Giấu trong đuôi là bộ thu năng lượng mặt trời kép.' },
-            { id: 'pet_5', name: 'Pet 5', image: 'pet_5.png', cost: 10, description: 'Panda thông minh. Cánh tay thủy lực có thể bóp nát đá tảng hoặc pha một tách trà hoàn hảo.' },
-            { id: 'pet_6', name: 'Pet 6', image: 'pet_6.png', cost: 10, description: 'Chim ưng laser. Tầm nhìn hồng ngoại xuyên màn đêm, là người canh gác bầu trời đáng tin cậy.' },
-            { id: 'pet_7', name: 'Pet 7', image: 'pet_7.png', cost: 10, description: 'Rùa bọc năng lượng. Tạo ra trường lực plasma xung quanh để bảo vệ đồng minh trong bán kính 5m.' },
-            { id: 'pet_8', name: 'Pet 8', image: 'pet_8.png', cost: 10, description: 'Khỉ đột cơ khí tay dài. Leo trèo trên mọi địa hình với lõi trọng lực nhân tạo.' },
-            { id: 'pet_9', name: 'Pet 9', image: 'pet_9.png', cost: 10, description: 'Mèo không gian. Thích ngủ trên nắp lò phản ứng hạt nhân để sạc pin.' },
-            { id: 'pet_10', name: 'Pet 10', image: 'pet_10.png', cost: 10, description: 'Ếch từ tính. Chân có giác mút tĩnh điện, có thể nhảy lên các tàu không gian đang bay.' },
-            { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.png', cost: 50, description: 'Sinh vật viễn cổ cải tạo sinh học. Hơi thở chứa Plasma siêu nóng có thể làm tan chảy hợp kim Crome-Z.' }
+            { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 50, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
+            { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 50, description: 'Cẩu máy phiên bản Mark II. Trang bị bộ khuếch đại âm thanh để giao tiếp sóng âm.' },
+            { id: 'pet_3', name: 'Pet 3', image: 'pet_3.png', cost: 50, description: 'Gấu máy bọc thép titan. Khả năng chịu nhiệt tốt, chuyên gia đào xới kim loại quý.' },
+            { id: 'pet_4', name: 'Pet 4', image: 'pet_4.png', cost: 50, description: 'Cáo sa mạc phiên bản sinh cơ học. Giấu trong đuôi là bộ thu năng lượng mặt trời kép.' },
+            { id: 'pet_5', name: 'Pet 5', image: 'pet_5.png', cost: 50, description: 'Panda thông minh. Cánh tay thủy lực có thể bóp nát đá tảng hoặc pha một tách trà hoàn hảo.' },
+            { id: 'pet_6', name: 'Pet 6', image: 'pet_6.png', cost: 50, description: 'Chim ưng laser. Tầm nhìn hồng ngoại xuyên màn đêm, là người canh gác bầu trời đáng tin cậy.' },
+            { id: 'pet_7', name: 'Pet 7', image: 'pet_7.png', cost: 50, description: 'Rùa bọc năng lượng. Tạo ra trường lực plasma xung quanh để bảo vệ đồng minh trong bán kính 5m.' },
+            { id: 'pet_8', name: 'Pet 8', image: 'pet_8.png', cost: 50, description: 'Khỉ đột cơ khí tay dài. Leo trèo trên mọi địa hình với lõi trọng lực nhân tạo.' },
+            { id: 'pet_9', name: 'Pet 9', image: 'pet_9.png', cost: 50, description: 'Mèo không gian. Thích ngủ trên nắp lò phản ứng hạt nhân để sạc pin.' },
+            { id: 'pet_10', name: 'Pet 10', image: 'pet_10.png', cost: 50, description: 'Ếch từ tính. Chân có giác mút tĩnh điện, có thể nhảy lên các tàu không gian đang bay.' },
+            { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.png', cost: 100, description: 'Sinh vật viễn cổ cải tạo sinh học. Hơi thở chứa Plasma siêu nóng có thể làm tan chảy hợp kim Crome-Z.' }
         ],
         currentTrainIndex: 0,
         trainAnimationDir: 0,
