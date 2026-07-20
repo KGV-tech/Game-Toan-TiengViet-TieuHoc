@@ -96,6 +96,22 @@ const app = {
         } catch (e) { console.warn("Web Audio API not supported", e); }
     },
 
+    showGuide() {
+        const modal = document.getElementById('guide-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            const arrow = document.getElementById('guide-arrow');
+            if (arrow) arrow.style.display = 'none';
+            if (app.data.currentUser) {
+                app.safeStorage.setItem('guide_seen_' + app.data.currentUser.username, 'true');
+            }
+        }
+    },
+    hideGuide() {
+        const modal = document.getElementById('guide-modal');
+        if (modal) modal.style.display = 'none';
+    },
+
     data: {
         sanitizeHTML(str) {
             if (!str) return '';
@@ -470,6 +486,17 @@ const app = {
                 this.updateHeader();
 
                 app.router.open('map-screen');
+
+                // Hiển thị mũi tên hướng dẫn nếu là lần đầu login
+                setTimeout(() => {
+                    if (app.data.currentUser && app.data.currentUser.role !== 'admin') {
+                        const hasSeenGuide = app.safeStorage.getItem('guide_seen_' + app.data.currentUser.username);
+                        const guideArrow = document.getElementById('guide-arrow');
+                        if (!hasSeenGuide && guideArrow) {
+                            guideArrow.style.display = 'block';
+                        }
+                    }
+                }, 500);
             } else {
                 alert('Sai tên đăng nhập hoặc mật khẩu!');
             }

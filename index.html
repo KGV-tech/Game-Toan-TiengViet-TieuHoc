@@ -71,7 +71,18 @@
 
     <!-- Bản đồ -->
     <div id="map-screen" class="screen">
-      <div class="top-nav" style="justify-content: flex-end;">
+      <div class="top-nav" style="justify-content: space-between;">
+        <!-- Left: Guide Button -->
+        <div style="position:relative; z-index: 50;">
+            <button id="btn-guide" class="btn-primary" style="padding:10px 20px; font-size:1.1rem; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid #60a5fa; display:flex; align-items:center; gap:8px;" onclick="app.showGuide()">
+                <span>📖 Hướng Dẫn</span>
+            </button>
+            <div id="guide-arrow" style="position:absolute; top: 120%; left: 50%; transform: translateX(-50%); display:none; animation: bounce-guide 1s infinite; z-index:50;">
+                <span style="font-size:3rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.8)); text-shadow: 0 0 10px #facc15;">⬆️</span>
+            </div>
+        </div>
+
+        <!-- Right: Info -->
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <button id="logout-btn" class="btn-danger" style="padding: 5px 15px; font-size: 0.9rem;">Thoát</button>
           <div id="player-info" class="player-info-card"></div>
@@ -129,6 +140,33 @@
             style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
       </div>
+    </div>
+
+    <!-- Hướng dẫn sử dụng (Modal) -->
+    <div id="guide-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
+        <div class="sci-fi-panel" style="width: 90%; max-width: 650px; background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8; border-radius: 20px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.2); padding: 30px; position: relative; backdrop-filter: blur(10px);">
+            <button onclick="app.hideGuide()" style="position:absolute; top: -15px; right: -15px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); z-index: 10; font-weight: bold;">✖</button>
+            <h2 style="color: #38bdf8; text-align: center; text-transform: uppercase; font-weight: 900; font-size: 2.2rem; margin-top: 0; text-shadow: 0 0 15px #38bdf8; border-bottom: 2px solid rgba(56, 189, 248, 0.3); padding-bottom: 15px; margin-bottom: 25px;">Hướng Dẫn Sử Dụng</h2>
+            
+            <div style="color: #e2e8f0; font-size: 1.2rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 15px;" class="custom-scrollbar">
+                <h3 style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">1. Quy tắc làm bài:</h3>
+                <ul style="list-style-type: none; padding-left: 15px; margin-bottom: 20px;">
+                    <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Trả lời đúng mỗi câu nhận 1 điểm.</li>
+                    <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt &lt; 8 điểm/1 lượt chơi sẽ không nhận được Kẹo (🍭).</li>
+                    <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 8-9 điểm/1 lượt chơi sẽ nhận 2 Kẹo (🍭).</li>
+                    <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 10 điểm/1 lượt chơi sẽ nhận 5 Kẹo (🍭).</li>
+                </ul>
+
+                <h3 style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">2. Đơn vị Kẹo 🍭:</h3>
+                <p style="margin-bottom: 20px; padding-left: 15px;">Dùng Kẹo để tham gia "Trạm May Mắn" (Vòng quay) hoặc vào "Shop" để mua Thú cưng và nâng Kỹ năng cho Thú cưng.</p>
+
+                <h3 style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">3. Thú Cưng:</h3>
+                <p style="margin-bottom: 20px; padding-left: 15px;">Bạn có thể sở hữu tối đa 3 Thú cưng. Thú cưng sẽ đồng hành cùng bạn và kích hoạt các Kỹ năng hỗ trợ trong khi làm bài.</p>
+
+                <h3 style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">4. Thông tin thêm:</h3>
+                <p style="margin-bottom: 20px; padding-left: 15px; font-style: italic; color: #94a3b8;">Sẽ update tiếp ...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Màn hình chơi chung (Luyện Tập) -->

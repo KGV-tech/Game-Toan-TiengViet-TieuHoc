@@ -655,3 +655,12 @@ input[type="text"], input[type="password"], select, textarea {
   font-size: 16px !important;
   touch-action: manipulation;
 }
+
+/* Guide Modal Custom Styles */
+@keyframes bounce-guide {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(15px); }
+}
+.sci-fi-panel {
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
