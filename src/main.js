@@ -3879,17 +3879,17 @@ const app = {
         this.switchTab('candy');
     },
     shopData: [
-        { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10 },
-        { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 10 },
-        { id: 'pet_3', name: 'Pet 3', image: 'pet_3.png', cost: 10 },
-        { id: 'pet_4', name: 'Pet 4', image: 'pet_4.png', cost: 10 },
-        { id: 'pet_5', name: 'Pet 5', image: 'pet_5.png', cost: 10 },
-        { id: 'pet_6', name: 'Pet 6', image: 'pet_6.png', cost: 10 },
-        { id: 'pet_7', name: 'Pet 7', image: 'pet_7.png', cost: 10 },
-        { id: 'pet_8', name: 'Pet 8', image: 'pet_8.png', cost: 10 },
-        { id: 'pet_9', name: 'Pet 9', image: 'pet_9.png', cost: 10 },
-        { id: 'pet_10', name: 'Pet 10', image: 'pet_10.png', cost: 10 },
-        { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.png', cost: 50 }
+        { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
+        { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 10, description: 'Cẩu máy phiên bản Mark II. Trang bị bộ khuếch đại âm thanh để giao tiếp sóng âm.' },
+        { id: 'pet_3', name: 'Pet 3', image: 'pet_3.png', cost: 10, description: 'Gấu máy bọc thép titan. Khả năng chịu nhiệt tốt, chuyên gia đào xới kim loại quý.' },
+        { id: 'pet_4', name: 'Pet 4', image: 'pet_4.png', cost: 10, description: 'Cáo sa mạc phiên bản sinh cơ học. Giấu trong đuôi là bộ thu năng lượng mặt trời kép.' },
+        { id: 'pet_5', name: 'Pet 5', image: 'pet_5.png', cost: 10, description: 'Panda thông minh. Cánh tay thủy lực có thể bóp nát đá tảng hoặc pha một tách trà hoàn hảo.' },
+        { id: 'pet_6', name: 'Pet 6', image: 'pet_6.png', cost: 10, description: 'Chim ưng laser. Tầm nhìn hồng ngoại xuyên màn đêm, là người canh gác bầu trời đáng tin cậy.' },
+        { id: 'pet_7', name: 'Pet 7', image: 'pet_7.png', cost: 10, description: 'Rùa bọc năng lượng. Tạo ra trường lực plasma xung quanh để bảo vệ đồng minh trong bán kính 5m.' },
+        { id: 'pet_8', name: 'Pet 8', image: 'pet_8.png', cost: 10, description: 'Khỉ đột cơ khí tay dài. Leo trèo trên mọi địa hình với lõi trọng lực nhân tạo.' },
+        { id: 'pet_9', name: 'Pet 9', image: 'pet_9.png', cost: 10, description: 'Mèo không gian. Thích ngủ trên nắp lò phản ứng hạt nhân để sạc pin.' },
+        { id: 'pet_10', name: 'Pet 10', image: 'pet_10.png', cost: 10, description: 'Ếch từ tính. Chân có giác mút tĩnh điện, có thể nhảy lên các tàu không gian đang bay.' },
+        { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.png', cost: 50, description: 'Sinh vật viễn cổ cải tạo sinh học. Hơi thở chứa Plasma siêu nóng có thể làm tan chảy hợp kim Crome-Z.' }
     ],
     currentTrainIndex: 0,
     trainAnimationDir: 0,
@@ -3917,26 +3917,28 @@ const app = {
             localStorage.setItem(remainingKey, remaining);
         }
         const hasPet = myPets.some(p => p.pet_image === currentPet.image);
+        const description = currentPet.description || "Chưa có dữ liệu.";
         
         let html = `
-        <div style="height: 100%; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-            <div style="width: 100%; max-width: 600px; background: transparent; position:relative; overflow:visible;">
+        <div style="height: 100%; display:flex; flex-direction:row; gap: 20px;">
+            <!-- Left Side: Machine (60%) -->
+            <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 ${isAdmin ? `
-                <div style="display:flex; justify-content:center; align-items:center; margin-bottom:20px; z-index:1;">
+                <div style="position:absolute; top: 0; left: 50%; transform: translateX(-50%); z-index:10;">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 10px 20px; border-radius: 20px;">
                         Chế độ Admin
                     </div>
                 </div>
                 ` : ''}
                 
-                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%; height: 50vh; min-height: 400px; max-height: 600px;">
+                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%; height: 75vh; min-height: 500px; max-height: 800px;">
                     <style>
                         @keyframes wipeDown { 
                             0% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); opacity: 0; transform: translate(-50%, -60%); }
                             100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; transform: translate(-50%, -50%); }
                         }
                     </style>
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:20px; z-index:10; border-radius:50%; width:60px; height:60px; font-size:1.8rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">◀</button>
+                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
                     
                     <div style="position:relative; width: 100%; height: 100%; display:flex; justify-content:center; align-items:center;">
                         <!-- Sci-Fi Machine Background -->
@@ -3947,28 +3949,42 @@ const app = {
                             <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 15px rgba(56,189,248,0.9)); animation: heartbeat 2s infinite;">
                         </div>
                         
-                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:20%; right:25%; background:#22c55e; color:white; font-size:1.1rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(10deg);">Đã sở hữu</div>` : ''}
+                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:15%; right:20%; background:#22c55e; color:white; font-size:1.2rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(15deg);">Đã sở hữu</div>` : ''}
                     </div>
                     
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:-20px; z-index:10; border-radius:50%; width:60px; height:60px; font-size:1.8rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">▶</button>
+                    <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
                 </div>
-                
-                <div style="background: rgba(255,255,255,0.95); padding: 15px; border-radius: 20px; text-align:center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); margin: -20px auto 0; width: 70%; position:relative; z-index:5;">
-                    <div style="font-weight:bold; color: #333; font-size: 1.4rem; margin-bottom: 10px;">${currentPet.name}</div>
+            </div>
+
+            <!-- Right Side: Details (40%) -->
+            <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+                <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
+                    <h2 style="font-weight:900; color: #7e22ce; font-size: 2.5rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 0 #e9d5ff;">${currentPet.name}</h2>
+                    
+                    <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
+                        <strong>Mô tả:</strong><br/>
+                        ${description}
+                    </div>
                     
                     ${isAdmin ? `
-                        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
-                            <span style="font-size:1.1rem; font-weight:bold;">Còn tồn:</span>
-                            <input type="number" id="admin_edit_${currentPet.id}" value="${remaining}" style="width:70px; text-align:center; padding:5px; font-size:1.1rem; border:2px solid #cbd5e1; border-radius:5px;">
+                        <div style="display:flex; flex-direction:column; gap:15px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:1.2rem; font-weight:bold; color: #475569;">Còn tồn:</span>
+                                <input type="number" id="admin_edit_${currentPet.id}" value="${remaining}" style="width:100px; text-align:center; padding:10px; font-size:1.2rem; border:2px solid #94a3b8; border-radius:10px;">
+                            </div>
+                            <button class="btn-primary" style="padding:12px 30px; font-size:1.2rem; border-radius: 15px;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu Thay Đổi</button>
                         </div>
-                        <button class="btn-primary" style="padding:8px 30px; font-size:1.1rem;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu</button>
                     ` : `
-                        <div style="font-size: 1.1rem; color: #ef4444; margin-bottom: 10px; font-weight:bold;">Số lượng còn: ${remaining}</div>
-                        <button class="btn-success" style="padding:10px 40px; font-size:1.2rem; border-radius:30px; font-weight:bold; box-shadow: 0 4px 10px rgba(34,197,94,0.4);" 
-                            onclick="app.shop.buyPet('${currentPet.id}')"
-                            ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                            Đổi Ngay: ${currentPet.cost} 🍭
-                        </button>
+                        <div style="display:flex; flex-direction:column; gap:20px; align-items: flex-start;">
+                            <div style="font-size: 1.3rem; color: #ef4444; font-weight:900; background: #fee2e2; padding: 10px 20px; border-radius: 15px; border: 2px solid #fca5a5;">
+                                Số lượng kho: ${remaining}
+                            </div>
+                            <button class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(34,197,94,0.4); display:flex; justify-content:center; align-items:center; gap:10px;" 
+                                onclick="app.shop.buyPet('${currentPet.id}')"
+                                ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed; background: #9ca3af; border-color:#6b7280; box-shadow:none;"' : ''}>
+                                Đổi Ngay: ${currentPet.cost} 🍭
+                            </button>
+                        </div>
                     `}
                 </div>
             </div>
@@ -4007,30 +4023,30 @@ const app = {
                     const refund = Math.floor(shopInfo.cost / 2);
                     
                     html += `
-                    <div style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #e0f2fe, #bae6fd); border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px solid ${isEquipped ? '#eab308' : '#7dd3fc'}; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.2s;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.2); z-index:0;"></div>
-                        ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2;" class="heartbeat">⭐</div>` : ''}
+                    <div style="flex: 1; min-width: 250px; background: url('./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}') center/cover no-repeat; border-radius: 20px; height: 350px; position:relative; overflow:hidden; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease;">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:0;"></div>
+                        ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2; text-shadow: 0 0 10px #10b981;" class="heartbeat">⭐</div>` : ''}
                         
                         <div style="position:relative; z-index:1; display:flex; flex-direction:column; justify-content:space-between; align-items:center; height:100%; padding:20px 10px;">
-                            <div style="font-weight:bold; font-size:1.2rem; color:#333; text-shadow:2px 2px 0px #fff; background: rgba(255,255,255,0.7); padding: 5px 15px; border-radius: 15px;">${p.pet_name}</div>
+                            <div style="font-weight:900; font-size:1.3rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #10b981;">${p.pet_name}</div>
                             
-                            <div style="width:120px; height:120px; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));">
-                                <img src="./public/${p.pet_image}" style="max-width:100%; max-height:100%; object-fit:contain; ${isEquipped ? 'animation: heartbeat 2s infinite;' : ''}">
+                            <div style="width:140px; height:140px; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); margin-top: ${isEquipped ? '0' : '20px'}; opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
+                                <img src="./public/${p.pet_image}" style="max-width:100%; max-height:100%; object-fit:contain; ${isEquipped ? 'animation: heartbeat 2s infinite;' : 'filter: brightness(0.6);'}">
                             </div>
                             
-                            <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
-                                <button class="btn-success" style="padding:8px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.2);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Cất đi' : 'Sử dụng'}</button>
-                                <button class="btn-danger" style="padding:8px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.2);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại</button>
+                            <div style="display:flex; gap:10px; width: 100%; justify-content:center; margin-bottom: 10px;">
+                                <button class="btn-success" style="padding:10px 20px; font-size:1rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
+                                <button class="btn-danger" style="padding:10px 20px; font-size:1rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Thả Tự Do</button>
                             </div>
                         </div>
                     </div>
                     `;
                 } else {
                     html += `
-                    <div style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px dashed #cbd5e1; opacity: 0.6;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.5); z-index:0;"></div>
-                        <div style="position:relative; z-index:1; display:flex; justify-content:center; align-items:center; height:100%; color:#64748b; font-weight:bold; font-size:1.5rem;">
-                            Nhà Trống
+                    <div style="flex: 1; min-width: 250px; background: url('./public/incubator_closed.png') center/cover no-repeat; border-radius: 20px; height: 350px; position:relative; overflow:hidden; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%);">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:0;"></div>
+                        <div style="position:relative; z-index:1; display:flex; justify-content:center; align-items:center; height:100%; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                            Khoang Trống
                         </div>
                     </div>
                     `;
