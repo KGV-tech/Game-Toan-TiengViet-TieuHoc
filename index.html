@@ -71,18 +71,19 @@
 
     <!-- Bản đồ -->
     <div id="map-screen" class="screen">
-      <div class="top-nav" style="justify-content: space-between;">
-        <!-- Left: Guide Button -->
-        <div style="position:relative; z-index: 50;">
-            <button id="btn-guide" class="btn-primary" style="padding:10px 20px; font-size:1.1rem; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid #60a5fa; display:flex; align-items:center; gap:8px;" onclick="app.showGuide()">
-                <span>📖 Hướng Dẫn</span>
-            </button>
-            <div id="guide-arrow" style="position:absolute; top: 120%; left: 50%; transform: translateX(-50%); display:none; animation: bounce-guide 1s infinite; z-index:50;">
-                <span style="font-size:3rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.8)); text-shadow: 0 0 10px #facc15;">⬆️</span>
-            </div>
-        </div>
+      <!-- Nút Hướng dẫn (Tự do chỉnh top/left) -->
+      <div style="position: absolute; top: 5%; left: 5%; z-index: 50;">
+          <button id="btn-guide" class="btn-primary" style="padding:10px 20px; font-size:1.1rem; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid #60a5fa; display:flex; align-items:center; gap:8px;" onclick="app.showGuide()">
+              <span>📖 Hướng Dẫn</span>
+          </button>
+          <div id="guide-arrow" style="position:absolute; top: 120%; left: 50%; transform: translateX(-50%); display:none; animation: bounce-guide 1s infinite; z-index:50;">
+              <span style="font-size:3rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.8)); text-shadow: 0 0 10px #facc15;">⬆️</span>
+          </div>
+      </div>
 
-        <!-- Right: Info -->
+      <div class="top-nav" style="justify-content: flex-end;">
+
+
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <button id="logout-btn" class="btn-danger" style="padding: 5px 15px; font-size: 0.9rem;">Thoát</button>
           <div id="player-info" class="player-info-card"></div>
