@@ -4115,7 +4115,7 @@ const app = {
                             
                             <div style="display:flex; gap:10px; width: 100%; justify-content:center; margin-bottom: 5px;">
                                 <button class="btn-success" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
-                                <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Thả Tự Do</button>
+                                <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại Trạm</button>
                             </div>
                         </div>
                     </div>
@@ -4188,7 +4188,7 @@ const app = {
             const user = app.data.currentUser;
             if (!user) return;
 
-            if (!confirm("Bạn có chắc chắn muốn trả lại thú cưng này? Bạn sẽ nhận lại 50% số kẹo mút.")) return;
+            if (!confirm("Bạn có chắc chắn muốn trả lại thú cưng này về trạm? Bạn sẽ được hoàn lại 50% số kẹo đã đổi ban đầu.")) return;
 
             const shopInfo = this.shopData.find(x => x.image === petImage) || { cost: 50, id: 'pet_1' };
             const refund = Math.floor(shopInfo.cost / 2);
