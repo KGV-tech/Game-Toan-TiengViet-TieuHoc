@@ -3939,7 +3939,7 @@ const app = {
                     
                     <div style="position:relative; width: 100%; max-width: 450px; aspect-ratio: 1; display:flex; justify-content:center; align-items:center; margin:0 35px;">
                         <!-- Sci-Fi Machine Background -->
-                        <img src="./public/scifi_machine.jpg" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));">
+                        <img src="./public/scifi_machine.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));">
                         
                         <!-- Pet Inside Window (Z-index 3 to be on top) -->
                         <div style="position:absolute; width: 45%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
