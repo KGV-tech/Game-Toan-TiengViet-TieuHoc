@@ -3929,23 +3929,25 @@ const app = {
                 </div>
                 ` : ''}
                 
-                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%;">
+                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%; height: 50vh; min-height: 400px; max-height: 600px;">
                     <style>
-                        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                        @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                        @keyframes wipeDown { 
+                            0% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); opacity: 0; transform: translate(-50%, -60%); }
+                            100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; transform: translate(-50%, -50%); }
+                        }
                     </style>
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:-20px; z-index:10; border-radius:50%; width:60px; height:60px; font-size:1.8rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">◀</button>
+                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:20px; z-index:10; border-radius:50%; width:60px; height:60px; font-size:1.8rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">◀</button>
                     
-                    <div style="position:relative; width: 100%; aspect-ratio: 1; display:flex; justify-content:center; align-items:center;">
+                    <div style="position:relative; width: 100%; height: 100%; display:flex; justify-content:center; align-items:center;">
                         <!-- Sci-Fi Machine Background -->
-                        <img src="./public/scifi_machine.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
+                        <img src="./public/scifi_machine.png" style="height:100%; object-fit:contain; position:absolute; top:0; left:50%; transform: translateX(-50%); z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
                         
                         <!-- Pet Inside Window -->
-                        <div style="position:absolute; width: 45%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; ${this.trainAnimationDir === 1 ? 'animation: slideInLeft 0.3s ease-out;' : (this.trainAnimationDir === -1 ? 'animation: slideInRight 0.3s ease-out;' : '')}">
+                        <div style="position:absolute; width: 35%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; animation: wipeDown 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;">
                             <img src="./public/${currentPet.image}" style="max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 0px 15px rgba(56,189,248,0.9)); animation: heartbeat 2s infinite;">
                         </div>
                         
-                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:10%; right:15%; background:#22c55e; color:white; font-size:1.1rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(10deg);">Đã sở hữu</div>` : ''}
+                        ${hasPet && !isAdmin ? `<div style="position:absolute; top:20%; right:25%; background:#22c55e; color:white; font-size:1.1rem; font-weight:bold; padding:8px 15px; border-radius:15px; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,0.3); transform: rotate(10deg);">Đã sở hữu</div>` : ''}
                     </div>
                     
                     <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:-20px; z-index:10; border-radius:50%; width:60px; height:60px; font-size:1.8rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">▶</button>
