@@ -3741,8 +3741,8 @@ const app = {
                         <img src="./public/wheel_circle.png" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0px 20px rgba(147,51,234,0.6));">
                     </div>
                     
-                    <!-- Center Pointer/Pin -->
-                    <div style="position:absolute; top: 8%; left: 50%; transform: translateX(-50%); z-index:3; width: 50px; height: 70px; background: linear-gradient(180deg, #ef4444, #991b1b); clip-path: polygon(50% 100%, 10% 0, 90% 0); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));"></div>
+                    <!-- Side Pointer/Pin at 3 o'clock (Right side) -->
+                    <img src="./public/wheel_pointer.png" style="position:absolute; top: 50%; right: 12%; transform: translateY(-50%); z-index:3; width: 100px; height: 100px; object-fit:contain; filter: drop-shadow(-5px 0 10px rgba(0,0,0,0.6));">
                 </div>
             </div>
 
@@ -3809,26 +3809,31 @@ const app = {
         }
         
         const rand = Math.random() * 100;
-        let segment = 1;
+        let segment = 0;
         let rewardText = "";
         
-        if (rand < 40) { 
-            segment = Math.floor(Math.random() * 3) + 1; // 1, 2, 3
-            rewardText = "Rất tiếc! May mắn lần sau nhé.";
-        } else if (rand < 45) { 
-            segment = 4;
-            rewardText = "Chúc mừng! Bạn nhận được 5 kẹo 🍭.";
-            user.lollipops += 5;
-        } else if (rand < 53) { 
-            segment = 5;
-            rewardText = "Chúc mừng! Bạn nhận được 2 kẹo 🍭.";
-            user.lollipops += 2;
-        } else if (rand < 77) { 
-            segment = Math.floor(Math.random() * 2) + 6; // 6, 7
+        // Target Layout:
+        // 0: Tặng 1 kẹo (12%)
+        // 1: Tặng 2 kẹo (8%)
+        // 2: Tặng Thú Cưng (3%)
+        // 3: May mắn lần sau (13.33%)
+        // 4: Quay lại (10%)
+        // 5: Tặng 5 kẹo (5%)
+        // 6: May mắn lần sau (13.33%)
+        // 7: Tặng 1 kẹo (12%)
+        // 8: May mắn lần sau (13.34%)
+        // 9: Quay lại (10%)
+        
+        if (rand < 12) {
+            segment = 0;
             rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
             user.lollipops += 1;
-        } else if (rand < 80) { 
-            segment = 8;
+        } else if (rand < 20) {
+            segment = 1;
+            rewardText = "Chúc mừng! Bạn nhận được 2 kẹo 🍭.";
+            user.lollipops += 2;
+        } else if (rand < 23) {
+            segment = 2;
             let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username).map(p => p.pet_image);
             let unownedPets = this.shopData.filter(p => !myPets.includes(p.image));
             if (unownedPets.length > 0) {
@@ -3846,16 +3851,42 @@ const app = {
                 rewardText = "Tuyệt vời! Bạn quay trúng Thú Cưng nhưng đã sở hữu tất cả. Hệ thống đền bù 8 kẹo 🍭!";
                 user.lollipops += 8;
             }
-        } else { 
-            segment = Math.floor(Math.random() * 2) + 9; // 9, 10
+        } else if (rand < 36.33) {
+            segment = 3;
+            rewardText = "Rất tiếc! May mắn lần sau nhé.";
+        } else if (rand < 46.33) {
+            segment = 4;
+            rewardText = "Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.";
+            this.freeSpin = true;
+        } else if (rand < 51.33) {
+            segment = 5;
+            rewardText = "Chúc mừng! Bạn nhận được 5 kẹo 🍭.";
+            user.lollipops += 5;
+        } else if (rand < 64.66) {
+            segment = 6;
+            rewardText = "Rất tiếc! May mắn lần sau nhé.";
+        } else if (rand < 76.66) {
+            segment = 7;
+            rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
+            user.lollipops += 1;
+        } else if (rand < 90) {
+            segment = 8;
+            rewardText = "Rất tiếc! May mắn lần sau nhé.";
+        } else {
+            segment = 9;
             rewardText = "Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.";
             this.freeSpin = true;
         }
         
-        const segmentCenter = (segment - 1) * 36 + 18; 
+        // Pointer is at 3 o'clock (90 degrees).
+        // Text is drawn at i*36 + 18 + OFFSET_DEG (offset is 17) -> i*36 + 35 degrees clockwise from top.
+        // Rotation needed to place this text at 90 degrees: 90 - (i*36 + 35) = 55 - i*36
+        const segmentTextAngle = segment * 36 + 35;
         const currentTotalRotation = this.currentRotation || 0;
         const currentBase = currentTotalRotation % 360;
-        const extraDegreesToTarget = (360 - segmentCenter) - currentBase;
+        
+        const extraDegreesToTarget = (90 - segmentTextAngle) - currentBase;
+        // Add full spins + align to target
         const targetRotation = currentTotalRotation + (360 * 6) + extraDegreesToTarget;
         
         this.currentRotation = targetRotation;
