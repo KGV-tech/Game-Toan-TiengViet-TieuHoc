@@ -4077,7 +4077,7 @@ const app = {
             <h2 style="color:#9333ea; text-align:center; font-size: 2rem; margin-top:0;">Thú Cưng Của Tôi</h2>
             <p style="text-align:center; font-size:1.1rem; color:#666; margin-bottom: 30px;">(Tối đa 3 Thú cưng)</p>
             
-            <div style="display:flex; justify-content:space-around; align-items:center; gap: 20px; padding: 20px; flex-wrap:wrap;">
+            <div style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
         `;
 
             if (isAdmin) {
@@ -4091,7 +4091,7 @@ const app = {
                         const refund = Math.floor(shopInfo.cost / 2);
 
                         html += `
-                    <div style="flex: 1; min-width: 250px; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a;">
+                    <div style="flex: 1; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; min-width: 0;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:0;"></div>
                         ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2; text-shadow: 0 0 10px #10b981;" class="heartbeat">⭐</div>` : ''}
                         
@@ -4119,7 +4119,7 @@ const app = {
                     `;
                     } else {
                         html += `
-                    <div style="flex: 1; min-width: 250px; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <div style="flex: 1; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center; min-width: 0;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:0;"></div>
                         <div style="position:relative; width:100%;">
                             <img src="./public/incubator_closed.png" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
