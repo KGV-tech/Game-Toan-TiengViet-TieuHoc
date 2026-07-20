@@ -4005,8 +4005,8 @@ const app = {
                     const refund = Math.floor(shopInfo.cost / 2);
                     
                     html += `
-                    <div style="flex: 1; min-width: 200px; background: url('./public/pet_house.png') center/cover no-repeat; border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px solid ${isEquipped ? '#eab308' : 'transparent'}; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.2s;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.4); z-index:0;"></div>
+                    <div style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #e0f2fe, #bae6fd); border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px solid ${isEquipped ? '#eab308' : '#7dd3fc'}; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.2s;">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.2); z-index:0;"></div>
                         ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2;" class="heartbeat">⭐</div>` : ''}
                         
                         <div style="position:relative; z-index:1; display:flex; flex-direction:column; justify-content:space-between; align-items:center; height:100%; padding:20px 10px;">
@@ -4025,8 +4025,8 @@ const app = {
                     `;
                 } else {
                     html += `
-                    <div style="flex: 1; min-width: 200px; background: url('./public/pet_house.png') center/cover no-repeat; border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px dashed #cbd5e1; opacity: 0.6;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.7); z-index:0;"></div>
+                    <div style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-radius: 20px; height: 280px; position:relative; overflow:hidden; border: 4px dashed #cbd5e1; opacity: 0.6;">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.5); z-index:0;"></div>
                         <div style="position:relative; z-index:1; display:flex; justify-content:center; align-items:center; height:100%; color:#64748b; font-weight:bold; font-size:1.5rem;">
                             Nhà Trống
                         </div>
