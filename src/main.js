@@ -3745,7 +3745,7 @@ const app = {
                             </div>
                             
                             <!-- Side Pointer/Pin -->
-                            <img src="./public/wheel_pointer.png" style="position:absolute; top: 30%; right: 17%; transform: translateY(-50%); z-index:3; width: 22%; height: auto; object-fit:contain; filter: drop-shadow(-5px 0 10px rgba(0,0,0,0.6));">
+                            <img src="./public/wheel_pointer.png" style="position:absolute; top: 30%; right: 7%; transform: translateY(-50%); z-index:3; width: 22%; height: auto; object-fit:contain; filter: drop-shadow(-5px 0 10px rgba(0,0,0,0.6));">
                         </div>
                     </div>
                 </div>
