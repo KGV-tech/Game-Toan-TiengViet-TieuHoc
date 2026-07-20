@@ -382,26 +382,28 @@
     </div>
   </div>
 
-  <!-- Modal Cửa hàng & Gacha -->
+  <!-- Modal Cửa hàng & Gacha (Notebook Layout) -->
   <div id="shop-modal" class="modal">
     <div class="modal-content glass-container-xl"
-      style="position:relative; background: rgba(253, 230, 138, 0.95); max-width: 900px; padding: 20px;">
+      style="position:relative; width: 90%; max-width: 1000px; padding: 0; display:flex; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 600px; background: transparent;">
+      
+      <!-- Blurred Background -->
+      <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: url('./public/icon_shop.png') center/cover no-repeat; filter: blur(15px); opacity: 0.5; z-index: 0; transform: scale(1.1);"></div>
+      <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.4); z-index: 0;"></div> <!-- Overlay -->
+      
       <button class="btn-danger"
         style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
         onclick="document.getElementById('shop-modal').style.display='none'">Đóng</button>
-      <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px; gap: 10px;">
-        <img src="./public/cat_normal.png" alt="Mèo Phép Thuật"
-          style="height: 60px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));">
-        <h2 class="title-glow" style="margin:0; color: #9333ea; text-shadow: 2px 2px 0px #e9d5ff;">Cửa Tiệm Phép Thuật
-        </h2>
+      
+      <!-- Notebook Tabs (Left) -->
+      <div class="admin-tabs" style="display:flex; flex-direction:column; gap: 10px; width: 200px; z-index: 1; padding: 30px 0 20px 0; border:none;">
+        <button class="notebook-tab active" onclick="app.shop.switchTab('candy', this)">Máy Đổi Kẹo</button>
+        <button class="notebook-tab" onclick="app.shop.switchTab('pets', this)">Trạm Thú Cưng</button>
+        <button class="notebook-tab" onclick="app.shop.switchTab('mypets', this)">Thú Cưng Của Tôi</button>
       </div>
 
-      <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-        <button class="tab-btn active" onclick="app.shop.switchTab('kiosk', this)">Máy Đổi Kẹo</button>
-        <button class="tab-btn" onclick="app.shop.switchTab('pets', this)">Thú Cưng</button>
-      </div>
-
-      <div id="shop-content-area" class="scroll-box" style="height: 400px;">
+      <!-- Content (Right) -->
+      <div id="shop-content-area" class="scroll-box" style="flex: 1; height: 600px; z-index: 1; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 20px 0 0 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1);">
         <!-- Shop content rendered by JS -->
       </div>
     </div>

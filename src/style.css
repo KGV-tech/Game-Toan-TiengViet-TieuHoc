@@ -121,6 +121,35 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
     box-shadow: 0 -5px 15px rgba(59,130,246,0.5), inset 0 2px 5px rgba(255,255,255,0.3);
     text-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
+.notebook-tab {
+    background: linear-gradient(90deg, #f8fafc, #e2e8f0);
+    color: #475569;
+    padding: 15px 10px 15px 20px;
+    border-radius: 0 15px 15px 0;
+    font-weight: 900;
+    font-size: 1.1rem;
+    border: 2px solid #cbd5e1;
+    border-left: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    text-align: left;
+    text-transform: uppercase;
+}
+.notebook-tab:hover {
+    background: linear-gradient(90deg, #ffffff, #f1f5f9);
+    color: #1e293b;
+    transform: translateX(3px);
+}
+.notebook-tab.active {
+    color: #fff;
+    background: linear-gradient(90deg, #9333ea, #7e22ce);
+    border-color: #a855f7;
+    box-shadow: 5px 0 15px rgba(147,51,234,0.5), inset 2px 0 5px rgba(255,255,255,0.3);
+    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+    transform: translateX(5px);
+    width: calc(100% + 5px);
+}
 .admin-content { flex: 1; overflow-y: auto; padding-right: 10px; color: white; }
 .scroll-box { max-height: 400px; overflow-y: auto; text-align: left; margin: 20px 0; }
 .scroll-box::-webkit-scrollbar, .admin-content::-webkit-scrollbar { width: 8px; }
