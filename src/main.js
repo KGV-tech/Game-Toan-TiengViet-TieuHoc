@@ -3735,9 +3735,8 @@ const app = {
                     <img src="./public/wheel_stand.png" style="height:100%; object-fit:contain; position:absolute; top:0; left:50%; transform: translateX(-50%); z-index:1; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
                     
                     <!-- The Wheel -->
-                    <div style="position:absolute; width: 60%; height: 60%; top: 40%; left: 50%; z-index:2; 
+                    <div id="lucky-wheel-circle" style="position:absolute; width: 60%; height: 60%; top: 40%; left: 50%; z-index:2; 
                                 transform: translate(-50%, -50%) rotate(${this.currentRotation || 0}deg); 
-                                transition: ${isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)' : 'none'};
                                 transform-origin: center center;">
                         <img src="./public/wheel_circle.png" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0px 20px rgba(147,51,234,0.6));">
                     </div>
@@ -3754,23 +3753,23 @@ const app = {
                     
                     <div style="display:flex; justify-content:center; margin-bottom: 20px;">
                         <div style="font-size: 1.5rem; font-weight: bold; color: #b45309; background: #fef3c7; padding: 10px 25px; border-radius: 20px; border: 2px solid #fde68a;">
-                            Bạn đang có: <span style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
+                            Bạn đang có: <span id="lucky-lollipop-count" style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
                         </div>
                     </div>
                     
                     <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 10px;">
                         <h3 style="margin-top:0; color: #475569;">Thể lệ Vòng Quay:</h3>
                         <ul style="padding-left: 20px; margin-bottom:0;">
-                            <li><b style="color:#ef4444;">May mắn lần sau</b> (40%)</li>
-                            <li><b style="color:#22c55e;">Tặng 5 kẹo</b> (5%)</li>
-                            <li><b style="color:#3b82f6;">Tặng 2 kẹo</b> (8%)</li>
-                            <li><b style="color:#a855f7;">Tặng 1 kẹo</b> (24%)</li>
-                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (3%) - Tự động quy đổi thành 8 kẹo nếu đủ bộ sưu tập.</li>
-                            <li><b style="color:#0ea5e9;">Quay lại</b> (20%) - Miễn phí 1 lần quay tới.</li>
+                            <li><b style="color:#ef4444;">May mắn lần sau</b></li>
+                            <li><b style="color:#22c55e;">Tặng 5 kẹo</b></li>
+                            <li><b style="color:#3b82f6;">Tặng 2 kẹo</b></li>
+                            <li><b style="color:#a855f7;">Tặng 1 kẹo</b></li>
+                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (Tự đổi 8 kẹo nếu đủ bộ)</li>
+                            <li><b style="color:#0ea5e9;">Quay lại</b> (Miễn phí 1 lần quay tới)</li>
                         </ul>
                     </div>
                     
-                    <button class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
+                    <button id="btn-spin-lucky" class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
                         onclick="app.shop.spinWheel()"
                         ${isSpinning ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
                         QUAY NGAY (1 🍭)
@@ -3799,8 +3798,15 @@ const app = {
         this.freeSpin = false;
         this.isSpinning = true;
         
-        // Re-render to disable button
-        this.switchTab('lucky');
+        const lolliSpan = document.getElementById('lucky-lollipop-count');
+        if (lolliSpan) lolliSpan.innerText = user.lollipops || 0;
+        
+        const spinBtn = document.getElementById('btn-spin-lucky');
+        if (spinBtn) {
+            spinBtn.disabled = true;
+            spinBtn.style.opacity = '0.5';
+            spinBtn.style.cursor = 'not-allowed';
+        }
         
         const rand = Math.random() * 100;
         let segment = 1;
@@ -3847,20 +3853,32 @@ const app = {
         }
         
         const segmentCenter = (segment - 1) * 36 + 18; 
-        const targetRotation = 360 - segmentCenter + (360 * 5); // 5 spins + alignment
+        const currentTotalRotation = this.currentRotation || 0;
+        const currentBase = currentTotalRotation % 360;
+        const extraDegreesToTarget = (360 - segmentCenter) - currentBase;
+        const targetRotation = currentTotalRotation + (360 * 6) + extraDegreesToTarget;
         
-        const baseRotation = (this.currentRotation || 0) % 360;
-        this.currentRotation = (this.currentRotation || 0) - baseRotation + targetRotation;
+        this.currentRotation = targetRotation;
         
-        this.switchTab('lucky'); // re-render to start transition
+        const wheelEl = document.getElementById('lucky-wheel-circle');
+        if (wheelEl) {
+            wheelEl.style.transition = 'transform 5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            wheelEl.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
+        }
         
         setTimeout(() => {
             app.data.saveUsers();
             app.auth.updateHeader();
+            if (lolliSpan) lolliSpan.innerText = user.lollipops || 0;
             alert(rewardText);
             this.isSpinning = false;
-            this.switchTab('lucky'); 
-        }, 4000);
+            
+            if (spinBtn) {
+                spinBtn.disabled = false;
+                spinBtn.style.opacity = '1';
+                spinBtn.style.cursor = 'pointer';
+            }
+        }, 5100);
     },
     shopData: [
         { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 10, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
