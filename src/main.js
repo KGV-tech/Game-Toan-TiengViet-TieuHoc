@@ -636,6 +636,143 @@ const app = {
 
     game: {
         state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        
+        skills: {
+            state: {
+                skillUsed: false,
+                shieldActive: false
+            },
+            getCooldown(username, skillId) {
+                return parseInt(localStorage.getItem('cooldown_' + username + '_' + skillId) || '0', 10);
+            },
+            setCooldown(username, skillId, value) {
+                localStorage.setItem('cooldown_' + username + '_' + skillId, value);
+            },
+            decreaseCooldowns(username) {
+                ['freeze_time', 'fifty_fifty', 'show_hint', 'show_answer', 'shield', 'swap_question'].forEach(skillId => {
+                    let cd = this.getCooldown(username, skillId);
+                    if (cd > 0) this.setCooldown(username, skillId, cd - 1);
+                });
+            },
+            renderSkillBar(petId, petImage) {
+                const container = document.getElementById('skill-bar-container');
+                if (!container) return;
+                const user = app.data.currentUser;
+                if (!user) return;
+                
+                let shopInfo = app.shop.shopData.find(x => x.id === petId);
+                if (!shopInfo || !shopInfo.skills) {
+                    container.innerHTML = '';
+                    return;
+                }
+                
+                let html = '';
+                shopInfo.skills.forEach(skill => {
+                    let cd = this.getCooldown(user.username, skill.id);
+                    let disabled = cd > 0 || this.state.skillUsed;
+                    let text = cd > 0 ? `Đang hồi (${cd})` : skill.name;
+                    html += `<button class="btn-action" style="background: ${disabled ? '#64748b' : 'linear-gradient(90deg, #8b5cf6, #3b82f6)'}; border:none; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4); width:100%; display:flex; justify-content:flex-start; align-items:center; gap: 15px; padding: 12px; margin-bottom: 5px; border-radius: 12px;" 
+                        onclick="app.game.skills.useSkill('${skill.id}')" ${disabled ? 'disabled' : ''}>
+                        <img src="./public/${petImage}" style="width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5);"> 
+                        <span style="color: white; font-weight: bold; font-size: 1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${text}</span>
+                    </button>`;
+                });
+                container.innerHTML = html;
+                container.style.display = 'flex';
+            },
+            useSkill(skillId) {
+                if (this.state.skillUsed) return;
+                const user = app.data.currentUser;
+                if (!user) return;
+                
+                this.state.skillUsed = true;
+                this.setCooldown(user.username, skillId, 3);
+                
+                // Cập nhật lại UI
+                let currentlyEquipped = localStorage.getItem('equipped_pet_' + user.username);
+                if (currentlyEquipped) {
+                    let petId = app.shop.shopData.find(x => x.image === currentlyEquipped)?.id;
+                    this.renderSkillBar(petId, currentlyEquipped);
+                }
+
+                // Kích hoạt Hiệu ứng
+                if (skillId === 'freeze_time') {
+                    if (app.game.hardTimer) {
+                        clearInterval(app.game.hardTimer);
+                        app.game.hardTimer = null;
+                        let timerDisplay = document.getElementById('hard-timer-display');
+                        if(timerDisplay) {
+                            timerDisplay.style.color = '#3b82f6';
+                            timerDisplay.style.textShadow = '0 0 10px #3b82f6';
+                        }
+                        app.playSound('success'); 
+                    }
+                } else if (skillId === 'fifty_fifty') {
+                    const q = app.game.state.questions[app.game.state.currentIdx];
+                    if (q.options) {
+                        let wrongOpts = q.options.filter(o => o !== q.ans);
+                        wrongOpts.sort(() => Math.random() - 0.5);
+                        let toRemove = wrongOpts.slice(0, Math.ceil(wrongOpts.length / 2));
+                        
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            let text = btn.textContent.trim().replace(/^[A-D]\.\s*/, '');
+                            if (toRemove.includes(text)) {
+                                btn.style.visibility = 'hidden';
+                            }
+                        });
+                        app.playSound('success');
+                    }
+                } else if (skillId === 'show_hint') {
+                    const q = app.game.state.questions[app.game.state.currentIdx];
+                    const explBox = document.getElementById('explanation-box');
+                    explBox.style.display = 'block';
+                    if (q.explanation || q.hint) {
+                        explBox.innerHTML = `🌟 <b style="color:#fbbf24;">Tầm Nhìn Đa Chiều:</b><br>${q.explanation || q.hint}`;
+                    } else {
+                        explBox.innerHTML = `🌟 <b style="color:#fbbf24;">Tầm Nhìn Đa Chiều:</b><br>Dữ liệu mật bị mã hóa. Không tìm thấy lời giải cho câu hỏi này!`;
+                    }
+                    app.playSound('success');
+                } else if (skillId === 'show_answer') {
+                    const q = app.game.state.questions[app.game.state.currentIdx];
+                    if (q.options) {
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            let text = btn.textContent.trim().replace(/^[A-D]\.\s*/, '');
+                            if (text === q.ans) {
+                                btn.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                                btn.style.color = 'black';
+                                btn.style.boxShadow = '0 0 20px #4ade80';
+                                btn.style.transform = 'scale(1.02)';
+                            }
+                        });
+                    } else if (q.type === 'Điền khuyết') {
+                         document.querySelectorAll('.fill-blank-input').forEach((input, i) => {
+                             input.value = q.ans.split('|')[i] || q.ans;
+                         });
+                         app.game.selectAnswer(); // Enable Check button
+                    }
+                    app.playSound('success');
+                } else if (skillId === 'shield') {
+                    this.state.shieldActive = true;
+                    app.playSound('success');
+                } else if (skillId === 'swap_question') {
+                    const allQs = app.data.questions.filter(x => x.subject === app.game.state.subject && x.difficulty === app.game.state.difficulty);
+                    let pool = allQs.filter(x => !app.game.state.questions.some(q => q.q === x.q));
+                    if (pool.length > 0) {
+                        let newQ = pool[Math.floor(Math.random() * pool.length)];
+                        app.game.state.questions[app.game.state.currentIdx] = newQ;
+                        app.game.loadQuestion();
+                        app.playSound('success');
+                        
+                        // Tắt skill vì đã xài
+                        this.state.skillUsed = true; 
+                    } else {
+                        alert("Không tìm thấy câu hỏi thay thế trong ngân hàng đề!");
+                        this.state.skillUsed = false; // Hoàn lại skill
+                        this.setCooldown(app.data.currentUser.username, skillId, 0);
+                    }
+                }
+            }
+        },
 
         init() {
             document.querySelectorAll('.station[data-subject]').forEach(el => {
@@ -872,6 +1009,30 @@ const app = {
             this.state.currentIdx = 0;
             this.state.score = 0;
             this.state.historyDetails = [];
+            this.state.historyDetails = [];
+
+            // Ẩn nút Trở về
+            const btnBack = document.getElementById('game-btn-back');
+            if (btnBack) btnBack.style.display = 'none';
+
+            // Reset skill state
+            if (this.skills) {
+                this.skills.state.skillUsed = false;
+                this.skills.state.shieldActive = false;
+                
+                // Render skill bar
+                const user = app.data.currentUser;
+                if (user) {
+                    let eq = localStorage.getItem('equipped_pet_' + user.username);
+                    if (eq) {
+                        let petId = app.shop.shopData.find(x => x.image === eq)?.id;
+                        this.skills.renderSkillBar(petId, eq);
+                    } else {
+                        const container = document.getElementById('skill-bar-container');
+                        if (container) container.style.display = 'none';
+                    }
+                }
+            }
 
             app.router.openGameView('game-play-view');
             this.loadQuestion();
@@ -888,6 +1049,8 @@ const app = {
             return [ansString.trim()];
         },
         loadQuestion() {
+            if (this.skills) this.skills.state.shieldActive = false;
+            
             const q = this.state.questions[this.state.currentIdx];
             document.getElementById('current-q-index').textContent = this.state.currentIdx + 1;
             document.getElementById('total-q-count').textContent = this.state.questions.length;
@@ -1492,7 +1655,15 @@ const app = {
                 explBox.style.display = 'none';
             }
 
-            this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect });
+            if (!isCorrect && this.skills && this.skills.state.shieldActive) {
+                // Hấp thụ sát thương, vẫn tính điểm cho câu này
+                this.state.score += 10 / this.state.questions.length;
+                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect: false, shieldUsed: true });
+                bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
+                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.png', '_happy.png').replace('_normal.png', '_happy.png')}`;
+            } else {
+                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect });
+            }
 
             document.getElementById('game-score').textContent = Math.round(this.state.score * 10) / 10;
 
@@ -1509,6 +1680,10 @@ const app = {
             };
         },
         finishPlay() {
+            if (this.skills && app.data.currentUser) {
+                this.skills.decreaseCooldowns(app.data.currentUser.username);
+            }
+            
             const finalScore = Math.round(this.state.score * 10) / 10;
             let msg = '';
             let candiesEarned = 0;
@@ -1674,6 +1849,10 @@ const app = {
             });
 
             app.router.open('exam-play-screen');
+            
+            // Ẩn nút Trở về
+            const btnBackExam = document.getElementById('exam-btn-back');
+            if (btnBackExam) btnBackExam.style.display = 'none';
 
             const timerDisplay = document.getElementById('exam-timer-display');
             timerDisplay.style.display = 'inline';
@@ -3947,17 +4126,17 @@ const app = {
             }, 5100);
         },
         shopData: [
-            { id: 'pet_1', name: 'Pet 1', image: 'pet_1.png', cost: 50, description: 'Robot thỏ trinh sát siêu nhẹ. Tốc độ di chuyển nhanh, trang bị radar lượng tử đa hướng.' },
-            { id: 'pet_2', name: 'Pet 2', image: 'pet_2.png', cost: 50, description: 'Cẩu máy phiên bản Mark II. Trang bị bộ khuếch đại âm thanh để giao tiếp sóng âm.' },
-            { id: 'pet_3', name: 'Pet 3', image: 'pet_3.png', cost: 50, description: 'Gấu máy bọc thép titan. Khả năng chịu nhiệt tốt, chuyên gia đào xới kim loại quý.' },
-            { id: 'pet_4', name: 'Pet 4', image: 'pet_4.png', cost: 50, description: 'Cáo sa mạc phiên bản sinh cơ học. Giấu trong đuôi là bộ thu năng lượng mặt trời kép.' },
-            { id: 'pet_5', name: 'Pet 5', image: 'pet_5.png', cost: 50, description: 'Panda thông minh. Cánh tay thủy lực có thể bóp nát đá tảng hoặc pha một tách trà hoàn hảo.' },
-            { id: 'pet_6', name: 'Pet 6', image: 'pet_6.png', cost: 50, description: 'Chim ưng laser. Tầm nhìn hồng ngoại xuyên màn đêm, là người canh gác bầu trời đáng tin cậy.' },
-            { id: 'pet_7', name: 'Pet 7', image: 'pet_7.png', cost: 50, description: 'Rùa bọc năng lượng. Tạo ra trường lực plasma xung quanh để bảo vệ đồng minh trong bán kính 5m.' },
-            { id: 'pet_8', name: 'Pet 8', image: 'pet_8.png', cost: 50, description: 'Khỉ đột cơ khí tay dài. Leo trèo trên mọi địa hình với lõi trọng lực nhân tạo.' },
-            { id: 'pet_9', name: 'Pet 9', image: 'pet_9.png', cost: 50, description: 'Mèo không gian. Thích ngủ trên nắp lò phản ứng hạt nhân để sạc pin.' },
-            { id: 'pet_10', name: 'Pet 10', image: 'pet_10.png', cost: 50, description: 'Ếch từ tính. Chân có giác mút tĩnh điện, có thể nhảy lên các tàu không gian đang bay.' },
-            { id: 'pet_dragon', name: 'Dragon', image: 'Pet_Dragon.png', cost: 100, description: 'Sinh vật viễn cổ cải tạo sinh học. Hơi thở chứa Plasma siêu nóng có thể làm tan chảy hợp kim Crome-Z.' }
+            { id: 'pet_1', name: 'Thỏ Hồng Không Gian', image: 'pet_1.png', cost: 50, description: 'Phi thuyền mini mang năng lượng tích cực! Tốc độ cực nhanh. Kỹ năng "Ngưng Đọng Thời Không" đóng băng đồng hồ đếm ngược, cho bạn thêm thời gian chốt đáp án!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
+            { id: 'pet_2', name: 'Gấu Trúc Siêu Chip', image: 'pet_2.png', cost: 50, description: 'Hệ điều hành thiên tài và bình tĩnh. Kỹ năng "Tia Laser Thanh Trừng" phát ra luồng sáng cường độ cao, quét sạch một nửa số đáp án nhiễu để dễ lựa chọn!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_3', name: 'Ong Vệ Tinh Nhí', image: 'pet_3.png', cost: 50, description: 'Vệ tinh vi mô bay khắp vũ trụ thu thập dữ liệu. Kỹ năng "Tầm Nhìn Đa Chiều" kích hoạt con mắt sinh cơ học, hé lộ lời giải chi tiết ẩn giấu!', skills: [{id: 'show_hint', name: 'Tầm Nhìn Đa Chiều'}] },
+            { id: 'pet_4', name: 'Cú Radar Tinh Anh', image: 'pet_4.png', cost: 50, description: 'Bậc thầy phân tích dữ liệu với lõi lượng tử! Kỹ năng "Lõi Phân Tích AI" kích hoạt siêu máy tính, giải mã thẳng vào hệ thống để cung cấp đáp án đúng!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
+            { id: 'pet_5', name: 'Chuột Capybara Từ Tính', image: 'pet_5.png', cost: 50, description: 'Chuyên gia tâm lý học giúp xả stress! Kỹ năng "Lá Chắn Năng Lượng" tạo trường lực bảo vệ. Lỡ chọn sai, lá chắn sẽ hấp thụ sát thương, bảo toàn nguyên vẹn điểm số!', skills: [{id: 'shield', name: 'Lá Chắn Năng Lượng'}] },
+            { id: 'pet_6', name: 'Cún Nâu Ngân Hà', image: 'pet_6.png', cost: 50, description: 'Bạn đồng hành với trí tuệ nhân tạo cực đỉnh. Kỹ năng "Bước Nhảy Lượng Tử" mở ra cổng không gian, hô biến câu hỏi khó thành câu mới cùng chủ đề!', skills: [{id: 'swap_question', name: 'Bước Nhảy Lượng Tử'}] },
+            { id: 'pet_7', name: 'Gà Vàng Lõi Quang', image: 'pet_7.png', cost: 50, description: 'Thiết bị sinh học lanh lợi luôn sạc đầy năng lượng. Kỹ năng "Tia Laser Thanh Trừng" khởi động vũ khí quang học, bắn bay phân nửa số đáp án sai lừa tình!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_8', name: 'Chúa Tể Plasma', image: 'pet_8.png', cost: 50, description: 'Vị vua dải ngân hà tiên phong chinh phục tri thức! Kỹ năng "Lõi Phân Tích AI" truy cập vào máy chủ tối cao, bẻ khóa hàng rào bảo mật đem về đáp án đúng!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
+            { id: 'pet_9', name: 'Voi Siêu Bộ Nhớ', image: 'pet_9.png', cost: 50, description: 'Sở hữu ổ cứng siêu dung lượng và vòi đa cảm biến. Kỹ năng "Tia Laser Thanh Trừng" dùng sóng âm quét sạch 50% các đáp án sai, dọn đường chiến thắng!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_10', name: 'Trâu Giáp Titan', image: 'pet_10.png', cost: 50, description: 'Cỗ xe tăng bọc thép có động cơ bền bỉ! Kỹ năng "Ngưng Đọng Thời Không" can thiệp dòng chảy thời gian, cho bạn khoảng lặng hoàn hảo để suy nghĩ thấu đáo!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
+            { id: 'pet_dragon', name: 'Rồng Plasma Viễn Cổ', image: 'Pet_Dragon.png', cost: 100, description: 'Thần thú tối thượng của vũ trụ ảo! Sở hữu 2 kỹ năng độc quyền: "Hơi Thở Plasma" đốt cháy câu hỏi khó thành câu dễ, và "Hào Quang Chân Lý" hiển thị tức thời đáp án đúng!', skills: [{id: 'swap_question', name: 'Hơi Thở Plasma'}, {id: 'show_answer', name: 'Hào Quang Chân Lý'}] }
         ],
         currentTrainIndex: 0,
         trainAnimationDir: 0,

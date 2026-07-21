@@ -166,28 +166,39 @@
             style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
             1. Quy tắc làm bài:</h3>
           <ul style="list-style-type: none; padding-left: 15px; margin-bottom: 20px;">
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Trả lời đúng mỗi câu nhận 1 điểm (10 câu/lượt), hoặc 0,5 điểm (20 câu/lượt).</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Trả lời đúng mỗi câu nhận 1 điểm (10
+              câu/lượt), hoặc 0,5 điểm (20 câu/lượt).</li>
             <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt &lt; 8 điểm/1 lượt chơi sẽ không
               nhận được Kẹo (🍭).</li>
             <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 8-9 điểm/1 lượt chơi sẽ nhận 2 Kẹo
               (🍭).</li>
             <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 10 điểm/1 lượt chơi sẽ nhận 5 Kẹo
               (🍭).</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Thoát ra khi đang làm bài sẽ không
+              được tính điểm.</li>
           </ul>
 
           <h3
             style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
             2. Đơn vị Kẹo 🍭:</h3>
-          <p style="margin-bottom: 20px; padding-left: 15px;">Dùng Kẹo để tham gia "Trạm May Mắn" (tốn 2 kẹo/1 lần quay) hoặc vào
-            "Shop" để đổi Thú cưng (50 kẹo/pet, Rồng 100 kẹo) và nâng Kỹ năng cho Thú cưng.</p>
+          <p style="margin-bottom: 20px; padding-left: 15px;">Dùng Kẹo để trao đổi trong Shop:
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> "Trạm May Mắn" (sử dụng 2 kẹo/1 lần
+              quay).</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> "Trạm Thú Cưng" (50 kẹo/pet, 100
+              kẹo/Rồng).</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Nâng Kỹ năng hỗ trợ cho Thú cưng.</li>
+          </p>
 
           <h3
             style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
             3. Thú Cưng:</h3>
           <p style="margin-bottom: 20px; padding-left: 15px;">
-            - Bạn có thể sở hữu tối đa 3 Thú cưng. Thú cưng sẽ đồng hành
-            cùng bạn và kích hoạt các Kỹ năng hỗ trợ trong khi làm bài.<br>
-            - Thú cưng khi trả lại trạm thú cưng sẽ được hoàn trả lại 50% số kẹo đã đổi ban đầu.
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Bạn có thể sở hữu tối đa 3 Thú cưng.
+            </li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Khi được Kích hoạt Thú cưng sẽ đồng
+              hành cùng bạn với các Kỹ năng hỗ trợ trong khi làm bài.</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Thú cưng khi trả lại trạm thú cưng,
+              bạn sẽ được hoàn trả lại 50% số kẹo đã đổi ban đầu.</li>
           </p>
 
           <h3
@@ -281,7 +292,7 @@
 
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
-        <button class="btn-back" onclick="app.game.confirmExit()">⬅ Trở về</button>
+        <button id="game-btn-back" class="btn-back" onclick="app.game.confirmExit()">⬅ Trở về</button>
 
         <div class="glass-container-xl">
           <div class="play-layout">
@@ -311,6 +322,10 @@
                 <span id="submit-ans-text">Kiểm Tra</span>
               </button>
               <div id="explanation-box" class="explanation-box" style="display:none;"></div>
+              
+              <!-- Skill Bar Container -->
+              <div id="skill-bar-container" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%;">
+              </div>
             </div>
           </div>
         </div>
@@ -375,7 +390,7 @@
     <div id="exam-play-screen" class="screen exam-bg"
       style="overflow-y:auto; align-items:flex-start; padding-top: 50px;">
       <div class="exam-paper" id="exam-paper">
-        <button class="btn-back" style="position:absolute; top:-40px; left:0;" onclick="app.exam.confirmExit()">⬅ Trở
+        <button id="exam-btn-back" class="btn-back" style="position:absolute; top:-40px; left:0;" onclick="app.exam.confirmExit()">⬅ Trở
           về</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
