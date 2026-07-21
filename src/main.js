@@ -3939,10 +3939,10 @@ const app = {
             let isSpinning = this.isSpinning || false;
 
             let html = `
-        <div style="height: 100%; display:flex; flex-direction:row; gap: 20px;">
+        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Wheel (60%) -->
             <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
-                <div style="position:relative; width:100%; height: 75vh; min-height: 500px; max-height: 800px; display:flex; justify-content:center; align-items:center;">
+                <div style="position:relative; width:100%; height: 100%; display:flex; justify-content:center; align-items:center;">
                     <!-- Vùng chứa tỉ lệ chuẩn, khóa chặt 3 ảnh lại với nhau -->
                     <div style="position:relative; width: 100%; max-width: 550px; display: flex; justify-content: center; align-items: center;">
                         <div style="position:relative; width: 100%;">
@@ -4170,7 +4170,7 @@ const app = {
             const description = currentPet.description || "Chưa có dữ liệu.";
 
             let html = `
-        <div style="height: 100%; display:flex; flex-direction:row; gap: 20px;">
+        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Machine (60%) -->
             <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 ${isAdmin ? `
@@ -4181,7 +4181,7 @@ const app = {
                 </div>
                 ` : ''}
                 
-                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%; height: 75vh; min-height: 500px; max-height: 800px;">
+                <div style="display:flex; justify-content:center; align-items:center; position:relative; width:100%; height: 100%;">
                     <style>
                         @keyframes wipeDown { 
                             0% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); opacity: 0; transform: translate(-50%, -60%); }
@@ -4250,7 +4250,7 @@ const app = {
             let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
 
             let html = `
-        <div style="height: 100%; display:flex; flex-direction:column;">
+        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column;">
             ${!isAdmin ? `
             <div style="display:flex; justify-content:flex-end; margin-bottom:20px; margin-top: 40px;">
                 <div style="font-size: 1.2rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
