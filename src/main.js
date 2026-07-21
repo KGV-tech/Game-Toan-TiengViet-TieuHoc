@@ -663,6 +663,7 @@ const app = {
                 let shopInfo = app.shop.shopData.find(x => x.id === petId);
                 if (!shopInfo || !shopInfo.skills) {
                     container.innerHTML = '';
+                    container.style.display = 'none';
                     return;
                 }
                 
@@ -670,15 +671,17 @@ const app = {
                 shopInfo.skills.forEach(skill => {
                     let cd = this.getCooldown(user.username, skill.id);
                     let disabled = cd > 0 || this.state.skillUsed;
-                    let text = cd > 0 ? `Đang hồi (${cd})` : skill.name;
-                    html += `<button class="btn-action" style="background: ${disabled ? '#64748b' : 'linear-gradient(90deg, #8b5cf6, #3b82f6)'}; border:none; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4); width:100%; display:flex; justify-content:flex-start; align-items:center; gap: 15px; padding: 12px; margin-bottom: 5px; border-radius: 12px;" 
-                        onclick="app.game.skills.useSkill('${skill.id}')" ${disabled ? 'disabled' : ''}>
+                    if (disabled) return;
+                    
+                    let text = skill.name;
+                    html += `<button class="btn-action" style="background: linear-gradient(90deg, #8b5cf6, #3b82f6); border:none; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4); width:100%; max-width: 200px; display:flex; justify-content:flex-start; align-items:center; gap: 15px; padding: 12px; margin-bottom: 5px; border-radius: 12px;" 
+                        onclick="app.game.skills.useSkill('${skill.id}')">
                         <img src="./public/${petImage}" style="width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5);"> 
                         <span style="color: white; font-weight: bold; font-size: 1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${text}</span>
                     </button>`;
                 });
                 container.innerHTML = html;
-                container.style.display = 'flex';
+                container.style.display = html.trim() ? 'flex' : 'none';
             },
             useSkill(skillId) {
                 if (this.state.skillUsed) return;
@@ -4209,10 +4212,10 @@ const app = {
             <!-- Right Side: Details (40%) -->
             <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
                 <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
-                    <h2 style="font-weight:900; color: #7e22ce; font-size: 2.5rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 0 #e9d5ff;">${currentPet.name}</h2>
+                    <h2 style="font-weight:900; color: #a855f7; font-size: 1.8rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; letter-spacing: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${currentPet.name}">${currentPet.name}</h2>
                     
-                    <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
-                        <strong>Mô tả:</strong><br/>
+                    <div style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
+                        <strong style="color: #64748b; font-size: 1.1rem;">Mô tả:</strong><br/>
                         ${description}
                     </div>
                     
@@ -4225,14 +4228,14 @@ const app = {
                             <button class="btn-primary" style="padding:12px 30px; font-size:1.2rem; border-radius: 15px;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu Thay Đổi</button>
                         </div>
                     ` : `
-                        <div style="display:flex; flex-direction:column; gap:20px; align-items: flex-start;">
-                            <div style="font-size: 1.3rem; color: #ef4444; font-weight:900; background: #fee2e2; padding: 10px 20px; border-radius: 15px; border: 2px solid #fca5a5;">
-                                Số lượng kho: ${remaining}
+                        <div style="display:flex; flex-direction:row; gap:15px; align-items: center; width: 100%;">
+                            <div style="font-size: 1rem; color: #ef4444; font-weight:bold; background: #fee2e2; padding: 8px 15px; border-radius: 12px; border: 2px solid #fca5a5; white-space: nowrap;">
+                                Kho: ${remaining}
                             </div>
-                            <button class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(34,197,94,0.4); display:flex; justify-content:center; align-items:center; gap:10px;" 
+                            <button class="btn-success" style="flex: 1; padding:10px 20px; font-size:1.2rem; border-radius:20px; font-weight:bold; box-shadow: 0 4px 10px rgba(34,197,94,0.4); display:flex; justify-content:center; align-items:center; gap:8px;" 
                                 onclick="app.shop.buyPet('${currentPet.id}')"
                                 ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed; background: #9ca3af; border-color:#6b7280; box-shadow:none;"' : ''}>
-                                Đổi Ngay: ${currentPet.cost} 🍭
+                                Đổi: ${currentPet.cost} 🍭
                             </button>
                         </div>
                     `}
@@ -4249,7 +4252,7 @@ const app = {
             let html = `
         <div style="height: 100%; display:flex; flex-direction:column;">
             ${!isAdmin ? `
-            <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:20px; margin-top: 40px;">
                 <div style="font-size: 1.2rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                     Kẹo của bạn: 🍭 ${user.lollipops || 0}
                 </div>
@@ -4273,7 +4276,7 @@ const app = {
                         const refund = Math.floor(shopInfo.cost / 2);
 
                         html += `
-                    <div style="flex: 1; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; min-width: 0;">
+                    <div style="flex: 0 0 400px; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; min-width: 0;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:0;"></div>
                         ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2; text-shadow: 0 0 10px #10b981;" class="heartbeat">⭐</div>` : ''}
                         
@@ -4283,7 +4286,7 @@ const app = {
                             <img src="./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
                             
                             <!-- Thú cưng bên trong khoang -->
-                            <div style="position:absolute; width:40%; height:40%; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
+                            <div style="position:absolute; width:45%; height:45%; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
                                 <img src="./public/${p.pet_image}" style="max-width:100%; max-height:100%; object-fit:contain; ${isEquipped ? 'animation: heartbeat 2s infinite;' : 'filter: brightness(0.6);'}">
                             </div>
                         </div>
@@ -4292,16 +4295,30 @@ const app = {
                         <div style="position:absolute; z-index:3; display:flex; flex-direction:column; justify-content:space-between; align-items:center; width:100%; height:100%; padding:15px 10px;">
                             <div style="font-weight:900; font-size:1.2rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #10b981;">${p.pet_name}</div>
                             
-                            <div style="display:flex; gap:10px; width: 100%; justify-content:center; margin-bottom: 5px;">
-                                <button class="btn-success" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
-                                <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại Trạm</button>
+                            <div style="display:flex; flex-direction:column; gap:10px; width: 100%; align-items:center; margin-bottom: 5px;">
+                                <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
+                                    <button class="btn-success" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
+                                    <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại Trạm</button>
+                                </div>
+                                ${(() => {
+                                    if(!shopInfo.skills || shopInfo.skills.length === 0) return '';
+                                    let cd = 0;
+                                    if (app.game && app.game.skills) {
+                                        cd = Math.max(...shopInfo.skills.map(s => app.game.skills.getCooldown(user.username, s.id)));
+                                    }
+                                    if (cd > 0) {
+                                        return `<div style="font-size:0.85rem; font-weight:bold; color:#fca5a5; background:rgba(127,29,29,0.8); padding:5px 15px; border-radius:15px; box-shadow: 0 0 10px rgba(220,38,38,0.5); text-align:center;">Đang nạp năng lượng<br>(${cd} lượt)</div>`;
+                                    } else {
+                                        return `<div style="font-size:0.85rem; font-weight:bold; color:#86efac; background:rgba(20,83,45,0.8); padding:5px 15px; border-radius:15px; box-shadow: 0 0 10px rgba(34,197,94,0.5);">Kỹ năng Sẵn sàng</div>`;
+                                    }
+                                })()}
                             </div>
                         </div>
                     </div>
                     `;
                     } else {
                         html += `
-                    <div style="flex: 1; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center; min-width: 0;">
+                    <div style="flex: 0 0 400px; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center; min-width: 0;">
                         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:0;"></div>
                         <div style="position:relative; width:100%;">
                             <img src="./public/incubator_closed.png" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
