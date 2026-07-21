@@ -3941,7 +3941,7 @@ const app = {
             let html = `
         <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Wheel (60%) -->
-            <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+            <div style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 <div style="position:relative; width:100%; height: 100%; display:flex; justify-content:center; align-items:center;">
                     <!-- Vùng chứa tỉ lệ chuẩn, khóa chặt 3 ảnh lại với nhau -->
                     <div style="position:relative; width: 100%; max-width: 550px; display: flex; justify-content: center; align-items: center;">
@@ -3964,7 +3964,7 @@ const app = {
             </div>
 
             <!-- Right Side: Details (40%) -->
-            <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
                 <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(234, 179, 8, 0.3); backdrop-filter: blur(10px);">
                     <h2 style="font-weight:900; color: #d97706; font-size: 2.5rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 0 #fef08a; text-align:center;">Trạm May Mắn</h2>
                     
@@ -4172,7 +4172,7 @@ const app = {
             let html = `
         <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Machine (60%) -->
-            <div style="flex: 1.5; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+            <div style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 ${isAdmin ? `
                 <div style="position:absolute; top: 0; left: 50%; transform: translateX(-50%); z-index:10;">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 10px 20px; border-radius: 20px;">
@@ -4210,7 +4210,7 @@ const app = {
             </div>
 
             <!-- Right Side: Details (40%) -->
-            <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
                 <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
                     <h2 style="font-weight:900; color: #a855f7; font-size: 1.8rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; letter-spacing: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${currentPet.name}">${currentPet.name}</h2>
                     
@@ -4250,18 +4250,9 @@ const app = {
             let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column;">
-            ${!isAdmin ? `
-            <div style="display:flex; justify-content:flex-end; margin-bottom:20px; margin-top: 40px;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: #d97706; background: rgba(254,243,199,0.9); padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                    Kẹo của bạn: 🍭 ${user.lollipops || 0}
-                </div>
-            </div>
-            ` : ''}
+        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
             
-            <h2 style="color:#9333ea; text-align:center; font-size: 2rem; margin-top:0;">Thú Cưng Của Tôi</h2>
-            <p style="text-align:center; font-size:1.1rem; color:#666; margin-bottom: 30px;">(Tối đa 3 Thú cưng)</p>
-            
+
             <div style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
         `;
 
