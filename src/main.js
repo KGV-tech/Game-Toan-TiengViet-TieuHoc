@@ -4276,12 +4276,9 @@ const app = {
                         const refund = Math.floor(shopInfo.cost / 2);
 
                         html += `
-                    <div style="flex: 0 0 400px; position:relative; overflow:hidden; border-radius: 20px; border: 2px solid ${isEquipped ? '#10b981' : '#334155'}; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; min-width: 0;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:0;"></div>
-                        ${isEquipped ? `<div style="position:absolute; top:10px; right:10px; font-size:2rem; z-index:2; text-shadow: 0 0 10px #10b981;" class="heartbeat">⭐</div>` : ''}
-                        
+                    <div style="flex: 0 0 280px; position:relative; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0;">
                         <!-- Khung tỉ lệ chuẩn cho Khoang và Pet -->
-                        <div style="position:relative; width: 100%;">
+                        <div style="position:relative; width: 100%; filter: ${isEquipped ? 'drop-shadow(0 0 20px #10b981)' : 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))'};">
                             <!-- Hình nền Khoang -->
                             <img src="./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
                             
@@ -4289,42 +4286,43 @@ const app = {
                             <div style="position:absolute; width:45%; height:45%; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
                                 <img src="./public/${p.pet_image}" style="max-width:100%; max-height:100%; object-fit:contain; ${isEquipped ? 'animation: heartbeat 2s infinite;' : 'filter: brightness(0.6);'}">
                             </div>
-                        </div>
-
-                        <!-- Lớp đè thông tin và nút bấm -->
-                        <div style="position:absolute; z-index:3; display:flex; flex-direction:column; justify-content:space-between; align-items:center; width:100%; height:100%; padding:15px 10px;">
-                            <div style="font-weight:900; font-size:1.2rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #10b981;">${p.pet_name}</div>
                             
-                            <div style="display:flex; flex-direction:column; gap:10px; width: 100%; align-items:center; margin-bottom: 5px;">
-                                <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
-                                    <button class="btn-success" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
-                                    <button class="btn-danger" style="padding:10px 15px; font-size:0.9rem; border-radius:20px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại Trạm</button>
+                            <!-- Lớp đè thông tin và nút bấm -->
+                            <div style="position:absolute; z-index:3; display:flex; flex-direction:column; justify-content:space-between; align-items:center; width:100%; height:100%; padding:25px 10px; top:0; left:0;">
+                                <div style="font-weight:900; font-size:1.1rem; color:#fff; text-shadow: 0 0 10px #10b981; background: rgba(15, 23, 42, 0.8); padding: 5px 15px; border-radius: 15px; border: 1px solid #10b981; white-space:nowrap; text-align:center;">${p.pet_name}</div>
+                                
+                                <div style="display:flex; flex-direction:column; gap:10px; width: 100%; align-items:center;">
+                                    <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
+                                        <button class="btn-success" style="padding:8px 12px; font-size:0.9rem; border-radius:15px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
+                                        <button class="btn-danger" style="padding:8px 12px; font-size:0.9rem; border-radius:15px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại</button>
+                                    </div>
+                                    ${(() => {
+                                        if(!shopInfo.skills || shopInfo.skills.length === 0) return '';
+                                        let cd = 0;
+                                        if (app.game && app.game.skills) {
+                                            cd = Math.max(...shopInfo.skills.map(s => app.game.skills.getCooldown(user.username, s.id)));
+                                        }
+                                        if (cd > 0) {
+                                            return `<div style="font-size:0.8rem; font-weight:bold; color:#fca5a5; background:rgba(127,29,29,0.9); padding:5px 10px; border-radius:10px; box-shadow: 0 0 10px rgba(220,38,38,0.5); text-align:center;">Đang nạp<br>(${cd} lượt)</div>`;
+                                        } else {
+                                            return `<div style="font-size:0.8rem; font-weight:bold; color:#86efac; background:rgba(20,83,45,0.9); padding:5px 10px; border-radius:10px; box-shadow: 0 0 10px rgba(34,197,94,0.5);">Skill Sẵn sàng</div>`;
+                                        }
+                                    })()}
                                 </div>
-                                ${(() => {
-                                    if(!shopInfo.skills || shopInfo.skills.length === 0) return '';
-                                    let cd = 0;
-                                    if (app.game && app.game.skills) {
-                                        cd = Math.max(...shopInfo.skills.map(s => app.game.skills.getCooldown(user.username, s.id)));
-                                    }
-                                    if (cd > 0) {
-                                        return `<div style="font-size:0.85rem; font-weight:bold; color:#fca5a5; background:rgba(127,29,29,0.8); padding:5px 15px; border-radius:15px; box-shadow: 0 0 10px rgba(220,38,38,0.5); text-align:center;">Đang nạp năng lượng<br>(${cd} lượt)</div>`;
-                                    } else {
-                                        return `<div style="font-size:0.85rem; font-weight:bold; color:#86efac; background:rgba(20,83,45,0.8); padding:5px 15px; border-radius:15px; box-shadow: 0 0 10px rgba(34,197,94,0.5);">Kỹ năng Sẵn sàng</div>`;
-                                    }
-                                })()}
                             </div>
+                            
+                            ${isEquipped ? `<div style="position:absolute; top:-10px; right:-10px; font-size:2.5rem; z-index:4; text-shadow: 0 0 15px #10b981;" class="heartbeat">⭐</div>` : ''}
                         </div>
                     </div>
                     `;
                     } else {
                         html += `
-                    <div style="flex: 0 0 400px; position:relative; overflow:hidden; border-radius: 20px; border: 2px dashed #475569; opacity: 0.5; filter: grayscale(100%); background: #0f172a; display:flex; flex-direction:column; justify-content:center; align-items:center; min-width: 0;">
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:0;"></div>
-                        <div style="position:relative; width:100%;">
+                    <div style="flex: 0 0 280px; position:relative; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0;">
+                        <div style="position:relative; width: 100%; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)) grayscale(100%); opacity: 0.5;">
                             <img src="./public/incubator_closed.png" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
-                        </div>
-                        <div style="position:absolute; z-index:3; display:flex; justify-content:center; align-items:center; height:100%; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                            Khoang Trống
+                            <div style="position:absolute; z-index:3; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                Khoang Trống
+                            </div>
                         </div>
                     </div>
                     `;
