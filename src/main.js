@@ -1474,8 +1474,8 @@ const app = {
                 let selectedLeft = null;
                 let selectedRight = null;
 
-                const neonColors = ['#fde047', '#4ade80', '#60a5fa', '#f472b6', '#a78bfa', '#2dd4bf'];
-                let colorIdx = 0;
+                // blue, yellow, pink, brown, cyan, orange
+                const neonColors = ['#3b82f6', '#eab308', '#ec4899', '#a16207', '#06b6d4', '#f97316'];
 
                 const drawLine = (leftEl, rightEl, color) => {
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -1523,8 +1523,9 @@ const app = {
                             return true;
                         });
 
-                        const color = neonColors[colorIdx % neonColors.length];
-                        colorIdx++;
+                        const usedColors = this.state.matchingPairs.map(p => p.color);
+                        const available = neonColors.filter(c => !usedColors.includes(c));
+                        const color = available.length > 0 ? available[0] : neonColors[Math.floor(Math.random() * neonColors.length)];
 
                         selectedLeft.style.boxShadow = `0 0 15px ${color}`;
                         selectedLeft.style.borderColor = color;
@@ -1846,7 +1847,39 @@ const app = {
                     setTimeout(() => {
                         const svg = document.getElementById('matching-lines');
                         if (svg) {
-                            svg.innerHTML = '';
+                            // Không xóa svg để giữ lại các đường sai
+                            
+                            // Vẽ dấu X (gạch chéo) ở giữa các đường sai
+                            pairs.forEach(p => {
+                                const str = `${p.leftText}:${p.rightText}`;
+                                if (!correctPairsStr.includes(str)) {
+                                    const x1 = parseFloat(p.line.getAttribute('x1'));
+                                    const y1 = parseFloat(p.line.getAttribute('y1'));
+                                    const x2 = parseFloat(p.line.getAttribute('x2'));
+                                    const y2 = parseFloat(p.line.getAttribute('y2'));
+                                    const mx = (x1 + x2) / 2;
+                                    const my = (y1 + y2) / 2;
+                                    
+                                    const cross1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                                    cross1.setAttribute('x1', mx - 10);
+                                    cross1.setAttribute('y1', my - 10);
+                                    cross1.setAttribute('x2', mx + 10);
+                                    cross1.setAttribute('y2', my + 10);
+                                    cross1.setAttribute('stroke', '#f87171');
+                                    cross1.setAttribute('stroke-width', '4');
+                                    
+                                    const cross2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                                    cross2.setAttribute('x1', mx + 10);
+                                    cross2.setAttribute('y1', my - 10);
+                                    cross2.setAttribute('x2', mx - 10);
+                                    cross2.setAttribute('y2', my + 10);
+                                    cross2.setAttribute('stroke', '#f87171');
+                                    cross2.setAttribute('stroke-width', '4');
+                                    
+                                    svg.appendChild(cross1);
+                                    svg.appendChild(cross2);
+                                }
+                            });
                             
                             const drawLineRaw = (lRect, rRect, color) => {
                                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -1866,6 +1899,10 @@ const app = {
                             };
 
                             correctPairsStr.forEach(pairStr => {
+                                // Nếu cặp này HS đã nối đúng rồi thì không vẽ đè nữa
+                                const alreadyCorrect = pairs.some(p => `${p.leftText}:${p.rightText}` === pairStr);
+                                if (alreadyCorrect) return;
+
                                 const [l, r] = pairStr.split(':');
                                 if (!l || !r) return;
                                 const leftItems = Array.from(document.querySelectorAll('.left-item'));
@@ -1876,6 +1913,8 @@ const app = {
                                 
                                 if (leftEl && rightEl) {
                                     const line = drawLineRaw(leftEl.getBoundingClientRect(), rightEl.getBoundingClientRect(), '#4ade80');
+                                    // Thêm stroke-dasharray để phân biệt đường hệ thống tự vẽ lại
+                                    line.setAttribute('stroke-dasharray', '5,5');
                                     svg.appendChild(line);
                                 }
                             });
