@@ -970,42 +970,83 @@ const app = {
                 return matchSub && matchClass && matchTopic;
             });
 
-            if (pool.length < this.state.count) {
-                alert('Ngân hàng không đủ ' + this.state.count + ' câu hỏi, sẽ lấy tất cả câu hiện có!');
+            if (pool.length === 0) {
+                alert('Không có câu hỏi phù hợp! Vui lòng nhập thêm dữ liệu vào thư viện.');
+                return;
             }
 
-            if (pool.length > this.state.count) {
+            // 1. Đọc seen_questions của user từ localStorage
+            const username = app.data.currentUser ? app.data.currentUser.username : 'guest';
+            const seenKey = `seen_questions_${username}_${this.state.subject}_${clLevel}`;
+            let seenIds = [];
+            try {
+                seenIds = JSON.parse(app.safeStorage.getItem(seenKey) || '[]');
+            } catch (e) { seenIds = []; }
+
+            // 2. Chia pool thành unseen và seen
+            let unseenPool = [];
+            let seenPool = [];
+            pool.forEach(q => {
+                const qId = q.q.trim(); // Dùng nội dung câu hỏi làm ID định danh
+                if (seenIds.includes(qId)) {
+                    seenPool.push(q);
+                } else {
+                    unseenPool.push(q);
+                }
+            });
+
+            let targetCount = Math.min(this.state.count, pool.length);
+
+            // 3. Hàm bốc câu hỏi đa dạng loại (Round-robin)
+            const pickDiverse = (sourcePool, countNeeded) => {
+                if (countNeeded <= 0) return [];
                 const byType = {};
-                pool.forEach(q => {
+                sourcePool.forEach(q => {
                     const t = (q.type || 'Trắc nghiệm').trim();
                     if (!byType[t]) byType[t] = [];
                     byType[t].push(q);
                 });
                 Object.values(byType).forEach(arr => arr.sort(() => 0.5 - Math.random()));
 
-                let selected = [];
-                const types = Object.keys(byType);
-                let lastType = null;
-
-                for (let i = 0; i < this.state.count; i++) {
-                    let availableTypes = types.filter(t => byType[t].length > 0 && t !== lastType);
-                    if (availableTypes.length === 0) {
-                        availableTypes = types.filter(t => byType[t].length > 0);
+                let picked = [];
+                const types = Object.keys(byType).sort(() => 0.5 - Math.random());
+                let typeIdx = 0;
+                while (picked.length < countNeeded && types.length > 0) {
+                    const currentType = types[typeIdx];
+                    if (byType[currentType].length > 0) {
+                        picked.push(byType[currentType].pop());
+                        typeIdx = (typeIdx + 1) % types.length;
+                    } else {
+                        types.splice(typeIdx, 1);
+                        if (types.length > 0) typeIdx = typeIdx % types.length;
                     }
-                    if (availableTypes.length === 0) break;
-
-                    const chosenType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-                    selected.push(byType[chosenType].pop());
-                    lastType = chosenType;
                 }
-                pool = selected;
-            } else {
-                pool = pool.sort(() => 0.5 - Math.random());
+                return picked;
+            };
+
+            let selected = pickDiverse(unseenPool, targetCount);
+            if (selected.length < targetCount) {
+                // Thiếu, lấy thêm từ seenPool (Tức là đã hết câu mới)
+                let needed = targetCount - selected.length;
+                let extra = pickDiverse(seenPool, needed);
+                selected = selected.concat(extra);
+                // Vòng lặp mới: reset seenIds để các câu cũ có thể ra lại vào các lượt sau
+                seenIds = []; 
             }
 
-            if (pool.length === 0) {
-                alert('Không có câu hỏi phù hợp! Vui lòng nhập thêm dữ liệu vào thư viện.');
-                return;
+            pool = selected;
+
+            // 4. Lưu lại các câu đã chọn vào seen_questions
+            pool.forEach(q => {
+                const qId = q.q.trim();
+                if (!seenIds.includes(qId)) {
+                    seenIds.push(qId);
+                }
+            });
+            app.safeStorage.setItem(seenKey, JSON.stringify(seenIds));
+
+            if (pool.length < this.state.count) {
+                alert('Ngân hàng chỉ có ' + pool.length + ' câu hỏi phù hợp, sẽ bốc toàn bộ!');
             }
 
             this.state.questions = pool;
@@ -1385,8 +1426,177 @@ const app = {
                     inp.autocomplete = 'off';
                     inp.oninput = () => { this.state.selectedAns = inp.value; btnCheck.disabled = !inp.value.trim(); };
                     optContainer.appendChild(inp);
+                    optContainer.appendChild(inp);
                 }
+            } else if (qType === 'Đối chiếu trùng khớp') {
+                optContainer.className = 'matching-container';
+                optContainer.innerHTML = '';
+                
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.id = "matching-lines";
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.width = '100%';
+                svg.style.height = '100%';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '0';
+                optContainer.appendChild(svg);
+                optContainer.style.position = 'relative';
+
+                let leftItems = [];
+                let rightItems = [];
+                
+                if (q.options && q.options.length >= 2) {
+                    leftItems = q.options[0].split(',').map(s => s.trim()).filter(s => s);
+                    rightItems = q.options[1].split(',').map(s => s.trim()).filter(s => s);
+                } else if (q.q && q.q.includes('|')) {
+                    let parts = q.q.split('|');
+                    leftItems = parts[0].split(',').map(s => s.trim());
+                    rightItems = parts[1].split(',').map(s => s.trim());
+                }
+
+                // Randomize right items slightly
+                rightItems.sort(() => Math.random() - 0.5);
+
+                const colsWrapper = document.createElement('div');
+                colsWrapper.style.display = 'flex';
+                colsWrapper.style.justifyContent = 'space-between';
+                colsWrapper.style.position = 'relative';
+                colsWrapper.style.zIndex = '1';
+
+                const leftCol = document.createElement('div');
+                leftCol.className = 'matching-col left-col';
+                const rightCol = document.createElement('div');
+                rightCol.className = 'matching-col right-col';
+
+                this.state.matchingPairs = [];
+                let selectedLeft = null;
+                let selectedRight = null;
+
+                const neonColors = ['#fde047', '#4ade80', '#60a5fa', '#f472b6', '#a78bfa', '#2dd4bf'];
+                let colorIdx = 0;
+
+                const drawLine = (leftEl, rightEl, color) => {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    const svgRect = svg.getBoundingClientRect();
+                    const leftRect = leftEl.getBoundingClientRect();
+                    const rightRect = rightEl.getBoundingClientRect();
+
+                    const x1 = leftRect.right - svgRect.left;
+                    const y1 = leftRect.top + leftRect.height / 2 - svgRect.top;
+                    const x2 = rightRect.left - svgRect.left;
+                    const y2 = rightRect.top + rightRect.height / 2 - svgRect.top;
+
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', color);
+                    line.setAttribute('stroke-width', '4');
+                    line.style.filter = `drop-shadow(0 0 5px ${color})`;
+                    
+                    return line;
+                };
+
+                const updateLines = () => {
+                    svg.innerHTML = ''; 
+                    this.state.matchingPairs.forEach(pair => {
+                        const line = drawLine(pair.leftEl, pair.rightEl, pair.color);
+                        pair.line = line;
+                        svg.appendChild(line);
+                    });
+                };
+                
+                window.addEventListener('resize', updateLines);
+                
+                const handleSelection = () => {
+                    if (selectedLeft && selectedRight) {
+                        this.state.matchingPairs = this.state.matchingPairs.filter(p => {
+                            if (p.leftEl === selectedLeft || p.rightEl === selectedRight) {
+                                p.leftEl.style.boxShadow = 'none';
+                                p.leftEl.style.borderColor = 'rgba(255,255,255,0.2)';
+                                p.rightEl.style.boxShadow = 'none';
+                                p.rightEl.style.borderColor = 'rgba(255,255,255,0.2)';
+                                return false;
+                            }
+                            return true;
+                        });
+
+                        const color = neonColors[colorIdx % neonColors.length];
+                        colorIdx++;
+
+                        selectedLeft.style.boxShadow = `0 0 15px ${color}`;
+                        selectedLeft.style.borderColor = color;
+                        selectedRight.style.boxShadow = `0 0 15px ${color}`;
+                        selectedRight.style.borderColor = color;
+
+                        this.state.matchingPairs.push({
+                            leftEl: selectedLeft,
+                            rightEl: selectedRight,
+                            leftText: selectedLeft.dataset.text,
+                            rightText: selectedRight.dataset.text,
+                            color: color
+                        });
+
+                        selectedLeft.classList.remove('matching-selected');
+                        selectedRight.classList.remove('matching-selected');
+                        selectedLeft = null;
+                        selectedRight = null;
+
+                        updateLines();
+
+                        const ansStr = this.state.matchingPairs.map(p => `${p.leftText}:${p.rightText}`).join(', ');
+                        this.state.selectedAns = ansStr;
+                        btnCheck.disabled = this.state.matchingPairs.length === 0;
+                    }
+                };
+
+                leftItems.forEach(text => {
+                    const item = document.createElement('div');
+                    item.className = 'matching-item left-item';
+                    item.textContent = text;
+                    item.dataset.text = text;
+                    item.onclick = () => {
+                        if (selectedLeft === item) {
+                            item.classList.remove('matching-selected');
+                            selectedLeft = null;
+                        } else {
+                            if (selectedLeft) selectedLeft.classList.remove('matching-selected');
+                            item.classList.add('matching-selected');
+                            selectedLeft = item;
+                        }
+                        handleSelection();
+                    };
+                    leftCol.appendChild(item);
+                });
+
+                rightItems.forEach(text => {
+                    const item = document.createElement('div');
+                    item.className = 'matching-item right-item';
+                    item.textContent = text;
+                    item.dataset.text = text;
+                    item.onclick = () => {
+                        if (selectedRight === item) {
+                            item.classList.remove('matching-selected');
+                            selectedRight = null;
+                        } else {
+                            if (selectedRight) selectedRight.classList.remove('matching-selected');
+                            item.classList.add('matching-selected');
+                            selectedRight = item;
+                        }
+                        handleSelection();
+                    };
+                    rightCol.appendChild(item);
+                });
+
+                colsWrapper.appendChild(leftCol);
+                colsWrapper.appendChild(rightCol);
+                optContainer.appendChild(colsWrapper);
+
+                setTimeout(updateLines, 50);
             }
+
 
             const timerDisplay = document.getElementById('hard-timer-display');
             if (this.state.difficulty === 'hard') {
@@ -1610,6 +1820,67 @@ const app = {
                     corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
                     corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
                     optContainer.appendChild(corr);
+                }
+            } else if (qType === 'Đối chiếu trùng khớp') {
+                const pairs = this.state.matchingPairs || [];
+                const correctPairsStr = q.ans.split(',').map(s => s.trim());
+                
+                let numCorrect = 0;
+                let numTotal = correctPairsStr.length;
+
+                pairs.forEach(p => {
+                    const str = `${p.leftText}:${p.rightText}`;
+                    if (correctPairsStr.includes(str)) {
+                        p.line.setAttribute('stroke', '#4ade80');
+                        p.line.style.filter = `drop-shadow(0 0 5px #4ade80)`;
+                        numCorrect++;
+                    } else {
+                        p.line.setAttribute('stroke', '#f87171');
+                        p.line.style.filter = `drop-shadow(0 0 5px #f87171)`;
+                    }
+                });
+
+                isCorrect = (numCorrect === numTotal && pairs.length === numTotal);
+                
+                if (!isCorrect) {
+                    setTimeout(() => {
+                        const svg = document.getElementById('matching-lines');
+                        if (svg) {
+                            svg.innerHTML = '';
+                            
+                            const drawLineRaw = (lRect, rRect, color) => {
+                                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                                const svgRect = svg.getBoundingClientRect();
+                                const x1 = lRect.right - svgRect.left;
+                                const y1 = lRect.top + lRect.height / 2 - svgRect.top;
+                                const x2 = rRect.left - svgRect.left;
+                                const y2 = rRect.top + rRect.height / 2 - svgRect.top;
+                                line.setAttribute('x1', x1);
+                                line.setAttribute('y1', y1);
+                                line.setAttribute('x2', x2);
+                                line.setAttribute('y2', y2);
+                                line.setAttribute('stroke', color);
+                                line.setAttribute('stroke-width', '4');
+                                line.style.filter = `drop-shadow(0 0 5px ${color})`;
+                                return line;
+                            };
+
+                            correctPairsStr.forEach(pairStr => {
+                                const [l, r] = pairStr.split(':');
+                                if (!l || !r) return;
+                                const leftItems = Array.from(document.querySelectorAll('.left-item'));
+                                const rightItems = Array.from(document.querySelectorAll('.right-item'));
+                                
+                                const leftEl = leftItems.find(el => el.dataset.text === l);
+                                const rightEl = rightItems.find(el => el.dataset.text === r);
+                                
+                                if (leftEl && rightEl) {
+                                    const line = drawLineRaw(leftEl.getBoundingClientRect(), rightEl.getBoundingClientRect(), '#4ade80');
+                                    svg.appendChild(line);
+                                }
+                            });
+                        }
+                    }, 1000);
                 }
             }
 
@@ -1843,7 +2114,7 @@ const app = {
                         lbl.innerHTML = `<input type="radio" name="exam_q_${idx}" value="${opt}"> ${opt}`;
                         optsContainer.appendChild(lbl);
                     });
-                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật') {
+                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật' || q.type === 'Đối chiếu trùng khớp') {
                     optsContainer.innerHTML = `<input type="text" class="fill-input" name="exam_q_${idx}" style="width:100%; max-width:400px;" placeholder="Nhập câu trả lời...">`;
                 }
 
@@ -1905,7 +2176,7 @@ const app = {
                         selected = checked.value;
                         isCorrect = (selected === q.ans);
                     }
-                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật') {
+                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật' || q.type === 'Đối chiếu trùng khớp') {
                     const inp = document.querySelector(`input[name="exam_q_${idx}"]`);
                     if (inp) {
                         selected = inp.value.replace(/\s+/g, ' ').trim();
@@ -2098,12 +2369,19 @@ const app = {
                 i++;
             }
         },
-        toggleExamOptionsWrapper(idx) {
-            const typeEl = document.getElementById(`add-e-q-type-${idx}`);
-            const wrapper = document.getElementById(`add-e-q-opts-wrapper-${idx}`);
-            if (typeEl && wrapper) {
+        toggleQuestionType(prefix, idx = '') {
+            const suffix = idx !== '' ? `-${idx}` : '';
+            const typeEl = document.getElementById(`${prefix}-type${suffix}`);
+            const optsWrapper = document.getElementById(`${prefix}-opts-wrapper${suffix}`);
+            const matchWrapper = document.getElementById(`${prefix}-match-wrapper${suffix}`);
+            if (typeEl) {
                 const val = typeEl.value;
-                wrapper.style.display = (val === 'Trắc nghiệm' || val === 'Kéo thả') ? 'block' : 'none';
+                if (optsWrapper) {
+                    optsWrapper.style.display = (val === 'Trắc nghiệm' || val === 'Kéo thả') ? 'block' : 'none';
+                }
+                if (matchWrapper) {
+                    matchWrapper.style.display = (val === 'Đối chiếu trùng khớp') ? 'block' : 'none';
+                }
             }
         },
         openAdmin() {
@@ -2429,13 +2707,14 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Loại câu hỏi</label>
-                  <select id="add-q-type" class="form-input" style="flex:1; padding:8px;" onchange="document.getElementById('add-q-opts-wrapper').style.display = (this.value === 'Trắc nghiệm' || this.value === 'Kéo thả') ? 'block' : 'none';">
+                  <select id="add-q-type" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.toggleQuestionType('add-q')">
                      <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                      <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                      <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
                      <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
                      <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
                      <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
+                     <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
                   </select>
                </div>
 
@@ -2447,20 +2726,33 @@ const app = {
                <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 1</label>
-                     <input type="text" id="add-q-opt1" placeholder="Trả lời 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
+                     <input type="text" id="add-q-opt1" placeholder="Trả lời 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 2</label>
-                     <input type="text" id="add-q-opt2" placeholder="Trả lời 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
+                     <input type="text" id="add-q-opt2" placeholder="Trả lời 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 3</label>
-                     <input type="text" id="add-q-opt3" placeholder="Trả lời 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
+                     <input type="text" id="add-q-opt3" placeholder="Trả lời 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 4</label>
-                     <input type="text" id="add-q-opt4" placeholder="Trả lời 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
+                     <input type="text" id="add-q-opt4" placeholder="Trả lời 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}">
                   </div>
+               </div>
+               
+               <div id="add-q-match-wrapper" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                  <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">Ngăn cách các ô bằng dấu phẩy. VD: Mèo, Chó, Gà</p>
+                  <div style="display:flex; align-items:center; margin-bottom:5px;">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0; color:#4ade80;">Cột Trái</label>
+                     <input type="text" id="add-q-match-left" placeholder="Mèo, Chó, Gà" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
+                  </div>
+                  <div style="display:flex; align-items:center; margin-bottom:5px;">
+                     <label style="width:150px; font-weight:bold; flex-shrink:0; color:#60a5fa;">Cột Phải</label>
+                     <input type="text" id="add-q-match-right" placeholder="Meo meo, Gâu gâu, Ò ó o, Cục tác" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
+                  </div>
+                  <p style="font-size:0.85rem; color:#f87171; margin-top:10px;">Lưu ý: Ô Đáp án Đúng phải nhập theo cặp, ngăn bằng dấu phẩy. VD: Mèo:Meo meo, Chó:Gâu gâu</p>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
@@ -2479,9 +2771,19 @@ const app = {
                 setTimeout(() => app.admin.updateTopicDropdown(), 0);
             }
             else if (tab === 'tpl') {
-                subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
-                app.admin.downloadQTemplate();
-                setTimeout(() => app.admin.renderQSubTab('lib'), 1000);
+                subBox.innerHTML = `
+                <div style="max-width: 500px; margin: 0 auto; text-align:center;">
+                   <h3>Chọn loại câu hỏi muốn xuất file mẫu</h3>
+                   <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Trắc nghiệm')">Trắc nghiệm</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Điền khuyết')">Điền khuyết</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Đúng/Sai')">Đúng/Sai</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('So sánh')">So sánh</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Chuỗi Quy luật')">Chuỗi Quy luật</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Kéo thả')">Kéo thả</button>
+                      <button class="btn-opt" onclick="app.admin.downloadQTemplate('Đối chiếu trùng khớp')" style="grid-column: span 2;">Đối chiếu trùng khớp</button>
+                   </div>
+                </div>`;
             }
             else if (tab === 'exp') {
                 subBox.innerHTML = `<p>Đang xuất dữ liệu...</p>`;
@@ -2502,92 +2804,101 @@ const app = {
           `;
             }
         },
-        downloadQTemplate() {
-            const data = [
-                {
-                    "Cấp lớp": "Lớp 1",
-                    "Môn học": "Toán",
-                    "Học kỳ": "Học kỳ 1",
-                    "Chủ đề": "Phép cộng trừ không nhớ phạm vi 100",
-                    "Mức độ khó": "Dễ",
-                    "Loại câu hỏi": "Trắc nghiệm",
-                    "Câu hỏi": "1 + 1 = ?",
-                    "Lựa chọn": "1, 2, 3, 4",
-                    "Đáp án đúng": "2",
-                    "Lời giải chi tiết": "1 cộng 1 bằng 2"
-                },
-                {
-                    "Cấp lớp": "Lớp 1",
-                    "Môn học": "Tiếng Việt",
-                    "Học kỳ": "Học kỳ 2",
-                    "Chủ đề": "Mái trường mến yêu",
-                    "Mức độ khó": "Khó",
-                    "Loại câu hỏi": "Kéo thả",
-                    "Câu hỏi": "Con chó sủa gâu ___, con mèo kêu meo ___.",
-                    "Lựa chọn": "gâu, meo, quác, chiếp",
-                    "Đáp án đúng": "gâu, meo",
-                    "Lời giải chi tiết": "Kéo thả 'gâu' vào chỗ trống thứ nhất, 'meo' vào thứ 2"
-                },
-                {
-                    "Cấp lớp": "Lớp 2",
-                    "Môn học": "Toán",
-                    "Học kỳ": "Học kỳ 1",
-                    "Chủ đề": "Phép nhân, phép chia",
-                    "Mức độ khó": "Dễ",
-                    "Loại câu hỏi": "Đúng/Sai",
-                    "Câu hỏi": "5 - 3 = 2, đúng hay sai?",
-                    "Lựa chọn": "",
-                    "Đáp án đúng": "Đúng",
-                    "Lời giải chi tiết": "Phép trừ chính xác"
-                },
-                {
-                    "Cấp lớp": "Lớp 3",
-                    "Môn học": "Tiếng Việt",
-                    "Học kỳ": "Học kỳ 1",
-                    "Chủ đề": "Cộng đồng gắn bó",
-                    "Mức độ khó": "Khó",
-                    "Loại câu hỏi": "Điền khuyết",
-                    "Câu hỏi": "Gần mực thì đen, gần ___ thì sáng.",
-                    "Lựa chọn": "",
-                    "Đáp án đúng": "đèn",
-                    "Lời giải chi tiết": "Tục ngữ"
-                },
-                {
-                    "Cấp lớp": "Lớp 4",
-                    "Môn học": "Toán",
-                    "Học kỳ": "Học kỳ 2",
-                    "Chủ đề": "Phân số",
-                    "Mức độ khó": "Dễ",
-                    "Loại câu hỏi": "So sánh",
-                    "Câu hỏi": "Điền dấu thích hợp: 1/2 ___ 1/3",
-                    "Lựa chọn": "",
-                    "Đáp án đúng": ">",
-                    "Lời giải chi tiết": "1/2 > 1/3"
-                },
-                {
-                    "Cấp lớp": "Lớp 5",
-                    "Môn học": "Toán",
-                    "Học kỳ": "Học kỳ 1",
-                    "Chủ đề": "Số thập phân",
-                    "Mức độ khó": "Khó",
-                    "Loại câu hỏi": "Chuỗi quy luật",
-                    "Câu hỏi": "2, ___, 6, ___, 10",
-                    "Lựa chọn": "",
-                    "Đáp án đúng": "4, 8",
-                    "Lời giải chi tiết": "Điền 2 số còn thiếu"
-                },
-                {
-                    "Cấp lớp": "=> HƯỚNG DẪN CÁCH NHẬP:",
-                    "Môn học": "(1) Cấp lớp, Môn học, Học kỳ (Học kỳ 1 hoặc Học kỳ 2)",
-                    "Học kỳ": "Học kỳ 1",
-                    "Chủ đề": "(2) Copy chính xác Chủ đề bên dưới",
-                    "Loại câu hỏi": "(3) Ghi chính xác: Trắc nghiệm, Điền khuyết, Đúng/Sai, So sánh, Chuỗi quy luật, Kéo thả",
-                    "Câu hỏi": "(4) Kéo thả, So sánh, Điền khuyết, Chuỗi quy luật: Bắt buộc dùng ___ hoặc ... để làm chỗ trống.",
-                    "Lựa chọn": "(5) Trắc nghiệm / Kéo thả: Các lựa chọn & đáp án nhiễu (ngăn cách bởi dấu phẩy).",
-                    "Đáp án đúng": "(6) Kéo thả, Chuỗi quy luật: Cho phép 1->4 đáp án (ngăn cách bởi dấu phẩy). So sánh: <,>,=",
-                    "Lời giải chi tiết": "(7) Có thể để trống"
-                }
-            ];
+        downloadQTemplate(type) {
+            let guide = {};
+            let sample = {};
+
+            switch (type) {
+                case 'Trắc nghiệm':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn điền", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "Ghi câu hỏi vào đây", "Lựa chọn": "Ghi các đáp án (ngăn cách bằng dấu phẩy)",
+                        "Đáp án đúng": "Ghi chính xác 1 lựa chọn", "Lời giải chi tiết": "Tùy chọn"
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng trừ không nhớ phạm vi 100", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "1 + 1 = ?", "Lựa chọn": "1, 2, 3, 4",
+                        "Đáp án đúng": "2", "Lời giải chi tiết": "1 cộng 1 bằng 2"
+                    };
+                    break;
+                case 'Điền khuyết':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn điền", "Mức độ khó": "Trung bình",
+                        "Loại câu hỏi": type, "Câu hỏi": "Bắt buộc có ___ (3 dấu gạch dưới) làm chỗ trống", "Lựa chọn": "",
+                        "Đáp án đúng": "Ghi chính xác từ cần điền", "Lời giải chi tiết": "Tùy chọn"
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Chữ cái", "Mức độ khó": "Trung bình",
+                        "Loại câu hỏi": type, "Câu hỏi": "Con ___ kêu meo meo", "Lựa chọn": "",
+                        "Đáp án đúng": "mèo", "Lời giải chi tiết": ""
+                    };
+                    break;
+                case 'Đúng/Sai':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "Đưa ra nhận định", "Lựa chọn": "",
+                        "Đáp án đúng": "Ghi Đúng hoặc Sai", "Lời giải chi tiết": ""
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "So sánh", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "2 lớn hơn 1", "Lựa chọn": "",
+                        "Đáp án đúng": "Đúng", "Lời giải chi tiết": ""
+                    };
+                    break;
+                case 'So sánh':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "VD: 2 ___ 1", "Lựa chọn": "",
+                        "Đáp án đúng": "Điền <, > hoặc =", "Lời giải chi tiết": ""
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "So sánh", "Mức độ khó": "Dễ",
+                        "Loại câu hỏi": type, "Câu hỏi": "2 ___ 1", "Lựa chọn": "",
+                        "Đáp án đúng": ">", "Lời giải chi tiết": ""
+                    };
+                    break;
+                case 'Chuỗi Quy luật':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "VD: 2, 4, ___, 8", "Lựa chọn": "",
+                        "Đáp án đúng": "Điền các số còn thiếu, cách nhau bởi dấu phẩy", "Lời giải chi tiết": ""
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Quy luật dãy số", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "2, 4, ___, 8", "Lựa chọn": "",
+                        "Đáp án đúng": "6", "Lời giải chi tiết": ""
+                    };
+                    break;
+                case 'Kéo thả':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "Bắt buộc dùng ___ để tạo chỗ trống", "Lựa chọn": "Ghi các đáp án kéo thả (cả đúng lẫn nhiễu) cách nhau bởi dấu phẩy",
+                        "Đáp án đúng": "Ghi đúng thứ tự các từ cần thả vào chỗ trống", "Lời giải chi tiết": ""
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Môi trường mến yêu", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "Con chó sủa gâu ___, con mèo kêu meo ___.", "Lựa chọn": "gâu, meo, quác, chiếp",
+                        "Đáp án đúng": "gâu, meo", "Lời giải chi tiết": ""
+                    };
+                    break;
+                case 'Đối chiếu trùng khớp':
+                    guide = {
+                        "Cấp lớp": "VD: Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Hướng dẫn", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "Ghi câu hỏi (VD: Nối ô bên trái với ô bên phải)", "Lựa chọn": "Chia 2 cột trái phải bằng dấu | (VD: Cột trái | Cột phải). Mỗi cột dùng dấu phẩy.",
+                        "Đáp án đúng": "Nối cặp bằng dấu hai chấm : (VD: Trái1:Phải1, Trái2:Phải2)", "Lời giải chi tiết": ""
+                    };
+                    sample = {
+                        "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Nối từ", "Mức độ khó": "Khó",
+                        "Loại câu hỏi": type, "Câu hỏi": "Nối con vật với tiếng kêu", "Lựa chọn": "Mèo, Chó, Gà | Gâu gâu, Cục tác, Meo meo, Ò ó o",
+                        "Đáp án đúng": "Mèo:Meo meo, Chó:Gâu gâu, Gà:Ò ó o", "Lời giải chi tiết": ""
+                    };
+                    break;
+                default:
+                    // Fallback to old behavior if type is not provided
+                    break;
+            }
+
+            const data = (type) ? [guide, sample] : [];
 
             for (let i = 1; i <= 5; i++) {
                 const t = app.constants.topics[String(i)];
@@ -2608,7 +2919,8 @@ const app = {
                 }
             }
 
-            app.ui.exportToExcel(data, "Mau_Nhap_Cau_Hoi.xlsx");
+            const fileName = type ? `Mau_Nhap_${type.replace(/[\/\s]/g, '_')}.xlsx` : "Mau_Nhap_Cau_Hoi.xlsx";
+            app.ui.exportToExcel(data, fileName);
         },
         exportQuestions() {
             const data = app.data.libraryQuestions.map(q => ({
@@ -2652,12 +2964,17 @@ const app = {
                 topic: document.getElementById('add-q-topic').value,
                 q: document.getElementById('add-q-q').value,
                 ans: document.getElementById('add-q-ans').value,
-                options: [
-                    document.getElementById('add-q-opt1') ? document.getElementById('add-q-opt1').value.trim() : '',
-                    document.getElementById('add-q-opt2') ? document.getElementById('add-q-opt2').value.trim() : '',
-                    document.getElementById('add-q-opt3') ? document.getElementById('add-q-opt3').value.trim() : '',
-                    document.getElementById('add-q-opt4') ? document.getElementById('add-q-opt4').value.trim() : ''
-                ].filter(s => s),
+                options: document.getElementById('add-q-type').value === 'Đối chiếu trùng khớp' 
+                    ? [
+                        document.getElementById('add-q-match-left') ? document.getElementById('add-q-match-left').value.trim() : '',
+                        document.getElementById('add-q-match-right') ? document.getElementById('add-q-match-right').value.trim() : ''
+                    ]
+                    : [
+                        document.getElementById('add-q-opt1') ? document.getElementById('add-q-opt1').value.trim() : '',
+                        document.getElementById('add-q-opt2') ? document.getElementById('add-q-opt2').value.trim() : '',
+                        document.getElementById('add-q-opt3') ? document.getElementById('add-q-opt3').value.trim() : '',
+                        document.getElementById('add-q-opt4') ? document.getElementById('add-q-opt4').value.trim() : ''
+                    ].filter(o => o !== ''),
                 explanation: document.getElementById('add-q-exp').value
             };
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
@@ -2876,37 +3193,49 @@ const app = {
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
                           <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Loại câu hỏi</label>
-                          <select id="add-e-q-type-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" onchange="app.admin.toggleExamOptionsWrapper(${i})">
+                          <select id="add-e-q-type-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" onchange="app.admin.toggleQuestionType('add-e-q', ${i})">
                              <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                              <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                              <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
                              <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
                              <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
                              <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
+                             <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
                           </select>
                        </div>
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
                           <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Nội dung câu</label>
-                          <textarea id="add-e-q-q-${i}" placeholder="Nhập nội dung câu hỏi (để trống nếu không muốn tạo câu này)" class="form-input" style="flex:1; padding:6px; height:50px; font-size:0.9rem;">${q ? q.q : ''}</textarea>
+                          <textarea id="add-e-q-q-${i}" placeholder="Nội dung" class="form-input" style="flex:1; padding:6px; height:50px; font-size:0.9rem;">${q ? q.q : ''}</textarea>
                        </div>
 
                        <div id="add-e-q-opts-wrapper-${i}" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
                              <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 1</label>
-                             <input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] ? q.options[0] : ''}">
+                             <input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
                              <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 2</label>
-                             <input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] ? q.options[1] : ''}">
+                             <input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:5px;">
                              <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 3</label>
-                             <input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[2] ? q.options[2] : ''}">
+                             <input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}">
                           </div>
                           <div style="display:flex; align-items:center; margin-bottom:0;">
                              <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 4</label>
-                             <input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[3] ? q.options[3] : ''}">
+                             <input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}">
+                          </div>
+                       </div>
+                       
+                       <div id="add-e-q-match-wrapper-${i}" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                          <div style="display:flex; align-items:center; margin-bottom:5px;">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem; color:#4ade80;">Cột Trái</label>
+                             <input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
+                          </div>
+                          <div style="display:flex; align-items:center; margin-bottom:5px;">
+                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem; color:#60a5fa;">Cột Phải</label>
+                             <input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
                           </div>
                        </div>
 
