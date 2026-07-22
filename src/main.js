@@ -2063,18 +2063,18 @@ const app = {
                                 const corPairs = d.correct ? d.correct.split(', ') : [];
                                 ansHtml = selPairs.map(sp => {
                                     const isPairCorrect = corPairs.includes(sp);
-                                    return \`<span style="color:\${isPairCorrect ? '#4ade80' : '#f87171'}">\${isPairCorrect ? '✅' : '❌'} \${app.data.sanitizeHTML(sp)}</span>\`;
+                                    return `<span style="color:${isPairCorrect ? '#4ade80' : '#f87171'}">${isPairCorrect ? '✅' : '❌'} ${app.data.sanitizeHTML(sp)}</span>`;
                                 }).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
                             } else {
-                                ansHtml = \`<span style="color:\${d.isCorrect ? '#4ade80' : '#f87171'}">\${d.isCorrect ? '✅' : '❌'} \${app.data.sanitizeHTML(d.selected || 'Bỏ trống')}</span>\`;
+                                ansHtml = `<span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? '✅' : '❌'} ${app.data.sanitizeHTML(d.selected || 'Bỏ trống')}</span>`;
                             }
-                            return \`
+                            return `
                     <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                      <b>\${i + 1}.</b> \${app.data.sanitizeHTML(d.q)} <br>
-                      Bạn chọn: \${ansHtml} <br>
-                      \${!d.isCorrect ? \`<span style="color:#4ade80">Đáp án: \${app.data.sanitizeHTML(d.correct)}</span>\` : ''}
+                      <b>${i + 1}.</b> ${app.data.sanitizeHTML(d.q)} <br>
+                      Bạn chọn: ${ansHtml} <br>
+                      ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${app.data.sanitizeHTML(d.correct)}</span>` : ''}
                     </div>
-                  \`;
+                  `;
                         }).join('');
             detailsBox.innerHTML = htmlString;
 
