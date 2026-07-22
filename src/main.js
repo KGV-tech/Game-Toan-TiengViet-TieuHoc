@@ -2823,7 +2823,7 @@ const app = {
                </div>
                
                <div id="add-q-match-wrapper" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-                  <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">Ngăn cách các ô bằng dấu phẩy. VD: Mèo, Chó, Gà</p>
+                  <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">Ngăn cách các ô bằng dấu phẩy (Tối đa 5 ô mỗi bên). VD: Mèo, Chó, Gà</p>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0; color:#4ade80;">Cột Trái</label>
                      <input type="text" id="add-q-match-left" placeholder="Mèo, Chó, Gà" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">

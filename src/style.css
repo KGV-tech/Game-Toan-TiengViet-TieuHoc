@@ -67,7 +67,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .action-buttons { display: flex; gap: 15px; }
 
 /* Question Types */
-.options-grid { display: grid; gap: 20px; width: 100%; flex-grow: 1; overflow-y: auto; padding-right: 10px; align-content: start; }
+.options-grid { display: grid; gap: 20px; width: 100%; flex-grow: 1; overflow-y: auto; padding-right: 10px; align-content: start; margin-top: 15px; min-height: 0; }
 .options-grid.multiple_choice { grid-template-columns: repeat(2, 1fr); }
 .options-grid.true_false { grid-template-columns: repeat(2, 1fr); }
 .ans-btn { background: linear-gradient(180deg, #f8fafc, #cbd5e1); border: 3px solid #ffffff; border-bottom: 6px solid #94a3b8; color: #1e293b; padding: 15px 20px; font-size: 1.4rem; font-weight: 900; border-radius: 15px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; text-align:center; box-shadow: 0 8px 15px rgba(0,0,0,0.3); text-transform: uppercase; }
