@@ -2021,13 +2021,39 @@ const app = {
                 app.quest.updateProgress(this.state.subject, finalScore);
             }
 
-            document.getElementById('result-score').textContent = finalScore;
+            const scoreEl = document.getElementById('result-score');
+            const scoreCircle = scoreEl.parentElement;
+            scoreEl.innerHTML = finalScore;
+            
+            // Apply colors and glowing based on score
+            if (finalScore < 5) {
+                scoreCircle.style.color = '#ef4444'; // Red
+                scoreCircle.style.textShadow = '0 0 20px rgba(239, 68, 68, 0.6)';
+            } else if (finalScore < 8) {
+                scoreCircle.style.color = '#eab308'; // Yellow
+                scoreCircle.style.textShadow = '0 0 20px rgba(234, 179, 8, 0.6)';
+            } else if (finalScore < 10) {
+                scoreCircle.style.color = '#3b82f6'; // Blue
+                scoreCircle.style.textShadow = '0 0 20px rgba(59, 130, 246, 0.6)';
+            } else {
+                scoreCircle.style.color = '#22c55e'; // Green
+                scoreCircle.style.textShadow = '0 0 20px rgba(34, 197, 94, 0.6)';
+                scoreEl.innerHTML = finalScore + '<span style="color:#fde047; font-size:3rem; text-shadow:0 0 20px #fde047; position:absolute; top:-20px; right:-30px;">⭐</span>';
+            }
+
             document.getElementById('result-msg').textContent = msg;
 
-            const chest = document.getElementById('bonus-chest-img');
-            chest.style.display = (candiesEarned > 0) ? 'block' : 'none';
-            chest.src = './public/lollipop.png';
-            chest.onclick = () => this.claimBonus();
+            const chestContainer = document.getElementById('bonus-candies-container');
+            if (candiesEarned > 0) {
+                chestContainer.style.display = 'flex';
+                chestContainer.style.justifyContent = 'center';
+                chestContainer.style.gap = '10px';
+                chestContainer.innerHTML = Array(candiesEarned).fill('<img src="./public/lollipop.png" style="width:60px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s;" onmouseover="this.style.transform=\\\'scale(1.1)\\\'" onmouseout="this.style.transform=\\\'scale(1)\\\'">').join('');
+                chestContainer.onclick = () => this.claimBonus();
+            } else {
+                chestContainer.style.display = 'none';
+                chestContainer.innerHTML = '';
+            }
 
             const detailsBox = document.getElementById('result-details');
             const htmlString = this.state.historyDetails.map((d, i) => `

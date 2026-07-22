@@ -418,10 +418,9 @@
             <span id="result-score">0</span><span class="max-score">/10</span>
           </div>
           <p id="result-msg" class="msg-text"></p>
-          <img id="bonus-chest-img" src="./public/lollipop.png" alt="Bonus"
-            style="display:none; cursor:pointer; width:150px; margin: 10px auto;" onclick="app.game.claimBonus()">
+          <div id="bonus-candies-container" style="display:none; cursor:pointer; margin: 15px auto; flex-wrap: wrap;" onclick="app.game.claimBonus()"></div>
           <br>
-          <button class="btn-start-massive" onclick="app.game.closeResult()">
+          <button class="btn-exit-gray" onclick="app.game.closeResult()">
             Thoát
           </button>
         </div>
