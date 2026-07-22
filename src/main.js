@@ -3060,6 +3060,8 @@ const app = {
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
 
             if (editIdx !== null && editIdx !== undefined) {
+                const oldId = app.data.libraryQuestions[editIdx]?.id;
+                if (oldId) qObj.id = oldId;
                 app.data.libraryQuestions[editIdx] = qObj;
                 alert('Đã cập nhật câu hỏi!');
             } else {
@@ -3483,6 +3485,8 @@ const app = {
             }
 
             if (editIdx !== null && editIdx !== undefined) {
+                const oldId = app.data.exams[editIdx]?.id;
+                if (oldId) eObj.id = oldId;
                 app.data.exams[editIdx] = eObj;
                 alert('Đã cập nhật đề kiểm tra!');
             } else {
