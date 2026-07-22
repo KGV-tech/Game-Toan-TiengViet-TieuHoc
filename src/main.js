@@ -2887,7 +2887,7 @@ const app = {
         downloadQTemplate(type) {
             let data = [];
             
-            const divider = (text) => ({ "Cấp lớp": text, "Môn học": "", "Học kỳ": "", "Chủ đề": "", "Mức độ khó": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": "" });
+            const divider = (text) => ({ "Cấp lớp": text, "Môn học": "", "Học kỳ": "", "Chủ đề": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": "" });
 
             if (type) {
                 data.push(divider("--- HƯỚNG DẪN CÁCH ĐIỀN CÁC CỘT ---"));
@@ -2896,7 +2896,6 @@ const app = {
                     "Môn học": "Nhập chính xác: Toán hoặc Tiếng Việt",
                     "Học kỳ": "Nhập chính xác: Học kỳ 1 hoặc Học kỳ 2",
                     "Chủ đề": "Phải thuộc danh sách các chủ đề hợp lệ (xem phần dưới cùng của file)",
-                    "Mức độ khó": "Nhập: Dễ, Trung bình, Khó, hoặc Cực khó",
                     "Loại câu hỏi": type,
                     "Câu hỏi": "",
                     "Lựa chọn": "",
@@ -2913,13 +2912,11 @@ const app = {
                         guide["Đáp án đúng"] = "Nhập chính xác 1 lựa chọn đúng trong số các lựa chọn đã ghi";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Các số đến 10", "Mức độ khó": "Dễ",
-                            "Loại câu hỏi": type, "Câu hỏi": "Số nào lớn nhất trong các số sau?", "Lựa chọn": "1, 5, 9, 3",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Các số đến 10", "Loại câu hỏi": type, "Câu hỏi": "Số nào lớn nhất trong các số sau?", "Lựa chọn": "1, 5, 9, 3",
                             "Đáp án đúng": "9", "Lời giải chi tiết": "Vì 9 > 5 > 3 > 1"
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Chữ cái", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "Từ nào sau đây có chứa chữ a?", "Lựa chọn": "con cò, con cá, con ong",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Chữ cái", "Loại câu hỏi": type, "Câu hỏi": "Từ nào sau đây có chứa chữ a?", "Lựa chọn": "con cò, con cá, con ong",
                             "Đáp án đúng": "con cá", "Lời giải chi tiết": "Từ con cá có chữ cá chứa chữ a"
                         };
                         break;
@@ -2929,13 +2926,11 @@ const app = {
                         guide["Đáp án đúng"] = "Nhập chính xác từ cần điền vào chỗ trống";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Chữ cái", "Mức độ khó": "Dễ",
-                            "Loại câu hỏi": type, "Câu hỏi": "Con bò kêu rống ___ ___", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Chữ cái", "Loại câu hỏi": type, "Câu hỏi": "Con bò kêu rống ___ ___", "Lựa chọn": "",
                             "Đáp án đúng": "ò ó", "Lời giải chi tiết": ""
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "Kết quả của 5 + ___ = 10", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Loại câu hỏi": type, "Câu hỏi": "Kết quả của 5 + ___ = 10", "Lựa chọn": "",
                             "Đáp án đúng": "5", "Lời giải chi tiết": "10 - 5 = 5"
                         };
                         break;
@@ -2945,13 +2940,11 @@ const app = {
                         guide["Đáp án đúng"] = "Ghi chính xác: Đúng hoặc Sai";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 3", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Bảng nhân", "Mức độ khó": "Dễ",
-                            "Loại câu hỏi": type, "Câu hỏi": "5 x 3 = 15", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 3", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Bảng nhân", "Loại câu hỏi": type, "Câu hỏi": "5 x 3 = 15", "Lựa chọn": "",
                             "Đáp án đúng": "Đúng", "Lời giải chi tiết": "Vì 5 x 3 = 15 là phép tính chính xác"
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "Từ 'mặt trời' viết sai chính tả.", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Loại câu hỏi": type, "Câu hỏi": "Từ 'mặt trời' viết sai chính tả.", "Lựa chọn": "",
                             "Đáp án đúng": "Sai", "Lời giải chi tiết": "Từ 'mặt trời' viết đúng chính tả."
                         };
                         break;
@@ -2961,13 +2954,11 @@ const app = {
                         guide["Đáp án đúng"] = "Ghi 1 trong 3 dấu: <, > hoặc =";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Các số đến 10", "Mức độ khó": "Dễ",
-                            "Loại câu hỏi": type, "Câu hỏi": "5 ___ 3", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Các số đến 10", "Loại câu hỏi": type, "Câu hỏi": "5 ___ 3", "Lựa chọn": "",
                             "Đáp án đúng": ">", "Lời giải chi tiết": "Vì 5 lớn hơn 3"
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "10 + 5 ___ 15", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Loại câu hỏi": type, "Câu hỏi": "10 + 5 ___ 15", "Lựa chọn": "",
                             "Đáp án đúng": "=", "Lời giải chi tiết": "Vì 10 + 5 = 15"
                         };
                         break;
@@ -2977,13 +2968,11 @@ const app = {
                         guide["Đáp án đúng"] = "Nhập giá trị cần điền. Nếu có nhiều chỗ trống thì ngăn cách bằng dấu phẩy";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Dãy số", "Mức độ khó": "Khó",
-                            "Loại câu hỏi": type, "Câu hỏi": "2, 4, ___, 8, 10", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Dãy số", "Loại câu hỏi": type, "Câu hỏi": "2, 4, ___, 8, 10", "Lựa chọn": "",
                             "Đáp án đúng": "6", "Lời giải chi tiết": "Mỗi số cách nhau 2 đơn vị"
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 3", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Dãy số", "Mức độ khó": "Cực khó",
-                            "Loại câu hỏi": type, "Câu hỏi": "1, 2, 4, 7, ___", "Lựa chọn": "",
+                            "Cấp lớp": "Lớp 3", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Dãy số", "Loại câu hỏi": type, "Câu hỏi": "1, 2, 4, 7, ___", "Lựa chọn": "",
                             "Đáp án đúng": "11", "Lời giải chi tiết": "Khoảng cách tăng dần: +1, +2, +3, +4"
                         };
                         break;
@@ -2993,13 +2982,11 @@ const app = {
                         guide["Đáp án đúng"] = "Nhập các từ ĐÚNG, theo đúng thứ tự các chỗ trống, ngăn cách bằng dấu phẩy";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Mức độ khó": "Khó",
-                            "Loại câu hỏi": type, "Câu hỏi": "Con chó sủa ___ ___, con mèo kêu ___ ___.", "Lựa chọn": "gâu, meo, quác, chiếp",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Loại câu hỏi": type, "Câu hỏi": "Con chó sủa ___ ___, con mèo kêu ___ ___.", "Lựa chọn": "gâu, meo, quác, chiếp",
                             "Đáp án đúng": "gâu, gâu, meo, meo", "Lời giải chi tiết": ""
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "2 + 3 = ___. 4 + 1 = ___.", "Lựa chọn": "5, 6, 7",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Loại câu hỏi": type, "Câu hỏi": "2 + 3 = ___. 4 + 1 = ___.", "Lựa chọn": "5, 6, 7",
                             "Đáp án đúng": "5, 5", "Lời giải chi tiết": ""
                         };
                         break;
@@ -3009,13 +2996,11 @@ const app = {
                         guide["Đáp án đúng"] = "Ghi các cặp đáp án, mỗi cặp nối với nhau bằng dấu : (hai chấm). Các cặp ngăn cách bằng dấu phẩy. VD: Mèo:Meo meo, Chó:Gâu gâu";
                         
                         sample1 = {
-                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Mức độ khó": "Trung bình",
-                            "Loại câu hỏi": type, "Câu hỏi": "Nối con vật với tiếng kêu của nó", "Lựa chọn": "Mèo, Chó, Bò | Rống, Gâu gâu, Meo meo",
+                            "Cấp lớp": "Lớp 1", "Môn học": "Tiếng Việt", "Học kỳ": "Học kỳ 1", "Chủ đề": "Từ ngữ", "Loại câu hỏi": type, "Câu hỏi": "Nối con vật với tiếng kêu của nó", "Lựa chọn": "Mèo, Chó, Bò | Rống, Gâu gâu, Meo meo",
                             "Đáp án đúng": "Mèo:Meo meo, Chó:Gâu gâu, Bò:Rống", "Lời giải chi tiết": ""
                         };
                         sample2 = {
-                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Mức độ khó": "Khó",
-                            "Loại câu hỏi": type, "Câu hỏi": "Nối phép tính với kết quả đúng", "Lựa chọn": "2+3, 4+5, 1+1 | 9, 2, 5",
+                            "Cấp lớp": "Lớp 2", "Môn học": "Toán", "Học kỳ": "Học kỳ 1", "Chủ đề": "Phép cộng", "Loại câu hỏi": type, "Câu hỏi": "Nối phép tính với kết quả đúng", "Lựa chọn": "2+3, 4+5, 1+1 | 9, 2, 5",
                             "Đáp án đúng": "2+3:5, 4+5:9, 1+1:2", "Lời giải chi tiết": ""
                         };
                         break;
@@ -3039,14 +3024,14 @@ const app = {
                         "Môn học": "TOÁN",
                         "Học kỳ": "",
                         "Chủ đề": mathTopics,
-                        "Mức độ khó": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
+                        "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
                     });
                     data.push({
                         "Cấp lớp": "LỚP " + i,
                         "Môn học": "TIẾNG VIỆT",
                         "Học kỳ": "",
                         "Chủ đề": vietTopics,
-                        "Mức độ khó": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
+                        "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
                     });
                 }
             }
@@ -3343,13 +3328,7 @@ const app = {
                           </select>
                        </div>
 
-                       <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Mức độ khó</label>
-                          <select id="add-e-q-diff-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;">
-                             <option value="Dễ" ${q && q.difficulty === 'Dễ' ? 'selected' : (!q ? 'selected' : '')}>Dễ</option>
-                             <option value="Khó" ${q && q.difficulty === 'Khó' ? 'selected' : ''}>Khó</option>
-                          </select>
-                       </div>
+                       
 
                        <div style="display:flex; align-items:center; margin-bottom:10px;">
                           <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Loại câu hỏi</label>
@@ -3533,7 +3512,6 @@ const app = {
                         classlevel: eObj.classlevel,
                         subject: eObj.subject,
                         topic: document.getElementById(`add-e-q-topic-${i}`).value,
-                        difficulty: document.getElementById(`add-e-q-diff-${i}`).value,
                         type: typeVal,
                         q: qText,
                         ans: ansText,
