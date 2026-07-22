@@ -1973,11 +1973,11 @@ const app = {
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
                 this.state.score += 10 / this.state.questions.length;
-                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect: false, shieldUsed: true });
+                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect: false, shieldUsed: true, type: qType });
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
                 document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.png', '_happy.png').replace('_normal.png', '_happy.png')}`;
             } else {
-                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect });
+                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect, type: qType });
             }
 
             document.getElementById('game-score').textContent = Math.round(this.state.score * 10) / 10;
@@ -2056,13 +2056,26 @@ const app = {
             }
 
             const detailsBox = document.getElementById('result-details');
-            const htmlString = this.state.historyDetails.map((d, i) => `
-        <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-          <b>${i + 1}.</b> ${app.data.sanitizeHTML(d.q)} <br>
-          Bạn chọn: <span style="color:${d.isCorrect ? '#4ade80' : '#f87171'}">${d.isCorrect ? '✔' : '✘'} ${app.data.sanitizeHTML(d.selected || 'Bỏ trống')}</span> <br>
-          ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${app.data.sanitizeHTML(d.correct)}</span>` : ''}
-        </div>
-      `).join('');
+            const htmlString = this.state.historyDetails.map((d, i) => {
+                            let ansHtml = '';
+                            if (d.type === 'Đối chiếu trùng khớp' && d.selected) {
+                                const selPairs = d.selected.split(', ');
+                                const corPairs = d.correct ? d.correct.split(', ') : [];
+                                ansHtml = selPairs.map(sp => {
+                                    const isPairCorrect = corPairs.includes(sp);
+                                    return \`<span style="color:\${isPairCorrect ? '#4ade80' : '#f87171'}">\${isPairCorrect ? '✅' : '❌'} \${app.data.sanitizeHTML(sp)}</span>\`;
+                                }).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+                            } else {
+                                ansHtml = \`<span style="color:\${d.isCorrect ? '#4ade80' : '#f87171'}">\${d.isCorrect ? '✅' : '❌'} \${app.data.sanitizeHTML(d.selected || 'Bỏ trống')}</span>\`;
+                            }
+                            return \`
+                    <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                      <b>\${i + 1}.</b> \${app.data.sanitizeHTML(d.q)} <br>
+                      Bạn chọn: \${ansHtml} <br>
+                      \${!d.isCorrect ? \`<span style="color:#4ade80">Đáp án: \${app.data.sanitizeHTML(d.correct)}</span>\` : ''}
+                    </div>
+                  \`;
+                        }).join('');
             detailsBox.innerHTML = htmlString;
 
             document.getElementById('result-modal').classList.add('active');
@@ -2252,7 +2265,7 @@ const app = {
                 }
 
                 if (isCorrect) totalPts += ptsPerQ;
-                this.state.historyDetails.push({ q: q.q, selected, correct: q.ans, isCorrect });
+                this.state.historyDetails.push({ q: q.q, selected, correct: q.ans, isCorrect, type: q.type });
             });
 
             this.state.score = Math.round(totalPts * 10) / 10;
