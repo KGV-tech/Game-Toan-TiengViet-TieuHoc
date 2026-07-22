@@ -1,7 +1,10 @@
 const fs = require('fs');
 let code = fs.readFileSync('src/main.js', 'utf8');
-code = code.replace(/role === 'admin'/g, "role?.toLowerCase() === 'admin'");
-code = code.replace(/role !== 'admin'/g, "role?.toLowerCase() !== 'admin'");
-code = code.replace(/\(this\.currentUser\.history \|\| \[\]\)/g, "(Array.isArray(this.currentUser.history) ? this.currentUser.history : [])");
-fs.writeFileSync('src/main.js', code);
-console.log('Fixed main.js');
+
+// The file contains literal backslashes from when we did string replace with escaped backslashes.
+// We need to replace "\`" with "`" and "\${" with "${"
+code = code.replace(/\\`/g, '`');
+code = code.replace(/\\\${/g, '${');
+
+fs.writeFileSync('src/main.js', code, 'utf8');
+console.log('Fixed syntax in main.js');
