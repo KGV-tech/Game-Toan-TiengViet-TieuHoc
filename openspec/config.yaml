@@ -2,12 +2,12 @@ schema: spec-driven
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tech stack: HTML5, CSS3 (Vanilla, Flexbox, UI/UX Sci-fi Game), JS (Vanilla, ES6 modules).
+  Database: Supabase (PostgreSQL, Realtime).
+  Fallback: LocalStorage is used as a fallback if Supabase is unavailable.
+  Domain: Gamified E-learning platform for Primary School (Math & Vietnamese).
+  State Management: Singleton `window.app` object.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
