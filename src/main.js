@@ -1474,8 +1474,8 @@ const app = {
                 let selectedLeft = null;
                 let selectedRight = null;
 
-                // blue, yellow, pink, brown, cyan, orange
-                const neonColors = ['#3b82f6', '#eab308', '#ec4899', '#a16207', '#06b6d4', '#f97316'];
+                // blue, yellow, cyan, pink, brown, orange
+                const neonColors = ['#3b82f6', '#eab308', '#06b6d4', '#ec4899', '#a16207', '#f97316'];
 
                 const drawLine = (leftEl, rightEl, color) => {
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -1857,8 +1857,10 @@ const app = {
                                     const y1 = parseFloat(p.line.getAttribute('y1'));
                                     const x2 = parseFloat(p.line.getAttribute('x2'));
                                     const y2 = parseFloat(p.line.getAttribute('y2'));
-                                    const mx = (x1 + x2) / 2;
-                                    const my = (y1 + y2) / 2;
+                                    // Gạch chéo ở 1/3 hoặc 2/3 line để tránh bị chồng nhau ở giữa khi có nhiều line cắt nhau
+                                    const fraction = (pairs.indexOf(p) % 2 === 0) ? 0.3 : 0.7;
+                                    const mx = x1 + (x2 - x1) * fraction;
+                                    const my = y1 + (y2 - y1) * fraction;
                                     
                                     const cross1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
                                     cross1.setAttribute('x1', mx - 10);
