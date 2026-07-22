@@ -67,7 +67,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .action-buttons { display: flex; gap: 15px; }
 
 /* Question Types */
-.options-grid { display: grid; gap: 20px; width: 100%; }
+.options-grid { display: grid; gap: 20px; width: 100%; flex-grow: 1; overflow-y: auto; padding-right: 10px; align-content: start; }
 .options-grid.multiple_choice { grid-template-columns: repeat(2, 1fr); }
 .options-grid.true_false { grid-template-columns: repeat(2, 1fr); }
 .ans-btn { background: linear-gradient(180deg, #f8fafc, #cbd5e1); border: 3px solid #ffffff; border-bottom: 6px solid #94a3b8; color: #1e293b; padding: 15px 20px; font-size: 1.4rem; font-weight: 900; border-radius: 15px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; text-align:center; box-shadow: 0 8px 15px rgba(0,0,0,0.3); text-transform: uppercase; }
@@ -298,16 +298,16 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 }
 #start-adv-icon { width: 120px; filter: drop-shadow(0 0 20px #f59e0b); }
 
-/* Play Layout (3 columns) */
-.play-layout { display: flex; width: 100%; justify-content: space-between; align-items: stretch; gap: 20px; }
-.play-left, .play-right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-.play-center { position: relative; flex: 2; display: flex; flex-direction: column; background: rgba(0,0,0,0.4); padding: 40px; border-radius: 30px; border: 4px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 30px rgba(0,0,0,0.5); }
+/* Play Layout (2 columns: 1/4 and 3/4) */
+.play-layout { display: grid; grid-template-columns: 25% 75%; width: 100%; align-items: stretch; gap: 20px; }
+.play-left { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; padding-top: 10px; }
+.play-center { position: relative; display: flex; flex-direction: column; background: rgba(0,0,0,0.4); padding: 40px; border-radius: 30px; border: 4px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 30px rgba(0,0,0,0.5); min-height: 600px; height: 75vh; }
 
 .game-header { display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; font-size: 1.3rem; font-weight: bold; }
 .question-progress { background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 20px; color: #fde047; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
 .score-display { position: absolute; top: -25px; right: -25px; background: linear-gradient(180deg, #fde047, #d97706); border: 4px solid #fef08a; border-bottom: 8px solid #92400e; padding: 15px 30px; border-radius: 25px; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.4); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8rem; font-weight: 900; z-index: 10; transform: rotate(5deg); }
 
-.question-box { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(226,232,240,0.95)); border: 4px solid #ffffff; border-bottom: 8px solid #cbd5e1; border-radius: 20px; padding: 25px; margin-bottom: 25px; color: #1e293b; font-size: 1.6rem; font-weight: bold; text-shadow: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; }
+.question-box { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(226,232,240,0.95)); border: 4px solid #ffffff; border-bottom: 8px solid #cbd5e1; border-radius: 20px; padding: 25px; margin-bottom: 25px; color: #1e293b; font-size: 1.6rem; font-weight: bold; text-shadow: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; height: 130px; min-height: 130px; display: flex; align-items: center; justify-content: center; overflow-y: auto; flex-shrink: 0; }
 
 /* Check Button */
 .btn-check { background: linear-gradient(180deg, #4ade80, #16a34a); border: 4px solid #86efac; border-bottom: 8px solid #14532d; color: white; padding: 15px 40px; border-radius: 20px; font-size: 1.6rem; font-weight: 900; text-transform: uppercase; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
@@ -673,7 +673,7 @@ input[type="text"], input[type="password"], select, textarea {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    width: 45%;
+    width: 30%;
 }
 .matching-item {
     background: rgba(255, 255, 255, 0.1);

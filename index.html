@@ -308,8 +308,14 @@
 
               <!-- Skill Bar Container -->
               <div id="skill-bar-container"
-                style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;">
+                style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;">
               </div>
+
+              <button id="submit-ans-btn" class="btn-action btn-check" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;">
+                <span id="submit-ans-text">Kiểm Tra</span>
+              </button>
+              
+              <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
             </div>
 
             <div class="play-center">
@@ -323,13 +329,6 @@
 
               <div id="game-question-container" class="question-box"></div>
               <div id="game-options-container" class="options-grid"></div>
-            </div>
-
-            <div class="play-right">
-              <button id="submit-ans-btn" class="btn-action btn-check" onclick="app.game.submitAnswer()" disabled>
-                <span id="submit-ans-text">Kiểm Tra</span>
-              </button>
-              <div id="explanation-box" class="explanation-box" style="display:none;"></div>
             </div>
           </div>
         </div>
