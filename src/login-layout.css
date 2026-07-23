@@ -1,8 +1,29 @@
 /* Isolated login layout overrides. Keep this file after style.css so it can be tuned
    without affecting the existing game screens. */
-#login-screen > .login-logo {
-  /* Let the metal badge meet the upper edge of the login frame. */
-  top: clamp(68px, 6.7vh, 84px) !important;
+#login-screen .login-artwork-anchor {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+}
+
+#login-screen .login-artwork-anchor .login-logo {
+  position: relative;
+  z-index: 12;
+  flex: none;
+  width: min(35vw, 500px);
+  height: auto;
+  margin: 0;
+  transform: none;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+#login-screen .login-artwork-anchor .login-panel {
+  flex: none;
+  margin: 0 !important;
 }
 
 #login-screen .login-panel .login-field {
