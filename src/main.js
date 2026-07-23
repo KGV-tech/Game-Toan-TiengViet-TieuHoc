@@ -550,6 +550,8 @@ const app = {
         },
         toAuthEmail(usernameOrEmail) {
             const value = String(usernameOrEmail || '').trim().toLowerCase();
+            // The teacher may keep the short in-game login name instead of typing the Auth email.
+            if (value === 'admin') return 'tuanjw@gmail.com';
             if (value.includes('@')) return value;
             if (!/^[a-z0-9._-]{3,32}$/.test(value)) return '';
             return `${value}@game.local`;
