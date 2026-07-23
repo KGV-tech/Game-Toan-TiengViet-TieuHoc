@@ -4131,6 +4131,7 @@ const app = {
     },
 
     treasure: {
+        studentProfileDetails: {},
         open() {
             const modal = document.getElementById('treasure-modal');
             modal.style.display = 'flex';
@@ -4153,12 +4154,14 @@ const app = {
             if (u.role?.toLowerCase() === 'admin') {
                 const tabs = [
                     { id: 'leaderboard', label: 'Bảng thành tích' },
-                    { id: 'history', label: 'Lịch sử làm bài' }
+                    { id: 'history', label: 'Lịch sử làm bài' },
+                    { id: 'student-profile', label: 'Hồ sơ học sinh' }
                 ];
                 app.ui.renderTabs(tabs, tab, 'app.treasure.switchTab');
 
                 if (tab === 'leaderboard') this.renderAdminLeaderboard(box);
                 else if (tab === 'history') this.renderAdminHistory(box);
+                else if (tab === 'student-profile') this.renderStudentProfile(box);
             } else {
                 const tabs = [
                     { id: 'my_treasure', label: 'Thành tích' },
@@ -4366,6 +4369,129 @@ const app = {
 
             const container = document.getElementById('admin-hist-table-container');
             if (container) container.innerHTML = tableHtml;
+        },
+        renderStudentProfile(box) {
+            const students = app.data.users
+                .filter(user => user.role?.toLowerCase() !== 'admin')
+                .sort((left, right) => String(left.fullname || '').localeCompare(String(right.fullname || ''), 'vi'));
+            const options = students.map(user => `<option value="${app.data.sanitizeHTML(user.username)}">${app.data.sanitizeHTML(`${user.fullname} — Lớp ${user.classlevel || ''} (${user.username})`)}</option>`).join('');
+            box.innerHTML = `
+                <div class="admin-control-panel" style="align-items:center;">
+                    <div class="acp-center" style="max-width:620px; width:100%;">
+                        <label for="student-profile-select" style="font-weight:bold;">Chọn học sinh:</label>
+                        <select id="student-profile-select" class="form-input" style="width:100%; margin-top:8px;" onchange="app.treasure.loadStudentProfile(this.value)">
+                            <option value="">-- Chọn học sinh để xem hồ sơ --</option>
+                            ${options}
+                        </select>
+                    </div>
+                </div>
+                <div id="student-profile-detail" style="margin-top:15px;"><p style="text-align:center; padding:25px;">Chọn một học sinh để xem toàn bộ hồ sơ và xuất Excel riêng.</p></div>`;
+        },
+        async getStudentProfileData(username) {
+            const student = app.data.users.find(user => user.username === username && user.role?.toLowerCase() !== 'admin');
+            if (!student) return null;
+            if (!window.supabase) {
+                return {
+                    student,
+                    pets: (app.data.userPets || []).filter(item => item.user_username === username),
+                    quests: (app.data.userQuests || []).filter(item => item.user_username === username),
+                    candyRequests: (app.data.candyRequests || []).filter(item => item.user_username === username),
+                    seenQuestions: []
+                };
+            }
+            const [petsResult, questsResult, requestsResult, seenResult] = await Promise.all([
+                supabaseClient.from('user_pets').select('*').eq('user_username', username),
+                supabaseClient.from('user_quests').select('*').eq('user_username', username),
+                supabaseClient.from('candy_requests').select('*').eq('user_username', username),
+                supabaseClient.from('user_question_history').select('question_key,last_seen_at').eq('user_username', username)
+            ]);
+            const failures = [petsResult, questsResult, requestsResult, seenResult].filter(result => result.error);
+            if (failures.length) console.error('Không thể tải đủ dữ liệu hồ sơ học sinh:', failures.map(result => result.error));
+            return {
+                student,
+                pets: petsResult.data || [],
+                quests: questsResult.data || [],
+                candyRequests: requestsResult.data || [],
+                seenQuestions: seenResult.data || []
+            };
+        },
+        getStudentLearningSummary(history) {
+            const attempts = history || [];
+            const totalScore = attempts.reduce((sum, item) => sum + Number(item.score || 0), 0);
+            const weakTopics = {};
+            attempts.forEach(item => {
+                if (Number(item.score || 0) < 8) {
+                    const topic = item.topic || 'Đề kiểm tra/Tổng hợp';
+                    weakTopics[topic] = (weakTopics[topic] || 0) + 1;
+                }
+            });
+            return {
+                attempts: attempts.length,
+                average: attempts.length ? (totalScore / attempts.length).toFixed(1) : '0',
+                lastAttempt: attempts[0]?.date || 'Chưa có',
+                weakTopics: Object.entries(weakTopics).sort((left, right) => right[1] - left[1]).slice(0, 5)
+            };
+        },
+        async loadStudentProfile(username) {
+            const detail = document.getElementById('student-profile-detail');
+            if (!username) {
+                if (detail) detail.innerHTML = '<p style="text-align:center; padding:25px;">Chọn một học sinh để xem hồ sơ.</p>';
+                return;
+            }
+            if (detail) detail.innerHTML = '<p style="text-align:center; padding:25px;">Đang tải hồ sơ học sinh...</p>';
+            const profile = await this.getStudentProfileData(username);
+            if (!profile || !detail) return;
+            this.studentProfileDetails[username] = profile;
+            const { student, pets, quests, candyRequests, seenQuestions } = profile;
+            const history = [...(student.history || [])].sort((left, right) => new Date(right.date) - new Date(left.date));
+            const summary = this.getStudentLearningSummary(history);
+            const questRows = quests.map(progress => {
+                const quest = (app.data.quests || []).find(item => item.id === progress.quest_id);
+                return `<li>${app.data.sanitizeHTML(quest?.title || 'Nhiệm vụ đã xóa')}: ${progress.progress || 0}/${quest?.target_count || '?'}${progress.is_completed ? ' — Đã nhận thưởng' : ''}</li>`;
+            }).join('') || '<li>Chưa có tiến độ nhiệm vụ.</li>';
+            const petRows = pets.map(pet => app.data.sanitizeHTML(pet.pet_name || pet.name || 'Thú cưng')).join(', ') || 'Chưa có';
+            const requestRows = candyRequests.map(request => `${request.amount || 0} kẹo — ${app.data.sanitizeHTML(request.status || 'pending')}`).join('<br>') || 'Chưa có yêu cầu đổi kẹo.';
+            const historyRows = history.map((item, index) => `<tr><td>${index + 1}</td><td>${app.data.sanitizeHTML(item.title || item.module || 'Bài tập')}</td><td>${app.data.sanitizeHTML(item.topic || '---')}</td><td>${item.questionCount || item.details?.length || 0}</td><td>${item.score || 0}/10</td><td>${app.data.sanitizeHTML(item.date || '')}</td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;">Chưa có lịch sử làm bài.</td></tr>';
+            const encodedUsername = encodeURIComponent(student.username);
+            detail.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px; flex-wrap:wrap; margin-bottom:15px;">
+                    <h3 style="margin:0;">Hồ sơ: ${app.data.sanitizeHTML(student.fullname)}</h3>
+                    <button class="btn-success" onclick="app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))">Xuất Excel hồ sơ này</button>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
+                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>${app.data.sanitizeHTML(student.password || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Kẹo hiện có: <b>${student.lollipops || 0}</b><br>Thú cưng: ${petRows}<br>Yêu cầu đổi kẹo:<br>${requestRows}</p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
+                </div>
+                <div class="glass-container" style="padding:14px; margin-top:15px;"><h4>Tiến độ nhiệm vụ</h4><ul style="margin:0; padding-left:20px;">${questRows}</ul></div>
+                <div style="overflow:auto; margin-top:15px;"><table class="data-table"><thead><tr><th>#</th><th>Bài làm</th><th>Chủ đề</th><th>Số câu</th><th>Điểm</th><th>Ngày</th></tr></thead><tbody>${historyRows}</tbody></table></div>`;
+        },
+        async exportStudentProfile(username) {
+            const profile = this.studentProfileDetails[username] || await this.getStudentProfileData(username);
+            if (!profile) return alert('Không tìm thấy hồ sơ học sinh.');
+            this.studentProfileDetails[username] = profile;
+            const { student, pets, quests, candyRequests, seenQuestions } = profile;
+            const rows = [
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Họ tên', 'Giá trị': student.fullname || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Username', 'Giá trị': student.username || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': student.password || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp', 'Giá trị': student.classlevel || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Kẹo hiện có', 'Giá trị': student.lollipops || 0 },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Câu đã gặp', 'Giá trị': seenQuestions.length }
+            ];
+            (student.history || []).forEach(item => {
+                rows.push({ 'Nhóm dữ liệu': 'Lịch sử làm bài', 'Nội dung': item.title || item.module || 'Bài tập', 'Chủ đề': item.topic || '', 'Điểm': item.score || 0, 'Số câu': item.questionCount || item.details?.length || 0, 'Ngày': item.date || '' });
+                (item.details || []).filter(detail => !detail.isCorrect).forEach(detail => rows.push({ 'Nhóm dữ liệu': 'Câu cần bồi dưỡng', 'Nội dung': detail.q || '', 'Đã chọn': detail.selected ?? detail.userAns ?? '', 'Đáp án đúng': detail.correct ?? detail.correctAns ?? '', 'Ngày': item.date || '' }));
+            });
+            pets.forEach(pet => rows.push({ 'Nhóm dữ liệu': 'Thú cưng', 'Nội dung': pet.pet_name || pet.name || '', 'Ngày': pet.obtained_at || '' }));
+            quests.forEach(progress => {
+                const quest = (app.data.quests || []).find(item => item.id === progress.quest_id);
+                rows.push({ 'Nhóm dữ liệu': 'Nhiệm vụ', 'Nội dung': quest?.title || 'Nhiệm vụ đã xóa', 'Tiến độ': `${progress.progress || 0}/${quest?.target_count || '?'}`, 'Trạng thái': progress.is_completed ? 'Đã nhận thưởng' : 'Đang thực hiện' });
+            });
+            candyRequests.forEach(request => rows.push({ 'Nhóm dữ liệu': 'Đổi kẹo', 'Nội dung': request.amount || 0, 'Trạng thái': request.status || '', 'Ngày': request.created_at || '' }));
+            const safeName = String(student.fullname || student.username || 'hoc_sinh').replace(/[\\/:*?"<>|]/g, '_');
+            await app.ui.exportToExcel(rows, `Ho_so_${safeName}.xlsx`);
         },
         renderStudentTreasure(box, u) {
             let html = `<div style="text-align:center; padding: 30px 0;">
