@@ -2718,6 +2718,7 @@ const app = {
 
             if (tab === 'lib') {
                 const cols = [
+                    { label: '<input type="checkbox" id="q-select-all" onclick="app.admin.toggleAllQSelect(this)">', filterable: false },
                     { label: 'Cấp lớp', filterable: true },
                     { label: 'Môn', filterable: true },
                     { label: 'Học kỳ', filterable: true },
@@ -2730,6 +2731,7 @@ const app = {
                 ];
                 let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
                     return `<tr>
+              <td><input type="checkbox" class="q-select-cb" value="${i}"></td>
               <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation || ''}</td>
@@ -2740,7 +2742,7 @@ const app = {
               </td>
             </tr>`;
                 });
-                subBox.innerHTML = html;
+                subBox.innerHTML = '<div style="margin-bottom: 10px; text-align: left;"><button class="btn-danger" onclick="app.admin.bulkDeleteQuestions()" style="padding: 5px 15px; font-size: 0.9rem;">Xóa các câu đã chọn</button></div>' + html;
                 const ind = document.getElementById('q-count-indicator');
                 if (ind) ind.textContent = `Tổng: ${app.data.libraryQuestions.length} câu`;
             }
@@ -3794,6 +3796,48 @@ const app = {
         editQuestion(idx) {
             this.renderQSubTab('add', idx);
         },
+        
+        toggleAllQSelect(masterCb) {
+            const table = masterCb.closest('table');
+            const tbody = table.querySelector('tbody');
+            const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
+            visibleRows.forEach(r => {
+                const cb = r.querySelector('.q-select-cb');
+                if (cb) cb.checked = masterCb.checked;
+            });
+        },
+        async bulkDeleteQuestions() {
+            const checkboxes = document.querySelectorAll('.q-select-cb:checked');
+            if (checkboxes.length === 0) return alert('Vui lòng chọn ít nhất 1 câu hỏi để xóa!');
+            if (!confirm(`Bạn có chắc chắn muốn xóa ${checkboxes.length} câu hỏi đã chọn?`)) return;
+
+            // Get indices sorted descending to safely splice
+            const indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+            
+            // For Supabase
+            let deletedCount = 0;
+            if (window.supabase) {
+                const idsToDelete = [];
+                for (let idx of indices) {
+                    const q = app.data.libraryQuestions[idx];
+                    if (q.id) idsToDelete.push(q.id);
+                }
+                if (idsToDelete.length > 0) {
+                    const { error } = await supabaseClient.from('game_questions').delete().in('id', idsToDelete);
+                    if (error) console.error('Bulk delete error:', error);
+                }
+            }
+
+            for (let idx of indices) {
+                app.data.libraryQuestions.splice(idx, 1);
+                deletedCount++;
+            }
+
+            await app.data.saveLibrary();
+            alert(`Đã xóa thành công ${deletedCount} câu hỏi!`);
+            this.renderQSubTab('lib');
+        },
+
         async deleteQuestion(idx) {
             if (confirm('Xác nhận xóa câu hỏi này?')) {
                 const q = app.data.libraryQuestions[idx];
