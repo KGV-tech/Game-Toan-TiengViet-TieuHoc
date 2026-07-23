@@ -6,7 +6,7 @@ Improve the pupil-facing game in three ordered phases: make the play loop cleare
 
 ## Findings from the current UI audit
 
-- The app is hidden on every portrait display, including iPad portrait; this causes an unnecessarily rigid experience.
+- The app is intentionally hidden on portrait displays. This landscape-only rule is a confirmed product requirement and must be retained.
 - The learning map uses fixed absolute positions and several treasure/shop views use fixed-height, horizontal layouts that overflow or feel cramped on tablets.
 - Several core flows rely on large inline layouts, so a focused responsive layer is safer than broad visual rewrites.
 - Existing correct/wrong feedback, pet effects, rewards, and map exploration are useful gameplay foundations and should be retained.
@@ -15,7 +15,7 @@ Improve the pupil-facing game in three ordered phases: make the play loop cleare
 
 - Keep the existing art, stations, pets, and learning rules; improve hierarchy, touch targets, and feedback around them.
 - Use CSS layout classes and responsive media queries for shared tablet behavior rather than creating separate iPad pages.
-- Treat 768px and 1024px as key tablet breakpoints; support both portrait and landscape instead of blocking portrait outright.
+- Treat 768px and 1024px as key tablet-landscape breakpoints; portrait remains blocked with a clear rotation instruction.
 - Land each UI slice separately and verify it before moving to technical hardening.
 
 ## Task list
@@ -23,12 +23,12 @@ Improve the pupil-facing game in three ordered phases: make the play loop cleare
 ### Phase 1: Responsive foundation and map usability
 
 - [x] Task 1: Preserve the landscape-only lock while adding responsive tablet layouts for login, map, navigation, and modal surfaces.
-- [ ] Task 2: Give map stations stable touch targets, readable labels, and safe placement at iPad dimensions.
+- [x] Task 2: Give map stations stable touch targets, readable labels, and safe placement at iPad dimensions.
 - [ ] Task 3: Make treasure, shop, and pet layouts stack cleanly on portrait tablets and narrow screens.
 
 ### Checkpoint: Tablet foundation
 
-- [ ] Login, map, treasure, and shop fit at 768×1024 and 1024×768 without hidden controls or horizontal overflow.
+- [ ] Login, map, treasure, and shop fit at supported landscape tablet sizes without hidden controls or horizontal overflow.
 - [ ] Existing desktop layout remains usable.
 
 ### Phase 2: Gameplay polish

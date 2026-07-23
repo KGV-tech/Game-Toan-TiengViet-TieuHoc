@@ -1,7 +1,7 @@
 # UI and gameplay work queue
 
 - [x] Responsive foundation: retain portrait lockout and add iPad-landscape-safe base layouts.
-- [ ] Learning map: improve station labels, touch targets, and tablet positioning.
+- [x] Learning map: improve station labels, touch targets, and tablet positioning.
 - [ ] Treasure/shop/pets: make tablet layouts responsive.
 - [ ] Practice flow: clarify goals, difficulty, and time rules.
 - [ ] Results and rewards: improve feedback and next-action guidance.

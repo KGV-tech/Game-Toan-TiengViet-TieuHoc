@@ -34,24 +34,27 @@
   <div id="app">
 
     <!-- Màn hình Đăng nhập -->
-    <div id="login-screen" class="screen active">
-      <img src="./public/login_bg.png" alt="Background" class="bg-img">
+    <div id="login-screen" class="screen active auth-screen">
+      <img src="./public/login_scifi_adventure.png" alt="Khu rừng và kim tự tháp tương lai" class="bg-img">
       <div class="glass-container" style="margin-top: 20vh;">
+        <p class="auth-kicker">HÀNH TRÌNH: KẾT NỐI TRI THỨC</p>
         <h2>Đăng nhập để bắt đầu</h2>
         <input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass">
         <input type="password" id="password" placeholder="Mật khẩu" class="input-glass">
         <button id="login-btn" class="btn-primary">Bắt Đầu</button>
         <a href="#" id="link-to-register" class="link-glass">Đăng ký tài khoản mới</a>
       </div>
+      <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
       <div
         style="position: absolute; bottom: 10px; right: 10px; color: white; font-weight: bold; font-size: 1rem; text-shadow: 1px 1px 2px #000; z-index: 100;">
         Ver. 1.00</div>
     </div>
 
     <!-- Màn hình Đăng ký -->
-    <div id="register-screen" class="screen">
-      <img src="./public/login_bg.png" alt="Background" class="bg-img">
+    <div id="register-screen" class="screen auth-screen">
+      <img src="./public/login_scifi_adventure.png" alt="Khu rừng và kim tự tháp tương lai" class="bg-img">
       <div class="glass-container">
+        <p class="auth-kicker">HÀNH TRÌNH: KẾT NỐI TRI THỨC</p>
         <h2>Đăng Ký Tài Khoản</h2>
         <input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass">
         <input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass">
@@ -67,6 +70,7 @@
         <button id="register-btn" class="btn-success">Đăng Ký</button>
         <a href="#" id="link-to-login" class="link-glass">⬅ Quay lại đăng nhập</a>
       </div>
+      <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
     </div>
 
     <!-- Bản đồ -->
@@ -85,7 +89,7 @@
       </div>
 
       <div class="map-container">
-        <img src="./public/map.png" alt="Map" class="map-bg">
+        <img src="./public/map_scifi_adventure.png" alt="Bản đồ hành trình kết nối tri thức" class="map-bg">
 
         <!-- Nút Hướng dẫn (Gắn liền với Map, co giãn theo tỷ lệ Map) -->
         <div class="station" style="top: 20%; left: 3%; z-index: 50;">
@@ -104,45 +108,53 @@
         <!-- Tiếng Việt: Rừng xanh bí ẩn (góc trái dưới) -->
         <div class="station" data-subject="vietnamese" style="top: 70%; left: 14%;">
           <img src="./public/icon_tiengviet.png" alt="Tiếng Việt" class="station-img">
+          <span class="station-label">Tiếng Việt</span>
         </div>
 
         <!-- Toán học: Kim tự tháp -->
         <div class="station" data-subject="math" style="top: 47%; left: 35%;">
           <img src="./public/icon_toan.png" alt="Toán Học" class="station-img">
+          <span class="station-label">Toán</span>
         </div>
 
         <!-- Đề Kiểm tra -->
         <div class="station" data-subject="exam" style="top: 41%; left: 64%;">
           <img src="./public/dethi_icon.png" alt="Đề Kiểm tra" class="station-img">
+          <span class="station-label">Đề kiểm tra</span>
         </div>
 
         <!-- Cài Đặt (Admin) -->
         <div id="admin-station" class="station" style="top: 22%; left: 51%; display:none;">
           <img src="./public/icon_caidat.png" alt="Cài Đặt" class="station-img">
+          <span class="station-label">Cài đặt</span>
         </div>
 
         <!-- Nhiệm vụ (Học sinh) - Cùng tọa độ với Cài đặt -->
         <div id="quest-station" class="station" style="top: 22%; left: 51%; display:none;">
           <img src="./public/icon_nhiemvu.png" alt="Nhiệm vụ" class="station-img">
+          <span class="station-label">Nhiệm vụ</span>
         </div>
 
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
         <div id="treasure-station" class="station" style="top: 75%; left: 80%;">
           <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img">
+          <span class="station-label">Kho báu</span>
         </div>
 
         <!-- Cửa hàng Shop & Gacha -->
         <div id="shop-station" class="station" style="top: 75%; left: 70%;">
           <img src="./public/icon_shop.png" alt="Cửa hàng" class="station-img">
+          <span class="station-label">Cửa hàng</span>
         </div>
 
-        <div class="map-title-container">
-          <img src="./public/title.png" alt="Vùng Đất Bí Ẩn" class="map-title">
+        <div class="map-title-container" aria-label="Hành trình: Kết Nối Tri Thức">
+          <span class="map-title-rope"></span>
+          <div class="map-title">Hành trình:<strong>Kết Nối Tri Thức</strong></div>
         </div>
 
         <div id="map-cat-wrapper"
           style="position:absolute; top: 75%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
-          <img id="map-cat" src="./public/cat.png" alt="Mèo máy" class="floating-cat"
+          <img id="map-cat" src="./public/robot_cat_normal_transparent.png" alt="Robot mèo" class="floating-cat"
             style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
       </div>
@@ -223,7 +235,7 @@
           <div class="config-layout">
             <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
               <div class="config-left" style="flex: 1; display: flex; justify-content: center; align-items: center;">
-                <img src="./public/cat_normal.png" alt="Mèo máy" class="cat-avatar heartbeat" style="width: 150px;">
+                <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo" class="cat-avatar heartbeat" style="width: 150px;">
               </div>
 
               <div class="config-center" style="flex: 3; display: flex; flex-direction: column; gap: 8px;">
@@ -303,7 +315,7 @@
               <div class="cat-wrapper"
                 style="position: relative; display: flex; justify-content: center; align-items: center; margin-top: 60px;">
                 <div id="cat-speech-bubble" class="speech-bubble" style="display:none;"></div>
-                <img id="play-cat-img" src="./public/cat_normal.png" alt="Mèo máy" class="cat-avatar-large">
+                <img id="play-cat-img" src="./public/robot_cat_normal_transparent.png" alt="Robot mèo" class="cat-avatar-large">
               </div>
 
               <!-- Skill Bar Container -->

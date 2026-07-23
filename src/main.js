@@ -117,6 +117,11 @@ const app = {
         const modal = document.getElementById('guide-modal');
         if (modal) modal.style.display = 'none';
     },
+    getEquippedPet(user) {
+        const savedPet = user ? app.safeStorage.getItem('equipped_pet_' + user.username) : null;
+        // Keep existing pupils' default selection working while moving the mascot to its new art set.
+        return (!savedPet || savedPet === 'cat_normal.png') ? 'robot_cat_normal_transparent.png' : savedPet;
+    },
 
     data: {
         sanitizeHTML(str) {
@@ -1261,7 +1266,7 @@ const app = {
             document.getElementById('explanation-box').style.display = 'none';
 
             const user = app.data.currentUser;
-            let equipped = user ? (localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png') : 'cat_normal.png';
+            let equipped = app.getEquippedPet(user);
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
             let qHtml = q.q;
@@ -2114,25 +2119,27 @@ const app = {
                 this.state.score += 10 / this.state.questions.length;
 
                 const user = app.data.currentUser;
-                let basePet = 'cat';
+                let basePet = 'robot_cat';
                 if (user) {
-                    let equipped = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+                    let equipped = app.getEquippedPet(user);
                     basePet = equipped.split('.')[0];
-                    if (basePet === 'cat_normal') basePet = 'cat';
+                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent') basePet = 'robot_cat';
                 }
-                document.getElementById('play-cat-img').src = `./public/${basePet}_happy.png`;
+                const happyImage = basePet === 'robot_cat' ? 'robot_cat_happy_transparent.png' : `${basePet}_happy.png`;
+                document.getElementById('play-cat-img').src = `./public/${happyImage}`;
                 bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
             } else {
                 app.playSound('wrong');
 
                 const user = app.data.currentUser;
-                let basePet = 'cat';
+                let basePet = 'robot_cat';
                 if (user) {
-                    let equipped = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+                    let equipped = app.getEquippedPet(user);
                     basePet = equipped.split('.')[0];
-                    if (basePet === 'cat_normal') basePet = 'cat';
+                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent') basePet = 'robot_cat';
                 }
-                document.getElementById('play-cat-img').src = `./public/${basePet}_sad.png`;
+                const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad_transparent.png' : `${basePet}_sad.png`;
+                document.getElementById('play-cat-img').src = `./public/${sadImage}`;
                 bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
             }
 
@@ -2150,7 +2157,7 @@ const app = {
                 this.state.score += 10 / this.state.questions.length;
                 this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect: false, shieldUsed: true, type: qType });
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
-                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.png', '_happy.png').replace('_normal.png', '_happy.png')}`;
+                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad_transparent.png', '_happy_transparent.png').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.png', '_happy.png')}`;
             } else {
                 this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect, type: qType });
             }
@@ -5309,7 +5316,7 @@ const app = {
         renderMyPets(box, user) {
             let isAdmin = (user.role === 'admin');
             let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
-            let equippedPet = localStorage.getItem('equipped_pet_' + user.username) || 'cat_normal.png';
+            let equippedPet = app.getEquippedPet(user);
 
             let html = `
         <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
