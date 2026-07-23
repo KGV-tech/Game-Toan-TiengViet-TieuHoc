@@ -1128,7 +1128,16 @@ const app = {
             document.getElementById('submit-ans-text').textContent = 'Kiểm Tra';
             btnCheck.onclick = () => this.submitAnswer();
 
-            let qType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
+            let rawType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
+            let qType = 'Điền khuyết';
+            if (rawType.includes('Trắc nghiệm')) qType = 'Trắc nghiệm';
+            else if (rawType.includes('Đúng/Sai')) qType = 'Đúng/Sai';
+            else if (rawType.includes('So sánh')) qType = 'So sánh';
+            else if (rawType.includes('Chuỗi')) qType = 'Chuỗi quy luật';
+            else if (rawType.includes('Kéo thả')) qType = 'Kéo thả';
+            else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
+            else qType = 'Điền khuyết';
+
             let opts = q.options || [];
 
             if (opts.length === 0) {
@@ -1636,7 +1645,16 @@ const app = {
             if (this.hardTimer) clearInterval(this.hardTimer);
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
-            let qType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
+            let rawType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
+            let qType = 'Điền khuyết';
+            if (rawType.includes('Trắc nghiệm')) qType = 'Trắc nghiệm';
+            else if (rawType.includes('Đúng/Sai')) qType = 'Đúng/Sai';
+            else if (rawType.includes('So sánh')) qType = 'So sánh';
+            else if (rawType.includes('Chuỗi')) qType = 'Chuỗi quy luật';
+            else if (rawType.includes('Kéo thả')) qType = 'Kéo thả';
+            else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
+            else qType = 'Điền khuyết';
+
             let opts = q.options || [];
 
             if (opts.length === 0) {
