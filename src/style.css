@@ -660,10 +660,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .result-right { padding-left: 0; }
 }
 
-/* Tablet orientation notice is kept for compatibility but is no longer shown.
-   Portrait iPads use the responsive rules below instead of losing access to the game. */
+/* Landscape-only game: portrait devices show a clear rotation instruction. */
 #portrait-overlay {
-  display: none !important;
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -691,30 +690,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   color: #94a3b8;
 }
 
-@media (max-width: 1024px) and (orientation: portrait) {
-  #login-screen .glass-container { margin-top: 0 !important; }
-  .map-bg { object-position: center; }
-  .top-nav > div { gap: 6px !important; }
-  #map-cat-wrapper { width: 96px !important; margin-left: -48px !important; margin-top: -48px !important; }
-  .station-img { width: clamp(64px, 16vw, 108px); }
-  .station[style*="left: 80%"] { left: 76% !important; }
-  .station[style*="left: 70%"] { left: 63% !important; }
-  .station[style*="left: 64%"] { left: 61% !important; }
-  .station[style*="left: 51%"] { left: 49% !important; }
-  .station[style*="left: 35%"] { left: 31% !important; }
-  .station[style*="left: 14%"] { left: 10% !important; }
-  .station[style*="left: 3%"] { left: 2% !important; }
-}
-
-@media (max-width: 600px) and (orientation: portrait) {
-  .top-nav { padding: 0 10px; }
-  .top-nav .btn-danger { padding: 5px 10px !important; }
-  .player-info-card { font-size: 0.78rem; max-width: 180px; }
-  .map-title-container { bottom: 8px; }
-  .map-title { height: 54px; }
-  .station-img { width: clamp(52px, 17vw, 82px); }
-  #btn-guide { padding: 7px 9px !important; font-size: 0.78rem !important; }
-  #map-cat-wrapper { width: 72px !important; margin-left: -36px !important; margin-top: -36px !important; }
+@media screen and (orientation: portrait) {
+  #app { display: none !important; }
+  #portrait-overlay { display: flex !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
