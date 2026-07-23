@@ -282,20 +282,11 @@ const app = {
                 this.candyRequests = [];
                 this.userPets = [];
 
-                // 3. Fetch Exams
-                this.exams = await this.fetchAllFromSupabase('game_exams');
-
-                // 4. Fetch Settings
-                const settingsData = await this.fetchAllFromSupabase('game_settings');
-                if (settingsData && settingsData.length > 0) {
-                    this.settings = settingsData[0].data || settingsData[0];
-                } else {
-                    // Check localStorage fallback
-                    const localSettings = app.safeStorage.getItem('game_settings');
-                    if (localSettings) this.settings = JSON.parse(localSettings);
-                }
-
-                await this.refreshPetInventory();
+                // Protected game data is loaded after successful login. Loading it here
+                // would delay the login screen and make unauthenticated RLS requests.
+                this.exams = [];
+                const localSettings = app.safeStorage.getItem('game_settings');
+                if (localSettings) this.settings = JSON.parse(localSettings);
 
                 // Realtime subscription
                 supabaseClient.channel('custom-all-channel')
@@ -561,6 +552,11 @@ const app = {
             const p = document.getElementById('password').value.trim();
             const email = this.toAuthEmail(u);
             if (!email || !p) return alert('Vui lòng nhập tên đăng nhập/email và mật khẩu.');
+            if (this.loginPending) return;
+
+            this.loginPending = true;
+            app.ui.setButtonLoading('login-btn', true, 'Vui lòng chờ…');
+            try {
 
             const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
             if (authError || !authData?.user) return alert('Sai tên đăng nhập hoặc mật khẩu!');
@@ -580,28 +576,44 @@ const app = {
                 app.data.currentUser = user;
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
-                app.data.exams = await app.data.fetchAllFromSupabase('game_exams');
-                const settingsData = await app.data.fetchAllFromSupabase('game_settings');
+                const [exams, settingsData] = await Promise.all([
+                    app.data.fetchAllFromSupabase('game_exams'),
+                    app.data.fetchAllFromSupabase('game_settings'),
+                    app.data.refreshPetInventory()
+                ]);
+                app.data.exams = exams;
                 if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
-                await app.data.refreshPetInventory();
 
                 // Lazy load based on role
                 if (user.role?.toLowerCase() === 'admin') {
-                    app.data.users = await app.data.fetchAllFromSupabase('game_users');
+                    const [users, questions, quests, candyRequests] = await Promise.all([
+                        app.data.fetchAllFromSupabase('game_users'),
+                        app.data.fetchAllFromSupabase('game_questions'),
+                        app.data.fetchAllFromSupabase('game_quests'),
+                        app.data.fetchAllFromSupabase('candy_requests')
+                    ]);
+                    app.data.users = users;
                     app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
-                    app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions');
-                    app.data.quests = await app.data.fetchAllFromSupabase('game_quests');
-                    app.data.candyRequests = await app.data.fetchAllFromSupabase('candy_requests');
+                    app.data.libraryQuestions = questions;
+                    app.data.quests = quests;
+                    app.data.candyRequests = candyRequests;
                     document.getElementById('admin-station').style.display = 'flex';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
                     const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
-                    app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
-                    await app.data.loadSeenQuestions(user.username);
-                    app.data.quests = await app.data.fetchAllFromSupabase('game_quests');
-                    app.data.userQuests = await app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username);
-                    app.data.candyRequests = await app.data.fetchAllFromSupabase('candy_requests', 'user_username', user.username);
-                    app.data.userPets = await app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username);
+                    const [questions, , quests, userQuests, candyRequests, userPets] = await Promise.all([
+                        app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
+                        app.data.loadSeenQuestions(user.username),
+                        app.data.fetchAllFromSupabase('game_quests'),
+                        app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username),
+                        app.data.fetchAllFromSupabase('candy_requests', 'user_username', user.username),
+                        app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
+                    ]);
+                    app.data.libraryQuestions = questions;
+                    app.data.quests = quests;
+                    app.data.userQuests = userQuests;
+                    app.data.candyRequests = candyRequests;
+                    app.data.userPets = userPets;
                     document.getElementById('admin-station').style.display = 'none';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
                 }
@@ -624,6 +636,10 @@ const app = {
             } else {
                 alert('Sai tên đăng nhập hoặc mật khẩu!');
             }
+            } finally {
+                this.loginPending = false;
+                app.ui.setButtonLoading('login-btn', false);
+            }
         },
         async register() {
             const fn = document.getElementById('reg-fullname').value.trim();
@@ -638,6 +654,10 @@ const app = {
 
             const email = this.toAuthEmail(un);
             if (!email) return alert('Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang (3–32 ký tự).');
+            if (this.registerPending) return;
+            this.registerPending = true;
+            app.ui.setButtonLoading('register-btn', true, 'Vui lòng chờ…');
+            try {
             const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                 email, password: pw, options: { data: { username: un } }
             });
@@ -674,6 +694,10 @@ const app = {
             await supabaseClient.auth.signOut();
             alert('Đăng ký thành công! Hãy chờ Giáo viên phê duyệt.');
             app.router.open('login-screen');
+            } finally {
+                this.registerPending = false;
+                app.ui.setButtonLoading('register-btn', false);
+            }
         },
         async logout() {
             await supabaseClient.auth.signOut();
@@ -2483,6 +2507,23 @@ const app = {
     },
 
     ui: {
+        setButtonLoading(buttonId, isLoading, loadingLabel = 'Vui lòng chờ…') {
+            const button = document.getElementById(buttonId);
+            if (!button) return;
+            if (isLoading) {
+                if (!button.dataset.originalLabel) button.dataset.originalLabel = button.innerHTML;
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.textContent = loadingLabel;
+                return;
+            }
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            if (button.dataset.originalLabel) {
+                button.innerHTML = button.dataset.originalLabel;
+                delete button.dataset.originalLabel;
+            }
+        },
         renderTabs(tabData, currentTabId, onClickFnString) {
             let html = '';
             tabData.forEach(t => {

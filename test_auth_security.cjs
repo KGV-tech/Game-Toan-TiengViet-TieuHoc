@@ -17,5 +17,8 @@ assert.match(adminFunction, /legacy_profile_linked/, 'Resetting a legacy student
 assert.match(source, /student_not_found/, 'The teacher UI must explain why a password reset cannot be completed.');
 assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an Auth account already exists.');
 assert.match(source, /!app\.data\.users\.find\(x => x\.id === data\.profile\.id\)/, 'Creating a student must not duplicate the realtime profile in the teacher list.');
+assert.match(source, /setButtonLoading\(buttonId, isLoading, loadingLabel/, 'Slow actions must show a clear loading state and prevent repeated clicks.');
+assert.match(source, /setButtonLoading\('login-btn', true, 'Vui lòng chờ…'\)/, 'Login must visibly acknowledge loading before fetching protected data.');
+assert.match(source, /Promise\.all\(\[/, 'Independent post-login data loads must run in parallel.');
 
 console.log('Supabase Auth and RLS security contract verified.');
