@@ -3047,7 +3047,7 @@ const app = {
                 "Chủ đề": q.topic,
                 "Loại câu hỏi": q.type,
                 "Câu hỏi": q.q,
-                "Lựa chọn": (q.options || []).join(', '),
+                "Lựa chọn": q.type === 'Đối chiếu trùng khớp' ? (q.options || []).join(' | ') : (q.options || []).join(', '),
                 "Đáp án đúng": q.ans,
                 "Lời giải chi tiết": q.explanation || ''
             }));
@@ -3186,7 +3186,11 @@ const app = {
                                 topic: row["Chủ đề"] || 'Khác',
                                 q: row["Câu hỏi"],
                                 ans: String(ansStr),
-                                options: row["Lựa chọn"] ? String(row["Lựa chọn"]).split(/[,;\|]/).map(s => s.trim()).filter(Boolean) : [],
+                                options: row["Lựa chọn"] ? (
+        (row["Loại câu hỏi"] || row["Loại"]) === 'Đối chiếu trùng khớp'
+            ? String(row["Lựa chọn"]).split('|').map(s => s.trim()).filter(Boolean)
+            : String(row["Lựa chọn"]).split(/[,;\|]/).map(s => s.trim()).filter(Boolean)
+    ) : [],
                                 explanation: row["Lời giải chi tiết"] || ''
                             });
                             totalCount++;
