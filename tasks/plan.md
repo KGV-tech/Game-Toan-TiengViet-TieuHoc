@@ -22,7 +22,7 @@ Improve the pupil-facing game in three ordered phases: make the play loop cleare
 
 ### Phase 1: Responsive foundation and map usability
 
-- [ ] Task 1: Replace portrait lockout with responsive tablet layouts for login, map, navigation, and modal surfaces.
+- [x] Task 1: Replace portrait lockout with responsive tablet layouts for login, map, navigation, and modal surfaces.
 - [ ] Task 2: Give map stations stable touch targets, readable labels, and safe placement at iPad dimensions.
 - [ ] Task 3: Make treasure, shop, and pet layouts stack cleanly on portrait tablets and narrow screens.
 
@@ -54,4 +54,3 @@ Improve the pupil-facing game in three ordered phases: make the play loop cleare
 | Fixed inline layouts conflict with responsive CSS | Medium | Override only the identified core layouts in small, testable slices. |
 | Large visual changes obscure learning controls | High | Preserve existing actions and add labels/feedback before decorative changes. |
 | iPad device differences | Medium | Verify portrait and landscape at 768×1024 and 1024×768 before release. |
-
