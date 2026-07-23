@@ -964,7 +964,15 @@ const app = {
                 const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
                 const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
                     const tNorm = String(t).toLowerCase();
-                    return tNorm.includes(qTopic) || qTopic.includes(tNorm);
+                    if (tNorm.includes(qTopic) || qTopic.includes(tNorm)) return true;
+                    const tNum = tNorm.match(/^\d+/)?.[0];
+                    const qNum = qTopic.match(/\d+/)?.[0];
+                    if (tNum && qNum && tNum === qNum) {
+                        if (qTopic.includes('chủ đề') || qTopic.includes('bài') || qTopic.includes('chu de') || qTopic.includes('bai')) {
+                            return true;
+                        }
+                    }
+                    return false;
                 }));
 
                 return matchSub && matchClass && matchTopic;
