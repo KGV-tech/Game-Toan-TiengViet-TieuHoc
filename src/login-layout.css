@@ -1,0 +1,14 @@
+/* Isolated login layout overrides. Keep this file after style.css so it can be tuned
+   without affecting the existing game screens. */
+#login-screen .login-panel .login-field {
+  width: 68% !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
+
+#login-screen .login-panel .login-action {
+  display: block !important;
+  width: 42% !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
