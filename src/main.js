@@ -14,6 +14,12 @@ const dummyQuery = {
 };
 const dummySupabase = {
     from: () => dummyQuery,
+    auth: {
+        signInWithPassword: async () => ({ data: null, error: { message: 'Offline' } }),
+        signUp: async () => ({ data: null, error: { message: 'Offline' } }),
+        signOut: async () => ({ error: null })
+    },
+    functions: { invoke: async () => ({ data: null, error: { message: 'Offline' } }) },
     channel: () => ({
         on: () => ({ subscribe: () => { } })
     })
@@ -386,9 +392,6 @@ const app = {
                 console.error("Critical DB error during init:", err);
                 // Fallback to avoid breaking UI completely
                 this.users = this.users || [];
-                if (!this.users.find(u => u.username === 'admin')) {
-                    this.users.push({ username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true });
-                }
                 this.libraryQuestions = this.libraryQuestions || [];
                 this.exams = this.exams || [];
             }
@@ -545,38 +548,26 @@ const app = {
             document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
             document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
         },
-        async hashPassword(password) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        toAuthEmail(usernameOrEmail) {
+            const value = String(usernameOrEmail || '').trim().toLowerCase();
+            if (value.includes('@')) return value;
+            if (!/^[a-z0-9._-]{3,32}$/.test(value)) return '';
+            return `${value}@game.local`;
         },
         async login() {
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
+            const email = this.toAuthEmail(u);
+            if (!email || !p) return alert('Vui lòng nhập tên đăng nhập/email và mật khẩu.');
 
-            let user = null;
-            let hashedP = await this.hashPassword(p);
+            const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
+            if (authError || !authData?.user) return alert('Sai tên đăng nhập hoặc mật khẩu!');
 
-            try {
-                // Fetch directly from DB
-                const { data: dbUser } = await supabaseClient.from('game_users')
-                    .select('*')
-                    .or(`username.eq.${u},fullname.eq.${u}`);
-
-                if (dbUser && dbUser.length > 0) {
-                    user = dbUser.find(x => x.password === p || x.password === hashedP);
-                }
-            } catch (err) {
-                console.error("Supabase failed during login:", err);
-            }
-
-            // Ensure admin exists in DB just in case
-            if (!user && u === 'admin' && p === '123') {
-                user = { username: 'admin', password: '123', role: 'admin', fullname: 'Admin', history: [], totalscore: 0, lollipops: 0, classlevel: '5', approved: true };
-                supabaseClient.from('game_users').insert([user]).then(({ error }) => {
-                    if (error) console.error("Admin insert error:", error);
-                });
+            const { data: user, error: profileError } = await supabaseClient.from('game_users')
+                .select('*').eq('auth_user_id', authData.user.id).single();
+            if (profileError || !user) {
+                await supabaseClient.auth.signOut();
+                return alert('Tài khoản chưa được Giáo viên cấp quyền sử dụng game.');
             }
 
             if (user) {
@@ -637,19 +628,20 @@ const app = {
                 return;
             }
 
-            // Check in DB to be absolutely sure
-            const { data: existingUser } = await supabaseClient.from('game_users').select('username').eq('username', un).single();
-            if (existingUser || app.data.users.find(x => x.username === un)) {
-                alert('Tên đăng nhập đã tồn tại!');
-                return;
+            const email = this.toAuthEmail(un);
+            if (!email) return alert('Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang (3–32 ký tự).');
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                email, password: pw, options: { data: { username: un } }
+            });
+            if (authError || !authData?.user) {
+                return alert('Không thể đăng ký. Tên đăng nhập có thể đã tồn tại.');
             }
-
-            const hashedPw = await this.hashPassword(pw);
 
             const newUser = {
                 fullname: fn,
                 username: un,
-                password: hashedPw,
+                password: null,
+                auth_user_id: authData.user.id,
                 classlevel: cl,
                 role: 'student',
                 approved: false,
@@ -660,6 +652,7 @@ const app = {
 
             const { data, error } = await supabaseClient.from('game_users').insert([newUser]).select();
             if (error) {
+                await supabaseClient.auth.signOut();
                 alert('Có lỗi xảy ra khi kết nối máy chủ!');
                 console.error(error);
                 return;
@@ -670,14 +663,21 @@ const app = {
             }
 
             app.data.users.push(newUser);
-            alert('Đăng ký thành công!');
+            await supabaseClient.auth.signOut();
+            alert('Đăng ký thành công! Hãy chờ Giáo viên phê duyệt.');
             app.router.open('login-screen');
         },
-        logout() {
+        async logout() {
+            await supabaseClient.auth.signOut();
             app.data.currentUser = null;
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             app.router.open('login-screen');
+        },
+        async manageStudentAccount(payload) {
+            const { data, error } = await supabaseClient.functions.invoke('admin-users', { body: payload });
+            if (error || data?.error) throw new Error(data?.error || 'admin_function_failed');
+            return data;
         },
         updateHeader() {
             if (!app.data.currentUser) return;
@@ -3952,7 +3952,7 @@ const app = {
                 }
                 return `<tr>
           <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
-          <td>${app.data.sanitizeHTML(u.username)}</td><td>${app.data.sanitizeHTML(u.password || '')}</td>
+          <td>${app.data.sanitizeHTML(u.username)}</td><td>Không hiển thị (có thể đặt lại)</td>
           <td>${actionBtns}</td>
         </tr>`;
             }, isPending ? "Không có học sinh nào chờ duyệt" : "Chưa có học sinh nào");
@@ -3990,8 +3990,8 @@ const app = {
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Mật khẩu</label>
-                <input type="text" id="add-password" placeholder="Mật khẩu" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.password) : ''}">
+                <label style="width:130px; font-weight:bold; flex-shrink:0;">${u ? 'Mật khẩu mới' : 'Mật khẩu'}</label>
+                <input type="password" id="add-password" placeholder="${u ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 8 ký tự'}" class="form-input" style="flex:1; padding:8px;" value="">
              </div>
              
              <div style="display:flex; align-items:center; margin-bottom:15px;">
@@ -4009,31 +4009,40 @@ const app = {
           </div>
         `;
         },
-        addPlayerSubmit(editUsername) {
+        async addPlayerSubmit(editUsername) {
             const fn = document.getElementById('add-fullname').value.trim();
             const un = document.getElementById('add-username').value.trim();
             const pw = document.getElementById('add-password').value.trim();
             const cl = document.getElementById('add-class').value;
-            if (!fn || !un || !pw) return alert('Điền đủ thông tin!');
+            if (!fn || !un || (!editUsername && !pw)) return alert('Điền đủ thông tin!');
 
             if (editUsername) {
                 let user = app.data.users.find(x => x.username === editUsername);
                 if (user) {
-                    if (un !== editUsername && app.data.users.find(x => x.username === un)) {
-                        return alert('Tên đăng nhập mới đã tồn tại!');
-                    }
+                    if (un !== editUsername) return alert('Vì bảo mật, không đổi tên đăng nhập sau khi tạo. Hãy tạo tài khoản mới nếu cần.');
                     user.fullname = fn;
-                    user.username = un;
-                    user.password = pw;
                     user.classlevel = cl;
-                    alert('Đã cập nhật thông tin học sinh!');
+                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl }).eq('id', user.id);
+                    if (error) return alert('Không thể cập nhật thông tin học sinh.');
+                    if (pw) {
+                        try {
+                            await app.auth.manageStudentAccount({ action: 'reset_password', username: un, password: pw });
+                        } catch (_) {
+                            return alert('Đã lưu thông tin, nhưng chưa đặt lại được mật khẩu. Vui lòng thử lại.');
+                        }
+                    }
+                    alert('Đã cập nhật thông tin học sinh. Mật khẩu cũ không được hiển thị vì đã bảo mật.');
                 }
             } else {
                 if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
-                app.data.users.push({ fullname: fn, username: un, password: pw, classlevel: cl, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0 });
+                try {
+                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, password: pw });
+                    app.data.users.push(data.profile);
+                } catch (_) {
+                    return alert('Không thể tạo tài khoản. Mật khẩu phải có ít nhất 8 ký tự và tên đăng nhập chưa tồn tại.');
+                }
                 alert('Đã tạo tài khoản học sinh!');
             }
-            app.data.saveUsers();
             this.renderPlayersList(false);
         },
         editUser(username) {
@@ -4134,12 +4143,12 @@ const app = {
         async deleteUser(username) {
             if (confirm('Xóa học sinh này?')) {
                 const user = app.data.users.find(u => u.username === username);
-                app.data.users = app.data.users.filter(u => u.username !== username);
-                if (user && user.id) {
-                    await supabaseClient.from('game_users').delete().eq('id', user.id);
-                } else {
-                    await app.data.saveUsers();
+                try {
+                    await app.auth.manageStudentAccount({ action: 'delete', username });
+                } catch (_) {
+                    return alert('Không thể xóa tài khoản học sinh. Vui lòng thử lại.');
                 }
+                app.data.users = app.data.users.filter(u => u.username !== username);
                 this.switchTab('players');
             }
         }
@@ -4474,7 +4483,7 @@ const app = {
                     <button class="btn-success" onclick="app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))">Xuất Excel hồ sơ này</button>
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
-                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>${app.data.sanitizeHTML(student.password || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Kẹo hiện có: <b>${student.lollipops || 0}</b><br>Thú cưng: ${petRows}<br>Yêu cầu đổi kẹo:<br>${requestRows}</p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
@@ -4490,7 +4499,7 @@ const app = {
             const rows = [
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Họ tên', 'Giá trị': student.fullname || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Username', 'Giá trị': student.username || '' },
-                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': student.password || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': 'Không xuất vì mật khẩu được bảo mật' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp', 'Giá trị': student.classlevel || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Kẹo hiện có', 'Giá trị': student.lollipops || 0 },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Câu đã gặp', 'Giá trị': seenQuestions.length }
