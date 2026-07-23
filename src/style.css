@@ -709,7 +709,7 @@ input[type="text"], input[type="password"], select, textarea {
 /* Matching Component */
 .matching-container {
     width: 100%;
-    padding: 10px;
+    padding: 0px;
     display: flex;
     justify-content: space-between;
     height: 100%;
@@ -718,8 +718,13 @@ input[type="text"], input[type="password"], select, textarea {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 30%;
     justify-content: space-evenly;
+}
+.matching-col.left-col {
+    width: 30%;
+}
+.matching-col.right-col {
+    width: 50%;
 }
 .matching-item {
     background: rgba(255, 255, 255, 0.1);
