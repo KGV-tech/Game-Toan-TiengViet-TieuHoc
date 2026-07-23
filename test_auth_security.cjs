@@ -16,5 +16,6 @@ assert.doesNotMatch(adminFunction, /Access-Control-Allow-Origin': '\*'/, 'Admin 
 assert.match(adminFunction, /legacy_profile_linked/, 'Resetting a legacy student must link that profile to a new Auth account.');
 assert.match(source, /student_not_found/, 'The teacher UI must explain why a password reset cannot be completed.');
 assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an Auth account already exists.');
+assert.match(source, /!app\.data\.users\.find\(x => x\.id === data\.profile\.id\)/, 'Creating a student must not duplicate the realtime profile in the teacher list.');
 
 console.log('Supabase Auth and RLS security contract verified.');

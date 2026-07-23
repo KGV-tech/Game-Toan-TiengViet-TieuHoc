@@ -4056,7 +4056,8 @@ const app = {
                 if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
                 try {
                     const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, password: pw });
-                    app.data.users.push(data.profile);
+                    // Realtime can insert this profile before the function response arrives.
+                    if (!app.data.users.find(x => x.id === data.profile.id)) app.data.users.push(data.profile);
                 } catch (error) {
                     const messages = {
                         invalid_username: 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang; dài 3–32 ký tự.',
