@@ -2700,7 +2700,8 @@ const app = {
                  <button class="btn-primary" id="btn-q-lib" style="flex:1; margin:0;" onclick="app.admin.renderQSubTab('lib')">Thư viện</button>
                  <div id="q-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
              </div>
-             <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
+             <button class="btn-danger" id="btn-q-bulk-del" style="display:none;" onclick="app.admin.bulkDeleteQuestions()">Xóa các câu đã chọn (0)</button>
+               <button class="btn-opt" id="btn-q-add" onclick="app.admin.renderQSubTab('add')">Soạn câu hỏi</button>
              <button class="btn-opt" id="btn-q-tpl" onclick="app.admin.renderQSubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
              <button class="btn-opt" id="btn-q-exp" onclick="app.admin.renderQSubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
              <button class="btn-opt" id="btn-q-imp" onclick="app.admin.renderQSubTab('imp')">Nhập từ file (*.xlsx)</button>
@@ -2731,7 +2732,7 @@ const app = {
                 ];
                 let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
                     return `<tr>
-              <td><input type="checkbox" class="q-select-cb" value="${i}"></td>
+              <td><input type="checkbox" class="q-select-cb" value="${i}" onchange="app.admin.updateBulkDeleteLabel()"></td>
               <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation || ''}</td>
@@ -2742,7 +2743,7 @@ const app = {
               </td>
             </tr>`;
                 });
-                subBox.innerHTML = '<div style="margin-bottom: 10px; text-align: left;"><button class="btn-danger" onclick="app.admin.bulkDeleteQuestions()" style="padding: 5px 15px; font-size: 0.9rem;">Xóa các câu đã chọn</button></div>' + html;
+                subBox.innerHTML = html;
                 const ind = document.getElementById('q-count-indicator');
                 if (ind) ind.textContent = `Tổng: ${app.data.libraryQuestions.length} câu`;
             }
@@ -3797,6 +3798,20 @@ const app = {
             this.renderQSubTab('add', idx);
         },
         
+        
+        updateBulkDeleteLabel() {
+            const checkboxes = document.querySelectorAll('.q-select-cb:checked');
+            const btn = document.getElementById('btn-q-bulk-del');
+            if (btn) {
+                if (checkboxes.length > 0) {
+                    btn.style.display = 'inline-block';
+                    btn.textContent = `Xóa các câu đã chọn (${checkboxes.length})`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+        },
+
         toggleAllQSelect(masterCb) {
             const table = masterCb.closest('table');
             const tbody = table.querySelector('tbody');
@@ -3805,6 +3820,7 @@ const app = {
                 const cb = r.querySelector('.q-select-cb');
                 if (cb) cb.checked = masterCb.checked;
             });
+            this.updateBulkDeleteLabel();
         },
         async bulkDeleteQuestions() {
             const checkboxes = document.querySelectorAll('.q-select-cb:checked');
