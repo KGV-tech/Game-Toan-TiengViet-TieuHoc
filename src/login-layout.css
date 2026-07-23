@@ -72,7 +72,7 @@
   flex: none;
   /* Keep the upright frame visually attached to the logo despite transparent padding. */
   margin: clamp(-150px, -10vw, -96px) 0 0 !important;
-  padding: clamp(118px, 9vh, 140px) clamp(48px, 4vw, 64px) clamp(32px, 3vh, 44px);
+  padding: clamp(170px, 13vh, 210px) clamp(48px, 4vw, 64px) clamp(32px, 3vh, 44px);
   overflow: visible;
   background: transparent;
   border: 0;
