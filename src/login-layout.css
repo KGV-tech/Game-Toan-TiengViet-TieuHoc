@@ -133,6 +133,12 @@
   cursor: pointer;
 }
 
+/* Native select menus render on a light system surface on several iPad/Chrome builds. */
+#register-screen .register-field select.input-glass option {
+  color: #082c63;
+  background: #f7fdff;
+}
+
 #register-screen .register-action {
   display: block;
   width: 58%;
