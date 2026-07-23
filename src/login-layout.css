@@ -1,5 +1,10 @@
 /* Isolated login layout overrides. Keep this file after style.css so it can be tuned
    without affecting the existing game screens. */
+#login-screen > .login-logo {
+  /* Let the metal badge meet the upper edge of the login frame. */
+  top: clamp(68px, 6.7vh, 84px) !important;
+}
+
 #login-screen .login-panel .login-field {
   width: 68% !important;
   margin-right: auto !important;
