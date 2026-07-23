@@ -12,7 +12,8 @@ const json = (body: unknown, status = 200, origin: string | null = null) => new 
 })
 
 const internalEmail = (username: string) => `${username.toLowerCase()}@game.local`
-const validUsername = (username: unknown) => typeof username === 'string' && /^[a-z0-9._-]{3,32}$/.test(username)
+const normalizeUsername = (username: unknown) => typeof username === 'string' ? username.trim().toLowerCase() : ''
+const validUsername = (username: string) => /^[a-z0-9._-]{3,32}$/.test(username)
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
@@ -38,7 +39,8 @@ Deno.serve(async (request) => {
   if (caller?.role?.toLowerCase() !== 'admin') return json({ error: 'forbidden' }, 403, origin)
 
   const body = await request.json().catch(() => null)
-  const { action, username, fullname, classlevel, password } = body || {}
+  const { action, fullname, classlevel, password } = body || {}
+  const username = normalizeUsername(body?.username)
   if (!validUsername(username)) return json({ error: 'invalid_username' }, 422, origin)
 
   if (action === 'create') {
@@ -48,7 +50,7 @@ Deno.serve(async (request) => {
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: internalEmail(username), password, email_confirm: true,
     })
-    if (createError || !created.user) return json({ error: 'create_failed' }, 409, origin)
+    if (createError || !created.user) return json({ error: 'auth_account_exists' }, 409, origin)
     const { data: profile, error: profileError } = await admin.from('game_users').insert({
       auth_user_id: created.user.id, username, fullname: fullname.trim(), password: null,
       classlevel: String(classlevel), role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
@@ -62,8 +64,30 @@ Deno.serve(async (request) => {
 
   if (action === 'reset_password') {
     if (typeof password !== 'string' || password.length < 8) return json({ error: 'invalid_password' }, 422, origin)
-    const { data: profile } = await admin.from('game_users').select('auth_user_id').eq('username', username).single()
-    if (!profile?.auth_user_id) return json({ error: 'student_not_linked' }, 404, origin)
+    const { data: profile } = await admin.from('game_users').select('auth_user_id').eq('username', username).maybeSingle()
+    if (!profile) return json({ error: 'student_not_found' }, 404, origin)
+
+    // Legacy profiles existed before Supabase Auth. The first teacher password reset
+    // safely creates (or reconnects) that student's Auth account.
+    if (!profile.auth_user_id) {
+      const email = internalEmail(username)
+      const { data: authUsers, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+      if (listError) return json({ error: 'auth_lookup_failed' }, 500, origin)
+      const existingAuth = authUsers.users.find((user) => user.email?.toLowerCase() === email)
+      let authUserId = existingAuth?.id
+      if (authUserId) {
+        const { error } = await admin.auth.admin.updateUserById(authUserId, { password })
+        if (error) return json({ error: 'reset_failed' }, 500, origin)
+      } else {
+        const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
+        if (error || !created.user) return json({ error: 'create_failed' }, 500, origin)
+        authUserId = created.user.id
+      }
+      const { error: linkError } = await admin.from('game_users')
+        .update({ auth_user_id: authUserId, password: null }).eq('username', username)
+      return linkError ? json({ error: 'profile_link_failed' }, 500, origin) : json({ ok: true, legacy_profile_linked: true }, 200, origin)
+    }
+
     const { error } = await admin.auth.admin.updateUserById(profile.auth_user_id, { password })
     return error ? json({ error: 'reset_failed' }, 500, origin) : json({ ok: true }, 200, origin)
   }

@@ -13,5 +13,8 @@ assert.match(migration, /private\.is_admin\(\)/, 'RLS must use a server-side adm
 assert.match(migration, /profiles_select_own_or_teacher/, 'Student profiles must be isolated by Auth identity.');
 assert.match(adminFunction, /SUPABASE_SERVICE_ROLE_KEY/, 'Administrative account provisioning must keep the service key on the server.');
 assert.doesNotMatch(adminFunction, /Access-Control-Allow-Origin': '\*'/, 'Admin function must not use a wildcard CORS origin.');
+assert.match(adminFunction, /legacy_profile_linked/, 'Resetting a legacy student must link that profile to a new Auth account.');
+assert.match(source, /student_not_found/, 'The teacher UI must explain why a password reset cannot be completed.');
+assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an Auth account already exists.');
 
 console.log('Supabase Auth and RLS security contract verified.');

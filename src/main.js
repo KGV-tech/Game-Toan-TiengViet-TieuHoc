@@ -684,7 +684,11 @@ const app = {
         },
         async manageStudentAccount(payload) {
             const { data, error } = await supabaseClient.functions.invoke('admin-users', { body: payload });
-            if (error || data?.error) throw new Error(data?.error || 'admin_function_failed');
+            let errorCode = data?.error;
+            if (error && !errorCode) {
+                try { errorCode = (await error.context?.json())?.error; } catch (_) { /* Use the safe fallback below. */ }
+            }
+            if (error || errorCode) throw new Error(errorCode || 'admin_function_failed');
             return data;
         },
         updateHeader() {
@@ -4035,8 +4039,15 @@ const app = {
                     if (pw) {
                         try {
                             await app.auth.manageStudentAccount({ action: 'reset_password', username: un, password: pw });
-                        } catch (_) {
-                            return alert('Đã lưu thông tin, nhưng chưa đặt lại được mật khẩu. Vui lòng thử lại.');
+                        } catch (error) {
+                            const messages = {
+                                invalid_password: 'Mật khẩu mới phải có ít nhất 8 ký tự.',
+                                student_not_found: 'Không tìm thấy tài khoản học sinh để đặt lại mật khẩu.',
+                                auth_lookup_failed: 'Chưa thể kiểm tra tài khoản đăng nhập. Vui lòng thử lại.',
+                                profile_link_failed: 'Đã tạo tài khoản đăng nhập nhưng chưa liên kết được hồ sơ. Vui lòng thử lại.',
+                                reset_failed: 'Supabase chưa đặt lại được mật khẩu. Vui lòng thử lại.',
+                            };
+                            return alert(`Đã lưu thông tin, nhưng ${messages[error.message] || 'chưa đặt lại được mật khẩu. Vui lòng thử lại.'}`);
                         }
                     }
                     alert('Đã cập nhật thông tin học sinh. Mật khẩu cũ không được hiển thị vì đã bảo mật.');
@@ -4046,8 +4057,14 @@ const app = {
                 try {
                     const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, password: pw });
                     app.data.users.push(data.profile);
-                } catch (_) {
-                    return alert('Không thể tạo tài khoản. Mật khẩu phải có ít nhất 8 ký tự và tên đăng nhập chưa tồn tại.');
+                } catch (error) {
+                    const messages = {
+                        invalid_username: 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang; dài 3–32 ký tự.',
+                        invalid_student_data: 'Hãy nhập đầy đủ họ tên, lớp và mật khẩu từ 8 ký tự.',
+                        auth_account_exists: 'Tên đăng nhập này đã được dùng cho một tài khoản đăng nhập khác.',
+                        profile_failed: 'Đã tạo tài khoản đăng nhập nhưng chưa lưu được hồ sơ học sinh. Vui lòng thử lại.',
+                    };
+                    return alert(messages[error.message] || 'Không thể tạo tài khoản do lỗi máy chủ. Vui lòng thử lại.');
                 }
                 alert('Đã tạo tài khoản học sinh!');
             }
