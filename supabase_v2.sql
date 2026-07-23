@@ -26,6 +26,10 @@ CREATE POLICY "Cho phép admin tạo nhiệm vụ" ON game_quests FOR INSERT WIT
 CREATE POLICY "Cho phép admin sửa nhiệm vụ" ON game_quests FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "Cho phép admin xoá nhiệm vụ" ON game_quests FOR DELETE USING (true);
 
+-- Liên kết tùy chọn từ nhiệm vụ tới một đề kiểm tra cụ thể.
+ALTER TABLE game_quests
+    ADD COLUMN IF NOT EXISTS exam_id UUID REFERENCES game_exams(id) ON DELETE SET NULL;
+
 
 -- 2. Bảng user_quests: Lưu tiến trình làm nhiệm vụ của học sinh
 CREATE TABLE IF NOT EXISTS user_quests (
