@@ -958,12 +958,12 @@ const app = {
                 const qClass = String(q.classlevel || '').trim().toLowerCase();
                 const clLvl = String(clLevel).toLowerCase();
 
-                const qTopic = String(q.topic || '').trim().toLowerCase();
+                const qTopic = String(q.topic || '').trim().toLowerCase().normalize('NFC');
 
                 const matchSub = (qSub === mSub || qSub === this.state.subject.toLowerCase() || qSub.includes(mSub) || mSub.includes(qSub));
                 const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
                 const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
-                    const tNorm = String(t).toLowerCase();
+                    const tNorm = String(t).toLowerCase().normalize('NFC');
                     if (tNorm.includes(qTopic) || qTopic.includes(tNorm)) return true;
                     const tNum = tNorm.match(/^\d+/)?.[0];
                     const qNum = qTopic.match(/\d+/)?.[0];
@@ -1010,7 +1010,7 @@ const app = {
                 if (countNeeded <= 0) return [];
                 const byType = {};
                 sourcePool.forEach(q => {
-                    const t = (q.type || 'Trắc nghiệm').trim();
+                    const t = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
                     if (!byType[t]) byType[t] = [];
                     byType[t].push(q);
                 });
@@ -1128,7 +1128,7 @@ const app = {
             document.getElementById('submit-ans-text').textContent = 'Kiểm Tra';
             btnCheck.onclick = () => this.submitAnswer();
 
-            let qType = (q.type || 'Trắc nghiệm').trim();
+            let qType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
             let opts = q.options || [];
 
             if (opts.length === 0) {
@@ -1636,7 +1636,7 @@ const app = {
             if (this.hardTimer) clearInterval(this.hardTimer);
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
-            let qType = (q.type || 'Trắc nghiệm').trim();
+            let qType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
             let opts = q.options || [];
 
             if (opts.length === 0) {
@@ -3190,11 +3190,11 @@ const app = {
                         const ansStr = row["Đáp án đúng"] || row["Đáp án"];
                         if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
                             app.data.libraryQuestions.push({
-                                type: String(row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm').trim(),
+                                type: String(row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm').trim().normalize('NFC'),
                                 subject: String(row["Môn học"] || row["Môn"] || 'Toán').trim(),
                                 classlevel: String(row["Cấp lớp"] || row["Lớp"] || 'Lớp 5').trim(),
                                 semester: String(row["Học kỳ"] || '').trim(),
-                                topic: String(row["Chủ đề"] || 'Khác').trim(),
+                                topic: String(row["Chủ đề"] || 'Khác').trim().normalize('NFC'),
                                 q: row["Câu hỏi"],
                                 ans: String(ansStr),
                                 options: row["Lựa chọn"] ? (
