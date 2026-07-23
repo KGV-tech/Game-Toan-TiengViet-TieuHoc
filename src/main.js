@@ -812,6 +812,9 @@ const app = {
                 if (this.state.skillUsed) return;
                 const user = app.data.currentUser;
                 if (!user) return;
+                if (app.game.state.examName || document.getElementById('exam-play-screen')?.classList.contains('active')) {
+                    return alert('Không thể dùng kỹ năng thú cưng khi làm Đề kiểm tra.');
+                }
                 
                 this.state.skillUsed = true;
                 this.setCooldown(user.username, skillId, 3);
@@ -834,11 +837,13 @@ const app = {
                             timerDisplay.style.textShadow = '0 0 10px #3b82f6';
                         }
                         app.playSound('success'); 
+                    } else {
+                        alert('Kỹ năng bạn chọn không có tác dụng gì trong trường hợp này.');
                     }
                 } else if (skillId === 'fifty_fifty') {
                     const q = app.game.state.questions[app.game.state.currentIdx];
-                    if (q.options) {
-                        let wrongOpts = q.options.filter(o => o !== q.ans);
+                    const wrongOpts = (q.options || []).filter(o => o !== q.ans);
+                    if (wrongOpts.length > 0 && document.querySelectorAll('.option-btn').length > 0) {
                         wrongOpts.sort(() => Math.random() - 0.5);
                         let toRemove = wrongOpts.slice(0, Math.ceil(wrongOpts.length / 2));
                         
@@ -849,20 +854,22 @@ const app = {
                             }
                         });
                         app.playSound('success');
+                    } else {
+                        alert('Kỹ năng bạn chọn không có tác dụng gì trong trường hợp này.');
                     }
                 } else if (skillId === 'show_hint') {
                     const q = app.game.state.questions[app.game.state.currentIdx];
                     const explBox = document.getElementById('explanation-box');
-                    explBox.style.display = 'block';
                     if (q.explanation || q.hint) {
+                        explBox.style.display = 'block';
                         explBox.innerHTML = `🌟 <b style="color:#fbbf24;">Tầm Nhìn Đa Chiều:</b><br>${q.explanation || q.hint}`;
+                        app.playSound('success');
                     } else {
-                        explBox.innerHTML = `🌟 <b style="color:#fbbf24;">Tầm Nhìn Đa Chiều:</b><br>Dữ liệu mật bị mã hóa. Không tìm thấy lời giải cho câu hỏi này!`;
+                        alert('Kỹ năng bạn chọn không có tác dụng gì trong trường hợp này.');
                     }
-                    app.playSound('success');
                 } else if (skillId === 'show_answer') {
                     const q = app.game.state.questions[app.game.state.currentIdx];
-                    if (q.options) {
+                    if (q.options && document.querySelectorAll('.option-btn').length > 0) {
                         document.querySelectorAll('.option-btn').forEach(btn => {
                             let text = btn.textContent.trim().replace(/^[A-D]\.\s*/, '');
                             if (text === q.ans) {
@@ -872,18 +879,28 @@ const app = {
                                 btn.style.transform = 'scale(1.02)';
                             }
                         });
-                    } else if (q.type === 'Điền khuyết') {
+                    } else if (q.type === 'Điền khuyết' && document.querySelectorAll('.fill-blank-input').length > 0) {
                          document.querySelectorAll('.fill-blank-input').forEach((input, i) => {
                              input.value = q.ans.split('|')[i] || q.ans;
                          });
                          app.game.selectAnswer(); // Enable Check button
+                        app.playSound('success');
+                    } else {
+                        alert('Kỹ năng bạn chọn không có tác dụng gì trong trường hợp này.');
                     }
-                    app.playSound('success');
                 } else if (skillId === 'shield') {
                     this.state.shieldActive = true;
                     app.playSound('success');
                 } else if (skillId === 'swap_question') {
-                    const allQs = app.data.questions.filter(x => x.subject === app.game.state.subject && x.difficulty === app.game.state.difficulty);
+                    const mappedSubject = app.game.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
+                    const clLevel = String(app.data.currentUser?.classlevel || '').replace('Lớp ', '').trim();
+                    const currentQuestion = app.game.state.questions[app.game.state.currentIdx];
+                    const allQs = app.data.libraryQuestions.filter(question =>
+                        app.data.normalizeQuestionPart(question.subject) === app.data.normalizeQuestionPart(mappedSubject) &&
+                        app.data.normalizeQuestionPart(String(question.classlevel || '').replace(/^Lớp\s*/i, '')) === app.data.normalizeQuestionPart(clLevel) &&
+                        app.data.normalizeQuestionPart(question.semester) === app.data.normalizeQuestionPart(currentQuestion.semester) &&
+                        app.data.normalizeQuestionPart(question.topic) === app.data.normalizeQuestionPart(currentQuestion.topic)
+                    );
                     let pool = allQs.filter(x => !app.game.state.questions.some(q => q.q === x.q));
                     if (pool.length > 0) {
                         let newQ = pool[Math.floor(Math.random() * pool.length)];
@@ -894,9 +911,7 @@ const app = {
                         // Tắt skill vì đã xài
                         this.state.skillUsed = true; 
                     } else {
-                        alert("Không tìm thấy câu hỏi thay thế trong ngân hàng đề!");
-                        this.state.skillUsed = false; // Hoàn lại skill
-                        this.setCooldown(app.data.currentUser.username, skillId, 0);
+                        alert('Kỹ năng bạn chọn không có tác dụng gì trong trường hợp này.');
                     }
                 }
             }
@@ -4888,7 +4903,7 @@ const app = {
                             <li><b style="color:#22c55e;">Tặng 5 kẹo</b></li>
                             <li><b style="color:#3b82f6;">Tặng 2 kẹo</b></li>
                             <li><b style="color:#a855f7;">Tặng 1 kẹo</b></li>
-                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (Tự đổi 8 kẹo nếu đủ bộ)</li>
+                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (tỉ lệ 0,1%, không gồm Rồng, tùy tồn kho chung)</li>
                             <li><b style="color:#0ea5e9;">Quay lại</b> (Miễn phí 1 lần quay tới)</li>
                         </ul>
                     </div>
@@ -4904,11 +4919,12 @@ const app = {
             box.innerHTML = html;
         },
 
-        spinWheel() {
+        async spinWheel() {
             if (this.isSpinning) return;
 
             const user = app.data.currentUser;
             if (!user) return;
+            const lollipopsBeforeSpin = user.lollipops || 0;
 
             let freeSpin = this.freeSpin || false;
             if (!freeSpin && (user.lollipops || 0) < 2) {
@@ -4932,23 +4948,48 @@ const app = {
                 spinBtn.style.cursor = 'not-allowed';
             }
 
-            const rand = Math.random() * 100;
             let segment = 0;
             let rewardText = "";
+            let wonPet = null;
+            let wonPetId = null;
 
-            // Target Layout:
-            // 0: Tặng 1 kẹo (12%)
-            // 1: Tặng 2 kẹo (8%)
-            // 2: Tặng Thú Cưng (3%)
-            // 3: May mắn lần sau (13.33%)
-            // 4: Quay lại (10%)
-            // 5: Tặng 5 kẹo (5%)
-            // 6: May mắn lần sau (13.33%)
-            // 7: Tặng 1 kẹo (12%)
-            // 8: May mắn lần sau (13.34%)
-            // 9: Quay lại (10%)
-
-            if (rand < 12) {
+            // Thú cưng chỉ có xác suất 0,001 = 0,1% (1/1000 lượt quay).
+            // Rồng chỉ đổi trong cửa hàng bằng kẹo, không nằm trong phần thưởng vòng quay.
+            if (Math.random() < 0.001) {
+                segment = 2;
+                const myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
+                if (myPets.length >= 3) {
+                    rewardText = 'Bạn đã có đủ 3 thú cưng nên không thể nhận thêm từ vòng quay.';
+                } else {
+                    const ownedImages = myPets.map(pet => pet.pet_image);
+                    const eligiblePets = this.shopData.filter(pet =>
+                        pet.id !== 'pet_dragon' &&
+                        !ownedImages.includes(pet.image) &&
+                        app.data.getPetStock(pet.id, 8) > 0
+                    );
+                    if (eligiblePets.length === 0) {
+                        rewardText = 'Kho thú cưng dùng chung đã hết hoặc bạn đã sở hữu các bé có thể nhận. May mắn lần sau nhé!';
+                    } else {
+                        const randomPet = eligiblePets[Math.floor(Math.random() * eligiblePets.length)];
+                        const reserved = await app.data.changePetStock(randomPet.id, -1, 8);
+                        if (reserved) {
+                            wonPetId = randomPet.id;
+                            wonPet = {
+                                user_username: user.username,
+                                pet_name: randomPet.name,
+                                pet_image: randomPet.image,
+                                rarity: 'common'
+                            };
+                            rewardText = `Tuyệt vời! Bạn nhận được Thú cưng: ${randomPet.name}!`;
+                        } else {
+                            rewardText = 'Thú cưng vừa hết trong kho dùng chung. May mắn lần sau nhé!';
+                        }
+                    }
+                }
+            } else {
+                // Phân bố các phần thưởng còn lại, giữ nguyên tỉ lệ tương đối cũ.
+                const rand = Math.random() * 97;
+                if (rand < 12) {
                 segment = 0;
                 rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
                 user.lollipops += 1;
@@ -4956,50 +4997,32 @@ const app = {
                 segment = 1;
                 rewardText = "Chúc mừng! Bạn nhận được 2 kẹo 🍭.";
                 user.lollipops += 2;
-            } else if (rand < 23) {
-                segment = 2;
-                let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username).map(p => p.pet_image);
-                let unownedPets = this.shopData.filter(p => !myPets.includes(p.image));
-                if (unownedPets.length > 0) {
-                    let randomPet = unownedPets[Math.floor(Math.random() * unownedPets.length)];
-                    rewardText = `Tuyệt vời! Bạn nhận được Thú cưng: ${randomPet.name}!`;
-                    app.data.userPets = app.data.userPets || [];
-                    app.data.userPets.push({
-                        id: 'up_' + new Date().getTime(),
-                        user_username: user.username,
-                        pet_name: randomPet.name,
-                        pet_image: randomPet.image,
-                        cost: randomPet.cost
-                    });
-                } else {
-                    rewardText = "Tuyệt vời! Bạn quay trúng Thú Cưng nhưng đã sở hữu tất cả. Hệ thống đền bù 8 kẹo 🍭!";
-                    user.lollipops += 8;
-                }
-            } else if (rand < 36.33) {
+            } else if (rand < 33.33) {
                 segment = 3;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
-            } else if (rand < 46.33) {
+            } else if (rand < 43.33) {
                 segment = 4;
                 rewardText = "Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.";
                 this.freeSpin = true;
-            } else if (rand < 51.33) {
+            } else if (rand < 48.33) {
                 segment = 5;
                 rewardText = "Chúc mừng! Bạn nhận được 5 kẹo 🍭.";
                 user.lollipops += 5;
-            } else if (rand < 64.66) {
+            } else if (rand < 61.66) {
                 segment = 6;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
-            } else if (rand < 76.66) {
+            } else if (rand < 73.66) {
                 segment = 7;
                 rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
                 user.lollipops += 1;
-            } else if (rand < 90) {
+            } else if (rand < 87) {
                 segment = 8;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
             } else {
                 segment = 9;
                 rewardText = "Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.";
                 this.freeSpin = true;
+            }
             }
 
             // Pointer is at 3 o'clock (90 degrees).
@@ -5021,8 +5044,29 @@ const app = {
                 wheelEl.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
             }
 
-            setTimeout(() => {
-                app.data.saveUsers();
+            setTimeout(async () => {
+                if (window.supabase) {
+                    const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: user.lollipops || 0 }).eq('id', user.id);
+                    if (candyError) {
+                        if (wonPetId) await app.data.changePetStock(wonPetId, 1, 8);
+                        user.lollipops = lollipopsBeforeSpin;
+                        rewardText = 'Không thể lưu kết quả vòng quay. Vui lòng thử lại.';
+                    } else if (wonPet) {
+                        const { data, error: petError } = await supabaseClient.from('user_pets').insert([wonPet]).select();
+                        if (petError || !data?.length) {
+                            await app.data.changePetStock(wonPetId, 1, 8);
+                            rewardText = 'Không thể nhận thú cưng. Kho đã được hoàn lại, vui lòng thử lại.';
+                        } else {
+                            app.data.userPets.push(data[0]);
+                        }
+                    }
+                } else {
+                    app.data.saveUsers();
+                    if (wonPet) {
+                        wonPet.id = 'temp_' + new Date().getTime();
+                        app.data.userPets.push(wonPet);
+                    }
+                }
                 app.auth.updateHeader();
                 if (lolliSpan) lolliSpan.innerText = user.lollipops || 0;
                 alert(rewardText);
@@ -5252,23 +5296,35 @@ const app = {
                 return alert('Thú cưng này vừa hết hàng hoặc số lượng đã thay đổi. Vui lòng thử lại.');
             }
 
-            user.lollipops -= pet.cost;
-            app.auth.updateHeader();
+            const previousLollipops = user.lollipops || 0;
+            const nextLollipops = previousLollipops - pet.cost;
 
             const newPet = {
                 user_username: user.username, pet_name: pet.name, pet_image: pet.image, rarity: 'common'
             };
 
             if (window.supabase) {
-                await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
-                const { data } = await supabaseClient.from('user_pets').insert([newPet]).select();
-                if (data && data.length > 0) app.data.userPets.push(data[0]);
+                const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: nextLollipops }).eq('id', user.id);
+                if (candyError) {
+                    await app.data.changePetStock(pet.id, 1, defaultStock);
+                    return alert('Không thể lưu số kẹo. Kho thú cưng đã được hoàn lại, vui lòng thử lại.');
+                }
+                const { data, error: petError } = await supabaseClient.from('user_pets').insert([newPet]).select();
+                if (petError || !data?.length) {
+                    await supabaseClient.from('game_users').update({ lollipops: previousLollipops }).eq('id', user.id);
+                    await app.data.changePetStock(pet.id, 1, defaultStock);
+                    return alert('Không thể nhận thú cưng. Kẹo và kho đã được hoàn lại, vui lòng thử lại.');
+                }
+                user.lollipops = nextLollipops;
+                app.data.userPets.push(data[0]);
             } else {
+                user.lollipops = nextLollipops;
                 app.data.saveUsers();
                 newPet.id = 'temp_' + new Date().getTime();
                 app.data.userPets.push(newPet);
             }
 
+            app.auth.updateHeader();
             if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             this.switchTab('pets');
         },
@@ -5281,17 +5337,32 @@ const app = {
             const shopInfo = this.shopData.find(x => x.image === petImage) || { cost: 50, id: 'pet_1' };
             const refund = Math.floor(shopInfo.cost / 2);
 
-            // Refund
-            user.lollipops = (user.lollipops || 0) + refund;
-            app.auth.updateHeader();
-
             const defaultStock = shopInfo.id === 'pet_dragon' ? 5 : 8;
             const returnedToStock = await app.data.changePetStock(shopInfo.id, 1, defaultStock);
             if (!returnedToStock) {
                 return alert('Không thể cập nhật kho thú cưng dùng chung. Vui lòng thử lại.');
             }
 
-            // Remove pet
+            const previousLollipops = user.lollipops || 0;
+            const nextLollipops = previousLollipops + refund;
+            if (window.supabase && !userPetId.startsWith('temp_')) {
+                const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: nextLollipops }).eq('id', user.id);
+                if (candyError) {
+                    await app.data.changePetStock(shopInfo.id, -1, defaultStock);
+                    return alert('Không thể hoàn kẹo. Kho thú cưng đã được khôi phục, vui lòng thử lại.');
+                }
+                const { error: petError } = await supabaseClient.from('user_pets').delete().eq('id', userPetId);
+                if (petError) {
+                    await supabaseClient.from('game_users').update({ lollipops: previousLollipops }).eq('id', user.id);
+                    await app.data.changePetStock(shopInfo.id, -1, defaultStock);
+                    return alert('Không thể trả thú cưng. Kẹo và kho đã được khôi phục, vui lòng thử lại.');
+                }
+            } else {
+                user.lollipops = nextLollipops;
+                app.data.saveUsers();
+            }
+
+            user.lollipops = nextLollipops;
             app.data.userPets = app.data.userPets.filter(x => x.id !== userPetId);
 
             // Un-equip if equipped
@@ -5300,13 +5371,7 @@ const app = {
                 localStorage.removeItem('equipped_pet_' + user.username);
             }
 
-            if (window.supabase && !userPetId.startsWith('temp_')) {
-                await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
-                await supabaseClient.from('user_pets').delete().eq('id', userPetId);
-            } else {
-                app.data.saveUsers();
-            }
-
+            app.auth.updateHeader();
             this.switchTab('mypets');
         },
         equipPet(petImage) {
