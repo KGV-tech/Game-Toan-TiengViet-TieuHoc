@@ -121,6 +121,7 @@ const app = {
         libraryQuestions: [],
         exams: [],
         petInventory: {},
+        seenQuestionKeys: new Set(),
         settings: { hardTimeLimit: 10, examTimeLimit: 30 },
         currentUser: null,
         async fetchAllFromSupabase(table, filterCol, filterVal) {
@@ -144,6 +145,77 @@ const app = {
                 from += step;
             }
             return allData;
+        },
+        normalizeQuestionPart(value) {
+            return String(value || '')
+                .trim()
+                .normalize('NFC')
+                .replace(/\s+/g, ' ')
+                .toLocaleLowerCase('vi-VN');
+        },
+        getQuestionKey(question) {
+            return [
+                question?.classlevel,
+                question?.subject,
+                question?.semester,
+                question?.topic,
+                question?.q
+            ].map(value => this.normalizeQuestionPart(value)).join('|');
+        },
+        validateQuestionMetadata(question) {
+            const classlevel = String(question.classlevel || '').trim();
+            const subject = String(question.subject || '').trim().normalize('NFC');
+            const semester = String(question.semester || '').trim().normalize('NFC');
+            const topic = String(question.topic || '').trim().normalize('NFC');
+            const classMatch = classlevel.match(/^Lớp\s+([1-5])$/i);
+            const classNumber = classMatch ? classMatch[1] : '';
+            const validSubjects = ['Toán', 'Tiếng Việt'];
+            const subjectKey = subject === 'Toán' ? 'math' : (subject === 'Tiếng Việt' ? 'vietnamese' : '');
+            const semesterKey = semester === 'Học kỳ 1' ? 'hk1' : (semester === 'Học kỳ 2' ? 'hk2' : '');
+
+            if (!classNumber) return 'Cấp lớp phải là từ Lớp 1 đến Lớp 5.';
+            if (!validSubjects.includes(subject)) return 'Môn học chỉ được là Toán hoặc Tiếng Việt.';
+            if (!semesterKey) return 'Học kỳ phải là Học kỳ 1 hoặc Học kỳ 2.';
+
+            const validTopics = app.constants.topics[classNumber]?.[subjectKey]?.[semesterKey] || [];
+            if (!validTopics.includes(topic)) return `Chủ đề "${topic || '(trống)'}" không thuộc ${classlevel} – ${subject} – ${semester}.`;
+            return '';
+        },
+        async loadSeenQuestions(username) {
+            this.seenQuestionKeys = new Set();
+            if (!username) return;
+            if (!window.supabase) {
+                const stored = app.safeStorage.getItem(`seen_questions_${username}`);
+                try { this.seenQuestionKeys = new Set(JSON.parse(stored || '[]')); } catch (_) { /* empty */ }
+                return;
+            }
+            const { data, error } = await supabaseClient.from('user_question_history')
+                .select('question_key')
+                .eq('user_username', username);
+            if (error) {
+                console.error('Không thể tải lịch sử câu hỏi đã gặp:', error);
+                return;
+            }
+            this.seenQuestionKeys = new Set((data || []).map(item => item.question_key));
+        },
+        async markQuestionsSeen(questions) {
+            const user = this.currentUser;
+            if (!user || user.role?.toLowerCase() === 'admin' || !questions.length) return;
+            const now = new Date().toISOString();
+            const records = questions.map(question => ({
+                user_username: user.username,
+                question_key: this.getQuestionKey(question),
+                last_seen_at: now
+            }));
+            records.forEach(record => this.seenQuestionKeys.add(record.question_key));
+
+            if (!window.supabase) {
+                app.safeStorage.setItem(`seen_questions_${user.username}`, JSON.stringify([...this.seenQuestionKeys]));
+                return;
+            }
+            const { error } = await supabaseClient.from('user_question_history')
+                .upsert(records, { onConflict: 'user_username,question_key' });
+            if (error) console.error('Không thể lưu lịch sử câu hỏi đã gặp:', error);
         },
         getPetStock(petId, fallbackStock) {
             const stock = this.petInventory[petId];
@@ -526,6 +598,7 @@ const app = {
                 } else {
                     const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
                     app.data.libraryQuestions = await app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl);
+                    await app.data.loadSeenQuestions(user.username);
                     app.data.quests = await app.data.fetchAllFromSupabase('game_quests');
                     app.data.userQuests = await app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username);
                     app.data.candyRequests = await app.data.fetchAllFromSupabase('candy_requests', 'user_username', user.username);
@@ -1004,30 +1077,18 @@ const app = {
             const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
 
             let pool = app.data.libraryQuestions.filter(q => {
-                const qSub = String(q.subject || '').trim().toLowerCase();
-                const mSub = mappedSubject.toLowerCase();
+                const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+                const matchSubject = same(q.subject, mappedSubject);
+                const matchClass = same(String(q.classlevel || '').replace(/^Lớp\s*/i, ''), clLevel);
+                const selectedTopic = this.state.selectedTopics.find(topic => same(q.topic, topic));
+                const matchTopic = Boolean(selectedTopic);
+                const selectedSemester = selectedTopic && (() => {
+                    const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
+                    const semesterTopics = Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
+                    return semesterTopics && same(q.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
+                })();
 
-                const qClass = String(q.classlevel || '').trim().toLowerCase();
-                const clLvl = String(clLevel).toLowerCase();
-
-                const qTopic = String(q.topic || '').trim().toLowerCase().normalize('NFC');
-
-                const matchSub = (qSub === mSub || qSub === this.state.subject.toLowerCase() || qSub.includes(mSub) || mSub.includes(qSub));
-                const matchClass = (!qClass || qClass === clLvl || qClass === ('lớp ' + clLvl) || qClass === ('lop ' + clLvl) || qClass.includes(clLvl));
-                const matchTopic = (!qTopic || this.state.selectedTopics.some(t => {
-                    const tNorm = String(t).toLowerCase().normalize('NFC');
-                    if (tNorm.includes(qTopic) || qTopic.includes(tNorm)) return true;
-                    const tNum = tNorm.match(/^\d+/)?.[0];
-                    const qNum = qTopic.match(/\d+/)?.[0];
-                    if (tNum && qNum && tNum === qNum) {
-                        if (qTopic.includes('chủ đề') || qTopic.includes('bài') || qTopic.includes('chu de') || qTopic.includes('bai')) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }));
-
-                return matchSub && matchClass && matchTopic;
+                return matchSubject && matchClass && matchTopic && selectedSemester;
             });
 
             if (pool.length === 0) {
@@ -1035,20 +1096,12 @@ const app = {
                 return;
             }
 
-            // 1. Đọc seen_questions của user từ localStorage
-            const username = app.data.currentUser ? app.data.currentUser.username : 'guest';
-            const seenKey = `seen_questions_${username}_${this.state.subject}_${clLevel}`;
-            let seenIds = [];
-            try {
-                seenIds = JSON.parse(app.safeStorage.getItem(seenKey) || '[]');
-            } catch (e) { seenIds = []; }
-
-            // 2. Chia pool thành unseen và seen
+            // Ưu tiên câu chưa gặp; khi đã gặp hết thì quay vòng mà không báo hết câu hỏi.
             let unseenPool = [];
             let seenPool = [];
             pool.forEach(q => {
-                const qId = q.q.trim(); // Dùng nội dung câu hỏi làm ID định danh
-                if (seenIds.includes(qId)) {
+                const qKey = app.data.getQuestionKey(q);
+                if (app.data.seenQuestionKeys.has(qKey)) {
                     seenPool.push(q);
                 } else {
                     unseenPool.push(q);
@@ -1086,24 +1139,14 @@ const app = {
 
             let selected = pickDiverse(unseenPool, targetCount);
             if (selected.length < targetCount) {
-                // Thiếu, lấy thêm từ seenPool (Tức là đã hết câu mới)
                 let needed = targetCount - selected.length;
                 let extra = pickDiverse(seenPool, needed);
                 selected = selected.concat(extra);
-                // Vòng lặp mới: reset seenIds để các câu cũ có thể ra lại vào các lượt sau
-                seenIds = []; 
             }
 
             pool = selected;
 
-            // 4. Lưu lại các câu đã chọn vào seen_questions
-            pool.forEach(q => {
-                const qId = q.q.trim();
-                if (!seenIds.includes(qId)) {
-                    seenIds.push(qId);
-                }
-            });
-            app.safeStorage.setItem(seenKey, JSON.stringify(seenIds));
+            app.data.markQuestionsSeen(pool);
 
             if (pool.length < this.state.count) {
                 alert('Ngân hàng chỉ có ' + pool.length + ' câu hỏi phù hợp, sẽ bốc toàn bộ!');
@@ -2498,11 +2541,14 @@ const app = {
 
             const clsEl = document.getElementById('add-q-class');
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
+            const semesterEl = document.getElementById('add-q-sem');
+            const semester = semesterEl ? semesterEl.value : 'Học kỳ 1';
+            const semesterKey = semester === 'Học kỳ 2' ? 'hk2' : 'hk1';
 
             const topicEl = document.getElementById('add-q-topic');
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
+            const topics = topicsObj[semesterKey] || [];
 
             const selected = topicEl.getAttribute('data-selected');
             topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
@@ -2852,7 +2898,7 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Học kỳ</label>
-                  <select id="add-q-sem" class="form-input" style="flex:1; padding:8px;">
+                   <select id="add-q-sem" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateTopicDropdown()">
                      <option value="Học kỳ 1" ${q && q.semester === 'Học kỳ 1' ? 'selected' : (!q ? 'selected' : '')}>Học kỳ 1</option>
                      <option value="Học kỳ 2" ${q && q.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option>
                   </select>
@@ -3202,6 +3248,15 @@ const app = {
                 explanation: document.getElementById('add-q-exp').value
             };
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
+            const metadataError = app.data.validateQuestionMetadata(qObj);
+            if (metadataError) return alert(metadataError);
+
+            const duplicateIndex = app.data.libraryQuestions.findIndex((item, index) =>
+                index !== editIdx && app.data.getQuestionKey(item) === app.data.getQuestionKey(qObj)
+            );
+            if (duplicateIndex !== -1) {
+                return alert('Câu hỏi này đã tồn tại trong đúng Lớp – Môn – Học kỳ – Chủ đề. Hệ thống không thêm câu trùng.');
+            }
 
             if (editIdx !== null && editIdx !== undefined) {
                 const oldId = app.data.libraryQuestions[editIdx]?.id;
@@ -3222,77 +3277,99 @@ const app = {
                 app.admin.renderESubTab('select_for_q', qIdx);
             }, 50);
         },
-        submitImportQuestions() {
+        async submitImportQuestions() {
             const fileInput = document.getElementById('q-file-upload');
             if (!fileInput.files.length) return alert('Vui lòng chọn file!');
 
             const modeInput = document.querySelector('input[name="q-import-mode"]:checked');
             const mode = modeInput ? modeInput.value : 'append';
-            if (mode === 'overwrite') {
-                if (!confirm("CẢNH BÁO: Bạn đã chọn GHI ĐÈ. Toàn bộ câu hỏi hiện có sẽ bị xóa sạch và thay bằng dữ liệu mới! Bạn có chắc chắn muốn tiếp tục? (Bấm OK để Ghi đè, Cancel để Hủy)")) {
-                    return;
-                }
-            }
-
             const btn = document.querySelector('button[onclick="app.admin.submitImportQuestions()"]');
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = 'Đang xử lý và tải lên... Vui lòng chờ';
             }
 
-            const files = Array.from(fileInput.files);
-            let totalCount = 0;
-            let processedFiles = 0;
+            try {
+                const files = Array.from(fileInput.files);
+                const readFile = file => new Promise(resolve => app.ui.importFromExcel(file, resolve));
+                const fileRows = await Promise.all(files.map(readFile));
+                const acceptedTypes = ['Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
+                const errors = [];
+                const importedQuestions = [];
 
-            const processNextFile = async (index) => {
-                if (index >= files.length) {
-                    await app.data.saveLibrary();
-                    alert(`Đã nhập thành công ${totalCount} câu hỏi từ ${files.length} file!`);
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = 'Tải lên';
-                    }
-                    this.renderQSubTab('lib');
+                fileRows.forEach((rows, fileIndex) => {
+                    rows.forEach((row, rowIndex) => {
+                        const questionText = String(row['Câu hỏi'] || '').trim();
+                        const answer = row['Đáp án đúng'] ?? row['Đáp án'];
+                        const hasData = questionText || answer !== undefined || row['Cấp lớp'] || row['Lớp'] || row['Môn học'] || row['Môn'] || row['Học kỳ'] || row['Chủ đề'];
+                        if (!hasData || (!questionText && answer === undefined)) return;
+
+                        const type = String(row['Loại câu hỏi'] || row['Loại'] || 'Trắc nghiệm').trim().normalize('NFC');
+                        const question = {
+                            type,
+                            subject: String(row['Môn học'] || row['Môn'] || '').trim().normalize('NFC'),
+                            classlevel: String(row['Cấp lớp'] || row['Lớp'] || '').trim().normalize('NFC'),
+                            semester: String(row['Học kỳ'] || '').trim().normalize('NFC'),
+                            topic: String(row['Chủ đề'] || '').trim().normalize('NFC'),
+                            q: questionText,
+                            ans: answer === undefined || answer === null ? '' : String(answer).trim(),
+                            options: row['Lựa chọn'] ? (
+                                type === 'Đối chiếu trùng khớp'
+                                    ? String(row['Lựa chọn']).split('|').map(s => s.trim()).filter(Boolean)
+                                    : String(row['Lựa chọn']).split(/[,;\|]/).map(s => s.trim()).filter(Boolean)
+                            ) : [],
+                            explanation: row['Lời giải chi tiết'] || ''
+                        };
+                        const location = `${files[fileIndex].name}, dòng ${rowIndex + 2}`;
+                        const metadataError = app.data.validateQuestionMetadata(question);
+                        if (!question.q) errors.push(`${location}: thiếu Câu hỏi.`);
+                        else if (!question.ans) errors.push(`${location}: thiếu Đáp án đúng.`);
+                        else if (!acceptedTypes.includes(type)) errors.push(`${location}: Loại câu hỏi "${type}" không hợp lệ.`);
+                        else if (metadataError) errors.push(`${location}: ${metadataError}`);
+                        else importedQuestions.push(question);
+                    });
+                });
+
+                if (errors.length > 0) {
+                    const preview = errors.slice(0, 20).join('\n');
+                    alert(`Không nhập dữ liệu vì có ${errors.length} dòng sai. Hãy sửa toàn bộ rồi tải lại:\n\n${preview}${errors.length > 20 ? '\n… và các lỗi khác.' : ''}`);
                     return;
                 }
-                app.ui.importFromExcel(files[index], (data) => {
-                    data.forEach(row => {
-                        const ansStr = row["Đáp án đúng"] || row["Đáp án"];
-                        if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
-                            app.data.libraryQuestions.push({
-                                type: String(row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm').trim().normalize('NFC'),
-                                subject: String(row["Môn học"] || row["Môn"] || 'Toán').trim(),
-                                classlevel: String(row["Cấp lớp"] || row["Lớp"] || 'Lớp 5').trim(),
-                                semester: String(row["Học kỳ"] || '').trim(),
-                                topic: String(row["Chủ đề"] || 'Khác').trim().normalize('NFC'),
-                                q: row["Câu hỏi"],
-                                ans: String(ansStr),
-                                options: row["Lựa chọn"] ? (
-        (row["Loại câu hỏi"] || row["Loại"]) === 'Đối chiếu trùng khớp'
-            ? String(row["Lựa chọn"]).split('|').map(s => s.trim()).filter(Boolean)
-            : String(row["Lựa chọn"]).split(/[,;\|]/).map(s => s.trim()).filter(Boolean)
-    ) : [],
-                                explanation: row["Lời giải chi tiết"] || ''
-                            });
-                            totalCount++;
-                        }
-                    });
-                    processNextFile(index + 1);
-                });
-            };
+                if (importedQuestions.length === 0) return alert('Không tìm thấy câu hỏi hợp lệ để nhập.');
 
-            if (mode === 'overwrite') {
-                app.data.libraryQuestions = [];
-                if (window.supabase) {
-                    supabaseClient.from('game_questions').delete().not('id', 'is', null).then(({ error }) => {
-                        if (error) console.error('Delete questions error:', error);
-                        processNextFile(0);
-                    });
-                } else {
-                    processNextFile(0);
+                if (mode === 'overwrite' && !confirm('CẢNH BÁO: Dữ liệu đã hợp lệ. Ghi đè sẽ xóa toàn bộ kho câu hỏi hiện có. Bạn có chắc chắn muốn tiếp tục?')) return;
+
+                const existingKeys = new Set(mode === 'overwrite' ? [] : app.data.libraryQuestions.map(q => app.data.getQuestionKey(q)));
+                const uniqueQuestions = [];
+                let duplicateCount = 0;
+                importedQuestions.forEach(question => {
+                    const key = app.data.getQuestionKey(question);
+                    if (existingKeys.has(key)) duplicateCount++;
+                    else {
+                        existingKeys.add(key);
+                        uniqueQuestions.push(question);
+                    }
+                });
+
+                if (mode === 'overwrite') {
+                    if (window.supabase) {
+                        const { error } = await supabaseClient.from('game_questions').delete().not('id', 'is', null);
+                        if (error) throw error;
+                    }
+                    app.data.libraryQuestions = [];
                 }
-            } else {
-                processNextFile(0);
+                app.data.libraryQuestions.push(...uniqueQuestions);
+                await app.data.saveLibrary();
+                alert(`Đã nhập ${uniqueQuestions.length} câu hỏi.${duplicateCount ? ` Đã tự bỏ ${duplicateCount} câu trùng.` : ''}`);
+                this.renderQSubTab('lib');
+            } catch (error) {
+                console.error('Lỗi nhập kho câu hỏi:', error);
+                alert(`Không thể nhập dữ liệu: ${error.message || 'Lỗi không xác định.'}`);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Tải lên';
+                }
             }
         },
         renderExams(box) {
