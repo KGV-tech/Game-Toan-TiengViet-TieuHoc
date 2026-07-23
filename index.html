@@ -35,16 +35,19 @@
 
     <!-- Màn hình Đăng nhập -->
     <div id="login-screen" class="screen active auth-screen">
-      <img src="./public/login_scifi_adventure.png" alt="Khu rừng và kim tự tháp tương lai" class="bg-img">
-      <div class="glass-container" style="margin-top: 20vh;">
-        <p class="auth-kicker">HÀNH TRÌNH: KẾT NỐI TRI THỨC</p>
-        <h2>Đăng nhập để bắt đầu</h2>
-        <input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass">
-        <input type="password" id="password" placeholder="Mật khẩu" class="input-glass">
-        <button id="login-btn" class="btn-primary">Bắt Đầu</button>
-        <a href="#" id="link-to-register" class="link-glass">Đăng ký tài khoản mới</a>
+      <img src="./public/login_reference_bg.png" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img">
+      <div class="glass-container login-panel" style="margin-top: 20vh;">
+        <div class="login-logo" aria-label="Hành trình: Kết Nối Tri Thức">
+          <span>Hành trình:</span>
+          <strong>Kết Nối Tri Thức</strong>
+        </div>
+        <h2 class="login-heading">Đăng nhập để bắt đầu</h2>
+        <label class="login-field" for="username"><span aria-hidden="true">👤</span><input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass"></label>
+        <label class="login-field" for="password"><span aria-hidden="true">🔒</span><input type="password" id="password" placeholder="Mật khẩu" class="input-glass"></label>
+        <button id="login-btn" class="btn-primary login-action">Bắt Đầu</button>
+        <a href="#" id="link-to-register" class="link-glass login-register-link">Đăng ký tài khoản mới</a>
       </div>
-      <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
+      <img src="./public/login_robot_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
       <div
         style="position: absolute; bottom: 10px; right: 10px; color: white; font-weight: bold; font-size: 1rem; text-shadow: 1px 1px 2px #000; z-index: 100;">
         Ver. 1.00</div>
