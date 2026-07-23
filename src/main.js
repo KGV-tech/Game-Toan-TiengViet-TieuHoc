@@ -1636,7 +1636,7 @@ const app = {
             if (this.hardTimer) clearInterval(this.hardTimer);
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
-            let qType = q.type || 'Trắc nghiệm';
+            let qType = (q.type || 'Trắc nghiệm').trim();
             let opts = q.options || [];
 
             if (opts.length === 0) {
@@ -3190,11 +3190,11 @@ const app = {
                         const ansStr = row["Đáp án đúng"] || row["Đáp án"];
                         if (row["Câu hỏi"] && ansStr !== undefined && ansStr !== null && String(ansStr).trim() !== '') {
                             app.data.libraryQuestions.push({
-                                type: row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm',
-                                subject: row["Môn học"] || row["Môn"] || 'Toán',
-                                classlevel: row["Cấp lớp"] || row["Lớp"] || 'Lớp 5',
-                                semester: row["Học kỳ"] || '',
-                                topic: row["Chủ đề"] || 'Khác',
+                                type: String(row["Loại câu hỏi"] || row["Loại"] || 'Trắc nghiệm').trim(),
+                                subject: String(row["Môn học"] || row["Môn"] || 'Toán').trim(),
+                                classlevel: String(row["Cấp lớp"] || row["Lớp"] || 'Lớp 5').trim(),
+                                semester: String(row["Học kỳ"] || '').trim(),
+                                topic: String(row["Chủ đề"] || 'Khác').trim(),
                                 q: row["Câu hỏi"],
                                 ans: String(ansStr),
                                 options: row["Lựa chọn"] ? (
