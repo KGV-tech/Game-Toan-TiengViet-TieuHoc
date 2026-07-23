@@ -56,25 +56,21 @@
 
     <!-- Màn hình Đăng ký -->
     <div id="register-screen" class="screen auth-screen">
-      <img src="./public/login_scifi_adventure.png" alt="Khu rừng và kim tự tháp tương lai" class="bg-img">
-      <div class="glass-container">
-        <p class="auth-kicker">HÀNH TRÌNH: KẾT NỐI TRI THỨC</p>
-        <h2>Đăng Ký Tài Khoản</h2>
-        <input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass">
-        <input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass">
-        <input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass">
-        <select id="reg-class" class="input-glass">
-          <option value="">-- Chọn Cấp Lớp --</option>
-          <option value="1">Lớp 1</option>
-          <option value="2">Lớp 2</option>
-          <option value="3">Lớp 3</option>
-          <option value="4">Lớp 4</option>
-          <option value="5">Lớp 5</option>
-        </select>
-        <button id="register-btn" class="btn-success">Đăng Ký</button>
-        <a href="#" id="link-to-login" class="link-glass">⬅ Quay lại đăng nhập</a>
+      <img src="./public/login_reference_bg.png" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img">
+      <div class="register-artwork-anchor">
+        <img src="./public/login_logo.png" class="register-logo" alt="Hành trình: Kết Nối Tri Thức">
+        <div class="glass-container register-panel">
+          <img src="./public/login_frame.png" class="register-panel-frame" alt="">
+          <h2 class="register-heading">Đăng ký tài khoản</h2>
+          <label class="register-field" for="reg-fullname"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass"></label>
+          <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass"></label>
+          <label class="register-field" for="reg-password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass"></label>
+          <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
+          <button id="register-btn" class="btn-primary register-action">Đăng ký</button>
+          <a href="#" id="link-to-login" class="link-glass register-back-link">← Quay lại đăng nhập</a>
+        </div>
       </div>
-      <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
+      <img src="./public/login_robot_transparent.png" alt="Robot mèo hướng dẫn" class="login-mascot">
     </div>
 
     <!-- Bản đồ -->
