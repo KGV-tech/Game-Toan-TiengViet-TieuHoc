@@ -23,7 +23,9 @@
 
 #login-screen .login-artwork-anchor .login-panel {
   flex: none;
-  margin: 0 !important;
+  /* Both PNGs have transparent outer padding; overlap the layout boxes so their
+     visible metal edges meet instead of leaving an artificial gap. */
+  margin: clamp(-120px, -8vw, -86px) 0 0 !important;
 }
 
 #login-screen .login-panel .login-field {
@@ -68,8 +70,9 @@
   max-width: 430px;
   aspect-ratio: 1055 / 1491;
   flex: none;
-  margin: 0 !important;
-  padding: clamp(74px, 7vh, 98px) clamp(48px, 4vw, 64px) clamp(32px, 3vh, 44px);
+  /* Keep the upright frame visually attached to the logo despite transparent padding. */
+  margin: clamp(-150px, -10vw, -96px) 0 0 !important;
+  padding: clamp(118px, 9vh, 140px) clamp(48px, 4vw, 64px) clamp(32px, 3vh, 44px);
   overflow: visible;
   background: transparent;
   border: 0;
