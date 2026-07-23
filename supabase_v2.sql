@@ -3,6 +3,11 @@
 -- =================================================================================
 
 -- 1. Bảng game_quests: Lưu các nhiệm vụ do Admin tạo
+-- Lượt quay may mắn theo từng học sinh: ngày hiện tại và số lượt đã dùng trong ngày.
+ALTER TABLE game_users
+    ADD COLUMN IF NOT EXISTS lucky_spin_date DATE,
+    ADD COLUMN IF NOT EXISTS lucky_spin_count INT NOT NULL DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS game_quests (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     title TEXT NOT NULL,

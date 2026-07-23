@@ -27,5 +27,8 @@ assert.match(source, /Kỹ năng bạn chọn không có tác dụng gì trong t
   'Inapplicable pet skills must clearly warn the student.');
 assert.match(source, /this\.setCooldown\(user\.username, skillId, 3\)/,
   'A skill attempt must start its three-round cooldown before determining its effect.');
+assert.match(source, /lucky_spin_date/, 'Daily lucky-spin usage must be stored per user.');
+assert.match(source, /spinsToday >= 3/, 'The wheel must reject a fourth spin on the same day.');
+assert.match(source, /Lượt quay hôm nay: \$\{remainingSpins\}\/3/, 'The UI must show the remaining daily spins.');
 
 console.log('Shared pet inventory contract verified.');

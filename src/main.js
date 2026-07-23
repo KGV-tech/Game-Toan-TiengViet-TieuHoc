@@ -4857,8 +4857,19 @@ const app = {
                 this.renderMyPets(box, user);
             }
         },
+        getLuckySpinDay() {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date()).split('/').reverse().join('-');
+        },
+        getLuckySpinsToday(user) {
+            return user.lucky_spin_date === this.getLuckySpinDay() ? Number(user.lucky_spin_count || 0) : 0;
+        },
         renderLuckyStation(box, user) {
             let isSpinning = this.isSpinning || false;
+            const spinsToday = this.getLuckySpinsToday(user);
+            const remainingSpins = Math.max(0, 3 - spinsToday);
+            const cannotSpin = isSpinning || remainingSpins === 0;
 
             let html = `
         <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
@@ -4895,6 +4906,7 @@ const app = {
                             Bạn đang có: <span id="lucky-lollipop-count" style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
                         </div>
                     </div>
+                    <p style="text-align:center; margin:-10px 0 18px; font-weight:800; color:${remainingSpins ? '#475569' : '#dc2626'};">Lượt quay hôm nay: ${remainingSpins}/3</p>
                     
                     <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 10px;">
                         <h3 style="margin-top:0; color: #475569;">Thể lệ Vòng Quay:</h3>
@@ -4905,13 +4917,14 @@ const app = {
                             <li><b style="color:#a855f7;">Tặng 1 kẹo</b></li>
                             <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (tỉ lệ 0,1%, không gồm Rồng, tùy tồn kho chung)</li>
                             <li><b style="color:#0ea5e9;">Quay lại</b> (Miễn phí 1 lần quay tới)</li>
+                            <li>Tối đa <b>3 lượt/ngày</b>; lượt chưa dùng sẽ không cộng dồn.</li>
                         </ul>
                     </div>
                     
                     <button id="btn-spin-lucky" class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
                         onclick="app.shop.spinWheel()"
-                        ${isSpinning ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                        QUAY NGAY (2 🍭)
+                        ${cannotSpin ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                        ${remainingSpins === 0 ? 'ĐÃ HẾT LƯỢT HÔM NAY' : 'QUAY NGAY (2 🍭)'}
                     </button>
                 </div>
             </div>
@@ -4924,7 +4937,24 @@ const app = {
 
             const user = app.data.currentUser;
             if (!user) return;
-            const lollipopsBeforeSpin = user.lollipops || 0;
+            let lollipopsBeforeSpin = user.lollipops || 0;
+
+            const today = this.getLuckySpinDay();
+            let spinsToday = this.getLuckySpinsToday(user);
+            if (window.supabase && user.id) {
+                const { data, error } = await supabaseClient.from('game_users')
+                    .select('lollipops,lucky_spin_date,lucky_spin_count').eq('id', user.id).single();
+                if (error || !data) return alert('Không thể kiểm tra lượt quay hôm nay. Vui lòng thử lại.');
+                user.lollipops = data.lollipops || 0;
+                user.lucky_spin_date = data.lucky_spin_date;
+                user.lucky_spin_count = data.lucky_spin_count || 0;
+                lollipopsBeforeSpin = user.lollipops;
+                spinsToday = this.getLuckySpinsToday(user);
+            }
+            if (spinsToday >= 3) {
+                return alert('Bạn đã dùng hết 3 lượt quay hôm nay. Hãy quay lại vào ngày mai nhé!');
+            }
+            const nextSpinCount = spinsToday + 1;
 
             let freeSpin = this.freeSpin || false;
             if (!freeSpin && (user.lollipops || 0) < 2) {
@@ -5046,12 +5076,16 @@ const app = {
 
             setTimeout(async () => {
                 if (window.supabase) {
-                    const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: user.lollipops || 0 }).eq('id', user.id);
+                    const { error: candyError } = await supabaseClient.from('game_users').update({
+                        lollipops: user.lollipops || 0, lucky_spin_date: today, lucky_spin_count: nextSpinCount
+                    }).eq('id', user.id);
                     if (candyError) {
                         if (wonPetId) await app.data.changePetStock(wonPetId, 1, 8);
                         user.lollipops = lollipopsBeforeSpin;
                         rewardText = 'Không thể lưu kết quả vòng quay. Vui lòng thử lại.';
                     } else if (wonPet) {
+                        user.lucky_spin_date = today;
+                        user.lucky_spin_count = nextSpinCount;
                         const { data, error: petError } = await supabaseClient.from('user_pets').insert([wonPet]).select();
                         if (petError || !data?.length) {
                             await app.data.changePetStock(wonPetId, 1, 8);
@@ -5059,8 +5093,13 @@ const app = {
                         } else {
                             app.data.userPets.push(data[0]);
                         }
+                    } else {
+                        user.lucky_spin_date = today;
+                        user.lucky_spin_count = nextSpinCount;
                     }
                 } else {
+                    user.lucky_spin_date = today;
+                    user.lucky_spin_count = nextSpinCount;
                     app.data.saveUsers();
                     if (wonPet) {
                         wonPet.id = 'temp_' + new Date().getTime();
