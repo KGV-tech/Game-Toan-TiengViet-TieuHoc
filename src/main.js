@@ -942,6 +942,9 @@ const app = {
             this.state.subject = subject;
             this.state.selectedTopics = [];
             this.state.topicMode = 'single';
+            this.state.examName = null;
+            this.state.examId = null;
+            this.state.questId = null;
 
             document.getElementById('game-config-title').textContent = subject === 'math' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
             document.getElementById('start-adv-icon').src = subject === 'math' ? './public/torch_new.png' : './public/watering_can.png';
@@ -2139,7 +2142,7 @@ const app = {
 
             // Update quests progress
             if (app.quest && typeof app.quest.updateProgress === 'function') {
-                app.quest.updateProgress(this.state.subject, finalScore);
+                app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId);
             }
 
             const scoreEl = document.getElementById('result-score');
@@ -2240,7 +2243,7 @@ const app = {
 
     exam: {
         filters: { subject: '', period: '' },
-        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5' },
+        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5', examId: null, questId: null },
 
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -2259,7 +2262,75 @@ const app = {
             el.classList.add('active');
         },
 
-        start() {
+        getQuestionType(question) {
+            const type = String(question.type || 'Trắc nghiệm').trim().normalize('NFC');
+            if (type.includes('Đúng/Sai')) return 'Đúng/Sai';
+            if (type.includes('So sánh')) return 'So sánh';
+            if (type.includes('Chuỗi')) return 'Chuỗi Quy luật';
+            if (type.includes('Kéo thả')) return 'Kéo thả';
+            if (type.includes('Đối chiếu')) return 'Đối chiếu trùng khớp';
+            if (type.includes('Điền')) return 'Điền khuyết';
+            return 'Trắc nghiệm';
+        },
+        normalizeAnswer(value) {
+            return String(value || '').trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN');
+        },
+        renderSimpleChoices(index, choices) {
+            return choices.map(choice => `<label class="exam-opt-label"><input type="radio" name="exam_q_${index}" value="${app.data.sanitizeHTML(choice)}"> ${app.data.sanitizeHTML(choice)}</label>`).join('');
+        },
+        renderQuestionInput(question, index) {
+            const type = this.getQuestionType(question);
+            const options = question.options || [];
+            if (type === 'Trắc nghiệm') return this.renderSimpleChoices(index, options);
+            if (type === 'Đúng/Sai') return this.renderSimpleChoices(index, ['Đúng', 'Sai']);
+            if (type === 'So sánh') return this.renderSimpleChoices(index, ['<', '>', '=']);
+            if (type === 'Đối chiếu trùng khớp') {
+                const leftItems = String(options[0] || '').split(',').map(item => item.trim()).filter(Boolean);
+                const rightItems = String(options[1] || '').split(',').map(item => item.trim()).filter(Boolean);
+                if (!leftItems.length || !rightItems.length) return '<p style="color:#dc2626;">Câu đối chiếu thiếu dữ liệu hai cột.</p>';
+                const choices = rightItems.map(item => `<option value="${app.data.sanitizeHTML(item)}">${app.data.sanitizeHTML(item)}</option>`).join('');
+                return leftItems.map((left, part) => `<label style="display:flex; gap:10px; align-items:center; margin:8px 0;"><span style="min-width:130px;">${app.data.sanitizeHTML(left)}</span><select class="form-input" data-exam-match="${index}" data-left="${app.data.sanitizeHTML(left)}"><option value="">-- Chọn --</option>${choices}</select></label>`).join('');
+            }
+
+            const blanks = (String(question.q || '').match(/___|\.\.\./g) || []).length;
+            const inputCount = Math.max(1, blanks);
+            if (type === 'Kéo thả') {
+                if (!options.length) return '<p style="color:#dc2626;">Câu kéo thả chưa có lựa chọn.</p>';
+                const choices = options.map(item => `<option value="${app.data.sanitizeHTML(item)}">${app.data.sanitizeHTML(item)}</option>`).join('');
+                return Array.from({ length: inputCount }, (_, part) => `<select class="form-input" data-exam-part="${index}" data-part="${part}" style="margin:5px; max-width:220px;"><option value="">-- Chọn đáp án ${part + 1} --</option>${choices}</select>`).join('');
+            }
+            return Array.from({ length: inputCount }, (_, part) => `<input type="text" class="fill-input" data-exam-part="${index}" data-part="${part}" style="max-width:400px; margin:5px;" placeholder="Nhập đáp án ${inputCount > 1 ? part + 1 : ''}">`).join('');
+        },
+        readQuestionAnswer(question, index) {
+            const type = this.getQuestionType(question);
+            if (['Trắc nghiệm', 'Đúng/Sai', 'So sánh'].includes(type)) {
+                return document.querySelector(`input[name="exam_q_${index}"]:checked`)?.value || '';
+            }
+            if (type === 'Đối chiếu trùng khớp') {
+                return Array.from(document.querySelectorAll(`[data-exam-match="${index}"]`))
+                    .map(select => `${select.dataset.left}:${select.value}`)
+                    .join(', ');
+            }
+            return Array.from(document.querySelectorAll(`[data-exam-part="${index}"]`))
+                .map(input => input.value.trim())
+                .join(', ');
+        },
+        isAnswerCorrect(question, selected) {
+            const type = this.getQuestionType(question);
+            if (type === 'Đối chiếu trùng khớp') {
+                const normalizePairs = value => String(value || '').split(',').map(pair => this.normalizeAnswer(pair)).filter(Boolean).sort();
+                const chosen = normalizePairs(selected);
+                const expected = normalizePairs(question.ans);
+                return chosen.length === expected.length && chosen.every((pair, index) => pair === expected[index]);
+            }
+            if (['Điền khuyết', 'Chuỗi Quy luật', 'Kéo thả'].includes(type)) {
+                const chosen = String(selected || '').split(',').map(value => this.normalizeAnswer(value));
+                const expected = String(question.ans || '').split(',').map(value => this.normalizeAnswer(value));
+                return chosen.length === expected.length && chosen.every((value, index) => value === expected[index]);
+            }
+            return this.normalizeAnswer(selected) === this.normalizeAnswer(question.ans);
+        },
+        start(forcedExamId = null, questId = null) {
             if (!this.filters.subject || !this.filters.period) {
                 return alert('Vui lòng chọn môn học và thời gian!');
             }
@@ -2280,7 +2351,11 @@ const app = {
             });
             if (filtered.length === 0) return alert('Không tìm thấy đề kiểm tra phù hợp trong Kho Đề Kiểm tra.');
 
-            const exam = filtered[0];
+            const exam = forcedExamId
+                ? filtered.find(item => item.id === forcedExamId)
+                : filtered[Math.floor(Math.random() * filtered.length)];
+            if (!exam) return alert('Đề kiểm tra được giao không còn phù hợp hoặc đã bị xóa.');
+            if (!Array.isArray(exam.questions) || exam.questions.length === 0) return alert('Đề kiểm tra này chưa có câu hỏi.');
 
             const timeLimitMinutes = app.data.settings.examTimeLimit || 30;
             if (!confirm(`Bạn có thời gian ${timeLimitMinutes} phút để làm bài kiểm tra này.\n\nBấm OK để bắt đầu tính giờ, hoặc Cancel để hủy bỏ.`)) {
@@ -2289,6 +2364,8 @@ const app = {
 
             this.state.questions = exam.questions || [];
             this.state.name = exam.name;
+            this.state.examId = exam.id || null;
+            this.state.questId = questId;
             this.state.historyDetails = [];
             this.state.score = 0;
 
@@ -2307,17 +2384,7 @@ const app = {
                 const optsContainer = document.createElement('div');
                 optsContainer.className = 'exam-options';
 
-                if (q.type === 'Trắc nghiệm' || q.type === 'Đúng/Sai' || q.type === 'So sánh' || q.type === 'Kéo thả' || !q.type) {
-                    const opts = q.options || [];
-                    opts.forEach(opt => {
-                        const lbl = document.createElement('label');
-                        lbl.className = 'exam-opt-label';
-                        lbl.innerHTML = `<input type="radio" name="exam_q_${idx}" value="${opt}"> ${opt}`;
-                        optsContainer.appendChild(lbl);
-                    });
-                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật' || q.type === 'Đối chiếu trùng khớp') {
-                    optsContainer.innerHTML = `<input type="text" class="fill-input" name="exam_q_${idx}" style="width:100%; max-width:400px;" placeholder="Nhập câu trả lời...">`;
-                }
+                optsContainer.innerHTML = this.renderQuestionInput(q, idx);
 
                 qBlock.appendChild(optsContainer);
                 container.appendChild(qBlock);
@@ -2368,22 +2435,8 @@ const app = {
             const ptsPerQ = 10 / (this.state.questions.length || 1);
 
             this.state.questions.forEach((q, idx) => {
-                let isCorrect = false;
-                let selected = '';
-
-                if (q.type === 'Trắc nghiệm' || q.type === 'Đúng/Sai' || q.type === 'So sánh' || q.type === 'Kéo thả' || !q.type) {
-                    const checked = document.querySelector(`input[name="exam_q_${idx}"]:checked`);
-                    if (checked) {
-                        selected = checked.value;
-                        isCorrect = (selected === q.ans);
-                    }
-                } else if (q.type === 'Điền khuyết' || q.type === 'Chuỗi Quy luật' || q.type === 'Đối chiếu trùng khớp') {
-                    const inp = document.querySelector(`input[name="exam_q_${idx}"]`);
-                    if (inp) {
-                        selected = inp.value.replace(/\s+/g, ' ').trim();
-                        isCorrect = (selected.toLowerCase() === (q.ans || '').toString().replace(/\s+/g, ' ').trim().toLowerCase());
-                    }
-                }
+                const selected = this.readQuestionAnswer(q, idx);
+                const isCorrect = this.isAnswerCorrect(q, selected);
 
                 if (isCorrect) totalPts += ptsPerQ;
                 this.state.historyDetails.push({ q: q.q, selected, correct: q.ans, isCorrect, type: q.type });
@@ -2395,6 +2448,8 @@ const app = {
             app.game.state.questions = this.state.questions;
             app.game.state.subject = this.filters.subject;
             app.game.state.examName = this.state.name;
+            app.game.state.examId = this.state.examId;
+            app.game.state.questId = this.state.questId;
 
             app.game.finishPlay();
         }
@@ -2632,6 +2687,10 @@ const app = {
                 const status = q.is_active ? '<span style="color:#16a34a; font-weight:bold;">Đang chạy</span>' : '<span style="color:#dc2626; font-weight:bold;">Tạm dừng</span>';
                 let target = q.target_subject === 'any' ? 'Bất kỳ' : (q.target_subject === 'math' ? 'Toán' : 'Tiếng Việt');
                 target += ` (>= ${q.target_score}đ)`;
+                if (q.exam_id) {
+                    const exam = app.data.exams.find(item => item.id === q.exam_id);
+                    target = `Đề: ${app.data.sanitizeHTML(exam?.name || 'Đã xóa')}`;
+                }
 
                 let assign = 'Toàn trường';
                 if (q.assign_type === 'class') assign = `Lớp ${q.assign_target}`;
@@ -2656,6 +2715,7 @@ const app = {
         showAddQuestForm() {
             const box = document.getElementById('treasure-content-area');
             let classOpts = [1, 2, 3, 4, 5].map(c => `<option value="${c}">Lớp ${c}</option>`).join('');
+            const examOptions = (app.data.exams || []).map(exam => `<option value="${exam.id}">${app.data.sanitizeHTML(`${exam.classlevel} – ${exam.subject} – ${exam.period}: ${exam.name}`)}</option>`).join('');
             box.innerHTML = `
         <div style="max-width: 600px; margin: 0 auto; text-align: left; padding: 20px;">
            <h3 style="margin-bottom: 20px; color: #ffeb3b; text-align:center;">Tạo Nhiệm Vụ Mới</h3>
@@ -2686,8 +2746,16 @@ const app = {
                  <label style="display:block; font-weight:bold; margin-bottom:5px;">Phần thưởng (Kẹo):</label>
                  <input type="number" id="quest-reward" class="form-input" style="width:100%;" value="20" min="1">
               </div>
-           </div>
-           <div class="form-group" style="margin-bottom:15px;">
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+               <label style="display:block; font-weight:bold; margin-bottom:5px;">Đề kiểm tra giao kèm (tùy chọn):</label>
+               <select id="quest-exam" class="form-input" style="width:100%;">
+                  <option value="">Không gắn đề — nhiệm vụ luyện tập thông thường</option>
+                  ${examOptions}
+               </select>
+               <small style="display:block; margin-top:5px; color:#cbd5e1;">Nếu chọn đề, học sinh chỉ được tính tiến độ khi làm đúng đề này từ nút “Làm đề”.</small>
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
               <label style="display:block; font-weight:bold; margin-bottom:5px;">Chỉ định cho:</label>
               <select id="quest-assign-type" class="form-input" style="width:100%;" onchange="document.getElementById('quest-assign-target').style.display = this.value === 'all' ? 'none' : 'block'">
                  <option value="all">Toàn trường</option>
@@ -2712,14 +2780,21 @@ const app = {
             const reward = parseInt(document.getElementById('quest-reward').value) || 10;
             const assignType = document.getElementById('quest-assign-type').value;
             const assignTarget = document.getElementById('quest-assign-target').value.trim();
+            const examId = document.getElementById('quest-exam').value || null;
 
             if (!title) return alert("Vui lòng nhập tên nhiệm vụ!");
             if (assignType !== 'all' && !assignTarget) return alert("Vui lòng nhập đích danh (Lớp/Username)!");
 
+            const selectedExam = examId ? app.data.exams.find(exam => exam.id === examId) : null;
+            if (examId && !selectedExam) return alert('Không tìm thấy đề kiểm tra đã chọn.');
             const newQuest = {
                 title, target_subject: subject, target_score: score, target_count: count,
-                reward_lollipops: reward, assign_type: assignType, assign_target: assignTarget, is_active: true
+                reward_lollipops: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true
             };
+            if (selectedExam) {
+                newQuest.target_subject = selectedExam.subject === 'Toán' ? 'math' : 'vietnamese';
+                newQuest.target_count = 1;
+            }
 
             if (window.supabase) {
                 const { data, error } = await supabaseClient.from('game_quests').insert([newQuest]).select();
@@ -4511,13 +4586,20 @@ const app = {
                 } else if (progress >= q.target_count) {
                     btnHtml = `<button class="btn-success" style="box-shadow: 0 0 10px #4ade80;" onclick="app.quest.claimReward('${q.id}')">Nhận ${q.reward_lollipops} 🍭</button>`;
                 } else {
-                    btnHtml = `<button class="btn-primary" style="opacity:0.5; cursor:not-allowed;" disabled>${progress}/${q.target_count}</button>`;
+                    btnHtml = q.exam_id
+                        ? `<button class="btn-primary" onclick="app.quest.startExam('${q.id}')">Làm đề (${progress}/${q.target_count})</button>`
+                        : `<button class="btn-primary" style="opacity:0.5; cursor:not-allowed;" disabled>${progress}/${q.target_count}</button>`;
                 }
+
+                const questExam = q.exam_id ? app.data.exams.find(exam => exam.id === q.exam_id) : null;
+                const requirement = questExam
+                    ? `Làm đề: ${app.data.sanitizeHTML(questExam?.name || 'Đề đã bị xóa')} đạt >= ${q.target_score} điểm`
+                    : `Yêu cầu: ${q.target_subject === 'any' ? 'Môn bất kỳ' : (q.target_subject === 'math' ? 'Môn Toán' : 'Môn Tiếng Việt')} đạt >= ${q.target_score} điểm`;
 
                 html += `<div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <h4 style="margin:0 0 5px 0; color:#b45309; font-size: 1.2rem;">${app.data.sanitizeHTML(q.title)}</h4>
-                    <p style="margin:0; font-size:0.9rem; color:#666;">Yêu cầu: ${q.target_subject === 'any' ? 'Môn bất kỳ' : (q.target_subject === 'math' ? 'Môn Toán' : 'Môn Tiếng Việt')} đạt >= ${q.target_score} điểm</p>
+                    <p style="margin:0; font-size:0.9rem; color:#666;">${requirement}</p>
                 </div>
                 <div>
                     ${btnHtml}
@@ -4525,6 +4607,15 @@ const app = {
             </div>`;
             });
             container.innerHTML = html;
+        },
+        startExam(questId) {
+            const quest = app.data.quests.find(item => item.id === questId);
+            const exam = quest?.exam_id && app.data.exams.find(item => item.id === quest.exam_id);
+            if (!quest || !exam) return alert('Không tìm thấy đề kiểm tra của nhiệm vụ này.');
+            document.getElementById('quest-modal').style.display = 'none';
+            app.exam.filters.subject = exam.subject === 'Toán' ? 'math' : 'vietnamese';
+            app.exam.filters.period = exam.period;
+            app.exam.start(exam.id, quest.id);
         },
         async claimReward(questId) {
             const user = app.data.currentUser;
@@ -4560,7 +4651,7 @@ const app = {
                 app.data.saveUsers();
             }
         },
-        async updateProgress(subject, score) {
+        async updateProgress(subject, score, examId = null, questId = null) {
             const user = app.data.currentUser;
             if (!user || user.role === 'admin') return;
 
@@ -4568,6 +4659,8 @@ const app = {
             const activeQuests = (app.data.quests || []).filter(q => {
                 if (!q.is_active) return false;
                 if (q.assign_type === 'all' || (q.assign_type === 'class' && q.assign_target === clLvl) || (q.assign_type === 'user' && q.assign_target === user.username)) {
+                    if (q.exam_id && (q.id !== questId || q.exam_id !== examId)) return false;
+                    if (!q.exam_id && questId) return false;
                     if (q.target_subject === 'any' || q.target_subject === subject) {
                         if (score >= q.target_score) return true;
                     }
