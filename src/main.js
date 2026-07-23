@@ -120,6 +120,7 @@ const app = {
         users: [],
         libraryQuestions: [],
         exams: [],
+        petInventory: {},
         settings: { hardTimeLimit: 10, examTimeLimit: 30 },
         currentUser: null,
         async fetchAllFromSupabase(table, filterCol, filterVal) {
@@ -143,6 +144,52 @@ const app = {
                 from += step;
             }
             return allData;
+        },
+        getPetStock(petId, fallbackStock) {
+            const stock = this.petInventory[petId];
+            return Number.isInteger(stock) && stock >= 0 ? stock : fallbackStock;
+        },
+        async refreshPetInventory() {
+            const inventory = await this.fetchAllFromSupabase('pet_inventory');
+            this.petInventory = {};
+            inventory.forEach(item => {
+                this.petInventory[item.pet_id] = Number(item.remaining);
+            });
+        },
+        async setPetStock(petId, remaining) {
+            if (!window.supabase) {
+                this.petInventory[petId] = remaining;
+                return true;
+            }
+
+            const { data, error } = await supabaseClient.from('pet_inventory')
+                .upsert({ pet_id: petId, remaining })
+                .select();
+            if (error || !data || data.length === 0) return false;
+            this.petInventory[petId] = Number(data[0].remaining);
+            return true;
+        },
+        async changePetStock(petId, delta, fallbackStock) {
+            const current = this.getPetStock(petId, fallbackStock);
+            const next = current + delta;
+            if (next < 0) return false;
+
+            if (!window.supabase) {
+                this.petInventory[petId] = next;
+                return true;
+            }
+
+            const { data, error } = await supabaseClient.from('pet_inventory')
+                .update({ remaining: next })
+                .eq('pet_id', petId)
+                .eq('remaining', current)
+                .select();
+            if (error || !data || data.length === 0) {
+                await this.refreshPetInventory();
+                return false;
+            }
+            this.petInventory[petId] = Number(data[0].remaining);
+            return true;
         },
 
         async init() {
@@ -169,6 +216,8 @@ const app = {
                     const localSettings = app.safeStorage.getItem('game_settings');
                     if (localSettings) this.settings = JSON.parse(localSettings);
                 }
+
+                await this.refreshPetInventory();
 
                 // Realtime subscription
                 supabaseClient.channel('custom-all-channel')
@@ -255,6 +304,9 @@ const app = {
                                 }
                             }
                         }
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'pet_inventory' }, async () => {
+                        await this.refreshPetInventory();
                     })
                     .subscribe();
 
@@ -4719,12 +4771,8 @@ const app = {
                 currentPet = this.shopData[0];
             }
 
-            let remainingKey = 'pet_rem_' + currentPet.id;
-            let remaining = localStorage.getItem(remainingKey);
-            if (remaining === null) {
-                remaining = (currentPet.id === 'pet_dragon') ? 5 : 8;
-                localStorage.setItem(remainingKey, remaining);
-            }
+            const defaultStock = currentPet.id === 'pet_dragon' ? 5 : 8;
+            const remaining = app.data.getPetStock(currentPet.id, defaultStock);
             const hasPet = myPets.some(p => p.pet_image === currentPet.image);
             const description = currentPet.description || "Chưa có dữ liệu.";
 
@@ -4902,14 +4950,14 @@ const app = {
                 return alert(`Bạn không đủ Kẹo! Cần ${pet.cost} 🍭.`);
             }
 
-            // Deduct
+            const defaultStock = pet.id === 'pet_dragon' ? 5 : 8;
+            const reserved = await app.data.changePetStock(pet.id, -1, defaultStock);
+            if (!reserved) {
+                return alert('Thú cưng này vừa hết hàng hoặc số lượng đã thay đổi. Vui lòng thử lại.');
+            }
+
             user.lollipops -= pet.cost;
             app.auth.updateHeader();
-
-            // Update remaining count
-            let remainingKey = 'pet_rem_' + pet.id;
-            let remaining = parseInt(localStorage.getItem(remainingKey)) || 0;
-            localStorage.setItem(remainingKey, remaining - 1);
 
             const newPet = {
                 user_username: user.username, pet_name: pet.name, pet_image: pet.image, rarity: 'common'
@@ -4941,10 +4989,11 @@ const app = {
             user.lollipops = (user.lollipops || 0) + refund;
             app.auth.updateHeader();
 
-            // Increase remaining
-            let remainingKey = 'pet_rem_' + shopInfo.id;
-            let remaining = parseInt(localStorage.getItem(remainingKey)) || 0;
-            localStorage.setItem(remainingKey, remaining + 1);
+            const defaultStock = shopInfo.id === 'pet_dragon' ? 5 : 8;
+            const returnedToStock = await app.data.changePetStock(shopInfo.id, 1, defaultStock);
+            if (!returnedToStock) {
+                return alert('Không thể cập nhật kho thú cưng dùng chung. Vui lòng thử lại.');
+            }
 
             // Remove pet
             app.data.userPets = app.data.userPets.filter(x => x.id !== userPetId);
@@ -4975,13 +5024,15 @@ const app = {
             }
             this.switchTab('mypets');
         },
-        adminSavePet(petId) {
-            const val = document.getElementById('admin_edit_' + petId).value;
-            if (val !== '') {
-                localStorage.setItem('pet_rem_' + petId, parseInt(val));
-                alert('Đã cập nhật số lượng tồn kho!');
-                this.switchTab('pets');
+        async adminSavePet(petId) {
+            const val = Number.parseInt(document.getElementById('admin_edit_' + petId).value, 10);
+            if (!Number.isInteger(val) || val < 0) {
+                return alert('Số lượng tồn kho phải là số nguyên từ 0 trở lên.');
             }
+            const saved = await app.data.setPetStock(petId, val);
+            if (!saved) return alert('Không thể lưu số lượng tồn kho. Vui lòng thử lại.');
+            alert('Đã cập nhật số lượng tồn kho dùng chung!');
+            this.switchTab('pets');
         }
 
     }
