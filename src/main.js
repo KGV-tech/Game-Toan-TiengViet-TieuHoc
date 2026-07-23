@@ -577,6 +577,12 @@ const app = {
                 }
                 app.data.currentUser = user;
 
+                // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
+                app.data.exams = await app.data.fetchAllFromSupabase('game_exams');
+                const settingsData = await app.data.fetchAllFromSupabase('game_settings');
+                if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
+                await app.data.refreshPetInventory();
+
                 // Lazy load based on role
                 if (user.role?.toLowerCase() === 'admin') {
                     app.data.users = await app.data.fetchAllFromSupabase('game_users');
