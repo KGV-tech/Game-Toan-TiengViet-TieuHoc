@@ -55,7 +55,7 @@
   position: relative;
   z-index: 12;
   flex: none;
-  width: min(28vw, 400px);
+  width: min(35vw, 500px);
   height: auto;
   margin: 0;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.6));
@@ -65,9 +65,9 @@
 #register-screen .register-panel {
   position: relative;
   z-index: 10;
-  width: min(30vw, 430px);
-  min-width: 280px;
-  max-width: 430px;
+  width: min(37.5vw, 538px);
+  min-width: 350px;
+  max-width: 538px;
   aspect-ratio: 1055 / 1491;
   flex: none;
   /* Keep the upright frame visually attached to the logo despite transparent padding. */
@@ -107,9 +107,9 @@
 #register-screen .register-field {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 76%;
   height: clamp(38px, 5vh, 46px);
-  margin: 0 0 clamp(7px, 1vh, 10px);
+  margin: 0 auto clamp(7px, 1vh, 10px);
   padding: 0 12px;
   border: 2px solid #527498;
   border-radius: 10px;
