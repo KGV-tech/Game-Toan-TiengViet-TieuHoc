@@ -5,7 +5,7 @@
 
 /* Keep interactive station badges legible without covering the new map landmarks. */
 .map-v2 .station-img {
-  width: clamp(76px, 6.5vw, 104px);
+  width: clamp(114px, 9.75vw, 156px);
 }
 
 /* The reusable plaque contains the wood/metal art; the live label supplies exact Vietnamese text. */
@@ -40,3 +40,21 @@
 .map-v2 .station-settings, .map-v2 .station-quest { --station-accent: #ff6570; --station-glow: rgba(255,101,112,.65); }
 .map-v2 .station-shop { --station-accent: #ffd45a; --station-glow: rgba(255,212,90,.65); }
 .map-v2 .station-treasure { --station-accent: #ff63c3; --station-glow: rgba(255,99,195,.65); }
+
+.map-v2 .station-guide .map-guide-label {
+  position: absolute;
+  top: 43%;
+  z-index: 2;
+  transform: translateY(-50%);
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(19, 21, 24, 0.32);
+  color: #f4f7ff;
+  font-size: clamp(.72rem, 1.05vw, .98rem);
+  font-weight: 800;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(244,247,255,.8), 0 1px 2px #000;
+  box-shadow: none;
+  pointer-events: auto;
+}
