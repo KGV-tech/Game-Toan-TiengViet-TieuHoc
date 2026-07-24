@@ -5,7 +5,12 @@
 
 /* Keep interactive station badges legible without covering the new map landmarks. */
 .map-v2 .station-img {
-  width: clamp(114px, 9.75vw, 156px);
+  width: clamp(137px, 11.7vw, 187px);
+}
+
+/* Keep the map companion centered and still; movement between stations remains scripted. */
+.map-v2 .floating-cat {
+  animation: none !important;
 }
 
 /* The reusable plaque contains the wood/metal art; the live label supplies exact Vietnamese text. */

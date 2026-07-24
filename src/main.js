@@ -529,8 +529,8 @@ const app = {
                 callback();
                 // Reset cat to default position if user goes back
                 setTimeout(() => {
-                    catWrapper.style.top = '75%';
-                    catWrapper.style.left = '14%';
+                    catWrapper.style.top = '50%';
+                    catWrapper.style.left = '50%';
                 }, 500);
             }, 800);
         }
