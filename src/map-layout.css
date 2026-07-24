@@ -8,6 +8,24 @@
   width: clamp(76px, 6.5vw, 104px);
 }
 
+/* The reusable plaque contains the wood/metal art; the live label supplies exact Vietnamese text. */
+.map-v2 .station[data-subject] .station-label,
+.map-v2 #admin-station .station-label,
+.map-v2 #quest-station .station-label,
+.map-v2 #treasure-station .station-label,
+.map-v2 #shop-station .station-label {
+  position: absolute;
+  top: 43%;
+  z-index: 2;
+  margin-top: 0;
+  transform: translateY(-50%);
+  padding: 2px 7px;
+  border-width: 0;
+  border-radius: 6px;
+  background: rgba(19, 21, 24, 0.32);
+  box-shadow: none;
+}
+
 /* Distinct station accents keep the labels separate from the cyan map title. */
 .map-v2 .station-label {
   border-color: var(--station-accent);
