@@ -7,3 +7,18 @@
 .map-v2 .station-img {
   width: clamp(76px, 6.5vw, 104px);
 }
+
+/* Distinct station accents keep the labels separate from the cyan map title. */
+.map-v2 .station-label {
+  border-color: var(--station-accent);
+  color: var(--station-accent);
+  text-shadow: 0 0 8px var(--station-glow), 0 1px 2px #000;
+  box-shadow: 0 0 10px var(--station-glow), 0 3px 9px rgba(0,0,0,0.4);
+}
+
+.map-v2 .station-vietnamese { --station-accent: #46e58c; --station-glow: rgba(70,229,140,.65); }
+.map-v2 .station-math { --station-accent: #ffad42; --station-glow: rgba(255,173,66,.65); }
+.map-v2 .station-practice { --station-accent: #d38cff; --station-glow: rgba(211,140,255,.65); }
+.map-v2 .station-settings, .map-v2 .station-quest { --station-accent: #ff6570; --station-glow: rgba(255,101,112,.65); }
+.map-v2 .station-shop { --station-accent: #ffd45a; --station-glow: rgba(255,212,90,.65); }
+.map-v2 .station-treasure { --station-accent: #ff63c3; --station-glow: rgba(255,99,195,.65); }
