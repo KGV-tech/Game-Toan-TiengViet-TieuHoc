@@ -1,0 +1,9 @@
+/* Map v2 uses the title rendered in the artwork so it is not duplicated by HTML. */
+.map-v2 .map-title-container {
+  display: none;
+}
+
+/* Keep interactive station badges legible without covering the new map landmarks. */
+.map-v2 .station-img {
+  width: clamp(76px, 6.5vw, 104px);
+}

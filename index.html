@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css">
   <link rel="stylesheet" href="./src/login-layout.css">
+  <link rel="stylesheet" href="./src/map-layout.css">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
   <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
@@ -88,11 +89,11 @@
         </div>
       </div>
 
-      <div class="map-container">
-        <img src="./public/map_scifi_adventure.png" alt="Bản đồ hành trình kết nối tri thức" class="map-bg">
+      <div class="map-container map-v2">
+        <img src="./public/map_scifi_adventure_v2.png" alt="Bản đồ hành trình kết nối tri thức" class="map-bg">
 
         <!-- Nút Hướng dẫn (Gắn liền với Map, co giãn theo tỷ lệ Map) -->
-        <div class="station" style="top: 20%; left: 3%; z-index: 50;">
+        <div class="station" style="top: 82%; left: 6%; z-index: 50;">
           <button id="btn-guide" class="btn-primary"
             style="padding:10px 20px; font-size:1.1rem; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid #60a5fa; display:flex; align-items:center; gap:8px; pointer-events: auto;"
             onclick="app.showGuide()">
@@ -106,43 +107,43 @@
         </div>
 
         <!-- Tiếng Việt: Rừng xanh bí ẩn (góc trái dưới) -->
-        <div class="station" data-subject="vietnamese" style="top: 70%; left: 14%;">
+        <div class="station" data-subject="vietnamese" style="top: 60%; left: 19%;">
           <img src="./public/icon_tiengviet.png" alt="Tiếng Việt" class="station-img">
           <span class="station-label">Tiếng Việt</span>
         </div>
 
         <!-- Toán học: Kim tự tháp -->
-        <div class="station" data-subject="math" style="top: 47%; left: 35%;">
+        <div class="station" data-subject="math" style="top: 29%; left: 27%;">
           <img src="./public/icon_toan.png" alt="Toán Học" class="station-img">
           <span class="station-label">Toán</span>
         </div>
 
         <!-- Đề Kiểm tra -->
-        <div class="station" data-subject="exam" style="top: 41%; left: 64%;">
+        <div class="station" data-subject="exam" style="top: 31%; left: 60%;">
           <img src="./public/dethi_icon.png" alt="Đề Kiểm tra" class="station-img">
           <span class="station-label">Đề kiểm tra</span>
         </div>
 
         <!-- Cài Đặt (Admin) -->
-        <div id="admin-station" class="station" style="top: 22%; left: 51%; display:none;">
+        <div id="admin-station" class="station" style="top: 25%; left: 47%; display:none;">
           <img src="./public/icon_caidat.png" alt="Cài Đặt" class="station-img">
           <span class="station-label">Cài đặt</span>
         </div>
 
         <!-- Nhiệm vụ (Học sinh) - Cùng tọa độ với Cài đặt -->
-        <div id="quest-station" class="station" style="top: 22%; left: 51%; display:none;">
+        <div id="quest-station" class="station" style="top: 25%; left: 47%; display:none;">
           <img src="./public/icon_nhiemvu.png" alt="Nhiệm vụ" class="station-img">
           <span class="station-label">Nhiệm vụ</span>
         </div>
 
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
-        <div id="treasure-station" class="station" style="top: 75%; left: 80%;">
+        <div id="treasure-station" class="station" style="top: 66%; left: 79%;">
           <img src="./public/treasure_chest.png" alt="Kho Báu" class="station-img">
           <span class="station-label">Kho báu</span>
         </div>
 
         <!-- Cửa hàng Shop & Gacha -->
-        <div id="shop-station" class="station" style="top: 75%; left: 70%;">
+        <div id="shop-station" class="station" style="top: 39%; left: 78%;">
           <img src="./public/icon_shop.png" alt="Cửa hàng" class="station-img">
           <span class="station-label">Cửa hàng</span>
         </div>
@@ -153,7 +154,7 @@
         </div>
 
         <div id="map-cat-wrapper"
-          style="position:absolute; top: 75%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
+          style="position:absolute; top: 75%; left: 14%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
           <img id="map-cat" src="./public/robot_cat_normal_transparent.png" alt="Robot mèo" class="floating-cat"
             style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
