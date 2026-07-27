@@ -820,6 +820,7 @@ input[type="text"], input[type="password"], select, textarea {
 .asset-button--wide { width: 100%; }
 .asset-button--score { width: clamp(220px, 26vw, 430px); }
 .asset-button--exit { width: clamp(170px, 20vw, 340px); }
+.asset-button--pet { width: min(100%, 225px); }
 .sr-only {
     position: absolute;
     width: 1px;

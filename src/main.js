@@ -4812,10 +4812,14 @@ const app = {
                 if (isCompleted) {
                     btnHtml = `<button class="btn-success" style="opacity:0.5; cursor:not-allowed;" disabled>Đã nhận</button>`;
                 } else if (progress >= q.target_count) {
-                    btnHtml = `<button class="btn-success" style="box-shadow: 0 0 10px #4ade80;" onclick="app.quest.claimReward('${q.id}')">Nhận ${q.reward_lollipops} 🍭</button>`;
+                    btnHtml = `<button class="asset-button asset-button--pet" onclick="app.quest.claimReward('${q.id}')" aria-label="Nhận ${q.reward_lollipops} kẹo">
+                        <img src="./public/ui/buttons/group2/claim-candy.png" alt="" aria-hidden="true">
+                    </button>`;
                 } else {
                     btnHtml = q.exam_id
-                        ? `<button class="btn-primary" onclick="app.quest.startExam('${q.id}')">Làm đề (${progress}/${q.target_count})</button>`
+                        ? `<button class="asset-button asset-button--pet" onclick="app.quest.startExam('${q.id}')" aria-label="Làm đề, tiến độ ${progress}/${q.target_count}">
+                            <img src="./public/ui/buttons/group2/start-mission-exam.png" alt="" aria-hidden="true">
+                        </button>`
                         : `<button class="btn-primary" style="opacity:0.5; cursor:not-allowed;" disabled>${progress}/${q.target_count}</button>`;
                 }
 
@@ -5302,13 +5306,14 @@ const app = {
                         </div>
                     ` : `
                         <div style="display:flex; flex-direction:row; gap:15px; align-items: center; width: 100%;">
-                            <div style="font-size: 1rem; color: #ef4444; font-weight:bold; background: #fee2e2; padding: 8px 15px; border-radius: 12px; border: 2px solid #fca5a5; white-space: nowrap;">
-                                Kho: ${remaining}
+                            <div style="display:flex; flex-direction:column; gap:4px; font-size: 1rem; color: #ef4444; font-weight:bold; background: #fee2e2; padding: 8px 15px; border-radius: 12px; border: 2px solid #fca5a5; white-space: nowrap;">
+                                <span>Kho: ${remaining}</span>
+                                <span>Giá: ${currentPet.cost} 🍭</span>
                             </div>
-                            <button class="btn-success" style="flex: 1; padding:10px 20px; font-size:1.2rem; border-radius:20px; font-weight:bold; box-shadow: 0 4px 10px rgba(34,197,94,0.4); display:flex; justify-content:center; align-items:center; gap:8px;" 
+                            <button class="asset-button asset-button--pet" style="flex:1; min-width:0;"
                                 onclick="app.shop.buyPet('${currentPet.id}')"
-                                ${(hasPet || remaining == 0) ? 'disabled style="opacity:0.5; cursor:not-allowed; background: #9ca3af; border-color:#6b7280; box-shadow:none;"' : ''}>
-                                Đổi: ${currentPet.cost} 🍭
+                                ${(hasPet || remaining == 0) ? 'disabled' : ''} aria-label="Đổi thú cưng, giá ${currentPet.cost} kẹo">
+                                <img src="./public/ui/buttons/group2/exchange-pet.png" alt="" aria-hidden="true">
                             </button>
                         </div>
                     `}
@@ -5357,8 +5362,12 @@ const app = {
                                 
                                 <div style="display:flex; flex-direction:column; gap:10px; width: 100%; align-items:center;">
                                     <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
-                                        <button class="btn-success" style="padding:8px 12px; font-size:0.9rem; border-radius:15px; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);" onclick="app.shop.equipPet('${p.pet_image}')">${isEquipped ? 'Tắt Khoang' : 'Kích Hoạt'}</button>
-                                        <button class="btn-danger" style="padding:8px 12px; font-size:0.9rem; border-radius:15px; font-weight:bold; box-shadow:0 4px 10px rgba(239,68,68,0.4);" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')">Trả lại</button>
+                                        <button class="asset-button asset-button--pet" style="width:48%;" onclick="app.shop.equipPet('${p.pet_image}')" aria-label="${isEquipped ? 'Tắt khoang' : 'Kích hoạt'}">
+                                            <img src="./public/ui/buttons/group2/${isEquipped ? 'deactivate-pet.png' : 'activate-pet.png'}" alt="" aria-hidden="true">
+                                        </button>
+                                        <button class="asset-button asset-button--pet" style="width:48%;" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')" aria-label="Trả lại thú cưng">
+                                            <img src="./public/ui/buttons/group2/return-pet.png" alt="" aria-hidden="true">
+                                        </button>
                                     </div>
                                     ${(() => {
                                         if(!shopInfo.skills || shopInfo.skills.length === 0) return '';
