@@ -1003,7 +1003,6 @@ const app = {
             this.state.questId = null;
 
             document.getElementById('game-config-title').textContent = subject === 'math' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
-            document.getElementById('start-adv-icon').src = subject === 'math' ? './public/torch_new.png' : './public/watering_can.png';
 
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
             const adminSelector = document.getElementById('admin-class-selector');

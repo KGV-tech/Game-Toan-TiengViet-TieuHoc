@@ -22,5 +22,6 @@ assert.match(html, /id="submit-ans-btn"[^>]*class="[^"]*asset-button/, 'Check an
 assert.match(html, /id="submit-ans-img"[^>]*src="\.\/public\/ui\/buttons\/group1\/check\.png"/, 'Check must start with the approved check asset.');
 assert.match(main, /submit-ans-img'\)\.src = '\.\/public\/ui\/buttons\/group1\/continue\.png'/, 'The next-question action must swap to the approved continue asset.');
 assert.doesNotMatch(html, /sci-fi-button/, 'Group 1 markup must no longer use CSS-drawn sci-fi buttons.');
+assert.doesNotMatch(main, /getElementById\('start-adv-icon'\)/, 'Subject selection must not reference the removed torch icon from the old button.');
 
 console.log('Group 1 image-button contract verified.');
