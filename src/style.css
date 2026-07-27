@@ -821,6 +821,8 @@ input[type="text"], input[type="password"], select, textarea {
 .asset-button--score { width: clamp(220px, 26vw, 430px); }
 .asset-button--exit { width: clamp(170px, 20vw, 340px); }
 .asset-button--pet { width: min(100%, 225px); }
+.asset-button--close { width: clamp(120px, 13vw, 210px); }
+.asset-button--shop-tab { width: 100%; }
 .sr-only {
     position: absolute;
     width: 1px;

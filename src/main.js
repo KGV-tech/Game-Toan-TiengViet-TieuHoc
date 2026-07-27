@@ -5012,10 +5012,10 @@ const app = {
                         </ul>
                     </div>
                     
-                    <button id="btn-spin-lucky" class="btn-success" style="width: 100%; padding:15px 40px; font-size:1.5rem; border-radius:30px; font-weight:900; box-shadow: 0 8px 15px rgba(234,179,8,0.4); display:flex; justify-content:center; align-items:center; gap:10px; background: linear-gradient(90deg, #f59e0b, #d97706); border:none;" 
+                    <button id="btn-spin-lucky" class="asset-button asset-button--wide" style="width:100%;"
                         onclick="app.shop.spinWheel()"
-                        ${cannotSpin ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                        ${remainingSpins === 0 ? 'ĐÃ HẾT LƯỢT HÔM NAY' : 'QUAY NGAY (2 🍭)'}
+                        ${cannotSpin ? 'disabled' : ''} aria-label="${remainingSpins === 0 ? 'Đã hết lượt quay hôm nay' : 'Quay may mắn, giá 2 kẹo'}">
+                        <img src="./public/ui/buttons/group2/spin-lucky.png" alt="" aria-hidden="true">
                     </button>
                 </div>
             </div>

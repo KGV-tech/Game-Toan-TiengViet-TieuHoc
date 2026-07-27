@@ -12,6 +12,7 @@ const groupOneAssets = [
 const groupTwoAssets = [
   'claim-candy.png', 'start-mission-exam.png', 'activate-pet.png',
   'deactivate-pet.png', 'return-pet.png', 'exchange-pet.png',
+  'shop-pets-tab.png', 'shop-my-pets-tab.png', 'shop-lucky-tab.png', 'spin-lucky.png',
 ];
 
 for (const asset of groupOneAssets) {
@@ -35,5 +36,10 @@ assert.match(main, /group2\/start-mission-exam\.png/, 'Quest exam must use the a
 assert.match(main, /group2\/exchange-pet\.png/, 'Pet exchange must use the approved exchange asset.');
 assert.match(main, /isEquipped \? 'deactivate-pet\.png' : 'activate-pet\.png'/, 'Pet state must choose the approved activation artwork.');
 assert.match(main, /group2\/return-pet\.png/, 'Pet return must use the approved return asset.');
+assert.match(html, /group2\/shop-pets-tab\.png/, 'Shop pet tab must use its approved image asset.');
+assert.match(html, /group2\/shop-my-pets-tab\.png/, 'My-pets tab must use its approved image asset.');
+assert.match(html, /group2\/shop-lucky-tab\.png/, 'Lucky-shop tab must use its approved image asset.');
+assert.match(html, /asset-button--close/, 'Treasure, quest, and shop panels must use image close buttons.');
+assert.match(main, /group2\/spin-lucky\.png/, 'Lucky spin must use the approved image asset.');
 
 console.log('Group 1 image-button contract verified.');

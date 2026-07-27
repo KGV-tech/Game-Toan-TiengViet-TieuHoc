@@ -460,9 +460,11 @@
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
     <div id="treasure-modal" class="modal">
       <div class="modal-content admin-panel glass-container-xl" style="position:relative;">
-        <button class="btn-danger"
-          style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
-          onclick="document.getElementById('treasure-modal').style.display='none'">Đóng</button>
+        <button class="btn-danger asset-button asset-button--close"
+          style="position:absolute; top: 15px; right: 15px; z-index: 100;"
+          onclick="document.getElementById('treasure-modal').style.display='none'" aria-label="Đóng Kho báu">
+          <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
+        </button>
 
         <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
           <h2 id="treasure-title" class="title-glow" style="margin:0;">Kho Báu</h2>
@@ -481,9 +483,11 @@
   <div id="quest-modal" class="modal">
     <div class="modal-content glass-container-xl"
       style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
-      <button class="btn-danger"
-        style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
-        onclick="document.getElementById('quest-modal').style.display='none'">Đóng</button>
+      <button class="btn-danger asset-button asset-button--close"
+        style="position:absolute; top: 15px; right: 15px; z-index: 100;"
+        onclick="document.getElementById('quest-modal').style.display='none'" aria-label="Đóng Nhiệm vụ">
+        <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
+      </button>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
         <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
       </div>
@@ -505,16 +509,24 @@
       <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.4); z-index: 0;">
       </div> <!-- Overlay -->
 
-      <button class="btn-danger"
-        style="position:absolute; top: 15px; right: 15px; font-weight:bold; font-size:1rem; cursor:pointer; padding: 5px 15px; border-radius: 5px; z-index: 100;"
-        onclick="document.getElementById('shop-modal').style.display='none'">Đóng</button>
+      <button class="btn-danger asset-button asset-button--close"
+        style="position:absolute; top: 15px; right: 15px; z-index: 100;"
+        onclick="document.getElementById('shop-modal').style.display='none'" aria-label="Đóng Cửa hàng">
+        <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
+      </button>
 
       <!-- Notebook Tabs (Left) -->
       <div class="admin-tabs"
         style="display:flex; flex-direction:column; gap: 10px; width: 200px; z-index: 1; padding: 30px 0 20px 0; border:none;">
-        <button class="notebook-tab active" onclick="app.shop.switchTab('pets', this)">Trạm Thú Cưng</button>
-        <button class="notebook-tab" onclick="app.shop.switchTab('mypets', this)">Thú Cưng Của Tôi</button>
-        <button class="notebook-tab" onclick="app.shop.switchTab('lucky', this)">Trạm May Mắn</button>
+        <button class="notebook-tab active asset-button asset-button--shop-tab" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
+          <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true">
+        </button>
+        <button class="notebook-tab asset-button asset-button--shop-tab" onclick="app.shop.switchTab('mypets', this)" aria-label="Thú Cưng Của Tôi">
+          <img src="./public/ui/buttons/group2/shop-my-pets-tab.png" alt="" aria-hidden="true">
+        </button>
+        <button class="notebook-tab asset-button asset-button--shop-tab" onclick="app.shop.switchTab('lucky', this)" aria-label="Trạm May Mắn">
+          <img src="./public/ui/buttons/group2/shop-lucky-tab.png" alt="" aria-hidden="true">
+        </button>
       </div>
 
       <!-- Content (Right) -->
