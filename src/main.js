@@ -1280,6 +1280,8 @@ const app = {
             const btnCheck = document.getElementById('submit-ans-btn');
             btnCheck.disabled = true;
             document.getElementById('submit-ans-text').textContent = 'Kiểm Tra';
+            document.getElementById('submit-ans-img').src = './public/ui/buttons/group1/check.png';
+            btnCheck.setAttribute('aria-label', 'Kiểm tra');
             btnCheck.onclick = () => this.submitAnswer();
 
             let rawType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
@@ -2168,7 +2170,10 @@ const app = {
 
             const isLast = this.state.currentIdx === this.state.questions.length - 1;
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
-            document.getElementById('submit-ans-text').textContent = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp tục';
+            const nextActionLabel = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp tục';
+            document.getElementById('submit-ans-text').textContent = nextActionLabel;
+            document.getElementById('submit-ans-img').src = './public/ui/buttons/group1/continue.png';
+            btnCheck.setAttribute('aria-label', nextActionLabel);
 
             btnCheck.onclick = () => {
                 this.state.currentIdx++;

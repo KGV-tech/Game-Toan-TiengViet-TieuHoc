@@ -45,7 +45,9 @@
         <h2 class="login-heading">Đăng nhập để bắt đầu</h2>
         <label class="login-field" for="username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass"></label>
         <label class="login-field" for="password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="password" placeholder="Mật khẩu" class="input-glass"><span class="login-eye" aria-hidden="true">◉</span></label>
-        <button id="login-btn" class="btn-primary login-action">Bắt Đầu</button>
+        <button id="login-btn" class="login-action asset-button asset-button--auth" aria-label="Bắt đầu">
+          <img src="./public/ui/buttons/group1/login-start.png" alt="" aria-hidden="true">
+        </button>
           <a href="#" id="link-to-register" class="link-glass login-register-link">Đăng ký tài khoản mới</a>
         </div>
       </div>
@@ -67,7 +69,9 @@
           <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass"></label>
           <label class="register-field" for="reg-password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass"></label>
           <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
-          <button id="register-btn" class="btn-primary register-action">Đăng ký</button>
+          <button id="register-btn" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">
+            <img src="./public/ui/buttons/group1/register.png" alt="" aria-hidden="true">
+          </button>
           <a href="#" id="link-to-login" class="link-glass register-back-link">← Quay lại đăng nhập</a>
         </div>
       </div>
@@ -81,7 +85,9 @@
 
 
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
-          <button id="logout-btn" class="btn-danger" style="padding: 5px 15px; font-size: 0.9rem;">Thoát</button>
+          <button id="logout-btn" class="asset-button asset-button--nav" aria-label="Đăng xuất">
+            <img src="./public/ui/buttons/group1/logout.png" alt="" aria-hidden="true">
+          </button>
           <div id="player-info" class="player-info-card"></div>
           <div id="admin-notification"
             style="display: none; background: rgba(239, 68, 68, 0.9); color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
@@ -228,7 +234,9 @@
 
       <!-- Cấu hình -->
       <div id="game-config-view" class="game-view active">
-        <button class="btn-back" onclick="app.router.open('map-screen')">⬅ Trở về</button>
+        <button class="btn-back asset-button asset-button--nav" onclick="app.router.open('map-screen')" aria-label="Trở về">
+          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
+        </button>
         <div class="glass-container-xl">
           <div class="config-layout">
             <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
@@ -291,11 +299,10 @@
                   </div>
                 </div>
 
-                <button id="game-start-btn" class="btn-start-adventure"
+                <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
                   style="width: 100%; flex-direction: row; justify-content: center; margin-top: 5px;"
-                  onclick="app.game.startPlay()">
-                  <img id="start-adv-icon" src="./public/torch_new.png" alt="Start" style="width: 40px;">
-                  BẮT ĐẦU KHÁM PHÁ
+                  onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
+                  <img src="./public/ui/buttons/group1/start-adventure.png" alt="" aria-hidden="true">
                 </button>
               </div>
             </div>
@@ -305,7 +312,9 @@
 
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
-        <button id="game-btn-back" class="btn-back" onclick="app.game.confirmExit()">⬅ Trở về</button>
+        <button id="game-btn-back" class="btn-back asset-button asset-button--nav" onclick="app.game.confirmExit()" aria-label="Trở về">
+          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
+        </button>
 
         <div class="glass-container-xl">
           <div class="play-layout">
@@ -321,8 +330,9 @@
                 style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;">
               </div>
 
-              <button id="submit-ans-btn" class="btn-action btn-check" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;">
-                <span id="submit-ans-text">Kiểm Tra</span>
+              <button id="submit-ans-btn" class="btn-action btn-check asset-button asset-button--wide" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;" aria-label="Kiểm tra">
+                <img id="submit-ans-img" src="./public/ui/buttons/group1/check.png" alt="" aria-hidden="true">
+                <span id="submit-ans-text" class="sr-only">Kiểm tra</span>
               </button>
               
               <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
@@ -348,7 +358,9 @@
     <!-- Màn hình Chọn Đề Kiểm tra -->
     <div id="exam-select-screen" class="screen exam-bg">
       <div class="glass-container-xl" style="max-width: 900px; text-align: center;">
-        <button class="btn-back" onclick="app.router.open('map-screen')">⬅ Trở về</button>
+        <button class="btn-back asset-button asset-button--nav" onclick="app.router.open('map-screen')" aria-label="Trở về">
+          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
+        </button>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
           <div id="exam-admin-class-selector" style="display:none; text-align:right;">
@@ -395,7 +407,9 @@
             onclick="app.exam.setFilter('period', 'Cuối kỳ 2', this)">Cuối kỳ 2</button>
         </div>
 
-        <button class="btn-start-massive" style="margin-top:20px;" onclick="app.exam.start()">Bắt Đầu Làm Bài</button>
+        <button class="btn-start-massive asset-button asset-button--wide" style="margin-top:20px;" onclick="app.exam.start()" aria-label="Bắt đầu làm bài">
+          <img src="./public/ui/buttons/group1/start-exam.png" alt="" aria-hidden="true">
+        </button>
       </div>
     </div>
 
@@ -403,9 +417,10 @@
     <div id="exam-play-screen" class="screen exam-bg"
       style="overflow-y:auto; align-items:flex-start; padding-top: 50px;">
       <div class="exam-paper" id="exam-paper">
-        <button id="exam-btn-back" class="btn-back" style="position:absolute; top:-40px; left:0;"
-          onclick="app.exam.confirmExit()">⬅ Trở
-          về</button>
+        <button id="exam-btn-back" class="btn-back asset-button asset-button--nav" style="position:absolute; top:-40px; left:0;"
+          onclick="app.exam.confirmExit()" aria-label="Trở về">
+          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
+        </button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
           <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display"
@@ -413,8 +428,9 @@
         </div>
         <div id="exam-questions-container" class="exam-scroll-area"></div>
         <div style="text-align:center; margin-top: 30px;">
-          <button class="btn-success" style="padding: 15px 40px; font-size:1.2rem;" onclick="app.exam.submit()">Chấm
-            Điểm</button>
+          <button class="asset-button asset-button--score" onclick="app.exam.submit()" aria-label="Chấm điểm">
+            <img src="./public/ui/buttons/group1/score.png" alt="" aria-hidden="true">
+          </button>
         </div>
       </div>
     </div>
@@ -430,8 +446,8 @@
           <p id="result-msg" class="msg-text"></p>
           <div id="bonus-candies-container" style="display:none; cursor:pointer; margin: 15px auto; flex-wrap: wrap;" onclick="app.game.claimBonus()"></div>
           <br>
-          <button class="btn-exit-gray" onclick="app.game.closeResult()">
-            Thoát
+          <button class="btn-exit-gray asset-button asset-button--exit" onclick="app.game.closeResult()" aria-label="Thoát">
+            <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
           </button>
         </div>
         <div class="result-right">
