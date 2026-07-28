@@ -239,29 +239,21 @@
           <div class="config-layout">
             <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
               <div class="config-left" style="flex: 1; display: flex; justify-content: center; align-items: center;">
-                <img src="./public/robot_cat_normal_transparent.png" alt="Robot mèo" class="cat-avatar heartbeat" style="width: 150px;">
+                <img src="./public/robot_cat_subject_select.png" alt="Robot mèo thám hiểm giới thiệu chủ đề" class="cat-avatar heartbeat" style="width: 190px;">
               </div>
 
               <div class="config-center" style="flex: 3; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <div class="screen-title-row">
                   <h1 id="game-config-title" class="title-glow" style="margin: 0; font-size: 2rem;"></h1>
-
-                  <div id="admin-class-selector" style="display:none; text-align:right;">
-                    <span style="color: #fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp
-                      để test game:</span>
-                    <div class="diff-options" id="admin-class-btns"
-                      style="display:inline-flex; gap:5px; margin:0; padding:0;">
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                        onclick="app.game.setAdminClass('1', this)">1</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                        onclick="app.game.setAdminClass('2', this)">2</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                        onclick="app.game.setAdminClass('3', this)">3</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                        onclick="app.game.setAdminClass('4', this)">4</button>
-                      <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                        onclick="app.game.setAdminClass('5', this)">5</button>
-                    </div>
+                </div>
+                <div id="admin-class-selector" class="admin-class-selector" style="display:none;">
+                  <span>Chọn Cấp Lớp để test game:</span>
+                  <div class="diff-options" id="admin-class-btns">
+                    <button class="btn-opt" onclick="app.game.setAdminClass('1', this)">1</button>
+                    <button class="btn-opt" onclick="app.game.setAdminClass('2', this)">2</button>
+                    <button class="btn-opt" onclick="app.game.setAdminClass('3', this)">3</button>
+                    <button class="btn-opt" onclick="app.game.setAdminClass('4', this)">4</button>
+                    <button class="btn-opt" onclick="app.game.setAdminClass('5', this)">5</button>
                   </div>
                 </div>
 
@@ -355,24 +347,17 @@
     <div id="exam-select-screen" class="screen exam-bg">
       <div class="glass-container-xl" style="max-width: 900px; text-align: center;">
         <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="screen-title-row">
           <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
-          <div id="exam-admin-class-selector" style="display:none; text-align:right;">
-            <span style="color:#fbbf24; font-weight:bold; margin-right: 5px; font-size: 0.9rem;">Chọn Cấp Lớp để test
-              game:</span>
-            <div class="diff-options" id="exam-admin-class-btns"
-              style="display:inline-flex; gap:5px; margin:0; padding:0;">
-              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                onclick="app.exam.setAdminClass('1', this)">1</button>
-              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                onclick="app.exam.setAdminClass('2', this)">2</button>
-              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                onclick="app.exam.setAdminClass('3', this)">3</button>
-              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                onclick="app.exam.setAdminClass('4', this)">4</button>
-              <button class="btn-opt" style="padding: 2px 8px; min-width:auto; font-size: 0.85rem;"
-                onclick="app.exam.setAdminClass('5', this)">5</button>
-            </div>
+        </div>
+        <div id="exam-admin-class-selector" class="admin-class-selector" style="display:none;">
+          <span>Chọn Cấp Lớp để test game:</span>
+          <div class="diff-options" id="exam-admin-class-btns">
+            <button class="btn-opt" onclick="app.exam.setAdminClass('1', this)">1</button>
+            <button class="btn-opt" onclick="app.exam.setAdminClass('2', this)">2</button>
+            <button class="btn-opt" onclick="app.exam.setAdminClass('3', this)">3</button>
+            <button class="btn-opt" onclick="app.exam.setAdminClass('4', this)">4</button>
+            <button class="btn-opt" onclick="app.exam.setAdminClass('5', this)">5</button>
           </div>
         </div>
 
@@ -381,7 +366,7 @@
             <img src="./public/icon_toan.png" alt="Toán">
             <h3>Toán Học</h3>
           </div>
-          <img src="./public/meo_thicuu.png" alt="Mèo"
+          <img src="./public/robot_cat_subject_select.png" alt="Robot mèo thám hiểm giới thiệu môn học"
             style="height: 180px; width: auto; object-fit: contain; animation: heartbeat 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
           <div class="subject-box" onclick="app.exam.setFilter('subject', 'vietnamese', this)">
             <img src="./public/icon_tiengviet.png" alt="Tiếng Việt">
