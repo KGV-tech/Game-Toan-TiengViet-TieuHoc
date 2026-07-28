@@ -2535,6 +2535,11 @@ const app = {
                 delete button.dataset.originalLabel;
             }
         },
+        assetButton(group, asset, label, onClick, className = '') {
+            return `<button class="asset-button asset-button--utility ${className}" onclick="${onClick}" aria-label="${label}">
+                <img src="./public/ui/buttons/${group}/${asset}.png" alt="" aria-hidden="true">
+            </button>`;
+        },
         renderTabs(tabData, currentTabId, onClickFnString) {
             let html = '';
             tabData.forEach(t => {
@@ -2724,6 +2729,7 @@ const app = {
         },
         openAdmin() {
             const modal = document.getElementById('treasure-modal');
+            modal.querySelector('.admin-panel')?.classList.add('control-panel-art');
             modal.style.display = 'flex';
             modal.classList.add('active');
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
@@ -2747,8 +2753,8 @@ const app = {
             else if (tab === 'quests') this.renderQuests(box);
         },
         renderQuests(box) {
-            let html = `<div style="margin-bottom: 20px; text-align: right;">
-          <button class="btn-success" onclick="app.admin.showAddQuestForm()">+ Tạo Nhiệm vụ Mới</button>
+            let html = `<div class="utility-actions utility-actions--right">
+          ${app.ui.assetButton('group4', 'create', 'Tạo nhiệm vụ mới', 'app.admin.showAddQuestForm()')}
       </div>`;
 
             const cols = [
@@ -2784,7 +2790,7 @@ const app = {
               <td>${status}</td>
               <td>
                   <button class="action-btn btn-danger" onclick="app.admin.toggleQuest(${i})">${q.is_active ? 'Dừng' : 'Bật'}</button>
-                  <button class="action-btn btn-danger" onclick="app.admin.deleteQuest(${i})">Xoá</button>
+                  ${app.ui.assetButton('group4', 'delete', 'Xóa nhiệm vụ', `app.admin.deleteQuest(${i})`, 'asset-button--table')}
               </td>
           </tr>`;
             }, "Chưa có nhiệm vụ nào được tạo.");
@@ -2845,8 +2851,8 @@ const app = {
            </div>
            
            <div style="text-align:center; margin-top: 20px;">
-              <button class="btn-primary" style="width:45%; display:inline-block;" onclick="app.admin.switchTab('quests')">Hủy</button>
-              <button class="btn-success" style="width:45%; display:inline-block;" onclick="app.admin.submitQuest()">Lưu Nhiệm Vụ</button>
+              ${app.ui.assetButton('group5', 'cancel', 'Hủy', "app.admin.switchTab('quests')", 'asset-button--form')}
+              ${app.ui.assetButton('group4', 'save', 'Lưu nhiệm vụ', 'app.admin.submitQuest()', 'asset-button--form')}
            </div>
         </div>
       `;
@@ -2943,7 +2949,7 @@ const app = {
            </div>
            
            <div style="text-align:center;">
-              <button class="btn-success" onclick="app.admin.saveSettings()">Lưu thay đổi</button>
+              ${app.ui.assetButton('group4', 'save', 'Lưu thay đổi', 'app.admin.saveSettings()', 'asset-button--form')}
            </div>
         </div>
       `;
@@ -2959,13 +2965,13 @@ const app = {
             app.data.settings.examTimeLimit = examTime;
 
             const btn = document.querySelector('button[onclick="app.admin.saveSettings()"]');
-            const oldText = btn.textContent;
-            btn.textContent = 'Đang lưu...';
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<span class="sr-only">Đang lưu...</span>';
             btn.disabled = true;
 
             const error = await app.data.saveSettings();
 
-            btn.textContent = oldText;
+            btn.innerHTML = oldText;
             btn.disabled = false;
             if (!error) {
                 alert('Đã lưu cài đặt thành công!');
@@ -3015,9 +3021,9 @@ const app = {
               <td>${q.type || 'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation || ''}</td>
               <td>
-                <button class="btn-success action-btn" onclick="app.admin.addToExamPrompt(${i})">Thêm vào đề</button>
-                <button class="btn-opt action-btn" onclick="app.admin.editQuestion(${i})">Sửa</button>
-                <button class="btn-danger action-btn" onclick="app.admin.deleteQuestion(${i})">Xóa</button>
+                ${app.ui.assetButton('group5', 'add-to-exam', 'Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'asset-button--table')}
+                ${app.ui.assetButton('group4', 'edit', 'Sửa câu hỏi', `app.admin.editQuestion(${i})`, 'asset-button--table')}
+                ${app.ui.assetButton('group4', 'delete', 'Xóa câu hỏi', `app.admin.deleteQuestion(${i})`, 'asset-button--table')}
               </td>
             </tr>`;
                 });
@@ -3126,7 +3132,7 @@ const app = {
                   <textarea id="add-q-exp" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.explanation || '' : ''}</textarea>
                </div>
 
-               <button class="btn-success" onclick="app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${q ? 'Lưu chỉnh sửa' : 'Lưu câu hỏi'}</button>
+               ${app.ui.assetButton('group4', 'save', q ? 'Lưu chỉnh sửa câu hỏi' : 'Lưu câu hỏi', `app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})`, 'asset-button--form')}
             </div>
           `;
                 setTimeout(() => app.admin.updateTopicDropdown(), 0);
@@ -3160,7 +3166,7 @@ const app = {
                   <label style="display:block; cursor:pointer;"><input type="radio" name="q-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ dữ liệu cũ, thay bằng mới)</label>
                </div>
                <input type="file" id="q-file-upload" accept=".xlsx, .csv" multiple style="margin: 10px 0 20px 0;">
-               <button class="btn-success" onclick="app.admin.submitImportQuestions()" style="width:100%;">Tải lên</button>
+               ${app.ui.assetButton('group5', 'upload', 'Tải lên câu hỏi', 'app.admin.submitImportQuestions()', 'asset-button--form')}
             </div>
           `;
             }
@@ -3440,7 +3446,8 @@ const app = {
             const btn = document.querySelector('button[onclick="app.admin.submitImportQuestions()"]');
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = 'Đang xử lý và tải lên... Vui lòng chờ';
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="sr-only">Đang xử lý và tải lên. Vui lòng chờ.</span>';
             }
 
             try {
@@ -3522,7 +3529,8 @@ const app = {
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = 'Tải lên';
+                    btn.innerHTML = btn.dataset.originalHtml || btn.innerHTML;
+                    delete btn.dataset.originalHtml;
                 }
             }
         },
@@ -3563,9 +3571,9 @@ const app = {
               <td>${e.classlevel || 'Lớp 5'}</td><td>${e.subject}</td>
               <td>${e.period}</td><td>${e.name}</td><td>${(e.questions || []).length}</td>
               <td>
-                <button class="btn-primary action-btn" onclick="app.admin.viewExam(${i})">Xem</button>
-                <button class="btn-opt action-btn" onclick="app.admin.editExam(${i})">Sửa</button>
-                <button class="btn-danger action-btn" onclick="app.admin.deleteExam(${i})">Xóa</button>
+                ${app.ui.assetButton('group5', 'view', 'Xem đề', `app.admin.viewExam(${i})`, 'asset-button--table')}
+                ${app.ui.assetButton('group4', 'edit', 'Sửa đề', `app.admin.editExam(${i})`, 'asset-button--table')}
+                ${app.ui.assetButton('group4', 'delete', 'Xóa đề', `app.admin.deleteExam(${i})`, 'asset-button--table')}
               </td>
             </tr>`;
                 });
@@ -3622,7 +3630,7 @@ const app = {
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
                             ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
                             ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
-                            <button class="btn-danger action-btn" style="padding:4px 8px;" onclick="app.admin.removeQuestionFromExam(${editIdx}, ${i})">Xóa</button>
+                            ${app.ui.assetButton('group4', 'delete', 'Xóa câu hỏi khỏi đề', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'asset-button--table')}
                         </td>
                      </tr>
                      `).join('')}
@@ -3708,7 +3716,7 @@ const app = {
                 }).join('')}
                </div>
 
-               <button class="btn-success" onclick="app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})" style="width:100%; padding:10px;">${e ? 'Lưu chỉnh sửa đề kiểm tra' : 'Tạo đề kiểm tra mới'}</button>
+               ${app.ui.assetButton('group4', 'save', e ? 'Lưu chỉnh sửa đề kiểm tra' : 'Tạo đề kiểm tra mới', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'asset-button--form')}
             </div>
           `;
                 setTimeout(() => app.admin.updateExamTopics(), 0);
@@ -3800,7 +3808,7 @@ const app = {
                   <label style="display:block; cursor:pointer;"><input type="radio" name="e-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ đề cũ, thay bằng mới)</label>
                </div>
                <input type="file" id="e-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
-               <button class="btn-success" onclick="app.admin.submitImportExams()" style="width:100%;">Tải lên</button>
+               ${app.ui.assetButton('group5', 'upload', 'Tải lên đề kiểm tra', 'app.admin.submitImportExams()', 'asset-button--form')}
             </div>
           `;
             }
@@ -3949,8 +3957,8 @@ const app = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
              <h3>Chi tiết đề: ${exam.name}</h3>
              <div>
-                <button class="btn-primary" onclick="window.print()">In PDF / A4</button>
-                <button class="btn-opt" onclick="app.admin.renderESubTab('lib')">Quay lại</button>
+                ${app.ui.assetButton('group5', 'print', 'In PDF hoặc A4', 'window.print()', 'asset-button--form')}
+                ${app.ui.assetButton('group5', 'back', 'Quay lại', "app.admin.renderESubTab('lib')", 'asset-button--form')}
              </div>
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
@@ -4008,11 +4016,11 @@ const app = {
             let html = app.ui.renderTable(cols, users, (u, i) => {
                 let actionBtns = '';
                 if (isPending) {
-                    actionBtns = `<button class="btn-success action-btn" onclick="app.admin.approveUser('${u.username}')">Duyệt</button>
-                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
+                    actionBtns = `${app.ui.assetButton('group4', 'approve', 'Duyệt học sinh', `app.admin.approveUser('${u.username}')`, 'asset-button--table')}
+                          ${app.ui.assetButton('group4', 'delete', 'Xóa học sinh', `app.admin.deleteUser('${u.username}')`, 'asset-button--table')}`;
                 } else {
-                    actionBtns = `<button class="btn-opt action-btn" onclick="app.admin.showAddPlayerForm('${u.username}')">Sửa</button>
-                          <button class="btn-danger action-btn" onclick="app.admin.deleteUser('${u.username}')">Xóa</button>`;
+                    actionBtns = `${app.ui.assetButton('group4', 'edit', 'Sửa học sinh', `app.admin.showAddPlayerForm('${u.username}')`, 'asset-button--table')}
+                          ${app.ui.assetButton('group4', 'delete', 'Xóa học sinh', `app.admin.deleteUser('${u.username}')`, 'asset-button--table')}`;
                 }
                 return `<tr>
           <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
@@ -4069,7 +4077,7 @@ const app = {
                 </select>
              </div>
              
-             <button class="btn-success" onclick="app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')" style="width:100%; padding:10px;">${u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản'}</button>
+             ${app.ui.assetButton(u ? 'group4' : 'group4', u ? 'save' : 'create', u ? 'Lưu chỉnh sửa học sinh' : 'Tạo tài khoản học sinh', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, 'asset-button--form')}
           </div>
         `;
         },
@@ -4236,6 +4244,7 @@ const app = {
         studentProfileDetails: {},
         open() {
             const modal = document.getElementById('treasure-modal');
+            modal.querySelector('.admin-panel')?.classList.remove('control-panel-art');
             modal.style.display = 'flex';
             modal.classList.add('active');
             document.getElementById('treasure-title').textContent = 'Kho Báu';
@@ -4558,7 +4567,7 @@ const app = {
             detail.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px; flex-wrap:wrap; margin-bottom:15px;">
                     <h3 style="margin:0;">Hồ sơ: ${app.data.sanitizeHTML(student.fullname)}</h3>
-                    <button class="btn-success" onclick="app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))">Xuất Excel hồ sơ này</button>
+                    ${app.ui.assetButton('group4', 'export-excel', 'Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'asset-button--form')}
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
                     <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>

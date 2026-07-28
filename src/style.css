@@ -823,6 +823,26 @@ input[type="text"], input[type="password"], select, textarea {
 .asset-button--pet { width: min(100%, 225px); }
 .asset-button--close { width: clamp(120px, 13vw, 210px); }
 .asset-button--shop-tab { width: 100%; }
+.asset-button--utility { width: clamp(112px, 14vw, 210px); }
+.asset-button--table { width: clamp(74px, 8vw, 132px); margin: 2px; vertical-align: middle; }
+.asset-button--form { width: min(46%, 250px); margin: 4px; }
+.utility-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.utility-actions--right { justify-content: flex-end; margin-bottom: 20px; }
+
+/* Raster frame is applied only while the admin control station is open. */
+.admin-panel.control-panel-art {
+    background: url('../public/ui/frames/admin-control-panel.png') center / 100% 100% no-repeat !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    backdrop-filter: none !important;
+    padding: clamp(50px, 7vh, 80px) clamp(55px, 7vw, 100px) !important;
+}
+.control-panel-art .admin-content { padding-right: 8px; }
+@media (max-width: 900px) {
+    .asset-button--table { width: clamp(66px, 11vw, 105px); }
+    .asset-button--form { width: min(48%, 190px); }
+    .admin-panel.control-panel-art { padding: 40px 48px !important; }
+}
 .sr-only {
     position: absolute;
     width: 1px;
