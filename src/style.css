@@ -868,10 +868,10 @@ input[type="text"], input[type="password"], select, textarea {
 .admin-class-selector .diff-options { display: inline-flex; gap: 5px; margin: 0; padding: 0; vertical-align: middle; }
 .admin-class-selector .btn-opt { padding: 2px 8px; min-width: auto; font-size: 0.85rem; }
 #game-start-btn { width: min(55%, 720px) !important; align-self: center; }
-#exam-select-screen .btn-start-massive { width: min(55%, 720px) !important; align-self: center; }
+#exam-select-screen .btn-start-massive { width: min(40%, 480px) !important; align-self: center; }
 #exam-select-screen { box-sizing: border-box; padding: clamp(24px, 4vh, 56px) clamp(32px, 5vw, 96px); }
-#exam-select-screen .glass-container-xl { width: min(100%, 1200px) !important; max-width: none !important; max-height: 100%; box-sizing: border-box; padding: clamp(22px, 3vh, 38px) clamp(28px, 4vw, 64px); }
-#exam-select-screen .btn-start-massive { margin: 20px auto 0 !important; }
+#exam-select-screen .glass-container-xl { width: min(100%, 1200px) !important; max-width: none !important; max-height: 100%; box-sizing: border-box; padding: clamp(22px, 3vh, 38px) clamp(28px, 4vw, 64px); overflow-x: hidden; overflow-y: auto; }
+#exam-select-screen .btn-start-massive { margin: 12px auto 0 !important; }
 #shop-modal .admin-tabs { width: clamp(330px, 25vw, 400px) !important; flex: 0 0 clamp(330px, 25vw, 400px); padding: 24px 12px !important; gap: 12px !important; align-items: center; justify-content: center; overflow: visible; }
 #shop-modal .notebook-tab, #shop-modal .notebook-tab.active { display: block; width: 100%; height: auto; margin: 0; padding: 0 !important; overflow: visible; transform: none; background: transparent !important; border: 0 !important; border-radius: 0; box-shadow: none !important; }
 #shop-modal .notebook-tab + .notebook-tab { margin-top: 0; }
