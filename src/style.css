@@ -390,17 +390,17 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 }
 /* Exam Layout specific overrides */
 .exam-bg { background-image: url('../public/castle_defense.png'); background-size: cover; background-position: center; }
-.exam-select-layout { display: flex; justify-content: center; align-items: center; gap: 50px; margin: 40px 0; }
+.exam-select-layout { display: flex; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; gap: clamp(28px, 3vw, 52px); margin: clamp(20px, 3vh, 34px) auto; padding: 0 clamp(12px, 2vw, 30px); }
 .exam-guide-mascot { width: 300px; height: 300px; object-fit: contain; animation: heartbeat 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
 .subject-box {
     background: linear-gradient(180deg, #4f46e5, #3730a3);
     border: 4px solid #818cf8;
     border-bottom: 10px solid #312e81;
     border-radius: 30px;
-    padding: 30px 20px;
+    padding: 24px 18px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 250px;
+    width: clamp(210px, 17vw, 240px);
     text-align: center;
     box-shadow: 0 15px 30px rgba(0,0,0,0.5);
     color: white;
@@ -869,6 +869,9 @@ input[type="text"], input[type="password"], select, textarea {
 .admin-class-selector .btn-opt { padding: 2px 8px; min-width: auto; font-size: 0.85rem; }
 #game-start-btn { width: min(55%, 720px) !important; align-self: center; }
 #exam-select-screen .btn-start-massive { width: min(55%, 720px) !important; align-self: center; }
+#exam-select-screen { box-sizing: border-box; padding: clamp(24px, 4vh, 56px) clamp(32px, 5vw, 96px); }
+#exam-select-screen .glass-container-xl { width: min(100%, 1200px) !important; max-width: none !important; max-height: 100%; box-sizing: border-box; padding: clamp(22px, 3vh, 38px) clamp(28px, 4vw, 64px); }
+#exam-select-screen .btn-start-massive { margin: 20px auto 0 !important; }
 #shop-modal .admin-tabs { width: clamp(330px, 25vw, 400px) !important; flex: 0 0 clamp(330px, 25vw, 400px); padding: 24px 12px !important; gap: 12px !important; align-items: center; justify-content: center; overflow: visible; }
 #shop-modal .notebook-tab, #shop-modal .notebook-tab.active { display: block; width: 100%; height: auto; margin: 0; padding: 0 !important; overflow: visible; transform: none; background: transparent !important; border: 0 !important; border-radius: 0; box-shadow: none !important; }
 #shop-modal .notebook-tab + .notebook-tab { margin-top: 0; }
