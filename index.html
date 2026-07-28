@@ -411,7 +411,7 @@
     <div id="exam-play-screen" class="screen exam-bg"
       style="overflow-y:auto; align-items:flex-start; padding-top: 50px;">
       <div class="exam-paper" id="exam-paper">
-        <button id="exam-btn-back" class="utility-close-button" style="position:absolute; top:-40px; left:0;"
+        <button id="exam-btn-back" class="utility-close-button" style="position:absolute; top:-40px; right:0;"
           onclick="app.exam.confirmExit()" aria-label="Thoát đề kiểm tra">×</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
@@ -492,7 +492,7 @@
   <!-- Modal Cửa hàng & Gacha (Notebook Layout) -->
   <div id="shop-modal" class="modal">
     <div class="modal-content glass-container-xl"
-      style="position:relative; width: 95%; max-width: 1400px; padding: 0; display:flex; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 80vh; max-height: 95vh; background: transparent;">
+      style="position:relative; width: 95%; max-width: 1540px; padding: 0; display:flex; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 88vh; max-height: 96vh; background: transparent;">
 
       <!-- Blurred Background -->
       <div
@@ -509,7 +509,7 @@
 
       <!-- Notebook Tabs (Left) -->
       <div class="admin-tabs"
-        style="display:flex; flex-direction:column; gap: 10px; width: 200px; z-index: 1; padding: 30px 0 20px 0; border:none;">
+        style="display:flex; flex-direction:column; gap: 10px; width: 330px; z-index: 1; padding: 30px 12px 20px; border:none;">
         <button class="notebook-tab active asset-button asset-button--shop-tab" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
           <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true">
         </button>

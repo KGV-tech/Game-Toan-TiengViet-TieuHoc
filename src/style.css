@@ -860,14 +860,16 @@ input[type="text"], input[type="password"], select, textarea {
 }
 .utility-close-button:hover { filter: brightness(1.12); transform: scale(1.05); }
 .utility-close-button--inline { width: 34px; height: 34px; font-size: 1.55rem; vertical-align: middle; }
-#game-config-view > .utility-close-button, #game-play-view > .utility-close-button, #exam-select-screen .utility-close-button { position: absolute; top: 20px; left: 20px; z-index: 1000; }
+#game-config-view > .utility-close-button, #game-play-view > .utility-close-button, #exam-select-screen .utility-close-button { position: absolute; top: 20px; right: 20px; z-index: 1000; }
 #game-start-btn { width: min(55%, 720px) !important; align-self: center; }
-#shop-modal .admin-tabs { width: clamp(170px, 20vw, 250px) !important; flex: 0 0 clamp(170px, 20vw, 250px); padding: 26px 8px 18px !important; align-items: stretch; overflow: visible; }
-#shop-modal .notebook-tab, #shop-modal .notebook-tab.active { width: 100%; margin: 0; transform: none; }
-#shop-modal .notebook-tab + .notebook-tab { margin-top: 8px; }
-#shop-modal .asset-button--shop-tab > img { max-width: 100%; height: auto; }
+#exam-select-screen .btn-start-massive { width: min(55%, 720px) !important; align-self: center; }
+#shop-modal .admin-tabs { width: clamp(280px, 24vw, 360px) !important; flex: 0 0 clamp(280px, 24vw, 360px); padding: 30px 12px 20px !important; align-items: center; justify-content: center; overflow: visible; }
+#shop-modal .notebook-tab, #shop-modal .notebook-tab.active { width: 100%; height: clamp(70px, 6vw, 92px); margin: 0; overflow: hidden; transform: none; }
+#shop-modal .notebook-tab + .notebook-tab { margin-top: 10px; }
+#shop-modal .asset-button--shop-tab > img { width: 100%; max-width: none; height: auto; transform: translateY(-1px); }
 #shop-content-area { min-width: 0; }
-.lucky-station-layout { min-height: 0; height: min(68vh, 590px); display: grid; grid-template-columns: minmax(260px, 1.05fr) minmax(300px, .95fr); gap: clamp(12px, 2vw, 24px); align-items: center; }
+#shop-content-area.shop-content--lucky { overflow-y: hidden; }
+.lucky-station-layout { min-height: 0; height: min(74vh, 680px); display: grid; grid-template-columns: minmax(260px, 1.05fr) minmax(300px, .95fr); gap: clamp(12px, 2vw, 24px); align-items: center; }
 .lucky-wheel-pane, .lucky-wheel-wrap { min-width: 0; height: 100%; display: grid; place-items: center; }
 .lucky-wheel-stage { position: relative; width: min(100%, 430px); display: flex; justify-content: center; align-items: center; }
 .lucky-info-pane { min-width: 0; }
@@ -885,8 +887,9 @@ input[type="text"], input[type="password"], select, textarea {
 @media (max-width: 900px) {
     .asset-button--table { width: clamp(66px, 11vw, 105px); }
     .asset-button--form { width: min(48%, 190px); }
-    #shop-modal .admin-tabs { width: 150px !important; flex-basis: 150px; padding: 18px 5px !important; }
+    #shop-modal .admin-tabs { width: 190px !important; flex-basis: 190px; padding: 18px 5px !important; }
     #shop-modal .notebook-tab + .notebook-tab { margin-top: 5px; }
+    #shop-content-area.shop-content--lucky { overflow-y: auto; }
     .lucky-station-layout { height: auto; min-height: 0; grid-template-columns: 1fr; gap: 10px; }
     .lucky-wheel-stage { width: min(100%, 300px); }
     .lucky-info-card { padding: 12px; }

@@ -4954,6 +4954,7 @@ const app = {
                 btnEl.classList.add('active');
             }
             const box = document.getElementById('shop-content-area');
+            box.classList.toggle('shop-content--lucky', tab === 'lucky');
             const user = app.data.currentUser;
             if (!user) return;
 
