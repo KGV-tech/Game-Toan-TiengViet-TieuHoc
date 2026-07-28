@@ -827,21 +827,70 @@ input[type="text"], input[type="password"], select, textarea {
 .asset-button--table { width: clamp(74px, 8vw, 132px); margin: 2px; vertical-align: middle; }
 .asset-button--form { width: min(46%, 250px); margin: 4px; }
 .utility-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.utility-actions--right { justify-content: flex-end; margin-bottom: 20px; }
-
-/* Raster frame is applied only while the admin control station is open. */
-.admin-panel.control-panel-art {
-    background: url('../public/ui/frames/admin-control-panel.png') center / 100% 100% no-repeat !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    backdrop-filter: none !important;
-    padding: clamp(50px, 7vh, 80px) clamp(55px, 7vw, 100px) !important;
+.utility-actions--center { justify-content: center; margin-bottom: 20px; }
+.compact-admin-action {
+    min-width: 84px;
+    margin: 2px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-size: 0.85rem;
+    line-height: 1.15;
 }
-.control-panel-art .admin-content { padding-right: 8px; }
+.compact-admin-action--create, .compact-admin-action--save, .compact-admin-action--approve { background: linear-gradient(180deg, #22c55e, #15803d); border-bottom-color: #14532d; }
+.compact-admin-action--view, .compact-admin-action--edit { background: linear-gradient(180deg, #38bdf8, #0369a1); border-bottom-color: #075985; }
+.compact-admin-action--add { background: linear-gradient(180deg, #fbbf24, #b45309); border-bottom-color: #78350f; }
+.compact-admin-action--delete, .compact-admin-action--cancel { background: linear-gradient(180deg, #ef4444, #b91c1c); border-bottom-color: #7f1d1d; }
+.quest-empty-state { min-height: 48vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; text-align: center; }
+.quest-empty-state p { margin: 0; font-size: 1.15rem; }
+.utility-close-button {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #dc2626;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(239,68,68,.8);
+}
+.utility-close-button:hover { filter: brightness(1.12); transform: scale(1.05); }
+.utility-close-button--inline { width: 34px; height: 34px; font-size: 1.55rem; vertical-align: middle; }
+#game-config-view > .utility-close-button, #game-play-view > .utility-close-button, #exam-select-screen .utility-close-button { position: absolute; top: 20px; left: 20px; z-index: 1000; }
+#game-start-btn { width: min(55%, 720px) !important; align-self: center; }
+#shop-modal .admin-tabs { width: clamp(170px, 20vw, 250px) !important; flex: 0 0 clamp(170px, 20vw, 250px); padding: 26px 8px 18px !important; align-items: stretch; overflow: visible; }
+#shop-modal .notebook-tab, #shop-modal .notebook-tab.active { width: 100%; margin: 0; transform: none; }
+#shop-modal .notebook-tab + .notebook-tab { margin-top: 8px; }
+#shop-modal .asset-button--shop-tab > img { max-width: 100%; height: auto; }
+#shop-content-area { min-width: 0; }
+.lucky-station-layout { min-height: 0; height: min(68vh, 590px); display: grid; grid-template-columns: minmax(260px, 1.05fr) minmax(300px, .95fr); gap: clamp(12px, 2vw, 24px); align-items: center; }
+.lucky-wheel-pane, .lucky-wheel-wrap { min-width: 0; height: 100%; display: grid; place-items: center; }
+.lucky-wheel-stage { position: relative; width: min(100%, 430px); display: flex; justify-content: center; align-items: center; }
+.lucky-info-pane { min-width: 0; }
+.lucky-info-card { background: rgba(255,255,255,.9); padding: clamp(14px, 2vw, 22px); border-radius: 16px; box-shadow: 0 8px 18px rgba(0,0,0,.16); border: 2px solid rgba(234,179,8,.3); }
+.lucky-station-title { margin: 0 0 8px; font-weight: 900; color: #d97706; font-size: clamp(1.45rem, 2.1vw, 2rem); text-transform: uppercase; text-shadow: 1px 1px 0 #fef08a; text-align: center; }
+.lucky-candy-row { display:flex; justify-content:center; margin-bottom: 8px; }
+.lucky-candy-count { font-size: clamp(1rem, 1.45vw, 1.25rem); font-weight: bold; color: #b45309; background:#fef3c7; padding: 6px 14px; border-radius: 14px; border: 2px solid #fde68a; }
+.lucky-candy-count #lucky-lollipop-count { font-size: 1.35em !important; }
+.lucky-spin-count { text-align:center; margin: 0 0 10px; font-weight:800; }
+.lucky-rules { font-size: clamp(.86rem, 1.15vw, 1rem); color:#334155; line-height:1.35; margin-bottom: 12px; padding: 10px 12px; border-bottom: 2px dashed #cbd5e1; background:rgba(255,255,255,.5); border-radius:10px; }
+.lucky-rules h3 { margin: 0 0 5px; font-size: 1.05em; color: #475569; }
+.lucky-rules ul { padding-left: 19px; margin: 0; }
+.lucky-rules li + li { margin-top: 2px; }
+.lucky-spin-button { display:block; width:min(100%, 390px) !important; margin: 0 auto; }
 @media (max-width: 900px) {
     .asset-button--table { width: clamp(66px, 11vw, 105px); }
     .asset-button--form { width: min(48%, 190px); }
-    .admin-panel.control-panel-art { padding: 40px 48px !important; }
+    #shop-modal .admin-tabs { width: 150px !important; flex-basis: 150px; padding: 18px 5px !important; }
+    #shop-modal .notebook-tab + .notebook-tab { margin-top: 5px; }
+    .lucky-station-layout { height: auto; min-height: 0; grid-template-columns: 1fr; gap: 10px; }
+    .lucky-wheel-stage { width: min(100%, 300px); }
+    .lucky-info-card { padding: 12px; }
+    .lucky-rules { font-size: .82rem; }
 }
 .sr-only {
     position: absolute;

@@ -2540,6 +2540,9 @@ const app = {
                 <img src="./public/ui/buttons/${group}/${asset}.png" alt="" aria-hidden="true">
             </button>`;
         },
+        compactAction(label, onClick, variant = '') {
+            return `<button class="action-btn compact-admin-action ${variant}" onclick="${onClick}">${label}</button>`;
+        },
         renderTabs(tabData, currentTabId, onClickFnString) {
             let html = '';
             tabData.forEach(t => {
@@ -2729,7 +2732,6 @@ const app = {
         },
         openAdmin() {
             const modal = document.getElementById('treasure-modal');
-            modal.querySelector('.admin-panel')?.classList.add('control-panel-art');
             modal.style.display = 'flex';
             modal.classList.add('active');
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
@@ -2753,8 +2755,16 @@ const app = {
             else if (tab === 'quests') this.renderQuests(box);
         },
         renderQuests(box) {
-            let html = `<div class="utility-actions utility-actions--right">
-          ${app.ui.assetButton('group4', 'create', 'Tạo nhiệm vụ mới', 'app.admin.showAddQuestForm()')}
+            const quests = app.data.quests || [];
+            if (quests.length === 0) {
+                box.innerHTML = `<div class="quest-empty-state">
+                    ${app.ui.compactAction('+ Tạo mới', 'app.admin.showAddQuestForm()', 'compact-admin-action--create')}
+                    <p>Chưa có nhiệm vụ nào được tạo.</p>
+                </div>`;
+                return;
+            }
+            let html = `<div class="utility-actions utility-actions--center">
+          ${app.ui.compactAction('+ Tạo mới', 'app.admin.showAddQuestForm()', 'compact-admin-action--create')}
       </div>`;
 
             const cols = [
@@ -2767,7 +2777,6 @@ const app = {
                 { label: 'Hành động' }
             ];
 
-            const quests = app.data.quests || [];
             html += app.ui.renderTable(cols, quests, (q, i) => {
                 const status = q.is_active ? '<span style="color:#16a34a; font-weight:bold;">Đang chạy</span>' : '<span style="color:#dc2626; font-weight:bold;">Tạm dừng</span>';
                 let target = q.target_subject === 'any' ? 'Bất kỳ' : (q.target_subject === 'math' ? 'Toán' : 'Tiếng Việt');
@@ -2790,7 +2799,7 @@ const app = {
               <td>${status}</td>
               <td>
                   <button class="action-btn btn-danger" onclick="app.admin.toggleQuest(${i})">${q.is_active ? 'Dừng' : 'Bật'}</button>
-                  ${app.ui.assetButton('group4', 'delete', 'Xóa nhiệm vụ', `app.admin.deleteQuest(${i})`, 'asset-button--table')}
+                  ${app.ui.compactAction('Xóa', `app.admin.deleteQuest(${i})`, 'compact-admin-action--delete')}
               </td>
           </tr>`;
             }, "Chưa có nhiệm vụ nào được tạo.");
@@ -2851,8 +2860,8 @@ const app = {
            </div>
            
            <div style="text-align:center; margin-top: 20px;">
-              ${app.ui.assetButton('group5', 'cancel', 'Hủy', "app.admin.switchTab('quests')", 'asset-button--form')}
-              ${app.ui.assetButton('group4', 'save', 'Lưu nhiệm vụ', 'app.admin.submitQuest()', 'asset-button--form')}
+              ${app.ui.compactAction('Hủy', "app.admin.switchTab('quests')", 'compact-admin-action--cancel')}
+              ${app.ui.compactAction('Lưu', 'app.admin.submitQuest()', 'compact-admin-action--save')}
            </div>
         </div>
       `;
@@ -2949,7 +2958,7 @@ const app = {
            </div>
            
            <div style="text-align:center;">
-              ${app.ui.assetButton('group4', 'save', 'Lưu thay đổi', 'app.admin.saveSettings()', 'asset-button--form')}
+              ${app.ui.compactAction('Lưu thay đổi', 'app.admin.saveSettings()', 'compact-admin-action--save')}
            </div>
         </div>
       `;
@@ -2966,7 +2975,7 @@ const app = {
 
             const btn = document.querySelector('button[onclick="app.admin.saveSettings()"]');
             const oldText = btn.innerHTML;
-            btn.innerHTML = '<span class="sr-only">Đang lưu...</span>';
+            btn.textContent = 'Đang lưu...';
             btn.disabled = true;
 
             const error = await app.data.saveSettings();
@@ -3021,9 +3030,9 @@ const app = {
               <td>${q.type || 'Trắc nghiệm'}</td>
               <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation || ''}</td>
               <td>
-                ${app.ui.assetButton('group5', 'add-to-exam', 'Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'asset-button--table')}
-                ${app.ui.assetButton('group4', 'edit', 'Sửa câu hỏi', `app.admin.editQuestion(${i})`, 'asset-button--table')}
-                ${app.ui.assetButton('group4', 'delete', 'Xóa câu hỏi', `app.admin.deleteQuestion(${i})`, 'asset-button--table')}
+                ${app.ui.compactAction('Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'compact-admin-action--add')}
+                ${app.ui.compactAction('Sửa', `app.admin.editQuestion(${i})`, 'compact-admin-action--edit')}
+                ${app.ui.compactAction('Xóa', `app.admin.deleteQuestion(${i})`, 'compact-admin-action--delete')}
               </td>
             </tr>`;
                 });
@@ -3132,7 +3141,7 @@ const app = {
                   <textarea id="add-q-exp" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.explanation || '' : ''}</textarea>
                </div>
 
-               ${app.ui.assetButton('group4', 'save', q ? 'Lưu chỉnh sửa câu hỏi' : 'Lưu câu hỏi', `app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})`, 'asset-button--form')}
+               ${app.ui.compactAction(q ? 'Lưu chỉnh sửa' : 'Lưu câu hỏi', `app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
             </div>
           `;
                 setTimeout(() => app.admin.updateTopicDropdown(), 0);
@@ -3166,7 +3175,7 @@ const app = {
                   <label style="display:block; cursor:pointer;"><input type="radio" name="q-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ dữ liệu cũ, thay bằng mới)</label>
                </div>
                <input type="file" id="q-file-upload" accept=".xlsx, .csv" multiple style="margin: 10px 0 20px 0;">
-               ${app.ui.assetButton('group5', 'upload', 'Tải lên câu hỏi', 'app.admin.submitImportQuestions()', 'asset-button--form')}
+               ${app.ui.compactAction('Tải lên', 'app.admin.submitImportQuestions()', 'compact-admin-action--save')}
             </div>
           `;
             }
@@ -3447,7 +3456,7 @@ const app = {
             if (btn) {
                 btn.disabled = true;
                 btn.dataset.originalHtml = btn.innerHTML;
-                btn.innerHTML = '<span class="sr-only">Đang xử lý và tải lên. Vui lòng chờ.</span>';
+                btn.textContent = 'Đang xử lý...';
             }
 
             try {
@@ -3571,9 +3580,9 @@ const app = {
               <td>${e.classlevel || 'Lớp 5'}</td><td>${e.subject}</td>
               <td>${e.period}</td><td>${e.name}</td><td>${(e.questions || []).length}</td>
               <td>
-                ${app.ui.assetButton('group5', 'view', 'Xem đề', `app.admin.viewExam(${i})`, 'asset-button--table')}
-                ${app.ui.assetButton('group4', 'edit', 'Sửa đề', `app.admin.editExam(${i})`, 'asset-button--table')}
-                ${app.ui.assetButton('group4', 'delete', 'Xóa đề', `app.admin.deleteExam(${i})`, 'asset-button--table')}
+                ${app.ui.compactAction('Xem', `app.admin.viewExam(${i})`, 'compact-admin-action--view')}
+                ${app.ui.compactAction('Sửa', `app.admin.editExam(${i})`, 'compact-admin-action--edit')}
+                ${app.ui.compactAction('Xóa', `app.admin.deleteExam(${i})`, 'compact-admin-action--delete')}
               </td>
             </tr>`;
                 });
@@ -3630,7 +3639,7 @@ const app = {
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
                             ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
                             ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
-                            ${app.ui.assetButton('group4', 'delete', 'Xóa câu hỏi khỏi đề', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'asset-button--table')}
+                            ${app.ui.compactAction('Xóa', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'compact-admin-action--delete')}
                         </td>
                      </tr>
                      `).join('')}
@@ -3716,7 +3725,7 @@ const app = {
                 }).join('')}
                </div>
 
-               ${app.ui.assetButton('group4', 'save', e ? 'Lưu chỉnh sửa đề kiểm tra' : 'Tạo đề kiểm tra mới', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'asset-button--form')}
+               ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
             </div>
           `;
                 setTimeout(() => app.admin.updateExamTopics(), 0);
@@ -3808,7 +3817,7 @@ const app = {
                   <label style="display:block; cursor:pointer;"><input type="radio" name="e-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ đề cũ, thay bằng mới)</label>
                </div>
                <input type="file" id="e-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
-               ${app.ui.assetButton('group5', 'upload', 'Tải lên đề kiểm tra', 'app.admin.submitImportExams()', 'asset-button--form')}
+               ${app.ui.compactAction('Tải lên', 'app.admin.submitImportExams()', 'compact-admin-action--save')}
             </div>
           `;
             }
@@ -3957,8 +3966,8 @@ const app = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
              <h3>Chi tiết đề: ${exam.name}</h3>
              <div>
-                ${app.ui.assetButton('group5', 'print', 'In PDF hoặc A4', 'window.print()', 'asset-button--form')}
-                ${app.ui.assetButton('group5', 'back', 'Quay lại', "app.admin.renderESubTab('lib')", 'asset-button--form')}
+                ${app.ui.compactAction('In PDF / A4', 'window.print()', 'compact-admin-action--view')}
+                <button class="utility-close-button utility-close-button--inline" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề">×</button>
              </div>
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
@@ -4016,11 +4025,11 @@ const app = {
             let html = app.ui.renderTable(cols, users, (u, i) => {
                 let actionBtns = '';
                 if (isPending) {
-                    actionBtns = `${app.ui.assetButton('group4', 'approve', 'Duyệt học sinh', `app.admin.approveUser('${u.username}')`, 'asset-button--table')}
-                          ${app.ui.assetButton('group4', 'delete', 'Xóa học sinh', `app.admin.deleteUser('${u.username}')`, 'asset-button--table')}`;
+                    actionBtns = `${app.ui.compactAction('Duyệt', `app.admin.approveUser('${u.username}')`, 'compact-admin-action--approve')}
+                          ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
                 } else {
-                    actionBtns = `${app.ui.assetButton('group4', 'edit', 'Sửa học sinh', `app.admin.showAddPlayerForm('${u.username}')`, 'asset-button--table')}
-                          ${app.ui.assetButton('group4', 'delete', 'Xóa học sinh', `app.admin.deleteUser('${u.username}')`, 'asset-button--table')}`;
+                    actionBtns = `${app.ui.compactAction('Sửa', `app.admin.showAddPlayerForm('${u.username}')`, 'compact-admin-action--edit')}
+                          ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
                 }
                 return `<tr>
           <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
@@ -4077,7 +4086,7 @@ const app = {
                 </select>
              </div>
              
-             ${app.ui.assetButton(u ? 'group4' : 'group4', u ? 'save' : 'create', u ? 'Lưu chỉnh sửa học sinh' : 'Tạo tài khoản học sinh', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, 'asset-button--form')}
+             ${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}
           </div>
         `;
         },
@@ -4244,7 +4253,6 @@ const app = {
         studentProfileDetails: {},
         open() {
             const modal = document.getElementById('treasure-modal');
-            modal.querySelector('.admin-panel')?.classList.remove('control-panel-art');
             modal.style.display = 'flex';
             modal.classList.add('active');
             document.getElementById('treasure-title').textContent = 'Kho Báu';
@@ -4567,7 +4575,7 @@ const app = {
             detail.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px; flex-wrap:wrap; margin-bottom:15px;">
                     <h3 style="margin:0;">Hồ sơ: ${app.data.sanitizeHTML(student.fullname)}</h3>
-                    ${app.ui.assetButton('group4', 'export-excel', 'Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'asset-button--form')}
+                    ${app.ui.compactAction('Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--save')}
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
                     <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
@@ -4972,12 +4980,11 @@ const app = {
             const cannotSpin = isSpinning || remainingSpins === 0;
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
-            <!-- Left Side: Wheel (60%) -->
-            <div style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
-                <div style="position:relative; width:100%; height: 100%; display:flex; justify-content:center; align-items:center;">
+        <div class="lucky-station-layout">
+            <div class="lucky-wheel-pane">
+                <div class="lucky-wheel-wrap">
                     <!-- Vùng chứa tỉ lệ chuẩn, khóa chặt 3 ảnh lại với nhau -->
-                    <div style="position:relative; width: 100%; max-width: 550px; display: flex; justify-content: center; align-items: center;">
+                    <div class="lucky-wheel-stage">
                         <div style="position:relative; width: 100%;">
                             <!-- Wheel Stand (Giữ khung tỉ lệ) -->
                             <img src="./public/wheel_stand.png" style="width:100%; height:auto; display:block; z-index:1; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
@@ -4996,19 +5003,18 @@ const app = {
                 </div>
             </div>
 
-            <!-- Right Side: Details (40%) -->
-            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
-                <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(234, 179, 8, 0.3); backdrop-filter: blur(10px);">
-                    <h2 style="font-weight:900; color: #d97706; font-size: 2.5rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 0 #fef08a; text-align:center;">Trạm May Mắn</h2>
+            <div class="lucky-info-pane">
+                <div class="lucky-info-card">
+                    <h2 class="lucky-station-title">Trạm May Mắn</h2>
                     
-                    <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #b45309; background: #fef3c7; padding: 10px 25px; border-radius: 20px; border: 2px solid #fde68a;">
+                    <div class="lucky-candy-row">
+                        <div class="lucky-candy-count">
                             Bạn đang có: <span id="lucky-lollipop-count" style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
                         </div>
                     </div>
-                    <p style="text-align:center; margin:-10px 0 18px; font-weight:800; color:${remainingSpins ? '#475569' : '#dc2626'};">Lượt quay hôm nay: ${remainingSpins}/3</p>
+                    <p class="lucky-spin-count" style="color:${remainingSpins ? '#475569' : '#dc2626'};">Lượt quay hôm nay: ${remainingSpins}/3</p>
                     
-                    <div style="font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 10px;">
+                    <div class="lucky-rules">
                         <h3 style="margin-top:0; color: #475569;">Thể lệ Vòng Quay:</h3>
                         <ul style="padding-left: 20px; margin-bottom:0;">
                             <li><b style="color:#ef4444;">May mắn lần sau</b></li>
@@ -5021,7 +5027,7 @@ const app = {
                         </ul>
                     </div>
                     
-                    <button id="btn-spin-lucky" class="asset-button asset-button--wide" style="width:100%;"
+                    <button id="btn-spin-lucky" class="asset-button asset-button--wide lucky-spin-button"
                         onclick="app.shop.spinWheel()"
                         ${cannotSpin ? 'disabled' : ''} aria-label="${remainingSpins === 0 ? 'Đã hết lượt quay hôm nay' : 'Quay may mắn, giá 2 kẹo'}">
                         <img src="./public/ui/buttons/group2/spin-lucky.png" alt="" aria-hidden="true">

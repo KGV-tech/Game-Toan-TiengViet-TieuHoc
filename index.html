@@ -234,9 +234,7 @@
 
       <!-- Cấu hình -->
       <div id="game-config-view" class="game-view active">
-        <button class="btn-back asset-button asset-button--nav" onclick="app.router.open('map-screen')" aria-label="Trở về">
-          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
-        </button>
+        <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
         <div class="glass-container-xl">
           <div class="config-layout">
             <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
@@ -312,9 +310,7 @@
 
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
-        <button id="game-btn-back" class="btn-back asset-button asset-button--nav" onclick="app.game.confirmExit()" aria-label="Trở về">
-          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
-        </button>
+        <button id="game-btn-back" class="utility-close-button" onclick="app.game.confirmExit()" aria-label="Thoát lượt làm bài">×</button>
 
         <div class="glass-container-xl">
           <div class="play-layout">
@@ -358,9 +354,7 @@
     <!-- Màn hình Chọn Đề Kiểm tra -->
     <div id="exam-select-screen" class="screen exam-bg">
       <div class="glass-container-xl" style="max-width: 900px; text-align: center;">
-        <button class="btn-back asset-button asset-button--nav" onclick="app.router.open('map-screen')" aria-label="Trở về">
-          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
-        </button>
+        <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
           <div id="exam-admin-class-selector" style="display:none; text-align:right;">
@@ -417,10 +411,8 @@
     <div id="exam-play-screen" class="screen exam-bg"
       style="overflow-y:auto; align-items:flex-start; padding-top: 50px;">
       <div class="exam-paper" id="exam-paper">
-        <button id="exam-btn-back" class="btn-back asset-button asset-button--nav" style="position:absolute; top:-40px; left:0;"
-          onclick="app.exam.confirmExit()" aria-label="Trở về">
-          <img src="./public/ui/buttons/group1/back.png" alt="" aria-hidden="true">
-        </button>
+        <button id="exam-btn-back" class="utility-close-button" style="position:absolute; top:-40px; left:0;"
+          onclick="app.exam.confirmExit()" aria-label="Thoát đề kiểm tra">×</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
           <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display"
@@ -460,10 +452,10 @@
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
     <div id="treasure-modal" class="modal">
       <div class="modal-content admin-panel glass-container-xl" style="position:relative;">
-        <button class="btn-danger asset-button asset-button--close"
+        <button class="utility-close-button"
           style="position:absolute; top: 15px; right: 15px; z-index: 100;"
           onclick="document.getElementById('treasure-modal').style.display='none'" aria-label="Đóng Kho báu">
-          <img src="./public/ui/buttons/group5/close.png" alt="" aria-hidden="true">
+          <span aria-hidden="true">×</span>
         </button>
 
         <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
@@ -483,10 +475,10 @@
   <div id="quest-modal" class="modal">
     <div class="modal-content glass-container-xl"
       style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
-      <button class="btn-danger asset-button asset-button--close"
+      <button class="utility-close-button"
         style="position:absolute; top: 15px; right: 15px; z-index: 100;"
         onclick="document.getElementById('quest-modal').style.display='none'" aria-label="Đóng Nhiệm vụ">
-        <img src="./public/ui/buttons/group5/close.png" alt="" aria-hidden="true">
+        <span aria-hidden="true">×</span>
       </button>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
         <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
@@ -509,10 +501,10 @@
       <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.4); z-index: 0;">
       </div> <!-- Overlay -->
 
-      <button class="btn-danger asset-button asset-button--close"
+      <button class="utility-close-button"
         style="position:absolute; top: 15px; right: 15px; z-index: 100;"
         onclick="document.getElementById('shop-modal').style.display='none'" aria-label="Đóng Cửa hàng">
-        <img src="./public/ui/buttons/group5/close.png" alt="" aria-hidden="true">
+        <span aria-hidden="true">×</span>
       </button>
 
       <!-- Notebook Tabs (Left) -->
