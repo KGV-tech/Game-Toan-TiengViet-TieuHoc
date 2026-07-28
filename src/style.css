@@ -391,6 +391,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 /* Exam Layout specific overrides */
 .exam-bg { background-image: url('../public/castle_defense.png'); background-size: cover; background-position: center; }
 .exam-select-layout { display: flex; justify-content: center; align-items: center; gap: 50px; margin: 40px 0; }
+.exam-guide-mascot { width: 300px; height: 300px; object-fit: contain; animation: heartbeat 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
 .subject-box {
     background: linear-gradient(180deg, #4f46e5, #3730a3);
     border: 4px solid #818cf8;
