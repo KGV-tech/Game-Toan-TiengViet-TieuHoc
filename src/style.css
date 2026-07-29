@@ -876,7 +876,7 @@ input[type="text"], input[type="password"], select, textarea {
 #shop-modal .notebook-tab, #shop-modal .notebook-tab.active { display: block; width: 100%; height: auto; margin: 0; padding: 0 !important; overflow: visible; transform: none; background: transparent !important; border: 0 !important; border-radius: 0; box-shadow: none !important; }
 #shop-modal .notebook-tab + .notebook-tab { margin-top: 0; }
 #shop-modal .notebook-tab:hover, #shop-modal .notebook-tab.active:hover { transform: translateY(-2px); background: transparent !important; }
-#shop-modal .asset-button--shop-tab > img { display: block; width: min(100%, 375px); max-width: 100%; height: auto; margin: 0 auto; transform: none; }
+#shop-modal .asset-button--shop-tab > img { display: block; width: min(100%, 500px); max-width: 100%; height: auto; margin: 0 auto; transform: none; }
 #shop-content-area { min-width: 0; }
 #shop-content-area.shop-content--lucky { overflow-y: hidden; }
 .lucky-station-layout { min-height: 0; height: min(74vh, 680px); display: grid; grid-template-columns: minmax(260px, 1.05fr) minmax(300px, .95fr); gap: clamp(12px, 2vw, 24px); align-items: center; }
