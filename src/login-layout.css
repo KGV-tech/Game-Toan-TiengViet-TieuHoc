@@ -69,11 +69,11 @@
   width: min(36vw, 516px);
   min-width: 336px;
   max-width: 516px;
-  aspect-ratio: 1055 / 1789;
+  aspect-ratio: 1055 / 1610;
   flex: none;
   /* Keep the upright frame visually attached to the logo despite transparent padding. */
   margin: clamp(-150px, -10vw, -96px) 0 0 !important;
-  padding: clamp(132px, 10vh, 168px) clamp(48px, 4vw, 64px) clamp(42px, 4vh, 58px);
+  padding: clamp(150px, 11vh, 185px) clamp(48px, 4vw, 64px) clamp(36px, 3.5vh, 50px);
   overflow: visible;
   background: transparent;
   border: 0;

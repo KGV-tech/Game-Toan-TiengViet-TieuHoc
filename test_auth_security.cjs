@@ -42,6 +42,6 @@ assert.match(css, /label:hover span/, 'Hovering an avatar must enlarge its portr
 assert.match(css, /min-inline-size: 0/, 'The avatar fieldset must be allowed to shrink inside the registration panel.');
 assert.match(css, /max-width: 100%/, 'The avatar picker must never exceed its registration panel.');
 assert.doesNotMatch(html, /<em>/, 'Avatar names must not be shown beneath the portraits.');
-assert.match(css, /aspect-ratio: 1055 \/ 1789/, 'The registration frame must be extended by about twenty percent.');
+assert.match(css, /aspect-ratio: 1055 \/ 1610/, 'The registration frame must use the reduced height requested after the first extension.');
 
 console.log('Supabase Auth and RLS security contract verified.');
