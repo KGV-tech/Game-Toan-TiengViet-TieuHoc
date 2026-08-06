@@ -1,0 +1,16 @@
+const assert = require('assert');
+const fs = require('fs');
+
+const source = fs.readFileSync('src/main.js', 'utf8');
+const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
+
+assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin must show a Template Bank tab before Question Bank.');
+assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
+assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
+assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
+assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
+assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
+assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
+assert(migration.includes('templates_write_teacher'), 'Only teachers may modify templates in Supabase.');
+
+console.log('Template Bank contract verified.');
