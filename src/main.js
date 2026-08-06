@@ -3011,8 +3011,7 @@ const app = {
 
             box.innerHTML = `
               <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                <div><h3 style="margin:0; color:#ffeb3b;">Kho Template</h3><small>Template chỉ lưu cấu hình; công thức tạo câu nằm trong file riêng theo lớp và môn.</small></div>
-                <button class="btn-success" onclick="app.admin.renderTemplateForm()">+ Tạo template</button>
+                <div><h3 style="margin:0; color:#ffeb3b;">Kho Template</h3><small>Generator được tạo trong code; tại đây chỉ sửa hoặc nhân bản cấu hình áp dụng của generator đó.</small></div>
               </div>
               <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:12px;">
                 <select class="filter-input" aria-label="Lọc cấp lớp" onchange="app.admin.setTemplateFilter('classlevel', this.value)">${optionList(['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'], filters.classlevel, 'Cấp lớp: tất cả')}</select>
@@ -3028,7 +3027,7 @@ const app = {
                 <td>${app.data.sanitizeHTML(item.classlevel)}</td><td>${app.data.sanitizeHTML(item.subject)}</td><td>${app.data.sanitizeHTML(item.topic)}</td>
                 <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.generator_key)}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
                 <td><button class="btn-opt action-btn" onclick="app.admin.renderTemplateForm(${index})">Sửa</button><button class="btn-danger action-btn" onclick="app.admin.deleteTemplate(${index})">Xóa</button></td>
-              </tr>`, 'Chưa có template. Bấm “Tạo template” để khai báo template đầu tiên.')}
+              </tr>`, 'Chưa có cấu hình template. Hãy thêm generator và cấu hình mẫu từ code hoặc chạy migration Supabase.')}
             `;
         },
         getTemplateTopics(classlevel, subject, semester) {
@@ -3046,7 +3045,12 @@ const app = {
             topic.innerHTML = topics.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selectedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('');
         },
         renderTemplateForm(editIndex) {
-            const existing = editIndex === undefined ? null : app.data.questionTemplates[editIndex];
+            const existing = app.data.questionTemplates[editIndex];
+            if (!existing) {
+                alert('Hãy chọn một template có sẵn để sửa hoặc lưu thành bản mới.');
+                this.switchTab('templates');
+                return;
+            }
             const config = existing?.config || {};
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
@@ -3054,7 +3058,7 @@ const app = {
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn']];
             const box = document.getElementById('treasure-content-area');
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
-              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">${existing ? 'Sửa template' : 'Tạo template mới'}</h3><p>Thiết lập một lần, game sẽ tự sinh nhiều câu hỏi khác nhau.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
+              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
               <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Ví dụ khai báo</b><p>Template <code>number.digit_at_place</code> dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên ở mỗi lượt.</p></div></aside>
               <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
                 <label class="template-editor__field template-editor__field--wide"><span>Tên template</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
@@ -3071,7 +3075,7 @@ const app = {
                 <div class="template-editor__rule"><h5>Chữ số hàng X</h5><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
                 <div class="template-editor__rule"><h5>Chữ số Y</h5><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div>
               </div></div>
-              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><div><button class="btn-success" onclick="app.admin.saveTemplate()">Lưu mới</button><button class="btn-primary" ${existing ? '' : 'disabled'} onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></div></footer>
+              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><div><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></div></footer>
             </section>`;
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
@@ -3091,10 +3095,11 @@ const app = {
             if (metadataError) throw new Error(metadataError);
             return template;
         },
-        async saveTemplate(editIndex) {
+        async saveTemplate(editIndex, asCopy = false) {
             let template;
             try { template = this.collectTemplateForm(); } catch (error) { alert(error.message); return; }
-            const isUpdate = editIndex !== undefined;
+            if (!app.data.questionTemplates[editIndex]) return alert('Không tìm thấy template gốc.');
+            const isUpdate = !asCopy;
             if (window.supabase && (!isUpdate || !app.data.questionTemplates[editIndex].id.startsWith('temp_'))) {
                 const query = isUpdate ? supabaseClient.from('question_templates').update(template).eq('id', app.data.questionTemplates[editIndex].id) : supabaseClient.from('question_templates').insert([template]);
                 const { data, error } = await query.select();
