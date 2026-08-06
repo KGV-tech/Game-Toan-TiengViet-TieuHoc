@@ -71,7 +71,7 @@
           <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
           <fieldset class="avatar-picker">
             <legend>Chọn Avatar</legend>
-            <div class="avatar-picker__tabs" role="tablist" aria-label="Nhóm avatar"><button type="button" class="active" role="tab" aria-selected="true" onclick="app.auth.setAvatarGroup('boys', this)">Bé trai</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('girls', this)">Bé gái</button></div>
+            <div class="avatar-picker__tabs" role="tablist" aria-label="Nhóm avatar"><button type="button" class="active" role="tab" aria-selected="true" onclick="app.auth.setAvatarGroup('boys', this)">Bé trai</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('girls', this)">Bé gái</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('cartoons', this)">Hoạt hình</button></div>
             <div class="avatar-picker__choices" data-avatar-group="boys">
               <label title="Phi công"><input type="radio" name="reg-avatar" value="boy-short" checked><span class="avatar-art avatar-art--boy-short" aria-hidden="true"></span></label>
               <label title="Mắt kính"><input type="radio" name="reg-avatar" value="boy-side"><span class="avatar-art avatar-art--boy-side" aria-hidden="true"></span></label>
@@ -95,6 +95,18 @@
               <label title="Đọc sách"><input type="radio" name="reg-avatar" value="girl-reader"><span class="avatar-art avatar-art--girl-reader" aria-hidden="true"></span></label>
               <label title="Vận động"><input type="radio" name="reg-avatar" value="girl-athlete"><span class="avatar-art avatar-art--girl-athlete" aria-hidden="true"></span></label>
               <label title="Phát minh"><input type="radio" name="reg-avatar" value="girl-inventor"><span class="avatar-art avatar-art--girl-inventor" aria-hidden="true"></span></label>
+            </div>
+            <div class="avatar-picker__choices" data-avatar-group="cartoons" hidden>
+              <label title="Mèo robot phi hành gia"><input type="radio" name="reg-avatar" value="cartoon-robot-cat"><span class="avatar-art avatar-art--cartoon-robot-cat" aria-hidden="true"></span></label>
+              <label title="Sóc điện"><input type="radio" name="reg-avatar" value="cartoon-lightning-squirrel"><span class="avatar-art avatar-art--cartoon-lightning-squirrel" aria-hidden="true"></span></label>
+              <label title="Cún cứu hộ"><input type="radio" name="reg-avatar" value="cartoon-rescue-pup"><span class="avatar-art avatar-art--cartoon-rescue-pup" aria-hidden="true"></span></label>
+              <label title="Rồng phép thuật"><input type="radio" name="reg-avatar" value="cartoon-dragon"><span class="avatar-art avatar-art--cartoon-dragon" aria-hidden="true"></span></label>
+              <label title="Bạn cây xanh"><input type="radio" name="reg-avatar" value="cartoon-garden-alien"><span class="avatar-art avatar-art--cartoon-garden-alien" aria-hidden="true"></span></label>
+              <label title="Robot mini"><input type="radio" name="reg-avatar" value="cartoon-mini-robot"><span class="avatar-art avatar-art--cartoon-mini-robot" aria-hidden="true"></span></label>
+              <label title="Cáo mây pháp sư"><input type="radio" name="reg-avatar" value="cartoon-cloud-fox"><span class="avatar-art avatar-art--cartoon-cloud-fox" aria-hidden="true"></span></label>
+              <label title="Rái cá thám hiểm"><input type="radio" name="reg-avatar" value="cartoon-otter"><span class="avatar-art avatar-art--cartoon-otter" aria-hidden="true"></span></label>
+              <label title="Gấu trúc đỏ phát minh"><input type="radio" name="reg-avatar" value="cartoon-red-panda"><span class="avatar-art avatar-art--cartoon-red-panda" aria-hidden="true"></span></label>
+              <label title="Chim phi công"><input type="radio" name="reg-avatar" value="cartoon-pilot-bird"><span class="avatar-art avatar-art--cartoon-pilot-bird" aria-hidden="true"></span></label>
             </div>
           </fieldset>
           <button id="register-btn" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">

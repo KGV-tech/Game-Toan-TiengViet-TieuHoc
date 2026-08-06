@@ -35,6 +35,10 @@ assert.match(html, /value="girl-long"/, 'Registration must include girl avatars.
 assert.match(html, /value="girl-doll"/, 'Registration must include varied girl hairstyles.');
 assert.match(html, /value="boy-reader"/, 'Registration must include the second set of boy avatars.');
 assert.match(html, /value="girl-inventor"/, 'Registration must include the second set of girl avatars.');
+assert.match(html, /setAvatarGroup\('cartoons'/, 'Registration must offer a dedicated Cartoon avatar tab.');
+assert.match(html, /value="cartoon-robot-cat"/, 'Registration must include original cartoon avatars.');
+assert.match(source, /cartoon-robot-cat/, 'Cartoon avatars must be valid profile avatar keys.');
+assert.match(css, /avatars-cartoons-sprite-v1\.png/, 'Cartoon avatars must use their own sprite sheet.');
 assert.match(source, /setAvatarGroup\(group, button\)/, 'The avatar picker must let pupils switch between boy and girl avatar groups.');
 assert.match(css, /overflow-x: auto/, 'Avatar choices must use a horizontal scroller instead of adding a second row.');
 assert.match(css, /input:checked \+ span \{[^}]*background-color/, 'Selecting an avatar must not overwrite its sprite background image.');

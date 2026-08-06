@@ -592,7 +592,17 @@ const app = {
             'girl-artist': { label: 'Bé gái nghệ sĩ mũ nồi tím' },
             'girl-reader': { label: 'Bé gái đọc sách đeo kính tròn' },
             'girl-athlete': { label: 'Bé gái vận động tóc tết' },
-            'girl-inventor': { label: 'Bé gái nhà phát minh tóc bất đối xứng' }
+            'girl-inventor': { label: 'Bé gái nhà phát minh tóc bất đối xứng' },
+            'cartoon-robot-cat': { label: 'Mèo robot phi hành gia' },
+            'cartoon-lightning-squirrel': { label: 'Sóc điện' },
+            'cartoon-rescue-pup': { label: 'Cún cứu hộ' },
+            'cartoon-dragon': { label: 'Rồng phép thuật' },
+            'cartoon-garden-alien': { label: 'Bạn cây xanh' },
+            'cartoon-mini-robot': { label: 'Robot mini' },
+            'cartoon-cloud-fox': { label: 'Cáo mây pháp sư' },
+            'cartoon-otter': { label: 'Rái cá thám hiểm' },
+            'cartoon-red-panda': { label: 'Gấu trúc đỏ phát minh' },
+            'cartoon-pilot-bird': { label: 'Chim phi công' }
         },
         getAvatar(avatarKey) {
             return { key: this.avatarChoices[avatarKey] ? avatarKey : 'boy-short', ...(this.avatarChoices[avatarKey] || this.avatarChoices['boy-short']) };
