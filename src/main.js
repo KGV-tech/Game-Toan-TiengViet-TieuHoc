@@ -572,6 +572,17 @@ const app = {
     },
 
     auth: {
+        avatarChoices: {
+            rocket: { icon: '🚀', label: 'Phi hành gia' },
+            fox: { icon: '🦊', label: 'Cáo nhỏ' },
+            lion: { icon: '🦁', label: 'Sư tử' },
+            panda: { icon: '🐼', label: 'Gấu trúc' },
+            unicorn: { icon: '🦄', label: 'Kỳ lân' },
+            robot: { icon: '🤖', label: 'Robot' }
+        },
+        getAvatar(avatarKey) {
+            return this.avatarChoices[avatarKey] || this.avatarChoices.rocket;
+        },
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
             document.getElementById('register-btn').onclick = () => this.register();
@@ -595,7 +606,7 @@ const app = {
             if (this.loginPending) return;
 
             this.loginPending = true;
-            app.ui.setButtonLoading('login-btn', true, 'Vui lòng chờ…');
+            app.ui.setButtonLoading('login-btn', true, 'Đang đăng nhập…');
             try {
 
             const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
@@ -690,8 +701,9 @@ const app = {
             const un = document.getElementById('reg-username').value.trim();
             const pw = document.getElementById('reg-password').value.trim();
             const cl = document.getElementById('reg-class').value;
+            const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'rocket';
 
-            if (!fn || !un || !pw) {
+            if (!fn || !un || !pw || !cl) {
                 alert('Vui lòng điền đầy đủ thông tin!');
                 return;
             }
@@ -716,6 +728,7 @@ const app = {
                 auth_user_id: authData.user.id,
                 classlevel: cl,
                 role: 'student',
+                avatar_key: Object.prototype.hasOwnProperty.call(this.avatarChoices, selectedAvatar) ? selectedAvatar : 'rocket',
                 approved: false,
                 history: [],
                 totalscore: 0,
@@ -761,10 +774,16 @@ const app = {
         },
         updateHeader() {
             if (!app.data.currentUser) return;
+            const user = app.data.currentUser;
+            const avatar = this.getAvatar(user.avatar_key);
+            const isAdmin = user.role?.toLowerCase() === 'admin';
             const html = `
-        <strong>${app.data.sanitizeHTML(app.data.currentUser.fullname)}</strong> (${app.data.currentUser.role?.toLowerCase() === 'admin' ? 'Admin' : 'Lớp ' + app.data.currentUser.classlevel})<br>
-        ${app.data.currentUser.role?.toLowerCase() !== 'admin' ? `Điểm: ${app.data.currentUser.totalscore} | Kẹo: ${app.data.currentUser.lollipops} 🍭` : ''}
-      `;
+                <span class="player-info-card__avatar" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}">${avatar.icon}</span>
+                <span class="player-info-card__content">
+                  <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
+                  <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
+                  ${isAdmin ? '' : `<span class="player-info-card__stats"><b>${user.totalscore || 0}</b> điểm <i aria-hidden="true">🍭</i> <b>${user.lollipops || 0}</b></span>`}
+                </span>`;
             document.getElementById('player-info').innerHTML = html;
 
             const adminNotif = document.getElementById('admin-notification');
