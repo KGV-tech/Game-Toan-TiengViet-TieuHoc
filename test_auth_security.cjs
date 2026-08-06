@@ -27,5 +27,13 @@ const html = fs.readFileSync('index.html', 'utf8');
 assert.match(html, /name="reg-avatar"/, 'Registration must offer an avatar selection.');
 assert.match(html, /id="player-info" class="player-info-card"/, 'The map must retain a dedicated player information card.');
 assert.match(source, /player-info-card__avatar/, 'The player card must render the chosen avatar.');
+assert.match(source, /Đang đăng nhập…/, 'The loading state must use the clear Vietnamese sign-in label.');
+assert.match(source, /button-loading/, 'Image buttons must render a visible loading treatment instead of transparent text.');
+assert.match(html, /value="boy-short"/, 'Registration must include boy avatars.');
+assert.match(html, /value="girl-long"/, 'Registration must include girl avatars.');
+assert.match(html, /value="girl-doll"/, 'Registration must include varied girl hairstyles.');
+assert.match(html, /value="boy-reader"/, 'Registration must include the second set of boy avatars.');
+assert.match(html, /value="girl-inventor"/, 'Registration must include the second set of girl avatars.');
+assert.match(source, /setAvatarGroup\(group, button\)/, 'The avatar picker must let pupils switch between boy and girl avatar groups.');
 
 console.log('Supabase Auth and RLS security contract verified.');

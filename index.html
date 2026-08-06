@@ -71,13 +71,30 @@
           <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
           <fieldset class="avatar-picker">
             <legend>Chọn Avatar</legend>
-            <div class="avatar-picker__choices">
-              <label><input type="radio" name="reg-avatar" value="rocket" checked><span aria-hidden="true">🚀</span><em>Phi hành gia</em></label>
-              <label><input type="radio" name="reg-avatar" value="fox"><span aria-hidden="true">🦊</span><em>Cáo nhỏ</em></label>
-              <label><input type="radio" name="reg-avatar" value="lion"><span aria-hidden="true">🦁</span><em>Sư tử</em></label>
-              <label><input type="radio" name="reg-avatar" value="panda"><span aria-hidden="true">🐼</span><em>Gấu trúc</em></label>
-              <label><input type="radio" name="reg-avatar" value="unicorn"><span aria-hidden="true">🦄</span><em>Kỳ lân</em></label>
-              <label><input type="radio" name="reg-avatar" value="robot"><span aria-hidden="true">🤖</span><em>Robot</em></label>
+            <div class="avatar-picker__tabs" role="tablist" aria-label="Nhóm avatar"><button type="button" class="active" role="tab" aria-selected="true" onclick="app.auth.setAvatarGroup('boys', this)">Bé trai</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('girls', this)">Bé gái</button></div>
+            <div class="avatar-picker__choices" data-avatar-group="boys">
+              <label><input type="radio" name="reg-avatar" value="boy-short" checked><span class="avatar-art avatar-art--boy-short" aria-hidden="true"></span><em>Phi công</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-side"><span class="avatar-art avatar-art--boy-side" aria-hidden="true"></span><em>Mắt kính</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-curly"><span class="avatar-art avatar-art--boy-curly" aria-hidden="true"></span><em>Khoa học</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-bowl"><span class="avatar-art avatar-art--boy-bowl" aria-hidden="true"></span><em>Đội nón</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-spiky"><span class="avatar-art avatar-art--boy-spiky" aria-hidden="true"></span><em>Tai nghe</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-reader"><span class="avatar-art avatar-art--boy-reader" aria-hidden="true"></span><em>Mọt sách</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-athlete"><span class="avatar-art avatar-art--boy-athlete" aria-hidden="true"></span><em>Thể thao</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-artist"><span class="avatar-art avatar-art--boy-artist" aria-hidden="true"></span><em>Họa sĩ</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-explorer"><span class="avatar-art avatar-art--boy-explorer" aria-hidden="true"></span><em>Thám hiểm</em></label>
+              <label><input type="radio" name="reg-avatar" value="boy-visor"><span class="avatar-art avatar-art--boy-visor" aria-hidden="true"></span><em>Công nghệ</em></label>
+            </div>
+            <div class="avatar-picker__choices" data-avatar-group="girls" hidden>
+              <label><input type="radio" name="reg-avatar" value="girl-long"><span class="avatar-art avatar-art--girl-long" aria-hidden="true"></span><em>Nơ hồng</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-bob"><span class="avatar-art avatar-art--girl-bob" aria-hidden="true"></span><em>Kính sao</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-twins"><span class="avatar-art avatar-art--girl-twins" aria-hidden="true"></span><em>Tóc buộc</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-braid"><span class="avatar-art avatar-art--girl-braid" aria-hidden="true"></span><em>Tóc tết</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-doll"><span class="avatar-art avatar-art--girl-doll" aria-hidden="true"></span><em>Mũ nồi</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-captain"><span class="avatar-art avatar-art--girl-captain" aria-hidden="true"></span><em>Đội trưởng</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-artist"><span class="avatar-art avatar-art--girl-artist" aria-hidden="true"></span><em>Nghệ sĩ</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-reader"><span class="avatar-art avatar-art--girl-reader" aria-hidden="true"></span><em>Đọc sách</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-athlete"><span class="avatar-art avatar-art--girl-athlete" aria-hidden="true"></span><em>Vận động</em></label>
+              <label><input type="radio" name="reg-avatar" value="girl-inventor"><span class="avatar-art avatar-art--girl-inventor" aria-hidden="true"></span><em>Phát minh</em></label>
             </div>
           </fieldset>
           <button id="register-btn" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">
