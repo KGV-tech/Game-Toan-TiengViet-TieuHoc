@@ -128,6 +128,18 @@ const app = {
             if (!str) return '';
             return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         },
+        formatMathNumber(value) {
+            const digits = String(value ?? '').replace(/\s/g, '');
+            if (!/^\d+$/.test(digits)) return String(value ?? '');
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        },
+        formatMathText(value) {
+            return String(value ?? '').replace(/\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
+        },
+        parseMathNumber(value) {
+            const digits = String(value ?? '').replace(/\s/g, '');
+            return /^\d+$/.test(digits) ? Number(digits) : NaN;
+        },
         users: [],
         libraryQuestions: [],
         questionTemplates: [],
@@ -1271,7 +1283,7 @@ const app = {
             let equipped = app.getEquippedPet(user);
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
-            let qHtml = q.q;
+            let qHtml = app.data.formatMathText(q.q);
             if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
             document.getElementById('game-question-container').innerHTML = qHtml;
 
@@ -1311,7 +1323,7 @@ const app = {
                 opts.forEach((opt, idx) => {
                     const btn = document.createElement('div');
                     btn.className = 'ans-btn';
-                    btn.innerHTML = `<span class="ans-badge">${labels[idx] || ''}</span><span class="ans-text">${opt}</span>`;
+                    btn.innerHTML = `<span class="ans-badge">${labels[idx] || ''}</span><span class="ans-text">${app.data.formatMathText(opt)}</span>`;
                     btn.onclick = () => {
                         optContainer.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('selected'));
                         btn.classList.add('selected');
@@ -1396,7 +1408,7 @@ const app = {
                     }
                     html += `</div>`;
                 } else {
-                    html += (q.q || '') + '<br><br>';
+                    html += app.data.formatMathText(q.q || '') + '<br><br>';
                     const ansArr = this.getAnsArr(q.ans);
                     html += `<div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">`;
                     for (let i = 0; i < ansArr.length; i++) {
@@ -1505,7 +1517,7 @@ const app = {
                     }
                 }
                 html += '</div>';
-                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (q.q + html);
+                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathText(q.q) + html);
 
                 const slots = document.querySelectorAll('.seq-slot');
                 const updateFocus = () => {
@@ -1854,7 +1866,7 @@ const app = {
                     corr.style.width = 'auto';
                     corr.style.display = 'inline-block';
                     corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.display = 'inline-block'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-                    corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
+                    corr.innerHTML = `✅ Đáp án đúng: <b>${app.data.formatMathText(q.ans)}</b>`;
                     optContainer.appendChild(corr);
                 }
             } else if (qType === 'Trắc nghiệm') {
@@ -1862,7 +1874,7 @@ const app = {
                 const optContainer = document.getElementById('game-options-container');
                 optContainer.querySelectorAll('.ans-btn').forEach(btn => {
                     const text = btn.querySelector('.ans-text').textContent;
-                    if (text === q.ans) {
+                    if (text === app.data.formatMathText(q.ans)) {
                         btn.classList.add('correct');
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-v';
@@ -2443,7 +2455,7 @@ const app = {
             this.state.questions.forEach((q, idx) => {
                 const qBlock = document.createElement('div');
                 qBlock.className = 'exam-q-block';
-                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${q.q}</div>`;
+                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathText(q.q)}</div>`;
                 if (q.imageUrl) qBlock.innerHTML += `<img src="${q.imageUrl}" style="max-height:150px; margin-bottom:10px;"><br>`;
 
                 const optsContainer = document.createElement('div');
@@ -2999,6 +3011,13 @@ const app = {
         selectAllTemplateOptions(group) {
             document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`).forEach(input => { input.checked = true; });
         },
+        formatTemplateNumberInput(input) {
+            const digits = input.value.replace(/\D/g, '');
+            input.value = digits ? app.data.formatMathNumber(digits) : '';
+        },
+        formatQuestionNumberText(input) {
+            input.value = app.data.formatMathText(input.value);
+        },
         renderTemplates(box) {
             const templates = app.data.questionTemplates || [];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
@@ -3074,7 +3093,7 @@ const app = {
               </div></div>
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span>Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
-                <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 100000)}"></label></div></div>
+                <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? 100000)}"></label></div></div>
                 <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
                 <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
               </div></div>
@@ -3091,7 +3110,7 @@ const app = {
             const value = id => document.getElementById(id).value.trim();
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: Number(value('template-minimum')), maximum: Number(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: app.data.parseMathNumber(value('template-minimum')), maximum: app.data.parseMathNumber(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
             if (!template.name || !template.prompt_template || !allowedPlaces.length || !allowedDigits.length) throw new Error('Hãy nhập tên, câu hỏi và chọn ít nhất một hàng cùng một chữ số.');
             if (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
@@ -3166,7 +3185,7 @@ const app = {
               <td><input type="checkbox" class="q-select-cb" value="${i}" onchange="app.admin.updateBulkDeleteLabel()"></td>
               <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
-              <td>${q.q}</td><td>${q.ans}</td><td>${q.explanation || ''}</td>
+                <td>${app.data.formatMathText(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
               <td>
                 ${app.ui.compactAction('Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'compact-admin-action--add')}
                 ${app.ui.compactAction('Sửa', `app.admin.editQuestion(${i})`, 'compact-admin-action--edit')}
@@ -3234,25 +3253,25 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Nội dung câu hỏi</label>
-                  <textarea id="add-q-q" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.q : ''}</textarea>
+                  <textarea id="add-q-q" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathText(q.q) : ''}</textarea>
                </div>
 
                <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 1</label>
-                     <input type="text" id="add-q-opt1" placeholder="Trả lời 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
+                     <input type="text" id="add-q-opt1" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Trả lời 1" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? app.data.formatMathText(q.options[0]) : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 2</label>
-                     <input type="text" id="add-q-opt2" placeholder="Trả lời 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
+                     <input type="text" id="add-q-opt2" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Trả lời 2" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? app.data.formatMathText(q.options[1]) : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 3</label>
-                     <input type="text" id="add-q-opt3" placeholder="Trả lời 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}">
+                     <input type="text" id="add-q-opt3" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Trả lời 3" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? app.data.formatMathText(q.options[2]) : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0;">Lựa chọn 4</label>
-                     <input type="text" id="add-q-opt4" placeholder="Trả lời 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}">
+                     <input type="text" id="add-q-opt4" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Trả lời 4" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? app.data.formatMathText(q.options[3]) : ''}">
                   </div>
                </div>
                
@@ -3271,12 +3290,12 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Đáp án đúng</label>
-                  <input type="text" id="add-q-ans" placeholder="Đáp án đúng (nếu trắc nghiệm phải ghi đúng 1 trong 4 lựa chọn ở trên)" class="form-input" style="flex:1; padding:8px;" value="${q ? q.ans : ''}">
+                  <input type="text" id="add-q-ans" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Đáp án đúng (nếu trắc nghiệm phải ghi đúng 1 trong 4 lựa chọn ở trên)" class="form-input" style="flex:1; padding:8px;" value="${q ? app.data.formatMathText(q.ans) : ''}">
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Lời giải chi tiết</label>
-                  <textarea id="add-q-exp" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? q.explanation || '' : ''}</textarea>
+                  <textarea id="add-q-exp" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathText(q.explanation || '') : ''}</textarea>
                </div>
 
                ${app.ui.compactAction(q ? 'Lưu chỉnh sửa' : 'Lưu câu hỏi', `app.admin.submitAddQuestion(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
@@ -3773,7 +3792,7 @@ const app = {
                   <table style="width:100%; border-collapse: collapse; text-align: left;">
                      ${e.questions.map((q, i) => `
                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${q.q}</td>
+                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathText(q.q)}</td>
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
                             ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
                             ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
@@ -3922,8 +3941,8 @@ const app = {
                 <h3>Thêm câu hỏi vào đề: ${e.name}</h3>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p><strong>Nội dung câu hỏi sẽ thêm:</strong></p>
-                    <p><i>${q.q}</i></p>
-                    <p><strong>Đáp án:</strong> ${q.ans}</p>
+                    <p><i>${app.data.formatMathText(q.q)}</i></p>
+                    <p><strong>Đáp án:</strong> ${app.data.formatMathText(q.ans)}</p>
                 </div>
                 
                 <div style="display:flex; align-items:center; margin-bottom:15px;">
@@ -4119,8 +4138,8 @@ const app = {
                 exam.questions.forEach((q, i) => {
                     html += `
                   <div style="margin-bottom: 20px;">
-                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${q.q}</p>
-                     ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${o}</li>`).join('')}</ul>` : ''}
+                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathText(q.q)}</p>
+                     ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${app.data.formatMathText(o)}</li>`).join('')}</ul>` : ''}
                      ${q.type === 'Điền khuyết' ? `<p>....................................................................</p>` : ''}
                   </div>
                `;
