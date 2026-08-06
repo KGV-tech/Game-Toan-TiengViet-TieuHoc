@@ -573,15 +573,29 @@ const app = {
 
     auth: {
         avatarChoices: {
-            rocket: { icon: '🚀', label: 'Phi hành gia' },
-            fox: { icon: '🦊', label: 'Cáo nhỏ' },
-            lion: { icon: '🦁', label: 'Sư tử' },
-            panda: { icon: '🐼', label: 'Gấu trúc' },
-            unicorn: { icon: '🦄', label: 'Kỳ lân' },
-            robot: { icon: '🤖', label: 'Robot' }
+            'boy-short': { label: 'Bé trai phi công khăn đỏ' },
+            'boy-side': { label: 'Bé trai tóc lệch đeo kính' },
+            'boy-curly': { label: 'Bé trai tóc xoăn khoa học' },
+            'boy-bowl': { label: 'Bé trai đội nón vàng' },
+            'boy-spiky': { label: 'Bé trai tóc nhọn đeo tai nghe' },
+            'girl-long': { label: 'Bé gái tóc dài nơ hồng' },
+            'girl-bob': { label: 'Bé gái tóc ngắn đeo kính sao' },
+            'girl-twins': { label: 'Bé gái tóc buộc hai bên' },
+            'girl-braid': { label: 'Bé gái tóc tết nơ vàng' },
+            'girl-doll': { label: 'Bé gái tóc búp bê đội mũ nồi' },
+            'boy-reader': { label: 'Bé trai mọt sách đeo kính' },
+            'boy-athlete': { label: 'Bé trai thể thao băng đô đỏ' },
+            'boy-artist': { label: 'Bé trai họa sĩ áo màu' },
+            'boy-explorer': { label: 'Bé trai thám hiểm đội mũ cam' },
+            'boy-visor': { label: 'Bé trai công nghệ kính visor' },
+            'girl-captain': { label: 'Bé gái đội trưởng mũ captain' },
+            'girl-artist': { label: 'Bé gái nghệ sĩ mũ nồi tím' },
+            'girl-reader': { label: 'Bé gái đọc sách đeo kính tròn' },
+            'girl-athlete': { label: 'Bé gái vận động tóc tết' },
+            'girl-inventor': { label: 'Bé gái nhà phát minh tóc bất đối xứng' }
         },
         getAvatar(avatarKey) {
-            return this.avatarChoices[avatarKey] || this.avatarChoices.rocket;
+            return { key: this.avatarChoices[avatarKey] ? avatarKey : 'boy-short', ...(this.avatarChoices[avatarKey] || this.avatarChoices['boy-short']) };
         },
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
@@ -589,6 +603,14 @@ const app = {
             document.getElementById('logout-btn').onclick = () => this.logout();
             document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
             document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
+        },
+        setAvatarGroup(group, button) {
+            document.querySelectorAll('[data-avatar-group]').forEach(element => { element.hidden = element.dataset.avatarGroup !== group; });
+            document.querySelectorAll('.avatar-picker__tabs [role="tab"]').forEach(tab => {
+                const active = tab === button;
+                tab.classList.toggle('active', active);
+                tab.setAttribute('aria-selected', String(active));
+            });
         },
         toAuthEmail(usernameOrEmail) {
             const value = String(usernameOrEmail || '').trim().toLowerCase();
@@ -701,7 +723,7 @@ const app = {
             const un = document.getElementById('reg-username').value.trim();
             const pw = document.getElementById('reg-password').value.trim();
             const cl = document.getElementById('reg-class').value;
-            const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'rocket';
+            const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'boy-short';
 
             if (!fn || !un || !pw || !cl) {
                 alert('Vui lòng điền đầy đủ thông tin!');
@@ -728,7 +750,7 @@ const app = {
                 auth_user_id: authData.user.id,
                 classlevel: cl,
                 role: 'student',
-                avatar_key: Object.prototype.hasOwnProperty.call(this.avatarChoices, selectedAvatar) ? selectedAvatar : 'rocket',
+                avatar_key: Object.prototype.hasOwnProperty.call(this.avatarChoices, selectedAvatar) ? selectedAvatar : 'boy-short',
                 approved: false,
                 history: [],
                 totalscore: 0,
@@ -778,7 +800,7 @@ const app = {
             const avatar = this.getAvatar(user.avatar_key);
             const isAdmin = user.role?.toLowerCase() === 'admin';
             const html = `
-                <span class="player-info-card__avatar" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}">${avatar.icon}</span>
+                <span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
@@ -2610,11 +2632,13 @@ const app = {
                 if (!button.dataset.originalLabel) button.dataset.originalLabel = button.innerHTML;
                 button.disabled = true;
                 button.setAttribute('aria-busy', 'true');
-                button.textContent = loadingLabel;
+                button.classList.add('button-loading');
+                button.innerHTML = `<span class="button-loading__spinner" aria-hidden="true"></span><span>${app.data.sanitizeHTML(loadingLabel)}</span>`;
                 return;
             }
             button.disabled = false;
             button.removeAttribute('aria-busy');
+            button.classList.remove('button-loading');
             if (button.dataset.originalLabel) {
                 button.innerHTML = button.dataset.originalLabel;
                 delete button.dataset.originalLabel;
