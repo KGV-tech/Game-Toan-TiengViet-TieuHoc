@@ -1,4 +1,10 @@
-const { randomInt, shuffle, formatNumber, createQuestion } = require('./shared');
+;(function (root, factory) {
+    const shared = typeof module !== 'undefined' && module.exports ? require('./shared') : root.Grade4MathTemplateShared;
+    const generate = factory(shared);
+    if (typeof module !== 'undefined' && module.exports) module.exports = generate;
+    root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
+    root.Grade4MathTemplateGenerators['number.digit_at_place'] = generate;
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createQuestion }) {
 
 const places = {
     ones: { divisor: 1, label: 'đơn vị' },
@@ -46,13 +52,16 @@ function generateDigitAtPlace(config = {}, random = Math.random) {
         distractors.add(randomNumberMatching(minimum, maximum, value => digitAt(value, place) !== targetDigit && value !== answer, random));
     }
 
-    return createQuestion(
+    const question = createQuestion(
         'number.digit_at_place',
         `Số nào dưới đây có chữ số hàng ${places[place].label} là ${targetDigit}?`,
         shuffle([answer, ...distractors], random),
         answer,
         `Trong số ${formatNumber(answer)}, chữ số ở hàng ${places[place].label} là ${targetDigit}.`
     );
+    question.templateVariables = { place: places[place].label, digit: String(targetDigit) };
+    return question;
 }
 
-module.exports = generateDigitAtPlace;
+return generateDigitAtPlace;
+}));

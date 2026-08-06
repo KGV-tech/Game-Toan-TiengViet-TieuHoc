@@ -44,3 +44,29 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.digit_at_place'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
 );
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Tìm số bé nhất trong bốn số', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Trắc nghiệm', 'number.smallest_of_four',
+    'Hãy tìm số bé nhất trong các số sau.',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.smallest_of_four'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Tìm số lớn nhất trong bốn số', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Trắc nghiệm', 'number.largest_of_four',
+    'Hãy tìm số lớn nhất trong các số sau.',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.largest_of_four'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);

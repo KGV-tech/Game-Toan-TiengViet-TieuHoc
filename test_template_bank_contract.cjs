@@ -18,6 +18,11 @@ assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must
 assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
+assert(source.includes('number.smallest_of_four'), 'The Template Bank must expose the smallest-of-four generator.');
+assert(source.includes('number.largest_of_four'), 'The Template Bank must expose the largest-of-four generator.');
+assert(source.includes('generateTemplateQuestion'), 'Gameplay must generate questions from active template configurations.');
+assert(migration.includes("'number.smallest_of_four'"), 'Migration must seed the smallest-of-four template.');
+assert(migration.includes("'number.largest_of_four'"), 'Migration must seed the largest-of-four template.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
 assert(migration.includes('templates_write_teacher'), 'Only teachers may modify templates in Supabase.');
 

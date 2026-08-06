@@ -1,4 +1,10 @@
-const { randomInt, shuffle, formatNumber, createQuestion } = require('./shared');
+;(function (root, factory) {
+    const shared = typeof module !== 'undefined' && module.exports ? require('./shared') : root.Grade4MathTemplateShared;
+    const generate = factory(shared);
+    if (typeof module !== 'undefined' && module.exports) module.exports = generate;
+    root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
+    root.Grade4MathTemplateGenerators['number.largest_of_four'] = generate;
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createQuestion }) {
 
 function generateLargestOfFour(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 1000;
@@ -17,4 +23,5 @@ function generateLargestOfFour(config = {}, random = Math.random) {
     );
 }
 
-module.exports = generateLargestOfFour;
+return generateLargestOfFour;
+}));
