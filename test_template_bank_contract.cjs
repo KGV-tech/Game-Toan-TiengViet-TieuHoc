@@ -15,6 +15,7 @@ assert(source.includes('template-select-all'), 'Template editor must provide qui
 assert(source.includes('hundredBillions'), 'Template editor must support place values through hundreds of billions.');
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
+assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
