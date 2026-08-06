@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const source = fs.readFileSync('src/main.js', 'utf8');
 const migration = fs.readFileSync('supabase_auth_security.sql', 'utf8');
 const adminFunction = fs.readFileSync('supabase/functions/admin-users/index.ts', 'utf8');
+const css = fs.readFileSync('src/style.css', 'utf8');
 
 assert.match(source, /auth\.signInWithPassword/, 'Login must use Supabase Auth.');
 assert.match(source, /auth_user_id/, 'Profiles must be linked to an Auth identity.');
@@ -35,5 +36,8 @@ assert.match(html, /value="girl-doll"/, 'Registration must include varied girl h
 assert.match(html, /value="boy-reader"/, 'Registration must include the second set of boy avatars.');
 assert.match(html, /value="girl-inventor"/, 'Registration must include the second set of girl avatars.');
 assert.match(source, /setAvatarGroup\(group, button\)/, 'The avatar picker must let pupils switch between boy and girl avatar groups.');
+assert.match(css, /overflow-x: auto/, 'Avatar choices must use a horizontal scroller instead of adding a second row.');
+assert.match(css, /input:checked \+ span \{[^}]*background-color/, 'Selecting an avatar must not overwrite its sprite background image.');
+assert.match(css, /label:hover span/, 'Hovering an avatar must enlarge its portrait for easier selection.');
 
 console.log('Supabase Auth and RLS security contract verified.');

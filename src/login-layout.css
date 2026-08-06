@@ -147,11 +147,11 @@
 }
 
 #register-screen .avatar-picker legend { font-size: clamp(.66rem, .8vw, .78rem); }
-#register-screen .avatar-picker__choices { gap: 4px; }
+#register-screen .avatar-picker__choices { gap: 5px; padding: 7px 3px 9px; }
 #register-screen .avatar-picker__tabs { margin-bottom: 4px; }
 #register-screen .avatar-picker__tabs button { min-height: 21px; padding: 3px 6px; font-size: clamp(.55rem, .66vw, .68rem); }
-#register-screen .avatar-picker__choices label { padding: 3px 1px; }
-#register-screen .avatar-picker__choices span { width: clamp(24px, 2.2vw, 31px); height: clamp(24px, 2.2vw, 31px); font-size: clamp(.88rem, 1.25vw, 1.15rem); }
+#register-screen .avatar-picker__choices label { flex-basis: clamp(43px, 4vw, 52px); min-width: clamp(43px, 4vw, 52px); padding: 3px 1px; }
+#register-screen .avatar-picker__choices span { width: clamp(32px, 3vw, 38px); height: clamp(32px, 3vw, 38px); }
 #register-screen .avatar-picker__choices em { font-size: clamp(.44rem, .52vw, .54rem); }
 
 #register-screen .register-action {
