@@ -2996,6 +2996,9 @@ const app = {
             this.templateFilters[key] = value;
             this.renderTemplates(document.getElementById('treasure-content-area'));
         },
+        selectAllTemplateOptions(group) {
+            document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`).forEach(input => { input.checked = true; });
+        },
         renderTemplates(box) {
             const templates = app.data.questionTemplates || [];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
@@ -3054,8 +3057,8 @@ const app = {
             const config = existing?.config || {};
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
-            const checkbox = (value, label, selected) => `<label class="template-editor__check"><input class="template-checkbox" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
-            const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn']];
+            const checkbox = (value, label, selected, group) => `<label class="template-editor__check"><input class="template-checkbox" data-template-group="${group}" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
+            const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn'],['hundredThousands','Trăm nghìn'],['millions','Triệu'],['tenMillions','Chục triệu'],['hundredMillions','Trăm triệu'],['billions','Tỷ'],['tenBillions','Chục tỷ'],['hundredBillions','Trăm tỷ']];
             const box = document.getElementById('treasure-content-area');
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
               <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
@@ -3072,10 +3075,10 @@ const app = {
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span>Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 100000)}"></label></div></div>
-                <div class="template-editor__rule"><h5>Chữ số hàng X</h5><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
-                <div class="template-editor__rule"><h5>Chữ số Y</h5><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div>
+                <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
+                <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
               </div></div>
-              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><div><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></div></footer>
+              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
             </section>`;
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
@@ -3086,7 +3089,7 @@ const app = {
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
-            const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands'].includes(input.value)).map(input => input.value);
+            const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: Number(value('template-minimum')), maximum: Number(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
             if (!template.name || !template.prompt_template || !allowedPlaces.length || !allowedDigits.length) throw new Error('Hãy nhập tên, câu hỏi và chọn ít nhất một hàng cùng một chữ số.');

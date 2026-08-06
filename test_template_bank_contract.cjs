@@ -11,6 +11,8 @@ assert(source.includes('template-prompt'), 'Template editor must offer an editab
 assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
 assert(!source.includes('onclick="app.admin.renderTemplateForm()"'), 'Template Bank must not offer a blank template creation flow.');
 assert(source.includes('Lưu thành bản mới'), 'Template editor must allow copying an existing configuration.');
+assert(source.includes('template-select-all'), 'Template editor must provide quick select-all controls.');
+assert(source.includes('hundredBillions'), 'Template editor must support place values through hundreds of billions.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
