@@ -70,3 +70,55 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.largest_of_four'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
 );
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Lập số từ các hàng', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Điền khuyết', 'number.compose_from_places',
+    '{question}',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.compose_from_places'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Điền thành phần còn thiếu khi phân tích số', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Điền khuyết', 'number.missing_expanded_addend',
+    '{question}',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.missing_expanded_addend'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Số liền trước và số liền sau', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Điền khuyết', 'number.neighbor_numbers',
+    '{question}',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.neighbor_numbers'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'So sánh số với dạng tổng', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'So sánh', 'number.compare_number_forms',
+    '{question}',
+    '{"minimum":10000,"maximum":100000}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.compare_number_forms'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
