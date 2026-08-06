@@ -142,12 +142,15 @@
 
 #register-screen .avatar-picker {
   width: 76%;
+  max-width: 100%;
+  min-inline-size: 0;
   margin: 0 auto clamp(7px, 1vh, 10px);
   padding: 6px 8px 7px;
+  overflow: hidden;
 }
 
 #register-screen .avatar-picker legend { font-size: clamp(.66rem, .8vw, .78rem); }
-#register-screen .avatar-picker__choices { gap: 5px; padding: 7px 3px 9px; }
+#register-screen .avatar-picker__choices { max-width: 100%; min-width: 0; gap: 5px; padding: 7px 3px 9px; }
 #register-screen .avatar-picker__tabs { margin-bottom: 4px; }
 #register-screen .avatar-picker__tabs button { min-height: 21px; padding: 3px 6px; font-size: clamp(.55rem, .66vw, .68rem); }
 #register-screen .avatar-picker__choices label { flex-basis: clamp(43px, 4vw, 52px); min-width: clamp(43px, 4vw, 52px); padding: 3px 1px; }
