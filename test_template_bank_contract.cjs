@@ -8,6 +8,7 @@ assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin mus
 assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
 assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
+assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');

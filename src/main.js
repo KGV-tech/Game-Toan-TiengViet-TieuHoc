@@ -3050,30 +3050,29 @@ const app = {
             const config = existing?.config || {};
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
-            const checkbox = (value, label, selected) => `<label style="display:inline-flex; align-items:center; gap:4px; margin:2px 10px 2px 0;"><input class="template-checkbox" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}> ${label}</label>`;
+            const checkbox = (value, label, selected) => `<label class="template-editor__check"><input class="template-checkbox" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn']];
             const box = document.getElementById('treasure-content-area');
-            box.innerHTML = `<div style="max-width:820px; margin:0 auto; text-align:left;">
-              <h3 style="color:#ffeb3b; text-align:center;">${existing ? 'Sửa template' : 'Tạo template mới'}</h3>
-              <div style="padding:12px; margin:12px 0 18px; background:rgba(0,0,0,.22); border:1px solid rgba(255,235,59,.35); border-radius:8px;" role="status">
-                <b>Ví dụ khai báo</b><br>Template <code>number.digit_at_place</code> dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”; chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên mỗi lượt.
-              </div>
-              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;">
-                <label>Tên template<input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
-                <label>Cấp lớp<select id="template-class" class="form-input" onchange="app.admin.refreshTemplateTopics()">${[1,2,3,4,5].map(n => `<option value="Lớp ${n}" ${(existing?.classlevel || 'Lớp 4') === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label>
-                <label>Môn học<select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
-                <label>Học kỳ<select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
-                <label>Chủ đề<select id="template-topic" class="form-input"></select></label>
-                <label>Loại câu hỏi<select id="template-question-type" class="form-input"><option value="Trắc nghiệm">Trắc nghiệm</option></select></label>
-                <label>Template<select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place">Nhận biết chữ số theo hàng</option></select></label>
-              </div>
-              <label style="display:block; margin-top:12px;">Câu hỏi<textarea id="template-prompt" class="form-input" style="width:100%; min-height:72px;">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label>
-              <div style="display:grid; grid-template-columns:repeat(2,minmax(160px,1fr)); gap:12px; margin-top:12px;"><label>Số nhỏ nhất<input id="template-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label>Số lớn nhất<input id="template-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 100000)}"></label></div>
-              <div style="margin-top:14px;"><b>Chữ số hàng X</b><div>${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
-              <div style="margin-top:14px;"><b>là Y</b><div>${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div>
-              <div id="template-example" style="margin-top:14px; padding:10px; background:rgba(34,197,94,.12); border-radius:7px;"></div>
-              <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;"><button class="btn-success" onclick="app.admin.saveTemplate()">Lưu mới</button><button class="btn-primary" ${existing ? '' : 'disabled'} onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button></div>
-            </div>`;
+            box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
+              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">${existing ? 'Sửa template' : 'Tạo template mới'}</h3><p>Thiết lập một lần, game sẽ tự sinh nhiều câu hỏi khác nhau.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
+              <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Ví dụ khai báo</b><p>Template <code>number.digit_at_place</code> dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên ở mỗi lượt.</p></div></aside>
+              <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
+                <label class="template-editor__field template-editor__field--wide"><span>Tên template</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
+                <label class="template-editor__field"><span>Cấp lớp</span><select id="template-class" class="form-input" onchange="app.admin.refreshTemplateTopics()">${[1,2,3,4,5].map(n => `<option value="Lớp ${n}" ${(existing?.classlevel || 'Lớp 4') === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label>
+                <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
+                <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
+                <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
+                <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input"><option value="Trắc nghiệm">Trắc nghiệm</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place">Nhận biết chữ số theo hàng</option></select></label>
+              </div></div>
+              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span>Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
+              <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
+                <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 100000)}"></label></div></div>
+                <div class="template-editor__rule"><h5>Chữ số hàng X</h5><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
+                <div class="template-editor__rule"><h5>Chữ số Y</h5><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div>
+              </div></div>
+              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><div><button class="btn-success" onclick="app.admin.saveTemplate()">Lưu mới</button><button class="btn-primary" ${existing ? '' : 'disabled'} onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></div></footer>
+            </section>`;
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
         },
