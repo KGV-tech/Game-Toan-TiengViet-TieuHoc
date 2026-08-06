@@ -40,6 +40,14 @@ const randomizedPlaceAndDigit = generateQuestion('number.digit_at_place', {
 }, seededRandom(4));
 assert.match(randomizedPlaceAndDigit.q, /hàng (chục|trăm) là (2|8)/);
 
+const hundredBillions = generateQuestion('number.digit_at_place', {
+    minimum: 100000000000,
+    maximum: 999999999999,
+    allowedPlaces: ['hundredBillions'],
+    allowedDigits: [2]
+}, seededRandom(5));
+assert.equal(Math.floor(numericValue(hundredBillions.ans) / 100000000000) % 10, 2);
+
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));
 assert.notDeepEqual(firstVersion.options, nextVersion.options, 'Different sessions should receive new numbers.');

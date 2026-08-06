@@ -5,7 +5,14 @@ const places = {
     tens: { divisor: 10, label: 'chục' },
     hundreds: { divisor: 100, label: 'trăm' },
     thousands: { divisor: 1000, label: 'nghìn' },
-    tenThousands: { divisor: 10000, label: 'chục nghìn' }
+    tenThousands: { divisor: 10000, label: 'chục nghìn' },
+    hundredThousands: { divisor: 100000, label: 'trăm nghìn' },
+    millions: { divisor: 1000000, label: 'triệu' },
+    tenMillions: { divisor: 10000000, label: 'chục triệu' },
+    hundredMillions: { divisor: 100000000, label: 'trăm triệu' },
+    billions: { divisor: 1000000000, label: 'tỷ' },
+    tenBillions: { divisor: 10000000000, label: 'chục tỷ' },
+    hundredBillions: { divisor: 100000000000, label: 'trăm tỷ' }
 };
 
 function digitAt(value, place) {
@@ -25,10 +32,11 @@ function generateDigitAtPlace(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 10000;
     const allowedPlaces = config.allowedPlaces ?? Object.keys(places);
     const allowedDigits = config.allowedDigits ?? [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const place = allowedPlaces[randomInt(0, allowedPlaces.length - 1, random)];
+    const validPlaces = allowedPlaces.filter(place => places[place] && places[place].divisor <= maximum);
+    const place = validPlaces[randomInt(0, validPlaces.length - 1, random)];
     const targetDigit = allowedDigits[randomInt(0, allowedDigits.length - 1, random)];
 
-    if (!places[place] || !Number.isInteger(targetDigit) || targetDigit < 0 || targetDigit > 9) {
+    if (!validPlaces.length || !Number.isInteger(targetDigit) || targetDigit < 0 || targetDigit > 9) {
         throw new Error('Invalid digit-at-place template configuration.');
     }
 
