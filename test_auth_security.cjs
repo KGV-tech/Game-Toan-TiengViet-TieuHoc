@@ -39,5 +39,7 @@ assert.match(source, /setAvatarGroup\(group, button\)/, 'The avatar picker must 
 assert.match(css, /overflow-x: auto/, 'Avatar choices must use a horizontal scroller instead of adding a second row.');
 assert.match(css, /input:checked \+ span \{[^}]*background-color/, 'Selecting an avatar must not overwrite its sprite background image.');
 assert.match(css, /label:hover span/, 'Hovering an avatar must enlarge its portrait for easier selection.');
+assert.match(css, /min-inline-size: 0/, 'The avatar fieldset must be allowed to shrink inside the registration panel.');
+assert.match(css, /max-width: 100%/, 'The avatar picker must never exceed its registration panel.');
 
 console.log('Supabase Auth and RLS security contract verified.');
