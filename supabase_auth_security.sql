@@ -5,6 +5,7 @@ ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS auth_user_id UUID REFEREN
 ALTER TABLE public.game_users ALTER COLUMN password DROP NOT NULL;
 ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS lucky_spin_date DATE;
 ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS lucky_spin_count INT NOT NULL DEFAULT 0;
+ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS avatar_key TEXT NOT NULL DEFAULT 'rocket';
 CREATE UNIQUE INDEX IF NOT EXISTS game_users_auth_user_id_key ON public.game_users(auth_user_id) WHERE auth_user_id IS NOT NULL;
 
 -- Remove legacy browser-managed passwords. Supabase Auth is the sole password authority.

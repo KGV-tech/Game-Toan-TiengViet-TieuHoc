@@ -18,7 +18,14 @@ assert.match(source, /student_not_found/, 'The teacher UI must explain why a pas
 assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an Auth account already exists.');
 assert.match(source, /!app\.data\.users\.find\(x => x\.id === data\.profile\.id\)/, 'Creating a student must not duplicate the realtime profile in the teacher list.');
 assert.match(source, /setButtonLoading\(buttonId, isLoading, loadingLabel/, 'Slow actions must show a clear loading state and prevent repeated clicks.');
-assert.match(source, /setButtonLoading\('login-btn', true, 'Vui lòng chờ…'\)/, 'Login must visibly acknowledge loading before fetching protected data.');
+assert.match(source, /setButtonLoading\('login-btn', true, 'Đang đăng nhập…'\)/, 'Login must visibly say that sign-in is in progress before fetching protected data.');
 assert.match(source, /Promise\.all\(\[/, 'Independent post-login data loads must run in parallel.');
+assert.match(source, /avatar_key/, 'New student profiles must save their selected avatar.');
+assert.match(migration, /avatar_key TEXT/, 'The user profile migration must persist an avatar key.');
+
+const html = fs.readFileSync('index.html', 'utf8');
+assert.match(html, /name="reg-avatar"/, 'Registration must offer an avatar selection.');
+assert.match(html, /id="player-info" class="player-info-card"/, 'The map must retain a dedicated player information card.');
+assert.match(source, /player-info-card__avatar/, 'The player card must render the chosen avatar.');
 
 console.log('Supabase Auth and RLS security contract verified.');
