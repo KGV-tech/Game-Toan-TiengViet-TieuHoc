@@ -69,11 +69,11 @@
   width: min(36vw, 516px);
   min-width: 336px;
   max-width: 516px;
-  aspect-ratio: 1055 / 1491;
+  aspect-ratio: 1055 / 1789;
   flex: none;
   /* Keep the upright frame visually attached to the logo despite transparent padding. */
   margin: clamp(-150px, -10vw, -96px) 0 0 !important;
-  padding: clamp(170px, 13vh, 210px) clamp(48px, 4vw, 64px) clamp(32px, 3vh, 44px);
+  padding: clamp(132px, 10vh, 168px) clamp(48px, 4vw, 64px) clamp(42px, 4vh, 58px);
   overflow: visible;
   background: transparent;
   border: 0;
@@ -155,7 +155,6 @@
 #register-screen .avatar-picker__tabs button { min-height: 21px; padding: 3px 6px; font-size: clamp(.55rem, .66vw, .68rem); }
 #register-screen .avatar-picker__choices label { flex-basis: clamp(43px, 4vw, 52px); min-width: clamp(43px, 4vw, 52px); padding: 3px 1px; }
 #register-screen .avatar-picker__choices span { width: clamp(32px, 3vw, 38px); height: clamp(32px, 3vw, 38px); }
-#register-screen .avatar-picker__choices em { font-size: clamp(.44rem, .52vw, .54rem); }
 
 #register-screen .register-action {
   display: block;

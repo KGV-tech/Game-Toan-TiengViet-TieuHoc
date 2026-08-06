@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const source = fs.readFileSync('src/main.js', 'utf8');
 const migration = fs.readFileSync('supabase_auth_security.sql', 'utf8');
 const adminFunction = fs.readFileSync('supabase/functions/admin-users/index.ts', 'utf8');
-const css = fs.readFileSync('src/style.css', 'utf8');
+const css = fs.readFileSync('src/style.css', 'utf8') + fs.readFileSync('src/login-layout.css', 'utf8');
 
 assert.match(source, /auth\.signInWithPassword/, 'Login must use Supabase Auth.');
 assert.match(source, /auth_user_id/, 'Profiles must be linked to an Auth identity.');
@@ -41,5 +41,7 @@ assert.match(css, /input:checked \+ span \{[^}]*background-color/, 'Selecting an
 assert.match(css, /label:hover span/, 'Hovering an avatar must enlarge its portrait for easier selection.');
 assert.match(css, /min-inline-size: 0/, 'The avatar fieldset must be allowed to shrink inside the registration panel.');
 assert.match(css, /max-width: 100%/, 'The avatar picker must never exceed its registration panel.');
+assert.doesNotMatch(html, /<em>/, 'Avatar names must not be shown beneath the portraits.');
+assert.match(css, /aspect-ratio: 1055 \/ 1789/, 'The registration frame must be extended by about twenty percent.');
 
 console.log('Supabase Auth and RLS security contract verified.');
