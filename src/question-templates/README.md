@@ -9,6 +9,10 @@ question-templates/
         ├── smallest-of-four.js
         ├── largest-of-four.js
         ├── digit-at-place.js
+        ├── compose-from-places.js
+        ├── missing-expanded-addend.js
+        ├── neighbor-numbers.js
+        ├── compare-number-forms.js
         └── index.js
 ```
 
@@ -34,3 +38,13 @@ question-templates/
 ```
 
 The administrator edits these values; the application does not accept JavaScript from the database.
+
+## Dynamic fill-in and comparison templates
+
+The four Grade 4 Math templates below use `minimum` and `maximum` only. Their database
+`prompt_template` must remain `{question}` so the dynamically generated content is retained:
+
+- `number.compose_from_places` — compose a number from named place values.
+- `number.missing_expanded_addend` — fill a missing addend in expanded form.
+- `number.neighbor_numbers` — fill the preceding and following numbers.
+- `number.compare_number_forms` — choose `>`, `<`, or `=` between a number and an expanded form.

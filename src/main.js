@@ -191,8 +191,8 @@ const app = {
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
             try {
                 const generated = registry.generateQuestion(template.generator_key, template.config || {});
-                const variables = generated.templateVariables || {};
-                const prompt = String(template.prompt_template || generated.q).replace(/\{(place|digit)\}/g, (token, key) => variables[key] ?? token);
+                const variables = { question: generated.q, ...(generated.templateVariables || {}) };
+                const prompt = String(template.prompt_template || '{question}').replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
                 return {
                     ...generated,
                     q: this.formatMathText(prompt),
@@ -1451,14 +1451,21 @@ const app = {
                 });
             } else if (qType === 'So sánh') {
                 optContainer.className = '';
-                const slotWrapper = document.createElement('div');
-                slotWrapper.style.display = 'flex';
-                slotWrapper.style.justifyContent = 'center';
-                const slot = document.createElement('div');
-                slot.className = 'compare-slot';
-                slot.textContent = '?';
-                slotWrapper.appendChild(slot);
-                optContainer.appendChild(slotWrapper);
+                const questionContainer = document.getElementById('game-question-container');
+                let slot;
+                if (q.q.includes('___')) {
+                    questionContainer.innerHTML = app.data.formatMathText(q.q).replace('___', '<span class="compare-slot">?</span>');
+                    slot = questionContainer.querySelector('.compare-slot');
+                } else {
+                    const slotWrapper = document.createElement('div');
+                    slotWrapper.style.display = 'flex';
+                    slotWrapper.style.justifyContent = 'center';
+                    slot = document.createElement('div');
+                    slot.className = 'compare-slot';
+                    slot.textContent = '?';
+                    slotWrapper.appendChild(slot);
+                    optContainer.appendChild(slotWrapper);
+                }
 
                 const controls = document.createElement('div');
                 controls.className = 'compare-controls';
@@ -3184,7 +3191,7 @@ const app = {
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn'],['hundredThousands','Trăm nghìn'],['millions','Triệu'],['tenMillions','Chục triệu'],['hundredMillions','Trăm triệu'],['billions','Tỷ'],['tenBillions','Chục tỷ'],['hundredBillions','Trăm tỷ']];
             const box = document.getElementById('treasure-content-area');
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
-              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
+              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
               <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Ví dụ khai báo</b><p id="template-guide-copy"></p></div></aside>
               <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
                 <label class="template-editor__field template-editor__field--wide"><span>Tên template</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
@@ -3192,8 +3199,8 @@ const app = {
                 <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
-                <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input"><option value="Trắc nghiệm">Trắc nghiệm</option></select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${(existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option></select></label>
+                <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input"><option value="Trắc nghiệm" ${(existing?.question_type || 'Trắc nghiệm') === 'Trắc nghiệm' ? 'selected' : ''}>Trắc nghiệm</option><option value="Điền khuyết" ${existing?.question_type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option><option value="So sánh" ${existing?.question_type === 'So sánh' ? 'selected' : ''}>So sánh</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${(existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option></select></label>
               </div></div>
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
@@ -3212,17 +3219,44 @@ const app = {
                 'number.digit_at_place': {
                     guide: 'Dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên mỗi lượt.',
                     hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
-                    example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?'
+                    example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?',
+                    type: 'Trắc nghiệm'
                 },
                 'number.smallest_of_four': {
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số bé nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403'
+                    example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403',
+                    type: 'Trắc nghiệm'
                 },
                 'number.largest_of_four': {
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số lớn nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403'
+                    example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403',
+                    type: 'Trắc nghiệm'
+                },
+                'number.compose_from_places': {
+                    guide: 'Game bốc một số trong phạm vi rồi mô tả các hàng có chữ số khác 0. Học sinh nhập số đã lập.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
+                    example: 'Ví dụ kết quả: Viết số rồi đọc số, biết số đó gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục. Số đó là ___',
+                    type: 'Điền khuyết'
+                },
+                'number.missing_expanded_addend': {
+                    guide: 'Game phân tích một số thành tổng các hàng rồi ẩn ngẫu nhiên một thành phần khác 0.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên phép tính động do game sinh.',
+                    example: 'Ví dụ kết quả: 33 471 = 30 000 + 3 000 + ___ + 70 + 1',
+                    type: 'Điền khuyết'
+                },
+                'number.neighbor_numbers': {
+                    guide: 'Game bốc một số ở giữa phạm vi, học sinh điền số liền trước và số liền sau.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
+                    example: 'Ví dụ kết quả: ___ ; 42 135 ; ___',
+                    type: 'Điền khuyết'
+                },
+                'number.compare_number_forms': {
+                    guide: 'Game sinh một số và một dạng tổng; học sinh chọn dấu >, < hoặc = đúng.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
+                    example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
+                    type: 'So sánh'
                 }
             };
             const preset = presets[generator] || presets['number.digit_at_place'];
@@ -3232,6 +3266,8 @@ const app = {
             if (target) target.textContent = preset.example;
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
+            const questionType = document.getElementById('template-question-type');
+            if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
         },
         collectTemplateForm() {

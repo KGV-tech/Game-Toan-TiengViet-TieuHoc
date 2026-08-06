@@ -20,9 +20,17 @@ assert(source.includes('allowedPlaces'), 'Template editor must support multiple 
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
 assert(source.includes('number.smallest_of_four'), 'The Template Bank must expose the smallest-of-four generator.');
 assert(source.includes('number.largest_of_four'), 'The Template Bank must expose the largest-of-four generator.');
+assert(source.includes('number.compose_from_places'), 'The Template Bank must expose the compose-number fill-in template.');
+assert(source.includes('number.missing_expanded_addend'), 'The Template Bank must expose the expanded-form fill-in template.');
+assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
+assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
 assert(source.includes('generateTemplateQuestion'), 'Gameplay must generate questions from active template configurations.');
 assert(migration.includes("'number.smallest_of_four'"), 'Migration must seed the smallest-of-four template.');
 assert(migration.includes("'number.largest_of_four'"), 'Migration must seed the largest-of-four template.');
+assert(migration.includes("'number.compose_from_places'"), 'Migration must seed the compose-number template.');
+assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must seed the expanded-form template.');
+assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
+assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
 assert(migration.includes('templates_write_teacher'), 'Only teachers may modify templates in Supabase.');
 

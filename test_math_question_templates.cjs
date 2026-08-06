@@ -51,6 +51,25 @@ const hundredBillions = generateQuestion('number.digit_at_place', {
 }, seededRandom(5));
 assert.equal(Math.floor(numericValue(hundredBillions.ans) / 100000000000) % 10, 2);
 
+const composeNumber = generateQuestion('number.compose_from_places', { minimum: 10000, maximum: 99999 }, seededRandom(6));
+assert.equal(composeNumber.type, 'Điền khuyết');
+assert.match(composeNumber.q, /___/, 'The compose-number template must provide an input blank.');
+assert.equal(numericValue(composeNumber.ans), composeNumber.templateVariables.number);
+
+const missingAddend = generateQuestion('number.missing_expanded_addend', { minimum: 10000, maximum: 99999 }, seededRandom(7));
+assert.equal(missingAddend.type, 'Điền khuyết');
+assert.match(missingAddend.q, /___/, 'The expanded-form template must hide exactly one addend.');
+assert.equal(missingAddend.templateVariables.number, missingAddend.templateVariables.expanded.split('+').reduce((sum, term) => sum + numericValue(term), 0));
+
+const neighbors = generateQuestion('number.neighbor_numbers', { minimum: 10000, maximum: 99999 }, seededRandom(8));
+assert.equal(neighbors.type, 'Điền khuyết');
+assert.equal(neighbors.ans.split(',').length, 2, 'The neighbor template must require both adjacent numbers.');
+
+const comparison = generateQuestion('number.compare_number_forms', { minimum: 10000, maximum: 99999 }, seededRandom(9));
+assert.equal(comparison.type, 'So sánh');
+assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');
+assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
+
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));
 assert.notDeepEqual(firstVersion.options, nextVersion.options, 'Different sessions should receive new numbers.');
