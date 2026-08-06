@@ -1,3 +1,8 @@
+;(function (root, factory) {
+    const api = factory();
+    if (typeof module !== 'undefined' && module.exports) module.exports = api;
+    root.Grade4MathTemplateShared = api;
+}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
 function randomInt(min, max, random) {
     return Math.floor(random() * (max - min + 1)) + min;
 }
@@ -30,4 +35,5 @@ function createQuestion(templateId, prompt, values, correctValue, explanation) {
     };
 }
 
-module.exports = { randomInt, shuffle, formatNumber, createQuestion };
+return { randomInt, shuffle, formatNumber, createQuestion };
+}));

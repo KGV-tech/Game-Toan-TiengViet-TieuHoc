@@ -20,9 +20,12 @@ function hasHundredsDigitEight(text) {
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
 assert.equal(smallest.options.length, 4);
+assert.equal(new Set(smallest.options).size, 4, 'The smallest-number template must generate four distinct options.');
 assert.equal(numericValue(smallest.ans), Math.min(...smallest.options.map(numericValue)));
 
 const largest = generateQuestion('number.largest_of_four', {}, seededRandom(2));
+assert.equal(largest.options.length, 4);
+assert.equal(new Set(largest.options).size, 4, 'The largest-number template must generate four distinct options.');
 assert.equal(numericValue(largest.ans), Math.max(...largest.options.map(numericValue)));
 
 const digitAtPlace = generateQuestion('number.digit_at_place', {

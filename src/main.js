@@ -186,6 +186,28 @@ const app = {
                 question?.q
             ].map(value => this.normalizeQuestionPart(value)).join('|');
         },
+        generateTemplateQuestion(template) {
+            const registry = window.Grade4MathTemplates;
+            if (!registry?.templateIds?.includes(template?.generator_key)) return null;
+            try {
+                const generated = registry.generateQuestion(template.generator_key, template.config || {});
+                const variables = generated.templateVariables || {};
+                const prompt = String(template.prompt_template || generated.q).replace(/\{(place|digit)\}/g, (token, key) => variables[key] ?? token);
+                return {
+                    ...generated,
+                    q: this.formatMathText(prompt),
+                    classlevel: template.classlevel,
+                    subject: template.subject,
+                    semester: template.semester,
+                    topic: template.topic,
+                    type: template.question_type || generated.type,
+                    templateId: template.generator_key
+                };
+            } catch (error) {
+                console.error(`Không thể sinh câu hỏi từ template ${template?.generator_key}:`, error);
+                return null;
+            }
+        },
         validateQuestionMetadata(question) {
             const classlevel = String(question.classlevel || '').trim();
             const subject = String(question.subject || '').trim().normalize('NFC');
@@ -621,8 +643,9 @@ const app = {
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
                     const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
-                    const [questions, , quests, userQuests, candyRequests, userPets] = await Promise.all([
+                    const [questions, templates, , quests, userQuests, candyRequests, userPets] = await Promise.all([
                         app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
+                        app.data.fetchAllFromSupabase('question_templates'),
                         app.data.loadSeenQuestions(user.username),
                         app.data.fetchAllFromSupabase('game_quests'),
                         app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username),
@@ -630,6 +653,7 @@ const app = {
                         app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
                     ]);
                     app.data.libraryQuestions = questions;
+                    app.data.questionTemplates = templates;
                     app.data.quests = quests;
                     app.data.userQuests = userQuests;
                     app.data.candyRequests = candyRequests;
@@ -1164,7 +1188,20 @@ const app = {
                 return matchSubject && matchClass && matchTopic && selectedSemester;
             });
 
-            if (pool.length === 0) {
+            const dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
+                if (template.is_active === false) return false;
+                const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+                const matchSubject = same(template.subject, mappedSubject);
+                const matchClass = same(String(template.classlevel || '').replace(/^Lớp\s*/i, ''), clLevel);
+                const selectedTopic = this.state.selectedTopics.find(topic => same(template.topic, topic));
+                const matchTopic = Boolean(selectedTopic);
+                const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
+                const semesterTopics = selectedTopic && Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
+                const matchSemester = semesterTopics && same(template.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
+                return matchSubject && matchClass && matchTopic && matchSemester;
+            });
+
+            if (pool.length === 0 && dynamicTemplates.length === 0) {
                 alert('Không có câu hỏi phù hợp! Vui lòng nhập thêm dữ liệu vào thư viện.');
                 return;
             }
@@ -1181,7 +1218,7 @@ const app = {
                 }
             });
 
-            let targetCount = Math.min(this.state.count, pool.length);
+            let targetCount = dynamicTemplates.length ? this.state.count : Math.min(this.state.count, pool.length);
 
             // 3. Hàm bốc câu hỏi đa dạng loại (Round-robin)
             const pickDiverse = (sourcePool, countNeeded) => {
@@ -1210,11 +1247,25 @@ const app = {
                 return picked;
             };
 
-            let selected = pickDiverse(unseenPool, targetCount);
-            if (selected.length < targetCount) {
-                let needed = targetCount - selected.length;
+            const staticTarget = dynamicTemplates.length ? Math.min(pool.length, Math.floor(targetCount / 2)) : targetCount;
+            let selected = pickDiverse(unseenPool, staticTarget);
+            if (selected.length < staticTarget) {
+                let needed = staticTarget - selected.length;
                 let extra = pickDiverse(seenPool, needed);
                 selected = selected.concat(extra);
+            }
+
+            const shuffledTemplates = [...dynamicTemplates].sort(() => Math.random() - 0.5);
+            let attempts = 0;
+            while (selected.length < targetCount && shuffledTemplates.length && attempts < targetCount * 4) {
+                const template = shuffledTemplates[attempts % shuffledTemplates.length];
+                const generated = app.data.generateTemplateQuestion(template);
+                if (generated) selected.push(generated);
+                attempts++;
+            }
+
+            if (selected.length < targetCount) {
+                selected = selected.concat(pickDiverse(seenPool, targetCount - selected.length));
             }
 
             pool = selected;
@@ -3081,7 +3132,7 @@ const app = {
             const box = document.getElementById('treasure-content-area');
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
               <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Trắc nghiệm động</span></header>
-              <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Ví dụ khai báo</b><p>Template <code>number.digit_at_place</code> dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên ở mỗi lượt.</p></div></aside>
+              <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Ví dụ khai báo</b><p id="template-guide-copy"></p></div></aside>
               <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
                 <label class="template-editor__field template-editor__field--wide"><span>Tên template</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
                 <label class="template-editor__field"><span>Cấp lớp</span><select id="template-class" class="form-input" onchange="app.admin.refreshTemplateTopics()">${[1,2,3,4,5].map(n => `<option value="Lớp ${n}" ${(existing?.classlevel || 'Lớp 4') === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label>
@@ -3089,13 +3140,13 @@ const app = {
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input"><option value="Trắc nghiệm">Trắc nghiệm</option></select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place">Nhận biết chữ số theo hàng</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${(existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option></select></label>
               </div></div>
-              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span>Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
+              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? 100000)}"></label></div></div>
-                <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
-                <div class="template-editor__rule"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
+                <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
+                <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
               </div></div>
               <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
             </section>`;
@@ -3103,15 +3154,41 @@ const app = {
             this.showTemplateExample();
         },
         showTemplateExample() {
+            const generator = document.getElementById('template-generator')?.value;
+            const presets = {
+                'number.digit_at_place': {
+                    guide: 'Dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên mỗi lượt.',
+                    hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
+                    example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?'
+                },
+                'number.smallest_of_four': {
+                    guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số bé nhất là đáp án đúng.',
+                    hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
+                    example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403'
+                },
+                'number.largest_of_four': {
+                    guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số lớn nhất là đáp án đúng.',
+                    hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
+                    example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403'
+                }
+            };
+            const preset = presets[generator] || presets['number.digit_at_place'];
             const target = document.getElementById('template-example');
-            if (target) target.textContent = 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?';
+            const guide = document.getElementById('template-guide-copy');
+            const hint = document.getElementById('template-prompt-hint');
+            if (target) target.textContent = preset.example;
+            if (guide) guide.textContent = preset.guide;
+            if (hint) hint.innerHTML = preset.hint;
+            document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: app.data.parseMathNumber(value('template-minimum')), maximum: app.data.parseMathNumber(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
-            if (!template.name || !template.prompt_template || !allowedPlaces.length || !allowedDigits.length) throw new Error('Hãy nhập tên, câu hỏi và chọn ít nhất một hàng cùng một chữ số.');
+            if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
+            if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
+            if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
             if (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);

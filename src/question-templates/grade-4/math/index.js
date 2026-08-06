@@ -1,12 +1,13 @@
-const generateSmallestOfFour = require('./smallest-of-four');
-const generateLargestOfFour = require('./largest-of-four');
-const generateDigitAtPlace = require('./digit-at-place');
-
-const generators = {
-    'number.smallest_of_four': generateSmallestOfFour,
-    'number.largest_of_four': generateLargestOfFour,
-    'number.digit_at_place': generateDigitAtPlace
-};
+;(function (root, factory) {
+    const generators = typeof module !== 'undefined' && module.exports ? {
+        'number.smallest_of_four': require('./smallest-of-four'),
+        'number.largest_of_four': require('./largest-of-four'),
+        'number.digit_at_place': require('./digit-at-place')
+    } : root.Grade4MathTemplateGenerators;
+    const api = factory(generators);
+    if (typeof module !== 'undefined' && module.exports) module.exports = api;
+    root.Grade4MathTemplates = api;
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (generators) {
 
 function generateQuestion(templateId, config = {}, random = Math.random) {
     const generator = generators[templateId];
@@ -14,4 +15,5 @@ function generateQuestion(templateId, config = {}, random = Math.random) {
     return generator(config, random);
 }
 
-module.exports = { generateQuestion, templateIds: Object.keys(generators) };
+return { generateQuestion, templateIds: Object.keys(generators) };
+}));
