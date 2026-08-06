@@ -65,7 +65,18 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; 
 .avatar-art--girl-reader { background-position: 50% 100%; }
 .avatar-art--girl-athlete { background-position: 75% 100%; }
 .avatar-art--girl-inventor { background-position: 100% 100%; }
-.avatar-picker__tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin: 0 0 6px; }
+.avatar-art--cartoon-robot-cat, .avatar-art--cartoon-lightning-squirrel, .avatar-art--cartoon-rescue-pup, .avatar-art--cartoon-dragon, .avatar-art--cartoon-garden-alien, .avatar-art--cartoon-mini-robot, .avatar-art--cartoon-cloud-fox, .avatar-art--cartoon-otter, .avatar-art--cartoon-red-panda, .avatar-art--cartoon-pilot-bird { background-image: url('../public/avatars-cartoons-sprite-v1.png'); }
+.avatar-art--cartoon-robot-cat { background-position: 0% 0%; }
+.avatar-art--cartoon-lightning-squirrel { background-position: 25% 0%; }
+.avatar-art--cartoon-rescue-pup { background-position: 50% 0%; }
+.avatar-art--cartoon-dragon { background-position: 75% 0%; }
+.avatar-art--cartoon-garden-alien { background-position: 100% 0%; }
+.avatar-art--cartoon-mini-robot { background-position: 0% 100%; }
+.avatar-art--cartoon-cloud-fox { background-position: 25% 100%; }
+.avatar-art--cartoon-otter { background-position: 50% 100%; }
+.avatar-art--cartoon-red-panda { background-position: 75% 100%; }
+.avatar-art--cartoon-pilot-bird { background-position: 100% 100%; }
+.avatar-picker__tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 0 0 6px; }
 .avatar-picker__tabs button { min-height: 24px; padding: 4px 8px; border: 1px solid rgba(125, 211, 252, .36); border-radius: 6px; background: rgba(7, 55, 87, .56); color: #bfefff; font-size: .68rem; font-weight: 800; line-height: 1; text-shadow: none; text-transform: none; }
 .avatar-picker__tabs button.active { border-color: #7ee9ff; background: rgba(14, 116, 144, .78); color: #fff; box-shadow: 0 0 9px rgba(34, 211, 238, .38); }
 .avatar-picker__choices[hidden] { display: none; }
