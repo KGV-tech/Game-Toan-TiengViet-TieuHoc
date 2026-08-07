@@ -136,6 +136,13 @@ const app = {
         formatMathText(value) {
             return String(value ?? '').replace(/\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
         },
+        formatQuestionDetailHTML(value) {
+            return String(value ?? '')
+                .split(/<br\s*\/?\s*>/i)
+                .map(part => this.sanitizeHTML(this.formatMathText(part.trim())))
+                .filter(Boolean)
+                .join('<br>');
+        },
         parseMathNumber(value) {
             const digits = String(value ?? '').replace(/\s/g, '');
             return /^\d+$/.test(digits) ? Number(digits) : NaN;
@@ -1769,10 +1776,7 @@ const app = {
                 rightItems.sort(() => Math.random() - 0.5);
 
                 const colsWrapper = document.createElement('div');
-                colsWrapper.style.display = 'flex';
-                colsWrapper.style.justifyContent = 'space-between';
-                colsWrapper.style.position = 'relative';
-                colsWrapper.style.zIndex = '1';
+                colsWrapper.className = 'matching-columns';
 
                 const leftCol = document.createElement('div');
                 leftCol.className = 'matching-col left-col';
@@ -2393,7 +2397,7 @@ const app = {
                             }
                             return `
                     <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                      <b>${i + 1}.</b> ${app.data.sanitizeHTML(d.q)} <br>
+                      <b>${i + 1}.</b> ${app.data.formatQuestionDetailHTML(d.q)} <br>
                       Bạn chọn: ${ansHtml} <br>
                       ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${app.data.sanitizeHTML(d.correct)}</span>` : ''}
                     </div>

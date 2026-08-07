@@ -2,6 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 
 const source = fs.readFileSync('src/main.js', 'utf8');
+const css = fs.readFileSync('src/style.css', 'utf8');
 const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
 
 assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin must show a Template Bank tab before Question Bank.');
@@ -21,6 +22,9 @@ assert(source.includes('place_values'), 'Template editor must document the gener
 assert(source.includes('normalizeFillAnswer'), 'Fill-in answers must normalize textbook number spacing before grading.');
 assert(source.includes('template-fill-layout'), 'Dynamic fill-in templates must use a multi-row layout.');
 assert(source.includes('comparison-expression'), 'Comparison templates must render operands in separate, readable positions.');
+assert(source.includes('formatQuestionDetailHTML'), 'Result details must render stored line breaks without showing raw <br> markup.');
+assert(source.includes('matching-columns'), 'Matching questions must use a dedicated balanced column layout.');
+assert(css.includes('white-space: nowrap'), 'Long mathematical expressions and matching labels must stay on one line.');
 assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
