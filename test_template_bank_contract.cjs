@@ -36,6 +36,8 @@ assert(source.includes('number.missing_expanded_addend'), 'The Template Bank mus
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
 assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
 assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
+assert(source.includes('number.place_value_true_false'), 'The Template Bank must expose the place-value true/false generator.');
+assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');
 assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');
 assert(source.includes("'Đúng/Sai'"), 'The Template Bank question-type list must include true/false questions.');
 assert(source.includes("'Chuỗi Quy luật'"), 'The Template Bank question-type list must include pattern questions.');
@@ -52,6 +54,7 @@ assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must s
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
 assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
 assert(migration.includes("'number.match_number_words'"), 'Migration must seed the number-word matching template.');
+assert(migration.includes("'number.place_value_true_false'"), 'Migration must seed the place-value true/false template.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
 assert(migration.includes('templates_write_teacher'), 'Only teachers may modify templates in Supabase.');
 

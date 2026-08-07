@@ -1448,6 +1448,26 @@ const app = {
                     };
                     optContainer.appendChild(btn);
                 });
+            } else if (qType === 'Đúng/Sai' && Array.isArray(q.statements)) {
+                questionContainer.classList.add('question-box--template', 'question-box--true-false');
+                questionContainer.innerHTML = `<div class="tf-template-number">${app.data.formatMathText(q.q)}</div><div class="tf-template-instruction">Hãy chọn <b>ĐÚNG</b> hay <b>SAI</b> cho các câu dưới đây:</div>`;
+                optContainer.className = 'tf-statements';
+                this.state.trueFalseSelections = new Array(q.statements.length).fill('');
+                q.statements.forEach((statement, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'tf-statement';
+                    row.innerHTML = `<span class="tf-statement__label">${statement.label}.</span><span class="tf-statement__text">${app.data.formatMathText(statement.text)}</span><span class="tf-statement__choices"><button type="button" data-choice="Đúng">ĐÚNG</button><button type="button" data-choice="Sai">SAI</button></span>`;
+                    row.querySelectorAll('button').forEach(button => {
+                        button.onclick = () => {
+                            row.querySelectorAll('button').forEach(item => item.classList.remove('selected'));
+                            button.classList.add('selected');
+                            this.state.trueFalseSelections[index] = button.dataset.choice;
+                            this.state.selectedAns = this.state.trueFalseSelections.join(', ');
+                            btnCheck.disabled = this.state.trueFalseSelections.some(choice => !choice);
+                        };
+                    });
+                    optContainer.appendChild(row);
+                });
             } else if (qType === 'Đúng/Sai') {
                 optContainer.className = 'options-grid true_false';
                 opts.forEach((opt) => {
@@ -2017,6 +2037,17 @@ const app = {
                         icon.textContent = '❌';
                         btn.appendChild(icon);
                     }
+                });
+            } else if (qType === 'Đúng/Sai' && Array.isArray(q.statements)) {
+                const expectedAnswers = q.statements.map(statement => statement.answer);
+                const selectedAnswers = this.state.trueFalseSelections || this.getAnsArr(this.state.selectedAns);
+                isCorrect = selectedAnswers.length === expectedAnswers.length && selectedAnswers.every((answer, index) => answer === expectedAnswers[index]);
+                document.querySelectorAll('.tf-statement').forEach((row, index) => {
+                    const correctAnswer = expectedAnswers[index];
+                    row.querySelectorAll('button').forEach(button => {
+                        if (button.dataset.choice === correctAnswer) button.classList.add('correct-fill');
+                        else if (button.classList.contains('selected')) button.classList.add('wrong-fill');
+                    });
                 });
             } else if (qType === 'Đúng/Sai') {
                 isCorrect = this.state.selectedAns === q.ans;
@@ -3227,7 +3258,7 @@ const app = {
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
@@ -3290,6 +3321,13 @@ const app = {
                     example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
                     type: 'So sánh',
                     variables: [['{question}', 'toàn bộ câu do game sinh'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
+                },
+                'number.place_value_true_false': {
+                    guide: 'Game sinh một số nhiều chữ số và bốn nhận định A–D về lớp của chữ số. Học sinh chọn ĐÚNG hoặc SAI cho từng nhận định.',
+                    hint: 'Dùng biến <code>{number}</code> để đặt số đã sinh ở hàng đầu.',
+                    example: 'Ví dụ: Số 14 021 983 — A. Chữ số 4 thuộc lớp triệu. ĐÚNG/SAI',
+                    type: 'Đúng/Sai',
+                    variables: [['{question}', 'dòng tiêu đề do game sinh'], ['{number}', 'số nhiều chữ số đã sinh']]
                 },
                 'number.match_number_words': {
                     guide: 'Game sinh các số có 7, 8 hoặc 9 chữ số và các cách đọc tương ứng. Hai vế lệch nhau đúng một mục để tạo một mục nhiễu.',
