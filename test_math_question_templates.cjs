@@ -73,6 +73,13 @@ assert.equal(comparison.type, 'So sánh');
 assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');
 assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
 assert.match(comparison.templateVariables.comparison, /___/, 'The comparison template must expose a reusable comparison expression.');
+
+const placeValueTrueFalse = generateQuestion('number.place_value_true_false', { minimum: 10000000, maximum: 99999999 }, seededRandom(10));
+assert.equal(placeValueTrueFalse.type, 'Đúng/Sai');
+assert.equal(placeValueTrueFalse.statements.length, 4, 'The place-value true/false template must generate four statements.');
+assert.deepEqual(placeValueTrueFalse.statements.map(item => item.label), ['A', 'B', 'C', 'D']);
+assert(placeValueTrueFalse.statements.every(item => ['Đúng', 'Sai'].includes(item.answer)), 'Each statement must have a true/false answer.');
+assert.match(placeValueTrueFalse.q, /^Số /, 'The number must be the first line of the true/false template.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));

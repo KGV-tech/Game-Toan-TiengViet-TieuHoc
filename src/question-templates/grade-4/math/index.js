@@ -7,7 +7,8 @@
         'number.missing_expanded_addend': require('./missing-expanded-addend'),
         'number.neighbor_numbers': require('./neighbor-numbers'),
         'number.compare_number_forms': require('./compare-number-forms'),
-        'number.match_number_words': require('./match-number-words')
+        'number.match_number_words': require('./match-number-words'),
+        'number.place_value_true_false': require('./place-value-true-false')
     } : root.Grade4MathTemplateGenerators;
     const api = factory(generators);
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
