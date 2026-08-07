@@ -151,11 +151,11 @@ INSERT INTO public.question_templates (
     name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
 )
 SELECT
-    'Đúng/Sai về lớp của chữ số', 'Lớp 4', 'Toán', 'Học kỳ 1', '1. Số tự nhiên',
+    'Đúng/Sai về lớp của chữ số', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
     'Đúng/Sai', 'number.place_value_true_false',
     'Số {number}',
     '{"minimum":10000000,"maximum":99999999}'::jsonb
 WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.place_value_true_false'
-      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Số tự nhiên'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
 );
