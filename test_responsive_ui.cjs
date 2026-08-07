@@ -11,5 +11,7 @@ assert.match(css, /\.score-display\s*\{[^}]*flex:\s*0 0 auto/s, 'The gameplay sc
 assert.match(css, /\.play-center\s*\{[^}]*height:\s*min\(82vh, 900px\)/s, 'The shared gameplay frame must allow more vertical content.');
 assert.match(css, /\.matching-item\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long matching answers must wrap instead of overflowing.');
 assert.match(css, /\.matching-columns\s*\{[^}]*grid-template-columns:\s*minmax\(150px, 30%\) minmax\(0, 58%\)/s, 'Matching layout must reserve clear space between number and text columns.');
+assert.match(css, /\.comparison-expression\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/s, 'Comparison expressions must use flexible columns.');
+assert.match(css, /\.comparison-expression__side\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long comparison expressions must wrap inside their cards.');
 
 console.log('Responsive UI contract verified.');

@@ -73,6 +73,7 @@ assert.equal(comparison.type, 'So sánh');
 assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');
 assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
 assert.match(comparison.templateVariables.comparison, /___/, 'The comparison template must expose a reusable comparison expression.');
+assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');

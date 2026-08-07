@@ -1467,7 +1467,11 @@ const app = {
                 optContainer.className = '';
                 let slot;
                 if (q.q.includes('___')) {
-                    const [instruction, expression = ''] = app.data.formatMathText(q.q).split(/<br\s*\/?\s*>/i);
+                    let [instruction, expression = ''] = app.data.formatMathText(q.q).split(/<br\s*\/?\s*>/i);
+                    if (!expression) {
+                        const instructionMatch = instruction.match(/^(.+?:)\s*(.+___.+)$/);
+                        if (instructionMatch) [, instruction, expression] = instructionMatch;
+                    }
                     const [left, right = ''] = (expression || instruction).split('___');
                     questionContainer.classList.add('question-box--template', 'question-box--comparison');
                     questionContainer.innerHTML = `<div class="template-question-copy">${expression ? instruction : ''}</div><div class="comparison-expression"><span class="comparison-expression__side">${left}</span><span class="compare-slot">?</span><span class="comparison-expression__side">${right}</span></div>`;
