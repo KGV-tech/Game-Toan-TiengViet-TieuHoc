@@ -3031,11 +3031,36 @@ const app = {
             const topics = this.getTemplateTopics(classlevel, subject, semester);
             topic.innerHTML = topics.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selectedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('');
         },
+        toggleTemplateGenerator() {
+            const generator = document.getElementById('template-generator')?.value;
+            const isMatching = generator === 'number.match_number_words';
+            const matchingConfig = document.getElementById('template-match-config');
+            const placeConfig = document.getElementById('template-place-config');
+            if (matchingConfig) matchingConfig.style.display = isMatching ? 'block' : 'none';
+            if (placeConfig) placeConfig.style.display = isMatching ? 'none' : 'block';
+            const type = document.getElementById('template-question-type');
+            if (isMatching && type) type.value = 'Đối chiếu trùng khớp';
+        },
+        validateMatchingTemplateConfig(config) {
+            const shapes = String(config.shapes || '').split(',').map(item => item.trim()).filter(Boolean);
+            const digits = String(config.digits || '').split(',').map(item => Number(item.trim())).filter(Number.isInteger);
+            if (!shapes.length || shapes.some(shape => !/^\d+:\d+$/.test(shape) || Math.abs(Number(shape.split(':')[0]) - Number(shape.split(':')[1])) !== 1 || Math.min(...shape.split(':').map(Number)) < 1)) throw new Error('Dạng ghép phải có dạng 5:4, 4:5, 4:3 hoặc 3:4.');
+            if (!digits.length || digits.some(digit => digit < 1 || digit > 9)) throw new Error('Độ dài số phải là các số nguyên từ 1 đến 9.');
+            if (!['balanced', 'random', 'cycle'].includes(config.digitStrategy)) throw new Error('Chiến lược phân bố không hợp lệ.');
+            if (config.digitWeights && !/^\d+\s*:\s*\d+(\s*,\s*\d+\s*:\s*\d+)*$/.test(config.digitWeights)) throw new Error('Tỷ lệ sinh số dùng dạng 7:20, 8:30, 9:50.');
+            if (!Number.isInteger(config.prefixWords) || config.prefixWords < 0 || !Number.isInteger(config.seed === '' ? 0 : Number(config.seed))) throw new Error('Tiền tố và seed phải là số nguyên hợp lệ.');
+            const digitWeights = config.digitWeights ? Object.fromEntries(config.digitWeights.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null;
+            return { shapes, digits, digitStrategy: config.digitStrategy, digitWeights, prefixWords: config.prefixWords, seed: config.seed === '' ? null : Number(config.seed) };
+        },
         renderTemplateForm(editIndex) {
             const existing = editIndex === undefined ? null : app.data.questionTemplates[editIndex];
             const config = existing?.config || {};
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
+            const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
+            const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
+            const matchingDigits = (config.digits || [7, 8, 9]).join(', ');
+            const matchingWeights = typeof config.digitWeights === 'string' ? config.digitWeights : Object.entries(config.digitWeights || {}).map(([digit, weight]) => `${digit}:${weight}`).join(', ');
             const checkbox = (value, label, selected) => `<label style="display:inline-flex; align-items:center; gap:4px; margin:2px 10px 2px 0;"><input class="template-checkbox" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}> ${label}</label>`;
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn']];
             const box = document.getElementById('treasure-content-area');
@@ -3050,30 +3075,50 @@ const app = {
                 <label>Môn học<select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label>Học kỳ<select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label>Chủ đề<select id="template-topic" class="form-input"></select></label>
-                <label>Loại câu hỏi<select id="template-question-type" class="form-input"><option value="Trắc nghiệm">Trắc nghiệm</option></select></label>
-                <label>Template<select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place">Nhận biết chữ số theo hàng</option></select></label>
+                <label>Loại câu hỏi<select id="template-question-type" class="form-input"><option value="Trắc nghiệm" ${!isMatching ? 'selected' : ''}>Trắc nghiệm</option><option value="Đối chiếu trùng khớp" ${isMatching ? 'selected' : ''}>Đối chiếu trùng khớp</option></select></label>
+                <label>Template<select id="template-generator" class="form-input" onchange="app.admin.toggleTemplateGenerator(); app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div>
               <label style="display:block; margin-top:12px;">Câu hỏi<textarea id="template-prompt" class="form-input" style="width:100%; min-height:72px;">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label>
               <div style="display:grid; grid-template-columns:repeat(2,minmax(160px,1fr)); gap:12px; margin-top:12px;"><label>Số nhỏ nhất<input id="template-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label>Số lớn nhất<input id="template-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 100000)}"></label></div>
-              <div style="margin-top:14px;"><b>Chữ số hàng X</b><div>${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
-              <div style="margin-top:14px;"><b>là Y</b><div>${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div>
+              <div id="template-place-config" style="display:${isMatching ? 'none' : 'block'};"><div style="margin-top:14px;"><b>Chữ số hàng X</b><div>${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces)).join('')}</div></div>
+              <div style="margin-top:14px;"><b>là Y</b><div>${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String))).join('')}</div></div></div>
+              <div id="template-match-config" style="display:${isMatching ? 'block' : 'none'}; margin-top:14px; padding:12px; background:rgba(34,197,94,.12); border-radius:8px;">
+                <b>Cấu hình đối chiếu số – chữ</b>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px;">
+                  <label>Dạng ghép<input id="template-match-shapes" class="form-input" value="${app.data.sanitizeHTML(matchingShapes)}" placeholder="5:4, 4:5"></label>
+                  <label>Độ dài số<input id="template-match-digits" class="form-input" value="${app.data.sanitizeHTML(matchingDigits)}" placeholder="7, 8, 9"></label>
+                  <label>Phân bố<select id="template-match-strategy" class="form-input">${['balanced','random','cycle'].map(value => `<option value="${value}" ${(config.digitStrategy || 'balanced') === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+                  <label>Tỷ lệ sinh số (tùy chọn)<input id="template-match-weights" class="form-input" value="${app.data.sanitizeHTML(matchingWeights)}" placeholder="7:20, 8:30, 9:50"></label>
+                  <label>Từ tiền tố chung<input id="template-match-prefix" class="form-input" type="number" min="0" value="${Number(config.prefixWords || 0)}"></label>
+                  <label>Seed (tùy chọn)<input id="template-match-seed" class="form-input" type="number" value="${config.seed ?? ''}"></label>
+                </div>
+              </div>
               <div id="template-example" style="margin-top:14px; padding:10px; background:rgba(34,197,94,.12); border-radius:7px;"></div>
               <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;"><button class="btn-success" onclick="app.admin.saveTemplate()">Lưu mới</button><button class="btn-primary" ${existing ? '' : 'disabled'} onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button></div>
             </div>`;
             this.refreshTemplateTopics(existing?.topic || '');
+            this.toggleTemplateGenerator();
             this.showTemplateExample();
         },
         showTemplateExample() {
             const target = document.getElementById('template-example');
-            if (target) target.textContent = 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?';
+            if (!target) return;
+            const isMatching = document.getElementById('template-generator')?.value === 'number.match_number_words';
+            target.textContent = isMatching ? 'Ví dụ: 5 số | 4 cách đọc, với đúng 4 cặp ghép và 1 mục nhiễu. Cấu hình được kiểm tra khi lưu.' : 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?';
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: Number(value('template-minimum')), maximum: Number(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
-            if (!template.name || !template.prompt_template || !allowedPlaces.length || !allowedDigits.length) throw new Error('Hãy nhập tên, câu hỏi và chọn ít nhất một hàng cùng một chữ số.');
-            if (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi cho template.');
+            if (template.generator_key === 'number.match_number_words') {
+                if (template.question_type !== 'Đối chiếu trùng khớp') throw new Error('Template đối chiếu phải dùng loại câu hỏi Đối chiếu trùng khớp.');
+                template.config = this.validateMatchingTemplateConfig({ shapes: value('template-match-shapes'), digits: value('template-match-digits'), digitStrategy: value('template-match-strategy'), digitWeights: value('template-match-weights'), prefixWords: Number(value('template-match-prefix')), seed: value('template-match-seed') });
+            } else {
+                if (!allowedPlaces.length || !allowedDigits.length) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
+                if (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            }
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;

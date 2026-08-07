@@ -1,11 +1,13 @@
 const generateSmallestOfFour = require('./smallest-of-four');
 const generateLargestOfFour = require('./largest-of-four');
 const generateDigitAtPlace = require('./digit-at-place');
+const generateMatchNumberWords = require('./match-number-words');
 
 const generators = {
     'number.smallest_of_four': generateSmallestOfFour,
     'number.largest_of_four': generateLargestOfFour,
-    'number.digit_at_place': generateDigitAtPlace
+    'number.digit_at_place': generateDigitAtPlace,
+    'number.match_number_words': generateMatchNumberWords
 };
 
 function generateQuestion(templateId, config = {}, random = Math.random) {

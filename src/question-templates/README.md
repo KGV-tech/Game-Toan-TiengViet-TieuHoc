@@ -34,3 +34,13 @@ question-templates/
 ```
 
 The administrator edits these values; the application does not accept JavaScript from the database.
+
+## Number-word matching
+
+`number.match_number_words` produces the existing `Đối chiếu trùng khớp`
+question contract: its two `options` strings are the left/right columns and
+`ans` contains `number:words` pairs. Configure it in the Template Bank with
+asymmetric shapes such as `5:4, 4:5` or `4:3, 3:4`; the number of answer pairs
+is always calculated from the smaller side. `digits`, `digitStrategy`, optional
+`digitWeights`, `prefixWords` and `seed` are JSON configuration only, so the
+same generator can be used by a new class or topic record without code changes.

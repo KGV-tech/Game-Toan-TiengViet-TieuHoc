@@ -44,3 +44,16 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.digit_at_place'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
 );
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Đối chiếu số với cách đọc', 'Lớp 4', 'Toán', 'Học kỳ 1', '1. Số tự nhiên',
+    'Đối chiếu trùng khớp', 'number.match_number_words',
+    'Hãy nối mỗi số với cách đọc đúng.',
+    '{"shapes":["5:4","4:5"],"digits":[7,8,9],"digitStrategy":"balanced","digitWeights":null,"prefixWords":0,"seed":null}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.match_number_words'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Số tự nhiên'
+);
