@@ -459,8 +459,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-fill-row:first-child { font-size: clamp(1.3rem, 2.25vw, 2rem); }
 .template-fill-row .magic-input { width: min(170px, 32vw); margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); }
 .template-question-copy { margin-bottom: 16px; font-size: clamp(1.3rem, 2.25vw, 2rem); line-height: 1.35; text-align: center; }
-.comparison-expression { display: grid; grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr); align-items: center; gap: clamp(12px, 2vw, 28px); width: 100%; }
-.comparison-expression__side { min-width: 0; padding: 12px 16px; border-radius: 12px; background: rgba(226, 232, 240, .82); color: #1e293b; font-size: clamp(1.45rem, 2.6vw, 2.25rem); line-height: 1.35; text-align: center; overflow-wrap: anywhere; }
+.comparison-expression { display: grid; grid-template-columns: minmax(160px, .7fr) 100px minmax(340px, 1.3fr); align-items: center; gap: clamp(12px, 2vw, 28px); width: 100%; }
+.comparison-expression__side { min-width: 0; padding: 12px 16px; border-radius: 12px; background: rgba(226, 232, 240, .82); color: #1e293b; font-size: clamp(1.1rem, 1.8vw, 1.75rem); line-height: 1.35; text-align: center; white-space: nowrap; }
 .question-box--comparison .compare-slot { justify-self: center; }
 
 /* Check Button */
@@ -873,21 +873,30 @@ input[type="text"], input[type="password"], select, textarea {
 .matching-container {
     width: 100%;
     padding: 0px;
-    display: flex;
+    display: block;
+    height: auto;
+    min-height: 0;
+}
+.matching-columns {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(150px, .26fr) minmax(0, .64fr);
     justify-content: space-between;
-    height: 100%;
+    column-gap: 10%;
+    width: 100%;
 }
 .matching-col {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    justify-content: space-evenly;
+    gap: 12px;
+    justify-content: flex-start;
 }
 .matching-col.left-col {
-    width: 30%;
+    width: auto;
 }
 .matching-col.right-col {
-    width: 50%;
+    width: auto;
 }
 .matching-item {
     background: rgba(255, 255, 255, 0.1);
@@ -896,15 +905,14 @@ input[type="text"], input[type="password"], select, textarea {
     padding: 10px 5px;
     text-align: center;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: clamp(.9rem, 1.35vw, 1.15rem);
     font-weight: bold;
     color: white;
     transition: all 0.2s;
     user-select: none;
     z-index: 2;
     position: relative;
-    word-break: break-word;
-    white-space: normal;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
