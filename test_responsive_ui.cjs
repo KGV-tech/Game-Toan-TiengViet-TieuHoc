@@ -10,5 +10,6 @@ assert.match(css, /prefers-reduced-motion/, 'Motion effects must respect reduced
 assert.match(css, /\.score-display\s*\{[^}]*flex:\s*0 0 auto/s, 'The gameplay score must remain inside the shared header layout.');
 assert.match(css, /\.play-center\s*\{[^}]*height:\s*min\(82vh, 900px\)/s, 'The shared gameplay frame must allow more vertical content.');
 assert.match(css, /\.matching-item\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long matching answers must wrap instead of overflowing.');
+assert.match(css, /\.matching-columns\s*\{[^}]*grid-template-columns:\s*minmax\(150px, 30%\) minmax\(0, 58%\)/s, 'Matching layout must reserve clear space between number and text columns.');
 
 console.log('Responsive UI contract verified.');
