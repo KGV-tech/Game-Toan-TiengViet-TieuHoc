@@ -3202,7 +3202,7 @@ const app = {
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input"><option value="Trắc nghiệm" ${(existing?.question_type || 'Trắc nghiệm') === 'Trắc nghiệm' ? 'selected' : ''}>Trắc nghiệm</option><option value="Điền khuyết" ${existing?.question_type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option><option value="So sánh" ${existing?.question_type === 'So sánh' ? 'selected' : ''}>So sánh</option></select></label>
                 <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${(existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option></select></label>
               </div></div>
-              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-example" class="template-editor__preview"></div></div>
+              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule"><h5>Phạm vi số</h5><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 10000)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? 100000)}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
@@ -3213,62 +3213,80 @@ const app = {
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
         },
-        showTemplateExample() {
-            const generator = document.getElementById('template-generator')?.value;
-            const presets = {
+        templatePresets: {
                 'number.digit_at_place': {
                     guide: 'Dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên mỗi lượt.',
                     hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
                     example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?',
-                    type: 'Trắc nghiệm'
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{place}', 'tên hàng được bốc'], ['{digit}', 'chữ số được bốc']]
                 },
                 'number.smallest_of_four': {
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số bé nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
                     example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403',
-                    type: 'Trắc nghiệm'
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'câu hỏi mặc định']]
                 },
                 'number.largest_of_four': {
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số lớn nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
                     example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403',
-                    type: 'Trắc nghiệm'
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'câu hỏi mặc định']]
                 },
                 'number.compose_from_places': {
                     guide: 'Game bốc một số trong phạm vi rồi mô tả các hàng có chữ số khác 0. Học sinh nhập số đã lập.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: Viết số rồi đọc số, biết số đó gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục. Số đó là ___',
-                    type: 'Điền khuyết'
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{place_values}', 'các hàng, ví dụ: 4 chục nghìn, 2 nghìn và 5 trăm'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.missing_expanded_addend': {
                     guide: 'Game phân tích một số thành tổng các hàng rồi ẩn ngẫu nhiên một thành phần khác 0.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên phép tính động do game sinh.',
                     example: 'Ví dụ kết quả: 33 471 = 30 000 + 3 000 + ___ + 70 + 1',
-                    type: 'Điền khuyết'
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{number}', 'số cần phân tích'], ['{expression}', 'dạng tổng có một ô trống'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.neighbor_numbers': {
                     guide: 'Game bốc một số ở giữa phạm vi, học sinh điền số liền trước và số liền sau.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: ___ ; 42 135 ; ___',
-                    type: 'Điền khuyết'
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.compare_number_forms': {
                     guide: 'Game sinh một số và một dạng tổng; học sinh chọn dấu >, < hoặc = đúng.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
-                    type: 'So sánh'
+                    type: 'So sánh',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
                 }
-            };
-            const preset = presets[generator] || presets['number.digit_at_place'];
+        },
+        showTemplateExample() {
+            const generator = document.getElementById('template-generator')?.value;
+            const preset = this.templatePresets[generator] || this.templatePresets['number.digit_at_place'];
             const target = document.getElementById('template-example');
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
+            const variables = document.getElementById('template-variables');
             if (target) target.textContent = preset.example;
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
+            if (variables) variables.innerHTML = `<b>Biến có thể chèn</b><div>${preset.variables.map(([token, description]) => `<button type="button" class="template-variable" title="${app.data.sanitizeHTML(description)}" onclick="app.admin.insertTemplateVariable('${token}')"><code>${token}</code><span>${app.data.sanitizeHTML(description)}</span></button>`).join('')}</div>`;
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
+        },
+        insertTemplateVariable(token) {
+            const input = document.getElementById('template-prompt');
+            if (!input) return;
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? start;
+            input.value = `${input.value.slice(0, start)}${token}${input.value.slice(end)}`;
+            input.focus();
+            input.setSelectionRange(start + token.length, start + token.length);
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
@@ -3276,6 +3294,9 @@ const app = {
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: value('template-generator'), prompt_template: value('template-prompt'), config: { minimum: app.data.parseMathNumber(value('template-minimum')), maximum: app.data.parseMathNumber(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
+            const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || []).map(([token]) => token.slice(1, -1)));
+            const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
+            if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
             if (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');

@@ -19,7 +19,8 @@ function generateLargestOfFour(config = {}, random = Math.random) {
         'Hãy tìm số lớn nhất trong các số sau.',
         shuffle(options, random),
         answer,
-        `So sánh bốn số theo hàng chục nghìn, rồi đến hàng nghìn để chọn số lớn nhất là ${formatNumber(answer)}.`
+        `So sánh bốn số theo hàng chục nghìn, rồi đến hàng nghìn để chọn số lớn nhất là ${formatNumber(answer)}.`,
+        { question: 'Hãy tìm số lớn nhất trong các số sau.' }
     );
 }
 

@@ -32,7 +32,7 @@ function generateComposeFromPlaces(config = {}, random = Math.random) {
         prompt,
         value,
         `Ghép các chữ số theo từng hàng, ta được số ${formatNumber(value)}.`,
-        { question: prompt, number: value }
+        { question: prompt, place_values: description, blank: '___', number: value }
     );
 }
 

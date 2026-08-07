@@ -55,20 +55,24 @@ const composeNumber = generateQuestion('number.compose_from_places', { minimum: 
 assert.equal(composeNumber.type, 'Điền khuyết');
 assert.match(composeNumber.q, /___/, 'The compose-number template must provide an input blank.');
 assert.equal(numericValue(composeNumber.ans), composeNumber.templateVariables.number);
+assert.match(composeNumber.templateVariables.place_values, /chục nghìn|nghìn/, 'The compose-number template must expose its generated place-value wording.');
 
 const missingAddend = generateQuestion('number.missing_expanded_addend', { minimum: 10000, maximum: 99999 }, seededRandom(7));
 assert.equal(missingAddend.type, 'Điền khuyết');
 assert.match(missingAddend.q, /___/, 'The expanded-form template must hide exactly one addend.');
-assert.equal(missingAddend.templateVariables.number, missingAddend.templateVariables.expanded.split('+').reduce((sum, term) => sum + numericValue(term), 0));
+assert.equal(numericValue(missingAddend.templateVariables.number), missingAddend.templateVariables.expanded.split('+').reduce((sum, term) => sum + numericValue(term), 0));
+assert.match(missingAddend.templateVariables.expression, /___/, 'The expanded-form template must expose the expression containing the blank.');
 
 const neighbors = generateQuestion('number.neighbor_numbers', { minimum: 10000, maximum: 99999 }, seededRandom(8));
 assert.equal(neighbors.type, 'Điền khuyết');
 assert.equal(neighbors.ans.split(',').length, 2, 'The neighbor template must require both adjacent numbers.');
+assert.match(neighbors.templateVariables.neighbor_line, /___/, 'The neighbor template must expose a reusable blank-number line.');
 
 const comparison = generateQuestion('number.compare_number_forms', { minimum: 10000, maximum: 99999 }, seededRandom(9));
 assert.equal(comparison.type, 'So sánh');
 assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');
 assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
+assert.match(comparison.templateVariables.comparison, /___/, 'The comparison template must expose a reusable comparison expression.');
 
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));

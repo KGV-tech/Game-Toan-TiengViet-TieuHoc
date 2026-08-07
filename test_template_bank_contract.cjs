@@ -15,6 +15,9 @@ assert(source.includes('template-select-all'), 'Template editor must provide qui
 assert(source.includes('hundredBillions'), 'Template editor must support place values through hundreds of billions.');
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
+assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
+assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
+assert(source.includes('place_values'), 'Template editor must document the generated place-value wording variable.');
 assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
