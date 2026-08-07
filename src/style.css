@@ -147,10 +147,10 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .action-buttons { display: flex; gap: 15px; }
 
 /* Question Types */
-.options-grid { display: grid; gap: 20px; width: 100%; flex-grow: 1; padding-right: 10px; align-content: start; margin-top: 15px; min-height: 0; }
+.options-grid { display: grid; gap: clamp(12px, 1.5vw, 20px); width: 100%; min-width: 0; flex-grow: 1; padding: 0; align-content: start; margin-top: 0; min-height: 0; }
 .options-grid.multiple_choice { grid-template-columns: repeat(2, 1fr); }
 .options-grid.true_false { grid-template-columns: repeat(2, 1fr); }
-.ans-btn { background: linear-gradient(180deg, #f8fafc, #cbd5e1); border: 3px solid #ffffff; border-bottom: 6px solid #94a3b8; color: #1e293b; padding: 15px 20px; font-size: 1.4rem; font-weight: 900; border-radius: 15px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; text-align:center; box-shadow: 0 8px 15px rgba(0,0,0,0.3); text-transform: uppercase; }
+.ans-btn { background: linear-gradient(180deg, #f8fafc, #cbd5e1); border: 3px solid #ffffff; border-bottom: 6px solid #94a3b8; color: #1e293b; padding: 15px 20px; font-size: 1.4rem; font-weight: 900; border-radius: 15px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; min-width: 0; overflow-wrap: anywhere; text-align:center; box-shadow: 0 8px 15px rgba(0,0,0,0.3); text-transform: uppercase; }
 .ans-btn:hover { background: linear-gradient(180deg, #ffffff, #e2e8f0); transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.4); }
 .ans-btn:active { transform: translateY(3px); border-bottom-width: 3px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); margin-top: 3px; }
 .ans-btn.selected { background: linear-gradient(180deg, #fbbf24, #d97706); border-color: #fde047; border-bottom-color: #b45309; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
@@ -445,16 +445,16 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 }
 #start-adv-icon { width: 120px; filter: drop-shadow(0 0 20px #f59e0b); }
 
-/* Play Layout (2 columns: 1/4 and 3/4) */
-.play-layout { display: grid; grid-template-columns: 25% 75%; width: 100%; align-items: stretch; gap: 20px; }
+/* Play layout: every question type shares this adaptive content frame. */
+.play-layout { display: grid; grid-template-columns: minmax(200px, .28fr) minmax(0, .72fr); width: 100%; align-items: stretch; gap: 20px; }
 .play-left { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; padding-top: 10px; }
-.play-center { position: relative; display: flex; flex-direction: column; background: rgba(0,0,0,0.4); padding: 40px; border-radius: 30px; border: 4px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 30px rgba(0,0,0,0.5); min-height: 600px; height: 75vh; }
+.play-center { box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: clamp(680px, 76vh, 820px); height: min(82vh, 900px); overflow-y: auto; background: rgba(0,0,0,0.4); padding: clamp(22px, 3vw, 40px); border-radius: 30px; border: 4px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 30px rgba(0,0,0,0.5); }
 
-.game-header { display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; font-size: 1.3rem; font-weight: bold; }
+.game-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 15px; font-size: 1.3rem; font-weight: bold; }
 .question-progress { background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 20px; color: #fde047; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
-.score-display { position: absolute; top: -25px; right: -25px; background: linear-gradient(180deg, #fde047, #d97706); border: 4px solid #fef08a; border-bottom: 8px solid #92400e; padding: 15px 30px; border-radius: 25px; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.4); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8rem; font-weight: 900; z-index: 10; transform: rotate(5deg); }
+.score-display { flex: 0 0 auto; background: linear-gradient(180deg, #fde047, #d97706); border: 3px solid #fef08a; border-bottom-width: 5px; padding: 7px 14px; border-radius: 14px; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.35); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: clamp(1rem, 1.7vw, 1.35rem); font-weight: 900; }
 
-.question-box { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(226,232,240,0.95)); border: 4px solid #ffffff; border-bottom: 8px solid #cbd5e1; border-radius: 20px; padding: 25px; margin-bottom: 25px; color: #1e293b; font-size: 1.6rem; font-weight: bold; text-shadow: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; height: 130px; min-height: 130px; display: flex; align-items: center; justify-content: center; overflow-y: auto; flex-shrink: 0; }
+.question-box { box-sizing: border-box; background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(226,232,240,0.95)); border: 4px solid #ffffff; border-bottom: 8px solid #cbd5e1; border-radius: 20px; padding: clamp(16px, 2vw, 25px); margin-bottom: 20px; color: #1e293b; font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: bold; line-height: 1.35; text-shadow: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere; flex-shrink: 0; }
 .question-box--template { display: block; height: auto; min-height: 0; max-height: none; padding: clamp(18px, 2vw, 28px); overflow: visible; text-align: left; }
 .template-fill-layout { display: grid; gap: 14px; width: 100%; }
 .template-fill-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; min-height: 54px; line-height: 1.35; text-align: center; }
@@ -883,9 +883,9 @@ input[type="text"], input[type="password"], select, textarea {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: minmax(150px, .26fr) minmax(0, .64fr);
+    grid-template-columns: minmax(150px, .3fr) minmax(0, .7fr);
     justify-content: space-between;
-    column-gap: 10%;
+    column-gap: clamp(18px, 4vw, 56px);
     width: 100%;
 }
 .matching-col {
@@ -904,7 +904,7 @@ input[type="text"], input[type="password"], select, textarea {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    padding: 10px 5px;
+    padding: 10px 14px;
     text-align: center;
     cursor: pointer;
     font-size: clamp(.9rem, 1.35vw, 1.15rem);
@@ -914,7 +914,8 @@ input[type="text"], input[type="password"], select, textarea {
     user-select: none;
     z-index: 2;
     position: relative;
-    white-space: nowrap;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
     display: flex;
     align-items: center;
     justify-content: center;

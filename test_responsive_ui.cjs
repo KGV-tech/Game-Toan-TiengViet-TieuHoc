@@ -7,5 +7,8 @@ assert.match(css, /@media screen and \(orientation: portrait\)\s*\{\s*#app\s*\{\
 assert.match(css, /@media \(max-width: 1024px\)/, 'Tablet-specific responsive rules must exist.');
 assert.match(css, /\.station\s*\{[^}]*min-width:/s, 'Map stations must have predictable touch targets.');
 assert.match(css, /prefers-reduced-motion/, 'Motion effects must respect reduced-motion preferences.');
+assert.match(css, /\.score-display\s*\{[^}]*flex:\s*0 0 auto/s, 'The gameplay score must remain inside the shared header layout.');
+assert.match(css, /\.play-center\s*\{[^}]*height:\s*min\(82vh, 900px\)/s, 'The shared gameplay frame must allow more vertical content.');
+assert.match(css, /\.matching-item\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long matching answers must wrap instead of overflowing.');
 
 console.log('Responsive UI contract verified.');
