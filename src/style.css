@@ -318,6 +318,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-select-all { padding: 5px 10px; border: 1px solid rgba(125, 211, 252, .7); border-radius: 6px; background: rgba(14, 116, 144, .34); color: #e0f2fe; font-size: .75rem; font-weight: 800; cursor: pointer; }
 .template-select-all:hover { background: rgba(14, 116, 144, .68); }
 .template-editor__rule p { min-height: 2.2em; margin: 0 0 10px; color: #94a3b8; font-size: .8rem; line-height: 1.35; }
+.template-editor__rule--matching-controls { grid-column: 1 / -1; }
+.template-editor__rule--matching-controls .template-editor__fields { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .template-editor__range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 8px; }
 .template-editor__range label { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #dbeafe; font-size: .8rem; font-weight: 700; }
 .template-editor__range > span { padding-bottom: 11px; color: #94a3b8; }

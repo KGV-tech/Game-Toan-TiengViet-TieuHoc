@@ -36,9 +36,13 @@ assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expos
 assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
 assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
 assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');
+assert(source.includes("'Đúng/Sai'"), 'The Template Bank question-type list must include true/false questions.');
+assert(source.includes("'Chuỗi Quy luật'"), 'The Template Bank question-type list must include pattern questions.');
+assert(source.includes("'Kéo thả'"), 'The Template Bank question-type list must include drag-and-drop questions.');
 assert(source.includes('template-match-shapes'), 'The matching template must expose configurable shapes.');
 assert(source.includes('template-match-digits'), 'The matching template must expose configurable number lengths.');
 assert(source.includes('Tỷ lệ sinh số'), 'The matching template must label digit weights clearly.');
+assert(css.includes('template-editor__rule--matching-controls'), 'Matching configuration must span the rule grid without overlapping fields.');
 assert(source.includes('generateTemplateQuestion'), 'Gameplay must generate questions from active template configurations.');
 assert(migration.includes("'number.smallest_of_four'"), 'Migration must seed the smallest-of-four template.');
 assert(migration.includes("'number.largest_of_four'"), 'Migration must seed the largest-of-four template.');
