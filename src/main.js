@@ -131,10 +131,10 @@ const app = {
         formatMathNumber(value) {
             const digits = String(value ?? '').replace(/\s/g, '');
             if (!/^\d+$/.test(digits)) return String(value ?? '');
-            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
         },
         formatMathText(value) {
-            return String(value ?? '').replace(/\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
+            return String(value ?? '').replace(/\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
         },
         formatQuestionDetailHTML(value) {
             return String(value ?? '')
