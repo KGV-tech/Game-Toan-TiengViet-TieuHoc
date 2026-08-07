@@ -17,7 +17,7 @@ function shuffle(items, random) {
 }
 
 function formatNumber(value) {
-    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
 }
 
 function createQuestion(templateId, prompt, values, correctValue, explanation, templateVariables = {}) {

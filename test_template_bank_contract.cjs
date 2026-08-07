@@ -25,6 +25,7 @@ assert(source.includes('comparison-expression'), 'Comparison templates must rend
 assert(source.includes('formatQuestionDetailHTML'), 'Result details must render stored line breaks without showing raw <br> markup.');
 assert(source.includes('matching-columns'), 'Matching questions must use a dedicated balanced column layout.');
 assert(css.includes('white-space: nowrap'), 'Long mathematical expressions and matching labels must stay on one line.');
+assert(source.includes("'\\u00a0'"), 'Math number formatting must use non-breaking spaces between thousands groups.');
 assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');
