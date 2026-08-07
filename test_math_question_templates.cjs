@@ -74,6 +74,21 @@ assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must u
 assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
 assert.match(comparison.templateVariables.comparison, /___/, 'The comparison template must expose a reusable comparison expression.');
 
+const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
+assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
+assert.equal(matchingFiveFour.options[0].split(', ').length, 5);
+assert.equal(matchingFiveFour.options[1].split(', ').length, 4);
+assert.equal(matchingFiveFour.ans.split(', ').length, 4);
+const matchingFourThree = generateQuestion('number.match_number_words', { shapes: ['4:3'], digits: [7], digitWeights: { 7: 1 } }, seededRandom(13));
+assert.equal(matchingFourThree.options[0].split(', ').length, 4);
+assert.equal(matchingFourThree.options[1].split(', ').length, 3);
+assert.deepEqual(
+    generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7], seed: 123 }, seededRandom(14)),
+    generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7], seed: 123 }, seededRandom(15)),
+    'A configured seed must reproduce the same question.'
+);
+assert.throws(() => generateQuestion('number.match_number_words', { shapes: ['4:2'] }, seededRandom(16)));
+
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));
 assert.notDeepEqual(firstVersion.options, nextVersion.options, 'Different sessions should receive new numbers.');

@@ -34,6 +34,11 @@ assert(source.includes('number.compose_from_places'), 'The Template Bank must ex
 assert(source.includes('number.missing_expanded_addend'), 'The Template Bank must expose the expanded-form fill-in template.');
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
 assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
+assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
+assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');
+assert(source.includes('template-match-shapes'), 'The matching template must expose configurable shapes.');
+assert(source.includes('template-match-digits'), 'The matching template must expose configurable number lengths.');
+assert(source.includes('Tỷ lệ sinh số'), 'The matching template must label digit weights clearly.');
 assert(source.includes('generateTemplateQuestion'), 'Gameplay must generate questions from active template configurations.');
 assert(migration.includes("'number.smallest_of_four'"), 'Migration must seed the smallest-of-four template.');
 assert(migration.includes("'number.largest_of_four'"), 'Migration must seed the largest-of-four template.');
@@ -41,6 +46,7 @@ assert(migration.includes("'number.compose_from_places'"), 'Migration must seed 
 assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must seed the expanded-form template.');
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
 assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
+assert(migration.includes("'number.match_number_words'"), 'Migration must seed the number-word matching template.');
 assert(migration.includes('CREATE TABLE IF NOT EXISTS public.question_templates'), 'Migration must create template storage.');
 assert(migration.includes('templates_write_teacher'), 'Only teachers may modify templates in Supabase.');
 

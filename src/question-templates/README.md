@@ -13,6 +13,7 @@ question-templates/
         ├── missing-expanded-addend.js
         ├── neighbor-numbers.js
         ├── compare-number-forms.js
+        ├── match-number-words.js
         └── index.js
 ```
 
@@ -66,3 +67,10 @@ Hãy lập số từ các hàng sau: {place_values}.<br>
 The expanded-form template provides `{number}` and `{expression}`; the neighbor template
 provides `{number}` and `{neighbor_line}`; and the comparison template provides `{left}`,
 `{right_expanded}`, and `{comparison}`.
+
+## Đối chiếu số với cách đọc
+
+`number.match_number_words` tạo câu **Đối chiếu trùng khớp**. Admin có thể chọn `shapes`
+(ví dụ `5:4`, `4:5`, `4:3`), `digits` (ví dụ `7, 8, 9`), cách phân bố và `digitWeights`
+(ví dụ `7:20, 8:30, 9:50`). Các quy tắc đọc như “linh”, “mốt”, “tư”, “lăm” chỉ là quy
+chuẩn cách đọc, không phải thước đo độ khó.
