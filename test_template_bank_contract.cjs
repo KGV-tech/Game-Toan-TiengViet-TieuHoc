@@ -18,6 +18,9 @@ assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must
 assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
 assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
 assert(source.includes('place_values'), 'Template editor must document the generated place-value wording variable.');
+assert(source.includes('normalizeFillAnswer'), 'Fill-in answers must normalize textbook number spacing before grading.');
+assert(source.includes('template-fill-layout'), 'Dynamic fill-in templates must use a multi-row layout.');
+assert(source.includes('comparison-expression'), 'Comparison templates must render operands in separate, readable positions.');
 assert(source.includes('template-editor__checks--places'), 'Place values must use a dedicated grouped grid layout.');
 assert(source.includes('allowedPlaces'), 'Template editor must support multiple place-value selections.');
 assert(source.includes('allowedDigits'), 'Template editor must support multiple digit selections.');

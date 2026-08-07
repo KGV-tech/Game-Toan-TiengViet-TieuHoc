@@ -1370,6 +1370,11 @@ const app = {
             if (ansString.includes('|')) return ansString.split('|').map(s => s.trim());
             return [ansString.trim()];
         },
+        normalizeFillAnswer(value) {
+            const normalized = String(value ?? '').trim().replace(/\s+/g, ' ');
+            const compactNumber = normalized.replace(/\s/g, '');
+            return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
+        },
         loadQuestion() {
             if (this.skills) this.skills.state.shieldActive = false;
             
@@ -1387,7 +1392,9 @@ const app = {
 
             let qHtml = app.data.formatMathText(q.q);
             if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-            document.getElementById('game-question-container').innerHTML = qHtml;
+            const questionContainer = document.getElementById('game-question-container');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison');
+            questionContainer.innerHTML = qHtml;
 
             const optContainer = document.getElementById('game-options-container');
             optContainer.innerHTML = '';
@@ -1451,10 +1458,12 @@ const app = {
                 });
             } else if (qType === 'So sánh') {
                 optContainer.className = '';
-                const questionContainer = document.getElementById('game-question-container');
                 let slot;
                 if (q.q.includes('___')) {
-                    questionContainer.innerHTML = app.data.formatMathText(q.q).replace('___', '<span class="compare-slot">?</span>');
+                    const [instruction, expression = ''] = app.data.formatMathText(q.q).split(/<br\s*\/?\s*>/i);
+                    const [left, right = ''] = (expression || instruction).split('___');
+                    questionContainer.classList.add('question-box--template', 'question-box--comparison');
+                    questionContainer.innerHTML = `<div class="template-question-copy">${expression ? instruction : ''}</div><div class="comparison-expression"><span class="comparison-expression__side">${left}</span><span class="compare-slot">?</span><span class="comparison-expression__side">${right}</span></div>`;
                     slot = questionContainer.querySelector('.compare-slot');
                 } else {
                     const slotWrapper = document.createElement('div');
@@ -1696,20 +1705,24 @@ const app = {
                 let inputs = [];
 
                 if (parts.length > 1) {
-                    let html = '';
+                    const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
+                    let html = '<div class="template-fill-layout"><div class="template-fill-row">';
                     for (let i = 0; i < parts.length; i++) {
-                        html += parts[i];
+                        html += toRows(parts[i]);
                         if (i < parts.length - 1) {
-                            html += `<input type="text" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
+                            html += `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
                         }
                     }
+                    html += '</div></div>';
                     if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                    document.getElementById('game-question-container').innerHTML = html;
+                    questionContainer.classList.add('question-box--template', 'question-box--fill');
+                    questionContainer.innerHTML = html;
 
                     for (let i = 0; i < parts.length - 1; i++) {
                         const input = document.getElementById(`fill-input-${i}`);
                         inputs.push(input);
                         input.oninput = () => {
+                            if (q.templateId?.startsWith('number.')) input.value = app.data.formatMathNumber(input.value);
                             const allFilled = inputs.every(inp => inp.value.trim() !== '');
                             this.state.selectedAns = inputs.map(inp => inp.value.trim()).join(', ');
                             btnCheck.disabled = !allFilled;
@@ -1945,13 +1958,13 @@ const app = {
             if (qType === 'Điền khuyết') {
                 const ansArr = this.getAnsArr(q.ans);
                 const selectedArr = this.getAnsArr(this.state.selectedAns);
-                isCorrect = selectedArr.every((val, i) => val.replace(/\s+/g, ' ').trim().toLowerCase() === (ansArr[i] || '').toString().replace(/\s+/g, ' ').trim().toLowerCase());
+                isCorrect = selectedArr.length === ansArr.length && selectedArr.every((val, i) => this.normalizeFillAnswer(val) === this.normalizeFillAnswer(ansArr[i]));
                 const parts = (q.q || '').split(/\.\.\.|___/);
                 if (parts.length > 1) {
                     for (let i = 0; i < parts.length - 1; i++) {
                         const inp = document.getElementById(`fill-input-${i}`);
                         if (inp) {
-                            if ((inp.value.replace(/\s+/g, ' ').trim().toLowerCase()) === (ansArr[i] || '').toString().replace(/\s+/g, ' ').trim().toLowerCase()) {
+                            if (this.normalizeFillAnswer(inp.value) === this.normalizeFillAnswer(ansArr[i])) {
                                 inp.classList.add('correct');
                             } else {
                                 inp.classList.add('wrong');
