@@ -48,3 +48,21 @@ The four Grade 4 Math templates below use `minimum` and `maximum` only. Their da
 - `number.missing_expanded_addend` — fill a missing addend in expanded form.
 - `number.neighbor_numbers` — fill the preceding and following numbers.
 - `number.compare_number_forms` — choose `>`, `<`, or `=` between a number and an expanded form.
+
+## Prompt variables for administrators
+
+In **Kho Template**, click a variable chip to insert it at the cursor in the prompt.
+`{question}` always retains the generator's complete default question. Each template also
+offers only the variables that are safe for that question type; unsupported variable names
+are rejected when saving.
+
+For example, the compose-number template can use:
+
+```text
+Hãy lập số từ các hàng sau: {place_values}.<br>
+Đáp án của em: {blank}
+```
+
+The expanded-form template provides `{number}` and `{expression}`; the neighbor template
+provides `{number}` and `{neighbor_line}`; and the comparison template provides `{left}`,
+`{right_expanded}`, and `{comparison}`.

@@ -10,14 +10,15 @@ function generateNeighborNumbers(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 10000;
     const maximum = config.maximum ?? 99999;
     const value = randomNumberMatching(minimum, maximum, number => number > minimum && number < maximum, random);
-    const prompt = `Điền số liền trước và số liền sau của ${formatNumber(value)}:<br>___ ; ${formatNumber(value)} ; ___`;
+    const neighborLine = `___ ; ${formatNumber(value)} ; ___`;
+    const prompt = `Điền số liền trước và số liền sau của ${formatNumber(value)}:<br>${neighborLine}`;
 
     return createFillBlankQuestion(
         'number.neighbor_numbers',
         prompt,
         [value - 1, value + 1],
         `Số liền trước ${formatNumber(value)} là ${formatNumber(value - 1)}; số liền sau là ${formatNumber(value + 1)}.`,
-        { question: prompt, number: value }
+        { question: prompt, number: formatNumber(value), neighbor_line: neighborLine, blank: '___' }
     );
 }
 

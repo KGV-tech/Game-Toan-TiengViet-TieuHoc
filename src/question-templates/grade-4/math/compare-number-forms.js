@@ -14,14 +14,15 @@ function generateCompareNumberForms(config = {}, random = Math.random) {
     const right = mode === 0 ? left : randomNumberMatching(minimum, maximum, number => mode === 1 ? number > left : number < left, random);
     const answer = left === right ? '=' : (left > right ? '>' : '<');
     const rightExpanded = expandedTerms(right).map(formatNumber).join(' + ');
-    const prompt = `Điền dấu thích hợp:<br>${formatNumber(left)} ___ ${rightExpanded}`;
+    const comparison = `${formatNumber(left)} ___ ${rightExpanded}`;
+    const prompt = `Điền dấu thích hợp:<br>${comparison}`;
 
     return createComparisonQuestion(
         'number.compare_number_forms',
         prompt,
         answer,
         `${formatNumber(left)} ${answer} ${formatNumber(right)}.`,
-        { question: prompt, left, right }
+        { question: prompt, left: formatNumber(left), right_expanded: rightExpanded, comparison, blank: '___', right }
     );
 }
 

@@ -22,7 +22,7 @@ function generateMissingExpandedAddend(config = {}, random = Math.random) {
         prompt,
         missingValue,
         `Số ${formatNumber(value)} được phân tích thành ${expanded}.`,
-        { question: prompt, number: value, expanded }
+        { question: prompt, number: formatNumber(value), expression: displayedTerms.join(' + '), blank: '___', expanded }
     );
 }
 

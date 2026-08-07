@@ -20,7 +20,7 @@ function formatNumber(value) {
     return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-function createQuestion(templateId, prompt, values, correctValue, explanation) {
+function createQuestion(templateId, prompt, values, correctValue, explanation, templateVariables = {}) {
     return {
         classlevel: 'Lớp 4',
         subject: 'Toán',
@@ -31,7 +31,8 @@ function createQuestion(templateId, prompt, values, correctValue, explanation) {
         q: prompt,
         options: values.map(formatNumber),
         ans: formatNumber(correctValue),
-        explanation
+        explanation,
+        templateVariables
     };
 }
 
