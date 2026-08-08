@@ -79,6 +79,11 @@ assert.equal(placeValueTrueFalse.type, 'Đúng/Sai');
 assert.equal(placeValueTrueFalse.statements.length, 4, 'The place-value true/false template must generate four statements.');
 assert.deepEqual(placeValueTrueFalse.statements.map(item => item.label), ['A', 'B', 'C', 'D']);
 assert(placeValueTrueFalse.statements.every(item => ['Đúng', 'Sai'].includes(item.answer)), 'Each statement must have a true/false answer.');
+const trueFalseDigits = placeValueTrueFalse.q.replace(/\D/g, '');
+assert.equal(new Set(trueFalseDigits).size, trueFalseDigits.length, 'True/false numbers must not repeat a digit, so each stated digit has one unambiguous location.');
+assert(placeValueTrueFalse.statements.every(item => trueFalseDigits.includes(item.text.match(/Chữ số (\d)/)[1])), 'Every stated digit must appear in the generated number.');
+assert.deepEqual(placeValueTrueFalse.statements.map(item => item.kind), ['class', 'place', 'class', 'place'], 'The default true/false template must mix class and place statements.');
+assert.match(placeValueTrueFalse.templateVariables.statements, /<br>/, 'The true/false template must expose its generated statements to administrators.');
 assert.match(placeValueTrueFalse.q, /^Số /, 'The number must be the first line of the true/false template.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 

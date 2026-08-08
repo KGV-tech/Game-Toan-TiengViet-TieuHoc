@@ -146,6 +146,8 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
   await expect(page.locator('#template-safe-password-condition1-classes')).toContainText('Lớp tỷ');
   await expect(page.locator('#template-safe-password-condition1-places')).toContainText('Triệu');
   await expect(page.locator('#template-safe-password-condition2-places')).toContainText('Trăm nghìn');
+  await expect(page.locator('#template-variables')).toContainText('{condition1}');
+  await expect(page.locator('#template-variables')).toContainText('{condition2}');
   await captureUiReview(page, testInfo, 'safe-password-template-config.png');
 });
 
