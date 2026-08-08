@@ -8,6 +8,12 @@ Chạy test browser:
 npm run test:browser
 ```
 
+Sau mỗi lần chạy, tải hai ảnh này lên Kimi để review giao diện:
+
+- `test-results/ui-review/login-desktop.png`
+- `test-results/ui-review/login-mobile-landscape.png`
+- `test-results/ui-review/login-mobile-portrait-rotate.png` (màn hình nhắc xoay ngang là hành vi dự kiến)
+
 ## Trước khi chạy
 
 1. Xác định URL ứng dụng đang chạy (local hoặc preview).
