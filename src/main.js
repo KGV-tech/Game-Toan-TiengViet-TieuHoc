@@ -3254,6 +3254,7 @@ const app = {
                 this.switchTab('templates');
                 return;
             }
+            document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
             const config = existing?.config || {};
             const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
             const selectedQuestionType = isMatching ? 'Đối chiếu trùng khớp' : (existing?.question_type || 'Trắc nghiệm');

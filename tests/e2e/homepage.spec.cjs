@@ -141,6 +141,7 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
   });
 
   await expect(page.locator('.template-editor__rule--safe-password-class-controls')).toBeVisible();
+  await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
   await expect(page.locator('.template-editor__rule--safe-password-controls')).toBeVisible();
   await expect(page.locator('#template-safe-password-condition1-classes')).toContainText('Lớp tỷ');
   await expect(page.locator('#template-safe-password-condition1-places')).toContainText('Triệu');
