@@ -112,7 +112,7 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   await expect(page.locator('.question-box--safe-password')).toBeVisible();
   await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password-3d-v3.png');
   await expect(page.locator('.safe-password-code')).toHaveCount(0);
-  await expect(page.locator('#game-question-container')).toContainText('mật khẩu có 9 chữ số');
+  await expect(page.locator('#game-question-container')).not.toContainText(/mật khẩu có \d+ chữ số/);
   await expect(page.locator('#game-options-container .ans-btn')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'safe-password-desktop.png');
   const correctAnswer = await page.evaluate(() => app.game.state.questions[0].ans);
@@ -133,7 +133,7 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
     app.data.questionTemplates = [{
       id: 'safe-password-demo', name: 'Mật khẩu két sắt theo hàng', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
       topic: '3. Số có nhiều chữ số', question_type: 'Trắc nghiệm', generator_key: 'number.safe_password_by_place_value',
-      prompt_template: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.',
+      prompt_template: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>{condition1} và {condition2}.',
       config: { minimum: 0, maximum: 999999999, minimumCodeLength: 9, maximumCodeLength: 9, condition1Scope: 'random', condition1Classes: ['millionsClass'], condition1Places: ['millions'], condition1Digits: [0], condition2Places: ['hundredThousands'], condition2Digits: [3] }
     }];
     app.admin.renderTemplateForm(0);
@@ -168,10 +168,39 @@ test('Kho Template: Đúng/Sai hiện cấu hình lớp, hàng và biến nhận
 
   await expect(page.locator('.template-editor__rule--true-false-controls')).toBeVisible();
   await expect(page.locator('#template-true-false-kinds')).toBeVisible();
-  await expect.poll(() => page.locator('#template-true-false-kinds').evaluate(select => [...select.selectedOptions].map(option => option.value))).toEqual(['class', 'place']);
+  await expect(page.locator('#template-true-false-kinds')).toContainText('Nhận định về lớp');
+  await expect(page.locator('#template-true-false-kinds')).toContainText('Nhận định về hàng');
+  await expect(page.locator('#template-true-false-kinds input[value="class"]')).toBeChecked();
+  await expect(page.locator('#template-true-false-kinds input[value="place"]')).toBeChecked();
   await expect(page.locator('#template-variables')).toContainText('{number}');
   await expect(page.locator('#template-variables')).toContainText('{statements}');
   await captureUiReview(page, testInfo, 'true-false-template-config.png');
+});
+
+test('đối chiếu số và cách đọc có hai cột cân bằng', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = {
+      type: 'Đối chiếu trùng khớp', q: 'Hãy nối mỗi số với cách đọc đúng.',
+      options: ['11 985 233, 300 675 904, 8 199 209, 76 597 957', 'Mười một triệu chín trăm tám mươi lăm nghìn hai trăm ba mươi ba, Ba trăm triệu sáu trăm bảy mươi lăm nghìn chín trăm linh bốn, Tám triệu một trăm chín mươi chín nghìn hai trăm linh chín, Bảy mươi sáu triệu năm trăm chín mươi bảy nghìn chín trăm năm mươi bảy'],
+      ans: '', classlevel: 'Lớp 4', subject: 'Toán'
+    };
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  const [left, right] = await Promise.all([
+    page.locator('.matching-col.left-col').boundingBox(),
+    page.locator('.matching-col.right-col').boundingBox()
+  ]);
+  expect(Math.abs(left.width - right.width)).toBeLessThanOrEqual(2);
+  await captureUiReview(page, testInfo, 'matching-balanced-columns.png');
 });
 
 test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạng thái rõ ràng', async ({ page }) => {

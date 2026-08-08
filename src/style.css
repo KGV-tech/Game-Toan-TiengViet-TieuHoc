@@ -331,6 +331,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-editor__rule p { min-height: 2.2em; margin: 0 0 10px; color: #94a3b8; font-size: .8rem; line-height: 1.35; }
 .template-editor__rule--matching-controls { grid-column: 1 / -1; }
 .template-editor__rule--true-false-controls { grid-column: 1 / -1; }
+.template-editor__checks--true-false { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+.template-editor__checks--true-false .template-editor__check { min-height: 52px; align-items: flex-start; line-height: 1.35; }
+.template-editor__rule-note { min-height: 0 !important; margin-top: 10px !important; color: #cbd5e1 !important; }
 .template-editor__rule--matching-controls .template-editor__fields { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .template-editor__rule--safe-password-controls { grid-column: 1 / -1; order: 2; }
 .template-editor__rule--safe-password-class-controls { grid-column: 1 / -1; order: 1; }
@@ -941,9 +944,9 @@ input[type="text"], input[type="password"], select, textarea {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: minmax(150px, 30%) minmax(0, 58%);
-    justify-content: space-between;
-    column-gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: center;
+    column-gap: clamp(42px, 8vw, 112px);
     width: 100%;
 }
 .matching-col {
