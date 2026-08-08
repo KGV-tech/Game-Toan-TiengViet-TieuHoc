@@ -3,10 +3,16 @@ const childProcess = require('node:child_process');
 const fs = require('node:fs');
 
 const legacyRls = fs.readFileSync('supabase_rls.sql', 'utf8');
+assert.match(legacyRls, /DEPRECATED/i, 'The legacy RLS file must be clearly marked as deprecated.');
 assert.match(
   legacyRls,
-  /RAISE EXCEPTION 'DEPRECATED: do not run supabase_rls\.sql'/,
-  'The legacy permissive RLS script must fail before it can change database policies.'
+  /supabase_auth_security\.sql/,
+  'The legacy RLS file must direct operators to the Auth-enabled migration.'
+);
+assert.doesNotMatch(
+  legacyRls,
+  /\b(?:ALTER\s+TABLE|CREATE\s+POLICY)\b/i,
+  'The deprecated RLS file must not retain executable policy or table statements.'
 );
 
 const legacyPatchScripts = [
