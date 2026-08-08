@@ -76,7 +76,7 @@ SELECT
     'Mật khẩu két sắt theo hàng', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
     'Trắc nghiệm', 'number.safe_password_by_place_value',
     '{question}',
-    '{"minimumCodeLength":9,"maximumCodeLength":9}'::jsonb
+    '{"minimumCodeLength":9,"maximumCodeLength":9,"condition1Places":["ones","tens","hundreds","thousands","tenThousands","hundredThousands","millions","tenMillions","hundredMillions"],"condition1Digits":[0],"condition2Places":["ones","tens","hundreds","thousands","tenThousands","hundredThousands","millions","tenMillions","hundredMillions"],"condition2Digits":[3]}'::jsonb
 WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.safe_password_by_place_value'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'

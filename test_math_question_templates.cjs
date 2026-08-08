@@ -90,11 +90,13 @@ assert.doesNotMatch(safePassword.q, /Chọn câu trả lời đúng/i, 'The safe
 assert.equal(safePassword.codeLength, 9);
 assert.equal(String(safePassword.passwordCode).length, 9, 'A nine-cell safe must display all nine password digits.');
 assert.match(safePassword.q, /mật khẩu có 9 chữ số/i, 'The question must state how many digits the password contains.');
+const safePlaceValues = { ones: 1, tens: 10, hundreds: 100, thousands: 1000, tenThousands: 10000, hundredThousands: 100000, millions: 1000000, tenMillions: 10000000, hundredMillions: 100000000 };
+const safeConditionDigit = condition => Number(condition.match(/khác (\d)/)[1]);
 assert.equal(safePassword.options.filter(option => {
     const value = numericValue(option);
-    const millionClassHasNoZero = [1000000, 10000000, 100000000].every(place => Math.floor(value / place) % 10 !== 0);
-    return millionClassHasNoZero && Math.floor(value / 100000) % 10 !== 3;
-}).length, 1, 'Only one safe-password option may satisfy both place-value rules.');
+    return Math.floor(value / safePlaceValues[safePassword.templateVariables.condition1Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition1)
+        && Math.floor(value / safePlaceValues[safePassword.templateVariables.condition2Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition2);
+}).length, 1, 'Only one safe-password option may satisfy both generated conditions.');
 assert.equal(numericValue(safePassword.ans), numericValue(safePassword.options.find(option => numericValue(option) === numericValue(safePassword.ans))));
 
 for (const codeLength of [2, 3, 6, 9]) {
@@ -105,6 +107,19 @@ for (const codeLength of [2, 3, 6, 9]) {
 }
 const variableLengthPassword = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: 2, maximumCodeLength: 9 }, seededRandom(99));
 assert(variableLengthPassword.codeLength >= 2 && variableLengthPassword.codeLength <= 9, 'The generated password-cell count must stay within the configured range.');
+
+const configurableSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimumCodeLength: 9,
+    maximumCodeLength: 9,
+    condition1Places: ['millions', 'hundredMillions'],
+    condition1Digits: [0, 4],
+    condition2Places: ['tenThousands', 'hundredThousands'],
+    condition2Digits: [3, 7]
+}, seededRandom(100));
+assert.match(configurableSafePassword.templateVariables.condition1, /hàng (triệu|trăm triệu) khác (0|4)/, 'Condition 1 must use an administrator-selected place and digit.');
+assert.match(configurableSafePassword.templateVariables.condition2, /hàng (chục nghìn|trăm nghìn) khác (3|7)/, 'Condition 2 must use an administrator-selected place and digit.');
+assert.match(configurableSafePassword.q, /mật khẩu có 9 chữ số/, 'The readable prompt must include dynamic password length.');
+assert.notEqual(configurableSafePassword.templateVariables.condition1Place, configurableSafePassword.templateVariables.condition2Place, 'The two generated conditions must use different places whenever configuration permits it.');
 
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');

@@ -42,6 +42,10 @@ assert(css.includes('question-box--safe-password'), 'Safe-password questions mus
 assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
 assert(source.includes('template-safe-password-min-length'), 'Safe-password templates must let administrators choose the minimum number of password cells.');
 assert(source.includes('template-safe-password-max-length'), 'Safe-password templates must let administrators choose the maximum number of password cells.');
+assert(source.includes('template-safe-password-condition1-places'), 'Safe-password templates must expose configurable places for condition 1.');
+assert(source.includes('template-safe-password-condition2-places'), 'Safe-password templates must expose configurable places for condition 2.');
+assert(source.includes('template-safe-password-condition1-digits'), 'Safe-password templates must expose configurable digits for condition 1.');
+assert(source.includes('template-safe-password-condition2-digits'), 'Safe-password templates must expose configurable digits for condition 2.');
 assert(!source.includes('renderSafePasswordCells'), 'Safe-password questions must not overlay SVG password cells on the safe image.');
 assert(migration.includes("'number.safe_password_by_place_value'"), 'Migration must seed the safe-password template.');
 assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');
