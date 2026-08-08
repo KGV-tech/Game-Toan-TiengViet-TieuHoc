@@ -1,6 +1,12 @@
 # Checklist Playwright cho game
 
-> Trạng thái hiện tại: Playwright chưa được cấu hình trong repo. Chỉ dùng checklist này sau khi Codex cài đặt và xác minh Playwright ở một thay đổi riêng.
+> Trạng thái hiện tại: Playwright 1.62.1 và Chromium headless đã được cấu hình. Test đầu tiên nằm tại `tests/e2e/homepage.spec.cjs` và dùng server tĩnh cục bộ, không gọi Supabase thật.
+
+Chạy test browser:
+
+```powershell
+npm run test:browser
+```
 
 ## Trước khi chạy
 

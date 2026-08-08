@@ -1,0 +1,29 @@
+{
+  "name": "game-lop5",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "npm run test:contracts && npm run test:browser",
+    "test:contracts": "node scripts/run-contract-tests.cjs",
+    "test:browser": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KGV-tech/Game-Toan-TiengViet-TieuHoc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KGV-tech/Game-Toan-TiengViet-TieuHoc/issues"
+  },
+  "homepage": "https://github.com/KGV-tech/Game-Toan-TiengViet-TieuHoc#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

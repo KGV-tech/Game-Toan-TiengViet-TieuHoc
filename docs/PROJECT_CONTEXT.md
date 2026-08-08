@@ -25,7 +25,8 @@
 ## Trạng thái kiểm thử
 
 - Hiện có kiểm thử Node.js (`test_*.cjs`) cho bảo mật, giao diện, câu hỏi, đề thi, học sinh và dữ liệu thú cưng.
-- Chưa có Playwright được cấu hình trong repo. Vì vậy không được kết luận một thay đổi đã kiểm thử trên trình duyệt nếu chưa thực sự chạy Playwright hoặc kiểm tra thủ công.
+- Playwright đã được cấu hình với Chromium headless, một server tĩnh cục bộ và test đầu tiên cho màn hình đăng nhập. Chạy `npm run test:browser` hoặc `npm test` để chạy nó.
+- Test browser hiện không gọi Supabase thật; các luồng cần dữ liệu/tài khoản phải dùng dữ liệu thử nghiệm được phê duyệt riêng.
 
 ## Gói ngữ cảnh cho một yêu cầu
 

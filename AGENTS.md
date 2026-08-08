@@ -34,7 +34,13 @@ foreach ($test in $tests) {
 }
 ```
 
-Các kiểm thử này là kiểm thử hợp đồng/tĩnh. Chúng không thay thế kiểm thử trong trình duyệt.
+Chạy toàn bộ kiểm thử (hợp đồng Node và Playwright Chromium):
+
+```powershell
+npm test
+```
+
+Playwright dùng Chromium headless và server tĩnh cục bộ tại `127.0.0.1:4173`. Test browser không được gọi Supabase thật.
 
 ## Cách làm việc
 

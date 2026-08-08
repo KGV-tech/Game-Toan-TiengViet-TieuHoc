@@ -12,6 +12,10 @@ const dummyQuery = {
     upsert() { return this; },
     delete() { return this; }
 };
+const dummyChannel = {
+    on() { return this; },
+    subscribe() { return this; }
+};
 const dummySupabase = {
     from: () => dummyQuery,
     auth: {
@@ -20,9 +24,7 @@ const dummySupabase = {
         signOut: async () => ({ error: null })
     },
     functions: { invoke: async () => ({ data: null, error: { message: 'Offline' } }) },
-    channel: () => ({
-        on: () => ({ subscribe: () => { } })
-    })
+    channel: () => dummyChannel
 };
 
 let supabaseClient = dummySupabase;
