@@ -39,6 +39,10 @@ assert(source.includes('number.match_number_words'), 'The Template Bank must exp
 assert(source.includes('number.place_value_true_false'), 'The Template Bank must expose the place-value true/false generator.');
 assert(source.includes('number.safe_password_by_place_value'), 'The Template Bank must expose the safe-password generator.');
 assert(css.includes('question-box--safe-password'), 'Safe-password questions must have a dedicated image layout.');
+assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
+assert(source.includes('template-safe-password-min-length'), 'Safe-password templates must let administrators choose the minimum number of password cells.');
+assert(source.includes('template-safe-password-max-length'), 'Safe-password templates must let administrators choose the maximum number of password cells.');
+assert(!source.includes('renderSafePasswordCells'), 'Safe-password questions must not overlay SVG password cells on the safe image.');
 assert(migration.includes("'number.safe_password_by_place_value'"), 'Migration must seed the safe-password template.');
 assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');
 assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');

@@ -53,9 +53,11 @@ The four Grade 4 Math templates below use `minimum` and `maximum` only. Their da
 
 ## Mật khẩu két sắt
 
-`number.safe_password_by_place_value` tạo câu trắc nghiệm kèm ảnh két sắt. Game sinh bốn số có
-chín chữ số; chỉ một số không chứa chữ số `0` ở lớp triệu và có chữ số hàng trăm nghìn khác `3`.
-Ảnh chỉ được lưu một lần tại `src/assets/safe-password.svg`, không lặp lại trong dữ liệu câu hỏi.
+`number.safe_password_by_place_value` tạo câu trắc nghiệm kèm ảnh két sắt 3D. Cấu hình
+`minimumCodeLength` và `maximumCodeLength` nhận từ `2` đến `9`; game nêu số chữ số mật khẩu
+ngay trong câu hỏi và sinh số đúng bằng độ dài đã bốc. Với 9 chữ số, điều kiện là không có chữ số
+`0` ở lớp triệu và chữ số hàng trăm nghìn khác `3`; các độ dài nhỏ hơn tự chuyển sang các hàng phù hợp. Ảnh nền
+chỉ được lưu một lần tại `src/assets/safe-password-3d-v3.png`, không lặp lại trong dữ liệu câu hỏi.
 
 ## Prompt variables for administrators
 

@@ -110,9 +110,17 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   });
 
   await expect(page.locator('.question-box--safe-password')).toBeVisible();
-  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password.svg');
+  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password-3d-v3.png');
+  await expect(page.locator('.safe-password-code')).toHaveCount(0);
+  await expect(page.locator('#game-question-container')).toContainText('mật khẩu có 9 chữ số');
   await expect(page.locator('#game-options-container .ans-btn')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'safe-password-desktop.png');
+  const correctAnswer = await page.evaluate(() => app.game.state.questions[0].ans);
+  await page.locator('#game-options-container .ans-btn', { hasText: correctAnswer }).click();
+  await page.locator('#submit-ans-btn').click();
+  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password-open-v1.png');
+  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('alt', 'Két sắt đã mở');
+  await captureUiReview(page, testInfo, 'safe-password-opened-desktop.png');
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
@@ -122,6 +130,7 @@ test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạn
   await openOfflineHomepage(page);
 
   await expect(page.locator('.station-artwork .station-label').first()).toHaveCSS('animation-name', 'map-station-beacon');
+  await expect(page.locator('.station-guide .station-img')).toHaveCSS('filter', 'none');
   await page.evaluate(() => {
     const multi = document.querySelector('input[name="topicMode"][value="multi"]');
     multi.checked = true;

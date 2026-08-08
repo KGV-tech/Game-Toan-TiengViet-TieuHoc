@@ -1404,7 +1404,7 @@ const app = {
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
-                questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div><img class="safe-password-illustration" src="./src/assets/safe-password.svg" alt="Hình minh hoạ két sắt">`;
+                questionContainer.innerHTML = `<div class="safe-password-visual"><img class="safe-password-illustration" src="./src/assets/safe-password-3d-v3.png" alt="Hình minh họa két sắt"></div><div class="safe-password-copy">${qHtml}</div>`;
             } else {
                 if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
                 questionContainer.innerHTML = qHtml;
@@ -2286,6 +2286,15 @@ const app = {
                             });
                         }
                     }, 1000);
+                }
+            }
+
+            if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
+                const safeImage = document.querySelector('.safe-password-illustration');
+                if (safeImage) {
+                    safeImage.src = './src/assets/safe-password-open-v1.png';
+                    safeImage.alt = 'Két sắt đã mở';
+                    safeImage.classList.add('safe-password-illustration--opened');
                 }
             }
 
@@ -3252,6 +3261,8 @@ const app = {
             const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
             const matchingDigits = (config.digits || [7, 8, 9]).join(', ');
             const matchingWeights = config.digitWeights ? Object.entries(config.digitWeights).map(([digit, weight]) => `${digit}:${weight}`).join(', ') : '';
+            const safePasswordMinLength = Math.max(2, Math.min(9, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
+            const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(9, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
             const checkbox = (value, label, selected, group) => `<label class="template-editor__check"><input class="template-checkbox" data-template-group="${group}" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
@@ -3275,6 +3286,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--matching-controls"><h5>Cấu hình đối chiếu số – chữ</h5><div class="template-editor__fields"><label class="template-editor__field"><span>Dạng ghép</span><input id="template-match-shapes" class="form-input" value="${app.data.sanitizeHTML(matchingShapes)}" placeholder="5:4, 4:5"></label><label class="template-editor__field"><span>Độ dài số</span><input id="template-match-digits" class="form-input" value="${app.data.sanitizeHTML(matchingDigits)}" placeholder="7, 8, 9"></label><label class="template-editor__field"><span>Phân bố</span><select id="template-match-strategy" class="form-input">${['balanced','random','cycle'].map(item => `<option value="${item}" ${(config.digitStrategy || 'balanced') === item ? 'selected' : ''}>${item}</option>`).join('')}</select></label><label class="template-editor__field"><span>Tỷ lệ sinh số (tùy chọn)</span><input id="template-match-weights" class="form-input" value="${app.data.sanitizeHTML(matchingWeights)}" placeholder="7:20, 8:30, 9:50"></label><label class="template-editor__field"><span>Từ tiền tố chung</span><input id="template-match-prefix" class="form-input" type="number" min="0" value="${Number(config.prefixWords || 0)}"></label><label class="template-editor__field"><span>Seed (tùy chọn)</span><input id="template-match-seed" class="form-input" type="number" value="${config.seed ?? ''}"></label></div></div>
+                <div class="template-editor__rule template-editor__rule--safe-password-controls"><h5>Độ dài mật khẩu</h5><p>Game nêu số chữ số ngay trong câu hỏi; két sắt chỉ là ảnh minh họa. Mỗi lượt, độ dài được bốc trong khoảng khai báo.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số chữ số ít nhất</span><input id="template-safe-password-min-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMinLength}"></label><label class="template-editor__field"><span>Số chữ số nhiều nhất</span><input id="template-safe-password-max-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMaxLength}"></label></div></div>
               </div></div>
               <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
             </section>`;
@@ -3339,9 +3351,9 @@ const app = {
                     variables: [['{question}', 'dòng tiêu đề do game sinh'], ['{number}', 'số nhiều chữ số đã sinh']]
                 },
                 'number.safe_password_by_place_value': {
-                    guide: 'Game sinh bốn số có chín chữ số và chỉ một số thỏa hai quy tắc mở két sắt. Ảnh két sắt được hiển thị cố định trong câu hỏi.',
+                    guide: 'Game sinh bốn số có độ dài đúng bằng số chữ số mật khẩu đã bốc (từ 2 đến 9); chỉ một số thỏa hai quy tắc mở két sắt. Ảnh két sắt được hiển thị cố định để minh họa.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động, hoặc ghép các điều kiện bằng <code>{condition1}</code> và <code>{condition2}</code>.',
-                    example: 'Ví dụ: Chọn mật khẩu không có chữ số 0 ở lớp triệu và có chữ số hàng trăm nghìn khác 3.',
+                    example: 'Ví dụ: Mật khẩu có từ 2 đến 9 chữ số, theo khoảng admin đã khai báo.',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'toàn bộ câu do game sinh'], ['{condition1}', 'quy tắc về lớp triệu'], ['{condition2}', 'quy tắc về hàng trăm nghìn']]
                 },
@@ -3367,8 +3379,9 @@ const app = {
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words'; });
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || generator === 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
+            document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
         },
         insertTemplateVariable(token) {
             const input = document.getElementById('template-prompt');
@@ -3384,7 +3397,12 @@ const app = {
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: { minimum: app.data.parseMathNumber(value('template-minimum')), maximum: app.data.parseMathNumber(value('template-maximum')), allowedPlaces, allowedDigits }, is_active: true };
+            const safePasswordMinLength = Math.max(2, Math.min(9, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
+            const safePasswordMaxLength = Math.max(2, Math.min(9, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
+            if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
+            const enteredMinimum = app.data.parseMathNumber(value('template-minimum'));
+            const enteredMaximum = app.data.parseMathNumber(value('template-maximum'));
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: { minimum: enteredMinimum, maximum: enteredMaximum, allowedPlaces, allowedDigits, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength }, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || []).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));

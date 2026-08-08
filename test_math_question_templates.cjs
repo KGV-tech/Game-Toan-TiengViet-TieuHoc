@@ -85,13 +85,26 @@ assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate th
 const safePassword = generateQuestion('number.safe_password_by_place_value', {}, seededRandom(11));
 assert.equal(safePassword.type, 'Trắc nghiệm');
 assert.equal(safePassword.options.length, 4);
-assert.equal(safePassword.imageUrl, './src/assets/safe-password.svg');
+assert.equal(safePassword.imageUrl, './src/assets/safe-password-3d-v3.png');
+assert.doesNotMatch(safePassword.q, /Chọn câu trả lời đúng/i, 'The safe-password prompt must avoid redundant text.');
+assert.equal(safePassword.codeLength, 9);
+assert.equal(String(safePassword.passwordCode).length, 9, 'A nine-cell safe must display all nine password digits.');
+assert.match(safePassword.q, /mật khẩu có 9 chữ số/i, 'The question must state how many digits the password contains.');
 assert.equal(safePassword.options.filter(option => {
     const value = numericValue(option);
     const millionClassHasNoZero = [1000000, 10000000, 100000000].every(place => Math.floor(value / place) % 10 !== 0);
     return millionClassHasNoZero && Math.floor(value / 100000) % 10 !== 3;
 }).length, 1, 'Only one safe-password option may satisfy both place-value rules.');
 assert.equal(numericValue(safePassword.ans), numericValue(safePassword.options.find(option => numericValue(option) === numericValue(safePassword.ans))));
+
+for (const codeLength of [2, 3, 6, 9]) {
+    const generated = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: codeLength, maximumCodeLength: codeLength }, seededRandom(codeLength));
+    assert.equal(generated.codeLength, codeLength, `The template must support ${codeLength} password cells.`);
+    assert.equal(String(generated.passwordCode).length, codeLength, `The displayed password must fill all ${codeLength} cells.`);
+    assert.match(generated.q, new RegExp(`mật khẩu có ${codeLength} chữ số`, 'i'));
+}
+const variableLengthPassword = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: 2, maximumCodeLength: 9 }, seededRandom(99));
+assert(variableLengthPassword.codeLength >= 2 && variableLengthPassword.codeLength <= 9, 'The generated password-cell count must stay within the configured range.');
 
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
