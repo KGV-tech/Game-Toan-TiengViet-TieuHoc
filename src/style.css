@@ -322,8 +322,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-editor__rule p { min-height: 2.2em; margin: 0 0 10px; color: #94a3b8; font-size: .8rem; line-height: 1.35; }
 .template-editor__rule--matching-controls { grid-column: 1 / -1; }
 .template-editor__rule--matching-controls .template-editor__fields { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-.template-editor__rule--safe-password-controls { grid-column: 1 / -1; }
-.template-editor__rule--safe-password-class-controls { grid-column: 1 / -1; }
+.template-editor__rule--safe-password-controls { grid-column: 1 / -1; order: 2; }
+.template-editor__rule--safe-password-class-controls { grid-column: 1 / -1; order: 1; }
 .template-editor__safe-conditions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
 .template-editor__safe-conditions fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid rgba(125, 211, 252, .28); border-radius: 9px; }
 .template-editor__safe-conditions legend { padding: 0 6px; color: #fef08a; font-size: .9rem; font-weight: 800; }
@@ -339,7 +339,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-editor__check:has(input:checked) { background: rgba(30, 88, 141, .65); box-shadow: inset 0 0 0 1px rgba(125, 211, 252, .6); color: #e0f2fe; }
 .template-editor__check input { accent-color: #38bdf8; }
 .template-editor__checks--digits .template-editor__check { min-width: 34px; justify-content: center; }
-.template-editor__actions { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; padding: 14px 0 2px; background: linear-gradient(to bottom, transparent, rgba(2, 6, 23, .96) 28%); }
+.template-editor__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; padding: 14px 0 2px; }
 .template-editor__actions button { min-width: 142px; min-height: 42px; padding: 8px 15px; font-size: .88rem; }
 
 @media (max-width: 1100px) {

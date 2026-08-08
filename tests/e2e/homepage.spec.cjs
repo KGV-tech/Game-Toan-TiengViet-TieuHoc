@@ -125,6 +125,29 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   expect(consoleErrors).toEqual([]);
 });
 
+test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'safe-password-demo', name: 'Mật khẩu két sắt theo hàng', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '3. Số có nhiều chữ số', question_type: 'Trắc nghiệm', generator_key: 'number.safe_password_by_place_value',
+      prompt_template: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.',
+      config: { minimum: 0, maximum: 999999999, minimumCodeLength: 9, maximumCodeLength: 9, condition1Scope: 'random', condition1Classes: ['millionsClass'], condition1Places: ['millions'], condition1Digits: [0], condition2Places: ['hundredThousands'], condition2Digits: [3] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--safe-password-class-controls')).toBeVisible();
+  await expect(page.locator('.template-editor__rule--safe-password-controls')).toBeVisible();
+  await expect(page.locator('#template-safe-password-condition1-classes')).toContainText('Lớp tỷ');
+  await expect(page.locator('#template-safe-password-condition1-places')).toContainText('Triệu');
+  await expect(page.locator('#template-safe-password-condition2-places')).toContainText('Trăm nghìn');
+  await captureUiReview(page, testInfo, 'safe-password-template-config.png');
+});
+
 test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạng thái rõ ràng', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
