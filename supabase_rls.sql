@@ -1,3 +1,12 @@
+-- DEPRECATED: This file contains pre-Auth policies that grant anonymous users broad access.
+-- It is intentionally blocked to prevent it from being run against any Supabase project.
+-- Use supabase_auth_security.sql after the Auth-enabled frontend has been deployed.
+DO $$
+BEGIN
+  RAISE EXCEPTION 'DEPRECATED: do not run supabase_rls.sql';
+END $$;
+
+-- Historical reference only. Statements below are unreachable because the block above aborts.
 -- Bật Row Level Security cho các bảng
 ALTER TABLE game_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_questions ENABLE ROW LEVEL SECURITY;
