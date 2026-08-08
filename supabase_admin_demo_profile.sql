@@ -1,6 +1,8 @@
 -- CẤU HÌNH TÀI KHOẢN ADMIN DÙNG ĐỂ KIỂM THỬ GIAO DIỆN
--- Chạy một lần trong Supabase SQL Editor của ĐÚNG dự án, sau supabase_auth_security.sql.
+-- Có thể chạy cả khi migration bảo mật chưa tạo cột avatar_key.
 -- Lệnh chỉ cập nhật các hồ sơ đã có role = admin; không tạo tài khoản Auth mới và không đụng đến học sinh.
+
+ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS avatar_key TEXT;
 
 UPDATE public.game_users
 SET
