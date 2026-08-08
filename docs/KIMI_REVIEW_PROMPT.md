@@ -20,6 +20,7 @@ Yêu cầu:
 3. Không đề xuất refactor lớn ngoài phạm vi.
 4. Kiểm tra correctness, security, khả năng test và tác động tới người dùng.
 5. Nếu không mở được tệp hoặc link, nói rõ trước khi kết luận.
+6. UI/UX ưu tiên laptop và tablet ngang. Không xếp vấn đề chỉ trên điện thoại thành lỗi bắt buộc, trừ khi nó ảnh hưởng laptop/tablet, an toàn, khả năng truy cập hoặc làm ứng dụng vỡ nghiêm trọng. Điện thoại dọc hiển thị hướng dẫn xoay ngang là hành vi dự kiến.
 
 Trả lời bằng tiếng Việt theo đúng mẫu:
 1. Đã xác nhận tốt

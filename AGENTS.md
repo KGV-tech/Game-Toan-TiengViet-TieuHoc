@@ -4,7 +4,8 @@
 
 1. Đọc `docs/PROJECT_CONTEXT.md` để hiểu cấu trúc game và các giới hạn an toàn.
 2. Đọc `docs/AI_WORKFLOW.md` để theo đúng vòng Codex → Kimi → Codex → Playwright.
-3. Chỉ mở các tệp liên quan trực tiếp đến yêu cầu hiện tại; không đoán khi chưa có bằng chứng.
+3. Đọc `docs/UX_DEVICE_POLICY.md` trước mọi thay đổi/review UI để ưu tiên đúng thiết bị.
+4. Chỉ mở các tệp liên quan trực tiếp đến yêu cầu hiện tại; không đoán khi chưa có bằng chứng.
 
 ## Công nghệ và tệp chính
 
@@ -41,6 +42,8 @@ npm test
 ```
 
 Playwright dùng Chromium headless và server tĩnh cục bộ tại `127.0.0.1:4173`. Test browser không được gọi Supabase thật.
+
+Mọi thay đổi UI ưu tiên laptop và tablet ngang theo `docs/UX_DEVICE_POLICY.md`; điện thoại không phải nền tảng gameplay mục tiêu.
 
 ## Cách làm việc
 

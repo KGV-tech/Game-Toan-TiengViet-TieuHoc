@@ -12,6 +12,7 @@
 ## Vòng làm việc cho mỗi thay đổi
 
 1. **Mô tả việc cần làm**: nêu mục tiêu, tiêu chí hoàn thành và giới hạn.
+   Với UI/UX, nêu rõ ưu tiên laptop/tablet theo `docs/UX_DEVICE_POLICY.md`; không tự mở rộng phạm vi sang tối ưu điện thoại.
 2. **Codex sửa phạm vi nhỏ**: đọc tệp liên quan, thêm test khi thay đổi hành vi, chạy test.
 3. **Codex push nhánh**: commit rõ mục đích; không tự merge nếu chưa có yêu cầu.
 4. **Kimi review**: dùng mẫu tại `docs/KIMI_REVIEW_PROMPT.md`, cung cấp URL commit cố định và diff/tệp liên quan.
@@ -25,6 +26,7 @@
 - Phân biệt rõ `Đã xác nhận`, `Cần kiểm tra thêm` và `Gợi ý`.
 - Không gọi kết quả là “đã test browser” khi mới chạy test Node.
 - Khi Kimi review nhầm phiên bản, dùng URL dạng `.../tree/<commit-sha>` và các URL `raw` của tệp cần review.
+- Finding chỉ liên quan điện thoại phải được ghi là ngoài phạm vi ưu tiên, không phải lỗi bắt buộc, trừ các ngoại lệ nêu trong `docs/UX_DEVICE_POLICY.md`.
 
 ## Tiêu chí hoàn thành
 

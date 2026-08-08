@@ -2,6 +2,8 @@
 
 > Trạng thái hiện tại: Playwright 1.62.1 và Chromium headless đã được cấu hình. Test đầu tiên nằm tại `tests/e2e/homepage.spec.cjs` và dùng server tĩnh cục bộ, không gọi Supabase thật.
 
+> Ưu tiên thiết bị: laptop/desktop và tablet ngang. Điện thoại không phải nền tảng gameplay mục tiêu; điện thoại dọc hiện hướng dẫn xoay ngang là hành vi dự kiến. Xem `docs/UX_DEVICE_POLICY.md`.
+
 Chạy test browser:
 
 ```powershell
@@ -28,7 +30,8 @@ Khi chạy `npm run test:browser`, Playwright còn tạo bộ ảnh audit `audit
 - Mở trang: không có lỗi console nghiêm trọng và không bị trắng trang.
 - Đăng ký/đăng nhập bằng dữ liệu thử nghiệm: hiển thị loading và thông báo lỗi rõ ràng.
 - Chọn khối/lớp, môn học và làm một câu hỏi: điểm, phản hồi đúng/sai và điều hướng hoạt động.
-- Kiểm tra một màn hình học sinh ở kích thước desktop và mobile.
+- Kiểm tra một màn hình học sinh ở kích thước laptop/desktop và tablet ngang.
+- Điện thoại chỉ kiểm tra theo chính sách thiết bị; không thêm yêu cầu tối ưu giao diện điện thoại nếu không có chỉ đạo mới.
 - Nếu thay đổi liên quan quản trị: kiểm tra quyền giáo viên và xác nhận học sinh không thấy chức năng quản trị.
 
 ## Bằng chứng cần lưu

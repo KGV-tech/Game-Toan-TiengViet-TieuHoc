@@ -28,6 +28,13 @@
 - Playwright đã được cấu hình với Chromium headless, một server tĩnh cục bộ và test đầu tiên cho màn hình đăng nhập. Chạy `npm run test:browser` hoặc `npm test` để chạy nó.
 - Test browser hiện không gọi Supabase thật; các luồng cần dữ liệu/tài khoản phải dùng dữ liệu thử nghiệm được phê duyệt riêng.
 
+## Ưu tiên thiết bị
+
+- Laptop/desktop và tablet ngang là nền tảng UI/UX chính.
+- Điện thoại không phải nền tảng gameplay mục tiêu; điện thoại dọc chủ động hiện hướng dẫn xoay ngang.
+- Không xếp đề xuất chỉ tối ưu điện thoại thành lỗi bắt buộc, trừ khi ảnh hưởng laptop/tablet, an toàn, khả năng truy cập hoặc làm ứng dụng vỡ nghiêm trọng.
+- Xem quy định và kích thước kiểm thử cụ thể tại `docs/UX_DEVICE_POLICY.md`.
+
 ## Gói ngữ cảnh cho một yêu cầu
 
 Khi giao việc cho Codex hoặc Kimi, luôn kèm:
