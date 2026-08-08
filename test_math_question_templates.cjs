@@ -82,6 +82,17 @@ assert(placeValueTrueFalse.statements.every(item => ['Đúng', 'Sai'].includes(i
 assert.match(placeValueTrueFalse.q, /^Số /, 'The number must be the first line of the true/false template.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 
+const safePassword = generateQuestion('number.safe_password_by_place_value', {}, seededRandom(11));
+assert.equal(safePassword.type, 'Trắc nghiệm');
+assert.equal(safePassword.options.length, 4);
+assert.equal(safePassword.imageUrl, './src/assets/safe-password.svg');
+assert.equal(safePassword.options.filter(option => {
+    const value = numericValue(option);
+    const millionClassHasNoZero = [1000000, 10000000, 100000000].every(place => Math.floor(value / place) % 10 !== 0);
+    return millionClassHasNoZero && Math.floor(value / 100000) % 10 !== 3;
+}).length, 1, 'Only one safe-password option may satisfy both place-value rules.');
+assert.equal(numericValue(safePassword.ans), numericValue(safePassword.options.find(option => numericValue(option) === numericValue(safePassword.ans))));
+
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
 assert.equal(matchingFiveFour.options[0].split(', ').length, 5);

@@ -36,7 +36,7 @@ function generatePlaceValueTrueFalse(config = {}, random = Math.random) {
     const prompt = `Số ${formatNumber(number)}`;
 
     return {
-        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '1. Số tự nhiên',
+        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
         type: 'Đúng/Sai', templateId: 'number.place_value_true_false', q: prompt, options: [],
         ans: statements.map(statement => statement.answer).join(', '), statements,
         explanation: `Xác định lớp của từng chữ số trong số ${formatNumber(number)} rồi chọn Đúng hoặc Sai.`,
