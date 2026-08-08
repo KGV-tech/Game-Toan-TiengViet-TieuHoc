@@ -78,21 +78,34 @@ const auditStates = [
   { name: 'exam-play', screenId: 'exam-play-screen' },
   { name: 'guide-modal', screenId: 'map-screen', modalId: 'guide-modal' },
   { name: 'result-modal', screenId: 'game-screen', gameViewId: 'game-play-view', modalId: 'result-modal' },
-  { name: 'treasure-modal', screenId: 'map-screen', modalId: 'treasure-modal' },
-  { name: 'quest-modal', screenId: 'map-screen', modalId: 'quest-modal' },
-  { name: 'shop-modal', screenId: 'map-screen', modalId: 'shop-modal' },
+  { name: 'treasure-achievements', screenId: 'map-screen', studentTreasureTab: 'my_treasure' },
+  { name: 'treasure-history', screenId: 'map-screen', studentTreasureTab: 'history' },
+  { name: 'quest-board', screenId: 'map-screen', questBoard: true },
+  { name: 'shop-pets', screenId: 'map-screen', shopTab: 'pets' },
+  { name: 'shop-my-pets', screenId: 'map-screen', shopTab: 'mypets' },
+  { name: 'shop-lucky', screenId: 'map-screen', shopTab: 'lucky' },
+  { name: 'admin-players', screenId: 'map-screen', adminTab: 'players' },
+  { name: 'admin-settings', screenId: 'map-screen', adminTab: 'settings' },
+  { name: 'admin-templates', screenId: 'map-screen', adminTab: 'templates' },
+  { name: 'admin-questions', screenId: 'map-screen', adminTab: 'questions' },
+  { name: 'admin-exams', screenId: 'map-screen', adminTab: 'exams' },
+  { name: 'admin-quests', screenId: 'map-screen', adminTab: 'quests' },
 ];
 
 async function showAuditState(page, state) {
-  await page.evaluate(({ screenId, gameViewId, modalId }) => {
+  await page.evaluate(({ screenId, gameViewId, modalId, adminTab, studentTreasureTab, questBoard, shopTab }) => {
     document.querySelectorAll('.screen').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.game-view').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.modal, .modal-overlay').forEach(element => element.classList.remove('active'));
+    // Hướng dẫn dùng inline style, nên cần tắt rõ ràng trước mỗi ảnh audit.
+    const guideModal = document.getElementById('guide-modal');
+    guideModal.style.display = 'none';
+    document.getElementById('treasure-modal').style.display = '';
 
     document.getElementById(screenId).classList.add('active');
     if (gameViewId) document.getElementById(gameViewId).classList.add('active');
     if (modalId === 'guide-modal') {
-      document.getElementById(modalId).style.display = 'flex';
+      guideModal.style.display = 'flex';
     } else if (modalId) {
       document.getElementById(modalId).classList.add('active');
     }
@@ -108,6 +121,45 @@ async function showAuditState(page, state) {
     document.getElementById('treasure-content-area').textContent = 'Kho báu minh họa cho phiên review UI.';
     document.getElementById('quest-list-container').innerHTML = '<article class="quest-card">Hoàn thành 5 câu Toán hôm nay</article>';
     document.getElementById('shop-content-area').textContent = 'Cửa hàng minh họa cho phiên review UI.';
+
+    const demoStudent = {
+      id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', classlevel: '5',
+      totalscore: 1250, lollipops: 7,
+      history: [{ title: 'Luyện tập Phân số', topic: 'Phân số', difficulty: 'Vừa', questionCount: 10, score: 9, date: '2026-08-08' }],
+    };
+    Object.assign(app.data, {
+      currentUser: demoStudent,
+      userPets: [{ id: 'pet-1', user_username: 'minh-hoa', pet_image: 'pet_1.png', pet_name: 'Thỏ Hồng Không Gian' }],
+      userQuests: [{ id: 'progress-1', quest_id: 'quest-1', progress: 3, is_completed: false }],
+      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_lollipops: 2, assign_type: 'all', is_active: true }],
+    });
+
+    if (studentTreasureTab) {
+      app.treasure.open();
+      app.treasure.switchTab(studentTreasureTab);
+    }
+    if (questBoard) app.quest.open();
+    if (shopTab) {
+      app.shop.open();
+      app.shop.switchTab(shopTab);
+    }
+
+    if (adminTab) {
+      // Dữ liệu minh họa cục bộ: chỉ để nhìn đủ giao diện quản trị, không gọi mạng.
+      Object.assign(app.data, {
+        currentUser: { id: 'demo-admin', name: 'Giáo viên Demo', role: 'admin', classlevel: '5' },
+        users: [
+          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, lollipops: 7, approved: true },
+          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, lollipops: 0, approved: false },
+        ],
+        questions: [{ id: 'question-1', classlevel: 'Lớp 5', subject: 'Toán', topic: 'Phân số', type: 'Trắc nghiệm', q: 'Phân số nào lớn hơn?', options: ['1/2', '1/3'], ans: '1/2' }],
+        exams: [{ id: 'exam-1', name: 'Kiểm tra Toán tuần 1', classlevel: 'Lớp 5', subject: 'Toán', questions: ['question-1'] }],
+        quests: [{ id: 'quest-1', name: 'Hoàn thành 5 câu Toán', subject: 'Toán', target: 5, is_active: true }],
+        questionTemplates: [{ id: 'template-1', classlevel: 'Lớp 5', subject: 'Toán', semester: 'Học kỳ 1', topic: 'Số tự nhiên', question_type: 'Trắc nghiệm', generator_key: 'number.largest_of_four' }],
+      });
+      app.admin.openAdmin();
+      app.admin.switchTab(adminTab);
+    }
   }, state);
 }
 
@@ -118,8 +170,37 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
 
   for (const state of auditStates) {
     await showAuditState(page, state);
-    await expect(page.locator(`#${state.modalId ?? state.screenId}`)).toBeVisible();
+    const visibleId = (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
+      : state.questBoard ? 'quest-modal'
+        : state.shopTab ? 'shop-modal'
+          : (state.modalId ?? state.screenId);
+    await expect(page.locator(`#${visibleId}`)).toBeVisible();
+    if (state.modalId !== 'guide-modal') {
+      await expect(page.locator('#guide-modal')).toBeHidden();
+    }
     await captureUiReview(page, testInfo, `audit-desktop-${state.name}.png`);
+  }
+
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
+test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 844, height: 390 });
+  const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
+
+  for (const state of auditStates) {
+    await showAuditState(page, state);
+    const visibleId = (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
+      : state.questBoard ? 'quest-modal'
+        : state.shopTab ? 'shop-modal'
+          : (state.modalId ?? state.screenId);
+    await expect(page.locator(`#${visibleId}`)).toBeVisible();
+    if (state.modalId !== 'guide-modal') {
+      await expect(page.locator('#guide-modal')).toBeHidden();
+    }
+    await captureUiReview(page, testInfo, `audit-mobile-${state.name}.png`);
   }
 
   expect(supabaseRequests).toEqual([]);
