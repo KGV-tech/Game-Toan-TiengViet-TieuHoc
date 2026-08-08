@@ -17,6 +17,8 @@ assert(source.includes('hundredBillions'), 'Template editor must support place v
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
 assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
+assert(source.includes('presetPrompt'), 'Templates stored with {question} must show a readable default prompt in the editor.');
+assert(source.includes('defaultPrompt'), 'Every dynamic template must declare its readable default prompt.');
 assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
 assert(source.includes('place_values'), 'Template editor must document the generated place-value wording variable.');
 assert(source.includes('normalizeFillAnswer'), 'Fill-in answers must normalize textbook number spacing before grading.');
@@ -39,6 +41,19 @@ assert(source.includes('number.match_number_words'), 'The Template Bank must exp
 assert(source.includes('number.place_value_true_false'), 'The Template Bank must expose the place-value true/false generator.');
 assert(source.includes('number.safe_password_by_place_value'), 'The Template Bank must expose the safe-password generator.');
 assert(css.includes('question-box--safe-password'), 'Safe-password questions must have a dedicated image layout.');
+assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
+assert(source.includes('template-safe-password-min-length'), 'Safe-password templates must let administrators choose the minimum number of password cells.');
+assert(source.includes('template-safe-password-max-length'), 'Safe-password templates must let administrators choose the maximum number of password cells.');
+assert(source.includes('template-safe-password-condition1-places'), 'Safe-password templates must expose configurable places for condition 1.');
+assert(source.includes('template-safe-password-condition2-places'), 'Safe-password templates must expose configurable places for condition 2.');
+assert(source.includes('template-safe-password-condition1-digits'), 'Safe-password templates must expose configurable digits for condition 1.');
+assert(source.includes('template-safe-password-condition2-digits'), 'Safe-password templates must expose configurable digits for condition 2.');
+assert(source.includes('template-safe-password-condition1-scope'), 'Safe-password templates must let administrators distinguish a class condition from a place condition.');
+assert(source.includes("rule.hidden = false"), 'Safe-password configuration controls must remain visible after the template editor renders.');
+assert(source.includes('Lớp triệu (trăm triệu, chục triệu, triệu)'), 'The editor must define a class as its three constituent places.');
+assert(source.includes('Lớp tỷ (trăm tỷ, chục tỷ, tỷ)'), 'The editor must offer the four requested number classes through lớp tỷ.');
+assert(source.includes("condition1Scope = generatorKey === 'number.safe_password_by_place_value' ? 'random'"), 'Safe-password condition 1 must randomly choose from configured classes and places.');
+assert(!source.includes('renderSafePasswordCells'), 'Safe-password questions must not overlay SVG password cells on the safe image.');
 assert(migration.includes("'number.safe_password_by_place_value'"), 'Migration must seed the safe-password template.');
 assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');
 assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');

@@ -79,19 +79,84 @@ assert.equal(placeValueTrueFalse.type, 'Đúng/Sai');
 assert.equal(placeValueTrueFalse.statements.length, 4, 'The place-value true/false template must generate four statements.');
 assert.deepEqual(placeValueTrueFalse.statements.map(item => item.label), ['A', 'B', 'C', 'D']);
 assert(placeValueTrueFalse.statements.every(item => ['Đúng', 'Sai'].includes(item.answer)), 'Each statement must have a true/false answer.');
+const trueFalseDigits = placeValueTrueFalse.q.replace(/\D/g, '');
+assert.equal(new Set(trueFalseDigits).size, trueFalseDigits.length, 'True/false numbers must not repeat a digit, so each stated digit has one unambiguous location.');
+assert(placeValueTrueFalse.statements.every(item => trueFalseDigits.includes(item.text.match(/Chữ số (\d)/)[1])), 'Every stated digit must appear in the generated number.');
+assert.deepEqual(placeValueTrueFalse.statements.map(item => item.kind), ['class', 'place', 'class', 'place'], 'The default true/false template must mix class and place statements.');
+assert.match(placeValueTrueFalse.templateVariables.statements, /<br>/, 'The true/false template must expose its generated statements to administrators.');
 assert.match(placeValueTrueFalse.q, /^Số /, 'The number must be the first line of the true/false template.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 
 const safePassword = generateQuestion('number.safe_password_by_place_value', {}, seededRandom(11));
 assert.equal(safePassword.type, 'Trắc nghiệm');
 assert.equal(safePassword.options.length, 4);
-assert.equal(safePassword.imageUrl, './src/assets/safe-password.svg');
+assert.equal(safePassword.imageUrl, './src/assets/safe-password-3d-v3.png');
+assert.doesNotMatch(safePassword.q, /Chọn câu trả lời đúng/i, 'The safe-password prompt must avoid redundant text.');
+assert.equal(safePassword.codeLength, 9);
+assert.equal(String(safePassword.passwordCode).length, 9, 'A nine-cell safe must display all nine password digits.');
+assert.match(safePassword.q, /mật khẩu có 9 chữ số/i, 'The question must state how many digits the password contains.');
+const safePlaceValues = { ones: 1, tens: 10, hundreds: 100, thousands: 1000, tenThousands: 10000, hundredThousands: 100000, millions: 1000000, tenMillions: 10000000, hundredMillions: 100000000 };
+const safeConditionDigit = condition => Number(condition.match(/khác (\d)/)[1]);
 assert.equal(safePassword.options.filter(option => {
     const value = numericValue(option);
-    const millionClassHasNoZero = [1000000, 10000000, 100000000].every(place => Math.floor(value / place) % 10 !== 0);
-    return millionClassHasNoZero && Math.floor(value / 100000) % 10 !== 3;
-}).length, 1, 'Only one safe-password option may satisfy both place-value rules.');
+    return Math.floor(value / safePlaceValues[safePassword.templateVariables.condition1Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition1)
+        && Math.floor(value / safePlaceValues[safePassword.templateVariables.condition2Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition2);
+}).length, 1, 'Only one safe-password option may satisfy both generated conditions.');
 assert.equal(numericValue(safePassword.ans), numericValue(safePassword.options.find(option => numericValue(option) === numericValue(safePassword.ans))));
+
+for (const codeLength of [2, 3, 6, 9]) {
+    const generated = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: codeLength, maximumCodeLength: codeLength }, seededRandom(codeLength));
+    assert.equal(generated.codeLength, codeLength, `The template must support ${codeLength} password cells.`);
+    assert.equal(String(generated.passwordCode).length, codeLength, `The displayed password must fill all ${codeLength} cells.`);
+    assert.match(generated.q, new RegExp(`mật khẩu có ${codeLength} chữ số`, 'i'));
+}
+const variableLengthPassword = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: 2, maximumCodeLength: 9 }, seededRandom(99));
+assert(variableLengthPassword.codeLength >= 2 && variableLengthPassword.codeLength <= 9, 'The generated password-cell count must stay within the configured range.');
+
+const configurableSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimumCodeLength: 9,
+    maximumCodeLength: 9,
+    condition1Places: ['millions', 'hundredMillions'],
+    condition1Digits: [0, 4],
+    condition2Places: ['tenThousands', 'hundredThousands'],
+    condition2Digits: [3, 7]
+}, seededRandom(100));
+assert.match(configurableSafePassword.templateVariables.condition1, /hàng (triệu|trăm triệu) khác (0|4)/, 'Condition 1 must use an administrator-selected place and digit.');
+assert.match(configurableSafePassword.templateVariables.condition2, /hàng (chục nghìn|trăm nghìn) khác (3|7)/, 'Condition 2 must use an administrator-selected place and digit.');
+assert.match(configurableSafePassword.q, /mật khẩu có 9 chữ số/, 'The readable prompt must include dynamic password length.');
+assert.notEqual(configurableSafePassword.templateVariables.condition1Place, configurableSafePassword.templateVariables.condition2Place, 'The two generated conditions must use different places whenever configuration permits it.');
+
+const classAndPlaceSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimumCodeLength: 9,
+    maximumCodeLength: 9,
+    condition1Scope: 'class',
+    condition1Classes: ['millionsClass'],
+    condition1Digits: [0],
+    condition2Scope: 'place',
+    condition2Places: ['hundredThousands'],
+    condition2Digits: [3]
+}, seededRandom(101));
+assert.match(classAndPlaceSafePassword.templateVariables.condition1, /^Lớp triệu không chứa chữ số 0$/, 'A class condition must name the class and apply to its three places.');
+assert.match(classAndPlaceSafePassword.templateVariables.condition2, /^Chữ số ở hàng trăm nghìn khác 3$/, 'A place condition must name one specific place.');
+const classAnswer = numericValue(classAndPlaceSafePassword.ans);
+assert([1000000, 10000000, 100000000].every(place => Math.floor(classAnswer / place) % 10 !== 0), 'The class-million condition must check all three places in the class.');
+assert.notEqual(Math.floor(classAnswer / 100000) % 10, 3, 'The hundred-thousands condition must check only its one place.');
+
+const gradeOneSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimum: 0,
+    maximum: 20,
+    minimumCodeLength: 2,
+    maximumCodeLength: 2,
+    condition1Scope: 'random',
+    condition1Classes: [],
+    condition1Places: ['tens'],
+    condition1Digits: [1],
+    condition2Places: ['ones'],
+    condition2Digits: [8]
+}, seededRandom(202));
+assert.match(gradeOneSafePassword.templateVariables.condition1, /^Chữ số ở hàng chục khác 1$/, 'Condition 1 must fall back to a configured random place when no class is selected.');
+assert.match(gradeOneSafePassword.templateVariables.condition2, /^Chữ số ở hàng đơn vị khác 8$/, 'Condition 2 must always use its configured random place.');
+assert(gradeOneSafePassword.options.every(option => /^\d{2}$/.test(option.replace(/\u00a0/g, '')) && Number(option.replace(/\u00a0/g, '')) <= 20), 'A configured 00–20 password range must retain two-digit display and never generate values outside the range.');
 
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
