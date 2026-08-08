@@ -151,6 +151,29 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
   await captureUiReview(page, testInfo, 'safe-password-template-config.png');
 });
 
+test('Kho Template: Đúng/Sai hiện cấu hình lớp, hàng và biến nhận định', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'true-false-demo', name: 'Đúng/Sai về lớp và hàng của chữ số', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '3. Số có nhiều chữ số', question_type: 'Đúng/Sai', generator_key: 'number.place_value_true_false',
+      prompt_template: 'Số {number}<br>Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:',
+      config: { minimum: 10000000, maximum: 999999999, statementKinds: ['class', 'place'] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--true-false-controls')).toBeVisible();
+  await expect(page.locator('#template-true-false-kinds')).toBeVisible();
+  await expect.poll(() => page.locator('#template-true-false-kinds').evaluate(select => [...select.selectedOptions].map(option => option.value))).toEqual(['class', 'place']);
+  await expect(page.locator('#template-variables')).toContainText('{number}');
+  await expect(page.locator('#template-variables')).toContainText('{statements}');
+  await captureUiReview(page, testInfo, 'true-false-template-config.png');
+});
+
 test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạng thái rõ ràng', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

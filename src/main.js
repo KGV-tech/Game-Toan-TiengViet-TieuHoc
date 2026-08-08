@@ -3327,8 +3327,11 @@ const app = {
             }
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
-            if (existing?.generator_key === 'number.safe_password_by_place_value') {
-                document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
+            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false'].includes(existing?.generator_key);
+            if (configurableGenerator) {
+                if (existing?.generator_key === 'number.safe_password_by_place_value') {
+                    document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
+                }
                 const adminContent = box.closest('.admin-content');
                 const rulesSection = box.querySelector('.template-editor__section:last-of-type');
                 if (adminContent && rulesSection) requestAnimationFrame(() => { adminContent.scrollTop = Math.max(0, rulesSection.offsetTop - 12); });
