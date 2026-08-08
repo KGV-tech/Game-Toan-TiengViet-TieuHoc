@@ -14,6 +14,8 @@ Sau mỗi lần chạy, tải hai ảnh này lên Kimi để review giao diện:
 - `test-results/ui-review/login-mobile-landscape.png`
 - `test-results/ui-review/login-mobile-portrait-rotate.png` (màn hình nhắc xoay ngang là hành vi dự kiến)
 
+Khi chạy `npm run test:browser`, Playwright còn tạo bộ ảnh audit desktop `audit-desktop-*.png` cho đăng ký, bản đồ, cấu hình/làm bài, đề thi và các modal chính. Các ảnh này dùng dữ liệu minh họa cục bộ, không phải dữ liệu học sinh hoặc Supabase thật.
+
 ## Trước khi chạy
 
 1. Xác định URL ứng dụng đang chạy (local hoặc preview).
