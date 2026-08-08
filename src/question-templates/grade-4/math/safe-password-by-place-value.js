@@ -128,7 +128,7 @@ function generateSafePassword(config = {}, random = Math.random) {
     const wrongBoth = randomNumberMatching(rule.minimum, rule.maximum, value => !isSafePassword(value, rule) && value !== wrongCondition1 && value !== wrongCondition2 && value !== correct, random);
     const firstCondition = rule.condition1.text.charAt(0).toLocaleLowerCase('vi-VN') + rule.condition1.text.slice(1);
     const secondCondition = rule.condition2.text.charAt(0).toLocaleLowerCase('vi-VN') + rule.condition2.text.slice(1);
-    const question = `Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có ${codeLength} chữ số, ${firstCondition} và ${secondCondition}.`;
+    const question = `Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng ${firstCondition} và ${secondCondition}.`;
 
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
