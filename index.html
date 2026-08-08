@@ -302,10 +302,10 @@
                     style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0;">1. Chọn Chủ đề</h3>
                     <div class="topic-mode-toggle">
-                      <label><input type="radio" name="topicMode" value="single" checked
-                          onchange="app.game.toggleTopicMode()"> Chọn 1</label>
-                      <label><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()">
-                        Chọn nhiều</label>
+                      <label class="topic-mode-option"><input type="radio" name="topicMode" value="single" checked
+                          onchange="app.game.toggleTopicMode()"><span>Chọn 1</span></label>
+                      <label class="topic-mode-option"><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()">
+                        <span>Chọn nhiều</span></label>
                     </div>
                   </div>
                   <div id="topics-list" class="topics-grid"></div>

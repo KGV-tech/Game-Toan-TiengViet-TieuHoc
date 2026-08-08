@@ -90,6 +90,19 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
+test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạng thái rõ ràng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await expect(page.locator('.station-artwork .station-label').first()).toHaveCSS('animation-name', 'map-station-beacon');
+  await page.evaluate(() => {
+    const multi = document.querySelector('input[name="topicMode"][value="multi"]');
+    multi.checked = true;
+    multi.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await expect(page.locator('.topic-mode-option:has(input[value="multi"]) span')).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },
