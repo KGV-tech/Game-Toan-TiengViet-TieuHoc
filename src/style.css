@@ -323,6 +323,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-editor__rule--matching-controls { grid-column: 1 / -1; }
 .template-editor__rule--matching-controls .template-editor__fields { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .template-editor__rule--safe-password-controls { grid-column: 1 / -1; }
+.template-editor__rule--safe-password-class-controls { grid-column: 1 / -1; }
 .template-editor__safe-conditions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
 .template-editor__safe-conditions fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid rgba(125, 211, 252, .28); border-radius: 9px; }
 .template-editor__safe-conditions legend { padding: 0 6px; color: #fef08a; font-size: .9rem; font-weight: 800; }

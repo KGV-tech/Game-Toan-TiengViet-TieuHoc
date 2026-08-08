@@ -48,6 +48,8 @@ assert(source.includes('template-safe-password-condition1-places'), 'Safe-passwo
 assert(source.includes('template-safe-password-condition2-places'), 'Safe-password templates must expose configurable places for condition 2.');
 assert(source.includes('template-safe-password-condition1-digits'), 'Safe-password templates must expose configurable digits for condition 1.');
 assert(source.includes('template-safe-password-condition2-digits'), 'Safe-password templates must expose configurable digits for condition 2.');
+assert(source.includes('template-safe-password-condition1-scope'), 'Safe-password templates must let administrators distinguish a class condition from a place condition.');
+assert(source.includes('Lớp triệu (trăm triệu, chục triệu, triệu)'), 'The editor must define a class as its three constituent places.');
 assert(!source.includes('renderSafePasswordCells'), 'Safe-password questions must not overlay SVG password cells on the safe image.');
 assert(migration.includes("'number.safe_password_by_place_value'"), 'Migration must seed the safe-password template.');
 assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');

@@ -121,6 +121,22 @@ assert.match(configurableSafePassword.templateVariables.condition2, /hàng (ch�
 assert.match(configurableSafePassword.q, /mật khẩu có 9 chữ số/, 'The readable prompt must include dynamic password length.');
 assert.notEqual(configurableSafePassword.templateVariables.condition1Place, configurableSafePassword.templateVariables.condition2Place, 'The two generated conditions must use different places whenever configuration permits it.');
 
+const classAndPlaceSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimumCodeLength: 9,
+    maximumCodeLength: 9,
+    condition1Scope: 'class',
+    condition1Classes: ['millionsClass'],
+    condition1Digits: [0],
+    condition2Scope: 'place',
+    condition2Places: ['hundredThousands'],
+    condition2Digits: [3]
+}, seededRandom(101));
+assert.match(classAndPlaceSafePassword.templateVariables.condition1, /^Lớp triệu không chứa chữ số 0$/, 'A class condition must name the class and apply to its three places.');
+assert.match(classAndPlaceSafePassword.templateVariables.condition2, /^Chữ số ở hàng trăm nghìn khác 3$/, 'A place condition must name one specific place.');
+const classAnswer = numericValue(classAndPlaceSafePassword.ans);
+assert([1000000, 10000000, 100000000].every(place => Math.floor(classAnswer / place) % 10 !== 0), 'The class-million condition must check all three places in the class.');
+assert.notEqual(Math.floor(classAnswer / 100000) % 10, 3, 'The hundred-thousands condition must check only its one place.');
+
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
 assert.equal(matchingFiveFour.options[0].split(', ').length, 5);
