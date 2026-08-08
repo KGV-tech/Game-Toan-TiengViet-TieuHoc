@@ -20,6 +20,7 @@
 - Ứng dụng dùng Supabase từ trình duyệt.
 - `supabase_auth_security.sql` là migration bảo mật/RLS cho kiến trúc dùng Supabase Auth. Chỉ chạy khi người phụ trách xác nhận đúng dự án đích và frontend tương ứng đã sẵn sàng.
 - `supabase_rls.sql` đã ngưng dùng; không chứa migration để thực thi.
+- `supabase_admin_demo_profile.sql` chỉ cấp cấu hình thử giao diện cho các tài khoản đã là Admin: avatar giáo viên nữ và ít nhất 1.000 kẹo. Chạy một lần trong Supabase SQL Editor của đúng dự án; tệp không tạo tài khoản và không thay đổi dữ liệu học sinh.
 - Không gửi secrets, thông tin học sinh, token, mật khẩu hoặc dữ liệu Supabase thật cho Kimi.
 
 ## Trạng thái kiểm thử

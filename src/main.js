@@ -120,6 +120,8 @@ const app = {
         if (modal) modal.style.display = 'none';
     },
     getEquippedPet(user) {
+        // Giáo viên không sở hữu/trang bị thú cưng; chú mèo robot vẫn là linh vật mặc định khi test bài.
+        if (user?.role?.toLowerCase() === 'admin') return 'robot_cat_normal_transparent.png';
         const savedPet = user ? app.safeStorage.getItem('equipped_pet_' + user.username) : null;
         // Keep existing pupils' default selection working while moving the mascot to its new art set.
         return (!savedPet || savedPet === 'cat_normal.png') ? 'robot_cat_normal_transparent.png' : savedPet;
@@ -602,6 +604,7 @@ const app = {
             'girl-reader': { label: 'Bé gái đọc sách đeo kính tròn' },
             'girl-athlete': { label: 'Bé gái vận động tóc tết' },
             'girl-inventor': { label: 'Bé gái nhà phát minh tóc bất đối xứng' },
+            'teacher-female': { label: 'Giáo viên nữ', image: './public/avatar-teacher-female.png' },
             'cartoon-robot-cat': { label: 'Mèo robot phi hành gia' },
             'cartoon-lightning-squirrel': { label: 'Sóc điện' },
             'cartoon-rescue-pup': { label: 'Cún cứu hộ' },
@@ -818,12 +821,18 @@ const app = {
             const user = app.data.currentUser;
             const avatar = this.getAvatar(user.avatar_key);
             const isAdmin = user.role?.toLowerCase() === 'admin';
+            const lollipopCount = Number(user.lollipops || 0).toLocaleString('vi-VN');
+            const avatarMarkup = avatar.image
+                ? `<img class="player-info-card__avatar player-info-card__avatar--teacher" src="${avatar.image}" alt="Avatar ${app.data.sanitizeHTML(avatar.label)}">`
+                : `<span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>`;
             const html = `
-                <span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>
+                ${avatarMarkup}
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
-                  ${isAdmin ? '' : `<span class="player-info-card__stats"><b>${user.totalscore || 0}</b> điểm <i aria-hidden="true">🍭</i> <b>${user.lollipops || 0}</b></span>`}
+                  ${isAdmin
+                    ? `<span class="player-info-card__stats"><i aria-hidden="true">🍭</i> <b>${lollipopCount}</b> kẹo thử nghiệm</span>`
+                    : `<span class="player-info-card__stats"><b>${user.totalscore || 0}</b> điểm <i aria-hidden="true">🍭</i> <b>${lollipopCount}</b></span>`}
                 </span>`;
             document.getElementById('player-info').innerHTML = html;
 
@@ -5788,7 +5797,18 @@ const app = {
         `;
 
             if (isAdmin) {
-                html += `<div style="text-align:center; padding: 40px; color:#666; font-size:1.2rem; width:100%;">Giáo viên không cần trang bị thú cưng.</div>`;
+                const previewPets = this.shopData.slice(0, 3);
+                html += `<section class="admin-pet-preview" aria-label="Bộ sưu tập thú cưng minh hoạ">
+                    <h3>Bộ sưu tập minh hoạ cho Giáo viên</h3>
+                    <p>Giáo viên không trang bị thú cưng. Các mẫu dưới đây chỉ để kiểm tra giao diện.</p>
+                    <div class="admin-pet-preview__grid">
+                        ${previewPets.map(pet => `<article class="admin-pet-preview-card">
+                            <img src="./public/${pet.image}" alt="${app.data.sanitizeHTML(pet.name)}">
+                            <strong>${app.data.sanitizeHTML(pet.name)}</strong>
+                            <span>Chỉ xem minh hoạ</span>
+                        </article>`).join('')}
+                    </div>
+                </section>`;
             } else {
                 for (let i = 0; i < 3; i++) {
                     const p = myPets[i];

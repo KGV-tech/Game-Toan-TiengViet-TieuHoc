@@ -124,6 +124,33 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await expect(page.locator('.pet-station-title')).toHaveCSS('white-space', 'normal');
 });
 
+test('Admin có avatar giáo viên, 1.000 kẹo và xem được giao diện thú cưng minh hoạ', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = {
+      id: 'demo-admin', username: 'admin', fullname: 'Giáo viên', role: 'admin',
+      avatar_key: 'teacher-female', lollipops: 1000,
+    };
+    app.data.userPets = [];
+    app.auth.updateHeader();
+    app.shop.open();
+    app.shop.switchTab('mypets');
+  });
+
+  await expect(page.locator('.player-info-card__avatar--teacher')).toHaveAttribute('src', './public/avatar-teacher-female.png');
+  await expect(page.locator('#player-info')).toContainText('1.000');
+  await expect(page.getByText('Bộ sưu tập minh hoạ cho Giáo viên')).toBeVisible();
+  await expect(page.locator('.admin-pet-preview-card')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: /Kích hoạt|Tắt khoang|Trả lại thú cưng/i })).toHaveCount(0);
+  await captureUiReview(page, testInfo, 'admin-profile-desktop.png');
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('.admin-pet-preview')).toBeVisible();
+  await captureUiReview(page, testInfo, 'admin-profile-tablet.png');
+});
+
 test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', async ({ page }) => {
   await page.setViewportSize({ width: 2048, height: 1049 });
   await openOfflineHomepage(page);
