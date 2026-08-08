@@ -3272,8 +3272,8 @@ const app = {
             const safeCondition2Places = config.condition2Places || safePlaces.map(([value]) => value);
             const safeCondition1Digits = (config.condition1Digits || [0]).map(String);
             const safeCondition2Digits = (config.condition2Digits || [3]).map(String);
-            const safeDefaultPrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
-            const displayedPrompt = existing?.generator_key === 'number.safe_password_by_place_value' && String(existing?.prompt_template || '').trim() === '{question}' ? safeDefaultPrompt : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
+            const presetPrompt = this.templatePresets[existing?.generator_key]?.defaultPrompt;
+            const displayedPrompt = String(existing?.prompt_template || '').trim() === '{question}' && presetPrompt ? presetPrompt : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
             const box = document.getElementById('treasure-content-area');
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
               <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
@@ -3302,74 +3302,84 @@ const app = {
         },
         templatePresets: {
                 'number.digit_at_place': {
+                    defaultPrompt: 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
                     guide: 'Dùng câu: “Số nào dưới đây có chữ số hàng {place} là {digit}?”. Chọn nhiều hàng và chữ số để game tự bốc ngẫu nhiên mỗi lượt.',
                     hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
                     example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?',
                     type: 'Trắc nghiệm',
-                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{place}', 'tên hàng được bốc'], ['{digit}', 'chữ số được bốc']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place}', 'tên hàng được bốc'], ['{digit}', 'chữ số được bốc']]
                 },
                 'number.smallest_of_four': {
+                    defaultPrompt: 'Hãy tìm số bé nhất trong các số sau.',
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số bé nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
                     example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403',
                     type: 'Trắc nghiệm',
-                    variables: [['{question}', 'câu hỏi mặc định']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
                 'number.largest_of_four': {
+                    defaultPrompt: 'Hãy tìm số lớn nhất trong các số sau.',
                     guide: 'Game sinh 4 số khác nhau trong phạm vi khai báo; chỉ số lớn nhất là đáp án đúng.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
                     example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403',
                     type: 'Trắc nghiệm',
-                    variables: [['{question}', 'câu hỏi mặc định']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
                 'number.compose_from_places': {
+                    defaultPrompt: 'Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}',
                     guide: 'Game bốc một số trong phạm vi rồi mô tả các hàng có chữ số khác 0. Học sinh nhập số đã lập.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: Viết số rồi đọc số, biết số đó gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục. Số đó là ___',
                     type: 'Điền khuyết',
-                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{place_values}', 'các hàng, ví dụ: 4 chục nghìn, 2 nghìn và 5 trăm'], ['{blank}', 'ô nhập đáp án (___)']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place_values}', 'các hàng, ví dụ: 4 chục nghìn, 2 nghìn và 5 trăm'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.missing_expanded_addend': {
+                    defaultPrompt: 'Điền số còn thiếu:<br>{number} = {expression}',
                     guide: 'Game phân tích một số thành tổng các hàng rồi ẩn ngẫu nhiên một thành phần khác 0.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên phép tính động do game sinh.',
                     example: 'Ví dụ kết quả: 33 471 = 30 000 + 3 000 + ___ + 70 + 1',
                     type: 'Điền khuyết',
-                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{number}', 'số cần phân tích'], ['{expression}', 'dạng tổng có một ô trống'], ['{blank}', 'ô nhập đáp án (___)']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số cần phân tích'], ['{expression}', 'dạng tổng có một ô trống'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.neighbor_numbers': {
+                    defaultPrompt: 'Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}',
                     guide: 'Game bốc một số ở giữa phạm vi, học sinh điền số liền trước và số liền sau.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: ___ ; 42 135 ; ___',
                     type: 'Điền khuyết',
-                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.compare_number_forms': {
+                    defaultPrompt: 'Điền dấu thích hợp:<br>{comparison}',
                     guide: 'Game sinh một số và một dạng tổng; học sinh chọn dấu >, < hoặc = đúng.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
                     type: 'So sánh',
-                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
                 },
                 'number.place_value_true_false': {
+                    defaultPrompt: 'Số {number}<br>Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:',
                     guide: 'Game sinh một số nhiều chữ số và bốn nhận định A–D về lớp của chữ số. Học sinh chọn ĐÚNG hoặc SAI cho từng nhận định.',
                     hint: 'Dùng biến <code>{number}</code> để đặt số đã sinh ở hàng đầu.',
                     example: 'Ví dụ: Số 14 021 983 — A. Chữ số 4 thuộc lớp triệu. ĐÚNG/SAI',
                     type: 'Đúng/Sai',
-                    variables: [['{question}', 'dòng tiêu đề do game sinh'], ['{number}', 'số nhiều chữ số đã sinh']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh']]
                 },
                 'number.safe_password_by_place_value': {
+                    defaultPrompt: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.',
                     guide: 'Game sinh bốn số có độ dài đúng bằng số chữ số mật khẩu đã bốc. Với từng lượt, game tự bốc hàng và chữ số cho Điều kiện 1, Điều kiện 2 theo các lựa chọn của admin; chỉ một số thỏa cả hai điều kiện.',
                     hint: 'Ô bên dưới đã ghi đầy đủ câu hỏi mặc định. Hãy sửa trực tiếp, hoặc chèn <code>{condition1}</code>, <code>{condition2}</code> và <code>{codeLength}</code> vào vị trí mong muốn.',
                     example: 'Ví dụ hiển thị: Số nào dưới đây là mật khẩu mở khóa két sắt? Biết rằng mật khẩu có 9 chữ số, chữ số ở hàng triệu khác 0 và chữ số ở hàng trăm nghìn khác 3.',
                     type: 'Trắc nghiệm',
-                    variables: [['{question}', 'toàn bộ câu mặc định do game sinh'], ['{codeLength}', 'số chữ số mật khẩu đã bốc'], ['{condition1}', 'quy tắc thứ nhất đã bốc'], ['{condition2}', 'quy tắc thứ hai đã bốc']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{codeLength}', 'số chữ số mật khẩu đã bốc'], ['{condition1}', 'quy tắc thứ nhất đã bốc'], ['{condition2}', 'quy tắc thứ hai đã bốc']]
                 },
                 'number.match_number_words': {
+                    defaultPrompt: 'Hãy nối mỗi số với cách đọc đúng.',
                     guide: 'Game sinh các số có 7, 8 hoặc 9 chữ số và các cách đọc tương ứng. Hai vế lệch nhau đúng một mục để tạo một mục nhiễu.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên yêu cầu nối số với cách đọc.',
                     example: 'Ví dụ: 5 số | 4 cách đọc, đúng 4 cặp ghép và 1 mục nhiễu.',
                     type: 'Đối chiếu trùng khớp',
-                    variables: [['{question}', 'toàn bộ câu do game sinh']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 }
         },
         showTemplateExample() {

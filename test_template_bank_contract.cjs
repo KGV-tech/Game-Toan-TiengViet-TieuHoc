@@ -17,6 +17,8 @@ assert(source.includes('hundredBillions'), 'Template editor must support place v
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
 assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
+assert(source.includes('presetPrompt'), 'Templates stored with {question} must show a readable default prompt in the editor.');
+assert(source.includes('defaultPrompt'), 'Every dynamic template must declare its readable default prompt.');
 assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
 assert(source.includes('place_values'), 'Template editor must document the generated place-value wording variable.');
 assert(source.includes('normalizeFillAnswer'), 'Fill-in answers must normalize textbook number spacing before grading.');
