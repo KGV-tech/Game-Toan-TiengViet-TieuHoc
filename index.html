@@ -535,13 +535,13 @@
       <!-- Notebook Tabs (Left) -->
       <div class="admin-tabs"
         style="display:flex; flex-direction:column; gap: 10px; width: 330px; z-index: 1; padding: 30px 12px 20px; border:none;">
-        <button class="notebook-tab active asset-button asset-button--shop-tab" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
+        <button class="notebook-tab active asset-button asset-button--shop-tab" data-shop-tab="pets" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
           <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true">
         </button>
-        <button class="notebook-tab asset-button asset-button--shop-tab" onclick="app.shop.switchTab('mypets', this)" aria-label="Thú Cưng Của Tôi">
+        <button class="notebook-tab asset-button asset-button--shop-tab" data-shop-tab="mypets" onclick="app.shop.switchTab('mypets', this)" aria-label="Thú Cưng Của Tôi">
           <img src="./public/ui/buttons/group2/shop-my-pets-tab.png" alt="" aria-hidden="true">
         </button>
-        <button class="notebook-tab asset-button asset-button--shop-tab" onclick="app.shop.switchTab('lucky', this)" aria-label="Trạm May Mắn">
+        <button class="notebook-tab asset-button asset-button--shop-tab" data-shop-tab="lucky" onclick="app.shop.switchTab('lucky', this)" aria-label="Trạm May Mắn">
           <img src="./public/ui/buttons/group2/shop-lucky-tab.png" alt="" aria-hidden="true">
         </button>
       </div>

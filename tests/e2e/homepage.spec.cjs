@@ -103,6 +103,36 @@ test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạn
   await expect(page.locator('.topic-mode-option:has(input[value="multi"]) span')).toHaveCSS('background-color', 'rgb(37, 99, 235)');
 });
 
+test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thưởng nội bộ', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', lollipops: 7 };
+    app.data.userPets = [];
+    app.shop.open();
+    app.shop.switchTab('lucky');
+  });
+
+  await expect(page.locator('#shop-modal .notebook-tab.active')).toHaveAttribute('aria-label', 'Trạm May Mắn');
+  await expect(page.locator('#shop-modal .notebook-tab.active')).toHaveCSS('outline-width', '3px');
+  await expect(page.getByText(/0,1%/)).toHaveCount(0);
+  await expect(page.locator('.lucky-wheel-stage')).toHaveCSS('width', '473px');
+  await expect(page.locator('.lucky-spin-button')).toHaveCSS('width', '332px');
+
+  await page.evaluate(() => app.shop.switchTab('pets', document.querySelector('#shop-modal .notebook-tab')));
+  await expect(page.locator('.pet-station-title')).toHaveCSS('white-space', 'normal');
+});
+
+test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 1049 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => document.getElementById('exam-select-screen').classList.add('active'));
+
+  const box = await page.locator('#exam-select-screen .btn-start-massive').boundingBox();
+  expect(box.y + box.height).toBeLessThanOrEqual(1020);
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },

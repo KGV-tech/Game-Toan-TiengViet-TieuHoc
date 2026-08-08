@@ -5385,9 +5385,10 @@ const app = {
             this.switchTab('pets', document.querySelector('#shop-modal .notebook-tab.active') || document.querySelector('#shop-modal .notebook-tab'));
         },
         switchTab(tab, btnEl) {
-            if (btnEl) {
+            const activeButton = btnEl || document.querySelector(`#shop-modal .notebook-tab[data-shop-tab="${tab}"]`);
+            if (activeButton) {
                 document.querySelectorAll('#shop-modal .notebook-tab').forEach(b => b.classList.remove('active'));
-                btnEl.classList.add('active');
+                activeButton.classList.add('active');
             }
             const box = document.getElementById('shop-content-area');
             box.classList.toggle('shop-content--lucky', tab === 'lucky');
@@ -5458,7 +5459,7 @@ const app = {
                             <li><b style="color:#22c55e;">Tặng 5 kẹo</b></li>
                             <li><b style="color:#3b82f6;">Tặng 2 kẹo</b></li>
                             <li><b style="color:#a855f7;">Tặng 1 kẹo</b></li>
-                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (tỉ lệ 0,1%, không gồm Rồng, tùy tồn kho chung)</li>
+                            <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (không gồm Rồng, tùy tồn kho chung)</li>
                             <li><b style="color:#0ea5e9;">Quay lại</b> (Miễn phí 1 lần quay tới)</li>
                             <li>Tối đa <b>3 lượt/ngày</b>; lượt chưa dùng sẽ không cộng dồn.</li>
                         </ul>
@@ -5741,7 +5742,7 @@ const app = {
             <!-- Right Side: Details (40%) -->
             <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
                 <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
-                    <h2 style="font-weight:900; color: #a855f7; font-size: 1.8rem; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; letter-spacing: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${currentPet.name}">${currentPet.name}</h2>
+                    <h2 class="pet-station-title" title="${currentPet.name}">${currentPet.name}</h2>
                     
                     <div style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
                         <strong style="color: #64748b; font-size: 1.1rem;">Mô tả:</strong><br/>
