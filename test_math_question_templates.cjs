@@ -137,6 +137,22 @@ const classAnswer = numericValue(classAndPlaceSafePassword.ans);
 assert([1000000, 10000000, 100000000].every(place => Math.floor(classAnswer / place) % 10 !== 0), 'The class-million condition must check all three places in the class.');
 assert.notEqual(Math.floor(classAnswer / 100000) % 10, 3, 'The hundred-thousands condition must check only its one place.');
 
+const gradeOneSafePassword = generateQuestion('number.safe_password_by_place_value', {
+    minimum: 0,
+    maximum: 20,
+    minimumCodeLength: 2,
+    maximumCodeLength: 2,
+    condition1Scope: 'random',
+    condition1Classes: [],
+    condition1Places: ['tens'],
+    condition1Digits: [1],
+    condition2Places: ['ones'],
+    condition2Digits: [8]
+}, seededRandom(202));
+assert.match(gradeOneSafePassword.templateVariables.condition1, /^Chữ số ở hàng chục khác 1$/, 'Condition 1 must fall back to a configured random place when no class is selected.');
+assert.match(gradeOneSafePassword.templateVariables.condition2, /^Chữ số ở hàng đơn vị khác 8$/, 'Condition 2 must always use its configured random place.');
+assert(gradeOneSafePassword.options.every(option => /^\d{2}$/.test(option.replace(/\u00a0/g, '')) && Number(option.replace(/\u00a0/g, '')) <= 20), 'A configured 00–20 password range must retain two-digit display and never generate values outside the range.');
+
 const matchingFiveFour = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7, 8, 9] }, seededRandom(12));
 assert.equal(matchingFiveFour.type, 'Đối chiếu trùng khớp');
 assert.equal(matchingFiveFour.options[0].split(', ').length, 5);

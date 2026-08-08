@@ -3261,16 +3261,16 @@ const app = {
             const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
             const matchingDigits = (config.digits || [7, 8, 9]).join(', ');
             const matchingWeights = config.digitWeights ? Object.entries(config.digitWeights).map(([digit, weight]) => `${digit}:${weight}`).join(', ') : '';
-            const safePasswordMinLength = Math.max(2, Math.min(9, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
-            const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(9, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
+            const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
+            const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
             const checkbox = (value, label, selected, group) => `<label class="template-editor__check"><input class="template-checkbox" data-template-group="${group}" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn'],['hundredThousands','Trăm nghìn'],['millions','Triệu'],['tenMillions','Chục triệu'],['hundredMillions','Trăm triệu'],['billions','Tỷ'],['tenBillions','Chục tỷ'],['hundredBillions','Trăm tỷ']];
-            const safePlaces = placeChoices.slice(0, 9);
-            const safeClasses = [['unitsClass', 'Lớp đơn vị (trăm, chục, đơn vị)'], ['thousandsClass', 'Lớp nghìn (trăm nghìn, chục nghìn, nghìn)'], ['millionsClass', 'Lớp triệu (trăm triệu, chục triệu, triệu)']];
-            const safeCondition1Scope = config.condition1Scope || 'place';
-            const safeCondition2Scope = config.condition2Scope || 'place';
+            const safePlaces = placeChoices;
+            const safeClasses = [['unitsClass', 'Lớp đơn vị (trăm, chục, đơn vị)'], ['thousandsClass', 'Lớp nghìn (trăm nghìn, chục nghìn, nghìn)'], ['millionsClass', 'Lớp triệu (trăm triệu, chục triệu, triệu)'], ['billionsClass', 'Lớp tỷ (trăm tỷ, chục tỷ, tỷ)']];
+            const safeCondition1Scope = 'random';
+            const safeCondition2Scope = 'place';
             const safeCondition1Places = config.condition1Places || safePlaces.map(([value]) => value);
             const safeCondition2Places = config.condition2Places || safePlaces.map(([value]) => value);
             const safeCondition1Classes = config.condition1Classes || safeClasses.map(([value]) => value);
@@ -3303,6 +3303,25 @@ const app = {
               </div></div>
               <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
             </section>`;
+            if (existing?.generator_key === 'number.safe_password_by_place_value') {
+                document.getElementById('template-minimum').value = app.data.formatMathNumber(config.minimum ?? 0);
+                document.getElementById('template-maximum').value = app.data.formatMathNumber(config.maximum ?? (10 ** safePasswordMaxLength - 1));
+                const condition1Scope = document.getElementById('template-safe-password-condition1-scope');
+                const condition2Scope = document.getElementById('template-safe-password-condition2-scope');
+                condition1Scope.innerHTML = '<option value="random">Lớp hoặc hàng ngẫu nhiên</option>';
+                condition1Scope.value = 'random';
+                condition1Scope.disabled = true;
+                condition1Scope.closest('label').querySelector('span').textContent = 'Điều kiện 1';
+                condition2Scope.innerHTML = '<option value="place">Hàng ngẫu nhiên</option>';
+                condition2Scope.value = 'place';
+                condition2Scope.disabled = true;
+                condition2Scope.closest('label').querySelector('span').textContent = 'Điều kiện 2';
+                document.querySelector('#template-safe-password-condition2-classes')?.closest('fieldset')?.remove();
+                const classHeading = document.querySelector('.template-editor__rule--safe-password-class-controls h5');
+                if (classHeading) classHeading.textContent = '1a. Lớp ngẫu nhiên cho Điều kiện 1';
+                const safeHeading = document.querySelector('.template-editor__rule--safe-password-controls h5');
+                if (safeHeading) safeHeading.textContent = '1b. Hàng ngẫu nhiên cho Điều kiện 1 · 2. Hàng ngẫu nhiên cho Điều kiện 2';
+            }
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
         },
@@ -3402,7 +3421,7 @@ const app = {
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || generator === 'number.safe_password_by_place_value'; });
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
@@ -3421,8 +3440,8 @@ const app = {
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
-            const safePasswordMinLength = Math.max(2, Math.min(9, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
-            const safePasswordMaxLength = Math.max(2, Math.min(9, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
+            const safePasswordMinLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
+            const safePasswordMaxLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
             const selectedSafeValues = group => [...document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`)].filter(input => input.checked).map(input => input.value);
             const condition1Places = selectedSafeValues('safe-condition1-places');
             const condition2Places = selectedSafeValues('safe-condition2-places');
@@ -3430,8 +3449,8 @@ const app = {
             const condition2Digits = selectedSafeValues('safe-condition2-digits').map(Number);
             const condition1Classes = selectedSafeValues('safe-condition1-classes');
             const condition2Classes = selectedSafeValues('safe-condition2-classes');
-            const condition1Scope = value('template-safe-password-condition1-scope') || 'place';
-            const condition2Scope = value('template-safe-password-condition2-scope') || 'place';
+            const condition1Scope = generatorKey === 'number.safe_password_by_place_value' ? 'random' : (value('template-safe-password-condition1-scope') || 'place');
+            const condition2Scope = 'place';
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
             const enteredMinimum = app.data.parseMathNumber(value('template-minimum'));
             const enteredMaximum = app.data.parseMathNumber(value('template-maximum'));
@@ -3442,9 +3461,10 @@ const app = {
             if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.safe_password_by_place_value') {
-                const target1 = condition1Scope === 'class' ? condition1Classes : condition1Places;
-                const target2 = condition2Scope === 'class' ? condition2Classes : condition2Places;
+                const target1 = condition1Scope === 'random' ? [...condition1Classes, ...condition1Places] : (condition1Scope === 'class' ? condition1Classes : condition1Places);
+                const target2 = condition2Places;
                 if (!target1.length || !condition1Digits.length || !target2.length || !condition2Digits.length) throw new Error('Mỗi điều kiện mở két cần chọn ít nhất một lớp hoặc một hàng, cùng một chữ số.');
+                if (!Number.isInteger(enteredMinimum) || !Number.isInteger(enteredMaximum) || enteredMinimum < 0 || enteredMaximum < enteredMinimum || enteredMaximum > 10 ** safePasswordMaxLength - 1) throw new Error(`Phạm vi mật khẩu phải là số nguyên từ 0 đến ${app.data.formatMathNumber(10 ** safePasswordMaxLength - 1)}.`);
                 const classMinimumLength = { unitsClass: 3, thousandsClass: 6, millionsClass: 9 };
                 for (const [index, scope, classes] of [[1, condition1Scope, condition1Classes], [2, condition2Scope, condition2Classes]]) {
                     if (scope === 'class' && Math.min(...classes.map(key => classMinimumLength[key] || Infinity)) > safePasswordMinLength) {

@@ -9,12 +9,14 @@
 const PLACE_CHOICES = [
     ['ones', 1, 'hàng đơn vị'], ['tens', 10, 'hàng chục'], ['hundreds', 100, 'hàng trăm'],
     ['thousands', 1000, 'hàng nghìn'], ['tenThousands', 10000, 'hàng chục nghìn'], ['hundredThousands', 100000, 'hàng trăm nghìn'],
-    ['millions', 1000000, 'hàng triệu'], ['tenMillions', 10000000, 'hàng chục triệu'], ['hundredMillions', 100000000, 'hàng trăm triệu']
+    ['millions', 1000000, 'hàng triệu'], ['tenMillions', 10000000, 'hàng chục triệu'], ['hundredMillions', 100000000, 'hàng trăm triệu'],
+    ['billions', 1000000000, 'hàng tỷ'], ['tenBillions', 10000000000, 'hàng chục tỷ'], ['hundredBillions', 100000000000, 'hàng trăm tỷ']
 ];
 const CLASS_CHOICES = [
     ['unitsClass', 'lớp đơn vị', [1, 10, 100]],
     ['thousandsClass', 'lớp nghìn', [1000, 10000, 100000]],
-    ['millionsClass', 'lớp triệu', [1000000, 10000000, 100000000]]
+    ['millionsClass', 'lớp triệu', [1000000, 10000000, 100000000]],
+    ['billionsClass', 'lớp tỷ', [1000000000, 10000000000, 100000000000]]
 ];
 
 function digitAt(value, place) {
@@ -22,7 +24,7 @@ function digitAt(value, place) {
 }
 
 function clampCodeLength(value) {
-    return Math.max(2, Math.min(9, Number.isInteger(Number(value)) ? Number(value) : 9));
+    return Math.max(2, Math.min(12, Number.isInteger(Number(value)) ? Number(value) : 9));
 }
 
 function validPlaces(codeLength) {
@@ -68,14 +70,38 @@ function chooseClassCondition(config, index, codeLength, random, previous) {
 }
 
 function chooseCondition(config, index, codeLength, random, previous) {
+    if (index === 2) return choosePlaceCondition(config, index, validPlaces(codeLength), random, previous);
+    if (index === 1 && config.condition1Scope === 'random') {
+        const availableClasses = CLASS_CHOICES.filter(([, , places]) => places.every(place => place <= 10 ** (codeLength - 1)));
+        const classes = Array.isArray(config.condition1Classes)
+            ? availableClasses.filter(([key]) => config.condition1Classes.includes(key))
+            : availableClasses;
+        const availablePlaces = validPlaces(codeLength);
+        const places = Array.isArray(config.condition1Places)
+            ? availablePlaces.filter(([key]) => config.condition1Places.includes(key))
+            : availablePlaces;
+        const choices = [
+            ...classes.map(item => ({ type: 'class', item })),
+            ...places.map(item => ({ type: 'place', item }))
+        ];
+        if (!choices.length) throw new Error('Điều kiện 1 cần chọn ít nhất một lớp hoặc một hàng phù hợp với phạm vi số.');
+        const picked = choices[randomInt(0, choices.length - 1, random)];
+        return picked.type === 'class'
+            ? chooseClassCondition({ ...config, condition1Classes: [picked.item[0]] }, index, codeLength, random, previous)
+            : choosePlaceCondition({ ...config, condition1Places: [picked.item[0]] }, index, validPlaces(codeLength), random, previous);
+    }
     return config[`condition${index}Scope`] === 'class'
         ? chooseClassCondition(config, index, codeLength, random, previous)
         : choosePlaceCondition(config, index, validPlaces(codeLength), random, previous);
 }
 
 function rulesFor(config, codeLength, random) {
-    const minimum = 10 ** (codeLength - 1);
-    const maximum = 10 ** codeLength - 1;
+    const naturalMinimum = 10 ** (codeLength - 1);
+    const naturalMaximum = 10 ** codeLength - 1;
+    const hasCustomRange = Number.isFinite(Number(config.minimum)) && Number.isFinite(Number(config.maximum));
+    const minimum = hasCustomRange ? Math.max(0, Number(config.minimum)) : naturalMinimum;
+    const maximum = hasCustomRange ? Math.min(naturalMaximum, Number(config.maximum)) : naturalMaximum;
+    if (!Number.isInteger(minimum) || !Number.isInteger(maximum) || minimum > maximum) throw new Error('Phạm vi mật khẩu không hợp lệ với số chữ số đã chọn.');
     const condition1 = chooseCondition(config, 1, codeLength, random);
     const condition2 = chooseCondition(config, 2, codeLength, random, condition1);
     return { minimum, maximum, condition1, condition2 };
@@ -84,6 +110,10 @@ function rulesFor(config, codeLength, random) {
 function isSafePassword(value, rule) {
     return rule.condition1.places.every(place => digitAt(value, place) !== rule.condition1.digit)
         && rule.condition2.places.every(place => digitAt(value, place) !== rule.condition2.digit);
+}
+
+function formatPassword(value, codeLength) {
+    return formatNumber(String(value).padStart(codeLength, '0'));
 }
 
 function generateSafePassword(config = {}, random = Math.random) {
@@ -104,8 +134,8 @@ function generateSafePassword(config = {}, random = Math.random) {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
         type: 'Trắc nghiệm', templateId: 'number.safe_password_by_place_value', q: question,
         imageUrl: './src/assets/safe-password-3d-v3.png', passwordCode: correct, codeLength,
-        options: shuffle([correct, wrongCondition1, wrongCondition2, wrongBoth], random).map(formatNumber), ans: formatNumber(correct),
-        explanation: `Mật khẩu ${formatNumber(correct)} thỏa cả hai điều kiện: ${rule.condition1.text}. ${rule.condition2.text}.`,
+        options: shuffle([correct, wrongCondition1, wrongCondition2, wrongBoth], random).map(value => formatPassword(value, codeLength)), ans: formatPassword(correct, codeLength),
+        explanation: `Mật khẩu ${formatPassword(correct, codeLength)} thỏa cả hai điều kiện: ${rule.condition1.text}. ${rule.condition2.text}.`,
         templateVariables: { question, condition1: rule.condition1.text, condition2: rule.condition2.text, codeLength: String(codeLength), password_cells: codeLength, condition1Place: rule.condition1.scope === 'place' ? rule.condition1.key : null, condition2Place: rule.condition2.scope === 'place' ? rule.condition2.key : null, condition1Scope: rule.condition1.scope, condition2Scope: rule.condition2.scope }
     };
 }
