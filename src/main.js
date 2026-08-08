@@ -2420,7 +2420,8 @@ const app = {
             }
 
             const detailsBox = document.getElementById('result-details');
-            const htmlString = this.state.historyDetails.map((d, i) => {
+            const historyDetails = Array.isArray(this.state.historyDetails) ? this.state.historyDetails : [];
+            const htmlString = historyDetails.map((d, i) => {
                             let ansHtml = '';
                             if (d.type === 'Đối chiếu trùng khớp' && d.selected) {
                                 const selPairs = d.selected.split(', ');
@@ -2440,7 +2441,8 @@ const app = {
                     </div>
                   `;
                         }).join('');
-            detailsBox.innerHTML = htmlString;
+            detailsBox.innerHTML = htmlString || '<p class="result-empty-details" role="status">Chưa có chi tiết bài làm để hiển thị.</p>';
+            document.querySelector('#result-modal .result-layout')?.classList.toggle('result-layout--single-column', historyDetails.length === 0);
 
             document.getElementById('result-modal').classList.add('active');
         },

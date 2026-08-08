@@ -14,7 +14,7 @@ Sau mỗi lần chạy, tải hai ảnh này lên Kimi để review giao diện:
 - `test-results/ui-review/login-mobile-landscape.png`
 - `test-results/ui-review/login-mobile-portrait-rotate.png` (màn hình nhắc xoay ngang là hành vi dự kiến)
 
-Khi chạy `npm run test:browser`, Playwright còn tạo bộ ảnh audit `audit-desktop-*.png` và `audit-mobile-*.png` cho đăng ký, bản đồ, cấu hình/làm bài, đề thi, kho báu, nhiệm vụ, cửa hàng và sáu tab quản trị. Các ảnh này dùng dữ liệu minh họa cục bộ, không phải dữ liệu học sinh hoặc Supabase thật. Test cũng xác nhận cửa sổ **Hướng dẫn sử dụng** phải tắt trước mọi ảnh khác, nên ảnh modal không bị che phủ.
+Khi chạy `npm run test:browser`, Playwright còn tạo bộ ảnh audit `audit-desktop-*.png` và `audit-mobile-*.png` cho đăng ký, bản đồ, cấu hình/làm bài, đề thi, kho báu, nhiệm vụ, cửa hàng và sáu tab quản trị. Các ảnh này dùng dữ liệu minh họa cục bộ, không phải dữ liệu học sinh hoặc Supabase thật. Test cũng xác nhận mọi modal dùng `display` nội tuyến (Hướng dẫn, Kho báu, Nhiệm vụ, Cửa hàng) phải tắt trước ảnh kế tiếp, nên ảnh modal không bị che phủ.
 
 ## Trước khi chạy
 

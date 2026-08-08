@@ -69,6 +69,27 @@ test('mobile ngang: trang chủ hiển thị màn hình đăng nhập mà không
   await captureUiReview(page, testInfo, 'login-mobile-landscape.png');
 });
 
+test('kết quả không để trống phần chi tiết khi không có câu trả lời', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.game.state = { ...app.game.state, score: 0, subject: 'math', questions: [], historyDetails: [] };
+    app.game.finishPlay();
+  });
+
+  await expect(page.locator('#result-modal')).toBeVisible();
+  await expect(page.locator('#result-msg')).not.toHaveText(/rất tốt/i);
+  await expect(page.locator('#result-details')).toContainText(/chưa có chi tiết/i);
+});
+
+test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },
@@ -97,10 +118,12 @@ async function showAuditState(page, state) {
     document.querySelectorAll('.screen').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.game-view').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.modal, .modal-overlay').forEach(element => element.classList.remove('active'));
-    // Hướng dẫn dùng inline style, nên cần tắt rõ ràng trước mỗi ảnh audit.
+    // Các modal này dùng inline style, nên cần tắt rõ ràng trước mỗi ảnh audit.
     const guideModal = document.getElementById('guide-modal');
     guideModal.style.display = 'none';
-    document.getElementById('treasure-modal').style.display = '';
+    ['treasure-modal', 'quest-modal', 'shop-modal'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
 
     document.getElementById(screenId).classList.add('active');
     if (gameViewId) document.getElementById(gameViewId).classList.add('active');
@@ -116,8 +139,11 @@ async function showAuditState(page, state) {
     document.getElementById('game-question-container').textContent = 'Số nào lớn nhất trong các số sau?';
     document.getElementById('game-options-container').innerHTML = '<button class="option-btn">12.345</button><button class="option-btn">12.354</button><button class="option-btn">12.435</button><button class="option-btn">12.453</button>';
     document.getElementById('exam-student-name').textContent = 'Minh Anh';
-    document.getElementById('exam-questions-container').innerHTML = '<article class="exam-question">Câu 1. Viết số thích hợp vào chỗ trống.</article>';
-    document.getElementById('result-msg').textContent = 'Con đã hoàn thành rất tốt!';
+    document.getElementById('exam-questions-container').innerHTML = '<section class="exam-q-block"><div class="exam-q-text">Câu 1. Viết số thích hợp vào chỗ trống.</div><label class="exam-opt-label" for="audit-exam-answer">Đáp án <input id="audit-exam-answer" class="fill-input" inputmode="numeric" aria-label="Đáp án câu 1"></label></section>';
+    document.getElementById('result-score').textContent = '0';
+    document.getElementById('result-msg').textContent = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận kẹo).';
+    document.getElementById('result-details').innerHTML = '<article><b>1. Số nào lớn nhất?</b><br>Con chọn: <span style="color:#f87171">Bỏ trống</span><br><span style="color:#4ade80">Đáp án: 12.453</span></article>';
+    document.querySelector('#result-modal .result-layout').classList.remove('result-layout--single-column');
     document.getElementById('treasure-content-area').textContent = 'Kho báu minh họa cho phiên review UI.';
     document.getElementById('quest-list-container').innerHTML = '<article class="quest-card">Hoàn thành 5 câu Toán hôm nay</article>';
     document.getElementById('shop-content-area').textContent = 'Cửa hàng minh họa cho phiên review UI.';
@@ -178,6 +204,11 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
     if (state.modalId !== 'guide-modal') {
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
+    if (state.adminTab) {
+      await expect(page.locator('#admin-tabs')).toBeVisible();
+      await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
+      await expect(page.locator('#shop-modal')).toBeHidden();
+    }
     await captureUiReview(page, testInfo, `audit-desktop-${state.name}.png`);
   }
 
@@ -199,6 +230,11 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
     await expect(page.locator(`#${visibleId}`)).toBeVisible();
     if (state.modalId !== 'guide-modal') {
       await expect(page.locator('#guide-modal')).toBeHidden();
+    }
+    if (state.adminTab) {
+      await expect(page.locator('#admin-tabs')).toBeVisible();
+      await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
+      await expect(page.locator('#shop-modal')).toBeHidden();
     }
     await captureUiReview(page, testInfo, `audit-mobile-${state.name}.png`);
   }
