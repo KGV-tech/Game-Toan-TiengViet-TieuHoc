@@ -49,6 +49,7 @@ assert(source.includes('template-safe-password-condition2-places'), 'Safe-passwo
 assert(source.includes('template-safe-password-condition1-digits'), 'Safe-password templates must expose configurable digits for condition 1.');
 assert(source.includes('template-safe-password-condition2-digits'), 'Safe-password templates must expose configurable digits for condition 2.');
 assert(source.includes('template-safe-password-condition1-scope'), 'Safe-password templates must let administrators distinguish a class condition from a place condition.');
+assert(source.includes("rule.hidden = false"), 'Safe-password configuration controls must remain visible after the template editor renders.');
 assert(source.includes('Lớp triệu (trăm triệu, chục triệu, triệu)'), 'The editor must define a class as its three constituent places.');
 assert(source.includes('Lớp tỷ (trăm tỷ, chục tỷ, tỷ)'), 'The editor must offer the four requested number classes through lớp tỷ.');
 assert(source.includes("condition1Scope = generatorKey === 'number.safe_password_by_place_value' ? 'random'"), 'Safe-password condition 1 must randomly choose from configured classes and places.');

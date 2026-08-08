@@ -3324,6 +3324,9 @@ const app = {
             }
             this.refreshTemplateTopics(existing?.topic || '');
             this.showTemplateExample();
+            if (existing?.generator_key === 'number.safe_password_by_place_value') {
+                document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
+            }
         },
         templatePresets: {
                 'number.digit_at_place': {
