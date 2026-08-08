@@ -177,7 +177,7 @@ test('Kho Template: Đúng/Sai hiện cấu hình lớp, hàng và biến nhận
   await captureUiReview(page, testInfo, 'true-false-template-config.png');
 });
 
-test('đối chiếu số và cách đọc có hai cột cân bằng', async ({ page }, testInfo) => {
+test('đối chiếu số và cách đọc dàn đều cột số theo chiều dọc', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1600, height: 1000 });
   await openOfflineHomepage(page);
 
@@ -195,11 +195,17 @@ test('đối chiếu số và cách đọc có hai cột cân bằng', async ({ 
     app.game.loadQuestion();
   });
 
-  const [left, right] = await Promise.all([
+  const [left, right, leftFirst, rightFirst, leftLast, rightLast] = await Promise.all([
     page.locator('.matching-col.left-col').boundingBox(),
-    page.locator('.matching-col.right-col').boundingBox()
+    page.locator('.matching-col.right-col').boundingBox(),
+    page.locator('.matching-col.left-col .matching-item').first().boundingBox(),
+    page.locator('.matching-col.right-col .matching-item').first().boundingBox(),
+    page.locator('.matching-col.left-col .matching-item').last().boundingBox(),
+    page.locator('.matching-col.right-col .matching-item').last().boundingBox()
   ]);
-  expect(Math.abs(left.width - right.width)).toBeLessThanOrEqual(2);
+  expect(right.width).toBeGreaterThan(left.width);
+  expect(Math.abs(leftFirst.y - rightFirst.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs((leftLast.y + leftLast.height) - (rightLast.y + rightLast.height))).toBeLessThanOrEqual(2);
   await captureUiReview(page, testInfo, 'matching-balanced-columns.png');
 });
 

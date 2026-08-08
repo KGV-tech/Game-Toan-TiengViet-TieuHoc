@@ -944,9 +944,9 @@ input[type="text"], input[type="password"], select, textarea {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-content: center;
-    column-gap: clamp(42px, 8vw, 112px);
+    grid-template-columns: minmax(150px, 30%) minmax(0, 58%);
+    justify-content: space-between;
+    column-gap: 0;
     width: 100%;
 }
 .matching-col {
@@ -957,6 +957,7 @@ input[type="text"], input[type="password"], select, textarea {
 }
 .matching-col.left-col {
     width: auto;
+    justify-content: space-between;
 }
 .matching-col.right-col {
     width: auto;

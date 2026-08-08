@@ -10,7 +10,8 @@ assert.match(css, /prefers-reduced-motion/, 'Motion effects must respect reduced
 assert.match(css, /\.score-display\s*\{[^}]*flex:\s*0 0 auto/s, 'The gameplay score must remain inside the shared header layout.');
 assert.match(css, /\.play-center\s*\{[^}]*height:\s*min\(82vh, 900px\)/s, 'The shared gameplay frame must allow more vertical content.');
 assert.match(css, /\.matching-item\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long matching answers must wrap instead of overflowing.');
-assert.match(css, /\.matching-columns\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)[^}]*column-gap:/s, 'Matching layout must use balanced columns with a clear center gap.');
+assert.match(css, /\.matching-columns\s*\{[^}]*grid-template-columns:\s*minmax\(150px, 30%\) minmax\(0, 58%\)/s, 'Matching layout must keep the text column wider than the number column.');
+assert.match(css, /\.matching-col\.left-col\s*\{[^}]*justify-content:\s*space-between/s, 'The shorter number column must distribute items across the full matching height.');
 assert.match(css, /\.comparison-expression\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/s, 'Comparison expressions must use flexible columns.');
 assert.match(css, /\.comparison-expression__side\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long comparison expressions must wrap inside their cards.');
 
