@@ -14,6 +14,7 @@ question-templates/
         ├── neighbor-numbers.js
         ├── compare-number-forms.js
         ├── match-number-words.js
+        ├── safe-password-by-place-value.js
         └── index.js
 ```
 
@@ -49,6 +50,12 @@ The four Grade 4 Math templates below use `minimum` and `maximum` only. Their da
 - `number.missing_expanded_addend` — fill a missing addend in expanded form.
 - `number.neighbor_numbers` — fill the preceding and following numbers.
 - `number.compare_number_forms` — choose `>`, `<`, or `=` between a number and an expanded form.
+
+## Mật khẩu két sắt
+
+`number.safe_password_by_place_value` tạo câu trắc nghiệm kèm ảnh két sắt. Game sinh bốn số có
+chín chữ số; chỉ một số không chứa chữ số `0` ở lớp triệu và có chữ số hàng trăm nghìn khác `3`.
+Ảnh chỉ được lưu một lần tại `src/assets/safe-password.svg`, không lặp lại trong dữ liệu câu hỏi.
 
 ## Prompt variables for administrators
 
