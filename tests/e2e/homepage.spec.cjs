@@ -95,6 +95,7 @@ test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạn
   await openOfflineHomepage(page);
 
   await expect(page.locator('.station-artwork .station-label').first()).toHaveCSS('animation-name', 'map-station-beacon');
+  await expect(page.locator('.station-guide .station-img')).toHaveCSS('filter', 'none');
   await page.evaluate(() => {
     const multi = document.querySelector('input[name="topicMode"][value="multi"]');
     multi.checked = true;

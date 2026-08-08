@@ -71,6 +71,12 @@
   pointer-events: auto;
 }
 
+/* Ảnh bảng Hướng dẫn đã có viền kim loại riêng; không thêm bóng đen từ style trạm chung. */
+.map-v2 .station-guide .station-img,
+.map-v2 .station-guide:hover .station-img {
+  filter: none;
+}
+
 .map-v2 .station-guide .map-guide-label:focus-visible {
   outline: 3px solid #fff2a8;
   outline-offset: 4px;
