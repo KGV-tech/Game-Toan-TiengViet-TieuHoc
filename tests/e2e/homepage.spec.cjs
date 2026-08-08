@@ -90,6 +90,33 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
+test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    let seed = 42;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.safe_password_by_place_value', {}, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--safe-password')).toBeVisible();
+  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password.svg');
+  await expect(page.locator('#game-options-container .ans-btn')).toHaveCount(4);
+  await captureUiReview(page, testInfo, 'safe-password-desktop.png');
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạng thái rõ ràng', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

@@ -1409,10 +1409,15 @@ const app = {
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
             let qHtml = app.data.formatMathText(q.q);
-            if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
             const questionContainer = document.getElementById('game-question-container');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison');
-            questionContainer.innerHTML = qHtml;
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password');
+            if (q.templateId === 'number.safe_password_by_place_value') {
+                questionContainer.classList.add('question-box--template', 'question-box--safe-password');
+                questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div><img class="safe-password-illustration" src="./src/assets/safe-password.svg" alt="Hình minh hoạ két sắt">`;
+            } else {
+                if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
+                questionContainer.innerHTML = qHtml;
+            }
 
             const optContainer = document.getElementById('game-options-container');
             optContainer.innerHTML = '';
@@ -3271,7 +3276,7 @@ const app = {
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?')}</textarea></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
@@ -3341,6 +3346,13 @@ const app = {
                     example: 'Ví dụ: Số 14 021 983 — A. Chữ số 4 thuộc lớp triệu. ĐÚNG/SAI',
                     type: 'Đúng/Sai',
                     variables: [['{question}', 'dòng tiêu đề do game sinh'], ['{number}', 'số nhiều chữ số đã sinh']]
+                },
+                'number.safe_password_by_place_value': {
+                    guide: 'Game sinh bốn số có chín chữ số và chỉ một số thỏa hai quy tắc mở két sắt. Ảnh két sắt được hiển thị cố định trong câu hỏi.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động, hoặc ghép các điều kiện bằng <code>{condition1}</code> và <code>{condition2}</code>.',
+                    example: 'Ví dụ: Chọn mật khẩu không có chữ số 0 ở lớp triệu và có chữ số hàng trăm nghìn khác 3.',
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ câu do game sinh'], ['{condition1}', 'quy tắc về lớp triệu'], ['{condition2}', 'quy tắc về hàng trăm nghìn']]
                 },
                 'number.match_number_words': {
                     guide: 'Game sinh các số có 7, 8 hoặc 9 chữ số và các cách đọc tương ứng. Hai vế lệch nhau đúng một mục để tạo một mục nhiễu.',
