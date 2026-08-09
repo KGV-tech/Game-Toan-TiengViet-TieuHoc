@@ -280,6 +280,10 @@
             <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
               <div class="config-left" style="flex: 1; display: flex; justify-content: center; align-items: center;">
                 <img src="./public/robot_cat_normal.webp" alt="Robot mèo thám hiểm" class="cat-avatar heartbeat" style="width: 170px;">
+                <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
+                  onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
+                  <img src="./public/ui/buttons/group1/start-adventure.png" alt="" aria-hidden="true">
+                </button>
               </div>
 
               <div class="config-center" style="flex: 3; display: flex; flex-direction: column; gap: 8px;">
@@ -316,12 +320,6 @@
                   </div>
                   <div id="topics-list" class="topics-grid"></div>
                 </div>
-
-                <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
-                  style="width: 100%; flex-direction: row; justify-content: center; margin-top: 5px;"
-                  onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
-                  <img src="./public/ui/buttons/group1/start-adventure.png" alt="" aria-hidden="true">
-                </button>
               </div>
             </div>
           </div>
