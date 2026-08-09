@@ -90,6 +90,35 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
+test('luyện tập tận dụng chiều cao, nền trong suốt và điều khiển không bị cắt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').className = 'screen active theme-math';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+  const configPanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
+  expect(configPanel.height).toBeGreaterThanOrEqual(860);
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(34, 211, 238)');
+
+  await page.evaluate(() => {
+    document.getElementById('game-config-view').classList.remove('active');
+    document.getElementById('game-play-view').classList.add('active');
+    const bubble = document.getElementById('cat-speech-bubble');
+    bubble.textContent = 'Cố lên!';
+    bubble.style.display = 'flex';
+  });
+  const playPanel = await page.locator('#game-play-view .glass-container-xl').boundingBox();
+  const bubble = await page.locator('#cat-speech-bubble').boundingBox();
+  const playLeft = await page.locator('#game-play-view .play-left').boundingBox();
+  const submitButton = await page.locator('#submit-ans-btn').boundingBox();
+  expect(bubble.y).toBeGreaterThanOrEqual(playPanel.y + 35);
+  expect(submitButton.width / playLeft.width).toBeLessThanOrEqual(.91);
+  await expect(page.locator('#game-play-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.locator('#game-play-view .play-center')).toHaveCSS('backdrop-filter', 'blur(2px)');
+});
+
 test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
