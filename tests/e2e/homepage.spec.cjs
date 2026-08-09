@@ -280,6 +280,30 @@ test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', a
   expect(box.y + box.height).toBeLessThanOrEqual(1020);
 });
 
+test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo máy nằm trong khung', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').className = 'screen active theme-math';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+
+  const practicePanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
+  const practiceMascot = await page.locator('#game-config-view .config-left').boundingBox();
+  expect(practicePanel.width).toBeGreaterThanOrEqual(1180);
+  expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
+  expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('exam-select-screen').classList.add('active');
+  });
+
+  const examPanel = await page.locator('#exam-select-screen .glass-container-xl').boundingBox();
+  expect(examPanel.width).toBeLessThanOrEqual(1040);
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },
