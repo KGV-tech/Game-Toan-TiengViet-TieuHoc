@@ -120,11 +120,14 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
   const playPanel = await page.locator('#game-play-view .glass-container-xl').boundingBox();
   const bubble = await page.locator('#cat-speech-bubble').boundingBox();
   const playLeft = await page.locator('#game-play-view .play-left').boundingBox();
+  const playCenter = await page.locator('#game-play-view .play-center').boundingBox();
   const submitButton = await page.locator('#submit-ans-btn').boundingBox();
   expect(bubble.y).toBeGreaterThanOrEqual(playPanel.y + 35);
   expect(submitButton.width / playLeft.width).toBeLessThanOrEqual(.91);
+  expect(playCenter.y + playCenter.height).toBeLessThanOrEqual(playPanel.y + playPanel.height - 16);
   await expect(page.locator('#game-play-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
   await expect(page.locator('#game-play-view .play-center')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.locator('#topics-list')).toHaveCSS('overflow-y', 'visible');
 
   await page.evaluate(() => {
     document.getElementById('game-play-view').classList.remove('active');
