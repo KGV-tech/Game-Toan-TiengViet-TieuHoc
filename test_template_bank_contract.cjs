@@ -69,7 +69,8 @@ assert(source.includes('template-arithmetic-max-digits'), 'Four-arithmetic templ
 assert(source.includes('template-arithmetic-operations'), 'Four-arithmetic templates must expose selectable operations.');
 assert(source.includes('template-arithmetic-layouts'), 'Four-arithmetic templates must expose selectable two-side layouts.');
 assert(source.includes('template-arithmetic-blank-positions'), 'The fill-in template must expose selectable blank positions.');
-assert(source.includes('template-arithmetic-comparisons'), 'The drag-comparison template must expose selectable comparison signs.');
+assert(source.includes("checkbox('fourth', 'Số thứ tư'"), 'The fill-in template must let administrators select the fourth operand as a blank.');
+assert(!source.includes('template-arithmetic-comparisons'), 'The drag-comparison template must always include all three signs instead of exposing a limited sign configuration.');
 assert(css.includes('comparison-drag-slot'), 'Four-arithmetic comparisons must use a dedicated circular drop slot.');
 assert(source.includes('Tỷ lệ sinh số'), 'The matching template must label digit weights clearly.');
 assert(css.includes('template-editor__rule--matching-controls'), 'Matching configuration must span the rule grid without overlapping fields.');

@@ -230,7 +230,7 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
     };
     const question = window.Grade4MathTemplates.generateQuestion('number.four_arithmetic_blanks', {
       minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
-      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third']
+      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third', 'fourth']
     }, random);
     app.data.currentUser = { username: 'demo-student', role: 'student' };
     app.game.state = { score: 0, currentIdx: 0, questions: [question] };
@@ -251,7 +251,7 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
       id: 'four-arithmetic-demo', name: 'Điền số trong bốn phép tính', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
       topic: '3. Số có nhiều chữ số', question_type: 'Điền khuyết', generator_key: 'number.four_arithmetic_blanks',
       prompt_template: 'Hãy điền số thích hợp vào chỗ trống:<br>{exercises}',
-      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third'] }
+      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third', 'fourth'] }
     }];
     app.admin.renderTemplateForm(0);
     document.getElementById('treasure-modal').style.display = 'block';
@@ -263,11 +263,12 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-operations')).toContainText('+');
   await expect(page.locator('#template-arithmetic-layouts')).toContainText('Hai vế đều là phép tính');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
+  await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
 });
 
-test('so sánh kéo thả bốn phép tính hiện bốn ô tròn và cấu hình dấu', async ({ page }, testInfo) => {
+test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -281,7 +282,7 @@ test('so sánh kéo thả bốn phép tính hiện bốn ô tròn và cấu hìn
     })();
     const question = window.Grade4MathTemplates.generateQuestion('number.four_arithmetic_comparisons', {
       minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
-      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '=']
+      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
     }, random);
     app.data.currentUser = { username: 'demo-student', role: 'student' };
     app.game.state = { score: 0, currentIdx: 0, questions: [question] };
@@ -315,21 +316,20 @@ test('so sánh kéo thả bốn phép tính hiện bốn ô tròn và cấu hìn
       id: 'four-arithmetic-comparison-demo', name: 'So sánh bốn phép tính kéo thả', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
       topic: '3. Số có nhiều chữ số', question_type: 'Kéo thả', generator_key: 'number.four_arithmetic_comparisons',
       prompt_template: 'Điền dấu thích hợp:<br>{exercises}',
-      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '='] }
+      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'] }
     }];
     app.admin.renderTemplateForm(0);
     document.getElementById('treasure-modal').style.display = 'block';
   });
 
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
-  await expect(page.locator('.template-editor__rule--four-arithmetic-comparison-signs')).toBeVisible();
   await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
-  await expect(page.locator('#template-arithmetic-comparisons')).toContainText('Bằng nhau (=)');
+  await expect(page.locator('#template-arithmetic-comparisons')).toHaveCount(0);
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
   const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
   expect(savedConfig).toEqual(expect.objectContaining({
     minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'],
-    layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '=']
+    layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
   }));
   await captureUiReview(page, testInfo, 'four-arithmetic-comparisons-template-config.png');
 });

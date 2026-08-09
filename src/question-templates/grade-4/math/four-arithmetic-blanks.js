@@ -7,7 +7,7 @@
 }(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, formatNumber, createFillBlankQuestion }) {
 
 const LAYOUTS = ['expressionLeft', 'expressionRight', 'twoExpressions'];
-const BLANK_POSITIONS = ['first', 'second', 'third'];
+const BLANK_POSITIONS = ['first', 'second', 'third', 'fourth'];
 
 function choose(items, random) {
     return items[randomInt(0, items.length - 1, random)];
@@ -45,7 +45,7 @@ function generateArithmeticLine(label, operation, layout, blankPosition, minimum
                 return [target + rightSecond, rightSecond];
             })();
         const values = [first, second, rightPair[0], rightPair[1]];
-        const display = `${displayValue(values[0], blankIndex === 0)} ${symbol} ${displayValue(values[1], blankIndex === 1)} = ${displayValue(values[2], blankIndex === 2)} ${symbol} ${formatNumber(values[3])}`;
+        const display = `${displayValue(values[0], blankIndex === 0)} ${symbol} ${displayValue(values[1], blankIndex === 1)} = ${displayValue(values[2], blankIndex === 2)} ${symbol} ${displayValue(values[3], blankIndex === 3)}`;
         return { label, operation, layout, blankPosition, answer: values[blankIndex], display, values };
     }
 
@@ -72,15 +72,24 @@ function generateFourArithmeticBlanks(config = {}, random = Math.random) {
     const blankPositions = (Array.isArray(config.blankPositions) ? config.blankPositions : BLANK_POSITIONS).filter(item => BLANK_POSITIONS.includes(item));
     if (!operations.length || !layouts.length || !blankPositions.length) throw new Error('Hãy chọn ít nhất một phép tính, dạng hai vế và vị trí ô trống.');
 
-    const subquestions = ['a', 'b', 'c', 'd'].map(label => generateArithmeticLine(
-        label,
-        choose(operations, random),
-        choose(layouts, random),
-        choose(blankPositions, random),
-        minimum,
-        maximum,
-        random
-    ));
+    const compatibleLayouts = layouts.filter(layout => layout === 'twoExpressions' || blankPositions.some(position => position !== 'fourth'));
+    if (!compatibleLayouts.length) throw new Error('Vị trí “Số thứ tư” chỉ dùng khi chọn dạng “Hai vế đều là phép tính”.');
+
+    const subquestions = ['a', 'b', 'c', 'd'].map(label => {
+        const layout = choose(compatibleLayouts, random);
+        const compatibleBlankPositions = layout === 'twoExpressions'
+            ? blankPositions
+            : blankPositions.filter(position => position !== 'fourth');
+        return generateArithmeticLine(
+            label,
+            choose(operations, random),
+            layout,
+            choose(compatibleBlankPositions, random),
+            minimum,
+            maximum,
+            random
+        );
+    });
     const exercises = subquestions.map(item => `${item.label}. ${item.display}`).join('<br>');
     const prompt = `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
 

@@ -7,6 +7,7 @@
 }(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, formatNumber }) {
 
 const LAYOUTS = ['expressionLeft', 'expressionRight', 'twoExpressions'];
+const COMPARISON_SIGNS = ['>', '<', '='];
 
 function choose(items, random) {
     return items[randomInt(0, items.length - 1, random)];
@@ -29,6 +30,15 @@ function expression(pair, operation) {
 
 function signFor(left, right) {
     return left === right ? '=' : (left > right ? '>' : '<');
+}
+
+function comparisonSignsForFourRows(random) {
+    const signs = [...COMPARISON_SIGNS, choose(COMPARISON_SIGNS, random)];
+    for (let index = signs.length - 1; index > 0; index--) {
+        const swapIndex = randomInt(0, index, random);
+        [signs[index], signs[swapIndex]] = [signs[swapIndex], signs[index]];
+    }
+    return signs;
 }
 
 function generateRow(label, operation, layout, requestedSign, minimum, maximum, random) {
@@ -87,15 +97,15 @@ function generateFourArithmeticComparisons(config = {}, random = Math.random) {
     if (!Number.isSafeInteger(minimum) || !Number.isSafeInteger(maximum) || minimum < 10 || maximum < minimum * 2) throw new Error('Phạm vi số chưa đủ để tạo phép so sánh.');
     const operations = (Array.isArray(config.operations) ? config.operations : ['+', '-']).filter(item => item === '+' || item === '-');
     const layouts = (Array.isArray(config.layouts) ? config.layouts : LAYOUTS).filter(item => LAYOUTS.includes(item));
-    const comparisons = (Array.isArray(config.comparisons) ? config.comparisons : ['>', '<', '=']).filter(item => ['>', '<', '='].includes(item));
-    if (!operations.length || !layouts.length || !comparisons.length) throw new Error('Hãy chọn ít nhất một phép tính, dạng hai vế và dấu so sánh.');
+    if (!operations.length || !layouts.length) throw new Error('Hãy chọn ít nhất một phép tính và dạng hai vế.');
 
-    const comparisonRows = ['a', 'b', 'c', 'd'].map(label => generateRow(label, choose(operations, random), choose(layouts, random), choose(comparisons, random), minimum, maximum, random));
+    const comparisonSigns = comparisonSignsForFourRows(random);
+    const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => generateRow(label, choose(operations, random), choose(layouts, random), comparisonSigns[index], minimum, maximum, random));
     const exercises = comparisonRows.map(row => `${row.label}. ${row.display}`).join('<br>');
     const prompt = `Điền dấu thích hợp:<br>${exercises}`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
-        type: 'Kéo thả', templateId: 'number.four_arithmetic_comparisons', q: prompt, options: ['>', '<', '='],
+        type: 'Kéo thả', templateId: 'number.four_arithmetic_comparisons', q: prompt, options: COMPARISON_SIGNS,
         ans: comparisonRows.map(row => row.answer).join(', '), comparisonRows,
         explanation: 'Tính giá trị hai vế của từng dòng rồi kéo dấu so sánh thích hợp vào vòng tròn.',
         templateVariables: { question: prompt, exercises, comparison_rows: exercises, blank: '___' }

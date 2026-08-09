@@ -90,25 +90,34 @@ const twoExpressionArithmetic = generateQuestion('number.four_arithmetic_blanks'
     maximumDigits: 3,
     operations: ['-'],
     layouts: ['twoExpressions'],
-    blankPositions: ['third']
+    blankPositions: ['fourth']
 }, seededRandom(82));
 assert(twoExpressionArithmetic.subquestions.every(item => item.layout === 'twoExpressions'), 'Both-expression layout must be selectable.');
 assert(twoExpressionArithmetic.subquestions.every(item => item.operation === '-'), 'Subtraction must be selectable.');
-assert(twoExpressionArithmetic.subquestions.every(item => item.blankPosition === 'third'), 'Administrators must be able to pin the blank position.');
+assert(twoExpressionArithmetic.subquestions.every(item => item.blankPosition === 'fourth'), 'Administrators must be able to pin the fourth blank position when both sides are expressions.');
+assert(twoExpressionArithmetic.subquestions.every(item => item.display.endsWith('___')), 'The fourth operand must render as the blank in a two-expression equation.');
 assert(twoExpressionArithmetic.subquestions.every(item => item.display.includes('−')), 'Subtraction questions must display a subtraction sign.');
+assert.throws(() => generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 2,
+    operations: ['+'],
+    layouts: ['expressionLeft'],
+    blankPositions: ['fourth']
+}, seededRandom(820)), /Số thứ tư/, 'The fourth blank position must require the two-expression layout.');
 
 const fourArithmeticComparisons = generateQuestion('number.four_arithmetic_comparisons', {
     minimumDigits: 2,
     maximumDigits: 3,
     operations: ['+', '-'],
     layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'],
-    comparisons: ['>', '<', '=']
+    comparisons: ['=']
 }, seededRandom(83));
 assert.equal(fourArithmeticComparisons.type, 'Kéo thả');
 assert.equal(fourArithmeticComparisons.comparisonRows.length, 4, 'The comparison template must generate four subquestions.');
 assert.deepEqual(fourArithmeticComparisons.comparisonRows.map(item => item.label), ['a', 'b', 'c', 'd']);
 assert.equal(fourArithmeticComparisons.ans.split(', ').length, 4, 'The four comparison slots must preserve their answer order.');
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['>', '<', '='].includes(item.answer)), 'Every comparison row must have a valid sign.');
+assert.deepEqual([...new Set(fourArithmeticComparisons.comparisonRows.map(item => item.answer))].sort(), ['<', '=', '>'], 'Four comparison rows must always include all three comparison signs, regardless of stale configuration.');
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['+', '-'].includes(item.operation)), 'Each row must use an administrator-selected operation.');
 assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\./);
 
