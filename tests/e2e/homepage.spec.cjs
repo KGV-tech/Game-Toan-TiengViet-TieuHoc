@@ -83,6 +83,42 @@ test('kết quả không để trống phần chi tiết khi không có câu tr�
   await expect(page.locator('#result-details')).toContainText(/chưa có chi tiết/i);
 });
 
+test('chi tiết kết quả của câu Đúng/Sai hiển thị đủ bốn nhận định', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.game.state = {
+      ...app.game.state,
+      score: 10,
+      subject: 'math',
+      questions: [],
+      historyDetails: [{
+        q: 'Số 674 809 231',
+        type: 'Đúng/Sai',
+        statements: [
+          { label: 'A', text: 'Chữ số 6 thuộc lớp trăm triệu.', answer: 'Đúng' },
+          { label: 'B', text: 'Chữ số 8 ở hàng trăm nghìn.', answer: 'Sai' },
+          { label: 'C', text: 'Chữ số 9 thuộc lớp nghìn.', answer: 'Đúng' },
+          { label: 'D', text: 'Chữ số 1 ở hàng đơn vị.', answer: 'Đúng' }
+        ],
+        selected: 'Đúng, Sai, Đúng, Đúng',
+        correct: 'Đúng, Sai, Đúng, Đúng',
+        isCorrect: true
+      }]
+    };
+    app.game.finishPlay();
+  });
+
+  const details = page.locator('#result-details');
+  await expect(details).toContainText('Số 674 809 231');
+  await expect(details).toContainText('A. Chữ số 6 thuộc lớp trăm triệu.');
+  await expect(details).toContainText('B. Chữ số 8 ở hàng trăm nghìn.');
+  await expect(details).toContainText('C. Chữ số 9 thuộc lớp nghìn.');
+  await expect(details).toContainText('D. Chữ số 1 ở hàng đơn vị.');
+  await expect(details).not.toContainText('<br>');
+});
+
 test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

@@ -1393,6 +1393,21 @@ const app = {
             if (ansString.includes('|')) return ansString.split('|').map(s => s.trim());
             return [ansString.trim()];
         },
+        createHistoryDetail(q, selected, isCorrect, extra = {}) {
+            const detail = { q: q.q, selected, correct: q.ans, isCorrect, type: q.type, ...extra };
+            if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
+                detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
+            }
+            return detail;
+        },
+        formatHistoryQuestion(detail) {
+            const lines = [detail.q];
+            if (detail.type === 'Đúng/Sai' && Array.isArray(detail.statements)) {
+                lines.push('Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:');
+                lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
+            }
+            return app.data.formatQuestionDetailHTML(lines.join('<br>'));
+        },
         normalizeFillAnswer(value) {
             const normalized = String(value ?? '').trim().replace(/\s+/g, ' ');
             const compactNumber = normalized.replace(/\s/g, '');
@@ -2362,11 +2377,11 @@ const app = {
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
                 this.state.score += 10 / this.state.questions.length;
-                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect: false, shieldUsed: true, type: qType });
+                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true }));
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
                 document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad_transparent.png', '_happy_transparent.png').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.png', '_happy.png')}`;
             } else {
-                this.state.historyDetails.push({ q: q.q, selected: this.state.selectedAns, correct: q.ans, isCorrect, type: qType });
+                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect));
             }
 
             document.getElementById('game-score').textContent = Math.round(this.state.score * 10) / 10;
@@ -2463,7 +2478,7 @@ const app = {
                             }
                             return `
                     <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                      <b>${i + 1}.</b> ${app.data.formatQuestionDetailHTML(d.q)} <br>
+                      <b>${i + 1}.</b> ${this.formatHistoryQuestion(d)} <br>
                       Bạn chọn: ${ansHtml} <br>
                       ${!d.isCorrect ? `<span style="color:#4ade80">Đáp án: ${app.data.sanitizeHTML(d.correct)}</span>` : ''}
                     </div>
@@ -2709,7 +2724,7 @@ const app = {
                 const isCorrect = this.isAnswerCorrect(q, selected);
 
                 if (isCorrect) totalPts += ptsPerQ;
-                this.state.historyDetails.push({ q: q.q, selected, correct: q.ans, isCorrect, type: q.type });
+                this.state.historyDetails.push(app.game.createHistoryDetail(q, selected, isCorrect));
             });
 
             this.state.score = Math.round(totalPts * 10) / 10;
