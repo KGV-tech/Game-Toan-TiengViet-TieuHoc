@@ -280,6 +280,29 @@ test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', a
   expect(box.y + box.height).toBeLessThanOrEqual(1020);
 });
 
+test('ba màn chọn giữ khung nội dung gọn và mèo máy đứng ngoài vùng thao tác', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').className = 'screen active theme-math';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+
+  const practicePanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
+  const practiceMascot = await page.locator('#game-config-view .config-left').boundingBox();
+  expect(practicePanel.width).toBeLessThanOrEqual(1140);
+  expect(practiceMascot.x).toBeLessThan(practicePanel.x);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('exam-select-screen').classList.add('active');
+  });
+
+  const examPanel = await page.locator('#exam-select-screen .glass-container-xl').boundingBox();
+  expect(examPanel.width).toBeLessThanOrEqual(1040);
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },

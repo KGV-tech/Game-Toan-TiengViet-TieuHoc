@@ -1108,6 +1108,117 @@ input[type="text"], input[type="password"], select, textarea {
 .lucky-rules li + li { margin-top: 2px; }
 .lucky-spin-button { display:block; width:min(100%, 332px) !important; margin: 0 auto; }
 .pet-station-title { margin: 0 0 15px; color: #a855f7; font-size: clamp(1.25rem, 2vw, 1.8rem); font-weight: 900; letter-spacing: 1px; line-height: 1.2; overflow-wrap: anywhere; text-align: center; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; text-transform: uppercase; white-space: normal; }
+
+/* Focused adventure panels: let each scene remain visible while keeping controls readable. */
+#game-config-view .glass-container-xl,
+#exam-select-screen .glass-container-xl {
+    --scene-glow: #00d4ff;
+    background: linear-gradient(135deg, rgba(6, 16, 28, .66), rgba(12, 24, 38, .45)) !important;
+    border-color: color-mix(in srgb, var(--scene-glow) 58%, white) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.16) inset, 0 0 34px color-mix(in srgb, var(--scene-glow) 32%, transparent), 0 18px 48px rgba(0,0,0,.42);
+}
+
+#game-screen.theme-math #game-config-view .glass-container-xl { --scene-glow: #ffb347; }
+#game-screen.theme-vietnamese #game-config-view .glass-container-xl { --scene-glow: #2ecc71; }
+
+#game-config-view .glass-container-xl {
+    width: min(78vw, 1240px) !important;
+    max-width: none !important;
+    padding: clamp(20px, 2.2vw, 34px) clamp(28px, 3.8vw, 58px) !important;
+    overflow: visible;
+}
+
+#game-config-view .config-top {
+    position: relative;
+    justify-content: center !important;
+}
+
+#game-config-view .config-left {
+    position: absolute !important;
+    z-index: 2;
+    left: clamp(-205px, -13vw, -130px);
+    top: 50%;
+    width: clamp(130px, 13vw, 190px);
+    transform: translateY(-42%);
+    pointer-events: none;
+}
+
+#game-config-view .config-left .cat-avatar {
+    width: 100% !important;
+}
+
+#game-config-view .config-center {
+    flex: 0 1 850px !important;
+    width: min(100%, 850px);
+    margin: 0 auto;
+    gap: 12px;
+}
+
+#game-config-view .config-section {
+    background: linear-gradient(135deg, rgba(10, 19, 31, .56), rgba(255,255,255,.10));
+    border-color: color-mix(in srgb, var(--scene-glow) 30%, rgba(255,255,255,.55));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 22px rgba(0,0,0,.18);
+}
+
+#game-config-view .topic-card {
+    min-height: 46px;
+    background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(220,230,242,.84));
+    border-color: rgba(255,255,255,.88);
+    border-bottom-color: rgba(148,163,184,.9);
+    box-shadow: 0 4px 9px rgba(0,0,0,.25);
+}
+
+#game-config-view .topic-card:hover,
+#game-config-view .topic-card:focus-within {
+    transform: translateY(-3px) scale(1.015);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--scene-glow) 70%, white), 0 10px 22px rgba(0,0,0,.3);
+}
+
+#game-config-view .topic-card:has(input:checked) {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--scene-glow) 78%, #fff), color-mix(in srgb, var(--scene-glow) 70%, #0f172a));
+    border-color: color-mix(in srgb, var(--scene-glow) 68%, white);
+    border-bottom-color: color-mix(in srgb, var(--scene-glow) 70%, #0f172a);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--scene-glow) 45%, transparent);
+}
+
+#exam-select-screen {
+    justify-content: center;
+    padding: 16px clamp(22px, 4vw, 72px);
+}
+
+#exam-select-screen .glass-container-xl {
+    width: min(70vw, 1080px) !important;
+    max-height: calc(100vh - 32px);
+    padding: clamp(18px, 2vw, 30px) clamp(28px, 4vw, 58px) 24px !important;
+    overflow: visible;
+}
+
+#exam-select-screen .subject-box {
+    background: linear-gradient(180deg, rgba(79,70,229,.92), rgba(55,48,163,.88));
+    border-color: rgba(199,210,254,.9);
+    box-shadow: 0 12px 26px rgba(0,0,0,.38);
+}
+
+#exam-select-screen .subject-box:hover,
+#exam-select-screen .subject-box.active {
+    box-shadow: 0 0 0 3px rgba(0,212,255,.62), 0 20px 34px rgba(0,212,255,.27);
+}
+
+@media (max-width: 1200px) {
+    #game-config-view .glass-container-xl { width: min(84vw, 980px) !important; }
+    #game-config-view .config-left { left: clamp(-138px, -12vw, -92px); width: clamp(105px, 13vw, 145px); }
+    #exam-select-screen .glass-container-xl { width: min(90vw, 980px) !important; }
+}
+
+@media (max-width: 900px) {
+    #game-config-view .glass-container-xl { width: calc(100% - 28px) !important; padding-left: 26px !important; padding-right: 26px !important; }
+    #game-config-view .config-left { left: -82px; width: 96px; }
+    #game-config-view .config-center { width: calc(100% - 46px); margin-left: auto; }
+    #exam-select-screen .glass-container-xl { width: calc(100% - 28px) !important; }
+    #exam-select-screen .exam-select-layout { gap: 16px; }
+    #exam-select-screen .exam-guide-mascot { width: 140px; height: 140px; }
+    #exam-select-screen .subject-box { width: 155px; padding: 12px 10px; }
+}
 @media (max-width: 900px) {
     .asset-button--table { width: clamp(66px, 11vw, 105px); }
     .asset-button--form { width: min(48%, 190px); }
