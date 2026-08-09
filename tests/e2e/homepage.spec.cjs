@@ -260,6 +260,9 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
   await expect(page.locator('.template-editor__guide b')).toHaveText('Diễn giải');
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls h5')).toHaveCount(0);
+  await expect.poll(() => page.locator('.template-editor__rules').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
+  await expect.poll(() => page.locator('.template-editor__arithmetic-settings').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
+  await expect.poll(() => page.locator('.template-editor__arithmetic-settings > .template-editor__fields--digit-count').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(1);
   await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
   await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('9');
   await expect(page.locator('label:has(#template-arithmetic-min-digits)')).toContainText('Số lượng chữ số ít nhất');
@@ -286,11 +289,13 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-minimum-digits')).toHaveValue('5');
   await expect(page.locator('#template-maximum-digits')).toHaveValue('6');
   await expect(page.locator('#template-minimum')).toBeHidden();
+  await expect.poll(() => page.locator('.template-editor__rule--range-controls').evaluate(element => Math.round(element.getBoundingClientRect().width))).toBeGreaterThan(1000);
   await expect(page.locator('label:has(#template-minimum-digits)')).toContainText('Số lượng chữ số ít nhất');
   await expect(page.locator('label:has(#template-maximum-digits)')).toContainText('Số lượng chữ số nhiều nhất');
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
     minimum: 10000, maximum: 999999, minimumDigits: 5, maximumDigits: 6
   });
+  await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
 });
 
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
