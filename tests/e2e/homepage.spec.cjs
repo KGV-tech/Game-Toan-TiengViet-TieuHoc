@@ -258,8 +258,12 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   });
 
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('.template-editor__guide b')).toHaveText('Diễn giải');
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls h5')).toHaveCount(0);
   await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
   await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('9');
+  await expect(page.locator('label:has(#template-arithmetic-min-digits)')).toContainText('Số lượng chữ số ít nhất');
+  await expect(page.locator('label:has(#template-arithmetic-max-digits)')).toContainText('Số lượng chữ số nhiều nhất');
   await expect(page.locator('#template-arithmetic-operations')).toContainText('+');
   await expect(page.locator('#template-arithmetic-operations')).toContainText('Phép nhân (×)');
   await expect(page.locator('#template-arithmetic-operations')).toContainText('Phép chia (÷)');
@@ -268,6 +272,25 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'digit-count-demo', name: 'Nhận biết chữ số theo hàng', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '3. Số có nhiều chữ số', question_type: 'Trắc nghiệm', generator_key: 'number.digit_at_place',
+      prompt_template: 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
+      config: { minimum: 10000, maximum: 999999, allowedPlaces: ['tens'], allowedDigits: [4] }
+    }];
+    app.admin.renderTemplateForm(0);
+  });
+
+  await expect(page.locator('#template-minimum-digits')).toHaveValue('5');
+  await expect(page.locator('#template-maximum-digits')).toHaveValue('6');
+  await expect(page.locator('#template-minimum')).toBeHidden();
+  await expect(page.locator('label:has(#template-minimum-digits)')).toContainText('Số lượng chữ số ít nhất');
+  await expect(page.locator('label:has(#template-maximum-digits)')).toContainText('Số lượng chữ số nhiều nhất');
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
+    minimum: 10000, maximum: 999999, minimumDigits: 5, maximumDigits: 6
+  });
 });
 
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
