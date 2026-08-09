@@ -100,7 +100,8 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
   });
   const configPanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
   expect(configPanel.height).toBeGreaterThanOrEqual(860);
-  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(34, 211, 238)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(255, 234, 167)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
 
   await page.evaluate(() => {
     document.getElementById('game-config-view').classList.remove('active');
