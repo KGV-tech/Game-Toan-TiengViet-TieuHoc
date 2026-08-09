@@ -35,6 +35,8 @@ assert(source.includes('number.smallest_of_four'), 'The Template Bank must expos
 assert(source.includes('number.largest_of_four'), 'The Template Bank must expose the largest-of-four generator.');
 assert(source.includes('number.compose_from_places'), 'The Template Bank must expose the compose-number fill-in template.');
 assert(source.includes('number.missing_expanded_addend'), 'The Template Bank must expose the expanded-form fill-in template.');
+assert(source.includes('number.four_arithmetic_blanks'), 'The Template Bank must expose the four-arithmetic fill-in template.');
+assert(source.includes('number.four_arithmetic_comparisons'), 'The Template Bank must expose the four-arithmetic drag-comparison template.');
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
 assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
 assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
@@ -62,6 +64,13 @@ assert(source.includes("'Chuỗi Quy luật'"), 'The Template Bank question-type
 assert(source.includes("'Kéo thả'"), 'The Template Bank question-type list must include drag-and-drop questions.');
 assert(source.includes('template-match-shapes'), 'The matching template must expose configurable shapes.');
 assert(source.includes('template-match-digits'), 'The matching template must expose configurable number lengths.');
+assert(source.includes('template-arithmetic-min-digits'), 'Four-arithmetic templates must expose the minimum number length.');
+assert(source.includes('template-arithmetic-max-digits'), 'Four-arithmetic templates must expose the maximum number length.');
+assert(source.includes('template-arithmetic-operations'), 'Four-arithmetic templates must expose selectable operations.');
+assert(source.includes('template-arithmetic-layouts'), 'Four-arithmetic templates must expose selectable two-side layouts.');
+assert(source.includes('template-arithmetic-blank-positions'), 'The fill-in template must expose selectable blank positions.');
+assert(source.includes('template-arithmetic-comparisons'), 'The drag-comparison template must expose selectable comparison signs.');
+assert(css.includes('comparison-drag-slot'), 'Four-arithmetic comparisons must use a dedicated circular drop slot.');
 assert(source.includes('Tỷ lệ sinh số'), 'The matching template must label digit weights clearly.');
 assert(css.includes('template-editor__rule--matching-controls'), 'Matching configuration must span the rule grid without overlapping fields.');
 assert(source.includes('generateTemplateQuestion'), 'Gameplay must generate questions from active template configurations.');
@@ -69,6 +78,8 @@ assert(migration.includes("'number.smallest_of_four'"), 'Migration must seed the
 assert(migration.includes("'number.largest_of_four'"), 'Migration must seed the largest-of-four template.');
 assert(migration.includes("'number.compose_from_places'"), 'Migration must seed the compose-number template.');
 assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must seed the expanded-form template.');
+assert(migration.includes("'number.four_arithmetic_blanks'"), 'Migration must seed the four-arithmetic fill-in template.');
+assert(migration.includes("'number.four_arithmetic_comparisons'"), 'Migration must seed the four-arithmetic drag-comparison template.');
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
 assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
 assert(migration.includes("'number.match_number_words'"), 'Migration must seed the number-word matching template.');

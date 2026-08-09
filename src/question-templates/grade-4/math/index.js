@@ -5,6 +5,8 @@
         'number.digit_at_place': require('./digit-at-place'),
         'number.compose_from_places': require('./compose-from-places'),
         'number.missing_expanded_addend': require('./missing-expanded-addend'),
+        'number.four_arithmetic_blanks': require('./four-arithmetic-blanks'),
+        'number.four_arithmetic_comparisons': require('./four-arithmetic-comparisons'),
         'number.neighbor_numbers': require('./neighbor-numbers'),
         'number.compare_number_forms': require('./compare-number-forms'),
         'number.match_number_words': require('./match-number-words'),

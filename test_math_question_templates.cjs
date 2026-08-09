@@ -68,6 +68,50 @@ assert.equal(neighbors.type, 'Điền khuyết');
 assert.equal(neighbors.ans.split(',').length, 2, 'The neighbor template must require both adjacent numbers.');
 assert.match(neighbors.templateVariables.neighbor_line, /___/, 'The neighbor template must expose a reusable blank-number line.');
 
+const fourArithmeticBlanks = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 2,
+    operations: ['+'],
+    layouts: ['expressionLeft'],
+    blankPositions: ['first', 'second', 'third']
+}, seededRandom(81));
+assert.equal(fourArithmeticBlanks.type, 'Điền khuyết');
+assert.equal(fourArithmeticBlanks.subquestions.length, 4, 'The arithmetic-fill template must generate four subquestions.');
+assert.deepEqual(fourArithmeticBlanks.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
+assert.equal((fourArithmeticBlanks.q.match(/___/g) || []).length, 4, 'Each subquestion must contain exactly one blank.');
+assert.equal(fourArithmeticBlanks.ans.split(', ').length, 4, 'The four blanks must preserve their answer order.');
+assert.match(fourArithmeticBlanks.q, /^Hãy điền số thích hợp vào chỗ trống:<br>a\./);
+assert(fourArithmeticBlanks.subquestions.every(item => item.operation === '+'), 'The configured operation must be used.');
+assert(fourArithmeticBlanks.subquestions.every(item => item.layout === 'expressionLeft'), 'The configured layout must be used.');
+assert(fourArithmeticBlanks.subquestions.every(item => ['first', 'second', 'third'].includes(item.blankPosition)), 'The blank must be one of the three configured positions.');
+
+const twoExpressionArithmetic = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['-'],
+    layouts: ['twoExpressions'],
+    blankPositions: ['third']
+}, seededRandom(82));
+assert(twoExpressionArithmetic.subquestions.every(item => item.layout === 'twoExpressions'), 'Both-expression layout must be selectable.');
+assert(twoExpressionArithmetic.subquestions.every(item => item.operation === '-'), 'Subtraction must be selectable.');
+assert(twoExpressionArithmetic.subquestions.every(item => item.blankPosition === 'third'), 'Administrators must be able to pin the blank position.');
+assert(twoExpressionArithmetic.subquestions.every(item => item.display.includes('−')), 'Subtraction questions must display a subtraction sign.');
+
+const fourArithmeticComparisons = generateQuestion('number.four_arithmetic_comparisons', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['+', '-'],
+    layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'],
+    comparisons: ['>', '<', '=']
+}, seededRandom(83));
+assert.equal(fourArithmeticComparisons.type, 'Kéo thả');
+assert.equal(fourArithmeticComparisons.comparisonRows.length, 4, 'The comparison template must generate four subquestions.');
+assert.deepEqual(fourArithmeticComparisons.comparisonRows.map(item => item.label), ['a', 'b', 'c', 'd']);
+assert.equal(fourArithmeticComparisons.ans.split(', ').length, 4, 'The four comparison slots must preserve their answer order.');
+assert(fourArithmeticComparisons.comparisonRows.every(item => ['>', '<', '='].includes(item.answer)), 'Every comparison row must have a valid sign.');
+assert(fourArithmeticComparisons.comparisonRows.every(item => ['+', '-'].includes(item.operation)), 'Each row must use an administrator-selected operation.');
+assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\./);
+
 const comparison = generateQuestion('number.compare_number_forms', { minimum: 10000, maximum: 99999 }, seededRandom(9));
 assert.equal(comparison.type, 'So sánh');
 assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');

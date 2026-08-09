@@ -161,6 +161,122 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   expect(consoleErrors).toEqual([]);
 });
 
+test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh câu hỏi', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    let seed = 58;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_arithmetic_blanks', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
+      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
+  await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
+  await expect(page.locator('.question-box--fill')).toContainText('a.');
+  await expect(page.locator('.question-box--fill')).toContainText('d.');
+  await captureUiReview(page, testInfo, 'four-arithmetic-blanks-desktop.png');
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'four-arithmetic-demo', name: 'Điền số trong bốn phép tính', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '3. Số có nhiều chữ số', question_type: 'Điền khuyết', generator_key: 'number.four_arithmetic_blanks',
+      prompt_template: 'Hãy điền số thích hợp vào chỗ trống:<br>{exercises}',
+      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third'] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
+  await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('9');
+  await expect(page.locator('#template-arithmetic-operations')).toContainText('+');
+  await expect(page.locator('#template-arithmetic-layouts')).toContainText('Hai vế đều là phép tính');
+  await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
+  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
+});
+
+test('so sánh kéo thả bốn phép tính hiện bốn ô tròn và cấu hình dấu', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const random = (() => {
+      let seed = 83;
+      return () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 0x100000000;
+      };
+    })();
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_arithmetic_comparisons', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
+      layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '=']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--four-comparisons')).toBeVisible();
+  await expect(page.locator('.comparison-drag-sign')).toHaveCount(3);
+  await expect(page.locator('.comparison-drag-sign').first()).toHaveAttribute('draggable', 'true');
+  await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
+  await expect(page.locator('.comparison-drag-slot')).toHaveCount(4);
+  await page.locator('.comparison-drag-sign', { hasText: '>' }).click();
+  await page.locator('.comparison-drag-slot').first().click();
+  await expect(page.locator('.comparison-drag-slot').first()).toHaveText('>');
+  await captureUiReview(page, testInfo, 'four-arithmetic-comparisons-desktop.png');
+  const correctSigns = await page.evaluate(() => app.game.state.questions[0].ans.split(', '));
+  for (let index = 0; index < correctSigns.length; index++) {
+    await page.locator(`.comparison-drag-sign[data-sign="${correctSigns[index]}"]`).click();
+    await page.locator('.comparison-drag-slot').nth(index).click();
+  }
+  await expect(page.locator('#submit-ans-btn')).toBeEnabled();
+  await page.locator('#submit-ans-btn').click();
+  await expect(page.locator('.comparison-drag-slot').first()).toHaveCSS('border-color', 'rgb(74, 222, 128)');
+  await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(10);
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'four-arithmetic-comparison-demo', name: 'So sánh bốn phép tính kéo thả', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '3. Số có nhiều chữ số', question_type: 'Kéo thả', generator_key: 'number.four_arithmetic_comparisons',
+      prompt_template: 'Điền dấu thích hợp:<br>{exercises}',
+      config: { minimum: 10, maximum: 999999999, minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '='] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-comparison-signs')).toBeVisible();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
+  await expect(page.locator('#template-arithmetic-comparisons')).toContainText('Bằng nhau (=)');
+  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(savedConfig).toEqual(expect.objectContaining({
+    minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'],
+    layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], comparisons: ['>', '<', '=']
+  }));
+  await captureUiReview(page, testInfo, 'four-arithmetic-comparisons-template-config.png');
+});
+
 test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

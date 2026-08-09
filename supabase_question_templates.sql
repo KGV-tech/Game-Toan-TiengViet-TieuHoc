@@ -164,6 +164,32 @@ INSERT INTO public.question_templates (
     name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
 )
 SELECT
+    'Bốn phép tính điền khuyết', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Điền khuyết', 'number.four_arithmetic_blanks',
+    'Hãy điền số thích hợp vào chỗ trống:<br>{exercises}',
+    '{"minimum":10,"maximum":999999999,"minimumDigits":2,"maximumDigits":9,"operations":["+","-"],"layouts":["expressionLeft","expressionRight","twoExpressions"],"blankPositions":["first","second","third"]}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.four_arithmetic_blanks'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'So sánh bốn phép tính kéo thả', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Kéo thả', 'number.four_arithmetic_comparisons',
+    'Điền dấu thích hợp:<br>{exercises}',
+    '{"minimum":10,"maximum":999999999,"minimumDigits":2,"maximumDigits":9,"operations":["+","-"],"layouts":["expressionLeft","expressionRight","twoExpressions"],"comparisons":[">","<","="]}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.four_arithmetic_comparisons'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
     'Đúng/Sai về lớp của chữ số', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
     'Đúng/Sai', 'number.place_value_true_false',
     'Số {number}',
