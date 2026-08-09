@@ -121,10 +121,10 @@ const app = {
     },
     getEquippedPet(user) {
         // Giáo viên không sở hữu/trang bị thú cưng; chú mèo robot vẫn là linh vật mặc định khi test bài.
-        if (user?.role?.toLowerCase() === 'admin') return 'robot_cat_normal_transparent.png';
+        if (user?.role?.toLowerCase() === 'admin') return 'robot_cat_normal.webp';
         const savedPet = user ? app.safeStorage.getItem('equipped_pet_' + user.username) : null;
         // Keep existing pupils' default selection working while moving the mascot to its new art set.
-        return (!savedPet || savedPet === 'cat_normal.png') ? 'robot_cat_normal_transparent.png' : savedPet;
+        return (!savedPet || savedPet === 'cat_normal.png') ? 'robot_cat_normal.webp' : savedPet;
     },
 
     data: {
@@ -914,7 +914,8 @@ const app = {
     },
 
     game: {
-        state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        questionsPerRound: 10,
+        state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
         
         skills: {
             state: {
@@ -1148,12 +1149,7 @@ const app = {
             const difficultyBtns = document.querySelectorAll('.config-section .diff-options:not(#admin-class-btns) .btn-opt');
             if (difficultyBtns.length > 0) difficultyBtns[0].classList.add('active');
 
-            const countOpts = document.querySelectorAll('.count-options .btn-opt');
-            countOpts.forEach(b => b.classList.remove('active'));
-            if (countOpts.length) countOpts[0].classList.add('active');
-
             this.state.difficulty = 'easy';
-            this.state.count = 10;
         },
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -1230,11 +1226,6 @@ const app = {
             btn.parentElement.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         },
-        setCount(val, btn) {
-            this.state.count = val;
-            btn.parentElement.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        },
         startPlay() {
             if (this.state.selectedTopics.length === 0) {
                 alert('Vui lòng chọn ít nhất 1 chủ đề!');
@@ -1292,7 +1283,9 @@ const app = {
                 }
             });
 
-            let targetCount = dynamicTemplates.length ? this.state.count : Math.min(this.state.count, pool.length);
+            const targetCount = dynamicTemplates.length
+                ? this.questionsPerRound
+                : Math.min(this.questionsPerRound, pool.length);
 
             // 3. Hàm bốc câu hỏi đa dạng loại (Round-robin)
             const pickDiverse = (sourcePool, countNeeded) => {
@@ -1346,7 +1339,7 @@ const app = {
 
             app.data.markQuestionsSeen(pool);
 
-            if (pool.length < this.state.count) {
+            if (pool.length < this.questionsPerRound) {
                 alert('Ngân hàng chỉ có ' + pool.length + ' câu hỏi phù hợp, sẽ bốc toàn bộ!');
             }
 
@@ -2391,9 +2384,9 @@ const app = {
                 if (user) {
                     let equipped = app.getEquippedPet(user);
                     basePet = equipped.split('.')[0];
-                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent') basePet = 'robot_cat';
+                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent' || basePet === 'robot_cat_normal') basePet = 'robot_cat';
                 }
-                const happyImage = basePet === 'robot_cat' ? 'robot_cat_happy_transparent.png' : `${basePet}_happy.png`;
+                const happyImage = basePet === 'robot_cat' ? 'robot_cat_happy.webp' : `${basePet}_happy.png`;
                 document.getElementById('play-cat-img').src = `./public/${happyImage}`;
                 bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
             } else {
@@ -2404,9 +2397,9 @@ const app = {
                 if (user) {
                     let equipped = app.getEquippedPet(user);
                     basePet = equipped.split('.')[0];
-                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent') basePet = 'robot_cat';
+                    if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent' || basePet === 'robot_cat_normal') basePet = 'robot_cat';
                 }
-                const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad_transparent.png' : `${basePet}_sad.png`;
+                const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad.webp' : `${basePet}_sad.png`;
                 document.getElementById('play-cat-img').src = `./public/${sadImage}`;
                 bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
             }
@@ -2425,7 +2418,7 @@ const app = {
                 this.state.score += 10 / this.state.questions.length;
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true }));
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
-                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad_transparent.png', '_happy_transparent.png').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.png', '_happy.png')}`;
+                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.webp', '_happy.webp').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.webp', '_happy.webp').replace('_normal.png', '_happy.png')}`;
             } else {
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect));
             }

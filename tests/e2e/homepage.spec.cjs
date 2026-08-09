@@ -126,6 +126,63 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
+test('luyện tập tận dụng chiều cao, nền trong suốt và điều khiển không bị cắt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').className = 'screen active theme-math';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+  const configPanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
+  const mascotColumn = await page.locator('#game-config-view .config-left').boundingBox();
+  const topicPanel = await page.locator('#game-config-view .config-section').boundingBox();
+  expect(configPanel.height).toBeGreaterThanOrEqual(860);
+  const mascotCenter = mascotColumn.y + mascotColumn.height / 2;
+  const topicCenter = topicPanel.y + topicPanel.height / 2;
+  expect(mascotCenter).toBeGreaterThanOrEqual(topicCenter - 36);
+  expect(mascotCenter).toBeLessThanOrEqual(topicCenter + 115);
+  await expect(page.locator('#game-config-view .screen-title-row')).toHaveCSS('backdrop-filter', 'blur(8px)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(255, 234, 167)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
+
+  await page.evaluate(() => {
+    document.getElementById('game-config-view').classList.remove('active');
+    document.getElementById('game-play-view').classList.add('active');
+    const bubble = document.getElementById('cat-speech-bubble');
+    bubble.textContent = 'Cố lên!';
+    bubble.style.display = 'flex';
+  });
+  const playPanel = await page.locator('#game-play-view .glass-container-xl').boundingBox();
+  const bubble = await page.locator('#cat-speech-bubble').boundingBox();
+  const playLeft = await page.locator('#game-play-view .play-left').boundingBox();
+  const playCenter = await page.locator('#game-play-view .play-center').boundingBox();
+  const submitButton = await page.locator('#submit-ans-btn').boundingBox();
+  expect(bubble.y).toBeGreaterThanOrEqual(playPanel.y + 35);
+  expect(submitButton.width / playLeft.width).toBeLessThanOrEqual(.91);
+  expect(playCenter.y + playCenter.height).toBeLessThanOrEqual(playPanel.y + playPanel.height - 16);
+  await expect(page.locator('#game-play-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.locator('#game-play-view .play-center')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.locator('#topics-list')).toHaveCSS('overflow-y', 'visible');
+
+  await page.evaluate(() => {
+    document.getElementById('game-play-view').classList.remove('active');
+    document.getElementById('game-screen').className = 'screen active theme-vietnamese';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(167, 243, 208)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('exam-select-screen').classList.add('active');
+  });
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('color', 'rgb(186, 230, 253)');
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('-webkit-text-stroke-width', '2px');
+  await expect(page.locator('#exam-select-screen .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.locator('#exam-select-screen .screen-title-row')).toHaveCSS('backdrop-filter', 'blur(8px)');
+});
+
 test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
@@ -430,6 +487,46 @@ test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', a
 
   const box = await page.locator('#exam-select-screen .btn-start-massive').boundingBox();
   expect(box.y + box.height).toBeLessThanOrEqual(1020);
+});
+
+test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo máy nằm trong khung', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').className = 'screen active theme-math';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+
+  const practicePanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
+  const practiceMascot = await page.locator('#game-config-view .config-left').boundingBox();
+  const practiceTopics = await page.locator('#game-config-view .config-center').boundingBox();
+  expect(practicePanel.width).toBeGreaterThanOrEqual(1180);
+  expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
+  expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
+  expect(practiceTopics.width).toBeGreaterThan(practiceMascot.width * 2);
+  expect(practiceTopics.x).toBeGreaterThan(practiceMascot.x);
+  await expect(page.locator('.config-left #game-start-btn')).toHaveCount(1);
+  await expect(page.locator('#game-config-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.getByRole('heading', { name: 'Chọn Chủ đề' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '20 Câu' })).toHaveCount(0);
+  await expect(page.locator('#game-config-view .count-options')).toHaveCount(0);
+  await expect(page.getByText('Số câu hỏi', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Dễ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khó' })).toBeVisible();
+  expect(await page.evaluate(() => ({
+    questionsPerRound: app.game.questionsPerRound,
+    hasSelectableCount: 'count' in app.game.state,
+    hasSetCount: typeof app.game.setCount === 'function'
+  }))).toEqual({ questionsPerRound: 10, hasSelectableCount: false, hasSetCount: false });
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('exam-select-screen').classList.add('active');
+  });
+
+  const examPanel = await page.locator('#exam-select-screen .glass-container-xl').boundingBox();
+  expect(examPanel.width).toBeLessThanOrEqual(1040);
 });
 
 const auditStates = [
