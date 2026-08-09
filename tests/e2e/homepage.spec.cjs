@@ -294,6 +294,7 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
   expect(practicePanel.width).toBeGreaterThanOrEqual(1180);
   expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
   expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
+  await expect(page.locator('#game-config-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
 
   await page.evaluate(() => {
     document.getElementById('game-screen').classList.remove('active');

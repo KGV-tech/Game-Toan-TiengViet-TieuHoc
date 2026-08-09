@@ -1126,6 +1126,9 @@ input[type="text"], input[type="password"], select, textarea {
     max-width: 1200px !important;
     padding: clamp(20px, 2.2vw, 34px) clamp(28px, 3.8vw, 58px) !important;
     overflow: hidden;
+    background: linear-gradient(135deg, rgba(6, 16, 28, .12), rgba(12, 24, 38, .07)) !important;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
 #game-config-view .config-top {
