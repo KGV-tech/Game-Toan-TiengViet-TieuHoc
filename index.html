@@ -222,8 +222,8 @@
             style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
             1. Quy tắc làm bài:</h3>
           <ul style="list-style-type: none; padding-left: 15px; margin-bottom: 20px;">
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Trả lời đúng mỗi câu nhận 1 điểm (10
-              câu/lượt), hoặc 0,5 điểm (20 câu/lượt).</li>
+            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Mỗi lượt học có 10 câu; trả lời đúng
+              mỗi câu nhận 1 điểm.</li>
             <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt &lt; 8 điểm/1 lượt chơi sẽ không
               nhận được Kẹo (🍭).</li>
             <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 8-9 điểm/1 lượt chơi sẽ nhận 2 Kẹo
@@ -300,33 +300,21 @@
                 <div class="config-section">
                   <div class="topic-header"
                     style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0;">1. Chọn Chủ đề</h3>
-                    <div class="topic-mode-toggle">
-                      <label class="topic-mode-option"><input type="radio" name="topicMode" value="single" checked
-                          onchange="app.game.toggleTopicMode()"><span>Chọn 1</span></label>
-                      <label class="topic-mode-option"><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()">
-                        <span>Chọn nhiều</span></label>
+                    <div class="topic-header__primary">
+                      <h3 style="margin: 0;">Chọn Chủ đề</h3>
+                      <div class="topic-mode-toggle">
+                        <label class="topic-mode-option"><input type="radio" name="topicMode" value="single" checked
+                            onchange="app.game.toggleTopicMode()"><span>Chọn 1</span></label>
+                        <label class="topic-mode-option"><input type="radio" name="topicMode" value="multi" onchange="app.game.toggleTopicMode()">
+                          <span>Chọn nhiều</span></label>
+                      </div>
                     </div>
-                  </div>
-                  <div id="topics-list" class="topics-grid"></div>
-                </div>
-
-                <div style="display: flex; gap: 15px;">
-                  <div class="config-section" style="flex: 1;">
-                    <h3 style="margin: 0;">2. Mức độ khó</h3>
-                    <div class="diff-options">
+                    <div class="diff-options config-difficulty-options" aria-label="Mức độ khó">
                       <button class="btn-opt active" onclick="app.game.setDifficulty('easy', this)">Dễ</button>
                       <button class="btn-opt" onclick="app.game.setDifficulty('hard', this)">Khó</button>
                     </div>
                   </div>
-
-                  <div class="config-section" style="flex: 1;">
-                    <h3 style="margin: 0;">3. Số câu hỏi</h3>
-                    <div class="count-options">
-                      <button class="btn-opt active" onclick="app.game.setCount(10, this)">10 Câu</button>
-                      <button class="btn-opt" onclick="app.game.setCount(20, this)">20 Câu</button>
-                    </div>
-                  </div>
+                  <div id="topics-list" class="topics-grid"></div>
                 </div>
 
                 <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"

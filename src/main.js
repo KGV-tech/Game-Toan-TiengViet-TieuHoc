@@ -914,7 +914,8 @@ const app = {
     },
 
     game: {
-        state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', count: 10, questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        questionsPerRound: 10,
+        state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
         
         skills: {
             state: {
@@ -1148,12 +1149,7 @@ const app = {
             const difficultyBtns = document.querySelectorAll('.config-section .diff-options:not(#admin-class-btns) .btn-opt');
             if (difficultyBtns.length > 0) difficultyBtns[0].classList.add('active');
 
-            const countOpts = document.querySelectorAll('.count-options .btn-opt');
-            countOpts.forEach(b => b.classList.remove('active'));
-            if (countOpts.length) countOpts[0].classList.add('active');
-
             this.state.difficulty = 'easy';
-            this.state.count = 10;
         },
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -1230,11 +1226,6 @@ const app = {
             btn.parentElement.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         },
-        setCount(val, btn) {
-            this.state.count = val;
-            btn.parentElement.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        },
         startPlay() {
             if (this.state.selectedTopics.length === 0) {
                 alert('Vui lòng chọn ít nhất 1 chủ đề!');
@@ -1292,7 +1283,9 @@ const app = {
                 }
             });
 
-            let targetCount = dynamicTemplates.length ? this.state.count : Math.min(this.state.count, pool.length);
+            const targetCount = dynamicTemplates.length
+                ? this.questionsPerRound
+                : Math.min(this.questionsPerRound, pool.length);
 
             // 3. Hàm bốc câu hỏi đa dạng loại (Round-robin)
             const pickDiverse = (sourcePool, countNeeded) => {
@@ -1346,7 +1339,7 @@ const app = {
 
             app.data.markQuestionsSeen(pool);
 
-            if (pool.length < this.state.count) {
+            if (pool.length < this.questionsPerRound) {
                 alert('Ngân hàng chỉ có ' + pool.length + ' câu hỏi phù hợp, sẽ bốc toàn bộ!');
             }
 

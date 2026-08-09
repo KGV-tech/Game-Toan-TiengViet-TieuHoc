@@ -295,6 +295,17 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
   expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
   expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
   await expect(page.locator('#game-config-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
+  await expect(page.getByRole('heading', { name: 'Chọn Chủ đề' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '20 Câu' })).toHaveCount(0);
+  await expect(page.locator('#game-config-view .count-options')).toHaveCount(0);
+  await expect(page.getByText('Số câu hỏi', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Dễ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khó' })).toBeVisible();
+  expect(await page.evaluate(() => ({
+    questionsPerRound: app.game.questionsPerRound,
+    hasSelectableCount: 'count' in app.game.state,
+    hasSetCount: typeof app.game.setCount === 'function'
+  }))).toEqual({ questionsPerRound: 10, hasSelectableCount: false, hasSetCount: false });
 
   await page.evaluate(() => {
     document.getElementById('game-screen').classList.remove('active');
