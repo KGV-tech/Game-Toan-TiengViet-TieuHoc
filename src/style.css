@@ -1122,10 +1122,17 @@ input[type="text"], input[type="password"], select, textarea {
 #game-screen.theme-math #game-config-view .glass-container-xl { --scene-glow: #ffb347; }
 #game-screen.theme-vietnamese #game-config-view .glass-container-xl { --scene-glow: #2ecc71; }
 
+#game-screen.theme-math #game-config-title {
+    color: #22d3ee;
+    text-shadow: 0 4px 0 #0e7490, 0 0 20px rgba(34, 211, 238, .9);
+}
+
 #game-config-view .glass-container-xl {
     width: min(95%, 1200px) !important;
     max-width: 1200px !important;
+    height: calc(100vh - 32px);
     padding: clamp(20px, 2.2vw, 34px) clamp(28px, 3.8vw, 58px) !important;
+    box-sizing: border-box;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(6, 16, 28, .12), rgba(12, 24, 38, .07)) !important;
     backdrop-filter: blur(2px);
@@ -1205,6 +1212,35 @@ input[type="text"], input[type="password"], select, textarea {
     box-shadow: 0 6px 16px color-mix(in srgb, var(--scene-glow) 45%, transparent);
 }
 
+#game-play-view .glass-container-xl {
+    --scene-glow: #22d3ee;
+    width: min(95%, 1200px) !important;
+    max-width: 1200px !important;
+    height: calc(100vh - 32px);
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(6, 16, 28, .12), rgba(12, 24, 38, .07)) !important;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border-color: color-mix(in srgb, var(--scene-glow) 48%, rgba(255,255,255,.62));
+}
+
+#game-play-view .play-center {
+    background: linear-gradient(135deg, rgba(6, 16, 28, .12), rgba(12, 24, 38, .07));
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border-color: color-mix(in srgb, var(--scene-glow) 34%, rgba(255,255,255,.5));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 22px rgba(0,0,0,.18);
+}
+
+#game-play-view .cat-wrapper {
+    margin-top: clamp(100px, 12vh, 130px) !important;
+}
+
+#game-play-view #submit-ans-btn {
+    width: 90% !important;
+    align-self: center;
+}
+
 #exam-select-screen {
     justify-content: center;
     padding: 16px clamp(22px, 4vw, 72px);
@@ -1235,6 +1271,7 @@ input[type="text"], input[type="password"], select, textarea {
 
 @media (max-width: 900px) {
     #game-config-view .glass-container-xl { width: calc(100% - 28px) !important; padding-left: 26px !important; padding-right: 26px !important; }
+    #game-play-view .glass-container-xl { width: calc(100% - 28px) !important; }
     #game-config-view .config-left { flex-basis: 170px !important; width: 170px; gap: 9px; }
     #game-config-view .config-left .cat-avatar { width: 118px !important; }
     #game-config-view .config-left #game-start-btn { width: min(100%, 170px) !important; }
