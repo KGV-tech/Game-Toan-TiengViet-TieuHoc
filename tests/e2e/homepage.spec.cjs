@@ -261,6 +261,8 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
   await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('9');
   await expect(page.locator('#template-arithmetic-operations')).toContainText('+');
+  await expect(page.locator('#template-arithmetic-operations')).toContainText('Phép nhân (×)');
+  await expect(page.locator('#template-arithmetic-operations')).toContainText('Phép chia (÷)');
   await expect(page.locator('#template-arithmetic-layouts')).toContainText('Hai vế đều là phép tính');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');

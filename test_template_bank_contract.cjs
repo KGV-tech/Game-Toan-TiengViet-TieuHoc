@@ -67,6 +67,8 @@ assert(source.includes('template-match-digits'), 'The matching template must exp
 assert(source.includes('template-arithmetic-min-digits'), 'Four-arithmetic templates must expose the minimum number length.');
 assert(source.includes('template-arithmetic-max-digits'), 'Four-arithmetic templates must expose the maximum number length.');
 assert(source.includes('template-arithmetic-operations'), 'Four-arithmetic templates must expose selectable operations.');
+assert(source.includes("checkbox('*', 'Phép nhân (×)'"), 'Four-arithmetic templates must expose multiplication as an operation.');
+assert(source.includes("checkbox('/', 'Phép chia (÷)'"), 'Four-arithmetic templates must expose division as an operation.');
 assert(source.includes('template-arithmetic-layouts'), 'Four-arithmetic templates must expose selectable two-side layouts.');
 assert(source.includes('template-arithmetic-blank-positions'), 'The fill-in template must expose selectable blank positions.');
 assert(source.includes("checkbox('fourth', 'Số thứ tư'"), 'The fill-in template must let administrators select the fourth operand as a blank.');

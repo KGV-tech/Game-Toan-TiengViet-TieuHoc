@@ -105,6 +105,46 @@ assert.throws(() => generateQuestion('number.four_arithmetic_blanks', {
     blankPositions: ['fourth']
 }, seededRandom(820)), /Số thứ tư/, 'The fourth blank position must require the two-expression layout.');
 
+const multiplicationBlanks = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 4,
+    operations: ['*'],
+    layouts: ['expressionLeft'],
+    blankPositions: ['third']
+}, seededRandom(821));
+assert(multiplicationBlanks.subquestions.every(item => item.operation === '*'), 'Multiplication must be selectable in the fill-in template.');
+assert(multiplicationBlanks.subquestions.every(item => item.display.includes('×')), 'Multiplication must use the elementary-school multiplication symbol.');
+assert(multiplicationBlanks.subquestions.every(item => item.values[0] * item.values[1] === item.values[2]), 'Every multiplication row must have an exact product.');
+
+const twoExpressionMultiplication = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 4,
+    operations: ['*'],
+    layouts: ['twoExpressions'],
+    blankPositions: ['fourth']
+}, seededRandom(8211));
+assert(twoExpressionMultiplication.subquestions.every(item => item.values[0] * item.values[1] === item.values[2] * item.values[3]), 'Both multiplication expressions must have the same value.');
+
+const divisionBlanks = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 4,
+    operations: ['/'],
+    layouts: ['expressionRight'],
+    blankPositions: ['second']
+}, seededRandom(822));
+assert(divisionBlanks.subquestions.every(item => item.operation === '/'), 'Division must be selectable in the fill-in template.');
+assert(divisionBlanks.subquestions.every(item => item.display.includes('÷')), 'Division must use the elementary-school division symbol.');
+assert(divisionBlanks.subquestions.every(item => item.values[0] / item.values[1] === item.values[2] && Number.isInteger(item.values[2])), 'Every division row must have an exact integer quotient.');
+
+const twoExpressionDivision = generateQuestion('number.four_arithmetic_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 4,
+    operations: ['/'],
+    layouts: ['twoExpressions'],
+    blankPositions: ['fourth']
+}, seededRandom(8221));
+assert(twoExpressionDivision.subquestions.every(item => item.values[0] / item.values[1] === item.values[2] / item.values[3]), 'Both division expressions must have the same integer quotient.');
+
 const fourArithmeticComparisons = generateQuestion('number.four_arithmetic_comparisons', {
     minimumDigits: 2,
     maximumDigits: 3,
@@ -120,6 +160,15 @@ assert(fourArithmeticComparisons.comparisonRows.every(item => ['>', '<', '='].in
 assert.deepEqual([...new Set(fourArithmeticComparisons.comparisonRows.map(item => item.answer))].sort(), ['<', '=', '>'], 'Four comparison rows must always include all three comparison signs, regardless of stale configuration.');
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['+', '-'].includes(item.operation)), 'Each row must use an administrator-selected operation.');
 assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\./);
+
+const divisionComparisons = generateQuestion('number.four_arithmetic_comparisons', {
+    minimumDigits: 2,
+    maximumDigits: 4,
+    operations: ['/'],
+    layouts: ['twoExpressions']
+}, seededRandom(84));
+assert(divisionComparisons.comparisonRows.every(item => item.operation === '/'), 'Division must be selectable in the drag-comparison template.');
+assert(divisionComparisons.comparisonRows.every(item => item.leftText.includes('÷') && item.rightText.includes('÷')), 'Both comparison expressions must display exact division.');
 
 const comparison = generateQuestion('number.compare_number_forms', { minimum: 10000, maximum: 99999 }, seededRandom(9));
 assert.equal(comparison.type, 'So sánh');

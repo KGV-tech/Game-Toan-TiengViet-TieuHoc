@@ -8,6 +8,7 @@
 
 const LAYOUTS = ['expressionLeft', 'expressionRight', 'twoExpressions'];
 const COMPARISON_SIGNS = ['>', '<', '='];
+const OPERATIONS = ['+', '-', '*', '/'];
 
 function choose(items, random) {
     return items[randomInt(0, items.length - 1, random)];
@@ -19,13 +20,47 @@ function generatePair(operation, minimum, maximum, random) {
         const first = randomInt(minimum, value - minimum, random);
         return { first, second: value - first, value };
     }
-    const value = randomInt(minimum, maximum - minimum, random);
-    const second = randomInt(minimum, maximum - value, random);
-    return { first: value + second, second, value };
+    if (operation === '-') {
+        const value = randomInt(minimum, maximum - minimum, random);
+        const second = randomInt(minimum, maximum - value, random);
+        return { first: value + second, second, value };
+    }
+    if (operation === '*') {
+        const second = randomInt(2, 9, random);
+        const maximumFirst = Math.floor(maximum / second);
+        if (maximumFirst < minimum) throw new Error('Phạm vi số chưa đủ để tạo phép nhân.');
+        const first = randomInt(minimum, maximumFirst, random);
+        return { first, second, value: first * second };
+    }
+    const second = randomInt(2, 9, random);
+    const maximumQuotient = Math.floor(maximum / second);
+    if (maximumQuotient < minimum) throw new Error('Phạm vi số chưa đủ để tạo phép chia.');
+    const value = randomInt(minimum, maximumQuotient, random);
+    return { first: value * second, second, value };
 }
 
 function expression(pair, operation) {
-    return `${formatNumber(pair.first)} ${operation === '+' ? '+' : '−'} ${formatNumber(pair.second)}`;
+    const symbol = operation === '*' ? '×' : (operation === '/' ? '÷' : (operation === '+' ? '+' : '−'));
+    return `${formatNumber(pair.first)} ${symbol} ${formatNumber(pair.second)}`;
+}
+
+function generatePairForValue(operation, value, minimum, maximum, random) {
+    if (operation === '+') {
+        const first = randomInt(minimum, value - minimum, random);
+        return { first, second: value - first, value };
+    }
+    if (operation === '-') {
+        const second = randomInt(minimum, maximum - value, random);
+        return { first: value + second, second, value };
+    }
+    if (operation === '*') {
+        const divisors = Array.from({ length: 8 }, (_, index) => index + 2).filter(divisor => value % divisor === 0 && value / divisor >= minimum && value / divisor <= maximum);
+        const second = choose(divisors, random);
+        return { first: value / second, second, value };
+    }
+    const divisors = Array.from({ length: 8 }, (_, index) => index + 2).filter(divisor => value * divisor <= maximum);
+    const second = choose(divisors, random);
+    return { first: value * second, second, value };
 }
 
 function signFor(left, right) {
@@ -72,9 +107,7 @@ function generateRow(label, operation, layout, requestedSign, minimum, maximum, 
             rightValue = requestedSign === '=' ? leftValue : rightPair.value;
             if (requestedSign !== '=' && signFor(leftValue, rightValue) !== requestedSign) continue;
             if (requestedSign === '=') {
-                const matchingPair = operation === '+'
-                    ? (() => { const first = randomInt(minimum, leftValue - minimum, random); return { first, second: leftValue - first, value: leftValue }; })()
-                    : (() => { const second = randomInt(minimum, maximum - leftValue, random); return { first: leftValue + second, second, value: leftValue }; })();
+                const matchingPair = generatePairForValue(operation, leftValue, minimum, maximum, random);
                 rightText = expression(matchingPair, operation);
             } else {
                 rightText = expression(rightPair, operation);
@@ -95,7 +128,7 @@ function generateFourArithmeticComparisons(config = {}, random = Math.random) {
     const minimum = Math.max(Number(config.minimum ?? 10 ** (minimumDigits - 1)), 10 ** (minimumDigits - 1));
     const maximum = Math.min(Number(config.maximum ?? (10 ** maximumDigits - 1)), 10 ** maximumDigits - 1);
     if (!Number.isSafeInteger(minimum) || !Number.isSafeInteger(maximum) || minimum < 10 || maximum < minimum * 2) throw new Error('Phạm vi số chưa đủ để tạo phép so sánh.');
-    const operations = (Array.isArray(config.operations) ? config.operations : ['+', '-']).filter(item => item === '+' || item === '-');
+    const operations = (Array.isArray(config.operations) ? config.operations : OPERATIONS).filter(item => OPERATIONS.includes(item));
     const layouts = (Array.isArray(config.layouts) ? config.layouts : LAYOUTS).filter(item => LAYOUTS.includes(item));
     if (!operations.length || !layouts.length) throw new Error('Hãy chọn ít nhất một phép tính và dạng hai vế.');
 
