@@ -1113,7 +1113,7 @@ input[type="text"], input[type="password"], select, textarea {
 #game-config-view .glass-container-xl,
 #exam-select-screen .glass-container-xl {
     --scene-glow: #00d4ff;
-    background: linear-gradient(135deg, rgba(6, 16, 28, .66), rgba(12, 24, 38, .45)) !important;
+    background: linear-gradient(135deg, rgba(6, 16, 28, .34), rgba(12, 24, 38, .24)) !important;
     border-color: color-mix(in srgb, var(--scene-glow) 58%, white) !important;
     box-shadow: 0 0 0 1px rgba(255,255,255,.16) inset, 0 0 34px color-mix(in srgb, var(--scene-glow) 32%, transparent), 0 18px 48px rgba(0,0,0,.42);
 }
@@ -1122,47 +1122,46 @@ input[type="text"], input[type="password"], select, textarea {
 #game-screen.theme-vietnamese #game-config-view .glass-container-xl { --scene-glow: #2ecc71; }
 
 #game-config-view .glass-container-xl {
-    width: min(78vw, 1240px) !important;
-    max-width: none !important;
+    width: min(95%, 1200px) !important;
+    max-width: 1200px !important;
     padding: clamp(20px, 2.2vw, 34px) clamp(28px, 3.8vw, 58px) !important;
-    overflow: visible;
+    overflow: hidden;
 }
 
 #game-config-view .config-top {
-    position: relative;
-    justify-content: center !important;
+    position: static;
 }
 
 #game-config-view .config-left {
-    position: absolute !important;
-    z-index: 2;
-    left: clamp(-205px, -13vw, -130px);
-    top: 50%;
-    width: clamp(130px, 13vw, 190px);
-    transform: translateY(-42%);
-    pointer-events: none;
+    position: static !important;
+    width: auto;
+    transform: none;
+    pointer-events: auto;
 }
 
 #game-config-view .config-left .cat-avatar {
-    width: 100% !important;
+    width: clamp(155px, 16vw, 220px) !important;
+    height: auto !important;
+    aspect-ratio: 1;
+    object-fit: contain;
 }
 
 #game-config-view .config-center {
-    flex: 0 1 850px !important;
-    width: min(100%, 850px);
-    margin: 0 auto;
+    flex: 3 !important;
+    width: auto;
+    margin: 0;
     gap: 12px;
 }
 
 #game-config-view .config-section {
-    background: linear-gradient(135deg, rgba(10, 19, 31, .56), rgba(255,255,255,.10));
+    background: linear-gradient(135deg, rgba(10, 19, 31, .30), rgba(255,255,255,.08));
     border-color: color-mix(in srgb, var(--scene-glow) 30%, rgba(255,255,255,.55));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 22px rgba(0,0,0,.18);
 }
 
 #game-config-view .topic-card {
     min-height: 46px;
-    background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(220,230,242,.84));
+    background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(220,230,242,.70));
     border-color: rgba(255,255,255,.88);
     border-bottom-color: rgba(148,163,184,.9);
     box-shadow: 0 4px 9px rgba(0,0,0,.25);
@@ -1205,19 +1204,26 @@ input[type="text"], input[type="password"], select, textarea {
 }
 
 @media (max-width: 1200px) {
-    #game-config-view .glass-container-xl { width: min(84vw, 980px) !important; }
-    #game-config-view .config-left { left: clamp(-138px, -12vw, -92px); width: clamp(105px, 13vw, 145px); }
+    #game-config-view .glass-container-xl { width: min(95%, 980px) !important; }
     #exam-select-screen .glass-container-xl { width: min(90vw, 980px) !important; }
 }
 
 @media (max-width: 900px) {
     #game-config-view .glass-container-xl { width: calc(100% - 28px) !important; padding-left: 26px !important; padding-right: 26px !important; }
-    #game-config-view .config-left { left: -82px; width: 96px; }
-    #game-config-view .config-center { width: calc(100% - 46px); margin-left: auto; }
+    #game-config-view .config-left .cat-avatar { width: 118px !important; }
+    #game-config-view .config-center { width: auto; margin: 0; }
     #exam-select-screen .glass-container-xl { width: calc(100% - 28px) !important; }
     #exam-select-screen .exam-select-layout { gap: 16px; }
     #exam-select-screen .exam-guide-mascot { width: 140px; height: 140px; }
     #exam-select-screen .subject-box { width: 155px; padding: 12px 10px; }
+}
+
+.cat-avatar-large,
+#play-cat-img {
+    width: clamp(190px, 15vw, 260px);
+    height: auto !important;
+    aspect-ratio: 1;
+    object-fit: contain;
 }
 @media (max-width: 900px) {
     .asset-button--table { width: clamp(66px, 11vw, 105px); }

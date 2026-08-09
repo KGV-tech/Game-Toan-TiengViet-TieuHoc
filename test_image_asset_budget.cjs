@@ -16,9 +16,9 @@ function webpBytes(path) {
 
 const assets = {
     teacher: pngDimensions('public/avatar-teacher-female.png'),
-    robotCatNormal: pngDimensions('public/robot_cat_normal_transparent.png'),
-    robotCatHappy: pngDimensions('public/robot_cat_happy_transparent.png'),
-    robotCatSad: pngDimensions('public/robot_cat_sad_transparent.png'),
+    robotCatNormal: webpBytes('public/robot_cat_normal.webp'),
+    robotCatHappy: webpBytes('public/robot_cat_happy.webp'),
+    robotCatSad: webpBytes('public/robot_cat_sad.webp'),
     robotCatSubjectSelect: pngDimensions('public/robot_cat_subject_select.png'),
     mathExplorer: webpBytes('public/subject_math_explorer.webp'),
     vietnameseExplorer: webpBytes('public/subject_vietnamese_explorer.webp'),
@@ -28,14 +28,11 @@ const assets = {
 };
 
 assert(assets.teacher.width <= 256 && assets.teacher.height <= 256, 'Teacher avatar must not exceed its 256px delivery size.');
-assert(assets.robotCatNormal.width <= 512 && assets.robotCatNormal.height <= 768, 'Normal robot cat must stay at its in-game display resolution.');
-assert(assets.robotCatHappy.width <= 512 && assets.robotCatHappy.height <= 768, 'Happy robot cat must stay at its in-game display resolution.');
-assert(assets.robotCatSad.width <= 512 && assets.robotCatSad.height <= 768, 'Sad robot cat must stay at its in-game display resolution.');
 assert(assets.robotCatSubjectSelect.width <= 678 && assets.robotCatSubjectSelect.height <= 768, 'Subject-select robot cat must stay at its in-game display resolution.');
 assert(assets.teacher.bytes < 400_000, 'Teacher avatar must stay below 400KB.');
-assert(assets.robotCatNormal.bytes < 350_000, 'Normal robot cat must stay below 350KB.');
-assert(assets.robotCatHappy.bytes < 350_000, 'Happy robot cat must stay below 350KB.');
-assert(assets.robotCatSad.bytes < 350_000, 'Sad robot cat must stay below 350KB.');
+assert(assets.robotCatNormal < 180_000, 'Normal robot cat must stay below 180KB.');
+assert(assets.robotCatHappy < 180_000, 'Happy robot cat must stay below 180KB.');
+assert(assets.robotCatSad < 180_000, 'Sad robot cat must stay below 180KB.');
 assert(assets.robotCatSubjectSelect.bytes < 350_000, 'Subject-select robot cat must stay below 350KB.');
 assert(assets.mathExplorer < 200_000, 'Math subject artwork must stay below 200KB.');
 assert(assets.vietnameseExplorer < 200_000, 'Vietnamese subject artwork must stay below 200KB.');

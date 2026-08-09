@@ -280,7 +280,7 @@ test('nút bắt đầu làm bài nằm trọn trong màn hình chọn đề', a
   expect(box.y + box.height).toBeLessThanOrEqual(1020);
 });
 
-test('ba màn chọn giữ khung nội dung gọn và mèo máy đứng ngoài vùng thao tác', async ({ page }) => {
+test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo máy nằm trong khung', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -291,8 +291,9 @@ test('ba màn chọn giữ khung nội dung gọn và mèo máy đứng ngoài v
 
   const practicePanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
   const practiceMascot = await page.locator('#game-config-view .config-left').boundingBox();
-  expect(practicePanel.width).toBeLessThanOrEqual(1140);
-  expect(practiceMascot.x).toBeLessThan(practicePanel.x);
+  expect(practicePanel.width).toBeGreaterThanOrEqual(1180);
+  expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
+  expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
 
   await page.evaluate(() => {
     document.getElementById('game-screen').classList.remove('active');
