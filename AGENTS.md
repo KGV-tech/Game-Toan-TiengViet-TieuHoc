@@ -18,7 +18,7 @@
 
 - Không chạy `supabase_rls.sql`: đây là tệp đã ngưng dùng và chỉ còn hướng dẫn.
 - Chỉ dùng `supabase_auth_security.sql` khi người dùng xác nhận triển khai vào đúng dự án Supabase.
-- Không chạy `fix.js`, `fix2.js`, `patch.js`, `patch_main.cjs`, `update.js` hoặc `update_note.js` nếu chưa xem nội dung và chủ động thêm `--allow-legacy-patch`.
+- Các script vá một lần đã được xóa khỏi repo; không thêm lại chúng vào quy trình phát triển.
 - Không thêm, xóa, hoặc thay đổi dữ liệu Supabase; không đổi schema, RLS, API key hay quyền truy cập nếu chưa được người dùng chấp thuận rõ ràng.
 - Không thêm dependency hay cài công cụ khi chưa kiểm tra dự án cần gì và báo cho người dùng.
 - Không refactor lớn `src/main.js` cùng lúc với việc sửa lỗi/chức năng nhỏ.

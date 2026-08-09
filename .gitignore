@@ -12,6 +12,13 @@ dist
 dist-ssr
 playwright-report/
 test-results/
+coverage/
+scratch/
+tasks/
+tmp/
+*.tmp
+*.bak
+*.orig
 *.local
 
 # Editor directories and files
