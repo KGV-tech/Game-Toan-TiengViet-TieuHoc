@@ -10,6 +10,12 @@ assert(source.includes('renderTemplates(box)'), 'Admin must render the Template 
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
 assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
 assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
+assert(source.includes('<b>Diễn giải</b>'), 'Template editor must label the template summary as Diễn giải.');
+assert(!source.includes('Ví dụ khai báo'), 'Template editor must no longer present the summary as an example declaration.');
+assert(source.includes('Số lượng chữ số ít nhất'), 'Four-arithmetic templates must clearly describe the minimum digit count.');
+assert(source.includes('Số lượng chữ số nhiều nhất'), 'Four-arithmetic templates must clearly describe the maximum digit count.');
+assert(css.includes('template-editor__arithmetic-settings'), 'Arithmetic settings must use the compact grid layout.');
+assert(css.includes('max-width: 250px'), 'Range inputs must stay compact instead of stretching across the editor.');
 assert(!source.includes('onclick="app.admin.renderTemplateForm()"'), 'Template Bank must not offer a blank template creation flow.');
 assert(source.includes('Lưu thành bản mới'), 'Template editor must allow copying an existing configuration.');
 assert(source.includes('template-select-all'), 'Template editor must provide quick select-all controls.');
