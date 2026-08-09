@@ -1134,13 +1134,19 @@ input[type="text"], input[type="password"], select, textarea {
 
 #game-config-view .config-top {
     position: static;
+    gap: clamp(18px, 2.4vw, 36px) !important;
+    align-items: center !important;
 }
 
 #game-config-view .config-left {
     position: static !important;
-    width: auto;
+    flex: 0 0 clamp(220px, 19vw, 270px) !important;
+    width: clamp(220px, 19vw, 270px);
     transform: none;
     pointer-events: auto;
+    flex-direction: column;
+    gap: 14px;
+    align-self: stretch;
 }
 
 #game-config-view .config-left .cat-avatar {
@@ -1151,10 +1157,16 @@ input[type="text"], input[type="password"], select, textarea {
 }
 
 #game-config-view .config-center {
-    flex: 3 !important;
+    flex: 1 1 auto !important;
+    min-width: 0;
     width: auto;
     margin: 0;
     gap: 12px;
+}
+
+#game-config-view .config-left #game-start-btn {
+    width: min(100%, 270px) !important;
+    margin: 0;
 }
 
 #game-config-view .config-section {
@@ -1223,7 +1235,9 @@ input[type="text"], input[type="password"], select, textarea {
 
 @media (max-width: 900px) {
     #game-config-view .glass-container-xl { width: calc(100% - 28px) !important; padding-left: 26px !important; padding-right: 26px !important; }
+    #game-config-view .config-left { flex-basis: 170px !important; width: 170px; gap: 9px; }
     #game-config-view .config-left .cat-avatar { width: 118px !important; }
+    #game-config-view .config-left #game-start-btn { width: min(100%, 170px) !important; }
     #game-config-view .config-center { width: auto; margin: 0; }
     #game-config-view .topic-header { gap: 10px; }
     #game-config-view .topic-mode-option span { min-height: 32px; padding: 0 9px; font-size: .82rem; }

@@ -291,9 +291,13 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
 
   const practicePanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
   const practiceMascot = await page.locator('#game-config-view .config-left').boundingBox();
+  const practiceTopics = await page.locator('#game-config-view .config-center').boundingBox();
   expect(practicePanel.width).toBeGreaterThanOrEqual(1180);
   expect(practiceMascot.x).toBeGreaterThanOrEqual(practicePanel.x);
   expect(practiceMascot.x + practiceMascot.width).toBeLessThanOrEqual(practicePanel.x + practicePanel.width);
+  expect(practiceTopics.width).toBeGreaterThan(practiceMascot.width * 2);
+  expect(practiceTopics.x).toBeGreaterThan(practiceMascot.x);
+  await expect(page.locator('.config-left #game-start-btn')).toHaveCount(1);
   await expect(page.locator('#game-config-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
   await expect(page.getByRole('heading', { name: 'Chọn Chủ đề' })).toBeVisible();
   await expect(page.getByRole('button', { name: '20 Câu' })).toHaveCount(0);
