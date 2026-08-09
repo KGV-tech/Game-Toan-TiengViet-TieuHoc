@@ -118,6 +118,22 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
   expect(submitButton.width / playLeft.width).toBeLessThanOrEqual(.91);
   await expect(page.locator('#game-play-view .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
   await expect(page.locator('#game-play-view .play-center')).toHaveCSS('backdrop-filter', 'blur(2px)');
+
+  await page.evaluate(() => {
+    document.getElementById('game-play-view').classList.remove('active');
+    document.getElementById('game-screen').className = 'screen active theme-vietnamese';
+    document.getElementById('game-config-view').classList.add('active');
+  });
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(167, 243, 208)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
+
+  await page.evaluate(() => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('exam-select-screen').classList.add('active');
+  });
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('color', 'rgb(186, 230, 253)');
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('-webkit-text-stroke-width', '2px');
+  await expect(page.locator('#exam-select-screen .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
 });
 
 test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop', async ({ page }, testInfo) => {
