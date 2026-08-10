@@ -301,15 +301,16 @@
                   </div>
                 </div>
 
+                <div id="admin-topic-mode-controls" class="admin-topic-mode-controls" style="display:none;">
+                  <button type="button" class="btn-opt active" data-topic-admin-mode="test" onclick="app.game.setAdminTopicMode('test', this)">Giao diện Test</button>
+                  <button type="button" class="btn-opt" data-topic-admin-mode="manage" onclick="app.game.setAdminTopicMode('manage', this)">Giao diện Mở/Khóa</button>
+                </div>
+
                 <div class="config-section">
                   <div class="topic-header"
                     style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
                     <div class="topic-header__primary">
                       <h3 style="margin: 0;">Chọn Chủ đề</h3>
-                      <div id="admin-topic-mode-controls" class="admin-topic-mode-controls" style="display:none;">
-                        <button type="button" class="btn-opt active" data-topic-admin-mode="test" onclick="app.game.setAdminTopicMode('test', this)">Giao diện Test</button>
-                        <button type="button" class="btn-opt" data-topic-admin-mode="manage" onclick="app.game.setAdminTopicMode('manage', this)">Giao diện Mở/Khóa</button>
-                      </div>
                       <div class="topic-mode-toggle">
                         <label class="topic-mode-option"><input type="radio" name="topicMode" value="single" checked
                             onchange="app.game.toggleTopicMode()"><span>Chọn 1</span></label>

@@ -573,7 +573,8 @@ test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấ
   const manageModeButton = page.getByRole('button', { name: 'Giao diện Mở/Khóa', exact: true });
   await expect(testModeButton).toBeVisible();
   await expect(manageModeButton).toBeVisible();
-  await expect(page.locator('.topic-header__primary #admin-topic-mode-controls')).toBeVisible();
+  await expect(page.locator('.config-center > #admin-topic-mode-controls')).toBeVisible();
+  await expect(page.locator('.config-section #admin-topic-mode-controls')).toHaveCount(0);
   await expect(page.locator('#game-start-btn')).toBeVisible();
   await expect(page.locator('.topic-mode-toggle')).toBeVisible();
   await expect(page.locator('.config-difficulty-options')).toBeVisible();
