@@ -569,13 +569,16 @@ test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấ
     app.game.openConfig('math');
   });
 
-  await expect(page.getByRole('button', { name: 'Test', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mở/Khóa', exact: true })).toBeVisible();
+  const testModeButton = page.getByRole('button', { name: 'Giao diện Test', exact: true });
+  const manageModeButton = page.getByRole('button', { name: 'Giao diện Mở/Khóa', exact: true });
+  await expect(testModeButton).toBeVisible();
+  await expect(manageModeButton).toBeVisible();
+  await expect(page.locator('.topic-header__primary #admin-topic-mode-controls')).toBeVisible();
   await expect(page.locator('#game-start-btn')).toBeVisible();
   await expect(page.locator('.topic-mode-toggle')).toBeVisible();
   await expect(page.locator('.config-difficulty-options')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Mở/Khóa', exact: true }).click();
+  await manageModeButton.click();
   await expect(page.locator('#game-start-btn')).toBeHidden();
   await expect(page.locator('.topic-mode-toggle')).toBeHidden();
   await expect(page.locator('.config-difficulty-options')).toBeHidden();
@@ -601,7 +604,7 @@ test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấ
   const studentLockedTopic = page.locator('#topics-list .topic-card', { hasText: lockedTopicName.trim().replace('Đã khóa', '').trim() }).first();
   await expect(studentLockedTopic).toHaveClass(/topic-card--locked/);
   await expect(studentLockedTopic.locator('input')).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Test', exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Giao diện Test', exact: true })).toBeHidden();
 
   await page.evaluate(() => {
     app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '5' };

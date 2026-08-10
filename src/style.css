@@ -396,7 +396,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .topic-header__primary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .topic-mode-toggle { display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 12px; }
 .admin-topic-mode-controls, .topic-lock-actions { gap: 6px; align-items: center; }
-.admin-topic-mode-controls .btn-opt, .topic-lock-actions .btn-opt { min-width: 82px; }
+.admin-topic-mode-controls { display: inline-flex; flex-wrap: wrap; }
+.admin-topic-mode-controls .btn-opt { min-width: 130px; }
+.topic-lock-actions .btn-opt { min-width: 82px; }
 .topic-lock-actions__open { background: linear-gradient(180deg, #22c55e, #15803d) !important; border-color: #86efac !important; color: #fff !important; }
 .topic-lock-actions__lock { background: linear-gradient(180deg, #ef4444, #b91c1c) !important; border-color: #fca5a5 !important; color: #fff !important; }
 .topic-mode-option { cursor: pointer; }
