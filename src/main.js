@@ -1175,7 +1175,7 @@ const app = {
             if (modeControls) {
                 modeControls.style.display = isAdmin ? 'inline-flex' : 'none';
                 modeControls.querySelectorAll('.btn-opt').forEach(button => {
-                    button.classList.toggle('active', button.textContent.trim() === (isManaging ? 'Mở/Khóa' : 'Test'));
+                    button.classList.toggle('active', button.dataset.topicAdminMode === (isManaging ? 'manage' : 'test'));
                 });
             }
             if (topicMode) topicMode.style.display = isManaging ? 'none' : '';
