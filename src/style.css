@@ -395,6 +395,10 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .topic-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 5px; }
 .topic-header__primary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .topic-mode-toggle { display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 12px; }
+.admin-topic-mode-controls, .topic-lock-actions { gap: 6px; align-items: center; }
+.admin-topic-mode-controls .btn-opt, .topic-lock-actions .btn-opt { min-width: 82px; }
+.topic-lock-actions__open { background: linear-gradient(180deg, #22c55e, #15803d) !important; border-color: #86efac !important; color: #fff !important; }
+.topic-lock-actions__lock { background: linear-gradient(180deg, #ef4444, #b91c1c) !important; border-color: #fca5a5 !important; color: #fff !important; }
 .topic-mode-option { cursor: pointer; }
 .topic-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
 .topic-mode-option span { display: inline-flex; min-height: 36px; align-items: center; gap: 6px; padding: 0 12px; border: 2px solid transparent; border-radius: 8px; color: #dbeafe; font-size: .9rem; font-weight: 800; transition: background-color .2s, border-color .2s, box-shadow .2s, color .2s; }
@@ -423,6 +427,37 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
     min-height: 40px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
     text-transform: uppercase;
+}
+.topic-card--locked {
+    position: relative;
+    overflow: hidden;
+    opacity: .52;
+    filter: grayscale(.75);
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+.topic-card--locked::after {
+    content: '';
+    position: absolute;
+    width: 145%;
+    height: 3px;
+    background: rgba(220, 38, 38, .9);
+    transform: rotate(-22deg);
+    box-shadow: 0 0 5px rgba(255,255,255,.7);
+}
+.topic-lock-status {
+    display: block;
+    position: relative;
+    z-index: 1;
+    margin-top: 3px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #b91c1c;
+    color: #fff;
+    font-size: .68em;
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-decoration: none;
 }
 .topic-card input {
     display: none;

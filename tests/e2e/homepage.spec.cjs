@@ -559,6 +559,59 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
   expect(examPanel.width).toBeLessThanOrEqual(1040);
 });
 
+test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấy chủ đề đã khóa', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '5' };
+    app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };
+    app.game.openConfig('math');
+  });
+
+  await expect(page.getByRole('button', { name: 'Test', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mở/Khóa', exact: true })).toBeVisible();
+  await expect(page.locator('#game-start-btn')).toBeVisible();
+  await expect(page.locator('.topic-mode-toggle')).toBeVisible();
+  await expect(page.locator('.config-difficulty-options')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Mở/Khóa', exact: true }).click();
+  await expect(page.locator('#game-start-btn')).toBeHidden();
+  await expect(page.locator('.topic-mode-toggle')).toBeHidden();
+  await expect(page.locator('.config-difficulty-options')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Mở', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khóa', exact: true })).toBeVisible();
+
+  const lockedTopic = page.locator('#topics-list .topic-card').first();
+  const secondLockedTopic = page.locator('#topics-list .topic-card').nth(1);
+  const lockedTopicName = await lockedTopic.textContent();
+  await lockedTopic.click();
+  await secondLockedTopic.click();
+  await expect.poll(() => page.evaluate(() => app.game.state.selectedTopics.length)).toBe(2);
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('button', { name: 'Khóa', exact: true }).click();
+  await expect(lockedTopic).toHaveClass(/topic-card--locked/);
+  await expect(secondLockedTopic).toHaveClass(/topic-card--locked/);
+  await expect(lockedTopic).toContainText('Đã khóa');
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'student', role: 'student', classlevel: '5' };
+    app.game.openConfig('math');
+  });
+  const studentLockedTopic = page.locator('#topics-list .topic-card', { hasText: lockedTopicName.trim().replace('Đã khóa', '').trim() }).first();
+  await expect(studentLockedTopic).toHaveClass(/topic-card--locked/);
+  await expect(studentLockedTopic.locator('input')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Test', exact: true })).toBeHidden();
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '5' };
+    app.game.openConfig('math');
+  });
+  const adminTopic = page.locator('#topics-list .topic-card', { hasText: lockedTopicName.trim().replace('Đã khóa', '').trim() }).first();
+  await expect(adminTopic.locator('input')).toBeEnabled();
+  await expect(page.locator('#game-start-btn')).toBeVisible();
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },

@@ -418,6 +418,9 @@ const app = {
                         if (payload.new && payload.new.data) {
                             this.settings = payload.new.data;
                             app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+                            if (document.getElementById('game-config-view')?.classList.contains('active')) {
+                                app.game.renderTopics();
+                            }
                             // Auto-refresh settings UI if admin is viewing it
                             if (app.admin && document.getElementById('treasure-modal').classList.contains('active')) {
                                 const activeTab = document.querySelector('.tab-btn.active');
@@ -915,7 +918,7 @@ const app = {
 
     game: {
         questionsPerRound: 10,
-        state: { subject: '', topicMode: 'single', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
         
         skills: {
             state: {
@@ -1112,6 +1115,7 @@ const app = {
             this.state.subject = subject;
             this.state.selectedTopics = [];
             this.state.topicMode = 'single';
+            this.state.adminTopicMode = 'test';
             this.state.examName = null;
             this.state.examId = null;
             this.state.questId = null;
@@ -1137,6 +1141,7 @@ const app = {
             app.router.openGameView('game-config-view');
 
             document.querySelector('input[name="topicMode"][value="single"]').checked = true;
+            this.syncTopicControls();
             this.renderTopics();
 
             const diffContainer = document.querySelectorAll('.config-section .diff-options')[isAdmin ? 1 : 0] || document.querySelectorAll('.diff-options')[0]; // To be safe, just select by ID if possible, but they don't have ID. Let's just use parent id if needed. Wait, let's select all and just reset the difficulty ones.
@@ -1150,6 +1155,71 @@ const app = {
             if (difficultyBtns.length > 0) difficultyBtns[0].classList.add('active');
 
             this.state.difficulty = 'easy';
+        },
+        isAdmin() {
+            return app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
+        },
+        isTopicLocked(classlevel, subject, topic) {
+            const locks = app.data.settings?.topicLocks;
+            return Boolean(locks?.[String(classlevel)]?.[subject]?.[topic]);
+        },
+        syncTopicControls() {
+            const isAdmin = this.isAdmin();
+            const isManaging = isAdmin && this.state.adminTopicMode === 'manage';
+            const modeControls = document.getElementById('admin-topic-mode-controls');
+            const topicMode = document.querySelector('.topic-mode-toggle');
+            const difficulty = document.querySelector('.config-difficulty-options');
+            const lockActions = document.getElementById('topic-lock-actions');
+            const startButton = document.getElementById('game-start-btn');
+
+            if (modeControls) {
+                modeControls.style.display = isAdmin ? 'inline-flex' : 'none';
+                modeControls.querySelectorAll('.btn-opt').forEach(button => {
+                    button.classList.toggle('active', button.textContent.trim() === (isManaging ? 'Mở/Khóa' : 'Test'));
+                });
+            }
+            if (topicMode) topicMode.style.display = isManaging ? 'none' : '';
+            if (difficulty) difficulty.style.display = isManaging ? 'none' : '';
+            if (lockActions) lockActions.style.display = isManaging ? 'inline-flex' : 'none';
+            if (startButton) startButton.style.display = isManaging ? 'none' : '';
+        },
+        setAdminTopicMode(mode) {
+            if (!this.isAdmin()) return;
+            this.state.adminTopicMode = mode === 'manage' ? 'manage' : 'test';
+            this.state.selectedTopics = [];
+            this.syncTopicControls();
+            this.renderTopics();
+        },
+        async setSelectedTopicsLock(locked) {
+            if (!this.isAdmin() || this.state.adminTopicMode !== 'manage') return;
+            if (this.state.selectedTopics.length === 0) {
+                alert('Vui lòng chọn ít nhất một chủ đề để cập nhật.');
+                return;
+            }
+
+            const classlevel = String(this.state.adminclasslevel || '5').replace('Lớp ', '').trim();
+            const subject = this.state.subject;
+            const previousLocks = app.data.settings?.topicLocks || {};
+            const topicLocks = JSON.parse(JSON.stringify(previousLocks));
+            topicLocks[classlevel] ||= {};
+            topicLocks[classlevel][subject] ||= {};
+            this.state.selectedTopics.forEach(topic => {
+                if (locked) topicLocks[classlevel][subject][topic] = true;
+                else delete topicLocks[classlevel][subject][topic];
+            });
+
+            app.data.settings = { ...app.data.settings, topicLocks };
+            const error = await app.data.saveSettings();
+            if (error) {
+                app.data.settings = { ...app.data.settings, topicLocks: previousLocks };
+                this.renderTopics();
+                return;
+            }
+
+            const updatedCount = this.state.selectedTopics.length;
+            this.state.selectedTopics = [];
+            this.renderTopics();
+            alert(`${locked ? 'Đã khóa' : 'Đã mở'} ${updatedCount} chủ đề cho học sinh.`);
         },
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -1165,7 +1235,8 @@ const app = {
             this.renderTopics();
         },
         renderTopics() {
-            const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
+            const isAdmin = this.isAdmin();
+            const isManaging = isAdmin && this.state.adminTopicMode === 'manage';
             let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
             clLevel = String(clLevel).replace('Lớp ', '').trim();
 
@@ -1196,13 +1267,17 @@ const app = {
 
                 topicList.forEach(t => {
                     const lbl = document.createElement('label');
-                    lbl.className = 'topic-card';
+                    const isLocked = this.isTopicLocked(clLevel, this.state.subject, t);
+                    const showLockedStatus = isLocked && (isManaging || !isAdmin);
+                    lbl.className = `topic-card${showLockedStatus ? ' topic-card--locked' : ''}`;
                     const inp = document.createElement('input');
-                    inp.type = this.state.topicMode === 'single' ? 'radio' : 'checkbox';
+                    inp.type = isManaging || this.state.topicMode === 'multi' ? 'checkbox' : 'radio';
                     inp.name = 'topic-selection';
                     inp.value = t;
+                    inp.disabled = !isAdmin && isLocked;
+                    if (inp.disabled) lbl.setAttribute('aria-disabled', 'true');
                     inp.onchange = (e) => {
-                        if (this.state.topicMode === 'single') {
+                        if (!isManaging && this.state.topicMode === 'single') {
                             this.state.selectedTopics = [t];
                         } else {
                             if (e.target.checked) this.state.selectedTopics.push(t);
@@ -1211,6 +1286,12 @@ const app = {
                     };
                     lbl.appendChild(inp);
                     lbl.appendChild(document.createTextNode(' ' + t));
+                    if (showLockedStatus) {
+                        const lockStatus = document.createElement('span');
+                        lockStatus.className = 'topic-lock-status';
+                        lockStatus.textContent = 'Đã khóa';
+                        lbl.appendChild(lockStatus);
+                    }
                     grid.appendChild(lbl);
                 });
 
@@ -1235,6 +1316,13 @@ const app = {
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
             let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
             clLevel = String(clLevel).replace('Lớp ', '').trim();
+
+            if (!isAdmin && this.state.selectedTopics.some(topic => this.isTopicLocked(clLevel, this.state.subject, topic))) {
+                this.state.selectedTopics = [];
+                this.renderTopics();
+                alert('Chủ đề này hiện chưa được giáo viên mở.');
+                return;
+            }
 
             const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
 
