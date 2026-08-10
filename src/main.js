@@ -1173,7 +1173,7 @@ const app = {
             const startButton = document.getElementById('game-start-btn');
 
             if (modeControls) {
-                modeControls.style.display = isAdmin ? 'inline-flex' : 'none';
+                modeControls.style.display = isAdmin ? 'flex' : 'none';
                 modeControls.querySelectorAll('.btn-opt').forEach(button => {
                     button.classList.toggle('active', button.dataset.topicAdminMode === (isManaging ? 'manage' : 'test'));
                 });
