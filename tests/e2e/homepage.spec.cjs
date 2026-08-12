@@ -616,6 +616,58 @@ test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấ
   await expect(page.locator('#game-start-btn')).toBeVisible();
 });
 
+test('học sinh chỉ mở chủ đề kế tiếp sau một lượt luyện tập đạt 10 điểm', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const progression = await page.evaluate(() => {
+    app.data.currentUser = { id: 'student-1', username: 'minh', role: 'student', classlevel: '5', history: [] };
+    app.data.settings = { topicLocks: {} };
+    app.game.openConfig('math');
+
+    const topics = app.game.getOrderedTopics('5', 'math');
+    const firstTopic = topics[0];
+    const secondTopic = topics[1];
+    const before = {
+      firstLocked: app.game.isStudentProgressionLocked('5', 'math', firstTopic),
+      secondLocked: app.game.isStudentProgressionLocked('5', 'math', secondTopic)
+    };
+    const firstCard = document.querySelector('#topics-list .topic-card');
+    const secondCard = document.querySelectorAll('#topics-list .topic-card')[1];
+
+    app.data.currentUser.history.push({
+      title: 'Toán', topic: firstTopic, score: 9, questionCount: 10, details: Array(10).fill({})
+    });
+    const afterNine = app.game.isStudentProgressionLocked('5', 'math', secondTopic);
+
+    app.data.currentUser.history.push({
+      title: 'Toán', topic: firstTopic, score: 10, questionCount: 10, details: Array(10).fill({})
+    });
+    const afterPerfect = app.game.isStudentProgressionLocked('5', 'math', secondTopic);
+    const nextTopic = topics[2];
+    const nextLocked = app.game.isStudentProgressionLocked('5', 'math', nextTopic);
+    app.data.settings.topicUnlockOverrides = { '5': { math: { [nextTopic]: true } } };
+
+    return {
+      before,
+      initialCards: { first: firstCard.classList.contains('topic-card--locked'), second: secondCard.classList.contains('topic-card--locked') },
+      afterNine,
+      afterPerfect,
+      nextLocked,
+      teacherOpenedNext: app.game.isStudentProgressionLocked('5', 'math', nextTopic)
+    };
+  });
+
+  expect(progression).toEqual({
+    before: { firstLocked: false, secondLocked: true },
+    initialCards: { first: false, second: true },
+    afterNine: true,
+    afterPerfect: false,
+    nextLocked: true,
+    teacherOpenedNext: false
+  });
+});
+
 const auditStates = [
   { name: 'register', screenId: 'register-screen' },
   { name: 'map', screenId: 'map-screen' },

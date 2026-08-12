@@ -1163,6 +1163,41 @@ const app = {
             const locks = app.data.settings?.topicLocks;
             return Boolean(locks?.[String(classlevel)]?.[subject]?.[topic]);
         },
+        getOrderedTopics(classlevel, subject) {
+            const topicGroups = app.constants.topics?.[String(classlevel)]?.[subject] || {};
+            return [...(topicGroups.hk1 || []), ...(topicGroups.hk2 || [])];
+        },
+        hasPerfectTopicRound(topic, subject, classlevel) {
+            const user = app.data.currentUser;
+            const subjectTitle = subject === 'math' ? 'Toán' : 'Tiếng Việt';
+            return (Array.isArray(user?.history) ? user.history : []).some(round => (
+                round?.topic === topic
+                && Number(round.score) === 10
+                && Number(round.questionCount) === this.questionsPerRound
+                && (round.subject ? round.subject === subject : round.title === subjectTitle)
+                && (!round.classlevel || String(round.classlevel).replace(/^Lớp\s*/i, '') === String(classlevel))
+            ));
+        },
+        isStudentProgressionLocked(classlevel, subject, topic) {
+            if (this.isAdmin()) return false;
+            const overrides = app.data.settings?.topicUnlockOverrides;
+            if (overrides?.[String(classlevel)]?.[subject]?.[topic]) return false;
+            const orderedTopics = this.getOrderedTopics(classlevel, subject);
+            const topicIndex = orderedTopics.indexOf(topic);
+            if (topicIndex <= 0) return false;
+
+            return orderedTopics.slice(0, topicIndex).some(previousTopic => (
+                !this.hasPerfectTopicRound(previousTopic, subject, classlevel)
+            ));
+        },
+        getNewlyUnlockedTopic(classlevel, subject, completedTopic) {
+            if (this.isAdmin() || this.state.examName || this.state.selectedTopics.length !== 1) return null;
+            const orderedTopics = this.getOrderedTopics(classlevel, subject);
+            const completedIndex = orderedTopics.indexOf(completedTopic);
+            const nextTopic = orderedTopics[completedIndex + 1];
+            if (!nextTopic || this.isTopicLocked(classlevel, subject, nextTopic)) return null;
+            return nextTopic;
+        },
         syncTopicControls() {
             const isAdmin = this.isAdmin();
             const isManaging = isAdmin && this.state.adminTopicMode === 'manage';
@@ -1201,17 +1236,26 @@ const app = {
             const subject = this.state.subject;
             const previousLocks = app.data.settings?.topicLocks || {};
             const topicLocks = JSON.parse(JSON.stringify(previousLocks));
+            const previousOverrides = app.data.settings?.topicUnlockOverrides || {};
+            const topicUnlockOverrides = JSON.parse(JSON.stringify(previousOverrides));
             topicLocks[classlevel] ||= {};
             topicLocks[classlevel][subject] ||= {};
+            topicUnlockOverrides[classlevel] ||= {};
+            topicUnlockOverrides[classlevel][subject] ||= {};
             this.state.selectedTopics.forEach(topic => {
-                if (locked) topicLocks[classlevel][subject][topic] = true;
-                else delete topicLocks[classlevel][subject][topic];
+                if (locked) {
+                    topicLocks[classlevel][subject][topic] = true;
+                    delete topicUnlockOverrides[classlevel][subject][topic];
+                } else {
+                    delete topicLocks[classlevel][subject][topic];
+                    topicUnlockOverrides[classlevel][subject][topic] = true;
+                }
             });
 
-            app.data.settings = { ...app.data.settings, topicLocks };
+            app.data.settings = { ...app.data.settings, topicLocks, topicUnlockOverrides };
             const error = await app.data.saveSettings();
             if (error) {
-                app.data.settings = { ...app.data.settings, topicLocks: previousLocks };
+                app.data.settings = { ...app.data.settings, topicLocks: previousLocks, topicUnlockOverrides: previousOverrides };
                 this.renderTopics();
                 return;
             }
@@ -1267,7 +1311,9 @@ const app = {
 
                 topicList.forEach(t => {
                     const lbl = document.createElement('label');
-                    const isLocked = this.isTopicLocked(clLevel, this.state.subject, t);
+                    const isTeacherLocked = this.isTopicLocked(clLevel, this.state.subject, t);
+                    const isProgressionLocked = this.isStudentProgressionLocked(clLevel, this.state.subject, t);
+                    const isLocked = isTeacherLocked || isProgressionLocked;
                     const showLockedStatus = isLocked && (isManaging || !isAdmin);
                     lbl.className = `topic-card${showLockedStatus ? ' topic-card--locked' : ''}`;
                     const inp = document.createElement('input');
@@ -1289,7 +1335,7 @@ const app = {
                     if (showLockedStatus) {
                         const lockStatus = document.createElement('span');
                         lockStatus.className = 'topic-lock-status';
-                        lockStatus.textContent = 'Đã khóa';
+                        lockStatus.textContent = isTeacherLocked ? 'Đã khóa' : 'Chưa mở';
                         lbl.appendChild(lockStatus);
                     }
                     grid.appendChild(lbl);
@@ -1317,10 +1363,13 @@ const app = {
             let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
             clLevel = String(clLevel).replace('Lớp ', '').trim();
 
-            if (!isAdmin && this.state.selectedTopics.some(topic => this.isTopicLocked(clLevel, this.state.subject, topic))) {
+            if (!isAdmin && this.state.selectedTopics.some(topic => (
+                this.isTopicLocked(clLevel, this.state.subject, topic)
+                || this.isStudentProgressionLocked(clLevel, this.state.subject, topic)
+            ))) {
                 this.state.selectedTopics = [];
                 this.renderTopics();
-                alert('Chủ đề này hiện chưa được giáo viên mở.');
+                alert('Chủ đề này chưa được mở. Hãy đạt 10 điểm ở chủ đề trước để tiếp tục.');
                 return;
             }
 
@@ -2528,7 +2577,7 @@ const app = {
                 else this.loadQuestion();
             };
         },
-        finishPlay() {
+        async finishPlay() {
             if (this.skills && app.data.currentUser) {
                 this.skills.decreaseCooldowns(app.data.currentUser.username);
             }
@@ -2548,7 +2597,10 @@ const app = {
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            this.recordHistory(title, finalScore, candiesEarned);
+            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, candiesEarned);
+            if (newlyUnlockedTopic) {
+                msg += ` Bạn đã mở khóa chủ đề mới: ${newlyUnlockedTopic}!`;
+            }
 
             // Update quests progress
             if (app.quest && typeof app.quest.updateProgress === 'function') {
@@ -2617,7 +2669,7 @@ const app = {
             document.getElementById('result-modal').classList.add('active');
         },
         async recordHistory(title, score, candiesEarned) {
-            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return;
+            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return null;
 
             let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
             let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Dễ');
@@ -2627,10 +2679,25 @@ const app = {
             let d = new Date();
             let dStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ' ' + d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
 
+            const classlevel = String(app.data.currentUser.classlevel || '5').replace(/^Lớp\s*/i, '');
+            const completedTopic = this.state.selectedTopics.length === 1 ? this.state.selectedTopics[0] : null;
+            const perfectPracticeRound = !this.state.examName
+                && completedTopic
+                && score === 10
+                && qCount === this.questionsPerRound;
+            const nextTopic = perfectPracticeRound
+                ? this.getNewlyUnlockedTopic(classlevel, this.state.subject, completedTopic)
+                : null;
+            const newlyUnlockedTopic = nextTopic && this.isStudentProgressionLocked(classlevel, this.state.subject, nextTopic)
+                ? nextTopic
+                : null;
+
             if (!Array.isArray(app.data.currentUser.history)) app.data.currentUser.history = []; app.data.currentUser.history.push({
                 date: dStr,
                 title: title,
                 topic: top,
+                subject: this.state.subject,
+                classlevel,
                 difficulty: diff,
                 questionCount: qCount,
                 score: score,
@@ -2639,6 +2706,7 @@ const app = {
             if (candiesEarned > 0) app.data.currentUser.lollipops = (app.data.currentUser.lollipops || 0) + candiesEarned;
             await app.data.updateUserScore();
             app.auth.updateHeader();
+            return newlyUnlockedTopic;
         },
         claimBonus() {
             const chest = document.getElementById('bonus-chest-img');
