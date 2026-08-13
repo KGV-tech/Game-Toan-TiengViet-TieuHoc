@@ -648,6 +648,15 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   border-bottom: 2px solid rgba(56, 189, 248, 0.3);
 }
 
+.guide-intro {
+  color: #e0f2fe;
+  max-width: 560px;
+  margin: -4px auto 16px;
+  text-align: center;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
 .guide-toc {
   display: flex;
   flex-wrap: wrap;
@@ -713,13 +722,39 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .guide-section ul { margin: 0; padding-left: 20px; }
 .guide-section li { margin-bottom: 6px; }
 
+.guide-reward-table {
+  width: 100%;
+  margin: 8px 0 12px;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 10px;
+}
+
+.guide-reward-table th,
+.guide-reward-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.26);
+}
+
+.guide-reward-table th {
+  color: #fef3c7;
+  background: rgba(146, 64, 14, 0.6);
+}
+
+.guide-reward-table tr:last-child td { border-bottom: 0; }
+
 @media (max-width: 900px) {
   .guide-title { font-size: 1.65rem; margin-bottom: 10px; }
+  .guide-intro { margin-bottom: 10px; font-size: 0.82rem; }
   .guide-toc { gap: 5px; margin-bottom: 10px; }
   .guide-toc a { padding: 3px 8px; font-size: 0.76rem; }
   .guide-content { font-size: 0.92rem; max-height: 54vh; }
   .guide-section { margin-bottom: 12px; padding-bottom: 10px; }
   .guide-section h3 { font-size: 1.06rem; }
+  .guide-reward-table th,
+  .guide-reward-table td { padding: 5px 7px; }
 }
 .subject-box {
     background: linear-gradient(180deg, #4f46e5, #3730a3);

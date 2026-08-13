@@ -211,81 +211,137 @@
         style="width: 90%; max-width: 650px; background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8; border-radius: 20px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.2); padding: 30px; position: relative; backdrop-filter: blur(10px);">
         <button onclick="app.hideGuide()"
           style="position:absolute; top: -15px; right: -15px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); z-index: 10; font-weight: bold;">✖</button>
-        <h2 class="guide-title">Hướng Dẫn Sử Dụng</h2>
+        <h2 class="guide-title">Hướng Dẫn Hành Trình: Kết Nối Tri Thức</h2>
+        <p class="guide-intro">Chào mừng bạn đến với hành trình khám phá Toán và Tiếng Việt cùng Robot Mèo thám hiểm! Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.</p>
 
         <nav class="guide-toc" aria-label="Mục lục hướng dẫn">
           <span class="guide-toc__label">Mục lục</span>
-          <a href="#guide-rules" onclick="return app.goToGuide('guide-rules')">Làm bài</a>
+          <a href="#guide-map" onclick="return app.goToGuide('guide-map')">Bản đồ</a>
+          <a href="#guide-practice" onclick="return app.goToGuide('guide-practice')">Luyện tập</a>
           <a href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở khóa chủ đề</a>
-          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Kẹo &amp; thú cưng</a>
-          <a href="#guide-activities" onclick="return app.goToGuide('guide-activities')">Trạm chơi</a>
+          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Điểm &amp; kẹo</a>
+          <a href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
+          <a href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
+          <a href="#guide-exams" onclick="return app.goToGuide('guide-exams')">Luyện đề</a>
+          <a href="#guide-quests" onclick="return app.goToGuide('guide-quests')">Nhiệm vụ</a>
           <a href="#guide-history" onclick="return app.goToGuide('guide-history')">Hồ sơ</a>
           <a href="#guide-teacher" class="guide-admin-only" onclick="return app.goToGuide('guide-teacher')">Dành cho Giáo viên</a>
         </nav>
 
         <div id="guide-content" class="guide-content custom-scrollbar">
-          <section id="guide-rules" class="guide-section" tabindex="-1">
-            <h3>1. Làm bài luyện tập</h3>
+          <section id="guide-map" class="guide-section" tabindex="-1">
+            <h3>1. Khám phá bản đồ</h3>
+            <p>Trên bản đồ có các trạm chính:</p>
             <ul>
-              <li>Mỗi lượt luyện tập có 10 câu; mỗi câu đúng nhận 1 điểm.</li>
-              <li>Chế độ <strong>Dễ</strong> không giới hạn thời gian; chế độ <strong>Khó</strong> có đếm ngược.</li>
-              <li>Sau khi kiểm tra, em sẽ biết đáp án đúng. Thoát giữa chừng được tính là bỏ lượt.</li>
+              <li><strong>Toán</strong>: luyện tập các chủ đề Toán theo lớp và học kỳ.</li>
+              <li><strong>Tiếng Việt</strong>: luyện tập các chủ đề Tiếng Việt theo lớp và học kỳ.</li>
+              <li><strong>Luyện đề</strong>: làm đề kiểm tra theo môn và thời điểm trong năm.</li>
+              <li><strong>Nhiệm vụ</strong>: xem các bài cô giáo giao và nhận thưởng khi hoàn thành.</li>
+              <li><strong>Kho Báu</strong>: xem thành tích và lịch sử làm bài.</li>
+              <li><strong>Cửa hàng</strong>: đổi kẹo, quản lý thú cưng và quay may mắn.</li>
+              <li><strong>Hướng dẫn</strong>: mở lại bảng này bất cứ lúc nào.</li>
+            </ul>
+          </section>
+
+          <section id="guide-practice" class="guide-section" tabindex="-1">
+            <h3>2. Luyện tập Toán và Tiếng Việt</h3>
+            <ul>
+              <li>Chọn môn học trên bản đồ.</li>
+              <li>Chọn một chủ đề. Các chủ đề được chia theo Học kỳ 1 và Học kỳ 2.</li>
+              <li>Chọn độ khó: <strong>Dễ</strong> không giới hạn thời gian; <strong>Khó</strong> có đếm ngược.</li>
+              <li>Bấm <strong>Bắt đầu khám phá</strong> để vào lượt học gồm 10 câu.</li>
+              <li>Sau mỗi câu, bấm <strong>Kiểm tra</strong> để xem kết quả ngay. Nếu sai, game hiển thị đáp án đúng để bạn biết và sửa kiến thức.</li>
             </ul>
           </section>
 
           <section id="guide-progression" class="guide-section" tabindex="-1">
             <h3>2. Mở khóa chủ đề</h3>
-            <p>Ban đầu, mỗi môn chỉ mở chủ đề đầu tiên. <strong>Đạt được 10điểm/lượt luyện tập</strong> ở một chủ đề để mở chủ đề kế tiếp; điểm của nhiều lượt không được cộng dồn.</p>
-            <p>Chủ đề chưa mở sẽ có nhãn <strong>Chưa mở</strong>. Hãy luyện lại cho đến khi đạt điểm tuyệt đối nhé!</p>
+            <p>Mỗi môn bắt đầu với chủ đề đầu tiên được mở. Những chủ đề chưa mở sẽ mờ và có dấu khóa.</p>
+            <p><strong>Đạt được 10điểm/lượt luyện tập</strong> của chủ đề hiện tại để mở chủ đề kế tiếp. Điểm của nhiều lượt không được cộng dồn.</p>
+            <p>Bạn có thể luyện lại nhiều lần đến khi đạt 10/10.</p>
           </section>
 
           <section id="guide-rewards" class="guide-section" tabindex="-1">
             <h3>3. Điểm và Kẹo</h3>
-            <ul>
-              <li>Dưới 8 điểm: chưa nhận Kẹo.</li>
-              <li>Từ 8 đến 9 điểm: nhận 2 Kẹo.</li>
-              <li>10 điểm: nhận 5 Kẹo.</li>
-              <li>Kẹo còn có thể nhận qua nhiệm vụ, vòng quay may mắn và khi trả thú cưng.</li>
-            </ul>
+            <p>Mỗi lượt có 10 câu, mỗi câu đúng tương ứng 1 điểm.</p>
+            <table class="guide-reward-table">
+              <thead><tr><th>Kết quả một lượt</th><th>Phần thưởng</th></tr></thead>
+              <tbody>
+                <tr><td>Dưới 8 điểm</td><td>Chưa nhận kẹo</td></tr>
+                <tr><td>8–9 điểm</td><td>2 kẹo</td></tr>
+                <tr><td>10 điểm</td><td>5 kẹo và có thể mở chủ đề kế tiếp</td></tr>
+              </tbody>
+            </table>
+            <p>Kết thúc lượt, bạn xem được điểm và chi tiết các câu đã làm. Lịch sử bài làm được lưu để cô giáo theo dõi và hỗ trợ thêm.</p>
+            <p>Nếu thoát khi đang làm bài, lượt đó được xem là bỏ dở: không tính điểm, không nhận kẹo và không cập nhật tiến độ.</p>
           </section>
 
           <section id="guide-pets" class="guide-section" tabindex="-1">
             <h3>4. Thú cưng đồng hành</h3>
             <ul>
-              <li>Em có thể sở hữu tối đa 3 thú cưng và chọn một bạn đồng hành khi luyện tập.</li>
-              <li>Kỹ năng thú cưng không dùng được trong đề kiểm tra. Nếu dùng kỹ năng không phù hợp, kỹ năng vẫn tính đã dùng và cần hồi lại sau 3 lượt.</li>
-              <li>Trả thú cưng về trạm sẽ nhận lại 50% số Kẹo đã đổi.</li>
-            </ul>
-          </section>
-
-          <section id="guide-activities" class="guide-section" tabindex="-1">
-            <h3>5. Các trạm trên bản đồ</h3>
-            <ul>
-              <li><strong>Toán học</strong> và <strong>Tiếng Việt</strong>: chọn chủ đề để luyện tập.</li>
-              <li><strong>Luyện đề</strong>: làm đề giáo viên giao hoặc đề phù hợp với lớp của em.</li>
-              <li><strong>Cửa hàng</strong>: đổi thú cưng, xem thú cưng của mình và quay may mắn.</li>
+              <li>Vào <strong>Cửa hàng → Trạm Thú Cưng</strong> để đổi kẹo lấy thú cưng.</li>
+              <li>Mỗi học sinh có thể sở hữu tối đa 3 thú cưng.</li>
+              <li>Chọn một thú cưng trong mục <strong>Thú Cưng Của Tôi</strong> để đồng hành khi luyện tập.</li>
+              <li>Thú cưng có kỹ năng hỗ trợ trong lúc luyện tập; không dùng kỹ năng khi làm đề kiểm tra.</li>
+              <li>Nếu dùng kỹ năng không phù hợp, kỹ năng vẫn tính là đã dùng và cần hồi lại sau 3 lượt.</li>
+              <li>Trả thú cưng về trạm nhận lại 50% số kẹo đã đổi.</li>
             </ul>
           </section>
 
           <section id="guide-lucky" class="guide-section" tabindex="-1">
-            <h3>6. Trạm May Mắn</h3>
-            <p>Mỗi ngày em có tối đa 3 lượt quay; lượt chưa dùng sẽ không cộng dồn. Rồng chỉ đổi bằng Kẹo, không nhận từ vòng quay.</p>
+            <h3>5. Trạm May Mắn</h3>
+            <p>Tại <strong>Cửa hàng → Trạm May Mắn</strong>:</p>
+            <ul>
+              <li>Mỗi lần quay cần 2 kẹo.</li>
+              <li>Tối đa 3 lượt quay mỗi ngày; lượt chưa dùng không cộng dồn sang ngày sau.</li>
+              <li>Phần thưởng có thể là kẹo, lượt quay lại hoặc thú cưng tùy tồn kho.</li>
+              <li>Rồng không xuất hiện trong phần thưởng vòng quay; chỉ đổi bằng kẹo tại Trạm Thú Cưng.</li>
+            </ul>
+          </section>
+
+          <section id="guide-exams" class="guide-section" tabindex="-1">
+            <h3>6. Luyện đề kiểm tra</h3>
+            <ul>
+              <li>Vào trạm <strong>Luyện Đề</strong>.</li>
+              <li>Chọn Toán hoặc Tiếng Việt.</li>
+              <li>Chọn thời điểm: Giữa kỳ 1, Cuối kỳ 1, Giữa kỳ 2 hoặc Cuối kỳ 2.</li>
+              <li>Bấm <strong>Bắt đầu làm bài</strong>.</li>
+              <li>Đề kiểm tra có thể có giới hạn thời gian theo quy định của cô giáo. Khi nộp bài, bạn nhận điểm và xem đáp án; phần lời giải có thể không xuất hiện nếu đề không có lời giải.</li>
+            </ul>
           </section>
 
           <section id="guide-quests" class="guide-section" tabindex="-1">
-            <h3>7. Nhiệm vụ và đề kiểm tra</h3>
-            <p>Nhiệm vụ do giáo viên giao. Hãy hoàn thành đúng yêu cầu để nhận thưởng. Khi làm đề kiểm tra, em không thể dùng kỹ năng thú cưng.</p>
+            <h3>7. Nhiệm vụ</h3>
+            <ul>
+              <li>Nhiệm vụ do cô giáo giao.</li>
+              <li>Mở trạm Nhiệm vụ để xem yêu cầu và tiến độ.</li>
+              <li>Khi đủ điều kiện, bấm nhận thưởng để lấy kẹo.</li>
+              <li>Một số nhiệm vụ có thể yêu cầu làm đúng môn, đúng mức điểm hoặc đúng đề kiểm tra mà cô giáo giao.</li>
+            </ul>
           </section>
 
           <section id="guide-history" class="guide-section" tabindex="-1">
             <h3>8. Hồ sơ học sinh</h3>
-            <p>Trong Trạm Kho Báu, em có thể xem thành tích và lịch sử các lượt đã làm. Giáo viên cũng dựa vào lịch sử này để hỗ trợ em học tốt hơn.</p>
+            <p>Trong Kho Báu, học sinh có thể xem:</p>
+            <ul>
+              <li>Tổng điểm và số kẹo đang có.</li>
+              <li>Lịch sử các lượt luyện tập và đề kiểm tra.</li>
+              <li>Câu đã làm đúng, câu sai và đáp án đúng.</li>
+            </ul>
           </section>
 
           <section id="guide-teacher" class="guide-section guide-admin-only" tabindex="-1" hidden>
             <h3>9. Dành cho Giáo viên</h3>
-            <p>Giáo viên có toàn quyền sử dụng Trạm Cài Đặt để quản lý học sinh, câu hỏi, đề kiểm tra, nhiệm vụ và xuất lịch sử học tập.</p>
-            <p>Cô giáo vẫn có thể khóa hoặc mở chủ đề riêng cho cả lớp. Các chủ đề bị khóa vẫn luôn mở với tài khoản Admin để tiện kiểm tra, thử đề và chuẩn bị bài dạy.</p>
+            <p>Trạm Cài đặt chỉ hiện với tài khoản Giáo viên. Giáo viên có thể:</p>
+            <ul>
+              <li>Quản lý tài khoản, lớp học, mật khẩu và hồ sơ học sinh.</li>
+              <li>Xem bảng thành tích, lịch sử làm bài và xuất Excel theo học sinh được chọn.</li>
+              <li>Thêm, sửa, xóa câu hỏi, template và đề kiểm tra.</li>
+              <li>Tạo, giao và theo dõi nhiệm vụ.</li>
+              <li>Chọn lớp để test nhanh giao diện.</li>
+              <li>Dùng <strong>Giao diện Test</strong> để thử làm bài như học sinh.</li>
+              <li>Dùng <strong>Giao diện Mở/Khóa</strong> để khóa/mở từng chủ đề cho học sinh. Giáo viên luôn có thể vào test mọi chủ đề.</li>
+            </ul>
           </section>
         </div>
       </div>
