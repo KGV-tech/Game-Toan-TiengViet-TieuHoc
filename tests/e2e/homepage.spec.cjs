@@ -69,7 +69,7 @@ test('mobile ngang: trang chủ hiển thị màn hình đăng nhập mà không
   await captureUiReview(page, testInfo, 'login-mobile-landscape.png');
 });
 
-test('bảng hướng dẫn có mục lục, mô tả mở khóa mới và chỉ hiện phần Giáo viên cho Admin', async ({ page }) => {
+test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần Giáo viên cho Admin', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -79,8 +79,15 @@ test('bảng hướng dẫn có mục lục, mô tả mở khóa mới và chỉ
   });
 
   await expect(page.locator('#guide-modal')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hướng Dẫn Hành Trình: Kết Nối Tri Thức' })).toBeVisible();
+  await expect(page.getByText('Chào mừng bạn đến với hành trình khám phá Toán và Tiếng Việt cùng Robot Mèo thám hiểm!')).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Mục lục hướng dẫn' })).toBeVisible();
   await expect(page.getByText('Đạt được 10điểm/lượt luyện tập')).toBeVisible();
+  await expect(page.locator('#guide-map')).toContainText('Khám phá bản đồ');
+  await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
+  await expect(page.locator('.guide-reward-table')).toContainText('5 kẹo và có thể mở chủ đề kế tiếp');
+  await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toHaveCount(0);
   await expect(page.locator('#guide-teacher')).toBeHidden();
 
@@ -94,7 +101,7 @@ test('bảng hướng dẫn có mục lục, mô tả mở khóa mới và chỉ
 
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toBeVisible();
   await expect(page.locator('#guide-teacher')).toBeVisible();
-  await expect(page.locator('#guide-teacher')).toContainText('Cô giáo vẫn có thể khóa hoặc mở chủ đề riêng cho cả lớp.');
+  await expect(page.locator('#guide-teacher')).toContainText('Giao diện Mở/Khóa');
 });
 
 test('kết quả không để trống phần chi tiết khi không có câu trả lời', async ({ page }) => {
