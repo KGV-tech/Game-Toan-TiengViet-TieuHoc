@@ -665,6 +665,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   line-height: 1.45;
 }
 
+.guide-intro span { display: block; }
+
 .guide-toc {
   display: flex;
   flex-wrap: wrap;

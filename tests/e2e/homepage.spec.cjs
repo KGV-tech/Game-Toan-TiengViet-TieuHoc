@@ -79,8 +79,11 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   });
 
   await expect(page.locator('#guide-modal')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Hướng Dẫn Hành Trình: Kết Nối Tri Thức' })).toBeVisible();
-  await expect(page.getByText('Chào mừng bạn đến với hành trình khám phá Toán và Tiếng Việt cùng Robot Mèo thám hiểm!')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hướng Dẫn Hành Trình' })).toBeVisible();
+  await expect(page.locator('.guide-intro span')).toHaveText([
+    'Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!',
+    'Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.'
+  ]);
   await expect(page.getByRole('navigation', { name: 'Mục lục hướng dẫn' })).toBeVisible();
   await expect(page.getByText('Đạt được 10điểm/lượt luyện tập')).toBeVisible();
   await expect(page.locator('#guide-map')).toContainText('Khám phá bản đồ');
