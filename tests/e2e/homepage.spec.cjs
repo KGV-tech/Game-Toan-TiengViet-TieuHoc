@@ -106,6 +106,23 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.locator('#guide-teacher')).toContainText('Giao diện Mở/Khóa');
 });
 
+test('khung Hướng dẫn nằm trọn trong màn hình và chỉ cuộn phần nội dung', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'minh-hoa', role: 'student' };
+    app.showGuide();
+  });
+
+  const panel = await page.locator('#guide-modal .sci-fi-panel').boundingBox();
+  const closeButton = await page.locator('#guide-modal button[aria-label="Đóng Hướng dẫn"]').boundingBox();
+  expect(panel.y).toBeGreaterThanOrEqual(16);
+  expect(panel.y + panel.height).toBeLessThanOrEqual(752);
+  expect(closeButton.y).toBeGreaterThanOrEqual(16);
+  expect(closeButton.y + closeButton.height).toBeLessThanOrEqual(752);
+  await expect.poll(() => page.locator('#guide-content').evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+});
+
 test('thang điểm chỉ chấp nhận 1, 2 hoặc 4 đáp án và giữ điểm phần tư', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
