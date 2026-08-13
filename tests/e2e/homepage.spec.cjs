@@ -69,6 +69,34 @@ test('mobile ngang: trang chủ hiển thị màn hình đăng nhập mà không
   await captureUiReview(page, testInfo, 'login-mobile-landscape.png');
 });
 
+test('bảng hướng dẫn có mục lục, mô tả mở khóa mới và chỉ hiện phần Giáo viên cho Admin', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'minh-hoa', role: 'student' };
+    app.showGuide();
+  });
+
+  await expect(page.locator('#guide-modal')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Mục lục hướng dẫn' })).toBeVisible();
+  await expect(page.getByText('Đạt được 10điểm/lượt luyện tập')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toHaveCount(0);
+  await expect(page.locator('#guide-teacher')).toBeHidden();
+
+  await page.getByRole('link', { name: 'Mở khóa chủ đề' }).click();
+  await expect.poll(() => page.locator('#guide-content').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'co-giao', role: 'admin' };
+    app.showGuide();
+  });
+
+  await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toBeVisible();
+  await expect(page.locator('#guide-teacher')).toBeVisible();
+  await expect(page.locator('#guide-teacher')).toContainText('Cô giáo vẫn có thể khóa hoặc mở chủ đề riêng cho cả lớp.');
+});
+
 test('kết quả không để trống phần chi tiết khi không có câu trả lời', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

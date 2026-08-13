@@ -211,59 +211,82 @@
         style="width: 90%; max-width: 650px; background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8; border-radius: 20px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.2); padding: 30px; position: relative; backdrop-filter: blur(10px);">
         <button onclick="app.hideGuide()"
           style="position:absolute; top: -15px; right: -15px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); z-index: 10; font-weight: bold;">✖</button>
-        <h2
-          style="color: #38bdf8; text-align: center; text-transform: uppercase; font-weight: 900; font-size: 2.2rem; margin-top: 0; text-shadow: 0 0 15px #38bdf8; border-bottom: 2px solid rgba(56, 189, 248, 0.3); padding-bottom: 15px; margin-bottom: 25px;">
-          Hướng Dẫn Sử Dụng</h2>
+        <h2 class="guide-title">Hướng Dẫn Sử Dụng</h2>
 
-        <div
-          style="color: #e2e8f0; font-size: 1.2rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 15px;"
-          class="custom-scrollbar">
-          <h3
-            style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
-            1. Quy tắc làm bài:</h3>
-          <ul style="list-style-type: none; padding-left: 15px; margin-bottom: 20px;">
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Mỗi lượt học có 10 câu; trả lời đúng
-              mỗi câu nhận 1 điểm.</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt &lt; 8 điểm/1 lượt chơi sẽ không
-              nhận được Kẹo (🍭).</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 8-9 điểm/1 lượt chơi sẽ nhận 2 Kẹo
-              (🍭).</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Đạt 10 điểm/1 lượt chơi sẽ nhận 5 Kẹo
-              (🍭).</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Không thể thoát ra trong khi đang làm
-              bài, bạn buộc phải làm trọn vẹn hết bài đến khi nhận được Kết Quả.</li>
-          </ul>
+        <nav class="guide-toc" aria-label="Mục lục hướng dẫn">
+          <span class="guide-toc__label">Mục lục</span>
+          <a href="#guide-rules" onclick="return app.goToGuide('guide-rules')">Làm bài</a>
+          <a href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở khóa chủ đề</a>
+          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Kẹo &amp; thú cưng</a>
+          <a href="#guide-activities" onclick="return app.goToGuide('guide-activities')">Trạm chơi</a>
+          <a href="#guide-history" onclick="return app.goToGuide('guide-history')">Hồ sơ</a>
+          <a href="#guide-teacher" class="guide-admin-only" onclick="return app.goToGuide('guide-teacher')">Dành cho Giáo viên</a>
+        </nav>
 
-          <h3
-            style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
-            2. Đơn vị Kẹo 🍭:</h3>
-          <p style="margin-bottom: 20px; padding-left: 15px;">Dùng Kẹo để trao đổi trong Shop:
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> "Trạm May Mắn": sử dụng 2 kẹo/1 lần
-              quay.</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> "Trạm Thú Cưng": đổi kẹo để sở hữu Thú
-              cưng .</li>
-          </p>
+        <div id="guide-content" class="guide-content custom-scrollbar">
+          <section id="guide-rules" class="guide-section" tabindex="-1">
+            <h3>1. Làm bài luyện tập</h3>
+            <ul>
+              <li>Mỗi lượt luyện tập có 10 câu; mỗi câu đúng nhận 1 điểm.</li>
+              <li>Chế độ <strong>Dễ</strong> không giới hạn thời gian; chế độ <strong>Khó</strong> có đếm ngược.</li>
+              <li>Sau khi kiểm tra, em sẽ biết đáp án đúng. Thoát giữa chừng được tính là bỏ lượt.</li>
+            </ul>
+          </section>
 
-          <h3
-            style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
-            3. Thú Cưng:</h3>
-          <p style="margin-bottom: 20px; padding-left: 15px;">
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Bạn có thể sở hữu tối đa 3 Thú cưng.
-            </li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Khi được Kích hoạt Thú cưng sẽ đồng
-              hành cùng bạn với các Kỹ năng hỗ trợ trong khi làm bài.</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Thú cưng khi trả lại trạm thú cưng,
-              bạn sẽ được hoàn trả lại 50% số kẹo đã đổi ban đầu.</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Chọn kỹ Thú cưng và Kỹ năng hỗ trợ
-              trong khi làm bài.</li>
-            <li style="margin-bottom: 8px;"><span style="color:#38bdf8;">+</span> Lưu ý: Khi giải Đề Kiểm Tra thì toàn
-              bộ Kỹ năng của Thú cưng sẽ bị vô hiệu.</li>
-          </p>
+          <section id="guide-progression" class="guide-section" tabindex="-1">
+            <h3>2. Mở khóa chủ đề</h3>
+            <p>Ban đầu, mỗi môn chỉ mở chủ đề đầu tiên. <strong>Đạt được 10điểm/lượt luyện tập</strong> ở một chủ đề để mở chủ đề kế tiếp; điểm của nhiều lượt không được cộng dồn.</p>
+            <p>Chủ đề chưa mở sẽ có nhãn <strong>Chưa mở</strong>. Hãy luyện lại cho đến khi đạt điểm tuyệt đối nhé!</p>
+          </section>
 
-          <h3
-            style="color: #facc15; margin-bottom: 10px; border-left: 4px solid #facc15; padding-left: 10px; font-size: 1.4rem;">
-            4. Thông tin thêm:</h3>
-          <p style="margin-bottom: 20px; padding-left: 15px; font-style: italic; color: #94a3b8;">Sẽ update tiếp ...</p>
+          <section id="guide-rewards" class="guide-section" tabindex="-1">
+            <h3>3. Điểm và Kẹo</h3>
+            <ul>
+              <li>Dưới 8 điểm: chưa nhận Kẹo.</li>
+              <li>Từ 8 đến 9 điểm: nhận 2 Kẹo.</li>
+              <li>10 điểm: nhận 5 Kẹo.</li>
+              <li>Kẹo còn có thể nhận qua nhiệm vụ, vòng quay may mắn và khi trả thú cưng.</li>
+            </ul>
+          </section>
+
+          <section id="guide-pets" class="guide-section" tabindex="-1">
+            <h3>4. Thú cưng đồng hành</h3>
+            <ul>
+              <li>Em có thể sở hữu tối đa 3 thú cưng và chọn một bạn đồng hành khi luyện tập.</li>
+              <li>Kỹ năng thú cưng không dùng được trong đề kiểm tra. Nếu dùng kỹ năng không phù hợp, kỹ năng vẫn tính đã dùng và cần hồi lại sau 3 lượt.</li>
+              <li>Trả thú cưng về trạm sẽ nhận lại 50% số Kẹo đã đổi.</li>
+            </ul>
+          </section>
+
+          <section id="guide-activities" class="guide-section" tabindex="-1">
+            <h3>5. Các trạm trên bản đồ</h3>
+            <ul>
+              <li><strong>Toán học</strong> và <strong>Tiếng Việt</strong>: chọn chủ đề để luyện tập.</li>
+              <li><strong>Luyện đề</strong>: làm đề giáo viên giao hoặc đề phù hợp với lớp của em.</li>
+              <li><strong>Cửa hàng</strong>: đổi thú cưng, xem thú cưng của mình và quay may mắn.</li>
+            </ul>
+          </section>
+
+          <section id="guide-lucky" class="guide-section" tabindex="-1">
+            <h3>6. Trạm May Mắn</h3>
+            <p>Mỗi ngày em có tối đa 3 lượt quay; lượt chưa dùng sẽ không cộng dồn. Rồng chỉ đổi bằng Kẹo, không nhận từ vòng quay.</p>
+          </section>
+
+          <section id="guide-quests" class="guide-section" tabindex="-1">
+            <h3>7. Nhiệm vụ và đề kiểm tra</h3>
+            <p>Nhiệm vụ do giáo viên giao. Hãy hoàn thành đúng yêu cầu để nhận thưởng. Khi làm đề kiểm tra, em không thể dùng kỹ năng thú cưng.</p>
+          </section>
+
+          <section id="guide-history" class="guide-section" tabindex="-1">
+            <h3>8. Hồ sơ học sinh</h3>
+            <p>Trong Trạm Kho Báu, em có thể xem thành tích và lịch sử các lượt đã làm. Giáo viên cũng dựa vào lịch sử này để hỗ trợ em học tốt hơn.</p>
+          </section>
+
+          <section id="guide-teacher" class="guide-section guide-admin-only" tabindex="-1" hidden>
+            <h3>9. Dành cho Giáo viên</h3>
+            <p>Giáo viên có toàn quyền sử dụng Trạm Cài Đặt để quản lý học sinh, câu hỏi, đề kiểm tra, nhiệm vụ và xuất lịch sử học tập.</p>
+            <p>Cô giáo vẫn có thể khóa hoặc mở chủ đề riêng cho cả lớp. Các chủ đề bị khóa vẫn luôn mở với tài khoản Admin để tiện kiểm tra, thử đề và chuẩn bị bài dạy.</p>
+          </section>
         </div>
       </div>
     </div>

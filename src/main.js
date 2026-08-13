@@ -108,6 +108,12 @@ const app = {
         const modal = document.getElementById('guide-modal');
         if (modal) {
             modal.style.display = 'flex';
+            const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
+            modal.querySelectorAll('.guide-admin-only').forEach(element => {
+                element.hidden = !isAdmin;
+            });
+            const content = document.getElementById('guide-content');
+            if (content) content.scrollTop = 0;
             const arrow = document.getElementById('guide-arrow');
             if (arrow) arrow.style.display = 'none';
             if (app.data.currentUser) {
@@ -118,6 +124,14 @@ const app = {
     hideGuide() {
         const modal = document.getElementById('guide-modal');
         if (modal) modal.style.display = 'none';
+    },
+    goToGuide(sectionId) {
+        const content = document.getElementById('guide-content');
+        const section = document.getElementById(sectionId);
+        if (!content || !section || section.hidden) return false;
+        content.scrollTo({ top: Math.max(0, section.offsetTop - content.offsetTop - 8), behavior: 'smooth' });
+        section.focus({ preventScroll: true });
+        return false;
     },
     getEquippedPet(user) {
         // Giáo viên không sở hữu/trang bị thú cưng; chú mèo robot vẫn là linh vật mặc định khi test bài.
