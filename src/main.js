@@ -257,6 +257,19 @@ const app = {
             if (!validTopics.includes(topic)) return `Chủ đề "${topic || '(trống)'}" không thuộc ${classlevel} – ${subject} – ${semester}.`;
             return '';
         },
+        getQuestionAnswerCount(question) {
+            if (Array.isArray(question?.statements)) return question.statements.length;
+            const answer = String(question?.ans || '').trim();
+            if (!answer) return 0;
+            return answer.split(/[|,]/).map(part => part.trim()).filter(Boolean).length;
+        },
+        validateQuestionScoring(question) {
+            const count = this.getQuestionAnswerCount(question);
+            if (![1, 2, 4].includes(count)) {
+                return 'Mỗi câu hỏi chỉ được có 1, 2 hoặc 4 câu trả lời đúng để chấm theo thang điểm 1; 0,5; 0,25.';
+            }
+            return '';
+        },
         async loadSeenQuestions(username) {
             this.seenQuestionKeys = new Set();
             if (!username) return;
@@ -1401,7 +1414,7 @@ const app = {
                     return semesterTopics && same(q.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
                 })();
 
-                return matchSubject && matchClass && matchTopic && selectedSemester;
+                return matchSubject && matchClass && matchTopic && selectedSemester && !app.data.validateQuestionScoring(q);
             });
 
             const dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
@@ -1434,9 +1447,7 @@ const app = {
                 }
             });
 
-            const targetCount = dynamicTemplates.length
-                ? this.questionsPerRound
-                : Math.min(this.questionsPerRound, pool.length);
+            const targetCount = this.questionsPerRound;
 
             // 3. Hàm bốc câu hỏi đa dạng loại (Round-robin)
             const pickDiverse = (sourcePool, countNeeded) => {
@@ -1478,21 +1489,21 @@ const app = {
             while (selected.length < targetCount && shuffledTemplates.length && attempts < targetCount * 4) {
                 const template = shuffledTemplates[attempts % shuffledTemplates.length];
                 const generated = app.data.generateTemplateQuestion(template);
-                if (generated) selected.push(generated);
+                if (generated && !app.data.validateQuestionScoring(generated)) selected.push(generated);
                 attempts++;
             }
 
             if (selected.length < targetCount) {
-                selected = selected.concat(pickDiverse(seenPool, targetCount - selected.length));
+                selected = selected.concat(pickDiverse([...unseenPool, ...seenPool], targetCount - selected.length));
+            }
+            const reusableQuestions = [...unseenPool, ...seenPool];
+            while (selected.length < targetCount && reusableQuestions.length) {
+                selected.push(reusableQuestions[selected.length % reusableQuestions.length]);
             }
 
             pool = selected;
 
             app.data.markQuestionsSeen(pool);
-
-            if (pool.length < this.questionsPerRound) {
-                alert('Ngân hàng chỉ có ' + pool.length + ' câu hỏi phù hợp, sẽ bốc toàn bộ!');
-            }
 
             this.state.questions = pool;
             this.state.currentIdx = 0;
@@ -1537,6 +1548,27 @@ const app = {
             if (ansString.includes('|')) return ansString.split('|').map(s => s.trim());
             return [ansString.trim()];
         },
+        calculateQuestionScore(q, selected) {
+            const expected = Array.isArray(q?.statements)
+                ? q.statements.map(statement => String(statement.answer || '').trim())
+                : this.getAnsArr(String(q?.ans || ''));
+            const selectedAnswers = Array.isArray(selected) ? selected : this.getAnsArr(String(selected || ''));
+            const answerCount = expected.length;
+            const questionType = String(q?.type || '').normalize('NFC');
+            const isMatching = questionType.includes('Đối chiếu');
+            const isFill = questionType.includes('Điền');
+            const normalize = value => isMatching
+                ? String(value || '').trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN')
+                : (isFill ? this.normalizeFillAnswer(value) : String(value || '').trim());
+            const expectedAnswers = expected.map(normalize);
+            const chosenAnswers = selectedAnswers.map(normalize);
+            const correctCount = isMatching
+                ? Math.min(answerCount, new Set(chosenAnswers.filter(answer => expectedAnswers.includes(answer))).size)
+                : expectedAnswers.reduce((total, answer, index) => total + (chosenAnswers[index] === answer ? 1 : 0), 0);
+            const isSupported = [1, 2, 4].includes(answerCount);
+            const points = isSupported ? correctCount / answerCount : 0;
+            return { answerCount, correctCount, points, isCorrect: isSupported && correctCount === answerCount };
+        },
         createHistoryDetail(q, selected, isCorrect, extra = {}) {
             const detail = { q: q.q, selected, correct: q.ans, isCorrect, type: q.type, ...extra };
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
@@ -1563,7 +1595,7 @@ const app = {
             const q = this.state.questions[this.state.currentIdx];
             document.getElementById('current-q-index').textContent = this.state.currentIdx + 1;
             document.getElementById('total-q-count').textContent = this.state.questions.length;
-            document.getElementById('game-score').textContent = Math.round(this.state.score * 10) / 10;
+            document.getElementById('game-score').textContent = this.state.score;
 
             document.getElementById('cat-speech-bubble').style.display = 'none';
             document.getElementById('explanation-box').style.display = 'none';
@@ -2191,6 +2223,7 @@ const app = {
             if (this.hardTimer) clearInterval(this.hardTimer);
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
+            let scoreResult = null;
             let rawType = (q.type || 'Trắc nghiệm').trim().normalize('NFC');
             let qType = 'Điền khuyết';
             if (rawType.includes('Trắc nghiệm')) qType = 'Trắc nghiệm';
@@ -2508,6 +2541,13 @@ const app = {
                 }
             }
 
+            const selectedForScore = qType === 'Đúng/Sai' && Array.isArray(q.statements)
+                ? (this.state.trueFalseSelections || [])
+                : this.state.selectedAns;
+            scoreResult = this.calculateQuestionScore(q, selectedForScore);
+            isCorrect = scoreResult.isCorrect;
+            this.state.score += scoreResult.points;
+
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
                 const safeImage = document.querySelector('.safe-password-illustration');
                 if (safeImage) {
@@ -2528,8 +2568,6 @@ const app = {
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 }
                 app.playSound('correct');
-                this.state.score += 10 / this.state.questions.length;
-
                 const user = app.data.currentUser;
                 let basePet = 'robot_cat';
                 if (user) {
@@ -2566,15 +2604,15 @@ const app = {
 
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
-                this.state.score += 10 / this.state.questions.length;
-                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true }));
+                this.state.score += 1 - scoreResult.points;
+                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true, ...scoreResult }));
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
                 document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.webp', '_happy.webp').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.webp', '_happy.webp').replace('_normal.png', '_happy.png')}`;
             } else {
-                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect));
+                this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect, scoreResult));
             }
 
-            document.getElementById('game-score').textContent = Math.round(this.state.score * 10) / 10;
+            document.getElementById('game-score').textContent = this.state.score;
 
             const btnCheck = document.getElementById('submit-ans-btn');
 
@@ -2596,7 +2634,7 @@ const app = {
                 this.skills.decreaseCooldowns(app.data.currentUser.username);
             }
             
-            const finalScore = Math.round(this.state.score * 10) / 10;
+            const finalScore = this.state.score;
             let msg = '';
             let candiesEarned = 0;
 
@@ -2776,6 +2814,14 @@ const app = {
             const type = this.getQuestionType(question);
             const options = question.options || [];
             if (type === 'Trắc nghiệm') return this.renderSimpleChoices(index, options);
+            if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
+                return question.statements.map((statement, part) => `
+                    <fieldset class="exam-true-false-row">
+                        <legend>${app.data.sanitizeHTML(`${statement.label || String.fromCharCode(65 + part)}. ${statement.text || ''}`)}</legend>
+                        ${this.renderSimpleChoices(`tf_${index}_${part}`, ['Đúng', 'Sai'])}
+                    </fieldset>
+                `).join('');
+            }
             if (type === 'Đúng/Sai') return this.renderSimpleChoices(index, ['Đúng', 'Sai']);
             if (type === 'So sánh') return this.renderSimpleChoices(index, ['<', '>', '=']);
             if (type === 'Đối chiếu trùng khớp') {
@@ -2797,6 +2843,11 @@ const app = {
         },
         readQuestionAnswer(question, index) {
             const type = this.getQuestionType(question);
+            if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
+                return question.statements.map((_, part) =>
+                    document.querySelector(`input[name="exam_q_tf_${index}_${part}"]:checked`)?.value || ''
+                ).join(', ');
+            }
             if (['Trắc nghiệm', 'Đúng/Sai', 'So sánh'].includes(type)) {
                 return document.querySelector(`input[name="exam_q_${index}"]:checked`)?.value || '';
             }
@@ -2850,6 +2901,9 @@ const app = {
                 : filtered[Math.floor(Math.random() * filtered.length)];
             if (!exam) return alert('Đề kiểm tra được giao không còn phù hợp hoặc đã bị xóa.');
             if (!Array.isArray(exam.questions) || exam.questions.length === 0) return alert('Đề kiểm tra này chưa có câu hỏi.');
+            if (exam.questions.length !== app.game.questionsPerRound) return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
+            const invalidQuestionIndex = exam.questions.findIndex(question => app.data.validateQuestionScoring(question));
+            if (invalidQuestionIndex !== -1) return alert(`Câu ${invalidQuestionIndex + 1} của đề chưa đúng cấu trúc chấm điểm. Mỗi câu chỉ được có 1, 2 hoặc 4 câu trả lời đúng.`);
 
             const timeLimitMinutes = app.data.settings.examTimeLimit || 30;
             if (!confirm(`Bạn có thời gian ${timeLimitMinutes} phút để làm bài kiểm tra này.\n\nBấm OK để bắt đầu tính giờ, hoặc Cancel để hủy bỏ.`)) {
@@ -2926,17 +2980,17 @@ const app = {
             if (this.examTimer) clearInterval(this.examTimer);
 
             let totalPts = 0;
-            const ptsPerQ = 10 / (this.state.questions.length || 1);
 
             this.state.questions.forEach((q, idx) => {
                 const selected = this.readQuestionAnswer(q, idx);
-                const isCorrect = this.isAnswerCorrect(q, selected);
+                const scoreResult = app.game.calculateQuestionScore(q, selected);
+                const isCorrect = scoreResult.isCorrect;
 
-                if (isCorrect) totalPts += ptsPerQ;
-                this.state.historyDetails.push(app.game.createHistoryDetail(q, selected, isCorrect));
+                totalPts += scoreResult.points;
+                this.state.historyDetails.push(app.game.createHistoryDetail(q, selected, isCorrect, scoreResult));
             });
 
-            this.state.score = Math.round(totalPts * 10) / 10;
+            this.state.score = totalPts;
             app.game.state.score = this.state.score;
             app.game.state.historyDetails = this.state.historyDetails;
             app.game.state.questions = this.state.questions;
@@ -4253,6 +4307,8 @@ const app = {
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
             const metadataError = app.data.validateQuestionMetadata(qObj);
             if (metadataError) return alert(metadataError);
+            const scoringError = app.data.validateQuestionScoring(qObj);
+            if (scoringError) return alert(scoringError);
 
             const duplicateIndex = app.data.libraryQuestions.findIndex((item, index) =>
                 index !== editIdx && app.data.getQuestionKey(item) === app.data.getQuestionKey(qObj)
@@ -4326,10 +4382,12 @@ const app = {
                         };
                         const location = `${files[fileIndex].name}, dòng ${rowIndex + 2}`;
                         const metadataError = app.data.validateQuestionMetadata(question);
+                        const scoringError = app.data.validateQuestionScoring(question);
                         if (!question.q) errors.push(`${location}: thiếu Câu hỏi.`);
                         else if (!question.ans) errors.push(`${location}: thiếu Đáp án đúng.`);
                         else if (!acceptedTypes.includes(type)) errors.push(`${location}: Loại câu hỏi "${type}" không hợp lệ.`);
                         else if (metadataError) errors.push(`${location}: ${metadataError}`);
+                        else if (scoringError) errors.push(`${location}: ${scoringError}`);
                         else importedQuestions.push(question);
                     });
                 });
@@ -4693,6 +4751,8 @@ const app = {
                             document.getElementById(`add-e-q-opt4-${i}`).value.trim()
                         ];
                     }
+                    const scoringError = app.data.validateQuestionScoring(newQ);
+                    if (scoringError) return alert(`Câu ${i + 1}: ${scoringError}`);
                     eObj.questions.push(newQ);
                     const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
                     if (!exists) {
@@ -4701,6 +4761,10 @@ const app = {
                     newQuestionsCount++;
                 }
                 i++;
+            }
+
+            if (eObj.questions.length !== app.game.questionsPerRound) {
+                return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
             }
 
             if (newQuestionsCount > 0) {
@@ -4726,6 +4790,8 @@ const app = {
             let mode = document.getElementById('inject-mode').value;
             let targetIdx = parseInt(document.getElementById('inject-target').value);
             let qClone = JSON.parse(JSON.stringify(app.data.libraryQuestions[qIdx]));
+            const scoringError = app.data.validateQuestionScoring(qClone);
+            if (scoringError) return alert(scoringError);
 
             if (mode === 'overwrite' && !isNaN(targetIdx) && targetIdx >= 0 && targetIdx < e.questions.length) {
                 e.questions[targetIdx] = qClone;

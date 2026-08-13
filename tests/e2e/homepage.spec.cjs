@@ -85,6 +85,7 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.getByText('Đạt được 10điểm/lượt luyện tập')).toBeVisible();
   await expect(page.locator('#guide-map')).toContainText('Khám phá bản đồ');
   await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
+  await expect(page.locator('#guide-history h3')).toHaveText('8. Kho Báu');
   await expect(page.locator('.guide-reward-table')).toContainText('5 kẹo và có thể mở chủ đề kế tiếp');
   await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
@@ -102,6 +103,48 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toBeVisible();
   await expect(page.locator('#guide-teacher')).toBeVisible();
   await expect(page.locator('#guide-teacher')).toContainText('Giao diện Mở/Khóa');
+});
+
+test('thang điểm chỉ chấp nhận 1, 2 hoặc 4 đáp án và giữ điểm phần tư', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const scores = await page.evaluate(() => ({
+    single: app.game.calculateQuestionScore({ type: 'Điền khuyết', ans: '42' }, '42'),
+    twoParts: app.game.calculateQuestionScore({ type: 'Điền khuyết', ans: 'đỏ, xanh' }, 'đỏ, vàng'),
+    fourParts: app.game.calculateQuestionScore({
+      type: 'Đúng/Sai',
+      statements: [
+        { answer: 'Đúng' }, { answer: 'Sai' }, { answer: 'Đúng' }, { answer: 'Sai' }
+      ]
+    }, ['Đúng', 'Sai', 'Sai', 'Sai']),
+    invalidThree: app.data.validateQuestionScoring({ type: 'Điền khuyết', ans: 'a, b, c' }),
+    invalidFive: app.data.validateQuestionScoring({ type: 'Điền khuyết', ans: 'a, b, c, d, e' })
+  }));
+
+  expect(scores.single).toMatchObject({ answerCount: 1, correctCount: 1, points: 1, isCorrect: true });
+  expect(scores.twoParts).toMatchObject({ answerCount: 2, correctCount: 1, points: 0.5, isCorrect: false });
+  expect(scores.fourParts).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
+  expect(scores.invalidThree).toContain('1, 2 hoặc 4');
+  expect(scores.invalidFive).toContain('1, 2 hoặc 4');
+});
+
+test('luyện đề hiển thị bốn lựa chọn Đúng/Sai để chấm từng phần', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const markup = await page.evaluate(() => app.exam.renderQuestionInput({
+    type: 'Đúng/Sai',
+    statements: [
+      { label: 'A', text: 'Nhận định A', answer: 'Đúng' },
+      { label: 'B', text: 'Nhận định B', answer: 'Sai' },
+      { label: 'C', text: 'Nhận định C', answer: 'Đúng' },
+      { label: 'D', text: 'Nhận định D', answer: 'Sai' }
+    ]
+  }, 0));
+
+  expect(markup.match(/exam_q_tf_0_/g)).toHaveLength(8);
+  expect(markup).toContain('Nhận định D');
 });
 
 test('kết quả không để trống phần chi tiết khi không có câu trả lời', async ({ page }) => {
@@ -374,7 +417,7 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('#submit-ans-btn')).toBeEnabled();
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveCSS('border-color', 'rgb(74, 222, 128)');
-  await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(10);
+  await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(1);
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{
