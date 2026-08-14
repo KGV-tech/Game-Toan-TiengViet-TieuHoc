@@ -1484,14 +1484,20 @@ const app = {
                 selected = selected.concat(extra);
             }
 
+            const staticQuestions = selected;
+            const templateQuestions = [];
             const shuffledTemplates = [...dynamicTemplates].sort(() => Math.random() - 0.5);
             let attempts = 0;
-            while (selected.length < targetCount && shuffledTemplates.length && attempts < targetCount * 4) {
+            while (templateQuestions.length < targetCount - staticQuestions.length && shuffledTemplates.length && attempts < targetCount * 4) {
                 const template = shuffledTemplates[attempts % shuffledTemplates.length];
                 const generated = app.data.generateTemplateQuestion(template);
-                if (generated && !app.data.validateQuestionScoring(generated)) selected.push(generated);
+                if (generated && !app.data.validateQuestionScoring(generated)) templateQuestions.push(generated);
                 attempts++;
             }
+
+            // Đưa template lên đầu lượt để học sinh thấy ngay câu hỏi động đang được áp dụng,
+            // thay vì luôn phải làm hết nhóm câu hỏi kho trước đó.
+            selected = [...templateQuestions, ...staticQuestions];
 
             if (selected.length < targetCount) {
                 selected = selected.concat(pickDiverse([...unseenPool, ...seenPool], targetCount - selected.length));
