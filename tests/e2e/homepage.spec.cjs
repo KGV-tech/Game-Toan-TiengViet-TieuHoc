@@ -317,6 +317,36 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   expect(consoleErrors).toEqual([]);
 });
 
+test('lượt luyện Toán lớp 4 đưa template phù hợp lên đầu lượt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const questionSources = await page.evaluate(() => {
+    const topic = '3. Số có nhiều chữ số';
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };
+    app.data.libraryQuestions = Array.from({ length: 6 }, (_, index) => ({
+      id: `static-${index}`,
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Trắc nghiệm', q: `Câu hỏi kho ${index + 1}`, options: ['Đúng', 'Sai'], ans: 'Đúng'
+    }));
+    app.data.questionTemplates = [{
+      id: 'template-smallest', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      question_type: 'Trắc nghiệm', generator_key: 'number.smallest_of_four',
+      prompt_template: 'Hãy tìm số bé nhất trong các số sau.', config: { minimum: 10000, maximum: 99999 }, is_active: true
+    }];
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    app.game.startPlay();
+    return app.game.state.questions.map(question => question.templateId || 'static');
+  });
+
+  expect(questionSources).toHaveLength(10);
+  expect(questionSources[0]).toBe('number.smallest_of_four');
+  expect(questionSources.filter(source => source === 'number.smallest_of_four')).toHaveLength(5);
+});
+
 test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh câu hỏi', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
