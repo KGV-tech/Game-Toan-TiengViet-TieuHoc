@@ -1605,7 +1605,7 @@ const app = {
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
             }
-            if (Array.isArray(q.subquestions)) {
+            if (q.type === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 detail.subquestions = q.subquestions.map(({ label, prompt, options }) => ({ label, prompt, options }));
             }
             return detail;
@@ -1616,7 +1616,7 @@ const app = {
                 lines.push('Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:');
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
             }
-            if (Array.isArray(detail.subquestions)) {
+            if (detail.type === 'Trắc nghiệm' && Array.isArray(detail.subquestions)) {
                 lines.push(...detail.subquestions.map(item => `${item.label}) ${item.prompt}<br>${(item.options || []).map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join(' · ')}`));
             }
             return app.data.formatQuestionDetailHTML(lines.join('<br>'));

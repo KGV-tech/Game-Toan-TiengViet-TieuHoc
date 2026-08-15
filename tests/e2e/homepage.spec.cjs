@@ -262,6 +262,22 @@ test('chi tiết kết quả của câu Đúng/Sai hiển thị đủ bốn nh�
   await expect(details).not.toContainText('<br>');
 });
 
+test('chi tiết điền khuyết bốn phép tính không lặp nhãn phụ rỗng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const historyQuestion = await page.evaluate(() => app.game.formatHistoryQuestion({
+    q: 'Hãy điền số thích hợp vào chỗ trống:<br>a. ___ + 10 713 = 11 133<br>b. 13 102 = 91 714 ÷ ___',
+    type: 'Điền khuyết',
+    subquestions: [{ label: 'a' }, { label: 'b' }]
+  }));
+
+  expect(historyQuestion).toContain('Hãy điền số thích hợp vào chỗ trống:');
+  expect(historyQuestion).not.toContain('undefined');
+  expect(historyQuestion.match(/a\./g)).toHaveLength(1);
+  expect(historyQuestion.match(/b\./g)).toHaveLength(1);
+});
+
 test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
