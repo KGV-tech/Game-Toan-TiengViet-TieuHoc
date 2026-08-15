@@ -168,7 +168,7 @@ test('luyện đề hiển thị bốn lựa chọn Đúng/Sai để chấm từ
   expect(markup).toContain('Nhận định D');
 });
 
-test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và chấm 0,25 điểm mỗi phần', async ({ page }) => {
+test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và chấm 0,25 điểm mỗi phần', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -190,8 +190,21 @@ test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và ch�
 
   await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('.multi-choice-subquestion__option')).toHaveCount(16);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-part-mc/);
+  for (let index = 0; index < 4; index++) {
+    await expect(page.locator(`.multi-choice-subquestion[data-index="${index}"]`)).toHaveClass(new RegExp(`multi-choice-subquestion--tone-${index}`));
+  }
+  await expect(page.locator('.multi-choice-subquestion--label-only')).toHaveCount(4);
+  await expect.poll(() => page.locator('.multi-choice-subquestion--label-only').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
   await expect(page.locator('.multi-choice-subquestion__heading h3')).toHaveCount(0);
   await expect(page.locator('.multi-choice-subquestion__label-only')).toHaveCount(4);
+  await captureUiReview(page, testInfo, 'four-part-multiple-choice-desktop.png');
   expect(summary.score).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
   for (let index = 0; index < summary.answers.length; index++) {
     await page.locator(`.multi-choice-subquestion[data-index="${index}"] .multi-choice-subquestion__option`, { hasText: summary.answers[index] }).click();
@@ -442,6 +455,7 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
   await expect(page.locator('.question-box--fill')).toContainText('a.');
   await expect(page.locator('.question-box--fill')).toContainText('d.');
+  await expect.poll(() => page.locator('.question-box--fill .template-fill-row').nth(1).evaluate(element => getComputedStyle(element).justifyContent)).toBe('flex-start');
   await captureUiReview(page, testInfo, 'four-arithmetic-blanks-desktop.png');
 
   await page.evaluate(() => {
@@ -497,6 +511,29 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
     minimum: 10000, maximum: 999999, minimumDigits: 5, maximumDigits: 6
   });
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
+});
+
+test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh “Số đó là”', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compose_from_places', {
+      minimum: 10000, maximum: 99999
+    }, () => 0.42);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--compose .template-compose-row')).toHaveCount(4);
+  await expect(page.locator('.question-box--compose .template-compose-answer')).toHaveCount(4);
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-row').first().evaluate(element => getComputedStyle(element).textAlign)).toBe('left');
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-answer').first().evaluate(element => getComputedStyle(element).whiteSpace)).toBe('nowrap');
+  await captureUiReview(page, testInfo, 'compose-from-places-desktop.png');
 });
 
 test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {
@@ -591,7 +628,26 @@ test('bốn phép tính tính giá trị biểu thức hiển thị dạng nhi�
   await expect(page.locator('.four-operations-expression-row__prompt')).toHaveCount(0);
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
   await expect(page.locator('.four-operations-expression-title')).toHaveText('Tính giá trị của biểu thức:');
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-expressions/);
+  await expect.poll(() => page.locator('.four-operations-expression-list').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(1);
+  await expect.poll(() => page.locator('.four-operations-practice__expression').first().evaluate(element => getComputedStyle(element).flexWrap)).toBe('nowrap');
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
   await captureUiReview(page, testInfo, 'four-operations-expressions-desktop.png');
+
+  const longExpressionLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_expressions', {
+      minimumDigits: 9, maximumDigits: 9, operations: ['+', '-', '*', '/']
+    }, (() => { let seed = 807; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    return [...document.querySelectorAll('.four-operations-practice__expression')].every(element => element.scrollWidth <= element.clientWidth);
+  });
+  expect(longExpressionLayout).toBe(true);
 });
 
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
@@ -625,6 +681,14 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('.comparison-drag-sign').first()).toHaveAttribute('draggable', 'true');
   await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
   await expect(page.locator('.comparison-drag-slot')).toHaveCount(4);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-comparisons/);
+  const comparisonLayout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(comparisonLayout).toMatchObject({ hasVerticalOverflow: false, horizontalOverflow: false });
+  expect(comparisonLayout.topInset).toBeLessThanOrEqual(16);
   await page.locator('.comparison-drag-sign', { hasText: '>' }).click();
   await page.locator('.comparison-drag-slot').first().click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveText('>');
@@ -638,6 +702,35 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveCSS('border-color', 'rgb(74, 222, 128)');
   await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(1);
+
+  const expandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 10000, maximum: 99999
+    }, (() => { let seed = 84; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(expandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
+  await captureUiReview(page, testInfo, 'compare-number-forms-desktop.png');
+
+  const longExpandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 100000000, maximum: 999999999
+    }, (() => { let seed = 85; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(longExpandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{

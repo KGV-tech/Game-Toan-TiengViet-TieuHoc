@@ -1643,6 +1643,8 @@ const app = {
 
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
+            const playCenter = document.querySelector('#game-play-view .play-center');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons');
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
@@ -1687,18 +1689,19 @@ const app = {
 
             if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 optContainer.className = 'multi-choice-subquestions';
+                if (q.subquestions.length === 4) playCenter?.classList.add('play-center--four-part-mc');
                 const labels = ['A', 'B', 'C', 'D'];
                 this.state.multipleChoiceSelections = new Array(q.subquestions.length).fill('');
                 q.subquestions.forEach((subquestion, index) => {
                     const row = document.createElement('section');
                     const isSafePassword = q.templateId === 'number.safe_password_by_place_value';
-                    row.className = `multi-choice-subquestion${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}`;
                     row.dataset.index = index;
                     const illustration = isSafePassword && subquestion.imageUrl
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
                         : '';
                     const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
                     const partPrompt = String(subquestion.prompt || '').trim();
+                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
                     const heading = partPrompt
                         ? `<h3><span>${partLabel})</span> ${app.data.formatMathText(partPrompt)}</h3>`
                         : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;
@@ -1811,6 +1814,7 @@ const app = {
                 optContainer.appendChild(controls);
             } else if (qType === 'Kéo thả' && Array.isArray(q.comparisonRows)) {
                 optContainer.className = '';
+                playCenter?.classList.add('play-center--four-comparisons');
                 questionContainer.classList.add('question-box--template', 'question-box--four-comparisons');
                 questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row"><span class="comparison-drag-label">${row.label}.</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
                 const answers = new Array(q.comparisonRows.length).fill('');
@@ -2065,6 +2069,7 @@ const app = {
                 optContainer.appendChild(numpad);
             } else if (qType === 'Điền khuyết' && q.templateId === 'number.four_operations_expressions' && Array.isArray(q.practiceRows)) {
                 optContainer.className = '';
+                playCenter?.classList.add('play-center--four-expressions');
                 const inputs = [];
                 const instruction = String(q.q || '').split(/<br\s*\/?\s*>/i)[0] || 'Tính giá trị của biểu thức:';
                 const renderExpression = (row, index) => {
@@ -2090,18 +2095,34 @@ const app = {
                 let inputs = [];
 
                 if (parts.length > 1) {
-                    const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
-                    let html = '<div class="template-fill-layout"><div class="template-fill-row">';
-                    for (let i = 0; i < parts.length; i++) {
-                        html += toRows(parts[i]);
-                        if (i < parts.length - 1) {
-                            html += `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
+                    const isComposeFromPlaces = q.templateId === 'number.compose_from_places';
+                    if (isComposeFromPlaces) {
+                        const rows = String(q.q || '').split(/<br\s*\/?\s*>/i).filter(Boolean);
+                        const [heading = '', ...subquestions] = rows;
+                        let inputIndex = 0;
+                        const renderSubquestion = row => {
+                            const input = `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${inputIndex++}" autocomplete="off">`;
+                            const formattedRow = app.data.formatMathText(row);
+                            const withAnswer = formattedRow.replace(/(Số đó là)\s*___/i, `<span class="template-compose-answer">$1 ${input}</span>`);
+                            return `<div class="template-compose-row">${withAnswer === formattedRow ? formattedRow.replace(/___/, input) : withAnswer}</div>`;
+                        };
+                        const html = `<div class="template-compose-layout"><div class="template-compose-heading">${app.data.formatMathText(heading)}</div>${subquestions.map(renderSubquestion).join('')}</div>`;
+                        questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--compose');
+                        questionContainer.innerHTML = html;
+                    } else {
+                        const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
+                        let html = '<div class="template-fill-layout"><div class="template-fill-row">';
+                        for (let i = 0; i < parts.length; i++) {
+                            html += toRows(parts[i]);
+                            if (i < parts.length - 1) {
+                                html += `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
+                            }
                         }
+                        html += '</div></div>';
+                        if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
+                        questionContainer.classList.add('question-box--template', 'question-box--fill');
+                        questionContainer.innerHTML = html;
                     }
-                    html += '</div></div>';
-                    if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                    questionContainer.classList.add('question-box--template', 'question-box--fill');
-                    questionContainer.innerHTML = html;
 
                     for (let i = 0; i < parts.length - 1; i++) {
                         const input = document.getElementById(`fill-input-${i}`);
