@@ -91,8 +91,9 @@ assert(migration.includes("'number.compose_from_places'"), 'Migration must seed 
 assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must seed the expanded-form template.');
 assert(migration.includes("'number.four_arithmetic_blanks'"), 'Migration must seed the four-arithmetic fill-in template.');
 assert(migration.includes("'number.four_arithmetic_comparisons'"), 'Migration must seed the four-arithmetic drag-comparison template.');
-assert(migration.includes('Grade 4 Math, Topic 1: configure the ten reusable templates'), 'Migration must configure the reusable Grade 4 Math templates for Topic 1.');
-assert(migration.includes("'1. Ôn tập và bổ sung'"), 'Migration must assign the configured templates to the real Grade 4 Topic 1.');
+assert(migration.includes('Grade 4 Math, Topic 1: COPY the ten reusable templates'), 'Migration must copy the reusable Grade 4 Math templates for Topic 1.');
+assert(migration.includes('The originals stay in their current topic'), 'Migration must preserve the original Topic 3 templates.');
+assert(migration.includes("'1. Ôn tập và bổ sung'"), 'Migration must create configured copies for the real Grade 4 Topic 1.');
 assert(migration.includes("'number.four_operations_fill_blanks'"), 'Migration must add the Topic 1 four-operations fill-in template.');
 assert(migration.includes("'number.four_operations_expressions'"), 'Migration must add the Topic 1 calculate-expression template.');
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
