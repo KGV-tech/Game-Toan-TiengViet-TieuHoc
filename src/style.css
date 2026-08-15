@@ -1643,7 +1643,18 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view .play-center--four-comparisons .question-progress { padding: 6px 15px; }
 #game-play-view .play-center--four-comparisons .score-display { padding: 5px 12px; border-bottom-width: 4px; }
 #game-play-view .play-center--four-comparisons .question-box { min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
-#game-play-view .play-center--four-comparisons .template-question-copy { margin: 0 0 7px; font-size: clamp(1.2rem, 1.7vw, 1.45rem); }
+#game-play-view .play-center--four-comparisons .template-question-copy {
+    margin: 0 0 7px;
+    padding: 8px 14px;
+    border: 2px solid rgba(255, 255, 255, .92);
+    border-bottom: 4px solid #cbd5e1;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(226,232,240,.96));
+    color: #1e293b;
+    box-shadow: 0 5px 12px rgba(0,0,0,.24);
+    font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+    font-weight: 900;
+}
 #game-play-view .play-center--four-comparisons .comparison-drag-controls { gap: 14px; margin: 0 0 9px; }
 #game-play-view .play-center--four-comparisons .comparison-drag-sign { width: 46px; height: 46px; border-width: 3px; font-size: 1.8rem; box-shadow: 0 5px 0 #1e40af; }
 #game-play-view .play-center--four-comparisons .comparison-drag-sign:hover,
@@ -1653,9 +1664,18 @@ input[type="text"], input[type="password"], select, textarea {
     grid-template-columns: auto minmax(80px, .5fr) auto minmax(290px, 1.9fr);
     gap: 7px;
     padding: 7px 10px;
+    border: 2px solid transparent;
     border-radius: 11px;
 }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-0 { background: rgba(255, 237, 213, .94); border-color: #fdba74; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-1 { background: rgba(224, 242, 254, .94); border-color: #7dd3fc; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-2 { background: rgba(220, 252, 231, .94); border-color: #86efac; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-3 { background: rgba(237, 233, 254, .94); border-color: #c4b5fd; }
 #game-play-view .play-center--four-comparisons .comparison-drag-label { font-size: clamp(1rem, 1.45vw, 1.2rem); }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-0 .comparison-drag-label { color: #c2410c; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-1 .comparison-drag-label { color: #0369a1; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-2 .comparison-drag-label { color: #15803d; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row--tone-3 .comparison-drag-label { color: #6d28d9; }
 #game-play-view .play-center--four-comparisons .comparison-drag-side {
     font-size: clamp(.8rem, 1.05vw, .98rem);
     line-height: 1.25;
