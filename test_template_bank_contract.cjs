@@ -10,6 +10,9 @@ assert(source.includes('renderTemplates(box)'), 'Admin must render the Template 
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
 assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
 assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
+assert(source.includes('renderTemplatePreview(generator)'), 'Template editor must render a visual preview for the selected template.');
+assert(source.includes('template-preview__canvas'), 'Template editor visual preview must have a dedicated canvas.');
+assert(!source.includes('target.textContent = preset.example'), 'Template editor must not show the old text-only result example.');
 assert(source.includes('<b>Diễn giải</b>'), 'Template editor must label the template summary as Diễn giải.');
 assert(!source.includes('Ví dụ khai báo'), 'Template editor must no longer present the summary as an example declaration.');
 assert(source.includes('Số lượng chữ số ít nhất'), 'Four-arithmetic templates must clearly describe the minimum digit count.');

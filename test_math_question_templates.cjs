@@ -23,6 +23,7 @@ assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must
 assert.deepEqual(smallest.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
 smallest.subquestions.forEach(item => {
     assert.equal(item.options.length, 4, 'Each smallest-number part must have four options.');
+    assert.equal(item.prompt, '', 'The shared smallest-number instruction must not repeat in every part.');
     assert.equal(new Set(item.options).size, 4, 'Each smallest-number part must generate distinct options.');
     assert.equal(numericValue(item.answer), Math.min(...item.options.map(numericValue)));
 });
@@ -32,6 +33,7 @@ const largest = generateQuestion('number.largest_of_four', {}, seededRandom(2));
 assert.equal(largest.subquestions.length, 4, 'The largest-number template must generate four parts a–d.');
 largest.subquestions.forEach(item => {
     assert.equal(item.options.length, 4, 'Each largest-number part must have four options.');
+    assert.equal(item.prompt, '', 'The shared largest-number instruction must not repeat in every part.');
     assert.equal(new Set(item.options).size, 4, 'Each largest-number part must generate distinct options.');
     assert.equal(numericValue(item.answer), Math.max(...item.options.map(numericValue)));
 });

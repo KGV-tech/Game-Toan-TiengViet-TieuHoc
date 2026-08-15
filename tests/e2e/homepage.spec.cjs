@@ -190,6 +190,8 @@ test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và ch�
 
   await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('.multi-choice-subquestion__option')).toHaveCount(16);
+  await expect(page.locator('.multi-choice-subquestion__heading h3')).toHaveCount(0);
+  await expect(page.locator('.multi-choice-subquestion__label-only')).toHaveCount(4);
   expect(summary.score).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
   for (let index = 0; index < summary.answers.length; index++) {
     await page.locator(`.multi-choice-subquestion[data-index="${index}"] .multi-choice-subquestion__option`, { hasText: summary.answers[index] }).click();
@@ -470,6 +472,9 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await expect(page.locator('#template-example .template-preview__canvas')).toBeVisible();
+  await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
+  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
 
   await page.evaluate(() => {
@@ -605,6 +610,8 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
       minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
       layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
     }, random);
+    // Supabase may label this template as “So sánh”; comparisonRows must still retain drag-and-drop.
+    question.type = 'So sánh';
     app.data.currentUser = { username: 'demo-student', role: 'student' };
     app.game.state = { score: 0, currentIdx: 0, questions: [question] };
     document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
@@ -653,6 +660,28 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
     layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
   }));
   await captureUiReview(page, testInfo, 'four-arithmetic-comparisons-template-config.png');
+});
+
+test('so sánh số với dạng tổng vẫn là kéo thả khi kho lưu loại So sánh', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 10000, maximum: 99999
+    }, Math.random);
+    question.type = 'So sánh';
+    question.options = [];
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.comparison-drag-sign')).toHaveCount(3);
+  await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
+  await expect(page.locator('.magic-input')).toHaveCount(0);
 });
 
 test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({ page }, testInfo) => {

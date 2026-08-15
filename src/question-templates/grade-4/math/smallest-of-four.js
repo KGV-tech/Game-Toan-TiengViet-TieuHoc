@@ -16,7 +16,7 @@ function generateSmallestOfFour(config = {}, random = Math.random) {
         const answer = Math.min(...options);
         return {
             label,
-            prompt: 'Tìm số bé nhất.',
+            prompt: '',
             options: shuffle(options, random).map(formatNumber),
             answer: formatNumber(answer)
         };

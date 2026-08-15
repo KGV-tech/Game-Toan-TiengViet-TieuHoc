@@ -323,7 +323,30 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-editor__field > span { font-size: .88rem; }
 .template-editor .form-input { width: 100%; box-sizing: border-box; min-height: 40px; margin: 0; border: 1px solid rgba(148, 163, 184, .55); border-radius: 7px; background: rgba(255, 255, 255, .96); color: #0f172a; }
 .template-editor textarea.form-input { min-height: 84px; resize: vertical; line-height: 1.45; }
-.template-editor__preview { margin-top: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, .35); background: rgba(22, 163, 74, .13); color: #dcfce7; font-weight: 700; }
+.template-editor__preview { margin-top: 14px; }
+.template-preview__canvas { overflow: hidden; border: 1px solid rgba(96, 165, 250, .5); border-radius: 12px; background: linear-gradient(135deg, #10233e, #07111f); box-shadow: inset 0 0 28px rgba(56, 189, 248, .12); color: #eff6ff; font-size: .77rem; }
+.template-preview__topbar { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; background: rgba(59, 130, 246, .2); color: #bfdbfe; font-size: .68rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+.template-preview__question { margin: 10px 12px; padding: 9px 12px; border-radius: 8px; background: #f8fafc; color: #17233a; font-size: .9rem; font-weight: 800; text-align: center; }
+.template-preview__rows { display: grid; gap: 6px; padding: 0 12px 12px; }
+.template-preview__line { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 6px 9px; border-radius: 7px; background: rgba(255, 255, 255, .09); font-weight: 700; line-height: 1.35; }
+.template-preview__line > b { color: #facc15; }
+.template-preview__blank { display: inline-block; width: 56px; min-width: 56px; height: 17px; vertical-align: middle; border-radius: 4px; background: #fff; box-shadow: inset 0 -4px #cbd5e1; }
+.template-preview__drop { display: inline-grid; width: 23px; height: 23px; place-items: center; vertical-align: middle; border: 2px dashed #facc15; border-radius: 50%; color: #facc15; font-style: normal; }
+.template-preview__choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 7px; }
+.template-preview__choices span { display: flex; align-items: center; gap: 5px; min-width: 0; padding: 6px; border: 1px solid rgba(96, 165, 250, .75); border-radius: 6px; background: #eaf2ff; color: #17233a; font-weight: 800; white-space: nowrap; }
+.template-preview__choices b { display: inline-grid; flex: 0 0 16px; width: 16px; height: 16px; place-items: center; border-radius: 50%; background: #f59e0b; color: #fff; font-size: .64rem; }
+.template-preview__mc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.template-preview__mc > div { padding: 8px; border-radius: 7px; background: rgba(255, 255, 255, .08); }
+.template-preview__mc > div > b { color: #facc15; }
+.template-preview__expression-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.template-preview__expression { padding: 10px; border-radius: 9px; color: #17233a; font-weight: 800; text-align: center; }
+.template-preview__expression b { margin-right: 6px; color: #0f766e; }
+.template-preview__expression--1 { background: #bae6fd; }.template-preview__expression--2 { background: #fbcfe8; }.template-preview__expression--3 { background: #bbf7d0; }.template-preview__expression--4 { background: #ddd6fe; }
+.template-preview__true-false { display: grid; gap: 6px; padding: 0 12px 12px; }
+.template-preview__true-false > div { display: grid; grid-template-columns: 24px 1fr auto auto; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 7px; background: #f8fafc; color: #17233a; font-weight: 800; }.template-preview__true-false b { color: #2563eb; }.template-preview__true-false em, .template-preview__true-false i { padding: 4px 6px; border-radius: 5px; font-style: normal; font-size: .64rem; }.template-preview__true-false em { background: #22c55e; color: white; }.template-preview__true-false i { border: 1px solid #93c5fd; color: #1d4ed8; }
+.template-preview__matching { display: grid; grid-template-columns: .7fr 1.3fr; gap: 10px; padding: 0 12px 12px; }.template-preview__matching > div { display: grid; gap: 5px; }.template-preview__matching span { padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, .1); font-weight: 700; }.template-preview__matching > div:last-child span { background: rgba(34, 197, 94, .2); }
+.template-preview__safe { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: center; padding: 0 12px 12px; }.template-preview__safe-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 10px; background: linear-gradient(135deg, #475569, #0f172a); font-size: 1.7rem; }.template-preview__safe p { margin: 0; font-weight: 700; }
+@media (max-width: 1100px) { .template-preview__choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }.template-preview__topbar { font-size: .61rem; }.template-preview__line { align-items: flex-start; }.template-preview__mc, .template-preview__expression-grid { grid-template-columns: 1fr; } }
 .template-editor__variables { margin-top: 10px; color: #cbd5e1; font-size: .8rem; }
 .template-editor__variables > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; }
 .template-variable { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid rgba(125, 211, 252, .42); border-radius: 6px; background: rgba(14, 116, 144, .18); color: #e0f2fe; font: inherit; cursor: pointer; }
@@ -583,6 +606,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .safe-password-illustration { display: block; width: 100%; }
 .multi-choice-subquestion__heading { display: flex; align-items: center; gap: 14px; }
 .multi-choice-subquestion__heading h3 { flex: 1; }
+.multi-choice-subquestion__label-only { color: #2563eb; font-size: clamp(1.5rem, 2.3vw, 2.1rem); font-weight: 900; }
 .multi-choice-subquestion--safe-password .safe-password-illustration { width: clamp(74px, 9vw, 118px); max-height: 104px; object-fit: contain; flex: 0 0 auto; }
 .multi-choice-subquestion--safe-password .multi-choice-subquestion__options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .multi-choice-subquestion--safe-password .ans-text { white-space: nowrap; }
