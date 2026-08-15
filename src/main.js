@@ -1644,7 +1644,7 @@ const app = {
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
-            playCenter?.classList.remove('play-center--four-part-mc');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions');
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
@@ -2068,6 +2068,7 @@ const app = {
                 optContainer.appendChild(numpad);
             } else if (qType === 'Điền khuyết' && q.templateId === 'number.four_operations_expressions' && Array.isArray(q.practiceRows)) {
                 optContainer.className = '';
+                playCenter?.classList.add('play-center--four-expressions');
                 const inputs = [];
                 const instruction = String(q.q || '').split(/<br\s*\/?\s*>/i)[0] || 'Tính giá trị của biểu thức:';
                 const renderExpression = (row, index) => {

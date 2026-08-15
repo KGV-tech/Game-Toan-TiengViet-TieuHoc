@@ -1586,6 +1586,42 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-3 h3 span,
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-3 .multi-choice-subquestion__label-only { color: #7c3aed; }
 
+#game-play-view .play-center.play-center--four-expressions {
+    height: calc(100vh - 48px);
+    max-height: calc(100vh - 48px);
+    overflow-y: hidden;
+    padding: 10px clamp(14px, 1.5vw, 22px) 14px;
+}
+#game-play-view .play-center--four-expressions .game-header {
+    margin: 0 0 8px;
+    font-size: clamp(1rem, 1.25vw, 1.15rem);
+}
+#game-play-view .play-center--four-expressions .question-progress { padding: 6px 15px; }
+#game-play-view .play-center--four-expressions .score-display { padding: 5px 12px; border-bottom-width: 4px; }
+#game-play-view .play-center--four-expressions .question-box {
+    min-height: 0;
+    margin-bottom: 8px;
+    padding: 8px 14px;
+    border-width: 2px;
+    border-bottom-width: 4px;
+    border-radius: 14px;
+    box-shadow: 0 5px 12px rgba(0,0,0,.18);
+    background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(226,232,240,.94));
+}
+#game-play-view .play-center--four-expressions .four-operations-expression-title { margin: 0 0 8px; font-size: clamp(1.2rem, 1.7vw, 1.45rem); }
+#game-play-view .play-center--four-expressions .four-operations-expression-list { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+#game-play-view .play-center--four-expressions .four-operations-expression-row { grid-template-columns: auto minmax(0, 1fr); gap: 7px; }
+#game-play-view .play-center--four-expressions .four-operations-expression-row__label { font-size: clamp(1rem, 1.45vw, 1.2rem); }
+#game-play-view .play-center--four-expressions .four-operations-practice__expression {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    min-height: 38px;
+    padding: 6px 10px;
+    gap: 6px;
+    font-size: clamp(.92rem, 1.35vw, 1.18rem);
+}
+#game-play-view .play-center--four-expressions .four-operations-practice__expression .magic-input { width: min(95px, 11vw); min-width: 64px; font-size: clamp(.9rem, 1.25vw, 1.1rem); }
+
 #exam-select-screen {
     justify-content: center;
     padding: 16px clamp(22px, 4vw, 72px);

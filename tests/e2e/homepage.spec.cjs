@@ -626,7 +626,26 @@ test('bốn phép tính tính giá trị biểu thức hiển thị dạng nhi�
   await expect(page.locator('.four-operations-expression-row__prompt')).toHaveCount(0);
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
   await expect(page.locator('.four-operations-expression-title')).toHaveText('Tính giá trị của biểu thức:');
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-expressions/);
+  await expect.poll(() => page.locator('.four-operations-expression-list').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(1);
+  await expect.poll(() => page.locator('.four-operations-practice__expression').first().evaluate(element => getComputedStyle(element).flexWrap)).toBe('nowrap');
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
   await captureUiReview(page, testInfo, 'four-operations-expressions-desktop.png');
+
+  const longExpressionLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_expressions', {
+      minimumDigits: 9, maximumDigits: 9, operations: ['+', '-', '*', '/']
+    }, (() => { let seed = 807; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    return [...document.querySelectorAll('.four-operations-practice__expression')].every(element => element.scrollWidth <= element.clientWidth);
+  });
+  expect(longExpressionLayout).toBe(true);
 });
 
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
