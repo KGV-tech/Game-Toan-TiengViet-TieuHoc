@@ -3648,7 +3648,7 @@ const app = {
                     defaultPrompt: 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
                     guide: 'Tạo câu trắc nghiệm nhận biết chữ số ở một hàng xác định. Mỗi lượt game bốc ngẫu nhiên hàng, chữ số và bốn phương án, trong đó chỉ có một đáp án đúng.',
                     hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
-                    example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?',
+                    previewImage: 'digit-at-place.jpg',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place}', 'tên hàng được bốc'], ['{digit}', 'chữ số được bốc']]
                 },
@@ -3656,7 +3656,7 @@ const app = {
                     defaultPrompt: 'Hãy tìm số bé nhất trong các số sau.',
                     guide: 'Tạo câu trắc nghiệm gồm bốn số khác nhau trong phạm vi đã chọn; học sinh tìm số bé nhất.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403',
+                    previewImage: 'smallest-of-four.jpg',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
@@ -3664,7 +3664,7 @@ const app = {
                     defaultPrompt: 'Hãy tìm số lớn nhất trong các số sau.',
                     guide: 'Tạo câu trắc nghiệm gồm bốn số khác nhau trong phạm vi đã chọn; học sinh tìm số lớn nhất.',
                     hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403',
+                    previewImage: 'largest-of-four.jpg',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
@@ -3672,7 +3672,7 @@ const app = {
                     defaultPrompt: 'Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}',
                     guide: 'Tạo bài điền khuyết lập số từ các hàng có chữ số khác 0. Học sinh ghép các giá trị hàng để viết đúng số đã cho.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
-                    example: 'Ví dụ kết quả: Viết số rồi đọc số, biết số đó gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục. Số đó là ___',
+                    previewImage: 'compose-from-places.jpg',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place_values}', 'các hàng, ví dụ: 4 chục nghìn, 2 nghìn và 5 trăm'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
@@ -3680,7 +3680,7 @@ const app = {
                     defaultPrompt: 'Điền số còn thiếu:<br>{number} = {expression}',
                     guide: 'Tạo bài điền khuyết về cấu tạo thập phân của số. Một thành phần trong dạng tổng được ẩn đi để học sinh tìm lại.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên phép tính động do game sinh.',
-                    example: 'Ví dụ kết quả: 33 471 = 30 000 + 3 000 + ___ + 70 + 1',
+                    previewImage: 'missing-expanded-addend.jpg',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số cần phân tích'], ['{expression}', 'dạng tổng có một ô trống'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
@@ -3688,7 +3688,7 @@ const app = {
                     defaultPrompt: 'Hãy điền số thích hợp vào chỗ trống:<br>{exercises}',
                     guide: 'Tạo bốn phép tính a–d, mỗi dòng có một số bị khuyết. Có thể chọn cộng, trừ, nhân, chia và cách đặt phép tính ở một hoặc hai vế; phép chia luôn cho kết quả nguyên.',
                     hint: 'Dùng <code>{exercises}</code> để chèn trọn 4 dòng, hoặc <code>{question}</code> để giữ nguyên toàn bộ câu hỏi mặc định.',
-                    example: 'Ví dụ: a. 12 714 + ___ = 28 223 · b. ___ = 9 160 − 894 · c. 7 580 + 430 = ___',
+                    previewImage: 'four-arithmetic-blanks.jpg',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'toàn bộ câu hỏi gồm câu dẫn và 4 dòng'], ['{exercises}', 'bốn phép tính a–d có một ô trống mỗi dòng'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
@@ -3696,7 +3696,7 @@ const app = {
                     defaultPrompt: 'Điền dấu thích hợp:<br>{exercises}',
                     guide: 'Tạo bốn phép tính a–d để kéo dấu so sánh vào chỗ trống. Mỗi lượt luôn có đủ các dấu >, <, = và có thể dùng cộng, trừ, nhân hoặc chia.',
                     hint: 'Dùng <code>{exercises}</code> để chèn trọn 4 dòng, hoặc <code>{question}</code> để giữ nguyên toàn bộ câu hỏi mặc định.',
-                    example: 'Ví dụ: a. 17 784 − 4 884 ___ 16 033 + 18 927',
+                    previewImage: 'four-arithmetic-comparisons.jpg',
                     type: 'Kéo thả',
                     variables: [['{question}', 'toàn bộ câu hỏi gồm câu dẫn và 4 dòng'], ['{exercises}', 'bốn phép so sánh a–d'], ['{comparison_rows}', 'bốn phép so sánh a–d']]
                 },
@@ -3704,7 +3704,7 @@ const app = {
                     defaultPrompt: 'Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}',
                     guide: 'Tạo bài điền khuyết số liền trước và số liền sau của một số đã cho trong phạm vi đã chọn.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
-                    example: 'Ví dụ kết quả: ___ ; 42 135 ; ___',
+                    previewImage: 'neighbor-numbers.jpg',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
@@ -3712,7 +3712,7 @@ const app = {
                     defaultPrompt: 'Điền dấu thích hợp:<br>{comparison}',
                     guide: 'Tạo câu so sánh giữa một số tự nhiên và dạng tổng theo các hàng của số đó; học sinh chọn dấu thích hợp.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
-                    example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
+                    previewImage: 'compare-number-forms.jpg',
                     type: 'So sánh',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
                 },
@@ -3720,7 +3720,7 @@ const app = {
                     defaultPrompt: 'Số {number}<br>Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:',
                     guide: 'Tạo một số nhiều chữ số và bốn nhận định Đúng/Sai về lớp hoặc hàng của chữ số. Mỗi chữ số được hỏi xuất hiện đúng một lần trong số đã cho.',
                     hint: 'Dùng <code>{number}</code> cho hàng đầu; có thể chèn <code>{statements}</code> nếu cần hiển thị danh sách nhận định trong nội dung câu hỏi.',
-                    example: 'Ví dụ: Số 14 021 983 — A. Chữ số 4 thuộc lớp triệu. B. Chữ số 1 ở hàng chục. ĐÚNG/SAI',
+                    previewImage: 'place-value-true-false.jpg',
                     type: 'Đúng/Sai',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh'], ['{statements}', 'bốn nhận định A–D đã sinh về lớp hoặc hàng']]
                 },
@@ -3728,7 +3728,7 @@ const app = {
                     defaultPrompt: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.',
                     guide: 'Tạo câu trắc nghiệm tìm mật khẩu két sắt từ hai điều kiện về lớp hoặc hàng của chữ số. Trong bốn số, chỉ một số thỏa đồng thời cả hai điều kiện.',
                     hint: 'Ô bên dưới đã ghi đầy đủ câu hỏi mặc định. Hãy sửa trực tiếp, hoặc chèn <code>{condition1}</code> và <code>{condition2}</code> vào vị trí mong muốn.',
-                    example: 'Ví dụ hiển thị: Số nào dưới đây là mật khẩu mở khóa két sắt? Biết rằng chữ số ở hàng triệu khác 0 và chữ số ở hàng trăm nghìn khác 3.',
+                    previewImage: 'safe-password-by-place-value.jpg',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{codeLength}', 'số chữ số mật khẩu đã bốc'], ['{condition1}', 'quy tắc thứ nhất đã bốc'], ['{condition2}', 'quy tắc thứ hai đã bốc']]
                 },
@@ -3736,7 +3736,7 @@ const app = {
                     defaultPrompt: 'Hãy nối mỗi số với cách đọc đúng.',
                     guide: 'Tạo bài đối chiếu số với cách đọc tương ứng. Hai cột có số lượng mục lệch nhau một để tạo một lựa chọn nhiễu.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên yêu cầu nối số với cách đọc.',
-                    example: 'Ví dụ: 5 số | 4 cách đọc, đúng 4 cặp ghép và 1 mục nhiễu.',
+                    previewImage: 'match-number-words.jpg',
                     type: 'Đối chiếu trùng khớp',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 }
@@ -3748,7 +3748,11 @@ const app = {
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
             const variables = document.getElementById('template-variables');
-            if (target) target.textContent = preset.example;
+            if (target) {
+                const previewImage = preset.previewImage || 'digit-at-place.jpg';
+                const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
+                target.innerHTML = `<div class="template-editor__preview-heading"><span aria-hidden="true">🖼️</span><b>Giao diện khi học sinh làm bài</b></div><img class="template-editor__preview-image" src="./src/assets/template-previews/${app.data.sanitizeHTML(previewImage)}" alt="Giao diện thực tế của template ${app.data.sanitizeHTML(previewLabel)}" loading="lazy" decoding="async">`;
+            }
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
             if (variables) variables.innerHTML = `<b>Biến có thể chèn</b><div>${preset.variables.map(([token, description]) => `<button type="button" class="template-variable" title="${app.data.sanitizeHTML(description)}" onclick="app.admin.insertTemplateVariable('${token}')"><code>${token}</code><span>${app.data.sanitizeHTML(description)}</span></button>`).join('')}</div>`;
