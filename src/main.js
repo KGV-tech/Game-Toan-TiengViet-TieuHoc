@@ -1695,13 +1695,13 @@ const app = {
                 q.subquestions.forEach((subquestion, index) => {
                     const row = document.createElement('section');
                     const isSafePassword = q.templateId === 'number.safe_password_by_place_value';
-                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}`;
                     row.dataset.index = index;
                     const illustration = isSafePassword && subquestion.imageUrl
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
                         : '';
                     const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
                     const partPrompt = String(subquestion.prompt || '').trim();
+                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
                     const heading = partPrompt
                         ? `<h3><span>${partLabel})</span> ${app.data.formatMathText(partPrompt)}</h3>`
                         : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;

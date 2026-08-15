@@ -1573,6 +1573,14 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion__options { gap: 6px; }
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion__option { min-height: 38px; padding: 5px 6px; gap: 5px; font-size: clamp(.78rem, 1.05vw, .94rem); }
 #game-play-view .play-center--four-part-mc .ans-badge { width: 29px; height: 29px; margin-right: 4px; font-size: .9em; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--label-only {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+}
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--label-only .multi-choice-subquestion__heading { display: contents; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--label-only .multi-choice-subquestion__options { grid-column: 2; }
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-0 .ans-badge { background: linear-gradient(180deg, #fde047, #d97706); }
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-1 .ans-badge { background: linear-gradient(180deg, #60a5fa, #2563eb); }
 #game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-2 .ans-badge { background: linear-gradient(180deg, #6ee7b7, #059669); }

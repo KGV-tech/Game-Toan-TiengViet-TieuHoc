@@ -194,6 +194,8 @@ test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và ch�
   for (let index = 0; index < 4; index++) {
     await expect(page.locator(`.multi-choice-subquestion[data-index="${index}"]`)).toHaveClass(new RegExp(`multi-choice-subquestion--tone-${index}`));
   }
+  await expect(page.locator('.multi-choice-subquestion--label-only')).toHaveCount(4);
+  await expect.poll(() => page.locator('.multi-choice-subquestion--label-only').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
   const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
     hasVerticalOverflow: element.scrollHeight > element.clientHeight,
     topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
