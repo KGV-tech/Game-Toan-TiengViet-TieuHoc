@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.safe_password_by_place_value'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, randomNumberMatching }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, randomNumberMatching, createFourPartMultipleChoiceQuestion }) {
 
 const PLACE_CHOICES = [
     ['ones', 1, 'hàng đơn vị'], ['tens', 10, 'hàng chục'], ['hundreds', 100, 'hàng trăm'],
@@ -17,6 +17,18 @@ const CLASS_CHOICES = [
     ['thousandsClass', 'lớp nghìn', [1000, 10000, 100000]],
     ['millionsClass', 'lớp triệu', [1000000, 10000000, 100000000]],
     ['billionsClass', 'lớp tỷ', [1000000000, 10000000000, 100000000000]]
+];
+const SAFE_ILLUSTRATIONS = [
+    './src/assets/safe-password-3d-v3.png',
+    './src/assets/safe-password-classic-red-v1.png',
+    './src/assets/safe-password-future-violet-v1.png',
+    './src/assets/safe-password-mini-teal-v1.png'
+];
+const OPEN_SAFE_ILLUSTRATIONS = [
+    './src/assets/safe-password-open-v1.png',
+    './src/assets/safe-password-classic-red-open-v1.png',
+    './src/assets/safe-password-future-violet-open-v1.png',
+    './src/assets/safe-password-mini-teal-open-v1.png'
 ];
 
 function digitAt(value, place) {
@@ -116,7 +128,7 @@ function formatPassword(value, codeLength) {
     return formatNumber(String(value).padStart(codeLength, '0'));
 }
 
-function generateSafePassword(config = {}, random = Math.random) {
+function generateSafePasswordRound(config, random) {
     const minimumCodeLength = clampCodeLength(config.minimumCodeLength ?? config.codeLength ?? 9);
     const maximumCodeLength = clampCodeLength(config.maximumCodeLength ?? config.codeLength ?? 9);
     if (minimumCodeLength > maximumCodeLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
@@ -128,16 +140,48 @@ function generateSafePassword(config = {}, random = Math.random) {
     const wrongBoth = randomNumberMatching(rule.minimum, rule.maximum, value => !isSafePassword(value, rule) && value !== wrongCondition1 && value !== wrongCondition2 && value !== correct, random);
     const firstCondition = rule.condition1.text.charAt(0).toLocaleLowerCase('vi-VN') + rule.condition1.text.slice(1);
     const secondCondition = rule.condition2.text.charAt(0).toLocaleLowerCase('vi-VN') + rule.condition2.text.slice(1);
-    const question = `Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng ${firstCondition} và ${secondCondition}.`;
-
+    const prompt = `Biết rằng ${firstCondition} và ${secondCondition}.`;
     return {
-        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
-        type: 'Trắc nghiệm', templateId: 'number.safe_password_by_place_value', q: question,
-        imageUrl: './src/assets/safe-password-3d-v3.png', passwordCode: correct, codeLength,
-        options: shuffle([correct, wrongCondition1, wrongCondition2, wrongBoth], random).map(value => formatPassword(value, codeLength)), ans: formatPassword(correct, codeLength),
+        prompt,
+        passwordCode: correct,
+        answer: formatPassword(correct, codeLength),
+        options: shuffle([correct, wrongCondition1, wrongCondition2, wrongBoth], random).map(value => formatPassword(value, codeLength)),
         explanation: `Mật khẩu ${formatPassword(correct, codeLength)} thỏa cả hai điều kiện: ${rule.condition1.text}. ${rule.condition2.text}.`,
-        templateVariables: { question, condition1: rule.condition1.text, condition2: rule.condition2.text, codeLength: String(codeLength), password_cells: codeLength, condition1Place: rule.condition1.scope === 'place' ? rule.condition1.key : null, condition2Place: rule.condition2.scope === 'place' ? rule.condition2.key : null, condition1Scope: rule.condition1.scope, condition2Scope: rule.condition2.scope }
+        codeLength,
+        condition1: rule.condition1.text,
+        condition2: rule.condition2.text,
+        condition1Place: rule.condition1.scope === 'place' ? rule.condition1.key : null,
+        condition2Place: rule.condition2.scope === 'place' ? rule.condition2.key : null,
+        condition1Scope: rule.condition1.scope,
+        condition2Scope: rule.condition2.scope
     };
+}
+
+function generateSafePassword(config = {}, random = Math.random) {
+    const subquestions = ['a', 'b', 'c', 'd'].map((label, index) => {
+        let lastError;
+        for (let attempt = 0; attempt < 24; attempt++) {
+            try {
+                return { label, imageUrl: SAFE_ILLUSTRATIONS[index], openedImageUrl: OPEN_SAFE_ILLUSTRATIONS[index], ...generateSafePasswordRound(config, random) };
+            } catch (error) {
+                lastError = error;
+            }
+        }
+        throw lastError;
+    });
+    const prompt = 'Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu sau.';
+
+    const question = createFourPartMultipleChoiceQuestion(
+        'number.safe_password_by_place_value',
+        prompt,
+        subquestions,
+        'Mỗi đáp án đúng phải thỏa đồng thời cả hai điều kiện của câu tương ứng.',
+        { question: prompt, exercises: subquestions.map(item => `${item.label}) ${item.prompt}`).join('<br>'), condition1: subquestions[0].condition1, condition2: subquestions[0].condition2, codeLength: String(subquestions[0].codeLength), password_cells: String(subquestions[0].codeLength), condition1Place: subquestions[0].condition1Place, condition2Place: subquestions[0].condition2Place, condition1Scope: subquestions[0].condition1Scope, condition2Scope: subquestions[0].condition2Scope }
+    );
+    question.imageUrl = './src/assets/safe-password-3d-v3.png';
+    question.codeLength = subquestions[0].codeLength;
+    question.passwordCode = subquestions[0].passwordCode;
+    return question;
 }
 
 return generateSafePassword;

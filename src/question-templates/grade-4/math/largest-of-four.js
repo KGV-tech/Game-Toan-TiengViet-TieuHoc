@@ -4,23 +4,30 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.largest_of_four'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createFourPartMultipleChoiceQuestion }) {
 
 function generateLargestOfFour(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 1000;
     const maximum = config.maximum ?? 99999;
-    const values = new Set();
-    while (values.size < 4) values.add(randomInt(minimum, maximum, random));
-    const options = [...values];
-    const answer = Math.max(...options);
+    const subquestions = ['a', 'b', 'c', 'd'].map(label => {
+        const values = new Set();
+        while (values.size < 4) values.add(randomInt(minimum, maximum, random));
+        const options = [...values];
+        const answer = Math.max(...options);
+        return {
+            label,
+            prompt: 'Tìm số lớn nhất.',
+            options: shuffle(options, random).map(formatNumber),
+            answer: formatNumber(answer)
+        };
+    });
 
-    return createQuestion(
+    return createFourPartMultipleChoiceQuestion(
         'number.largest_of_four',
-        'Hãy tìm số lớn nhất trong các số sau.',
-        shuffle(options, random),
-        answer,
-        `So sánh bốn số theo hàng chục nghìn, rồi đến hàng nghìn để chọn số lớn nhất là ${formatNumber(answer)}.`,
-        { question: 'Hãy tìm số lớn nhất trong các số sau.' }
+        'Hãy tìm số lớn nhất trong mỗi nhóm bốn số sau.',
+        subquestions,
+        'So sánh từng nhóm bốn số theo các hàng từ trái sang phải để chọn số lớn nhất.',
+        { question: 'Hãy tìm số lớn nhất trong mỗi nhóm bốn số sau.' }
     );
 }
 

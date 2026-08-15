@@ -20,19 +20,23 @@ function joinVietnamese(parts) {
 function generateComposeFromPlaces(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 10000;
     const maximum = config.maximum ?? 99999;
-    const value = randomNumberMatching(minimum, maximum, number => expandedTerms(number).length >= 2, random);
-    const description = joinVietnamese(expandedTerms(value).map(term => {
-        const placeValue = 10 ** Math.floor(Math.log10(term));
-        return `${term / placeValue} ${placeLabels[placeValue]}`;
-    }));
-    const prompt = `Viết số rồi đọc số, biết số đó gồm: ${description}.<br>Số đó là ___`;
+    const subquestions = ['a', 'b', 'c', 'd'].map(label => {
+        const value = randomNumberMatching(minimum, maximum, number => expandedTerms(number).length >= 2, random);
+        const description = joinVietnamese(expandedTerms(value).map(term => {
+            const placeValue = 10 ** Math.floor(Math.log10(term));
+            return `${term / placeValue} ${placeLabels[placeValue]}`;
+        }));
+        return { label, value, description, display: `${label}) Viết số, biết số đó gồm: ${description}. Số đó là ___` };
+    });
+    const exercises = subquestions.map(item => item.display).join('<br>');
+    const prompt = `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
 
     return createFillBlankQuestion(
         'number.compose_from_places',
         prompt,
-        value,
-        `Ghép các chữ số theo từng hàng, ta được số ${formatNumber(value)}.`,
-        { question: prompt, place_values: description, blank: '___', number: value }
+        subquestions.map(item => item.value),
+        'Ghép các chữ số theo từng hàng ở mỗi câu a, b, c, d để viết số đúng.',
+        { question: prompt, exercises, place_values: subquestions.map(item => item.description).join('; '), blank: '___', number: subquestions.map(item => formatNumber(item.value)).join(', ') }
     );
 }
 

@@ -167,6 +167,16 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .ans-btn.selected { background: linear-gradient(180deg, #fbbf24, #d97706); border-color: #fde047; border-bottom-color: #b45309; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
 .ans-btn.correct { background: linear-gradient(180deg, #4ade80, #16a34a); border-color: #86efac; border-bottom-color: #14532d; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); animation: bounce 0.5s ease; }
 .ans-btn.wrong { background: linear-gradient(180deg, #f87171, #dc2626); border-color: #fca5a5; border-bottom-color: #7f1d1d; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+.multi-choice-subquestions { display: grid; gap: 12px; width: 100%; }
+.multi-choice-subquestion { padding: 12px 16px; border: 2px solid rgba(148, 163, 184, .6); border-radius: 14px; background: rgba(255, 255, 255, .94); color: #1e293b; }
+.multi-choice-subquestion h3 { display: flex; gap: 8px; align-items: baseline; margin: 0 0 10px; font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.35; }
+.multi-choice-subquestion h3 span { color: #2563eb; }
+.multi-choice-subquestion__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.multi-choice-subquestion__option { display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; padding: 9px 8px; border: 2px solid #93c5fd; border-radius: 9px; background: #eff6ff; color: #1e3a8a; font: inherit; font-size: clamp(.9rem, 1.3vw, 1.1rem); font-weight: 800; cursor: pointer; }
+.multi-choice-subquestion__option:hover { background: #dbeafe; }
+.multi-choice-subquestion__option.selected { background: #fbbf24; border-color: #f59e0b; color: #fff; }
+.multi-choice-subquestion__option.correct { background: #22c55e; border-color: #16a34a; color: #fff; }
+.multi-choice-subquestion__option.wrong { background: #ef4444; border-color: #dc2626; color: #fff; }
 
 .drag-container { display: flex; flex-direction: column; gap: 30px; width: 100%; }
 .drop-zone { min-height: 100px; border: 4px dashed rgba(255,255,255,0.6); border-radius: 20px; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 15px; font-size: 1.5rem; color: #fff; font-weight: bold; box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); }
@@ -559,6 +569,12 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .safe-password-copy { font-size: clamp(1.25rem, 2vw, 1.75rem); line-height: 1.45; }
 .safe-password-visual { float: right; width: min(30%, 203px); margin: 0 0 12px clamp(14px, 2vw, 26px); }
 .safe-password-illustration { display: block; width: 100%; }
+.multi-choice-subquestion__heading { display: flex; align-items: center; gap: 14px; }
+.multi-choice-subquestion__heading h3 { flex: 1; }
+.multi-choice-subquestion--safe-password .safe-password-illustration { width: clamp(74px, 9vw, 118px); max-height: 104px; object-fit: contain; flex: 0 0 auto; }
+.multi-choice-subquestion--safe-password .multi-choice-subquestion__options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.multi-choice-subquestion--safe-password .ans-text { white-space: nowrap; }
+.multi-choice-subquestion--safe-password .multi-choice-subquestion__option { min-height: 36px; padding: 6px 7px; font-size: clamp(.78rem, 1.05vw, .95rem); }
 .safe-password-illustration--opened { animation: safe-password-unlock .55s cubic-bezier(.2, .8, .25, 1) both; filter: drop-shadow(0 0 12px rgba(250, 204, 21, .82)); }
 @keyframes safe-password-unlock { 0% { transform: scale(.88) rotate(-2deg); opacity: .35; } 68% { transform: scale(1.08) rotate(1deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 .tf-template-number { color: #1e293b; font-size: clamp(1.8rem, 3vw, 2.7rem); font-weight: 900; }
@@ -1041,6 +1057,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .station:active { transform: scale(0.96); }
   .drag-item { font-size: 1.1rem; padding: 10px 15px; }
   .ans-btn { font-size: 1.1rem; padding: 10px 15px; }
+  .multi-choice-subquestion__options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .multi-choice-subquestion--safe-password .multi-choice-subquestion__options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .drag-inventory { gap: 10px; padding: 10px; }
   .drag-slot { height: auto; min-height: 40px; line-height: normal; padding: 5px; min-width: 60px; }
   .question-box { font-size: 1.5rem; padding: 15px; }
