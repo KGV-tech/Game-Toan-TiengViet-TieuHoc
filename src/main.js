@@ -2090,18 +2090,34 @@ const app = {
                 let inputs = [];
 
                 if (parts.length > 1) {
-                    const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
-                    let html = '<div class="template-fill-layout"><div class="template-fill-row">';
-                    for (let i = 0; i < parts.length; i++) {
-                        html += toRows(parts[i]);
-                        if (i < parts.length - 1) {
-                            html += `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
+                    const isComposeFromPlaces = q.templateId === 'number.compose_from_places';
+                    if (isComposeFromPlaces) {
+                        const rows = String(q.q || '').split(/<br\s*\/?\s*>/i).filter(Boolean);
+                        const [heading = '', ...subquestions] = rows;
+                        let inputIndex = 0;
+                        const renderSubquestion = row => {
+                            const input = `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${inputIndex++}" autocomplete="off">`;
+                            const formattedRow = app.data.formatMathText(row);
+                            const withAnswer = formattedRow.replace(/(Số đó là)\s*___/i, `<span class="template-compose-answer">$1 ${input}</span>`);
+                            return `<div class="template-compose-row">${withAnswer === formattedRow ? formattedRow.replace(/___/, input) : withAnswer}</div>`;
+                        };
+                        const html = `<div class="template-compose-layout"><div class="template-compose-heading">${app.data.formatMathText(heading)}</div>${subquestions.map(renderSubquestion).join('')}</div>`;
+                        questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--compose');
+                        questionContainer.innerHTML = html;
+                    } else {
+                        const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
+                        let html = '<div class="template-fill-layout"><div class="template-fill-row">';
+                        for (let i = 0; i < parts.length; i++) {
+                            html += toRows(parts[i]);
+                            if (i < parts.length - 1) {
+                                html += `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${i}" autocomplete="off">`;
+                            }
                         }
+                        html += '</div></div>';
+                        if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
+                        questionContainer.classList.add('question-box--template', 'question-box--fill');
+                        questionContainer.innerHTML = html;
                     }
-                    html += '</div></div>';
-                    if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                    questionContainer.classList.add('question-box--template', 'question-box--fill');
-                    questionContainer.innerHTML = html;
 
                     for (let i = 0; i < parts.length - 1; i++) {
                         const input = document.getElementById(`fill-input-${i}`);

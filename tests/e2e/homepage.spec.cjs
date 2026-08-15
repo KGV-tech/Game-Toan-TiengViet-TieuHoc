@@ -500,6 +500,29 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
 });
 
+test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh “Số đó là”', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compose_from_places', {
+      minimum: 10000, maximum: 99999
+    }, () => 0.42);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--compose .template-compose-row')).toHaveCount(4);
+  await expect(page.locator('.question-box--compose .template-compose-answer')).toHaveCount(4);
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-row').first().evaluate(element => getComputedStyle(element).textAlign)).toBe('left');
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-answer').first().evaluate(element => getComputedStyle(element).whiteSpace)).toBe('nowrap');
+  await captureUiReview(page, testInfo, 'compose-from-places-desktop.png');
+});
+
 test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
