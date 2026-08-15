@@ -262,6 +262,22 @@ test('chi tiết kết quả của câu Đúng/Sai hiển thị đủ bốn nh�
   await expect(details).not.toContainText('<br>');
 });
 
+test('chi tiết điền khuyết bốn phép tính không lặp nhãn phụ rỗng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const historyQuestion = await page.evaluate(() => app.game.formatHistoryQuestion({
+    q: 'Hãy điền số thích hợp vào chỗ trống:<br>a. ___ + 10 713 = 11 133<br>b. 13 102 = 91 714 ÷ ___',
+    type: 'Điền khuyết',
+    subquestions: [{ label: 'a' }, { label: 'b' }]
+  }));
+
+  expect(historyQuestion).toContain('Hãy điền số thích hợp vào chỗ trống:');
+  expect(historyQuestion).not.toContain('undefined');
+  expect(historyQuestion.match(/a\./g)).toHaveLength(1);
+  expect(historyQuestion.match(/b\./g)).toHaveLength(1);
+});
+
 test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
@@ -681,14 +697,20 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('.comparison-drag-sign').first()).toHaveAttribute('draggable', 'true');
   await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
   await expect(page.locator('.comparison-drag-slot')).toHaveCount(4);
+  await expect(page.locator('.comparison-drag-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-3')).toHaveCount(1);
   await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-comparisons/);
   const comparisonLayout = await page.locator('#game-play-view .play-center').evaluate(element => ({
     hasVerticalOverflow: element.scrollHeight > element.clientHeight,
     horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top),
+    titleBackground: getComputedStyle(element.querySelector('.template-question-copy')).backgroundImage
   }));
   expect(comparisonLayout).toMatchObject({ hasVerticalOverflow: false, horizontalOverflow: false });
   expect(comparisonLayout.topInset).toBeLessThanOrEqual(16);
+  expect(comparisonLayout.titleBackground).not.toBe('none');
   await page.locator('.comparison-drag-sign', { hasText: '>' }).click();
   await page.locator('.comparison-drag-slot').first().click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveText('>');

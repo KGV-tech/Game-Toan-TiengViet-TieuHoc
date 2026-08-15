@@ -1605,7 +1605,7 @@ const app = {
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
             }
-            if (Array.isArray(q.subquestions)) {
+            if (q.type === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 detail.subquestions = q.subquestions.map(({ label, prompt, options }) => ({ label, prompt, options }));
             }
             return detail;
@@ -1616,7 +1616,7 @@ const app = {
                 lines.push('Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:');
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
             }
-            if (Array.isArray(detail.subquestions)) {
+            if (detail.type === 'Trắc nghiệm' && Array.isArray(detail.subquestions)) {
                 lines.push(...detail.subquestions.map(item => `${item.label}) ${item.prompt}<br>${(item.options || []).map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join(' · ')}`));
             }
             return app.data.formatQuestionDetailHTML(lines.join('<br>'));
@@ -1816,7 +1816,7 @@ const app = {
                 optContainer.className = '';
                 playCenter?.classList.add('play-center--four-comparisons');
                 questionContainer.classList.add('question-box--template', 'question-box--four-comparisons');
-                questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row"><span class="comparison-drag-label">${row.label}.</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
+                questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row comparison-drag-row--tone-${index % 4}"><span class="comparison-drag-label">${row.label}.</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
                 const answers = new Array(q.comparisonRows.length).fill('');
                 let selectedSign = '';
                 const signButtons = [...questionContainer.querySelectorAll('.comparison-drag-sign')];
