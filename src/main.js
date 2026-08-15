@@ -1644,7 +1644,7 @@ const app = {
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
-            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons');
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
@@ -1814,6 +1814,7 @@ const app = {
                 optContainer.appendChild(controls);
             } else if (qType === 'Kéo thả' && Array.isArray(q.comparisonRows)) {
                 optContainer.className = '';
+                playCenter?.classList.add('play-center--four-comparisons');
                 questionContainer.classList.add('question-box--template', 'question-box--four-comparisons');
                 questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row"><span class="comparison-drag-label">${row.label}.</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
                 const answers = new Array(q.comparisonRows.length).fill('');

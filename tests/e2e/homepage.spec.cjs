@@ -681,6 +681,14 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('.comparison-drag-sign').first()).toHaveAttribute('draggable', 'true');
   await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
   await expect(page.locator('.comparison-drag-slot')).toHaveCount(4);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-comparisons/);
+  const comparisonLayout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(comparisonLayout).toMatchObject({ hasVerticalOverflow: false, horizontalOverflow: false });
+  expect(comparisonLayout.topInset).toBeLessThanOrEqual(16);
   await page.locator('.comparison-drag-sign', { hasText: '>' }).click();
   await page.locator('.comparison-drag-slot').first().click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveText('>');
@@ -694,6 +702,35 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveCSS('border-color', 'rgb(74, 222, 128)');
   await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(1);
+
+  const expandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 10000, maximum: 99999
+    }, (() => { let seed = 84; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(expandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
+  await captureUiReview(page, testInfo, 'compare-number-forms-desktop.png');
+
+  const longExpandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 100000000, maximum: 999999999
+    }, (() => { let seed = 85; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(longExpandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{

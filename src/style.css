@@ -1630,6 +1630,41 @@ input[type="text"], input[type="password"], select, textarea {
 }
 #game-play-view .play-center--four-expressions .four-operations-practice__expression .magic-input { width: min(95px, 11vw); min-width: 64px; font-size: clamp(.9rem, 1.25vw, 1.1rem); }
 
+#game-play-view .play-center.play-center--four-comparisons {
+    height: calc(100vh - 48px);
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+    padding: 10px clamp(14px, 1.5vw, 22px) 14px;
+}
+#game-play-view .play-center--four-comparisons .game-header {
+    margin: 0 0 8px;
+    font-size: clamp(1rem, 1.25vw, 1.15rem);
+}
+#game-play-view .play-center--four-comparisons .question-progress { padding: 6px 15px; }
+#game-play-view .play-center--four-comparisons .score-display { padding: 5px 12px; border-bottom-width: 4px; }
+#game-play-view .play-center--four-comparisons .question-box { min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
+#game-play-view .play-center--four-comparisons .template-question-copy { margin: 0 0 7px; font-size: clamp(1.2rem, 1.7vw, 1.45rem); }
+#game-play-view .play-center--four-comparisons .comparison-drag-controls { gap: 14px; margin: 0 0 9px; }
+#game-play-view .play-center--four-comparisons .comparison-drag-sign { width: 46px; height: 46px; border-width: 3px; font-size: 1.8rem; box-shadow: 0 5px 0 #1e40af; }
+#game-play-view .play-center--four-comparisons .comparison-drag-sign:hover,
+#game-play-view .play-center--four-comparisons .comparison-drag-sign.selected { box-shadow: 0 6px 0 #1e40af, 0 0 12px rgba(253,224,71,.75); }
+#game-play-view .play-center--four-comparisons .comparison-drag-rows { gap: 7px; }
+#game-play-view .play-center--four-comparisons .comparison-drag-row {
+    grid-template-columns: auto minmax(80px, .5fr) auto minmax(290px, 1.9fr);
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 11px;
+}
+#game-play-view .play-center--four-comparisons .comparison-drag-label { font-size: clamp(1rem, 1.45vw, 1.2rem); }
+#game-play-view .play-center--four-comparisons .comparison-drag-side {
+    font-size: clamp(.8rem, 1.05vw, .98rem);
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+#game-play-view .play-center--four-comparisons .comparison-drag-slot { width: 40px; height: 40px; border-width: 3px; font-size: 1.7rem; }
+
 #exam-select-screen {
     justify-content: center;
     padding: 16px clamp(22px, 4vw, 72px);
