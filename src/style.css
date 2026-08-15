@@ -569,6 +569,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .question-box--template { display: block; height: auto; min-height: 0; max-height: none; padding: clamp(18px, 2vw, 28px); overflow: visible; text-align: left; }
 .template-fill-layout { display: grid; gap: 14px; width: 100%; }
 .template-fill-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; min-height: 54px; line-height: 1.35; text-align: center; }
+.template-fill-row:not(:first-child) { justify-content: flex-start; text-align: left; }
   .template-fill-row:first-child { font-size: clamp(1.3rem, 2.25vw, 2rem); }
   .template-fill-row .magic-input { width: min(170px, 32vw); margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); }
   .four-operations-expression-title { text-align: center; color: #1e293b; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900; margin-bottom: 16px; }

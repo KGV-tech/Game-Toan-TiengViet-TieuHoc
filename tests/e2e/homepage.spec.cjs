@@ -442,6 +442,7 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
   await expect(page.locator('.question-box--fill')).toContainText('a.');
   await expect(page.locator('.question-box--fill')).toContainText('d.');
+  await expect.poll(() => page.locator('.question-box--fill .template-fill-row').nth(1).evaluate(element => getComputedStyle(element).justifyContent)).toBe('flex-start');
   await captureUiReview(page, testInfo, 'four-arithmetic-blanks-desktop.png');
 
   await page.evaluate(() => {
