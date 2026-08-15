@@ -16,7 +16,7 @@ function generateLargestOfFour(config = {}, random = Math.random) {
         const answer = Math.max(...options);
         return {
             label,
-            prompt: 'Tìm số lớn nhất.',
+            prompt: '',
             options: shuffle(options, random).map(formatNumber),
             answer: formatNumber(answer)
         };

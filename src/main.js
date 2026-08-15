@@ -1680,6 +1680,7 @@ const app = {
             if (opts.length === 0) {
                 if (qType === 'Đúng/Sai') opts = ['Đúng', 'Sai'];
                 else if (qType === 'So sánh') opts = ['>', '<', '='];
+                else if (qType === 'Kéo thả' && Array.isArray(q.comparisonRows)) opts = ['>', '<', '='];
                 else if (qType === 'Trắc nghiệm') opts = [q.ans];
                 else qType = 'Điền khuyết';
             }
@@ -1696,7 +1697,12 @@ const app = {
                     const illustration = isSafePassword && subquestion.imageUrl
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
                         : '';
-                    row.innerHTML = `<div class="multi-choice-subquestion__heading">${illustration}<h3><span>${app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)))})</span> ${app.data.formatMathText(subquestion.prompt || '')}</h3></div><div class="multi-choice-subquestion__options"></div>`;
+                    const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
+                    const partPrompt = String(subquestion.prompt || '').trim();
+                    const heading = partPrompt
+                        ? `<h3><span>${partLabel})</span> ${app.data.formatMathText(partPrompt)}</h3>`
+                        : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;
+                    row.innerHTML = `<div class="multi-choice-subquestion__heading">${illustration}${heading}</div><div class="multi-choice-subquestion__options"></div>`;
                     const choices = row.querySelector('.multi-choice-subquestion__options');
                     (subquestion.options || []).forEach((option, optionIndex) => {
                         const button = document.createElement('button');
@@ -2328,7 +2334,7 @@ const app = {
             let opts = q.options || [];
 
             if (opts.length === 0) {
-                if (qType !== 'Đúng/Sai' && qType !== 'So sánh' && qType !== 'Trắc nghiệm') {
+                if (qType !== 'Đúng/Sai' && qType !== 'So sánh' && qType !== 'Trắc nghiệm' && qType !== 'Kéo thả') {
                     qType = 'Điền khuyết';
                 }
             }
@@ -3896,6 +3902,44 @@ const app = {
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 }
         },
+        renderTemplatePreview(generator) {
+            const preview = (title, content, variant = '') => `<section class="template-preview__canvas ${variant}" aria-label="Minh họa giao diện khi học sinh làm bài"><div class="template-preview__topbar"><span>Minh họa giao diện học sinh</span><span>4 câu con · 0,25 điểm/câu</span></div><div class="template-preview__question">${title}</div>${content}</section>`;
+            const fillRows = rows => `<div class="template-preview__rows">${rows.map((row, index) => `<div class="template-preview__line"><b>${'abcd'[index]})</b><span>${row}</span></div>`).join('')}</div>`;
+            const blank = '<i class="template-preview__blank" aria-label="Ô điền đáp án"></i>';
+            const choices = values => `<div class="template-preview__choices">${values.map((value, index) => `<span><b>${'ABCD'[index]}</b>${value}</span>`).join('')}</div>`;
+            const arithmeticRows = ['125 + ___ = 368', '720 − ___ = 415', '24 × 3 = ___', '144 : 12 = ___'];
+            if (generator === 'number.compose_from_places') return preview('Hãy điền số thích hợp vào chỗ trống:', fillRows([
+                `Số gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục là ${blank}`,
+                `Số gồm 8 nghìn, 6 trăm và 4 đơn vị là ${blank}`,
+                `Số gồm 7 chục nghìn, 1 trăm và 9 đơn vị là ${blank}`,
+                `Số gồm 5 nghìn, 3 chục và 2 đơn vị là ${blank}`
+            ]), 'template-preview--fill');
+            if (generator === 'number.missing_expanded_addend') return preview('Hãy điền số thích hợp vào chỗ trống:', fillRows([
+                `33 471 = 30 000 + 3 000 + ${blank} + 70 + 1`,
+                `75 850 = 70 000 + 5 000 + 800 + ${blank}`,
+                `86 209 = 80 000 + 6 000 + ${blank} + 9`,
+                `42 135 = 40 000 + ${blank} + 100 + 30 + 5`
+            ]), 'template-preview--fill');
+            if (generator === 'number.neighbor_numbers') return preview('Điền số liền trước và số liền sau:', fillRows([
+                `${blank} ; 42 135 ; ${blank}`,
+                `${blank} ; 80 000 ; ${blank}`,
+                `${blank} ; 99 999 ; ${blank}`,
+                `${blank} ; 7 208 ; ${blank}`
+            ]), 'template-preview--fill');
+            if (generator === 'number.four_operations_fill_blanks' || generator === 'number.four_arithmetic_blanks') return preview('Hãy điền số thích hợp vào chỗ trống:', fillRows(arithmeticRows.map(row => row.replace('___', blank))), 'template-preview--fill');
+            if (generator === 'number.four_operations_expressions') return preview('Tính giá trị của biểu thức:', `<div class="template-preview__expression-grid">${['172 + 234 + 171', '128 : 8 + 5', '829 − (886 − 447)', '28 × 18 : 9'].map((row, index) => `<div class="template-preview__expression template-preview__expression--${index + 1}"><b>${'abcd'[index]})</b>${row} = ${blank}</div>`).join('')}</div>`, 'template-preview--expression');
+            if (generator === 'number.compare_number_forms' || generator === 'number.four_arithmetic_comparisons') return preview('Điền dấu thích hợp:', fillRows([
+                '8 563 <i class="template-preview__drop">?</i> 8 000 + 500 + 60 + 3',
+                '34 000 <i class="template-preview__drop">?</i> 33 979',
+                '17 784 − 4 884 <i class="template-preview__drop">?</i> 16 033 + 18 927',
+                '60 000 + 700 <i class="template-preview__drop">?</i> 60 700'
+            ]), 'template-preview--comparison');
+            if (generator === 'number.place_value_true_false') return preview('Số 14 021 983 · Hãy chọn ĐÚNG hay SAI:', `<div class="template-preview__true-false">${['Chữ số 4 thuộc lớp triệu.', 'Chữ số 1 ở hàng chục.', 'Chữ số 9 thuộc lớp đơn vị.', 'Chữ số 0 ở hàng trăm nghìn.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
+            if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
+            if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div class="template-preview__safe-icon">🔒</div><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
+            const question = generator === 'number.smallest_of_four' ? 'Hãy tìm số bé nhất trong các số sau.' : generator === 'number.largest_of_four' ? 'Hãy tìm số lớn nhất trong các số sau.' : 'Số nào dưới đây có chữ số hàng trăm là 8?';
+            return preview(question, `<div class="template-preview__mc"><div><b>a)</b>${choices(['15 870', '90 435', '12 345', '9 403'])}</div><div><b>b)</b>${choices(['24 680', '18 405', '32 901', '27 150'])}</div></div>`, 'template-preview--multiple-choice');
+        },
         showTemplateExample() {
             const generator = document.getElementById('template-generator')?.value;
             const preset = this.templatePresets[generator] || this.templatePresets['number.digit_at_place'];
@@ -3903,7 +3947,7 @@ const app = {
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
             const variables = document.getElementById('template-variables');
-            if (target) target.textContent = preset.example;
+            if (target) target.innerHTML = this.renderTemplatePreview(generator);
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
             if (variables) variables.innerHTML = `<b>Biến có thể chèn</b><div>${preset.variables.map(([token, description]) => `<button type="button" class="template-variable" title="${app.data.sanitizeHTML(description)}" onclick="app.admin.insertTemplateVariable('${token}')"><code>${token}</code><span>${app.data.sanitizeHTML(description)}</span></button>`).join('')}</div>`;
