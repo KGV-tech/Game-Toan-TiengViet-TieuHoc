@@ -36,6 +36,32 @@ function createQuestion(templateId, prompt, values, correctValue, explanation, t
     };
 }
 
+function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, explanation, templateVariables = {}) {
+    if (!Array.isArray(subquestions) || subquestions.length !== 4) throw new Error('Bài trắc nghiệm bốn phần cần đúng bốn câu con.');
+    const normalizedSubquestions = subquestions.map((item, index) => ({
+        label: item.label || String.fromCharCode(97 + index),
+        prompt: item.prompt || '',
+        options: [...item.options],
+        answer: item.answer,
+        imageUrl: item.imageUrl || '',
+        openedImageUrl: item.openedImageUrl || ''
+    }));
+    return {
+        classlevel: 'Lớp 4',
+        subject: 'Toán',
+        semester: 'Học kỳ 1',
+        topic: '1. Số tự nhiên',
+        type: 'Trắc nghiệm',
+        templateId,
+        q: prompt,
+        options: [],
+        ans: normalizedSubquestions.map(item => item.answer).join(', '),
+        explanation,
+        templateVariables,
+        subquestions: normalizedSubquestions
+    };
+}
+
 function createFillBlankQuestion(templateId, prompt, answers, explanation, templateVariables = {}) {
     const answerList = Array.isArray(answers) ? answers : [answers];
     return {
@@ -86,5 +112,5 @@ function expandedTerms(value) {
     }, []);
 }
 
-return { randomInt, shuffle, formatNumber, createQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
+return { randomInt, shuffle, formatNumber, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
 }));

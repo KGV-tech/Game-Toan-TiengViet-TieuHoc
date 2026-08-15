@@ -219,9 +219,20 @@ const app = {
                 const variables = { question: generated.q, ...(generated.templateVariables || {}) };
                 const legacySafePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
                 const safePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.';
-                const promptTemplate = template.generator_key === 'number.safe_password_by_place_value' && String(template.prompt_template || '').trim() === legacySafePrompt
-                    ? safePrompt
-                    : String(template.prompt_template || '{question}');
+                const legacySingleQuestionPrompts = {
+                    'number.digit_at_place': ['Số nào dưới đây có chữ số hàng {place} là {digit}?'],
+                    'number.smallest_of_four': ['Hãy tìm số bé nhất trong các số sau.'],
+                    'number.largest_of_four': ['Hãy tìm số lớn nhất trong các số sau.'],
+                    'number.compose_from_places': ['Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}'],
+                    'number.missing_expanded_addend': ['Điền số còn thiếu:<br>{number} = {expression}'],
+                    'number.neighbor_numbers': ['Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}'],
+                    'number.compare_number_forms': ['Điền dấu thích hợp:<br>{comparison}'],
+                    'number.safe_password_by_place_value': [legacySafePrompt, safePrompt]
+                };
+                const savedPrompt = String(template.prompt_template || '{question}').trim();
+                const promptTemplate = legacySingleQuestionPrompts[template.generator_key]?.includes(savedPrompt)
+                    ? '{question}'
+                    : savedPrompt;
                 const prompt = promptTemplate.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
                 return {
                     ...generated,
@@ -1568,6 +1579,20 @@ const app = {
                 : (isFill ? this.normalizeFillAnswer(value) : String(value || '').trim());
             const expectedAnswers = expected.map(normalize);
             const chosenAnswers = selectedAnswers.map(normalize);
+            const partAnswerCounts = Array.isArray(q?.partAnswerCounts) ? q.partAnswerCounts.map(Number) : [];
+            const hasGroupedParts = partAnswerCounts.length === 4
+                && partAnswerCounts.every(count => Number.isInteger(count) && count > 0)
+                && partAnswerCounts.reduce((total, count) => total + count, 0) === expectedAnswers.length;
+            if (hasGroupedParts) {
+                let offset = 0;
+                const correctCount = partAnswerCounts.reduce((total, count) => {
+                    const isPartCorrect = expectedAnswers.slice(offset, offset + count)
+                        .every((answer, index) => chosenAnswers[offset + index] === answer);
+                    offset += count;
+                    return total + (isPartCorrect ? 1 : 0);
+                }, 0);
+                return { answerCount: partAnswerCounts.length, correctCount, points: correctCount / partAnswerCounts.length, isCorrect: correctCount === partAnswerCounts.length };
+            }
             const correctCount = isMatching
                 ? Math.min(answerCount, new Set(chosenAnswers.filter(answer => expectedAnswers.includes(answer))).size)
                 : expectedAnswers.reduce((total, answer, index) => total + (chosenAnswers[index] === answer ? 1 : 0), 0);
@@ -1580,6 +1605,9 @@ const app = {
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
             }
+            if (Array.isArray(q.subquestions)) {
+                detail.subquestions = q.subquestions.map(({ label, prompt, options }) => ({ label, prompt, options }));
+            }
             return detail;
         },
         formatHistoryQuestion(detail) {
@@ -1587,6 +1615,9 @@ const app = {
             if (detail.type === 'Đúng/Sai' && Array.isArray(detail.statements)) {
                 lines.push('Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:');
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
+            }
+            if (Array.isArray(detail.subquestions)) {
+                lines.push(...detail.subquestions.map(item => `${item.label}) ${item.prompt}<br>${(item.options || []).map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join(' · ')}`));
             }
             return app.data.formatQuestionDetailHTML(lines.join('<br>'));
         },
@@ -1612,10 +1643,10 @@ const app = {
 
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
-                questionContainer.innerHTML = `<div class="safe-password-visual"><img class="safe-password-illustration" src="./src/assets/safe-password-3d-v3.png" alt="Hình minh họa két sắt"></div><div class="safe-password-copy">${qHtml}</div>`;
+                questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>`;
             } else {
                 if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
                 questionContainer.innerHTML = qHtml;
@@ -1624,6 +1655,7 @@ const app = {
             const optContainer = document.getElementById('game-options-container');
             optContainer.innerHTML = '';
             this.state.selectedAns = null;
+            this.state.multipleChoiceSelections = null;
 
             const btnCheck = document.getElementById('submit-ans-btn');
             btnCheck.disabled = true;
@@ -1641,6 +1673,7 @@ const app = {
             else if (rawType.includes('Kéo thả')) qType = 'Kéo thả';
             else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
             else qType = 'Điền khuyết';
+            if (Array.isArray(q.comparisonRows)) qType = 'Kéo thả';
 
             let opts = q.options || [];
 
@@ -1651,7 +1684,37 @@ const app = {
                 else qType = 'Điền khuyết';
             }
 
-            if (qType === 'Trắc nghiệm') {
+            if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
+                optContainer.className = 'multi-choice-subquestions';
+                const labels = ['A', 'B', 'C', 'D'];
+                this.state.multipleChoiceSelections = new Array(q.subquestions.length).fill('');
+                q.subquestions.forEach((subquestion, index) => {
+                    const row = document.createElement('section');
+                    const isSafePassword = q.templateId === 'number.safe_password_by_place_value';
+                    row.className = `multi-choice-subquestion${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}`;
+                    row.dataset.index = index;
+                    const illustration = isSafePassword && subquestion.imageUrl
+                        ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
+                        : '';
+                    row.innerHTML = `<div class="multi-choice-subquestion__heading">${illustration}<h3><span>${app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)))})</span> ${app.data.formatMathText(subquestion.prompt || '')}</h3></div><div class="multi-choice-subquestion__options"></div>`;
+                    const choices = row.querySelector('.multi-choice-subquestion__options');
+                    (subquestion.options || []).forEach((option, optionIndex) => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'multi-choice-subquestion__option';
+                        button.innerHTML = `<span class="ans-badge">${labels[optionIndex] || ''}</span><span class="ans-text">${app.data.formatMathText(option)}</span>`;
+                        button.onclick = () => {
+                            choices.querySelectorAll('button').forEach(item => item.classList.remove('selected'));
+                            button.classList.add('selected');
+                            this.state.multipleChoiceSelections[index] = option;
+                            this.state.selectedAns = this.state.multipleChoiceSelections.join(', ');
+                            btnCheck.disabled = this.state.multipleChoiceSelections.some(answer => !answer);
+                        };
+                        choices.appendChild(button);
+                    });
+                    optContainer.appendChild(row);
+                });
+            } else if (qType === 'Trắc nghiệm') {
                 optContainer.className = 'options-grid multiple_choice';
                 const labels = ['A', 'B', 'C', 'D'];
                 opts.forEach((opt, idx) => {
@@ -1994,6 +2057,27 @@ const app = {
                     numpad.appendChild(btn);
                 });
                 optContainer.appendChild(numpad);
+            } else if (qType === 'Điền khuyết' && q.templateId === 'number.four_operations_expressions' && Array.isArray(q.practiceRows)) {
+                optContainer.className = '';
+                const inputs = [];
+                const instruction = String(q.q || '').split(/<br\s*\/?\s*>/i)[0] || 'Tính giá trị của biểu thức:';
+                const renderExpression = (row, index) => {
+                    const [beforeBlank = '', afterBlank = ''] = String(row.expression || '').split('___');
+                    const tone = ['sky', 'rose', 'mint', 'lavender'][index];
+                    return `<div class="four-operations-expression-row"><div class="four-operations-expression-row__label">${app.data.sanitizeHTML(row.label)}.</div><div class="four-operations-expression-row__content"><div class="four-operations-practice__expression four-operations-practice__expression--${tone}">${app.data.formatMathText(beforeBlank)}<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off">${app.data.formatMathText(afterBlank)}</div></div></div>`;
+                };
+                questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--four-operations-expressions');
+                questionContainer.innerHTML = `<div class="four-operations-expression-title">${app.data.formatMathText(instruction)}</div><div class="four-operations-expression-list">${q.practiceRows.map(renderExpression).join('')}</div>`;
+                q.practiceRows.forEach((_, index) => {
+                    const input = document.getElementById(`fill-input-${index}`);
+                    inputs.push(input);
+                    input.oninput = () => {
+                        input.value = app.data.formatMathNumber(input.value);
+                        const allFilled = inputs.every(item => item.value.trim() !== '');
+                        this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
+                        btnCheck.disabled = !allFilled;
+                    };
+                });
             } else if (qType === 'Điền khuyết') {
                 optContainer.className = '';
                 const parts = (q.q || '').split(/\.\.\.|___/);
@@ -2239,6 +2323,7 @@ const app = {
             else if (rawType.includes('Kéo thả')) qType = 'Kéo thả';
             else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
             else qType = 'Điền khuyết';
+            if (Array.isArray(q.comparisonRows)) qType = 'Kéo thả';
 
             let opts = q.options || [];
 
@@ -2284,6 +2369,18 @@ const app = {
                     corr.innerHTML = `✅ Đáp án đúng: <b>${app.data.formatMathText(q.ans)}</b>`;
                     optContainer.appendChild(corr);
                 }
+            } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
+                const expectedAnswers = q.subquestions.map(subquestion => String(subquestion.answer || '').trim());
+                const selectedAnswers = this.state.multipleChoiceSelections || this.getAnsArr(this.state.selectedAns);
+                isCorrect = selectedAnswers.length === expectedAnswers.length && selectedAnswers.every((answer, index) => answer === expectedAnswers[index]);
+                document.querySelectorAll('.multi-choice-subquestion').forEach((row, index) => {
+                    const correctAnswer = expectedAnswers[index];
+                    row.querySelectorAll('.multi-choice-subquestion__option').forEach(button => {
+                        const answer = button.querySelector('.ans-text').textContent;
+                        if (answer === correctAnswer) button.classList.add('correct');
+                        else if (button.classList.contains('selected')) button.classList.add('wrong');
+                    });
+                });
             } else if (qType === 'Trắc nghiệm') {
                 isCorrect = this.state.selectedAns === q.ans;
                 const optContainer = document.getElementById('game-options-container');
@@ -2549,18 +2646,19 @@ const app = {
 
             const selectedForScore = qType === 'Đúng/Sai' && Array.isArray(q.statements)
                 ? (this.state.trueFalseSelections || [])
-                : this.state.selectedAns;
+                : (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)
+                    ? (this.state.multipleChoiceSelections || [])
+                    : this.state.selectedAns);
             scoreResult = this.calculateQuestionScore(q, selectedForScore);
             isCorrect = scoreResult.isCorrect;
             this.state.score += scoreResult.points;
 
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
-                const safeImage = document.querySelector('.safe-password-illustration');
-                if (safeImage) {
-                    safeImage.src = './src/assets/safe-password-open-v1.png';
+                document.querySelectorAll('.safe-password-illustration').forEach(safeImage => {
+                    safeImage.src = safeImage.dataset.openSrc || './src/assets/safe-password-open-v1.png';
                     safeImage.alt = 'Két sắt đã mở';
                     safeImage.classList.add('safe-password-illustration--opened');
-                }
+                });
             }
 
             const bubble = document.getElementById('cat-speech-bubble');
@@ -2801,6 +2899,7 @@ const app = {
         },
 
         getQuestionType(question) {
+            if (Array.isArray(question?.comparisonRows)) return 'Kéo thả';
             const type = String(question.type || 'Trắc nghiệm').trim().normalize('NFC');
             if (type.includes('Đúng/Sai')) return 'Đúng/Sai';
             if (type.includes('So sánh')) return 'So sánh';
@@ -2819,6 +2918,14 @@ const app = {
         renderQuestionInput(question, index) {
             const type = this.getQuestionType(question);
             const options = question.options || [];
+            if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
+                return question.subquestions.map((subquestion, part) => `
+                    <fieldset class="exam-true-false-row">
+                        <legend>${app.data.sanitizeHTML(`${subquestion.label || String.fromCharCode(97 + part)}) ${subquestion.prompt || ''}`)}</legend>
+                        ${this.renderSimpleChoices(`mc_${index}_${part}`, subquestion.options || [])}
+                    </fieldset>
+                `).join('');
+            }
             if (type === 'Trắc nghiệm') return this.renderSimpleChoices(index, options);
             if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
                 return question.statements.map((statement, part) => `
@@ -2841,6 +2948,9 @@ const app = {
             const blanks = (String(question.q || '').match(/___|\.\.\./g) || []).length;
             const inputCount = Math.max(1, blanks);
             if (type === 'Kéo thả') {
+                if (Array.isArray(question.comparisonRows)) {
+                    return question.comparisonRows.map((row, part) => `<label style="display:flex; gap:10px; align-items:center; margin:8px 0;"><span>${app.data.sanitizeHTML(`${row.label || String.fromCharCode(97 + part)}) ${row.leftText} ___ ${row.rightText}`)}</span><select class="form-input" data-exam-part="${index}" data-part="${part}" style="max-width:180px;"><option value="">-- Chọn dấu --</option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select></label>`).join('');
+                }
                 if (!options.length) return '<p style="color:#dc2626;">Câu kéo thả chưa có lựa chọn.</p>';
                 const choices = options.map(item => `<option value="${app.data.sanitizeHTML(item)}">${app.data.sanitizeHTML(item)}</option>`).join('');
                 return Array.from({ length: inputCount }, (_, part) => `<select class="form-input" data-exam-part="${index}" data-part="${part}" style="margin:5px; max-width:220px;"><option value="">-- Chọn đáp án ${part + 1} --</option>${choices}</select>`).join('');
@@ -2853,6 +2963,9 @@ const app = {
                 return question.statements.map((_, part) =>
                     document.querySelector(`input[name="exam_q_tf_${index}_${part}"]:checked`)?.value || ''
                 ).join(', ');
+            }
+            if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
+                return question.subquestions.map((_, part) => document.querySelector(`input[name="exam_q_mc_${index}_${part}"]:checked`)?.value || '').join(', ');
             }
             if (['Trắc nghiệm', 'Đúng/Sai', 'So sánh'].includes(type)) {
                 return document.querySelector(`input[name="exam_q_${index}"]:checked`)?.value || '';
@@ -3588,7 +3701,17 @@ const app = {
             const presetPrompt = this.templatePresets[existing?.generator_key]?.defaultPrompt;
             const legacySafePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
             const existingPrompt = String(existing?.prompt_template || '').trim();
-            const displayedPrompt = (existingPrompt === '{question}' || (existing?.generator_key === 'number.safe_password_by_place_value' && existingPrompt === legacySafePrompt)) && presetPrompt
+            const legacyFourPartPrompt = {
+                'number.digit_at_place': 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
+                'number.smallest_of_four': 'Hãy tìm số bé nhất trong các số sau.',
+                'number.largest_of_four': 'Hãy tìm số lớn nhất trong các số sau.',
+                'number.compose_from_places': 'Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}',
+                'number.missing_expanded_addend': 'Điền số còn thiếu:<br>{number} = {expression}',
+                'number.neighbor_numbers': 'Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}',
+                'number.compare_number_forms': 'Điền dấu thích hợp:<br>{comparison}'
+            }[existing?.generator_key];
+            const safePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.';
+            const displayedPrompt = (existingPrompt === '{question}' || existingPrompt === legacyFourPartPrompt || (existing?.generator_key === 'number.safe_password_by_place_value' && [legacySafePrompt, safePrompt].includes(existingPrompt))) && presetPrompt
                 ? presetPrompt
                 : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
             const box = document.getElementById('treasure-content-area');
@@ -3602,7 +3725,7 @@ const app = {
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
               <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(displayedPrompt)}</textarea></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview"></div></div>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
@@ -3611,7 +3734,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--matching-controls"><h5>Cấu hình đối chiếu số – chữ</h5><div class="template-editor__fields"><label class="template-editor__field"><span>Dạng ghép</span><input id="template-match-shapes" class="form-input" value="${app.data.sanitizeHTML(matchingShapes)}" placeholder="5:4, 4:5"></label><label class="template-editor__field"><span>Độ dài số</span><input id="template-match-digits" class="form-input" value="${app.data.sanitizeHTML(matchingDigits)}" placeholder="7, 8, 9"></label><label class="template-editor__field"><span>Phân bố</span><select id="template-match-strategy" class="form-input">${['balanced','random','cycle'].map(item => `<option value="${item}" ${(config.digitStrategy || 'balanced') === item ? 'selected' : ''}>${item}</option>`).join('')}</select></label><label class="template-editor__field"><span>Tỷ lệ sinh số (tùy chọn)</span><input id="template-match-weights" class="form-input" value="${app.data.sanitizeHTML(matchingWeights)}" placeholder="7:20, 8:30, 9:50"></label><label class="template-editor__field"><span>Từ tiền tố chung</span><input id="template-match-prefix" class="form-input" type="number" min="0" value="${Number(config.prefixWords || 0)}"></label><label class="template-editor__field"><span>Seed (tùy chọn)</span><input id="template-match-seed" class="form-input" type="number" value="${config.seed ?? ''}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--true-false-controls"><h5>Nhận định Đúng/Sai</h5><p>Chọn nội dung bạn muốn xuất hiện trong bốn nhận định A–D. Game chỉ hỏi chữ số có trong số đã sinh, không lặp chữ số và tự tạo cả nhận định Đúng lẫn Sai.</p><div id="template-true-false-kinds" class="template-editor__checks template-editor__checks--true-false" aria-label="Loại nhận định">${checkbox('class', 'Nhận định về lớp · Ví dụ: Chữ số 8 thuộc lớp nghìn.', trueFalseKinds, 'true-false-kinds')}${checkbox('place', 'Nhận định về hàng · Ví dụ: Chữ số 9 ở hàng nghìn.', trueFalseKinds, 'true-false-kinds')}</div><p class="template-editor__rule-note">Có thể chọn cả hai để câu hỏi đa dạng; hoặc chỉ tick một loại nếu muốn luyện riêng.</p></div>
-                <div class="template-editor__rule template-editor__rule--four-arithmetic-controls"><div class="template-editor__arithmetic-settings"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-arithmetic-min-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-arithmetic-max-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMaximumDigits}"></label></div><fieldset><legend>Phép tính có thể bốc</legend><div id="template-arithmetic-operations" class="template-editor__checks">${checkbox('+', 'Phép cộng (+)', arithmeticOperations, 'arithmetic-operations')}${checkbox('-', 'Phép trừ (−)', arithmeticOperations, 'arithmetic-operations')}${checkbox('*', 'Phép nhân (×)', arithmeticOperations, 'arithmetic-operations')}${checkbox('/', 'Phép chia (÷)', arithmeticOperations, 'arithmetic-operations')}</div></fieldset><fieldset><legend>Dạng hiển thị hai vế</legend><div id="template-arithmetic-layouts" class="template-editor__checks">${checkbox('expressionLeft', 'Phép tính bên trái = kết quả', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('expressionRight', 'Kết quả = phép tính bên phải', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('twoExpressions', 'Hai vế đều là phép tính', arithmeticLayouts, 'arithmetic-layouts')}</div></fieldset><fieldset class="template-editor__rule--four-arithmetic-blank-positions"><legend>Vị trí ô trống có thể bốc</legend><div id="template-arithmetic-blank-positions" class="template-editor__checks">${checkbox('first', 'Số thứ nhất', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('second', 'Số thứ hai', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('third', 'Số thứ ba', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('fourth', 'Số thứ tư', arithmeticBlankPositions, 'arithmetic-blank-positions')}</div></fieldset></div></div>
+                <div class="template-editor__rule template-editor__rule--four-arithmetic-controls"><div class="template-editor__arithmetic-settings"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-arithmetic-min-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-arithmetic-max-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMaximumDigits}"></label></div><fieldset><legend>Phép tính có thể bốc</legend><div id="template-arithmetic-operations" class="template-editor__checks">${checkbox('+', 'Phép cộng (+)', arithmeticOperations, 'arithmetic-operations')}${checkbox('-', 'Phép trừ (−)', arithmeticOperations, 'arithmetic-operations')}${checkbox('*', 'Phép nhân (×)', arithmeticOperations, 'arithmetic-operations')}${checkbox('/', 'Phép chia (÷)', arithmeticOperations, 'arithmetic-operations')}</div></fieldset><fieldset class="template-editor__rule--four-arithmetic-layouts"><legend>Dạng hiển thị hai vế</legend><div id="template-arithmetic-layouts" class="template-editor__checks">${checkbox('expressionLeft', 'Phép tính bên trái = kết quả', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('expressionRight', 'Kết quả = phép tính bên phải', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('twoExpressions', 'Hai vế đều là phép tính', arithmeticLayouts, 'arithmetic-layouts')}</div></fieldset><fieldset class="template-editor__rule--four-arithmetic-blank-positions"><legend>Vị trí ô trống có thể bốc</legend><div id="template-arithmetic-blank-positions" class="template-editor__checks">${checkbox('first', 'Số thứ nhất', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('second', 'Số thứ hai', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('third', 'Số thứ ba', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('fourth', 'Số thứ tư', arithmeticBlankPositions, 'arithmetic-blank-positions')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-range-controls" aria-label="Khoảng giá trị mật khẩu"><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 0)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? (10 ** safePasswordMaxLength - 1))}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-controls"><h5>Độ dài mật khẩu</h5><p>Game nêu số chữ số ngay trong câu hỏi; két sắt chỉ là ảnh minh họa. Mỗi lượt, độ dài được bốc trong khoảng khai báo.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số chữ số ít nhất</span><input id="template-safe-password-min-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMinLength}"></label><label class="template-editor__field"><span>Số chữ số nhiều nhất</span><input id="template-safe-password-max-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMaxLength}"></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Điều kiện 1</legend><p>Chữ số ở một hàng được chọn phải khác một chữ số được chọn.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-places')">Tất cả</button></div><div id="template-safe-password-condition1-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition1Places, 'safe-condition1-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-digits')">Tất cả</button></div><div id="template-safe-password-condition1-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition1Digits, 'safe-condition1-digits')).join('')}</div></fieldset><fieldset><legend>Điều kiện 2</legend><p>Game tự bốc một hàng khác nếu còn hàng phù hợp với độ dài mật khẩu.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-places')">Tất cả</button></div><div id="template-safe-password-condition2-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition2Places, 'safe-condition2-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-digits')">Tất cả</button></div><div id="template-safe-password-condition2-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition2Digits, 'safe-condition2-digits')).join('')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-class-controls"><h5>Phân biệt “lớp” và “hàng”</h5><p><b>Lớp</b> luôn gồm ba hàng; <b>hàng</b> chỉ là một vị trí. Ở mỗi điều kiện, chọn một kiểu rồi cấu hình danh sách tương ứng bên dưới.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Điều kiện 1 áp dụng theo</span><select id="template-safe-password-condition1-scope" class="form-input"><option value="place" ${safeCondition1Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition1Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label><label class="template-editor__field"><span>Điều kiện 2 áp dụng theo</span><select id="template-safe-password-condition2-scope" class="form-input"><option value="place" ${safeCondition2Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition2Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Lớp có thể bốc cho Điều kiện 1</legend><div id="template-safe-password-condition1-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition1Classes, 'safe-condition1-classes')).join('')}</div></fieldset><fieldset><legend>Lớp có thể bốc cho Điều kiện 2</legend><div id="template-safe-password-condition2-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition2Classes, 'safe-condition2-classes')).join('')}</div></fieldset></div></div>
@@ -3638,8 +3761,18 @@ const app = {
                 if (safeHeading) safeHeading.textContent = '1b. Hàng ngẫu nhiên cho Điều kiện 1 · 2. Hàng ngẫu nhiên cho Điều kiện 2';
             }
             this.refreshTemplateTopics(existing?.topic || '');
+            const generatorControl = document.getElementById('template-generator');
+            generatorControl?.querySelector('option[value="number.four_operations_practice"]')?.remove();
+            const arithmeticTemplateOptions = [
+                ['number.four_operations_fill_blanks', 'Bốn phép tính: điền số còn thiếu'],
+                ['number.four_operations_expressions', 'Bốn phép tính: tính giá trị biểu thức']
+            ];
+            arithmeticTemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
+            if (generatorControl && arithmeticTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
-            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
+            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -3651,44 +3784,60 @@ const app = {
         },
         templatePresets: {
                 'number.digit_at_place': {
-                    defaultPrompt: 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
-                    guide: 'Tạo câu trắc nghiệm nhận biết chữ số ở một hàng xác định. Mỗi lượt game bốc ngẫu nhiên hàng, chữ số và bốn phương án, trong đó chỉ có một đáp án đúng.',
-                    hint: 'Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y',
-                    example: 'Ví dụ kết quả: Số nào dưới đây có chữ số hàng trăm là 8?',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d: mỗi câu bốc một hàng, một chữ số và 4 phương án; mỗi câu con đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên đầy đủ 4 câu con do game sinh.',
+                    example: 'Mẫu gồm 4 câu a–d, mỗi câu hỏi: “Số nào có chữ số hàng … là …?” cùng 4 lựa chọn.',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place}', 'tên hàng được bốc'], ['{digit}', 'chữ số được bốc']]
                 },
                 'number.smallest_of_four': {
-                    defaultPrompt: 'Hãy tìm số bé nhất trong các số sau.',
-                    guide: 'Tạo câu trắc nghiệm gồm bốn số khác nhau trong phạm vi đã chọn; học sinh tìm số bé nhất.',
-                    hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số bé nhất trong các số sau. A. 15 870  B. 90 435  C. 12 345  D. 9 403',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d; mỗi câu có 4 số khác nhau và yêu cầu tìm số bé nhất. Mỗi câu con đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên câu dẫn và 4 nhóm phương án.',
+                    example: 'Mẫu gồm 4 nhóm a–d; mỗi nhóm có 4 số để chọn số bé nhất.',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
                 'number.largest_of_four': {
-                    defaultPrompt: 'Hãy tìm số lớn nhất trong các số sau.',
-                    guide: 'Tạo câu trắc nghiệm gồm bốn số khác nhau trong phạm vi đã chọn; học sinh tìm số lớn nhất.',
-                    hint: 'Không cần biến. Game tự sinh 4 phương án khác nhau.',
-                    example: 'Ví dụ kết quả: Hãy tìm số lớn nhất trong các số sau. A. 14 870  B. 30 435  C. 15 345  D. 19 403',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d; mỗi câu có 4 số khác nhau và yêu cầu tìm số lớn nhất. Mỗi câu con đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên câu dẫn và 4 nhóm phương án.',
+                    example: 'Mẫu gồm 4 nhóm a–d; mỗi nhóm có 4 số để chọn số lớn nhất.',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
                 },
                 'number.compose_from_places': {
-                    defaultPrompt: 'Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}',
-                    guide: 'Tạo bài điền khuyết lập số từ các hàng có chữ số khác 0. Học sinh ghép các giá trị hàng để viết đúng số đã cho.',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d lập số từ các hàng. Mỗi dòng có một ô điền; mỗi câu con đúng được 0,25 điểm.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: Viết số rồi đọc số, biết số đó gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục. Số đó là ___',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{place_values}', 'các hàng, ví dụ: 4 chục nghìn, 2 nghìn và 5 trăm'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.missing_expanded_addend': {
-                    defaultPrompt: 'Điền số còn thiếu:<br>{number} = {expression}',
-                    guide: 'Tạo bài điền khuyết về cấu tạo thập phân của số. Một thành phần trong dạng tổng được ẩn đi để học sinh tìm lại.',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d về cấu tạo thập phân. Mỗi dòng ẩn một thành phần của dạng tổng; mỗi câu con đúng được 0,25 điểm.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên phép tính động do game sinh.',
                     example: 'Ví dụ kết quả: 33 471 = 30 000 + 3 000 + ___ + 70 + 1',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số cần phân tích'], ['{expression}', 'dạng tổng có một ô trống'], ['{blank}', 'ô nhập đáp án (___)']]
+                },
+                'number.four_operations_fill_blanks': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 ý a–d điền số còn thiếu. Ô trống được bốc ở số thứ nhất, số thứ hai hoặc kết quả; mỗi lượt có đủ cộng, trừ, nhân, chia và mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên câu dẫn cùng 4 ý; hoặc chèn <code>{exercises}</code> để tự soạn câu dẫn riêng.',
+                    example: 'Mẫu gồm 4 phép tính a–d với một ô trống ở số thứ nhất, số thứ hai hoặc kết quả.',
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ câu hỏi gồm câu dẫn và 4 ý'], ['{exercises}', 'bốn ý a–d đã sinh'], ['{practice_rows}', 'bốn ý a–d đã sinh'], ['{blank}', 'ô nhập đáp án (___)']]
+                },
+                'number.four_operations_expressions': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 ý a–d tính giá trị biểu thức nhiều bước, có ngoặc khi cần. Mỗi lượt có đủ cộng, trừ, nhân, chia và mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên câu dẫn cùng 4 ý; hoặc chèn <code>{exercises}</code> để tự soạn câu dẫn riêng.',
+                    example: 'Mẫu gồm 4 biểu thức như 57 670 − (29 653 − 2 653) hoặc 6 000 × 5 : 3.',
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ câu hỏi gồm câu dẫn và 4 ý'], ['{exercises}', 'bốn ý a–d đã sinh'], ['{practice_rows}', 'bốn ý a–d đã sinh'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.four_arithmetic_blanks': {
                     defaultPrompt: 'Hãy điền số thích hợp vào chỗ trống:<br>{exercises}',
@@ -3707,16 +3856,16 @@ const app = {
                     variables: [['{question}', 'toàn bộ câu hỏi gồm câu dẫn và 4 dòng'], ['{exercises}', 'bốn phép so sánh a–d'], ['{comparison_rows}', 'bốn phép so sánh a–d']]
                 },
                 'number.neighbor_numbers': {
-                    defaultPrompt: 'Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}',
-                    guide: 'Tạo bài điền khuyết số liền trước và số liền sau của một số đã cho trong phạm vi đã chọn.',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d về số liền trước và số liền sau. Mỗi dòng có 2 ô nhưng chỉ đúng cả cặp mới nhận 0,25 điểm.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: ___ ; 42 135 ; ___',
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
                 'number.compare_number_forms': {
-                    defaultPrompt: 'Điền dấu thích hợp:<br>{comparison}',
-                    guide: 'Tạo câu so sánh giữa một số tự nhiên và dạng tổng theo các hàng của số đó; học sinh chọn dấu thích hợp.',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d để so sánh số tự nhiên với dạng tổng theo các hàng; mỗi câu con đúng được 0,25 điểm.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên nội dung động do game sinh.',
                     example: 'Ví dụ kết quả: 8 563 ___ 8 000 + 500 + 60 + 3',
                     type: 'So sánh',
@@ -3731,8 +3880,8 @@ const app = {
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh'], ['{statements}', 'bốn nhận định A–D đã sinh về lớp hoặc hàng']]
                 },
                 'number.safe_password_by_place_value': {
-                    defaultPrompt: 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.',
-                    guide: 'Tạo câu trắc nghiệm tìm mật khẩu két sắt từ hai điều kiện về lớp hoặc hàng của chữ số. Trong bốn số, chỉ một số thỏa đồng thời cả hai điều kiện.',
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo 4 câu con a–d tìm mật khẩu két sắt. Mỗi câu có 2 điều kiện riêng và 4 số; mỗi câu con đúng được 0,25 điểm.',
                     hint: 'Ô bên dưới đã ghi đầy đủ câu hỏi mặc định. Hãy sửa trực tiếp, hoặc chèn <code>{condition1}</code> và <code>{condition2}</code> vào vị trí mong muốn.',
                     example: 'Ví dụ hiển thị: Số nào dưới đây là mật khẩu mở khóa két sắt? Biết rằng chữ số ở hàng triệu khác 0 và chữ số ở hàng trăm nghìn khác 3.',
                     type: 'Trắc nghiệm',
@@ -3761,13 +3910,21 @@ const app = {
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
-            const isFourArithmetic = ['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
+            const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-controls').forEach(rule => { rule.hidden = !isFourArithmetic; });
+            document.querySelectorAll('.template-editor__rule--four-arithmetic-layouts').forEach(rule => { rule.hidden = !['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator); });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-blank-positions').forEach(rule => { rule.hidden = generator !== 'number.four_arithmetic_blanks'; });
+            const usesAllFourOperations = ['number.four_operations_fill_blanks', 'number.four_operations_expressions'].includes(generator);
+            document.querySelectorAll('#template-arithmetic-operations input').forEach(input => {
+                if (usesAllFourOperations) input.checked = true;
+                input.disabled = usesAllFourOperations;
+            });
+            const arithmeticLegend = document.querySelector('#template-arithmetic-operations')?.closest('fieldset')?.querySelector('legend');
+            if (arithmeticLegend) arithmeticLegend.textContent = usesAllFourOperations ? 'Bốn phép tính dùng trong mỗi lượt' : 'Phép tính có thể bốc';
             document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
         },
@@ -3808,7 +3965,7 @@ const app = {
             const isSafePassword = generatorKey === 'number.safe_password_by_place_value';
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
-            const usesDigitCount = !isSafePassword && generatorKey !== 'number.match_number_words' && !['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey);
+            const usesDigitCount = !isSafePassword && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey);
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits }, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || []).map(([token]) => token.slice(1, -1)));
@@ -3817,12 +3974,14 @@ const app = {
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
             if (usesDigitCount && (!Number.isInteger(minimumDigits) || !Number.isInteger(maximumDigits) || minimumDigits < 1 || maximumDigits > 12 || minimumDigits > maximumDigits)) throw new Error('Số lượng chữ số phải là số nguyên từ 1 đến 12 và số ít nhất không được lớn hơn số nhiều nhất.');
-            if (['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(template.generator_key)) {
+            if (['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(template.generator_key)) {
                 if (!Number.isInteger(arithmeticMinimumDigits) || !Number.isInteger(arithmeticMaximumDigits) || arithmeticMinimumDigits < 2 || arithmeticMaximumDigits > 9 || arithmeticMinimumDigits > arithmeticMaximumDigits) throw new Error('Số chữ số phải từ 2 đến 9 và số ít nhất không lớn hơn số nhiều nhất.');
-                if (!arithmeticOperations.length || !arithmeticLayouts.length) throw new Error('Hãy chọn ít nhất một phép tính và một dạng hiển thị hai vế.');
+                const requiresLayouts = ['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(template.generator_key);
+                if (!arithmeticOperations.length || (requiresLayouts && !arithmeticLayouts.length)) throw new Error(requiresLayouts ? 'Hãy chọn ít nhất một phép tính và một dạng hiển thị hai vế.' : 'Hãy chọn đủ bốn phép tính cộng, trừ, nhân, chia.');
+                if (['number.four_operations_fill_blanks', 'number.four_operations_expressions'].includes(template.generator_key) && (arithmeticOperations.length !== 4 || new Set(arithmeticOperations).size !== 4)) throw new Error('Template này cần đủ bốn phép cộng, trừ, nhân, chia cho 4 ý a–d.');
                 if (template.generator_key === 'number.four_arithmetic_blanks' && !arithmeticBlankPositions.length) throw new Error('Hãy chọn ít nhất một vị trí ô trống.');
                 if (template.generator_key === 'number.four_arithmetic_blanks' && arithmeticBlankPositions.every(position => position === 'fourth') && !arithmeticLayouts.includes('twoExpressions')) throw new Error('Vị trí “Số thứ tư” chỉ dùng khi chọn dạng “Hai vế đều là phép tính”.');
-                template.config = { minimum: 10 ** (arithmeticMinimumDigits - 1), maximum: 10 ** arithmeticMaximumDigits - 1, minimumDigits: arithmeticMinimumDigits, maximumDigits: arithmeticMaximumDigits, operations: arithmeticOperations, layouts: arithmeticLayouts, ...(template.generator_key === 'number.four_arithmetic_blanks' ? { blankPositions: arithmeticBlankPositions } : {}) };
+                template.config = { minimum: 10 ** (arithmeticMinimumDigits - 1), maximum: 10 ** arithmeticMaximumDigits - 1, minimumDigits: arithmeticMinimumDigits, maximumDigits: arithmeticMaximumDigits, operations: arithmeticOperations, ...(requiresLayouts ? { layouts: arithmeticLayouts } : {}), ...(template.generator_key === 'number.four_arithmetic_blanks' ? { blankPositions: arithmeticBlankPositions } : {}) };
             }
             if (template.generator_key === 'number.safe_password_by_place_value') {
                 const target1 = condition1Scope === 'random' ? [...condition1Classes, ...condition1Places] : (condition1Scope === 'class' ? condition1Classes : condition1Places);

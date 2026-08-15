@@ -7,6 +7,8 @@
         'number.missing_expanded_addend': require('./missing-expanded-addend'),
         'number.four_arithmetic_blanks': require('./four-arithmetic-blanks'),
         'number.four_arithmetic_comparisons': require('./four-arithmetic-comparisons'),
+        'number.four_operations_fill_blanks': require('./four-operations-fill-blanks'),
+        'number.four_operations_expressions': require('./four-operations-expressions'),
         'number.neighbor_numbers': require('./neighbor-numbers'),
         'number.compare_number_forms': require('./compare-number-forms'),
         'number.match_number_words': require('./match-number-words'),
