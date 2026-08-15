@@ -1643,6 +1643,8 @@ const app = {
 
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
+            const playCenter = document.querySelector('#game-play-view .play-center');
+            playCenter?.classList.remove('play-center--four-part-mc');
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
@@ -1687,12 +1689,13 @@ const app = {
 
             if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 optContainer.className = 'multi-choice-subquestions';
+                if (q.subquestions.length === 4) playCenter?.classList.add('play-center--four-part-mc');
                 const labels = ['A', 'B', 'C', 'D'];
                 this.state.multipleChoiceSelections = new Array(q.subquestions.length).fill('');
                 q.subquestions.forEach((subquestion, index) => {
                     const row = document.createElement('section');
                     const isSafePassword = q.templateId === 'number.safe_password_by_place_value';
-                    row.className = `multi-choice-subquestion${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}`;
+                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}`;
                     row.dataset.index = index;
                     const illustration = isSafePassword && subquestion.imageUrl
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`

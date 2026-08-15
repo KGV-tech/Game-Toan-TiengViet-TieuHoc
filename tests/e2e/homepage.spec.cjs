@@ -168,7 +168,7 @@ test('luyện đề hiển thị bốn lựa chọn Đúng/Sai để chấm từ
   expect(markup).toContain('Nhận định D');
 });
 
-test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và chấm 0,25 điểm mỗi phần', async ({ page }) => {
+test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và chấm 0,25 điểm mỗi phần', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -190,8 +190,19 @@ test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và ch�
 
   await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('.multi-choice-subquestion__option')).toHaveCount(16);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-part-mc/);
+  for (let index = 0; index < 4; index++) {
+    await expect(page.locator(`.multi-choice-subquestion[data-index="${index}"]`)).toHaveClass(new RegExp(`multi-choice-subquestion--tone-${index}`));
+  }
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
   await expect(page.locator('.multi-choice-subquestion__heading h3')).toHaveCount(0);
   await expect(page.locator('.multi-choice-subquestion__label-only')).toHaveCount(4);
+  await captureUiReview(page, testInfo, 'four-part-multiple-choice-desktop.png');
   expect(summary.score).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
   for (let index = 0; index < summary.answers.length; index++) {
     await page.locator(`.multi-choice-subquestion[data-index="${index}"] .multi-choice-subquestion__option`, { hasText: summary.answers[index] }).click();

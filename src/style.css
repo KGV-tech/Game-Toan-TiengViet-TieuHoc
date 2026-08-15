@@ -1518,7 +1518,7 @@ input[type="text"], input[type="password"], select, textarea {
     --scene-glow: #22d3ee;
     width: min(95%, 1200px) !important;
     max-width: 1200px !important;
-    height: calc(100vh - 32px);
+    height: calc(100vh - 16px);
     box-sizing: border-box;
     background: linear-gradient(135deg, rgba(6, 16, 28, .12), rgba(12, 24, 38, .07)) !important;
     backdrop-filter: blur(2px);
@@ -1546,6 +1546,45 @@ input[type="text"], input[type="password"], select, textarea {
     width: 90% !important;
     align-self: center;
 }
+
+/* Four subquestion multiple-choice rounds are designed to fit one landscape screen. */
+#game-play-view .play-center.play-center--four-part-mc {
+    height: calc(100vh - 48px);
+    max-height: calc(100vh - 48px);
+    overflow-y: hidden;
+    padding: 10px clamp(14px, 1.5vw, 22px) 14px;
+}
+#game-play-view .play-center--four-part-mc .game-header {
+    margin: 0 0 8px;
+    font-size: clamp(1rem, 1.25vw, 1.15rem);
+}
+#game-play-view .play-center--four-part-mc .question-progress { padding: 6px 15px; }
+#game-play-view .play-center--four-part-mc .score-display { padding: 5px 12px; border-bottom-width: 4px; }
+#game-play-view .play-center--four-part-mc .question-box {
+    min-height: 78px;
+    margin-bottom: 10px;
+    padding: 12px 18px;
+    font-size: clamp(1.15rem, 1.65vw, 1.45rem);
+}
+#game-play-view .play-center--four-part-mc .multi-choice-subquestions { gap: 7px; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion { padding: 7px 10px; border-radius: 12px; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion h3 { margin-bottom: 6px; font-size: clamp(.9rem, 1.28vw, 1.08rem); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion__label-only { font-size: clamp(1.1rem, 1.6vw, 1.4rem); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion__options { gap: 6px; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion__option { min-height: 38px; padding: 5px 6px; gap: 5px; font-size: clamp(.78rem, 1.05vw, .94rem); }
+#game-play-view .play-center--four-part-mc .ans-badge { width: 29px; height: 29px; margin-right: 4px; font-size: .9em; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-0 .ans-badge { background: linear-gradient(180deg, #fde047, #d97706); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-1 .ans-badge { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-2 .ans-badge { background: linear-gradient(180deg, #6ee7b7, #059669); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-3 .ans-badge { background: linear-gradient(180deg, #c4b5fd, #7c3aed); }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-0 h3 span,
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-0 .multi-choice-subquestion__label-only { color: #d97706; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-1 h3 span,
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-1 .multi-choice-subquestion__label-only { color: #2563eb; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-2 h3 span,
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-2 .multi-choice-subquestion__label-only { color: #059669; }
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-3 h3 span,
+#game-play-view .play-center--four-part-mc .multi-choice-subquestion--tone-3 .multi-choice-subquestion__label-only { color: #7c3aed; }
 
 #exam-select-screen {
     justify-content: center;
