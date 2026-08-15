@@ -494,6 +494,101 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
 });
 
+test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    let seed = 805;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_fill_blanks', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-', '*', '/']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
+  await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
+  await expect(page.locator('.question-box--fill')).toContainText('Hãy điền số thích hợp vào chỗ trống:');
+  const generated = await page.evaluate(() => {
+    const question = app.game.state.questions[0];
+    return { operations: question.practiceRows.map(row => row.operation).sort(), score: app.game.calculateQuestionScore(question, question.ans) };
+  });
+  expect(generated.operations).toEqual(['*', '+', '-', '/']);
+  expect(generated.score).toMatchObject({ correctCount: 4, answerCount: 4, points: 1, isCorrect: true });
+  await captureUiReview(page, testInfo, 'four-operations-fill-blanks-desktop.png');
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'four-operations-fill-demo', name: 'Bốn phép tính: điền số còn thiếu', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '1. Ôn tập và bổ sung', question_type: 'Điền khuyết', generator_key: 'number.four_operations_fill_blanks',
+      prompt_template: '{question}',
+      config: { minimum: 10, maximum: 99999, minimumDigits: 2, maximumDigits: 5, operations: ['+', '-', '*', '/'] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-layouts')).toBeHidden();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
+  await expect(page.locator('#template-arithmetic-operations').locator('input')).toHaveCount(4);
+  await expect(page.locator('#template-arithmetic-operations').locator('input').first()).toBeDisabled();
+  await expect(page.locator('fieldset:has(#template-arithmetic-operations) legend')).toHaveText('Bốn phép tính dùng trong mỗi lượt');
+  await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
+  await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('5');
+  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(savedConfig).toEqual(expect.objectContaining({
+    minimumDigits: 2, maximumDigits: 5, operations: ['+', '-', '*', '/']
+  }));
+  expect(savedConfig.layouts).toBeUndefined();
+  await captureUiReview(page, testInfo, 'four-operations-fill-blanks-template-config.png');
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('bốn phép tính tính giá trị biểu thức hiển thị dạng nhiều bước như sách', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    let seed = 806;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_expressions', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-', '*', '/']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+  await expect(page.locator('.four-operations-expression-row')).toHaveCount(4);
+  await expect(page.locator('.four-operations-practice__expression')).toHaveCount(4);
+  await expect(page.locator('.four-operations-practice__expression--sky')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--rose')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--mint')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--lavender')).toHaveCount(1);
+  await expect(page.locator('.four-operations-expression-row__prompt')).toHaveCount(0);
+  await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
+  await expect(page.locator('.four-operations-expression-title')).toHaveText('Tính giá trị của biểu thức:');
+  await captureUiReview(page, testInfo, 'four-operations-expressions-desktop.png');
+});
+
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

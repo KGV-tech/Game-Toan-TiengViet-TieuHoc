@@ -198,3 +198,59 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.place_value_true_false'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
 );
+
+-- Grade 4 Math, Topic 1: configure the ten reusable templates for revision through 100 000.
+-- Existing teacher-written question text is preserved; only the catalog topic and generation rules are updated.
+UPDATE public.question_templates
+SET topic = '1. Ôn tập và bổ sung',
+    config = CASE generator_key
+        WHEN 'number.digit_at_place' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"allowedPlaces":["ones","tens","hundreds","thousands","tenThousands"],"allowedDigits":[0,1,2,3,4,5,6,7,8,9]}'::jsonb
+        WHEN 'number.smallest_of_four' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.largest_of_four' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.compose_from_places' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.missing_expanded_addend' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.neighbor_numbers' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.compare_number_forms' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
+        WHEN 'number.match_number_words' THEN '{"shapes":["5:4","4:5"],"digits":[2,3,4,5],"digitStrategy":"balanced","digitWeights":null,"prefixWords":0,"seed":null}'::jsonb
+        WHEN 'number.four_arithmetic_blanks' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"],"layouts":["expressionLeft","expressionRight","twoExpressions"],"blankPositions":["first","second","third","fourth"]}'::jsonb
+        WHEN 'number.four_arithmetic_comparisons' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"],"layouts":["expressionLeft","expressionRight","twoExpressions"]}'::jsonb
+        ELSE config
+    END,
+    updated_at = timezone('utc'::text, now())
+WHERE classlevel = 'Lớp 4'
+  AND subject = 'Toán'
+  AND generator_key IN (
+      'number.digit_at_place', 'number.smallest_of_four', 'number.largest_of_four',
+      'number.compose_from_places', 'number.missing_expanded_addend', 'number.neighbor_numbers',
+      'number.compare_number_forms', 'number.match_number_words',
+      'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'
+  )
+  AND topic IN ('1. Số tự nhiên', '3. Số có nhiều chữ số');
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Bốn phép tính: điền số còn thiếu', 'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung',
+    'Điền khuyết', 'number.four_operations_fill_blanks',
+    '{question}',
+    '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"]}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'number.four_operations_fill_blanks'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Ôn tập và bổ sung'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Bốn phép tính: tính giá trị biểu thức', 'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung',
+    'Điền khuyết', 'number.four_operations_expressions',
+    '{question}',
+    '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"]}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'number.four_operations_expressions'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Ôn tập và bổ sung'
+);

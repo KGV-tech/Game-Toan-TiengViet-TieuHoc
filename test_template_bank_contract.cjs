@@ -41,6 +41,8 @@ assert(source.includes('number.smallest_of_four'), 'The Template Bank must expos
 assert(source.includes('number.largest_of_four'), 'The Template Bank must expose the largest-of-four generator.');
 assert(source.includes('number.compose_from_places'), 'The Template Bank must expose the compose-number fill-in template.');
 assert(source.includes('number.missing_expanded_addend'), 'The Template Bank must expose the expanded-form fill-in template.');
+assert(source.includes('number.four_operations_fill_blanks'), 'The Template Bank must expose the Topic 1 four-operations fill-in template.');
+assert(source.includes('number.four_operations_expressions'), 'The Template Bank must expose the Topic 1 calculate-expression template.');
 assert(source.includes('number.four_arithmetic_blanks'), 'The Template Bank must expose the four-arithmetic fill-in template.');
 assert(source.includes('number.four_arithmetic_comparisons'), 'The Template Bank must expose the four-arithmetic drag-comparison template.');
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
@@ -89,6 +91,10 @@ assert(migration.includes("'number.compose_from_places'"), 'Migration must seed 
 assert(migration.includes("'number.missing_expanded_addend'"), 'Migration must seed the expanded-form template.');
 assert(migration.includes("'number.four_arithmetic_blanks'"), 'Migration must seed the four-arithmetic fill-in template.');
 assert(migration.includes("'number.four_arithmetic_comparisons'"), 'Migration must seed the four-arithmetic drag-comparison template.');
+assert(migration.includes('Grade 4 Math, Topic 1: configure the ten reusable templates'), 'Migration must configure the reusable Grade 4 Math templates for Topic 1.');
+assert(migration.includes("'1. Ôn tập và bổ sung'"), 'Migration must assign the configured templates to the real Grade 4 Topic 1.');
+assert(migration.includes("'number.four_operations_fill_blanks'"), 'Migration must add the Topic 1 four-operations fill-in template.');
+assert(migration.includes("'number.four_operations_expressions'"), 'Migration must add the Topic 1 calculate-expression template.');
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
 assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
 assert(migration.includes("'number.match_number_words'"), 'Migration must seed the number-word matching template.');

@@ -98,6 +98,31 @@ assert(fourArithmeticBlanks.subquestions.every(item => item.operation === '+'), 
 assert(fourArithmeticBlanks.subquestions.every(item => item.layout === 'expressionLeft'), 'The configured layout must be used.');
 assert(fourArithmeticBlanks.subquestions.every(item => ['first', 'second', 'third'].includes(item.blankPosition)), 'The blank must be one of the three configured positions.');
 
+const fourOperationsFillBlanks = generateQuestion('number.four_operations_fill_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['+', '-', '*', '/']
+}, seededRandom(805));
+assert.equal(fourOperationsFillBlanks.type, 'Điền khuyết');
+assert.equal(fourOperationsFillBlanks.practiceRows.length, 4, 'The fill-in template must generate parts a–d.');
+assert.deepEqual(fourOperationsFillBlanks.practiceRows.map(item => item.label), ['a', 'b', 'c', 'd']);
+assert.deepEqual([...fourOperationsFillBlanks.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert(fourOperationsFillBlanks.practiceRows.every(item => /(^___|[+−×÷]\s+___|=\s+___)/.test(item.expression)), 'Mỗi ý điền khuyết phải bốc ô số thứ nhất, thứ hai hoặc kết quả.');
+assert.equal((fourOperationsFillBlanks.q.match(/___/g) || []).length, 4, 'Each part must include one answer blank.');
+assert.deepEqual(fourOperationsFillBlanks.partAnswerCounts, [1, 1, 1, 1], 'Each of the four parts must be worth 0.25 point.');
+
+const fourOperationsExpressions = generateQuestion('number.four_operations_expressions', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['+', '-', '*', '/']
+}, seededRandom(806));
+assert.equal(fourOperationsExpressions.type, 'Điền khuyết');
+assert.equal(fourOperationsExpressions.practiceRows.length, 4, 'The expression template must generate parts a–d.');
+assert.deepEqual([...fourOperationsExpressions.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert(fourOperationsExpressions.practiceRows.every(item => (item.expression.match(/[+−×:]/g) || []).length >= 2), 'Mỗi ý tính giá trị biểu thức phải có ít nhất hai phép tính.');
+assert.equal((fourOperationsExpressions.q.match(/___/g) || []).length, 4, 'Each expression must provide one answer blank.');
+assert.deepEqual(fourOperationsExpressions.partAnswerCounts, [1, 1, 1, 1], 'Each expression part must be worth 0.25 point.');
+
 const twoExpressionArithmetic = generateQuestion('number.four_arithmetic_blanks', {
     minimumDigits: 2,
     maximumDigits: 3,

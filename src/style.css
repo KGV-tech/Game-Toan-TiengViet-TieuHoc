@@ -548,6 +548,18 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .template-fill-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; min-height: 54px; line-height: 1.35; text-align: center; }
   .template-fill-row:first-child { font-size: clamp(1.3rem, 2.25vw, 2rem); }
   .template-fill-row .magic-input { width: min(170px, 32vw); margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); }
+  .four-operations-expression-title { text-align: center; color: #1e293b; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900; margin-bottom: 16px; }
+  .four-operations-expression-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+  .four-operations-expression-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; }
+  .four-operations-expression-row__label { color: #0f9f96; font-size: clamp(1.25rem, 2vw, 1.7rem); font-weight: 900; }
+  .four-operations-expression-row__content { min-width: 0; }
+  .four-operations-practice__expression { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 8px 12px; border-radius: 14px; color: #1e293b; font-size: clamp(1.1rem, 1.8vw, 1.55rem); font-weight: 900; text-align: center; white-space: nowrap; }
+  .four-operations-practice__expression--sky { background: #bae6fd; }
+  .four-operations-practice__expression--rose { background: #fbcfe8; }
+  .four-operations-practice__expression--mint { background: #bbf7d0; }
+  .four-operations-practice__expression--lavender { background: #ddd6fe; }
+  .four-operations-practice__expression .magic-input { width: min(115px, 18vw); min-width: 72px; margin: 0; font-size: clamp(1rem, 1.55vw, 1.35rem); }
+  @media (max-width: 1050px) { .four-operations-expression-list { grid-template-columns: 1fr; } }
   .question-box--four-comparisons { text-align: center; }
   .comparison-drag-controls { display: flex; justify-content: center; gap: clamp(14px, 2vw, 26px); margin: 0 0 18px; }
   .comparison-drag-sign, .comparison-drag-slot { display: inline-flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer; }
