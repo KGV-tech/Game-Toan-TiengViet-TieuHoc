@@ -575,9 +575,33 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .template-compose-layout { display: grid; gap: 10px; width: 100%; }
   .template-compose-heading { text-align: center; font-size: clamp(1.25rem, 2vw, 1.85rem); line-height: 1.3; margin-bottom: 2px; }
   .template-compose-row { min-height: 42px; text-align: left; font-size: clamp(1.05rem, 1.65vw, 1.42rem); line-height: 1.35; }
-  .template-compose-answer { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
-  .template-compose-row .magic-input { width: min(132px, 16vw); margin: 0; font-size: clamp(1.05rem, 1.55vw, 1.35rem); }
-  .four-operations-expression-title { text-align: center; color: #1e293b; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900; margin-bottom: 16px; }
+.template-compose-answer { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.template-compose-row .magic-input { width: min(132px, 16vw); margin: 0; font-size: clamp(1.05rem, 1.55vw, 1.35rem); }
+.question-box--four-part-fill { padding: clamp(14px, 1.5vw, 20px); }
+.question-box--four-part-fill .template-fill-layout,
+.question-box--four-part-fill .template-compose-layout { gap: 8px; }
+.question-box--four-part-fill .template-fill-row:not(:first-child),
+.question-box--four-part-fill .template-compose-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+}
+.question-box--four-part-fill .template-fill-row:not(:first-child) { justify-content: flex-start; }
+.question-box--four-part-fill .template-compose-row { font-size: clamp(1rem, 1.45vw, 1.28rem); }
+.question-box--four-part-fill .template-fill-row .magic-input { width: min(148px, 18vw); font-size: clamp(1.05rem, 1.55vw, 1.35rem); }
+.question-box--four-part-fill .template-compose-row .magic-input { width: min(124px, 15vw); }
+.question-box--four-part-fill .template-fill-row--tone-0,
+.question-box--four-part-fill .template-compose-row--tone-0 { background: rgba(255, 237, 213, .94); border-color: #fdba74; }
+.question-box--four-part-fill .template-fill-row--tone-1,
+.question-box--four-part-fill .template-compose-row--tone-1 { background: rgba(224, 242, 254, .94); border-color: #7dd3fc; }
+.question-box--four-part-fill .template-fill-row--tone-2,
+.question-box--four-part-fill .template-compose-row--tone-2 { background: rgba(220, 252, 231, .94); border-color: #86efac; }
+.question-box--four-part-fill .template-fill-row--tone-3,
+.question-box--four-part-fill .template-compose-row--tone-3 { background: rgba(237, 233, 254, .94); border-color: #c4b5fd; }
+.four-operations-expression-title { text-align: center; color: #1e293b; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900; margin-bottom: 16px; }
   .four-operations-expression-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
   .four-operations-expression-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; }
   .four-operations-expression-row__label { color: #0f9f96; font-size: clamp(1.25rem, 2vw, 1.7rem); font-weight: 900; }
