@@ -547,9 +547,39 @@ test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh 
 
   await expect(page.locator('.question-box--compose .template-compose-row')).toHaveCount(4);
   await expect(page.locator('.question-box--compose .template-compose-answer')).toHaveCount(4);
+  await expect(page.locator('.question-box--four-part-fill')).toBeVisible();
+  await expect(page.locator('.template-compose-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-3')).toHaveCount(1);
   await expect.poll(() => page.locator('.question-box--compose .template-compose-row').first().evaluate(element => getComputedStyle(element).textAlign)).toBe('left');
   await expect.poll(() => page.locator('.question-box--compose .template-compose-answer').first().evaluate(element => getComputedStyle(element).whiteSpace)).toBe('nowrap');
   await captureUiReview(page, testInfo, 'compose-from-places-desktop.png');
+});
+
+test('tổng phân tích bốn câu dùng bốn thẻ màu cân đối', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.missing_expanded_addend', {
+      minimum: 1000, maximum: 99999
+    }, () => 0.42);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--four-part-fill')).toBeVisible();
+  await expect(page.locator('.template-fill-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-3')).toHaveCount(1);
+  await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
+  await captureUiReview(page, testInfo, 'missing-expanded-addend-desktop.png');
 });
 
 test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {

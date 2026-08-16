@@ -1645,7 +1645,7 @@ const app = {
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
             playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
                 questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>`;
@@ -2104,10 +2104,10 @@ const app = {
                             const input = `<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${inputIndex++}" autocomplete="off">`;
                             const formattedRow = app.data.formatMathText(row);
                             const withAnswer = formattedRow.replace(/(Số đó là)\s*___/i, `<span class="template-compose-answer">$1 ${input}</span>`);
-                            return `<div class="template-compose-row">${withAnswer === formattedRow ? formattedRow.replace(/___/, input) : withAnswer}</div>`;
+                            return `<div class="template-compose-row template-compose-row--tone-${inputIndex - 1}">${withAnswer === formattedRow ? formattedRow.replace(/___/, input) : withAnswer}</div>`;
                         };
                         const html = `<div class="template-compose-layout"><div class="template-compose-heading">${app.data.formatMathText(heading)}</div>${subquestions.map(renderSubquestion).join('')}</div>`;
-                        questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--compose');
+                        questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--compose', 'question-box--four-part-fill');
                         questionContainer.innerHTML = html;
                     } else {
                         const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
@@ -2120,8 +2120,15 @@ const app = {
                         }
                         html += '</div></div>';
                         if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
+                        const hasFourSubquestions = parts.length === 5;
                         questionContainer.classList.add('question-box--template', 'question-box--fill');
+                        if (hasFourSubquestions) questionContainer.classList.add('question-box--four-part-fill');
                         questionContainer.innerHTML = html;
+                        if (hasFourSubquestions) {
+                            questionContainer.querySelectorAll('.template-fill-row').forEach((row, index) => {
+                                if (index > 0) row.classList.add(`template-fill-row--tone-${index - 1}`);
+                            });
+                        }
                     }
 
                     for (let i = 0; i < parts.length - 1; i++) {
