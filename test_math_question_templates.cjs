@@ -317,6 +317,42 @@ assert.deepEqual(
 );
 assert.throws(() => generateQuestion('number.match_number_words', { shapes: ['4:2'] }, seededRandom(16)));
 
+// Tests for Topic 2: Angle Templates
+const polygonAngle = generateQuestion('g4-m-angle-count-in-polygon', {}, seededRandom(301));
+assert.equal(polygonAngle.type, 'Điền khuyết');
+assert.equal(polygonAngle.topic, '2. Góc và đơn vị đo góc');
+assert(polygonAngle.q.includes('<svg'));
+assert(polygonAngle.q.includes('a) ___ góc nhọn'));
+assert(polygonAngle.q.includes('d) ___ góc bẹt'));
+assert.equal(polygonAngle.ans.split(', ').length, 4);
+
+const polygonAngleAlias = generateQuestion('angle.count_in_polygon', {}, seededRandom(302));
+assert.equal(polygonAngleAlias.type, 'Điền khuyết');
+
+const dragAngle = generateQuestion('g4-m-angle-drag-classify', {}, seededRandom(303));
+assert.equal(dragAngle.type, 'Kéo thả');
+assert.equal(dragAngle.topic, '2. Góc và đơn vị đo góc');
+assert.deepEqual(dragAngle.options, ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt']);
+assert(dragAngle.q.includes('<svg'));
+assert.equal(dragAngle.ans.split(', ').length, 4);
+
+const dragClock = generateQuestion('g4-m-angle-clock-classify', {}, seededRandom(304));
+assert.equal(dragClock.type, 'Kéo thả');
+assert.equal(dragClock.topic, '2. Góc và đơn vị đo góc');
+assert.deepEqual(dragClock.options, ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt']);
+assert(dragClock.q.includes('<svg'));
+assert.equal(dragClock.ans.split(', ').length, 4);
+
+const eightAngles = generateQuestion('g4-m-angle-count-eight-angles', {}, seededRandom(305));
+assert.equal(eightAngles.type, 'Điền khuyết');
+assert.equal(eightAngles.topic, '2. Góc và đơn vị đo góc');
+assert(eightAngles.q.includes('<svg'));
+assert(eightAngles.q.includes('• ___ góc nhọn;'));
+assert(eightAngles.q.includes('• ___ góc bẹt.'));
+const eightAnsNumbers = eightAngles.ans.split(', ').map(Number);
+assert.equal(eightAnsNumbers.length, 4);
+assert.equal(eightAnsNumbers.reduce((a, b) => a + b, 0), 8, 'Total angles must equal 8.');
+
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));
 assert.notDeepEqual(firstVersion.subquestions, nextVersion.subquestions, 'Different sessions should receive new numbers.');
