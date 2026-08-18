@@ -8,6 +8,7 @@ require('./src/modules/safe-storage.js');
 require('./src/modules/constants.js');
 require('./src/modules/router.js');
 require('./src/modules/daily.js');
+require('./src/modules/ui.js');
 
 assert.ok(globalThis.app.utils && typeof globalThis.app.utils.loadScript === 'function',
   'src/modules/utils.js must attach app.utils.loadScript.');
@@ -19,6 +20,8 @@ assert.ok(globalThis.app.router && typeof globalThis.app.router.open === 'functi
   'src/modules/router.js must attach app.router.open.');
 assert.ok(globalThis.app.daily && typeof globalThis.app.daily.getEnergy === 'function',
   'src/modules/daily.js must attach app.daily.getEnergy.');
+assert.ok(globalThis.app.ui && typeof globalThis.app.ui.compactAction === 'function',
+  'src/modules/ui.js must attach app.ui.compactAction.');
 assert.ok(globalThis.app.constants.topics,
   'app.constants must expose the topics map.');
 assert.ok(Array.isArray(globalThis.app.constants.topics['5'].math.hk2),

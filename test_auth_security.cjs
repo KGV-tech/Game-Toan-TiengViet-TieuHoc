@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const source = fs.readFileSync('src/main.js', 'utf8');
+const ui = fs.readFileSync('src/modules/ui.js', 'utf8');
 const migration = fs.readFileSync('supabase_auth_security.sql', 'utf8');
 const adminFunction = fs.readFileSync('supabase/functions/admin-users/index.ts', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8') + fs.readFileSync('src/login-layout.css', 'utf8');
@@ -18,7 +19,7 @@ assert.match(adminFunction, /legacy_profile_linked/, 'Resetting a legacy student
 assert.match(source, /student_not_found/, 'The teacher UI must explain why a password reset cannot be completed.');
 assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an Auth account already exists.');
 assert.match(source, /!app\.data\.users\.find\(x => x\.id === data\.profile\.id\)/, 'Creating a student must not duplicate the realtime profile in the teacher list.');
-assert.match(source, /setButtonLoading\(buttonId, isLoading, loadingLabel/, 'Slow actions must show a clear loading state and prevent repeated clicks.');
+assert.match(ui, /setButtonLoading\(buttonId, isLoading, loadingLabel/, 'Slow actions must show a clear loading state and prevent repeated clicks.');
 assert.match(source, /setButtonLoading\('login-btn', true, 'Đang đăng nhập…'\)/, 'Login must visibly say that sign-in is in progress before fetching protected data.');
 assert.match(source, /Promise\.all\(\[/, 'Independent post-login data loads must run in parallel.');
 assert.match(source, /avatar_key/, 'New student profiles must save their selected avatar.');
@@ -29,7 +30,7 @@ assert.match(html, /name="reg-avatar"/, 'Registration must offer an avatar selec
 assert.match(html, /id="player-info" class="player-info-card"/, 'The map must retain a dedicated player information card.');
 assert.match(source, /player-info-card__avatar/, 'The player card must render the chosen avatar.');
 assert.match(source, /Đang đăng nhập…/, 'The loading state must use the clear Vietnamese sign-in label.');
-assert.match(source, /button-loading/, 'Image buttons must render a visible loading treatment instead of transparent text.');
+assert.match(ui, /button-loading/, 'Image buttons must render a visible loading treatment instead of transparent text.');
 assert.match(html, /value="boy-short"/, 'Registration must include boy avatars.');
 assert.match(html, /value="girl-long"/, 'Registration must include girl avatars.');
 assert.match(html, /value="girl-doll"/, 'Registration must include varied girl hairstyles.');

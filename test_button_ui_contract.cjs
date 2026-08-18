@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8');
 const main = fs.readFileSync('src/main.js', 'utf8');
+const ui = fs.readFileSync('src/modules/ui.js', 'utf8');
 
 const groupOneAssets = [
   'login-start.png', 'register.png', 'logout.png', 'back.png', 'check.png',
@@ -39,7 +40,7 @@ assert.match(html, /group2\/shop-my-pets-tab\.png/, 'My-pets tab must use its ap
 assert.match(html, /group2\/shop-lucky-tab\.png/, 'Lucky-shop tab must use its approved image asset.');
 assert.match(html, /utility-close-button/, 'Treasure, quest, and shop panels must use lightweight X close buttons.');
 assert.match(main, /group2\/spin-lucky\.png/, 'Lucky spin must use the approved image asset.');
-assert.match(main, /compactAction\(label, onClick/, 'Admin utilities must use compact CSS buttons.');
+assert.match(ui, /compactAction\(label, onClick/, 'Admin utilities must use compact CSS buttons.');
 assert.match(main, /compactAction\('Xem'/, 'View actions must use compact CSS buttons.');
 assert.match(main, /compactAction\('Thêm vào đề'/, 'Add-to-exam actions must use compact CSS buttons.');
 assert.match(css, /\.quest-empty-state/, 'Empty quest state must be centered.');
