@@ -1880,8 +1880,54 @@ input[type="text"], input[type="password"], select, textarea {
 .daily-gift-claim:hover { transform: scale(1.06); }
 .daily-gift-claim:active { transform: scale(.97); }
 
-/* Dòng tiến độ danh hiệu trong thẻ người chơi */
-.player-info-card__stats--progress {
-    color: #fbbf24;
-    font-size: .72rem;
+/* Nút "Nhận Sao" khi đủ điều kiện nhiệm vụ */
+.btn-claim-star {
+    padding: 10px 18px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    border: 2px solid #92400e;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, .45);
+    transition: transform .15s ease;
 }
+.btn-claim-star:hover { transform: scale(1.05); }
+
+/* Thông báo hộp quà dưới thanh Năng lượng */
+.gift-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid #f59e0b;
+    border-radius: 14px;
+    background: rgba(120, 53, 15, .9);
+    color: #fde68a;
+    font-size: .9rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+    animation: gift-notice-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gift-notice-pulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Hộp quà hằng ngày trong trạm Nhiệm vụ */
+.quest-gift-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    background: linear-gradient(160deg, #fef3c7, #fde68a);
+    border: 3px solid #f59e0b;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(245, 158, 11, .35);
+}
+.quest-gift-star { width: 64px; height: auto; flex: 0 0 64px; animation: gift-star-bounce 1.4s ease-in-out infinite; }
+.quest-gift-info { flex: 1; min-width: 0; }
+.quest-gift-info h4 { margin: 0 0 4px; color: #b45309; font-size: 1.15rem; }
+.quest-gift-info p { margin: 0; color: #78350f; font-size: .92rem; font-weight: 600; }

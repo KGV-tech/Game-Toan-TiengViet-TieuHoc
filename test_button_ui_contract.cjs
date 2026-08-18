@@ -25,14 +25,14 @@ for (const asset of groupTwoAssets) {
 
 assert.match(css, /\.asset-button/, 'Group 1 must use an image-button layout class.');
 assert.doesNotMatch(css, /\.sci-fi-button\s*\{/, 'The CSS-drawn sci-fi button frame must be removed.');
-assert.match(html, /id="logout-btn"[^>]*class="[^"]*asset-button/, 'Map logout must use the image-button class.');
+assert.doesNotMatch(html, /id="logout-btn"/, 'The map must no longer include a logout button (removed by design).');
 assert.match(html, /id="game-start-btn"[^>]*asset-button--wide/, 'Exploration must use the wide image-button variant.');
 assert.match(html, /id="submit-ans-btn"[^>]*class="[^"]*asset-button/, 'Check and continue must use image buttons.');
 assert.match(html, /id="submit-ans-img"[^>]*src="\.\/public\/ui\/buttons\/group1\/check\.png"/, 'Check must start with the approved check asset.');
 assert.match(main, /submit-ans-img'\)\.src = '\.\/public\/ui\/buttons\/group1\/continue\.png'/, 'The next-question action must swap to the approved continue asset.');
 assert.doesNotMatch(html, /sci-fi-button/, 'Group 1 markup must no longer use CSS-drawn sci-fi buttons.');
 assert.doesNotMatch(main, /getElementById\('start-adv-icon'\)/, 'Subject selection must not reference the removed torch icon from the old button.');
-assert.match(main, /group2\/claim-candy\.png/, 'Quest reward must use the approved claim-candy asset.');
+assert.match(main, /btn-claim-star/, 'Quest reward must use the claim-star button.');
 assert.match(main, /group2\/start-mission-exam\.png/, 'Quest exam must use the approved mission-exam asset.');
 assert.match(main, /isEquipped \? 'deactivate-pet\.png' : 'activate-pet\.png'/, 'Pet state must choose the approved activation artwork.');
 assert.match(html, /group2\/shop-pets-tab\.png/, 'Shop pet tab must use its approved image asset.');

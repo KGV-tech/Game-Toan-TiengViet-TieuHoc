@@ -62,6 +62,9 @@ const PLAYER_TITLES = [
     { stars: 0, name: 'Học Trò Tò Mò' }
 ];
 
+// Huy hiệu (emoji) tương ứng mỗi bậc danh hiệu, cùng thứ tự giảm dần với PLAYER_TITLES.
+const PLAYER_BADGES = ['👑', '🌌', '🧬', '🔭', '🌠', '🚀', '⚙️', '💡', '🛰️', '🧪', '🔬', '🔍', '🏆', '🏅', '🧠', '🧢', '🌟', '✨', '📚', '🌱'];
+
 // D2: bộ nhớ đệm getElementById để giảm truy vấn DOM lặp lại ở các hàm hot.
 const _domCache = new Map();
 function $id(id) {
@@ -833,6 +836,9 @@ const app = {
             const titleLine = isAdmin
                 ? ''
                 : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`;
+            const badgeLine = isAdmin
+                ? ''
+                : `<span class="player-info-card__stats"><i aria-hidden="true">🎖️</i> Huy hiệu: <b>${app.auth.getPlayerBadge(user)}</b></span>`;
             const avatarMarkup = avatar.image
                 ? `<img class="player-info-card__avatar player-info-card__avatar--teacher" src="${avatar.image}" alt="Avatar ${app.data.sanitizeHTML(avatar.label)}">`
                 : `<span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>`;
@@ -842,6 +848,7 @@ const app = {
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
                   ${titleLine}
+                  ${badgeLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
                 </span>`;
             $id('player-info').innerHTML = html;
@@ -870,17 +877,10 @@ const app = {
             const match = PLAYER_TITLES.find(t => earned >= t.stars);
             return (match || PLAYER_TITLES[PLAYER_TITLES.length - 1]).name;
         },
-        getPlayerProgress(user) {
+        getPlayerBadge(user) {
             const earned = this.getPlayerStars(user);
-            const currentIdx = PLAYER_TITLES.findIndex(t => earned >= t.stars);
-            const current = PLAYER_TITLES[currentIdx] || PLAYER_TITLES[PLAYER_TITLES.length - 1];
-            const next = currentIdx > 0 ? PLAYER_TITLES[currentIdx - 1] : null;
-            return {
-                currentTitle: current.name,
-                currentStars: earned,
-                nextTitle: next ? next.name : null,
-                starsToNext: next ? Math.max(0, next.stars - earned) : 0
-            };
+            const idx = PLAYER_TITLES.findIndex(t => earned >= t.stars);
+            return PLAYER_BADGES[Math.max(0, idx)] || PLAYER_BADGES[PLAYER_BADGES.length - 1];
         }
     },
 
@@ -2731,17 +2731,26 @@ const app = {
             let starsEarned = 0;
 
             if (finalScore === 10) {
-                msg = 'Tuyệt vời! Bạn nhận được 5 sao ⭐';
-                starsEarned = 5;
+                msg = 'Tuyệt vời! Bạn đạt điểm tuyệt đối!';
             } else if (finalScore >= 8) {
-                msg = 'Khá lắm! Bạn nhận được 2 sao ⭐';
-                starsEarned = 2;
+                msg = 'Khá lắm! Bạn làm rất tốt!';
             } else {
-                msg = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận sao)';
+                msg = 'Cố gắng thêm nữa bạn nhé!';
+            }
+
+            // Thưởng hằng ngày: 1 sao/ngày khi làm ≥1 lượt luyện tập + 5 sao chuỗi 5 ngày.
+            // Chỉ áp dụng lượt luyện tập (không áp dụng đề kiểm tra).
+            if (!this.state.examName && app.data.currentUser) {
+                const daily = app.daily.registerPracticeDay(app.data.currentUser);
+                if (daily.daily) {
+                    starsEarned += daily.stars;
+                    msg += ` Bạn nhận ${daily.stars} Sao hôm nay!`;
+                    if (daily.bonus > 0) msg += ` Thưởng chuỗi ${daily.streak} ngày: +${daily.bonus} Sao!`;
+                }
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, starsEarned);
+            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, 0);
             if (newlyUnlockedTopic) {
                 msg += ` Bạn đã mở khóa chủ đề mới: ${newlyUnlockedTopic}!`;
             }
@@ -5644,7 +5653,7 @@ const app = {
             const tableArea = document.getElementById('print-2k-table-area');
 
             if (type === 'leaderboard') {
-                container.style.background = 'url("./public/leaderboard_bg.png") no-repeat center center';
+                container.style.background = 'url("./public/leaderboard_bg.webp") no-repeat center center';
                 content.style.paddingTop = '600px';
             } else {
                 container.style.background = 'url("./public/history_bg.webp") no-repeat center center';
@@ -5746,8 +5755,22 @@ const app = {
                 return false;
             });
 
+            // Hộp quà hằng ngày hiển thị trong trạm Nhiệm vụ
+            let giftBoxHtml = '';
+            if (!app.daily.giftClaimedToday(user)) {
+                giftBoxHtml = `
+                    <div class="quest-gift-box">
+                        <img src="./public/star-gold-3d.svg" alt="Sao vàng" class="quest-gift-star">
+                        <div class="quest-gift-info">
+                            <h4>Hộp Quà Hằng Ngày 🎁</h4>
+                            <p>Vào và làm ít nhất 1 lượt luyện tập hôm nay để nhận 1 Sao. Mở hộp quà để nhận phần quà hôm nay!</p>
+                        </div>
+                        <button class="btn-claim-star" onclick="app.daily.claimDailyGift()">Nhận Quà 🎁</button>
+                    </div>`;
+            }
+
             if (activeQuests.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding: 20px;">Hiện tại chưa có nhiệm vụ nào.</p>';
+                container.innerHTML = giftBoxHtml + '<p style="text-align:center; padding: 20px;">Hiện tại chưa có nhiệm vụ nào.</p>';
                 return;
             }
 
@@ -5761,9 +5784,7 @@ const app = {
                 if (isCompleted) {
                     btnHtml = `<button class="btn-success" style="opacity:0.5; cursor:not-allowed;" disabled>Đã nhận</button>`;
                 } else if (progress >= q.target_count) {
-                    btnHtml = `<button class="asset-button asset-button--pet" onclick="app.quest.claimReward('${q.id}')" aria-label="Nhận ${q.reward_stars} sao">
-                        <img src="./public/ui/buttons/group2/claim-candy.png" alt="" aria-hidden="true">
-                    </button>`;
+                    btnHtml = `<button class="btn-claim-star" onclick="app.quest.claimReward('${q.id}')" aria-label="Nhận ${q.reward_stars} sao">Nhận ${q.reward_stars} Sao ⭐</button>`;
                 } else {
                     btnHtml = q.exam_id
                         ? `<button class="asset-button asset-button--pet" onclick="app.quest.startExam('${q.id}')" aria-label="Làm đề, tiến độ ${progress}/${q.target_count}">
@@ -5787,7 +5808,7 @@ const app = {
                 </div>
             </div>`;
             });
-            container.innerHTML = html;
+            container.innerHTML = giftBoxHtml + html;
         },
         startExam(questId) {
             const quest = app.data.quests.find(item => item.id === questId);
@@ -5924,17 +5945,17 @@ const app = {
                     <div class="lucky-wheel-stage">
                         <div style="position:relative; width: 100%;">
                             <!-- Wheel Stand (Giữ khung tỉ lệ) -->
-                            <img src="./public/wheel_stand.png" style="width:100%; height:auto; display:block; z-index:1; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
+                            <img src="./public/wheel_stand.webp" style="width:100%; height:auto; display:block; z-index:1; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
                             
                             <!-- The Wheel -->
                             <div id="lucky-wheel-circle" style="position:absolute; width: 70%; aspect-ratio: 1 / 1; top: 30%; left: 50%; z-index:2; 
                                         transform: translate(-50%, -50%) rotate(${this.currentRotation || 0}deg); 
                                         transform-origin: center center;">
-                                <img src="./public/wheel_circle.png" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0px 20px rgba(147,51,234,0.6));">
+                                <img src="./public/wheel_circle.webp" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0px 20px rgba(147,51,234,0.6));">
                             </div>
                             
                             <!-- Side Pointer/Pin -->
-                            <img src="./public/wheel_pointer.png" style="position:absolute; top: 30%; right: 7%; transform: translateY(-50%); z-index:3; width: 22%; height: auto; object-fit:contain; filter: drop-shadow(-5px 0 10px rgba(0,0,0,0.6));">
+                            <img src="./public/wheel_pointer.webp" style="position:absolute; top: 30%; right: 7%; transform: translateY(-50%); z-index:3; width: 22%; height: auto; object-fit:contain; filter: drop-shadow(-5px 0 10px rgba(0,0,0,0.6));">
                         </div>
                     </div>
                 </div>
@@ -6225,7 +6246,7 @@ const app = {
                     <div style="position:relative; width: 100%; max-width: 550px; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
                         <div style="position:relative; width: 100%;">
                             <!-- Sci-Fi Machine Background -->
-                            <img src="./public/scifi_machine.png" style="width:100%; height:auto; display:block; z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
+                            <img src="./public/scifi_machine.webp" style="width:100%; height:auto; display:block; z-index:2; pointer-events:none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
                             
                             <!-- Pet Inside Window -->
                             <div style="position:absolute; width: 35%; height: 45%; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index:3; display:flex; justify-content:center; align-items:center; animation: wipeDown 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;">
@@ -6307,7 +6328,7 @@ const app = {
                         <!-- Khung tỉ lệ chuẩn cho Khoang và Pet -->
                         <div style="position:relative; width: 100%; filter: ${isEquipped ? 'drop-shadow(0 0 20px #10b981)' : 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))'};">
                             <!-- Hình nền Khoang -->
-                            <img src="./public/${isEquipped ? 'incubator_open.png' : 'incubator_closed.png'}" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
+                            <img src="./public/${isEquipped ? 'incubator_open.webp' : 'incubator_closed.webp'}" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
                             
                             <!-- Thú cưng bên trong khoang -->
                             <div style="position:absolute; width:45%; height:45%; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2; display:flex; justify-content:center; align-items:center; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); opacity: ${isEquipped ? '1' : '0.7'}; transition: all 0.3s ease;">
@@ -6347,7 +6368,7 @@ const app = {
                         html += `
                     <div style="flex: 0 0 280px; position:relative; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0;">
                         <div style="position:relative; width: 100%; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)) grayscale(100%); opacity: 0.5;">
-                            <img src="./public/incubator_closed.png" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
+                            <img src="./public/incubator_closed.webp" style="width:100%; height:auto; display:block; position:relative; z-index:1;">
                             <div style="position:absolute; z-index:3; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; color:#94a3b8; font-weight:bold; font-size:1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
                                 Khoang Trống
                             </div>
