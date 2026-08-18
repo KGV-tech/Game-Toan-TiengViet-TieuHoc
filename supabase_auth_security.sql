@@ -50,7 +50,7 @@ BEGIN
     SELECT tablename, policyname FROM pg_policies
     WHERE schemaname = 'public' AND tablename IN (
       'game_users', 'game_questions', 'game_exams', 'game_settings', 'game_quests',
-      'user_quests', 'candy_requests', 'user_pets', 'pet_inventory', 'user_question_history'
+      'user_quests', 'user_pets', 'pet_inventory', 'user_question_history'
     )
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', policy_row.policyname, policy_row.tablename);
@@ -63,7 +63,6 @@ ALTER TABLE public.game_exams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_quests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_quests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.candy_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_pets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pet_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_question_history ENABLE ROW LEVEL SECURITY;
@@ -105,9 +104,6 @@ CREATE POLICY "seen_questions_own_or_teacher" ON public.user_question_history FO
   USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
   WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
 CREATE POLICY "quests_progress_own_or_teacher" ON public.user_quests FOR ALL TO authenticated
-  USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
-  WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
-CREATE POLICY "candy_requests_own_or_teacher" ON public.candy_requests FOR ALL TO authenticated
   USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
   WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
 CREATE POLICY "pets_own_or_teacher" ON public.user_pets FOR ALL TO authenticated
