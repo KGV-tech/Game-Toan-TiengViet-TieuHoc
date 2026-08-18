@@ -90,7 +90,7 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
   await expect(page.locator('#guide-history h3')).toHaveText('8. Kho Báu');
   await expect(page.getByRole('link', { name: 'Kho Báu' })).toBeVisible();
-  await expect(page.locator('.guide-reward-table')).toContainText('5 kẹo và có thể mở chủ đề kế tiếp');
+  await expect(page.locator('.guide-reward-table')).toContainText('5 sao và có thể mở chủ đề kế tiếp');
   await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toHaveCount(0);
@@ -168,6 +168,50 @@ test('luyện đề hiển thị bốn lựa chọn Đúng/Sai để chấm từ
   expect(markup).toContain('Nhận định D');
 });
 
+test('template trắc nghiệm bốn phần hiển thị 16 lựa chọn và chấm 0,25 điểm mỗi phần', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const summary = await page.evaluate(() => {
+    let seed = 37;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.smallest_of_four', { minimum: 10000, maximum: 99999 }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+    return { answers: question.subquestions.map(item => item.answer), score: app.game.calculateQuestionScore(question, question.subquestions.map((item, index) => index === 3 ? item.options.find(option => option !== item.answer) : item.answer)) };
+  });
+
+  await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
+  await expect(page.locator('.multi-choice-subquestion__option')).toHaveCount(16);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-part-mc/);
+  for (let index = 0; index < 4; index++) {
+    await expect(page.locator(`.multi-choice-subquestion[data-index="${index}"]`)).toHaveClass(new RegExp(`multi-choice-subquestion--tone-${index}`));
+  }
+  await expect(page.locator('.multi-choice-subquestion--label-only')).toHaveCount(4);
+  await expect.poll(() => page.locator('.multi-choice-subquestion--label-only').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
+  await expect(page.locator('.multi-choice-subquestion__heading h3')).toHaveCount(0);
+  await expect(page.locator('.multi-choice-subquestion__label-only')).toHaveCount(4);
+  await captureUiReview(page, testInfo, 'four-part-multiple-choice-desktop.png');
+  expect(summary.score).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
+  for (let index = 0; index < summary.answers.length; index++) {
+    await page.locator(`.multi-choice-subquestion[data-index="${index}"] .multi-choice-subquestion__option`, { hasText: summary.answers[index] }).click();
+  }
+  await expect(page.locator('#submit-ans-btn')).toBeEnabled();
+});
+
 test('kết quả không để trống phần chi tiết khi không có câu trả lời', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
@@ -216,6 +260,22 @@ test('chi tiết kết quả của câu Đúng/Sai hiển thị đủ bốn nh�
   await expect(details).toContainText('C. Chữ số 9 thuộc lớp nghìn.');
   await expect(details).toContainText('D. Chữ số 1 ở hàng đơn vị.');
   await expect(details).not.toContainText('<br>');
+});
+
+test('chi tiết điền khuyết bốn phép tính không lặp nhãn phụ rỗng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const historyQuestion = await page.evaluate(() => app.game.formatHistoryQuestion({
+    q: 'Hãy điền số thích hợp vào chỗ trống:<br>a. ___ + 10 713 = 11 133<br>b. 13 102 = 91 714 ÷ ___',
+    type: 'Điền khuyết',
+    subquestions: [{ label: 'a' }, { label: 'b' }]
+  }));
+
+  expect(historyQuestion).toContain('Hãy điền số thích hợp vào chỗ trống:');
+  expect(historyQuestion).not.toContain('undefined');
+  expect(historyQuestion.match(/a\./g)).toHaveLength(1);
+  expect(historyQuestion.match(/b\./g)).toHaveLength(1);
 });
 
 test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
@@ -282,7 +342,7 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
   await expect(page.locator('#exam-select-screen .screen-title-row')).toHaveCSS('backdrop-filter', 'blur(8px)');
 });
 
-test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop', async ({ page }, testInfo) => {
+test('template két sắt: hiện minh hoạ và bốn câu con trên desktop', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
 
@@ -302,19 +362,87 @@ test('template két sắt: hiện minh hoạ và bốn đáp án trên desktop',
   });
 
   await expect(page.locator('.question-box--safe-password')).toBeVisible();
-  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password-3d-v3.png');
+  await expect(page.locator('.safe-password-illustration')).toHaveCount(4);
+  await expect(page.locator('.safe-password-illustration').nth(0)).toHaveAttribute('src', './src/assets/safe-password-3d-v3.png');
+  await expect(page.locator('.safe-password-illustration').nth(1)).toHaveAttribute('src', './src/assets/safe-password-classic-red-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(2)).toHaveAttribute('src', './src/assets/safe-password-future-violet-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(3)).toHaveAttribute('src', './src/assets/safe-password-mini-teal-v1.png');
+  expect((await page.locator('.multi-choice-subquestion').allTextContents()).join(' ')).not.toContain('Số nào dưới đây là mật khẩu mở khóa két sắt');
   await expect(page.locator('.safe-password-code')).toHaveCount(0);
   await expect(page.locator('#game-question-container')).not.toContainText(/mật khẩu có \d+ chữ số/);
-  await expect(page.locator('#game-options-container .ans-btn')).toHaveCount(4);
+  await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
+  await expect(page.locator('.multi-choice-subquestion__option')).toHaveCount(16);
   await captureUiReview(page, testInfo, 'safe-password-desktop.png');
-  const correctAnswer = await page.evaluate(() => app.game.state.questions[0].ans);
-  await page.locator('#game-options-container .ans-btn', { hasText: correctAnswer }).click();
+  const correctAnswers = await page.evaluate(() => app.game.state.questions[0].subquestions.map(item => item.answer));
+  for (let index = 0; index < correctAnswers.length; index++) {
+    await page.locator(`.multi-choice-subquestion[data-index="${index}"] .multi-choice-subquestion__option`, { hasText: correctAnswers[index] }).click();
+  }
   await page.locator('#submit-ans-btn').click();
-  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('src', './src/assets/safe-password-open-v1.png');
-  await expect(page.locator('.safe-password-illustration')).toHaveAttribute('alt', 'Két sắt đã mở');
+  await expect(page.locator('.safe-password-illustration')).toHaveCount(4);
+  await expect(page.locator('.safe-password-illustration').nth(0)).toHaveAttribute('src', './src/assets/safe-password-open-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(1)).toHaveAttribute('src', './src/assets/safe-password-classic-red-open-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(2)).toHaveAttribute('src', './src/assets/safe-password-future-violet-open-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(3)).toHaveAttribute('src', './src/assets/safe-password-mini-teal-open-v1.png');
+  await expect(page.locator('.safe-password-illustration').nth(0)).toHaveAttribute('alt', 'Két sắt đã mở');
   await captureUiReview(page, testInfo, 'safe-password-opened-desktop.png');
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
+});
+
+test('template két sắt bốn câu con không tràn ngang trên tablet', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await openOfflineHomepage(page);
+
+  const layout = await page.evaluate(() => {
+    let seed = 74;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.safe_password_by_place_value', {}, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+    const optionsFit = [...document.querySelectorAll('.multi-choice-subquestion__option')].every(option => option.scrollWidth <= option.clientWidth);
+    return { optionsFit, overflowsHorizontally: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+  });
+
+  await expect(page.locator('.multi-choice-subquestion')).toHaveCount(4);
+  await expect(page.locator('.safe-password-illustration')).toHaveCount(4);
+  expect(layout).toEqual({ optionsFit: true, overflowsHorizontally: false });
+});
+
+test('lượt luyện Toán lớp 4 đưa template phù hợp lên đầu lượt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const questionSources = await page.evaluate(() => {
+    const topic = '3. Số có nhiều chữ số';
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };
+    app.data.libraryQuestions = Array.from({ length: 6 }, (_, index) => ({
+      id: `static-${index}`,
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Trắc nghiệm', q: `Câu hỏi kho ${index + 1}`, options: ['Đúng', 'Sai'], ans: 'Đúng'
+    }));
+    app.data.questionTemplates = [{
+      id: 'template-smallest', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      question_type: 'Trắc nghiệm', generator_key: 'number.smallest_of_four',
+      prompt_template: 'Hãy tìm số bé nhất trong các số sau.', config: { minimum: 10000, maximum: 99999 }, is_active: true
+    }];
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    app.game.startPlay();
+    return app.game.state.questions.map(question => question.templateId || 'static');
+  });
+
+  expect(questionSources).toHaveLength(10);
+  expect(questionSources[0]).toBe('number.smallest_of_four');
+  expect(questionSources.filter(source => source === 'number.smallest_of_four')).toHaveLength(5);
 });
 
 test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh câu hỏi', async ({ page }, testInfo) => {
@@ -343,6 +471,7 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
   await expect(page.locator('.question-box--fill')).toContainText('a.');
   await expect(page.locator('.question-box--fill')).toContainText('d.');
+  await expect.poll(() => page.locator('.question-box--fill .template-fill-row').nth(1).evaluate(element => getComputedStyle(element).justifyContent)).toBe('flex-start');
   await captureUiReview(page, testInfo, 'four-arithmetic-blanks-desktop.png');
 
   await page.evaluate(() => {
@@ -376,6 +505,9 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await expect(page.locator('#template-example .template-preview__canvas')).toBeVisible();
+  await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
+  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
   await page.locator('#template-generator').selectOption('number.safe_password_by_place_value');
   await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /safe-password-by-place-value\.jpg$/);
@@ -402,6 +534,173 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
 });
 
+test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh “Số đó là”', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compose_from_places', {
+      minimum: 10000, maximum: 99999
+    }, () => 0.42);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--compose .template-compose-row')).toHaveCount(4);
+  await expect(page.locator('.question-box--compose .template-compose-answer')).toHaveCount(4);
+  await expect(page.locator('.question-box--four-part-fill')).toBeVisible();
+  await expect(page.locator('.template-compose-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.template-compose-row--tone-3')).toHaveCount(1);
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-row').first().evaluate(element => getComputedStyle(element).textAlign)).toBe('left');
+  await expect.poll(() => page.locator('.question-box--compose .template-compose-answer').first().evaluate(element => getComputedStyle(element).whiteSpace)).toBe('nowrap');
+  await captureUiReview(page, testInfo, 'compose-from-places-desktop.png');
+});
+
+test('tổng phân tích bốn câu dùng bốn thẻ màu cân đối', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.missing_expanded_addend', {
+      minimum: 1000, maximum: 99999
+    }, () => 0.42);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--four-part-fill')).toBeVisible();
+  await expect(page.locator('.template-fill-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.template-fill-row--tone-3')).toHaveCount(1);
+  await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
+  await captureUiReview(page, testInfo, 'missing-expanded-addend-desktop.png');
+});
+
+test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    let seed = 805;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_fill_blanks', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-', '*', '/']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
+  await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
+  await expect(page.locator('.question-box--fill')).toContainText('Hãy điền số thích hợp vào chỗ trống:');
+  const generated = await page.evaluate(() => {
+    const question = app.game.state.questions[0];
+    return { operations: question.practiceRows.map(row => row.operation).sort(), score: app.game.calculateQuestionScore(question, question.ans) };
+  });
+  expect(generated.operations).toEqual(['*', '+', '-', '/']);
+  expect(generated.score).toMatchObject({ correctCount: 4, answerCount: 4, points: 1, isCorrect: true });
+  await captureUiReview(page, testInfo, 'four-operations-fill-blanks-desktop.png');
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'four-operations-fill-demo', name: 'Bốn phép tính: điền số còn thiếu', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '1. Ôn tập và bổ sung', question_type: 'Điền khuyết', generator_key: 'number.four_operations_fill_blanks',
+      prompt_template: '{question}',
+      config: { minimum: 10, maximum: 99999, minimumDigits: 2, maximumDigits: 5, operations: ['+', '-', '*', '/'] }
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-layouts')).toBeHidden();
+  await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
+  await expect(page.locator('#template-arithmetic-operations').locator('input')).toHaveCount(4);
+  await expect(page.locator('#template-arithmetic-operations').locator('input').first()).toBeDisabled();
+  await expect(page.locator('fieldset:has(#template-arithmetic-operations) legend')).toHaveText('Bốn phép tính dùng trong mỗi lượt');
+  await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
+  await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('5');
+  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(savedConfig).toEqual(expect.objectContaining({
+    minimumDigits: 2, maximumDigits: 5, operations: ['+', '-', '*', '/']
+  }));
+  expect(savedConfig.layouts).toBeUndefined();
+  await captureUiReview(page, testInfo, 'four-operations-fill-blanks-template-config.png');
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('bốn phép tính tính giá trị biểu thức hiển thị dạng nhiều bước như sách', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    let seed = 806;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_expressions', {
+      minimumDigits: 2, maximumDigits: 3, operations: ['+', '-', '*', '/']
+    }, random);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+  await expect(page.locator('.four-operations-expression-row')).toHaveCount(4);
+  await expect(page.locator('.four-operations-practice__expression')).toHaveCount(4);
+  await expect(page.locator('.four-operations-practice__expression--sky')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--rose')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--mint')).toHaveCount(1);
+  await expect(page.locator('.four-operations-practice__expression--lavender')).toHaveCount(1);
+  await expect(page.locator('.four-operations-expression-row__prompt')).toHaveCount(0);
+  await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
+  await expect(page.locator('.four-operations-expression-title')).toHaveText('Tính giá trị của biểu thức:');
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-expressions/);
+  await expect.poll(() => page.locator('.four-operations-expression-list').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(1);
+  await expect.poll(() => page.locator('.four-operations-practice__expression').first().evaluate(element => getComputedStyle(element).flexWrap)).toBe('nowrap');
+  const layout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top)
+  }));
+  expect(layout.hasVerticalOverflow).toBe(false);
+  expect(layout.topInset).toBeLessThanOrEqual(16);
+  await captureUiReview(page, testInfo, 'four-operations-expressions-desktop.png');
+
+  const longExpressionLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.four_operations_expressions', {
+      minimumDigits: 9, maximumDigits: 9, operations: ['+', '-', '*', '/']
+    }, (() => { let seed = 807; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    return [...document.querySelectorAll('.four-operations-practice__expression')].every(element => element.scrollWidth <= element.clientWidth);
+  });
+  expect(longExpressionLayout).toBe(true);
+});
+
 test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
@@ -418,6 +717,8 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
       minimumDigits: 2, maximumDigits: 3, operations: ['+', '-'],
       layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
     }, random);
+    // Supabase may label this template as “So sánh”; comparisonRows must still retain drag-and-drop.
+    question.type = 'So sánh';
     app.data.currentUser = { username: 'demo-student', role: 'student' };
     app.game.state = { score: 0, currentIdx: 0, questions: [question] };
     document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
@@ -431,6 +732,20 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('.comparison-drag-sign').first()).toHaveAttribute('draggable', 'true');
   await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
   await expect(page.locator('.comparison-drag-slot')).toHaveCount(4);
+  await expect(page.locator('.comparison-drag-row--tone-0')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-1')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-2')).toHaveCount(1);
+  await expect(page.locator('.comparison-drag-row--tone-3')).toHaveCount(1);
+  await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-comparisons/);
+  const comparisonLayout = await page.locator('#game-play-view .play-center').evaluate(element => ({
+    hasVerticalOverflow: element.scrollHeight > element.clientHeight,
+    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    topInset: Math.round(element.querySelector('.game-header').getBoundingClientRect().top - element.getBoundingClientRect().top),
+    titleBackground: getComputedStyle(element.querySelector('.template-question-copy')).backgroundImage
+  }));
+  expect(comparisonLayout).toMatchObject({ hasVerticalOverflow: false, horizontalOverflow: false });
+  expect(comparisonLayout.topInset).toBeLessThanOrEqual(16);
+  expect(comparisonLayout.titleBackground).not.toBe('none');
   await page.locator('.comparison-drag-sign', { hasText: '>' }).click();
   await page.locator('.comparison-drag-slot').first().click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveText('>');
@@ -444,6 +759,35 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('.comparison-drag-slot').first()).toHaveCSS('border-color', 'rgb(74, 222, 128)');
   await expect.poll(() => page.evaluate(() => app.game.state.score)).toBe(1);
+
+  const expandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 10000, maximum: 99999
+    }, (() => { let seed = 84; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(expandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
+  await captureUiReview(page, testInfo, 'compare-number-forms-desktop.png');
+
+  const longExpandedFormLayout = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 100000000, maximum: 999999999
+    }, (() => { let seed = 85; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const center = document.querySelector('#game-play-view .play-center');
+    return {
+      rowsFit: [...document.querySelectorAll('.comparison-drag-row')].every(row => row.scrollWidth <= row.clientWidth),
+      hasVerticalOverflow: center.scrollHeight > center.clientHeight
+    };
+  });
+  expect(longExpandedFormLayout).toEqual({ rowsFit: true, hasVerticalOverflow: false });
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{
@@ -466,6 +810,28 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
     layouts: ['expressionLeft', 'expressionRight', 'twoExpressions']
   }));
   await captureUiReview(page, testInfo, 'four-arithmetic-comparisons-template-config.png');
+});
+
+test('so sánh số với dạng tổng vẫn là kéo thả khi kho lưu loại So sánh', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.compare_number_forms', {
+      minimum: 10000, maximum: 99999
+    }, Math.random);
+    question.type = 'So sánh';
+    question.options = [];
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.comparison-drag-sign')).toHaveCount(3);
+  await expect(page.locator('.comparison-drag-row')).toHaveCount(4);
+  await expect(page.locator('.magic-input')).toHaveCount(0);
 });
 
 test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({ page }, testInfo) => {
@@ -571,7 +937,7 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await openOfflineHomepage(page);
 
   await page.evaluate(() => {
-    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', lollipops: 7 };
+    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', stars: 7 };
     app.data.userPets = [];
     app.shop.open();
     app.shop.switchTab('lucky');
@@ -587,14 +953,14 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await expect(page.locator('.pet-station-title')).toHaveCSS('white-space', 'normal');
 });
 
-test('Admin có avatar giáo viên, 1.000 kẹo và xem được giao diện thú cưng minh hoạ', async ({ page }, testInfo) => {
+test('Admin có avatar giáo viên, 1.000 sao và xem được giao diện thú cưng minh hoạ', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
   await page.evaluate(() => {
     app.data.currentUser = {
       id: 'demo-admin', username: 'admin', fullname: 'Giáo viên', role: 'admin',
-      avatar_key: 'teacher-female', lollipops: 1000,
+      avatar_key: 'teacher-female', stars: 1000,
     };
     app.data.userPets = [];
     app.auth.updateHeader();
@@ -823,7 +1189,7 @@ async function showAuditState(page, state) {
     document.getElementById('exam-student-name').textContent = 'Minh Anh';
     document.getElementById('exam-questions-container').innerHTML = '<section class="exam-q-block"><div class="exam-q-text">Câu 1. Viết số thích hợp vào chỗ trống.</div><label class="exam-opt-label" for="audit-exam-answer">Đáp án <input id="audit-exam-answer" class="fill-input" inputmode="numeric" aria-label="Đáp án câu 1"></label></section>';
     document.getElementById('result-score').textContent = '0';
-    document.getElementById('result-msg').textContent = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận kẹo).';
+    document.getElementById('result-msg').textContent = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận sao).';
     document.getElementById('result-details').innerHTML = '<article><b>1. Số nào lớn nhất?</b><br>Con chọn: <span style="color:#f87171">Bỏ trống</span><br><span style="color:#4ade80">Đáp án: 12.453</span></article>';
     document.querySelector('#result-modal .result-layout').classList.remove('result-layout--single-column');
     document.getElementById('treasure-content-area').textContent = 'Kho báu minh họa cho phiên review UI.';
@@ -832,14 +1198,14 @@ async function showAuditState(page, state) {
 
     const demoStudent = {
       id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', classlevel: '5',
-      totalscore: 1250, lollipops: 7,
+      totalscore: 1250, stars: 7,
       history: [{ title: 'Luyện tập Phân số', topic: 'Phân số', difficulty: 'Vừa', questionCount: 10, score: 9, date: '2026-08-08' }],
     };
     Object.assign(app.data, {
       currentUser: demoStudent,
       userPets: [{ id: 'pet-1', user_username: 'minh-hoa', pet_image: 'pet_1.png', pet_name: 'Thỏ Hồng Không Gian' }],
       userQuests: [{ id: 'progress-1', quest_id: 'quest-1', progress: 3, is_completed: false }],
-      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_lollipops: 2, assign_type: 'all', is_active: true }],
+      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_stars: 2, assign_type: 'all', is_active: true }],
     });
 
     if (studentTreasureTab) {
@@ -857,8 +1223,8 @@ async function showAuditState(page, state) {
       Object.assign(app.data, {
         currentUser: { id: 'demo-admin', name: 'Giáo viên Demo', role: 'admin', classlevel: '5' },
         users: [
-          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, lollipops: 7, approved: true },
-          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, lollipops: 0, approved: false },
+          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, stars: 7, approved: true },
+          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, stars: 0, approved: false },
         ],
         questions: [{ id: 'question-1', classlevel: 'Lớp 5', subject: 'Toán', topic: 'Phân số', type: 'Trắc nghiệm', q: 'Phân số nào lớn hơn?', options: ['1/2', '1/3'], ans: '1/2' }],
         exams: [{ id: 'exam-1', name: 'Kiểm tra Toán tuần 1', classlevel: 'Lớp 5', subject: 'Toán', questions: ['question-1'] }],

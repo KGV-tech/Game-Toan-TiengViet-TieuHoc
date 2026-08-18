@@ -129,6 +129,7 @@
             <img src="./public/ui/buttons/group1/logout.png" alt="" aria-hidden="true">
           </button>
           <div id="player-info" class="player-info-card"></div>
+          <div id="energy-display" class="energy-display" style="display:none;"></div>
           <div id="admin-notification"
             style="display: none; background: rgba(239, 68, 68, 0.9); color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
           </div>
@@ -219,7 +220,7 @@
           <a href="#guide-map" onclick="return app.goToGuide('guide-map')">Bản đồ</a>
           <a href="#guide-practice" onclick="return app.goToGuide('guide-practice')">Luyện tập</a>
           <a href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở khóa chủ đề</a>
-          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Điểm &amp; kẹo</a>
+          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Điểm &amp; sao</a>
           <a href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
           <a href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
           <a href="#guide-exams" onclick="return app.goToGuide('guide-exams')">Luyện đề</a>
@@ -238,7 +239,7 @@
               <li><strong>Luyện đề</strong>: làm đề kiểm tra theo môn và thời điểm trong năm.</li>
               <li><strong>Nhiệm vụ</strong>: xem các bài cô giáo giao và nhận thưởng khi hoàn thành.</li>
               <li><strong>Kho Báu</strong>: xem thành tích và lịch sử làm bài.</li>
-              <li><strong>Cửa hàng</strong>: đổi kẹo, quản lý thú cưng và quay may mắn.</li>
+              <li><strong>Cửa hàng</strong>: quản lý thú cưng và quay may mắn.</li>
               <li><strong>Hướng dẫn</strong>: mở lại bảng này bất cứ lúc nào.</li>
             </ul>
           </section>
@@ -262,29 +263,28 @@
           </section>
 
           <section id="guide-rewards" class="guide-section" tabindex="-1">
-            <h3>3. Điểm và Kẹo</h3>
+            <h3>3. Điểm và Sao</h3>
             <p>Mỗi lượt có 10 câu, mỗi câu đúng tương ứng 1 điểm.</p>
             <table class="guide-reward-table">
               <thead><tr><th>Kết quả một lượt</th><th>Phần thưởng</th></tr></thead>
               <tbody>
-                <tr><td>Dưới 8 điểm</td><td>Chưa nhận kẹo</td></tr>
-                <tr><td>8–9 điểm</td><td>2 kẹo</td></tr>
-                <tr><td>10 điểm</td><td>5 kẹo và có thể mở chủ đề kế tiếp</td></tr>
+                <tr><td>Dưới 8 điểm</td><td>Chưa nhận sao</td></tr>
+                <tr><td>8–9 điểm</td><td>2 sao</td></tr>
+                <tr><td>10 điểm</td><td>5 sao và có thể mở chủ đề kế tiếp</td></tr>
               </tbody>
             </table>
             <p>Kết thúc lượt, bạn xem được điểm và chi tiết các câu đã làm. Lịch sử bài làm được lưu để cô giáo theo dõi và hỗ trợ thêm.</p>
-            <p>Nếu thoát khi đang làm bài, lượt đó được xem là bỏ dở: không tính điểm, không nhận kẹo và không cập nhật tiến độ.</p>
+            <p>Nếu thoát khi đang làm bài, lượt đó được xem là bỏ dở: không tính điểm, không nhận sao và không cập nhật tiến độ.</p>
           </section>
 
           <section id="guide-pets" class="guide-section" tabindex="-1">
             <h3>4. Thú cưng đồng hành</h3>
             <ul>
-              <li>Vào <strong>Cửa hàng → Trạm Thú Cưng</strong> để đổi kẹo lấy thú cưng.</li>
+              <li>Vào <strong>Cửa hàng → Trạm Thú Cưng</strong> để xem các thú cưng. Chức năng đổi thú cưng sẽ sớm ra mắt.</li>
               <li>Mỗi học sinh có thể sở hữu tối đa 3 thú cưng.</li>
               <li>Chọn một thú cưng trong mục <strong>Thú Cưng Của Tôi</strong> để đồng hành khi luyện tập.</li>
               <li>Thú cưng có kỹ năng hỗ trợ trong lúc luyện tập; không dùng kỹ năng khi làm đề kiểm tra.</li>
               <li>Nếu dùng kỹ năng không phù hợp, kỹ năng vẫn tính là đã dùng và cần hồi lại sau 3 lượt.</li>
-              <li>Trả thú cưng về trạm nhận lại 50% số kẹo đã đổi.</li>
             </ul>
           </section>
 
@@ -292,10 +292,10 @@
             <h3>5. Trạm May Mắn</h3>
             <p>Tại <strong>Cửa hàng → Trạm May Mắn</strong>:</p>
             <ul>
-              <li>Mỗi lần quay cần 2 kẹo.</li>
+              <li>Mỗi lần quay cần 2 sao.</li>
               <li>Tối đa 3 lượt quay mỗi ngày; lượt chưa dùng không cộng dồn sang ngày sau.</li>
-              <li>Phần thưởng có thể là kẹo, lượt quay lại hoặc thú cưng tùy tồn kho.</li>
-              <li>Rồng không xuất hiện trong phần thưởng vòng quay; chỉ đổi bằng kẹo tại Trạm Thú Cưng.</li>
+              <li>Phần thưởng có thể là sao, lượt quay lại hoặc thú cưng tùy tồn kho.</li>
+              <li>Rồng không xuất hiện trong phần thưởng vòng quay.</li>
             </ul>
           </section>
 
@@ -315,7 +315,7 @@
             <ul>
               <li>Nhiệm vụ do cô giáo giao.</li>
               <li>Mở trạm Nhiệm vụ để xem yêu cầu và tiến độ.</li>
-              <li>Khi đủ điều kiện, bấm nhận thưởng để lấy kẹo.</li>
+              <li>Khi đủ điều kiện, bấm nhận thưởng để lấy sao.</li>
               <li>Một số nhiệm vụ có thể yêu cầu làm đúng môn, đúng mức điểm hoặc đúng đề kiểm tra mà cô giáo giao.</li>
             </ul>
           </section>
@@ -324,7 +324,7 @@
             <h3>8. Kho Báu</h3>
             <p>Trong Kho Báu, học sinh có thể xem:</p>
             <ul>
-              <li>Tổng điểm và số kẹo đang có.</li>
+              <li>Tổng điểm và số sao đang có.</li>
               <li>Lịch sử các lượt luyện tập và đề kiểm tra.</li>
               <li>Câu đã làm đúng, câu sai và đáp án đúng.</li>
             </ul>
@@ -678,6 +678,16 @@
   <!-- Canvas for Confetti -->
   <canvas id="confetti-canvas"></canvas>
 
+  <!-- Hộp Quà Hằng Ngày -->
+  <div id="daily-gift-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.72); z-index:1001; justify-content:center; align-items:center;">
+    <div class="daily-gift-card">
+      <img src="./public/star-gold-3d.svg" alt="Sao vàng" class="daily-gift-star">
+      <h2 class="daily-gift-title">Hộp Quà Hằng Ngày 🎁</h2>
+      <p class="daily-gift-text">Chào mừng bạn quay lại! Nhận ngay phần quà hôm nay nhé!</p>
+      <button class="daily-gift-claim" onclick="app.daily.claimDailyGift()" aria-label="Nhận quà hôm nay">Nhận Quà 🎁</button>
+    </div>
+  </div>
+
   </div>
   <script defer src="./src/question-templates/grade-4/math/shared.js"></script>
   <script defer src="./src/question-templates/grade-4/math/smallest-of-four.js"></script>
@@ -687,11 +697,17 @@
   <script defer src="./src/question-templates/grade-4/math/missing-expanded-addend.js"></script>
   <script defer src="./src/question-templates/grade-4/math/four-arithmetic-blanks.js"></script>
   <script defer src="./src/question-templates/grade-4/math/four-arithmetic-comparisons.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/four-operations-fill-blanks.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/four-operations-expressions.js"></script>
   <script defer src="./src/question-templates/grade-4/math/neighbor-numbers.js"></script>
   <script defer src="./src/question-templates/grade-4/math/compare-number-forms.js"></script>
   <script defer src="./src/question-templates/grade-4/math/match-number-words.js"></script>
   <script defer src="./src/question-templates/grade-4/math/place-value-true-false.js"></script>
   <script defer src="./src/question-templates/grade-4/math/safe-password-by-place-value.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/angle-count-in-polygon.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/angle-drag-classify.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/angle-clock-classify.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/angle-count-eight-angles.js"></script>
   <script defer src="./src/question-templates/grade-4/math/index.js"></script>
   <script defer src="./src/main.js?v=number-match-template-v3"></script>
 </body>

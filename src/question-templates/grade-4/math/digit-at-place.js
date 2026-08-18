@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.digit_at_place'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createFourPartMultipleChoiceQuestion }) {
 
 const places = {
     ones: { divisor: 1, label: 'đơn vị' },
@@ -39,28 +39,35 @@ function generateDigitAtPlace(config = {}, random = Math.random) {
     const allowedPlaces = config.allowedPlaces ?? Object.keys(places);
     const allowedDigits = config.allowedDigits ?? [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const validPlaces = allowedPlaces.filter(place => places[place] && places[place].divisor <= maximum);
-    const place = validPlaces[randomInt(0, validPlaces.length - 1, random)];
-    const targetDigit = allowedDigits[randomInt(0, allowedDigits.length - 1, random)];
-
-    if (!validPlaces.length || !Number.isInteger(targetDigit) || targetDigit < 0 || targetDigit > 9) {
+    if (!validPlaces.length || !allowedDigits.every(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9)) {
         throw new Error('Invalid digit-at-place template configuration.');
     }
 
-    const answer = randomNumberMatching(minimum, maximum, value => digitAt(value, place) === targetDigit, random);
-    const distractors = new Set();
-    while (distractors.size < 3) {
-        distractors.add(randomNumberMatching(minimum, maximum, value => digitAt(value, place) !== targetDigit && value !== answer, random));
-    }
+    const subquestions = ['a', 'b', 'c', 'd'].map(label => {
+        const place = validPlaces[randomInt(0, validPlaces.length - 1, random)];
+        const targetDigit = allowedDigits[randomInt(0, allowedDigits.length - 1, random)];
+        const answer = randomNumberMatching(minimum, maximum, value => digitAt(value, place) === targetDigit, random);
+        const distractors = new Set();
+        while (distractors.size < 3) {
+            distractors.add(randomNumberMatching(minimum, maximum, value => digitAt(value, place) !== targetDigit && value !== answer, random));
+        }
+        return {
+            label,
+            prompt: `Số nào có chữ số hàng ${places[place].label} là ${targetDigit}?`,
+            options: shuffle([answer, ...distractors], random).map(formatNumber),
+            answer: formatNumber(answer),
+            place: places[place].label,
+            digit: String(targetDigit)
+        };
+    });
 
-    const question = createQuestion(
+    return createFourPartMultipleChoiceQuestion(
         'number.digit_at_place',
-        `Số nào dưới đây có chữ số hàng ${places[place].label} là ${targetDigit}?`,
-        shuffle([answer, ...distractors], random),
-        answer,
-        `Trong số ${formatNumber(answer)}, chữ số ở hàng ${places[place].label} là ${targetDigit}.`
+        'Hãy chọn số phù hợp với mỗi yêu cầu sau.',
+        subquestions,
+        'Ở mỗi câu, xét đúng chữ số tại hàng được nêu để chọn đáp án.',
+        { question: 'Hãy chọn số phù hợp với mỗi yêu cầu sau.' }
     );
-    question.templateVariables = { place: places[place].label, digit: String(targetDigit) };
-    return question;
 }
 
 return generateDigitAtPlace;

@@ -19,29 +19,44 @@ function hasHundredsDigitEight(text) {
 
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
-assert.equal(smallest.options.length, 4);
-assert.equal(new Set(smallest.options).size, 4, 'The smallest-number template must generate four distinct options.');
-assert.equal(numericValue(smallest.ans), Math.min(...smallest.options.map(numericValue)));
+assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');
+assert.deepEqual(smallest.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
+smallest.subquestions.forEach(item => {
+    assert.equal(item.options.length, 4, 'Each smallest-number part must have four options.');
+    assert.equal(item.prompt, '', 'The shared smallest-number instruction must not repeat in every part.');
+    assert.equal(new Set(item.options).size, 4, 'Each smallest-number part must generate distinct options.');
+    assert.equal(numericValue(item.answer), Math.min(...item.options.map(numericValue)));
+});
+assert.deepEqual(smallest.ans.split(', '), smallest.subquestions.map(item => item.answer));
 
 const largest = generateQuestion('number.largest_of_four', {}, seededRandom(2));
-assert.equal(largest.options.length, 4);
-assert.equal(new Set(largest.options).size, 4, 'The largest-number template must generate four distinct options.');
-assert.equal(numericValue(largest.ans), Math.max(...largest.options.map(numericValue)));
+assert.equal(largest.subquestions.length, 4, 'The largest-number template must generate four parts a–d.');
+largest.subquestions.forEach(item => {
+    assert.equal(item.options.length, 4, 'Each largest-number part must have four options.');
+    assert.equal(item.prompt, '', 'The shared largest-number instruction must not repeat in every part.');
+    assert.equal(new Set(item.options).size, 4, 'Each largest-number part must generate distinct options.');
+    assert.equal(numericValue(item.answer), Math.max(...item.options.map(numericValue)));
+});
+assert.deepEqual(largest.ans.split(', '), largest.subquestions.map(item => item.answer));
 
 const digitAtPlace = generateQuestion('number.digit_at_place', {
     maximum: 100000,
     allowedPlaces: ['tens'],
     allowedDigits: [2]
 }, seededRandom(3));
-assert.equal(Math.floor(numericValue(digitAtPlace.ans) / 10) % 10, 2, 'The answer must have 2 in the tens place.');
-assert.equal(digitAtPlace.options.filter(option => Math.floor(numericValue(option) / 10) % 10 === 2).length, 1, 'Only one option may be correct.');
+assert.equal(digitAtPlace.subquestions.length, 4, 'The digit-at-place template must generate four parts a–d.');
+digitAtPlace.subquestions.forEach(item => {
+    assert.equal(Math.floor(numericValue(item.answer) / 10) % 10, 2, 'Each answer must have 2 in the tens place.');
+    assert.equal(item.options.filter(option => Math.floor(numericValue(option) / 10) % 10 === 2).length, 1, 'Each part must have only one correct option.');
+});
 
 const randomizedPlaceAndDigit = generateQuestion('number.digit_at_place', {
     maximum: 100000,
     allowedPlaces: ['tens', 'hundreds'],
     allowedDigits: [2, 8]
 }, seededRandom(4));
-assert.match(randomizedPlaceAndDigit.q, /hàng (chục|trăm) là (2|8)/);
+assert.equal(randomizedPlaceAndDigit.subquestions.length, 4);
+randomizedPlaceAndDigit.subquestions.forEach(item => assert.match(item.prompt, /hàng (chục|trăm) là (2|8)/));
 
 const hundredBillions = generateQuestion('number.digit_at_place', {
     minimum: 100000000000,
@@ -49,23 +64,23 @@ const hundredBillions = generateQuestion('number.digit_at_place', {
     allowedPlaces: ['hundredBillions'],
     allowedDigits: [2]
 }, seededRandom(5));
-assert.equal(Math.floor(numericValue(hundredBillions.ans) / 100000000000) % 10, 2);
+hundredBillions.subquestions.forEach(item => assert.equal(Math.floor(numericValue(item.answer) / 100000000000) % 10, 2));
 
 const composeNumber = generateQuestion('number.compose_from_places', { minimum: 10000, maximum: 99999 }, seededRandom(6));
 assert.equal(composeNumber.type, 'Điền khuyết');
-assert.match(composeNumber.q, /___/, 'The compose-number template must provide an input blank.');
-assert.equal(numericValue(composeNumber.ans), composeNumber.templateVariables.number);
+assert.equal((composeNumber.q.match(/___/g) || []).length, 4, 'The compose-number template must provide one blank in each part a–d.');
+assert.equal(composeNumber.ans.split(', ').length, 4);
 assert.match(composeNumber.templateVariables.place_values, /chục nghìn|nghìn/, 'The compose-number template must expose its generated place-value wording.');
 
 const missingAddend = generateQuestion('number.missing_expanded_addend', { minimum: 10000, maximum: 99999 }, seededRandom(7));
 assert.equal(missingAddend.type, 'Điền khuyết');
-assert.match(missingAddend.q, /___/, 'The expanded-form template must hide exactly one addend.');
-assert.equal(numericValue(missingAddend.templateVariables.number), missingAddend.templateVariables.expanded.split('+').reduce((sum, term) => sum + numericValue(term), 0));
+assert.equal((missingAddend.q.match(/___/g) || []).length, 4, 'The expanded-form template must hide one addend in each part a–d.');
+assert.equal(missingAddend.ans.split(', ').length, 4);
 assert.match(missingAddend.templateVariables.expression, /___/, 'The expanded-form template must expose the expression containing the blank.');
 
 const neighbors = generateQuestion('number.neighbor_numbers', { minimum: 10000, maximum: 99999 }, seededRandom(8));
 assert.equal(neighbors.type, 'Điền khuyết');
-assert.equal(neighbors.ans.split(',').length, 2, 'The neighbor template must require both adjacent numbers.');
+assert.equal(neighbors.ans.split(',').length, 8, 'The neighbor template must require both adjacent numbers in all four parts.');
 assert.match(neighbors.templateVariables.neighbor_line, /___/, 'The neighbor template must expose a reusable blank-number line.');
 
 const fourArithmeticBlanks = generateQuestion('number.four_arithmetic_blanks', {
@@ -84,6 +99,31 @@ assert.match(fourArithmeticBlanks.q, /^Hãy điền số thích hợp vào chỗ
 assert(fourArithmeticBlanks.subquestions.every(item => item.operation === '+'), 'The configured operation must be used.');
 assert(fourArithmeticBlanks.subquestions.every(item => item.layout === 'expressionLeft'), 'The configured layout must be used.');
 assert(fourArithmeticBlanks.subquestions.every(item => ['first', 'second', 'third'].includes(item.blankPosition)), 'The blank must be one of the three configured positions.');
+
+const fourOperationsFillBlanks = generateQuestion('number.four_operations_fill_blanks', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['+', '-', '*', '/']
+}, seededRandom(805));
+assert.equal(fourOperationsFillBlanks.type, 'Điền khuyết');
+assert.equal(fourOperationsFillBlanks.practiceRows.length, 4, 'The fill-in template must generate parts a–d.');
+assert.deepEqual(fourOperationsFillBlanks.practiceRows.map(item => item.label), ['a', 'b', 'c', 'd']);
+assert.deepEqual([...fourOperationsFillBlanks.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert(fourOperationsFillBlanks.practiceRows.every(item => /(^___|[+−×÷]\s+___|=\s+___)/.test(item.expression)), 'Mỗi ý điền khuyết phải bốc ô số thứ nhất, thứ hai hoặc kết quả.');
+assert.equal((fourOperationsFillBlanks.q.match(/___/g) || []).length, 4, 'Each part must include one answer blank.');
+assert.deepEqual(fourOperationsFillBlanks.partAnswerCounts, [1, 1, 1, 1], 'Each of the four parts must be worth 0.25 point.');
+
+const fourOperationsExpressions = generateQuestion('number.four_operations_expressions', {
+    minimumDigits: 2,
+    maximumDigits: 3,
+    operations: ['+', '-', '*', '/']
+}, seededRandom(806));
+assert.equal(fourOperationsExpressions.type, 'Điền khuyết');
+assert.equal(fourOperationsExpressions.practiceRows.length, 4, 'The expression template must generate parts a–d.');
+assert.deepEqual([...fourOperationsExpressions.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert(fourOperationsExpressions.practiceRows.every(item => (item.expression.match(/[+−×:]/g) || []).length >= 2), 'Mỗi ý tính giá trị biểu thức phải có ít nhất hai phép tính.');
+assert.equal((fourOperationsExpressions.q.match(/___/g) || []).length, 4, 'Each expression must provide one answer blank.');
+assert.deepEqual(fourOperationsExpressions.partAnswerCounts, [1, 1, 1, 1], 'Each expression part must be worth 0.25 point.');
 
 const twoExpressionArithmetic = generateQuestion('number.four_arithmetic_blanks', {
     minimumDigits: 2,
@@ -171,10 +211,11 @@ assert(divisionComparisons.comparisonRows.every(item => item.operation === '/'),
 assert(divisionComparisons.comparisonRows.every(item => item.leftText.includes('÷') && item.rightText.includes('÷')), 'Both comparison expressions must display exact division.');
 
 const comparison = generateQuestion('number.compare_number_forms', { minimum: 10000, maximum: 99999 }, seededRandom(9));
-assert.equal(comparison.type, 'So sánh');
-assert(['>', '<', '='].includes(comparison.ans), 'The comparison template must use a comparison symbol as its answer.');
-assert.match(comparison.q, /___/, 'The comparison template must contain a comparison slot.');
-assert.match(comparison.templateVariables.comparison, /___/, 'The comparison template must expose a reusable comparison expression.');
+assert.equal(comparison.type, 'Kéo thả');
+assert.equal(comparison.comparisonRows.length, 4, 'The number-form comparison template must generate four parts a–d.');
+assert.equal(comparison.ans.split(', ').length, 4);
+assert(comparison.comparisonRows.every(row => ['>', '<', '='].includes(row.answer)), 'Each comparison part must use a valid comparison symbol.');
+assert.equal((comparison.q.match(/___/g) || []).length, 4, 'The comparison template must contain one slot per part.');
 
 const placeValueTrueFalse = generateQuestion('number.place_value_true_false', { minimum: 10000000, maximum: 99999999 }, seededRandom(10));
 assert.equal(placeValueTrueFalse.type, 'Đúng/Sai');
@@ -191,7 +232,8 @@ assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate th
 
 const safePassword = generateQuestion('number.safe_password_by_place_value', {}, seededRandom(11));
 assert.equal(safePassword.type, 'Trắc nghiệm');
-assert.equal(safePassword.options.length, 4);
+assert.equal(safePassword.subquestions.length, 4, 'The safe-password template must generate four parts a–d.');
+assert(safePassword.subquestions.every(item => item.options.length === 4), 'Each safe-password part must have four options.');
 assert.equal(safePassword.imageUrl, './src/assets/safe-password-3d-v3.png');
 assert.doesNotMatch(safePassword.q, /Chọn câu trả lời đúng/i, 'The safe-password prompt must avoid redundant text.');
 assert.equal(safePassword.codeLength, 9);
@@ -199,12 +241,12 @@ assert.equal(String(safePassword.passwordCode).length, 9, 'A nine-cell safe must
 assert.doesNotMatch(safePassword.q, /mật khẩu có \d+ chữ số/i, 'The question must not repeat the password length when the conditions are sufficient.');
 const safePlaceValues = { ones: 1, tens: 10, hundreds: 100, thousands: 1000, tenThousands: 10000, hundredThousands: 100000, millions: 1000000, tenMillions: 10000000, hundredMillions: 100000000 };
 const safeConditionDigit = condition => Number(condition.match(/khác (\d)/)[1]);
-assert.equal(safePassword.options.filter(option => {
+assert.equal(safePassword.subquestions[0].options.filter(option => {
     const value = numericValue(option);
     return Math.floor(value / safePlaceValues[safePassword.templateVariables.condition1Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition1)
         && Math.floor(value / safePlaceValues[safePassword.templateVariables.condition2Place]) % 10 !== safeConditionDigit(safePassword.templateVariables.condition2);
-}).length, 1, 'Only one safe-password option may satisfy both generated conditions.');
-assert.equal(numericValue(safePassword.ans), numericValue(safePassword.options.find(option => numericValue(option) === numericValue(safePassword.ans))));
+}).length, 1, 'Only one option may satisfy both conditions in each safe-password part.');
+assert.equal(numericValue(safePassword.subquestions[0].answer), numericValue(safePassword.subquestions[0].options.find(option => numericValue(option) === numericValue(safePassword.subquestions[0].answer))));
 
 for (const codeLength of [2, 3, 6, 9]) {
     const generated = generateQuestion('number.safe_password_by_place_value', { minimumCodeLength: codeLength, maximumCodeLength: codeLength }, seededRandom(codeLength));
@@ -275,8 +317,44 @@ assert.deepEqual(
 );
 assert.throws(() => generateQuestion('number.match_number_words', { shapes: ['4:2'] }, seededRandom(16)));
 
+// Tests for Topic 2: Angle Templates
+const polygonAngle = generateQuestion('g4-m-angle-count-in-polygon', {}, seededRandom(301));
+assert.equal(polygonAngle.type, 'Điền khuyết');
+assert.equal(polygonAngle.topic, '2. Góc và đơn vị đo góc');
+assert(polygonAngle.q.includes('<svg'));
+assert(polygonAngle.q.includes('a) ___ góc nhọn'));
+assert(polygonAngle.q.includes('d) ___ góc bẹt'));
+assert.equal(polygonAngle.ans.split(', ').length, 4);
+
+const polygonAngleAlias = generateQuestion('angle.count_in_polygon', {}, seededRandom(302));
+assert.equal(polygonAngleAlias.type, 'Điền khuyết');
+
+const dragAngle = generateQuestion('g4-m-angle-drag-classify', {}, seededRandom(303));
+assert.equal(dragAngle.type, 'Kéo thả');
+assert.equal(dragAngle.topic, '2. Góc và đơn vị đo góc');
+assert.deepEqual(dragAngle.options, ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt']);
+assert(dragAngle.q.includes('<svg'));
+assert.equal(dragAngle.ans.split(', ').length, 4);
+
+const dragClock = generateQuestion('g4-m-angle-clock-classify', {}, seededRandom(304));
+assert.equal(dragClock.type, 'Kéo thả');
+assert.equal(dragClock.topic, '2. Góc và đơn vị đo góc');
+assert.deepEqual(dragClock.options, ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt']);
+assert(dragClock.q.includes('<svg'));
+assert.equal(dragClock.ans.split(', ').length, 4);
+
+const eightAngles = generateQuestion('g4-m-angle-count-eight-angles', {}, seededRandom(305));
+assert.equal(eightAngles.type, 'Điền khuyết');
+assert.equal(eightAngles.topic, '2. Góc và đơn vị đo góc');
+assert(eightAngles.q.includes('<svg'));
+assert(eightAngles.q.includes('• ___ góc nhọn;'));
+assert(eightAngles.q.includes('• ___ góc bẹt.'));
+const eightAnsNumbers = eightAngles.ans.split(', ').map(Number);
+assert.equal(eightAnsNumbers.length, 4);
+assert.equal(eightAnsNumbers.reduce((a, b) => a + b, 0), 8, 'Total angles must equal 8.');
+
 const firstVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(10));
 const nextVersion = generateQuestion('number.smallest_of_four', {}, seededRandom(11));
-assert.notDeepEqual(firstVersion.options, nextVersion.options, 'Different sessions should receive new numbers.');
+assert.notDeepEqual(firstVersion.subquestions, nextVersion.subquestions, 'Different sessions should receive new numbers.');
 
 console.log('Math question templates generate valid, varied multiple-choice questions.');

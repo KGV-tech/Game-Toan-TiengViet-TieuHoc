@@ -7,5 +7,5 @@ ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS avatar_key TEXT;
 UPDATE public.game_users
 SET
   avatar_key = 'teacher-female',
-  lollipops = GREATEST(COALESCE(lollipops, 0), 1000)
+  stars = GREATEST(COALESCE(stars, 0), 1000)
 WHERE lower(trim(COALESCE(role, ''))) = 'admin';
