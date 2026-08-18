@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const source = fs.readFileSync('src/main.js', 'utf8');
+const dailySource = fs.readFileSync('src/modules/daily.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 
 // ---- Danh hiệu: bảng 20 bậc (5 nhóm x 4 cấp) ----
@@ -23,11 +24,11 @@ for (const title of expectedTitles) {
 }
 
 // ---- Danh hiệu dựa trên tổng Sao tích lũy suốt đời ----
-assert.match(source, /total_stars_earned/,
+assert.match(dailySource, /total_stars_earned/,
   'The client must track total stars earned over a lifetime.');
-assert.match(source, /addStars\(user, amount\)/,
+assert.match(dailySource, /addStars\(user, amount\)/,
   'addStars helper must exist to credit stars.');
-assert.match(source, /user\.total_stars_earned = \(user\.total_stars_earned \|\| 0\) \+ amount/,
+assert.match(dailySource, /user\.total_stars_earned = \(user\.total_stars_earned \|\| 0\) \+ amount/,
   'addStars must increment lifetime stars together with the spendable balance.');
 assert.match(source, /getPlayerTitle\(user\)/,
   'getPlayerTitle must resolve the current title.');
@@ -35,21 +36,21 @@ assert.match(source, /PLAYER_TITLES\.find\(t => earned >= t\.stars\)/,
   'getPlayerTitle must pick the highest qualifying rank by lifetime stars.');
 
 // ---- Năng lượng (5 trái tim/ngày) ----
-assert.match(source, /energy_date !== today/,
+assert.match(dailySource, /energy_date !== today/,
   'Energy must be reset when the stored date is not today.');
-assert.match(source, /user\.energy = 5/,
+assert.match(dailySource, /user\.energy = 5/,
   'Energy must reset to 5 per day.');
-assert.match(source, /spendEnergy\(user\)/,
+assert.match(dailySource, /spendEnergy\(user\)/,
   'spendEnergy helper must exist to consume a heart.');
 assert.match(source, /Bạn đã dùng hết 5 lượt chơi hôm nay/,
   'Starting a round must be blocked when energy is exhausted.');
 
 // ---- Hộp quà hằng ngày ----
-assert.match(source, /daily_gift_date/,
+assert.match(dailySource, /daily_gift_date/,
   'The daily gift claim date must be stored per user.');
-assert.match(source, /daily_gift_streak/,
+assert.match(dailySource, /daily_gift_streak/,
   'The daily gift streak must be tracked.');
-assert.match(source, /claimDailyGift\(\)/,
+assert.match(dailySource, /claimDailyGift\(\)/,
   'claimDailyGift must exist to credit the daily reward.');
 
 // ---- Thẻ người chơi hiển thị Danh hiệu + Sao ----
