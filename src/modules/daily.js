@@ -54,6 +54,44 @@
             if (r < 0.95) return { stars: 5, label: '5 Sao ⭐' };
             return { stars: 10, label: '10 Sao ⭐' };
         },
+        shiftDate(dateKey, days) {
+            const d = new Date(dateKey + 'T12:00:00');
+            d.setDate(d.getDate() + days);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        },
+        // Thưởng hằng ngày: 1 sao cho ngày có ≥1 lượt luyện tập; +5 sao nếu đủ chuỗi 5 ngày liên tiếp.
+        registerPracticeDay(user) {
+            if (!user) return { daily: false, stars: 0 };
+            const today = this.todayKey();
+            if (user.last_practice_date === today) {
+                return { daily: false, streak: user.practice_streak || 0, bonus: 0, stars: 0 };
+            }
+            this.addStars(user, 1);
+            const yesterday = this.shiftDate(today, -1);
+            const streak = (user.last_practice_date === yesterday) ? (user.practice_streak || 0) + 1 : 1;
+            user.last_practice_date = today;
+            user.practice_streak = streak;
+            let bonus = 0;
+            let streakDays = streak;
+            if (streak >= 5) {
+                bonus = 5;
+                this.addStars(user, 5);
+                streakDays = 5;
+                user.practice_streak = 0; // bắt đầu chuỗi mới
+            }
+            if (window.supabase && user.id) {
+                supabaseClient.from('game_users').update({
+                    stars: user.stars,
+                    total_stars_earned: user.total_stars_earned || 0,
+                    last_practice_date: user.last_practice_date,
+                    practice_streak: user.practice_streak
+                }).eq('id', user.id).then(() => {});
+            }
+            return { daily: true, streak: streakDays, bonus, stars: 1 + bonus };
+        },
         async claimDailyGift() {
             const user = app.data.currentUser;
             if (!user || this.giftClaimedToday(user)) return;
@@ -66,9 +104,9 @@
                     stars: user.stars, total_stars_earned: user.total_stars_earned || 0, daily_gift_date: user.daily_gift_date, daily_gift_streak: user.daily_gift_streak
                 }).eq('id', user.id);
             }
-            const modal = document.getElementById('daily-gift-modal');
-            if (modal) modal.style.display = 'none';
+            this.renderGiftNotice();
             app.auth.updateHeader();
+            if (app.quest && typeof app.quest.render === 'function') app.quest.render();
             app.playSound('correct');
             if (window.confetti) confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
             alert(`Chúc mừng! Bạn nhận được ${gift.label} từ hộp quà hôm nay!`);
@@ -92,11 +130,18 @@
         onMapEnter() {
             const user = app.data.currentUser;
             this.renderEnergy();
+            this.renderGiftNotice();
             if (!user || user.role?.toLowerCase() === 'admin') return;
             this.showGreeting();
-            if (!this.giftClaimedToday(user)) {
-                const modal = document.getElementById('daily-gift-modal');
-                if (modal) modal.style.display = 'flex';
+        },
+        renderGiftNotice() {
+            const el = document.getElementById('gift-notice');
+            if (!el) return;
+            const user = app.data.currentUser;
+            if (!user || user.role?.toLowerCase() === 'admin' || this.giftClaimedToday(user)) {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
             }
         }
     };

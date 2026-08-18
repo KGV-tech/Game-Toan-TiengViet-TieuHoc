@@ -39,7 +39,9 @@ ALTER TABLE public.game_users
     ADD COLUMN IF NOT EXISTS energy_date DATE,
     ADD COLUMN IF NOT EXISTS daily_gift_date DATE,
     ADD COLUMN IF NOT EXISTS daily_gift_streak INT NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS total_stars_earned INT NOT NULL DEFAULT 0;
+    ADD COLUMN IF NOT EXISTS total_stars_earned INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS last_practice_date DATE,
+    ADD COLUMN IF NOT EXISTS practice_streak INT NOT NULL DEFAULT 0;
 
 -- 4. Bỏ tính năng "đổi kẹo thật" (candy_requests): xóa bảng.
 --    Cảnh báo: thao tác xóa dữ liệu; chỉ chạy khi chắc chắn không cần giữ.
