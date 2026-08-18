@@ -5928,7 +5928,7 @@ const app = {
                 container.style.background = 'url("./public/leaderboard_bg.png") no-repeat center center';
                 content.style.paddingTop = '600px';
             } else {
-                container.style.background = 'url("./public/history_bg.png") no-repeat center center';
+                container.style.background = 'url("./public/history_bg.webp") no-repeat center center';
                 content.style.paddingTop = '400px';
             }
             container.style.backgroundSize = 'cover';
