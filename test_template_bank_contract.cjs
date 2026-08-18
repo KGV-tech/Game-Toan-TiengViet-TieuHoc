@@ -4,15 +4,23 @@ const fs = require('fs');
 const source = fs.readFileSync('src/main.js', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8');
 const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
+const previewDirectory = 'src/assets/template-previews';
+const previewFiles = ['digit-at-place.jpg', 'smallest-of-four.jpg', 'largest-of-four.jpg', 'compose-from-places.jpg', 'missing-expanded-addend.jpg', 'four-arithmetic-blanks.jpg', 'four-arithmetic-comparisons.jpg', 'neighbor-numbers.jpg', 'compare-number-forms.jpg', 'place-value-true-false.jpg', 'safe-password-by-place-value.jpg', 'match-number-words.jpg'];
 
 assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin must show a Template Bank tab before Question Bank.');
 assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
 assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
 assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
-assert(source.includes('renderTemplatePreview(generator)'), 'Template editor must render a visual preview for the selected template.');
-assert(source.includes('template-preview__canvas'), 'Template editor visual preview must have a dedicated canvas.');
-assert(!source.includes('target.textContent = preset.example'), 'Template editor must not show the old text-only result example.');
+assert(source.includes('template-editor__preview-image'), 'Template editor must render a real gameplay preview image.');
+assert(source.includes('src/assets/template-previews/'), 'Each template preview must resolve to a shipped visual asset.');
+assert(!source.includes('Ví dụ kết quả:'), 'Template editor must not use text-only "Ví dụ kết quả" previews.');
+previewFiles.forEach(file => {
+  const path = `${previewDirectory}/${file}`;
+  assert(source.includes(file), `Template editor must reference preview image ${file}.`);
+  assert(fs.existsSync(path), `Missing shipped gameplay preview: ${file}`);
+  assert(fs.statSync(path).size < 100 * 1024, `Gameplay preview must stay lightweight: ${file}`);
+});
 assert(source.includes('<b>Diễn giải</b>'), 'Template editor must label the template summary as Diễn giải.');
 assert(!source.includes('Ví dụ khai báo'), 'Template editor must no longer present the summary as an example declaration.');
 assert(source.includes('Số lượng chữ số ít nhất'), 'Four-arithmetic templates must clearly describe the minimum digit count.');

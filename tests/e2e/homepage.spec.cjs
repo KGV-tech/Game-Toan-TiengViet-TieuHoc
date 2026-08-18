@@ -486,6 +486,9 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   });
 
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
+  await expect(page.locator('#template-example .template-editor__preview-image')).toBeVisible();
+  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /four-arithmetic-blanks\.jpg$/);
+  await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
   await expect(page.locator('.template-editor__guide b')).toHaveText('Diễn giải');
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls h5')).toHaveCount(0);
   await expect.poll(() => page.locator('.template-editor__rules').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
@@ -506,6 +509,8 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
   await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
+  await page.locator('#template-generator').selectOption('number.safe_password_by_place_value');
+  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /safe-password-by-place-value\.jpg$/);
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{
