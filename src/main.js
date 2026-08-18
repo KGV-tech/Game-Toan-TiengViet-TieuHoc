@@ -62,6 +62,13 @@ const PLAYER_TITLES = [
     { stars: 0, name: 'Học Trò Tò Mò' }
 ];
 
+// D2: bộ nhớ đệm getElementById để giảm truy vấn DOM lặp lại ở các hàm hot.
+const _domCache = new Map();
+function $id(id) {
+    if (!_domCache.has(id)) _domCache.set(id, document.getElementById(id));
+    return _domCache.get(id);
+}
+
 const app = {
     utils: {
         async loadScript(src, globalVar) {
@@ -903,9 +910,9 @@ const app = {
                   ${titleLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
                 </span>`;
-            document.getElementById('player-info').innerHTML = html;
+            $id('player-info').innerHTML = html;
 
-            const adminNotif = document.getElementById('admin-notification');
+            const adminNotif = $id('admin-notification');
             if (adminNotif) {
                 if (app.data.currentUser.role?.toLowerCase() === 'admin') {
                     const pendingUsers = app.data.users ? app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === false).length : 0;
@@ -2378,19 +2385,21 @@ const app = {
                 timerDisplay.textContent = `(00:${timeLeft.toString().padStart(2, '0')})`;
 
                 if (this.hardTimer) clearInterval(this.hardTimer);
+                // D6: dùng deadline theo Date.now() để đồng hồ không lệch khi tab bị ẩn/throttle.
+                const hardDeadline = Date.now() + timeLeft * 1000;
                 this.hardTimer = setInterval(() => {
-                    timeLeft--;
-                    timerDisplay.textContent = `(00:${timeLeft.toString().padStart(2, '0')})`;
+                    const remaining = Math.max(0, Math.ceil((hardDeadline - Date.now()) / 1000));
+                    timerDisplay.textContent = `(00:${remaining.toString().padStart(2, '0')})`;
 
-                    if (timeLeft <= 3 && timeLeft > 0) {
+                    if (remaining <= 3 && remaining > 0) {
                         app.playSound('tick');
                     }
 
-                    if (timeLeft <= 0) {
+                    if (remaining <= 0) {
                         clearInterval(this.hardTimer);
                         this.submitAnswer(true);
                     }
-                }, 1000);
+                }, 250);
             } else {
                 timerDisplay.style.display = 'none';
                 if (this.hardTimer) clearInterval(this.hardTimer);
@@ -3176,15 +3185,17 @@ const app = {
             timerDisplay.textContent = formatTime(timeLeft);
             if (this.examTimer) clearInterval(this.examTimer);
 
+            // D6: dùng deadline theo Date.now() để đồng hồ không lệch khi tab bị ẩn/throttle.
+            const examDeadline = Date.now() + timeLeft * 1000;
             this.examTimer = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = formatTime(timeLeft);
-                if (timeLeft <= 0) {
+                const remaining = Math.max(0, Math.ceil((examDeadline - Date.now()) / 1000));
+                timerDisplay.textContent = formatTime(remaining);
+                if (remaining <= 0) {
                     clearInterval(this.examTimer);
                     alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
                     this.submit(true);
                 }
-            }, 1000);
+            }, 250);
         },
 
         confirmExit() {
@@ -5917,7 +5928,7 @@ const app = {
                 container.style.background = 'url("./public/leaderboard_bg.png") no-repeat center center';
                 content.style.paddingTop = '600px';
             } else {
-                container.style.background = 'url("./public/history_bg.png") no-repeat center center';
+                container.style.background = 'url("./public/history_bg.webp") no-repeat center center';
                 content.style.paddingTop = '400px';
             }
             container.style.backgroundSize = 'cover';
@@ -6096,8 +6107,11 @@ const app = {
 
             // Cập nhật server
             if (window.supabase) {
-                await supabaseClient.from('user_quests').update({ is_completed: true }).eq('id', uq.id);
-                await supabaseClient.from('game_users').update({ stars: user.stars, total_stars_earned: user.total_stars_earned || 0 }).eq('id', user.id);
+                // D5: chạy song song 2 lệnh cập nhật độc lập để giảm round-trip.
+                await Promise.all([
+                    supabaseClient.from('user_quests').update({ is_completed: true }).eq('id', uq.id),
+                    supabaseClient.from('game_users').update({ stars: user.stars, total_stars_earned: user.total_stars_earned || 0 }).eq('id', user.id)
+                ]);
             } else {
                 app.data.saveUsers();
             }
