@@ -137,11 +137,11 @@
       </div>
 
       <div class="map-container map-v2">
-        <img src="./public/map_scifi_adventure_v2.png" alt="Bản đồ hành trình kết nối tri thức" class="map-bg">
+        <img src="./public/map_scifi_adventure_v2.png" alt="Bản đồ hành trình kết nối tri thức" class="map-bg" decoding="async">
 
         <!-- Nút Hướng dẫn (Gắn liền với Map, co giãn theo tỷ lệ Map) -->
         <div class="station station-guide" style="top: 82%; left: 6%; z-index: 50;">
-          <img src="./public/stations-v3/huong-dan.png" alt="Hướng dẫn" class="station-img">
+          <img src="./public/stations-v3/huong-dan.png" alt="Hướng dẫn" loading="lazy" decoding="async" class="station-img">
           <button id="btn-guide" class="map-guide-label" onclick="app.showGuide()" aria-label="Mở hướng dẫn"></button>
           <div id="guide-arrow"
             style="position:absolute; top: 120%; left: 50%; transform: translateX(-50%); display:none; animation: bounce-guide 1s infinite; z-index:50; pointer-events: none;">
@@ -152,43 +152,43 @@
 
         <!-- Tiếng Việt: Rừng xanh bí ẩn (góc trái dưới) -->
         <div class="station station-vietnamese station-artwork" data-subject="vietnamese" style="top: 68%; left: 23%;">
-          <img src="./public/stations-v3/tieng-viet.png" alt="Tiếng Việt" class="station-img">
+          <img src="./public/stations-v3/tieng-viet.png" alt="Tiếng Việt" loading="lazy" decoding="async" class="station-img">
           <span class="station-label">Tiếng Việt</span>
         </div>
 
         <!-- Toán học: Kim tự tháp -->
         <div class="station station-math station-artwork" data-subject="math" style="top: 41%; left: 35%;">
-          <img src="./public/stations-v3/toan-hoc.png" alt="Toán học" class="station-img">
+          <img src="./public/stations-v3/toan-hoc.png" alt="Toán học" loading="lazy" decoding="async" class="station-img">
           <span class="station-label">Toán</span>
         </div>
 
         <!-- Đề Kiểm tra -->
         <div class="station station-practice station-artwork" data-subject="exam" style="top: 30%; left: 45%;">
-          <img src="./public/stations-v3/luyen-de.png" alt="Luyện đề" class="station-img">
+          <img src="./public/stations-v3/luyen-de.png" alt="Luyện đề" loading="lazy" decoding="async" class="station-img">
           <span class="station-label">Luyện Đề</span>
         </div>
 
         <!-- Cài Đặt (Admin) -->
         <div id="admin-station" class="station station-settings station-artwork" style="top: 39%; left: 55%; display:none;">
-          <img src="./public/stations-v3/cai-dat.png" alt="Cài đặt" class="station-img">
+          <img src="./public/stations-v3/cai-dat.png" alt="Cài đặt" loading="lazy" decoding="async" class="station-img">
           <span class="station-label">Cài đặt</span>
         </div>
 
         <!-- Nhiệm vụ (Học sinh) - Cùng tọa độ với Cài đặt -->
         <div id="quest-station" class="station station-quest station-artwork" style="top: 37%; left: 58%; display:none;">
-          <img src="./public/stations-v3/nhiem-vu.png" alt="Nhiệm vụ" class="station-img">
+          <img src="./public/stations-v3/nhiem-vu.png" alt="Nhiệm vụ" loading="lazy" decoding="async" class="station-img">
           <span class="station-label">Nhiệm vụ</span>
         </div>
 
         <!-- Kho Báu (Ngôi nhà có ống khói) -->
         <div id="treasure-station" class="station station-treasure station-artwork" style="top: 76%; left: 69%;">
-          <img src="./public/stations-v3/kho-bau.png" alt="Kho báu" class="station-img" style="transform: rotate(10deg);">
+          <img src="./public/stations-v3/kho-bau.png" alt="Kho báu" loading="lazy" decoding="async" class="station-img" style="transform: rotate(10deg);">
           <span class="station-label">Kho báu</span>
         </div>
 
         <!-- Cửa hàng Shop & Gacha -->
         <div id="shop-station" class="station station-shop station-artwork" style="top: 46%; left: 67%;">
-          <img src="./public/stations-v3/cua-hang.png" alt="Cửa hàng" class="station-img" style="transform: rotate(10deg);">
+          <img src="./public/stations-v3/cua-hang.png" alt="Cửa hàng" loading="lazy" decoding="async" class="station-img" style="transform: rotate(10deg);">
           <span class="station-label">Cửa hàng</span>
         </div>
 
