@@ -37,6 +37,31 @@ const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
 
+// Bảng danh hiệu 20 bậc (5 nhóm × 4 cấp), sắp xếp GIẢM DẦN theo số Sao cần đạt.
+// Người chơi đạt danh hiệu tương ứng tổng Sao tích lũy (total_stars_earned) vượt qua ngưỡng.
+const PLAYER_TITLES = [
+    { stars: 2463, name: 'Nhà Khoa Học Vĩ Đại' },
+    { stars: 2063, name: 'Nhà Khoa Học Thiên Tài' },
+    { stars: 1713, name: 'Nhà Khoa Học' },
+    { stars: 1413, name: 'Nhà Khoa Học Nhí' },
+    { stars: 1153, name: 'Nhà Phát Minh Uyên Bác' },
+    { stars: 933, name: 'Nhà Phát Minh Tài Năng' },
+    { stars: 743, name: 'Nhà Phát Minh' },
+    { stars: 583, name: 'Nhà Phát Minh Nhí' },
+    { stars: 448, name: 'Nhà Nghiên Cứu Đại Tài' },
+    { stars: 338, name: 'Nhà Nghiên Cứu Tài Ba' },
+    { stars: 248, name: 'Nhà Nghiên Cứu' },
+    { stars: 178, name: 'Nhà Nghiên Cứu Nhí' },
+    { stars: 123, name: 'Đội Trưởng Bậc Thầy' },
+    { stars: 83, name: 'Đội Trưởng Siêu Việt' },
+    { stars: 53, name: 'Đội Trưởng Thiên Tài' },
+    { stars: 33, name: 'Đội Trưởng Sáng Tạo' },
+    { stars: 18, name: 'Học Trò Xuất Sắc' },
+    { stars: 8, name: 'Học Trò Gương Mẫu' },
+    { stars: 3, name: 'Học Trò Chăm Chỉ' },
+    { stars: 0, name: 'Học Trò Tò Mò' }
+];
+
 const app = {
     utils: {
         async loadScript(src, globalVar) {
@@ -864,6 +889,9 @@ const app = {
             const avatar = this.getAvatar(user.avatar_key);
             const isAdmin = user.role?.toLowerCase() === 'admin';
             const starCount = Number(user.stars || 0).toLocaleString('vi-VN');
+            const titleLine = isAdmin
+                ? ''
+                : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`;
             const avatarMarkup = avatar.image
                 ? `<img class="player-info-card__avatar player-info-card__avatar--teacher" src="${avatar.image}" alt="Avatar ${app.data.sanitizeHTML(avatar.label)}">`
                 : `<span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>`;
@@ -872,10 +900,8 @@ const app = {
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
+                  ${titleLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
-                  ${isAdmin
-                    ? ''
-                    : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`}
                 </span>`;
             document.getElementById('player-info').innerHTML = html;
 
@@ -894,15 +920,26 @@ const app = {
                 }
             }
         },
+        getPlayerStars(user) {
+            // Tổng Sao tích lũy suốt đời; fallback sang số Sao hiện có cho tài khoản cũ.
+            return Math.max(Number(user?.total_stars_earned || 0), Number(user?.stars || 0));
+        },
         getPlayerTitle(user) {
-            // Danh hiệu dựa trên tổng Sao tích lũy suốt đời (total_stars_earned);
-            // fallback sang số Sao hiện có cho tài khoản cũ chưa có dữ liệu tích lũy.
-            const stars = Math.max(Number(user?.total_stars_earned || 0), Number(user?.stars || 0));
-            if (stars >= 400) return 'Huyền Thoại Tri Thức';
-            if (stars >= 200) return 'Đội Trưởng Không Gian';
-            if (stars >= 100) return 'Phi Công Tri Thức';
-            if (stars >= 30) return 'Nhà Thám Hiểm';
-            return 'Nhà Thám Hiểm Tập Sự';
+            const earned = this.getPlayerStars(user);
+            const match = PLAYER_TITLES.find(t => earned >= t.stars);
+            return (match || PLAYER_TITLES[PLAYER_TITLES.length - 1]).name;
+        },
+        getPlayerProgress(user) {
+            const earned = this.getPlayerStars(user);
+            const currentIdx = PLAYER_TITLES.findIndex(t => earned >= t.stars);
+            const current = PLAYER_TITLES[currentIdx] || PLAYER_TITLES[PLAYER_TITLES.length - 1];
+            const next = currentIdx > 0 ? PLAYER_TITLES[currentIdx - 1] : null;
+            return {
+                currentTitle: current.name,
+                currentStars: earned,
+                nextTitle: next ? next.name : null,
+                starsToNext: next ? Math.max(0, next.stars - earned) : 0
+            };
         }
     },
 

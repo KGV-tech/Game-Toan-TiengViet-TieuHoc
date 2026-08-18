@@ -1879,3 +1879,9 @@ input[type="text"], input[type="password"], select, textarea {
 }
 .daily-gift-claim:hover { transform: scale(1.06); }
 .daily-gift-claim:active { transform: scale(.97); }
+
+/* Dòng tiến độ danh hiệu trong thẻ người chơi */
+.player-info-card__stats--progress {
+    color: #fbbf24;
+    font-size: .72rem;
+}
