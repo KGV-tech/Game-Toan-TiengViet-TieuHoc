@@ -636,7 +636,6 @@ const app = {
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
             document.getElementById('register-btn').onclick = () => this.register();
-            document.getElementById('logout-btn').onclick = () => this.logout();
             document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
             document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
         },
