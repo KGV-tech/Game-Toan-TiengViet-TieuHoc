@@ -373,7 +373,6 @@ const app = {
                 this.libraryQuestions = [];
                 this.quests = [];
                 this.userQuests = [];
-                this.candyRequests = [];
                 this.userPets = [];
 
                 // Protected game data is loaded after successful login. Loading it here
@@ -727,37 +726,33 @@ const app = {
 
                 // Lazy load based on role
                 if (user.role?.toLowerCase() === 'admin') {
-                    const [users, questions, templates, quests, candyRequests] = await Promise.all([
+                    const [users, questions, templates, quests] = await Promise.all([
                         app.data.fetchAllFromSupabase('game_users'),
                         app.data.fetchAllFromSupabase('game_questions'),
                         app.data.fetchAllFromSupabase('question_templates'),
-                        app.data.fetchAllFromSupabase('game_quests'),
-                        app.data.fetchAllFromSupabase('candy_requests')
+                        app.data.fetchAllFromSupabase('game_quests')
                     ]);
                     app.data.users = users;
                     app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
                     app.data.libraryQuestions = questions;
                     app.data.questionTemplates = templates;
                     app.data.quests = quests;
-                    app.data.candyRequests = candyRequests;
                     document.getElementById('admin-station').style.display = 'flex';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
                     const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
-                    const [questions, templates, , quests, userQuests, candyRequests, userPets] = await Promise.all([
+                    const [questions, templates, , quests, userQuests, userPets] = await Promise.all([
                         app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
                         app.data.fetchAllFromSupabase('question_templates'),
                         app.data.loadSeenQuestions(user.username),
                         app.data.fetchAllFromSupabase('game_quests'),
                         app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username),
-                        app.data.fetchAllFromSupabase('candy_requests', 'user_username', user.username),
                         app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
                     ]);
                     app.data.libraryQuestions = questions;
                     app.data.questionTemplates = templates;
                     app.data.quests = quests;
                     app.data.userQuests = userQuests;
-                    app.data.candyRequests = candyRequests;
                     app.data.userPets = userPets;
                     document.getElementById('admin-station').style.display = 'none';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
@@ -767,6 +762,7 @@ const app = {
                 this.updateHeader();
 
                 app.router.open('map-screen');
+                app.daily.onMapEnter();
 
                 // Hiển thị mũi tên hướng dẫn nếu là lần đầu login
                 setTimeout(() => {
@@ -822,7 +818,7 @@ const app = {
                 approved: false,
                 history: [],
                 totalscore: 0,
-                lollipops: 0
+                stars: 0
             };
 
             const { data, error } = await supabaseClient.from('game_users').insert([newUser]).select();
@@ -867,7 +863,7 @@ const app = {
             const user = app.data.currentUser;
             const avatar = this.getAvatar(user.avatar_key);
             const isAdmin = user.role?.toLowerCase() === 'admin';
-            const lollipopCount = Number(user.lollipops || 0).toLocaleString('vi-VN');
+            const starCount = Number(user.stars || 0).toLocaleString('vi-VN');
             const avatarMarkup = avatar.image
                 ? `<img class="player-info-card__avatar player-info-card__avatar--teacher" src="${avatar.image}" alt="Avatar ${app.data.sanitizeHTML(avatar.label)}">`
                 : `<span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>`;
@@ -876,9 +872,10 @@ const app = {
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
+                  <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
                   ${isAdmin
-                    ? `<span class="player-info-card__stats"><i aria-hidden="true">🍭</i> <b>${lollipopCount}</b> kẹo thử nghiệm</span>`
-                    : `<span class="player-info-card__stats"><b>${user.totalscore || 0}</b> điểm <i aria-hidden="true">🍭</i> <b>${lollipopCount}</b></span>`}
+                    ? ''
+                    : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`}
                 </span>`;
             document.getElementById('player-info').innerHTML = html;
 
@@ -896,6 +893,16 @@ const app = {
                     adminNotif.style.display = 'none';
                 }
             }
+        },
+        getPlayerTitle(user) {
+            // Danh hiệu dựa trên tổng Sao tích lũy suốt đời (total_stars_earned);
+            // fallback sang số Sao hiện có cho tài khoản cũ chưa có dữ liệu tích lũy.
+            const stars = Math.max(Number(user?.total_stars_earned || 0), Number(user?.stars || 0));
+            if (stars >= 400) return 'Huyền Thoại Tri Thức';
+            if (stars >= 200) return 'Đội Trưởng Không Gian';
+            if (stars >= 100) return 'Phi Công Tri Thức';
+            if (stars >= 30) return 'Nhà Thám Hiểm';
+            return 'Nhà Thám Hiểm Tập Sự';
         }
     },
 
@@ -1398,6 +1405,14 @@ const app = {
             }
 
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
+
+            // C2: Giới hạn 5 lượt chơi/ngày bằng năng lượng (chỉ áp dụng học sinh, không áp dụng admin).
+            if (!isAdmin && app.daily.getEnergy(app.data.currentUser) <= 0) {
+                alert('Bạn đã dùng hết 5 lượt chơi hôm nay. Hãy quay lại vào ngày mai nhé!');
+                app.router.open('map-screen');
+                return;
+            }
+
             let clLevel = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser ? app.data.currentUser.classlevel : '5');
             clLevel = String(clLevel).replace('Lớp ', '').trim();
 
@@ -1551,6 +1566,7 @@ const app = {
                 }
             }
 
+            if (!isAdmin) app.daily.spendEnergy(app.data.currentUser);
             app.router.openGameView('game-play-view');
             this.loadQuestion();
         },
@@ -2706,6 +2722,7 @@ const app = {
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 }
                 app.playSound('correct');
+                this.animateScoreGain(scoreResult.points);
                 const user = app.data.currentUser;
                 let basePet = 'robot_cat';
                 if (user) {
@@ -2767,6 +2784,18 @@ const app = {
                 else this.loadQuestion();
             };
         },
+        animateScoreGain(points) {
+            const scoreEl = document.getElementById('game-score');
+            if (!scoreEl || !points) return;
+            const rect = scoreEl.getBoundingClientRect();
+            const float = document.createElement('div');
+            float.className = 'score-float';
+            float.textContent = `+${points} điểm`;
+            float.style.left = `${rect.left + rect.width / 2}px`;
+            float.style.top = `${rect.top}px`;
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 950);
+        },
         async finishPlay() {
             if (this.skills && app.data.currentUser) {
                 this.skills.decreaseCooldowns(app.data.currentUser.username);
@@ -2774,20 +2803,20 @@ const app = {
             
             const finalScore = this.state.score;
             let msg = '';
-            let candiesEarned = 0;
+            let starsEarned = 0;
 
             if (finalScore === 10) {
-                msg = 'Tuyệt vời! Bạn nhận được 5 kẹo 🍭';
-                candiesEarned = 5;
+                msg = 'Tuyệt vời! Bạn nhận được 5 sao ⭐';
+                starsEarned = 5;
             } else if (finalScore >= 8) {
-                msg = 'Khá lắm! Bạn nhận được 2 kẹo 🍭';
-                candiesEarned = 2;
+                msg = 'Khá lắm! Bạn nhận được 2 sao ⭐';
+                starsEarned = 2;
             } else {
-                msg = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận kẹo)';
+                msg = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận sao)';
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, candiesEarned);
+            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, starsEarned);
             if (newlyUnlockedTopic) {
                 msg += ` Bạn đã mở khóa chủ đề mới: ${newlyUnlockedTopic}!`;
             }
@@ -2820,11 +2849,11 @@ const app = {
             document.getElementById('result-msg').textContent = msg;
 
             const chestContainer = document.getElementById('bonus-candies-container');
-            if (candiesEarned > 0) {
+            if (starsEarned > 0) {
                 chestContainer.style.display = 'flex';
                 chestContainer.style.justifyContent = 'center';
                 chestContainer.style.gap = '10px';
-                chestContainer.innerHTML = Array(candiesEarned).fill('<img src="./public/lollipop.png" style="width:60px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s;" onmouseover="this.style.transform=\\\'scale(1.1)\\\'" onmouseout="this.style.transform=\\\'scale(1)\\\'">').join('');
+                chestContainer.innerHTML = Array(starsEarned).fill('<img src="./public/star-gold-3d.svg" style="width:60px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s;" onmouseover="this.style.transform=\\\'scale(1.1)\\\'" onmouseout="this.style.transform=\\\'scale(1)\\\'">').join('');
                 chestContainer.onclick = () => this.claimBonus();
             } else {
                 chestContainer.style.display = 'none';
@@ -2858,7 +2887,7 @@ const app = {
 
             document.getElementById('result-modal').classList.add('active');
         },
-        async recordHistory(title, score, candiesEarned) {
+        async recordHistory(title, score, starsEarned) {
             if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return null;
 
             let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
@@ -2893,17 +2922,17 @@ const app = {
                 score: score,
                 details: this.state.historyDetails
             });
-            if (candiesEarned > 0) app.data.currentUser.lollipops = (app.data.currentUser.lollipops || 0) + candiesEarned;
+            if (starsEarned > 0) app.daily.addStars(app.data.currentUser, starsEarned);
             await app.data.updateUserScore();
             app.auth.updateHeader();
             return newlyUnlockedTopic;
         },
         claimBonus() {
             const chest = document.getElementById('bonus-chest-img');
-            chest.src = './public/lollipop.png';
+            chest.src = './public/star-gold-3d.svg';
             chest.style.width = '100px';
             chest.onclick = null;
-            alert('Nhận Kẹo Mút Thành Công! Kẹo đã được lưu vào Kho Báu.');
+            alert('Nhận Sao Thành Công! Sao đã được lưu vào Kho Báu.');
         },
         closeResult() {
             document.getElementById('result-modal').classList.remove('active');
@@ -3437,7 +3466,7 @@ const app = {
               <td>${app.data.sanitizeHTML(q.title)}</td>
               <td>${target}</td>
               <td>${q.target_count}</td>
-              <td>${q.reward_lollipops} 🍭</td>
+              <td>${q.reward_stars} ⭐</td>
               <td>${assign}</td>
               <td>${status}</td>
               <td>
@@ -3480,7 +3509,7 @@ const app = {
                  <input type="number" id="quest-count" class="form-input" style="width:100%;" value="3" min="1">
               </div>
               <div class="form-group" style="flex:1;">
-                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Phần thưởng (Kẹo):</label>
+                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Phần thưởng (Sao):</label>
                  <input type="number" id="quest-reward" class="form-input" style="width:100%;" value="20" min="1">
               </div>
             </div>
@@ -3526,7 +3555,7 @@ const app = {
             if (examId && !selectedExam) return alert('Không tìm thấy đề kiểm tra đã chọn.');
             const newQuest = {
                 title, target_subject: subject, target_score: score, target_count: count,
-                reward_lollipops: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true
+                reward_stars: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true
             };
             if (selectedExam) {
                 newQuest.target_subject = selectedExam.subject === 'Toán' ? 'math' : 'vietnamese';
@@ -5182,9 +5211,9 @@ const app = {
                 user.approved = true;
                 user.history = [];
                 user.totalscore = 0;
-                user.lollipops = 0;
+                user.stars = 0;
                 if (user.id) {
-                    await supabaseClient.from('game_users').update({ approved: true, history: [], totalscore: 0, lollipops: 0 }).eq('id', user.id);
+                    await supabaseClient.from('game_users').update({ approved: true, history: [], totalscore: 0, stars: 0 }).eq('id', user.id);
                 } else {
                     await app.data.saveUsers();
                 }
@@ -5461,7 +5490,7 @@ const app = {
                 { label: 'Học sinh', filterable: false },
                 { label: 'Số bài đã làm', filterable: false },
                 { label: 'Điểm', filterable: false },
-                { label: 'Kẹo', filterable: false }
+                { label: 'Sao', filterable: false }
             ];
             let students = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin' && u.approved === true);
 
@@ -5521,7 +5550,7 @@ const app = {
                 const totalExams = s.filteredHistory.length;
                 const maxScore = totalExams * 10;
                 const scoreDisplay = `${s.filteredScore}/${maxScore}`;
-                return `<tr><td>${i + 1}</td><td>${app.data.sanitizeHTML(s.fullname)}</td><td>${totalExams}</td><td>${scoreDisplay}</td><td>${s.lollipops || 0}</td></tr>`;
+                return `<tr><td>${i + 1}</td><td>${app.data.sanitizeHTML(s.fullname)}</td><td>${totalExams}</td><td>${scoreDisplay}</td><td>${s.stars || 0}</td></tr>`;
             });
 
             const container = document.getElementById('admin-lb-table-container');
@@ -5613,7 +5642,7 @@ const app = {
                 else if (s === 10) {
                     scoreColor = '#22c55e'; // Bold Green
                     scoreStyle = 'font-weight:bold; font-size:1.1em;';
-                    star = ' 🍭';
+                    star = ' ⭐';
                 }
 
                 const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
@@ -5651,23 +5680,20 @@ const app = {
                     student,
                     pets: (app.data.userPets || []).filter(item => item.user_username === username),
                     quests: (app.data.userQuests || []).filter(item => item.user_username === username),
-                    candyRequests: (app.data.candyRequests || []).filter(item => item.user_username === username),
                     seenQuestions: []
                 };
             }
-            const [petsResult, questsResult, requestsResult, seenResult] = await Promise.all([
+            const [petsResult, questsResult, seenResult] = await Promise.all([
                 supabaseClient.from('user_pets').select('*').eq('user_username', username),
                 supabaseClient.from('user_quests').select('*').eq('user_username', username),
-                supabaseClient.from('candy_requests').select('*').eq('user_username', username),
                 supabaseClient.from('user_question_history').select('question_key,last_seen_at').eq('user_username', username)
             ]);
-            const failures = [petsResult, questsResult, requestsResult, seenResult].filter(result => result.error);
+            const failures = [petsResult, questsResult, seenResult].filter(result => result.error);
             if (failures.length) console.error('Không thể tải đủ dữ liệu hồ sơ học sinh:', failures.map(result => result.error));
             return {
                 student,
                 pets: petsResult.data || [],
                 quests: questsResult.data || [],
-                candyRequests: requestsResult.data || [],
                 seenQuestions: seenResult.data || []
             };
         },
@@ -5698,7 +5724,7 @@ const app = {
             const profile = await this.getStudentProfileData(username);
             if (!profile || !detail) return;
             this.studentProfileDetails[username] = profile;
-            const { student, pets, quests, candyRequests, seenQuestions } = profile;
+            const { student, pets, quests, seenQuestions } = profile;
             const history = [...(student.history || [])].sort((left, right) => new Date(right.date) - new Date(left.date));
             const summary = this.getStudentLearningSummary(history);
             const questRows = quests.map(progress => {
@@ -5706,7 +5732,6 @@ const app = {
                 return `<li>${app.data.sanitizeHTML(quest?.title || 'Nhiệm vụ đã xóa')}: ${progress.progress || 0}/${quest?.target_count || '?'}${progress.is_completed ? ' — Đã nhận thưởng' : ''}</li>`;
             }).join('') || '<li>Chưa có tiến độ nhiệm vụ.</li>';
             const petRows = pets.map(pet => app.data.sanitizeHTML(pet.pet_name || pet.name || 'Thú cưng')).join(', ') || 'Chưa có';
-            const requestRows = candyRequests.map(request => `${request.amount || 0} kẹo — ${app.data.sanitizeHTML(request.status || 'pending')}`).join('<br>') || 'Chưa có yêu cầu đổi kẹo.';
             const historyRows = history.map((item, index) => `<tr><td>${index + 1}</td><td>${app.data.sanitizeHTML(item.title || item.module || 'Bài tập')}</td><td>${app.data.sanitizeHTML(item.topic || '---')}</td><td>${item.questionCount || item.details?.length || 0}</td><td>${item.score || 0}/10</td><td>${app.data.sanitizeHTML(item.date || '')}</td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;">Chưa có lịch sử làm bài.</td></tr>';
             const encodedUsername = encodeURIComponent(student.username);
             detail.innerHTML = `
@@ -5717,7 +5742,7 @@ const app = {
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
                     <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
-                    <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Kẹo hiện có: <b>${student.lollipops || 0}</b><br>Thú cưng: ${petRows}<br>Yêu cầu đổi kẹo:<br>${requestRows}</p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Sao hiện có: <b>${student.stars || 0}</b><br>Thú cưng: ${petRows}</p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
                 </div>
                 <div class="glass-container" style="padding:14px; margin-top:15px;"><h4>Tiến độ nhiệm vụ</h4><ul style="margin:0; padding-left:20px;">${questRows}</ul></div>
@@ -5727,13 +5752,13 @@ const app = {
             const profile = this.studentProfileDetails[username] || await this.getStudentProfileData(username);
             if (!profile) return alert('Không tìm thấy hồ sơ học sinh.');
             this.studentProfileDetails[username] = profile;
-            const { student, pets, quests, candyRequests, seenQuestions } = profile;
+            const { student, pets, quests, seenQuestions } = profile;
             const rows = [
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Họ tên', 'Giá trị': student.fullname || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Username', 'Giá trị': student.username || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': 'Không xuất vì mật khẩu được bảo mật' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp', 'Giá trị': student.classlevel || '' },
-                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Kẹo hiện có', 'Giá trị': student.lollipops || 0 },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Sao hiện có', 'Giá trị': student.stars || 0 },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Câu đã gặp', 'Giá trị': seenQuestions.length }
             ];
             (student.history || []).forEach(item => {
@@ -5745,7 +5770,6 @@ const app = {
                 const quest = (app.data.quests || []).find(item => item.id === progress.quest_id);
                 rows.push({ 'Nhóm dữ liệu': 'Nhiệm vụ', 'Nội dung': quest?.title || 'Nhiệm vụ đã xóa', 'Tiến độ': `${progress.progress || 0}/${quest?.target_count || '?'}`, 'Trạng thái': progress.is_completed ? 'Đã nhận thưởng' : 'Đang thực hiện' });
             });
-            candyRequests.forEach(request => rows.push({ 'Nhóm dữ liệu': 'Đổi kẹo', 'Nội dung': request.amount || 0, 'Trạng thái': request.status || '', 'Ngày': request.created_at || '' }));
             const safeName = String(student.fullname || student.username || 'hoc_sinh').replace(/[\\/:*?"<>|]/g, '_');
             await app.ui.exportToExcel(rows, `Ho_so_${safeName}.xlsx`);
         },
@@ -5754,9 +5778,9 @@ const app = {
          <h3 style="font-size: 1.5rem;">Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
          <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore || 0}</span></p>
          <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
-            const lolli = u.lollipops || 0;
-            if (lolli === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có kẹo nào. Hãy hoàn thành bài để nhận kẹo nhé!</p>`;
-            for (let i = 0; i < lolli; i++) html += '<img src="./public/lollipop.png" style="width:50px; margin:2px;" class="bounce">';
+            const stars = u.stars || 0;
+            if (stars === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có sao nào. Hãy hoàn thành bài để nhận sao nhé!</p>`;
+            for (let i = 0; i < stars; i++) html += '<img src="./public/star-gold-3d.svg" style="width:50px; margin:2px;" class="bounce">';
             html += '</div></div>';
             box.innerHTML = html;
         },
@@ -5781,7 +5805,7 @@ const app = {
                 if (s < 5) scoreColor = '#ef4444';
                 else if (s >= 5 && s < 8) scoreColor = '#facc15';
                 else if (s >= 8 && s < 10) scoreColor = '#4ade80';
-                else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' 🍭'; }
+                else if (s === 10) { scoreColor = '#22c55e'; scoreStyle = 'font-weight:bold; font-size:1.1em;'; star = ' ⭐'; }
                 const scoreHtml = `<span style="color: ${scoreColor}; ${scoreStyle}">${s}/10${star}</span>`;
                 return `<tr><td>${h.title || h.module || 'Bài tập'}</td><td>${h.topic || '---'}</td><td>${h.difficulty || '---'}</td><td>${h.questionCount || h.details?.length || 10}</td><td>${scoreHtml}</td><td>${h.date}</td>
          <td><button class="btn-success action-btn" data-record="${encoded}" onclick="app.ui.showHistoryDetails(this)">Xem</button></td></tr>`;
@@ -5966,7 +5990,7 @@ const app = {
                 if (isCompleted) {
                     btnHtml = `<button class="btn-success" style="opacity:0.5; cursor:not-allowed;" disabled>Đã nhận</button>`;
                 } else if (progress >= q.target_count) {
-                    btnHtml = `<button class="asset-button asset-button--pet" onclick="app.quest.claimReward('${q.id}')" aria-label="Nhận ${q.reward_lollipops} kẹo">
+                    btnHtml = `<button class="asset-button asset-button--pet" onclick="app.quest.claimReward('${q.id}')" aria-label="Nhận ${q.reward_stars} sao">
                         <img src="./public/ui/buttons/group2/claim-candy.png" alt="" aria-hidden="true">
                     </button>`;
                 } else {
@@ -6015,7 +6039,7 @@ const app = {
 
             // Cập nhật local
             uq.is_completed = true;
-            user.lollipops = (user.lollipops || 0) + q.reward_lollipops;
+            app.daily.addStars(user, q.reward_stars);
             app.auth.updateHeader();
 
             // Hiệu ứng pháo hoa
@@ -6032,7 +6056,7 @@ const app = {
             // Cập nhật server
             if (window.supabase) {
                 await supabaseClient.from('user_quests').update({ is_completed: true }).eq('id', uq.id);
-                await supabaseClient.from('game_users').update({ lollipops: user.lollipops }).eq('id', user.id);
+                await supabaseClient.from('game_users').update({ stars: user.stars, total_stars_earned: user.total_stars_earned || 0 }).eq('id', user.id);
             } else {
                 app.data.saveUsers();
             }
@@ -6146,9 +6170,9 @@ const app = {
                 <div class="lucky-info-card">
                     <h2 class="lucky-station-title">Trạm May Mắn</h2>
                     
-                    <div class="lucky-candy-row">
-                        <div class="lucky-candy-count">
-                            Bạn đang có: <span id="lucky-lollipop-count" style="font-size:2rem; color:#f59e0b;">${user.lollipops || 0}</span> 🍭
+                    <div class="lucky-star-row">
+                        <div class="lucky-star-count">
+                            Bạn đang có: <span id="lucky-star-balance" style="font-size:2rem; color:#f59e0b;">${user.stars || 0}</span> ⭐
                         </div>
                     </div>
                     <p class="lucky-spin-count" style="color:${remainingSpins ? '#475569' : '#dc2626'};">Lượt quay hôm nay: ${remainingSpins}/3</p>
@@ -6157,9 +6181,9 @@ const app = {
                         <h3 style="margin-top:0; color: #475569;">Thể lệ Vòng Quay:</h3>
                         <ul style="padding-left: 20px; margin-bottom:0;">
                             <li><b style="color:#ef4444;">May mắn lần sau</b></li>
-                            <li><b style="color:#22c55e;">Tặng 5 kẹo</b></li>
-                            <li><b style="color:#3b82f6;">Tặng 2 kẹo</b></li>
-                            <li><b style="color:#a855f7;">Tặng 1 kẹo</b></li>
+                            <li><b style="color:#22c55e;">Tặng 5 sao</b></li>
+                            <li><b style="color:#3b82f6;">Tặng 2 sao</b></li>
+                            <li><b style="color:#a855f7;">Tặng 1 sao</b></li>
                             <li><b style="color:#eab308;">Tặng 1 thú cưng</b> (không gồm Rồng, tùy tồn kho chung)</li>
                             <li><b style="color:#0ea5e9;">Quay lại</b> (Miễn phí 1 lần quay tới)</li>
                             <li>Tối đa <b>3 lượt/ngày</b>; lượt chưa dùng sẽ không cộng dồn.</li>
@@ -6168,7 +6192,7 @@ const app = {
                     
                     <button id="btn-spin-lucky" class="asset-button asset-button--wide lucky-spin-button"
                         onclick="app.shop.spinWheel()"
-                        ${cannotSpin ? 'disabled' : ''} aria-label="${remainingSpins === 0 ? 'Đã hết lượt quay hôm nay' : 'Quay may mắn, giá 2 kẹo'}">
+                        ${cannotSpin ? 'disabled' : ''} aria-label="${remainingSpins === 0 ? 'Đã hết lượt quay hôm nay' : 'Quay may mắn, giá 2 sao'}">
                         <img src="./public/ui/buttons/group2/spin-lucky.png" alt="" aria-hidden="true">
                     </button>
                 </div>
@@ -6182,18 +6206,19 @@ const app = {
 
             const user = app.data.currentUser;
             if (!user) return;
-            let lollipopsBeforeSpin = user.lollipops || 0;
+            let starsBeforeSpin = user.stars || 0;
+            let totalStarsBeforeSpin = user.total_stars_earned || 0;
 
             const today = this.getLuckySpinDay();
             let spinsToday = this.getLuckySpinsToday(user);
             if (window.supabase && user.id) {
                 const { data, error } = await supabaseClient.from('game_users')
-                    .select('lollipops,lucky_spin_date,lucky_spin_count').eq('id', user.id).single();
+                    .select('stars,lucky_spin_date,lucky_spin_count').eq('id', user.id).single();
                 if (error || !data) return alert('Không thể kiểm tra lượt quay hôm nay. Vui lòng thử lại.');
-                user.lollipops = data.lollipops || 0;
+                user.stars = data.stars || 0;
                 user.lucky_spin_date = data.lucky_spin_date;
                 user.lucky_spin_count = data.lucky_spin_count || 0;
-                lollipopsBeforeSpin = user.lollipops;
+                starsBeforeSpin = user.stars;
                 spinsToday = this.getLuckySpinsToday(user);
             }
             if (spinsToday >= 3) {
@@ -6202,19 +6227,19 @@ const app = {
             const nextSpinCount = spinsToday + 1;
 
             let freeSpin = this.freeSpin || false;
-            if (!freeSpin && (user.lollipops || 0) < 2) {
-                return alert("Bạn không đủ Kẹo mút để quay!");
+            if (!freeSpin && (user.stars || 0) < 2) {
+                return alert("Bạn không đủ Sao để quay!");
             }
 
             if (!freeSpin) {
-                user.lollipops -= 2;
+                user.stars -= 2;
                 app.auth.updateHeader();
             }
             this.freeSpin = false;
             this.isSpinning = true;
 
-            const lolliSpan = document.getElementById('lucky-lollipop-count');
-            if (lolliSpan) lolliSpan.innerText = user.lollipops || 0;
+            const starSpan = document.getElementById('lucky-star-balance');
+            if (starSpan) starSpan.innerText = user.stars || 0;
 
             const spinBtn = document.getElementById('btn-spin-lucky');
             if (spinBtn) {
@@ -6229,7 +6254,7 @@ const app = {
             let wonPetId = null;
 
             // Thú cưng chỉ có xác suất 0,001 = 0,1% (1/1000 lượt quay).
-            // Rồng chỉ đổi trong cửa hàng bằng kẹo, không nằm trong phần thưởng vòng quay.
+            // Rồng chỉ đổi trong cửa hàng bằng sao, không nằm trong phần thưởng vòng quay.
             if (Math.random() < 0.001) {
                 segment = 2;
                 const myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
@@ -6266,12 +6291,12 @@ const app = {
                 const rand = Math.random() * 97;
                 if (rand < 12) {
                 segment = 0;
-                rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
-                user.lollipops += 1;
+                rewardText = "Hoan hô! Bạn nhận được 1 sao ⭐.";
+                app.daily.addStars(user, 1);
             } else if (rand < 20) {
                 segment = 1;
-                rewardText = "Chúc mừng! Bạn nhận được 2 kẹo 🍭.";
-                user.lollipops += 2;
+                rewardText = "Chúc mừng! Bạn nhận được 2 sao ⭐.";
+                app.daily.addStars(user, 2);
             } else if (rand < 33.33) {
                 segment = 3;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
@@ -6281,15 +6306,15 @@ const app = {
                 this.freeSpin = true;
             } else if (rand < 48.33) {
                 segment = 5;
-                rewardText = "Chúc mừng! Bạn nhận được 5 kẹo 🍭.";
-                user.lollipops += 5;
+                rewardText = "Chúc mừng! Bạn nhận được 5 sao ⭐.";
+                app.daily.addStars(user, 5);
             } else if (rand < 61.66) {
                 segment = 6;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
             } else if (rand < 73.66) {
                 segment = 7;
-                rewardText = "Hoan hô! Bạn nhận được 1 kẹo 🍭.";
-                user.lollipops += 1;
+                rewardText = "Hoan hô! Bạn nhận được 1 sao ⭐.";
+                app.daily.addStars(user, 1);
             } else if (rand < 87) {
                 segment = 8;
                 rewardText = "Rất tiếc! May mắn lần sau nhé.";
@@ -6321,12 +6346,13 @@ const app = {
 
             setTimeout(async () => {
                 if (window.supabase) {
-                    const { error: candyError } = await supabaseClient.from('game_users').update({
-                        lollipops: user.lollipops || 0, lucky_spin_date: today, lucky_spin_count: nextSpinCount
+                    const { error: starError } = await supabaseClient.from('game_users').update({
+                        stars: user.stars || 0, total_stars_earned: user.total_stars_earned || 0, lucky_spin_date: today, lucky_spin_count: nextSpinCount
                     }).eq('id', user.id);
-                    if (candyError) {
+                    if (starError) {
                         if (wonPetId) await app.data.changePetStock(wonPetId, 1, 8);
-                        user.lollipops = lollipopsBeforeSpin;
+                        user.stars = starsBeforeSpin;
+                        user.total_stars_earned = totalStarsBeforeSpin;
                         rewardText = 'Không thể lưu kết quả vòng quay. Vui lòng thử lại.';
                     } else if (wonPet) {
                         user.lucky_spin_date = today;
@@ -6352,7 +6378,7 @@ const app = {
                     }
                 }
                 app.auth.updateHeader();
-                if (lolliSpan) lolliSpan.innerText = user.lollipops || 0;
+                if (starSpan) starSpan.innerText = user.stars || 0;
                 alert(rewardText);
                 this.isSpinning = false;
 
@@ -6364,17 +6390,17 @@ const app = {
             }, 5100);
         },
         shopData: [
-            { id: 'pet_1', name: 'Thỏ Hồng Không Gian', image: 'pet_1.png', cost: 50, description: 'Thỏ Hồng Không Gian là phi thuyền mini luôn mang năng lượng tích cực! Sở hữu tốc độ cực nhanh, cậu ấy sẵn sàng giúp bạn vượt qua mọi thử thách. Kỹ năng "Ngưng Đọng Thời Không" sẽ đóng băng toàn bộ hệ thống đếm ngược, giúp bạn có thêm thời gian để phân tích và chốt đáp án!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
-            { id: 'pet_2', name: 'Gấu Trúc Siêu Chip', image: 'pet_2.png', cost: 50, description: 'Trông có vẻ hiền lành, nhưng Gấu Trúc Siêu Chip sở hữu hệ điều hành thiên tài và cực kỳ bình tĩnh. Cậu ấy luôn tính toán kỹ lưỡng trước mọi câu hỏi. Kỹ năng "Tia Laser Thanh Trừng" sẽ phát ra một luồng sáng cường độ cao, quét sạch một nửa số đáp án nhiễu để bạn dễ dàng lựa chọn!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
-            { id: 'pet_3', name: 'Ong Vệ Tinh Nhí', image: 'pet_3.png', cost: 50, description: 'Hoạt động bền bỉ như một vệ tinh vi mô, Ong Vệ Tinh Nhí không ngừng bay khắp vũ trụ để thu thập dữ liệu học thuật. Cậu ấy là nguồn động lực tuyệt vời. Kỹ năng "Tầm Nhìn Đa Chiều" sẽ kích hoạt con mắt sinh cơ học, hé lộ ngay lập tức lời giải chi tiết ẩn giấu đằng sau câu hỏi!', skills: [{id: 'show_hint', name: 'Tầm Nhìn Đa Chiều'}] },
-            { id: 'pet_4', name: 'Cú Radar Tinh Anh', image: 'pet_4.png', cost: 50, description: 'Bậc thầy phân tích dữ liệu với đôi mắt hồng ngoại và lõi phép thuật lượng tử! Cú Radar Tinh Anh luôn nhìn thấu mọi bí ẩn của trò chơi. Khi gặp bế tắc, kỹ năng "Lõi Phân Tích AI" sẽ kích hoạt siêu máy tính, giải mã thẳng vào hệ thống để cung cấp ngay đáp án đúng cho bạn!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
-            { id: 'pet_5', name: 'Chuột Capybara Từ Tính', image: 'pet_5.png', cost: 50, description: 'Dù không mang vũ khí tối tân, Chuột Capybara Từ Tính lại là chuyên gia tâm lý học, biến mọi giờ học thành cuộc phiêu lưu xả stress! Kỹ năng "Lá Chắn Năng Lượng" sẽ tạo ra một trường lực bảo vệ. Nếu bạn lỡ chọn sai, lá chắn sẽ hấp thụ sát thương, giúp bạn bảo toàn nguyên vẹn điểm số!', skills: [{id: 'shield', name: 'Lá Chắn Năng Lượng'}] },
-            { id: 'pet_6', name: 'Cún Nâu Ngân Hà', image: 'pet_6.png', cost: 50, description: 'Người bạn đồng hành trung thành được trang bị trí tuệ nhân tạo cực đỉnh! Cún Nâu Ngân Hà không bao giờ chùn bước trước mọi thử thách. Kỹ năng "Bước Nhảy Lượng Tử" sẽ mở ra cổng không gian, hô biến câu hỏi khó nhằn hiện tại thành một câu hỏi hoàn toàn mới cùng chủ đề!', skills: [{id: 'swap_question', name: 'Bước Nhảy Lượng Tử'}] },
-            { id: 'pet_7', name: 'Gà Vàng Lõi Quang', image: 'pet_7.png', cost: 50, description: 'Thiết bị báo thức sinh học lanh lợi nhất đội hình! Gà Vàng Lõi Quang luôn sạc đầy năng lượng để cùng bạn vượt qua các nhiệm vụ. Kỹ năng "Tia Laser Thanh Trừng" sẽ khởi động vũ khí quang học, bắn bay phân nửa số đáp án sai lừa tình, thu hẹp phạm vi để bạn tự tin chốt hạ!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
-            { id: 'pet_8', name: 'Chúa Tể Plasma', image: 'pet_8.png', cost: 50, description: 'Vị vua dũng mãnh của dải ngân hà, luôn tiên phong trong mọi cuộc chinh phục tri thức! Chúa Tể Plasma sẽ truyền cho bạn nguồn sức mạnh vô song. Kỹ năng "Lõi Phân Tích AI" sẽ truy cập vào máy chủ tối cao, bẻ khóa toàn bộ hàng rào bảo mật để đem về đáp án chính xác tuyệt đối!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
-            { id: 'pet_9', name: 'Voi Siêu Bộ Nhớ', image: 'pet_9.png', cost: 50, description: 'Sở hữu ổ cứng siêu dung lượng cùng chiếc vòi đa cảm biến, Voi Siêu Bộ Nhớ lưu trữ mọi chiến thuật học tập hiệu quả. Cậu ấy luôn khuyên bạn giữ cái đầu lạnh. Kỹ năng "Tia Laser Thanh Trừng" sẽ dùng sóng âm quét sạch 50% các đáp án sai, dọn đường cho chiến thắng của bạn!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
-            { id: 'pet_10', name: 'Trâu Giáp Titan', image: 'pet_10.png', cost: 50, description: 'Cỗ xe tăng bọc thép không bao giờ lùi bước! Trâu Giáp Titan sở hữu động cơ bền bỉ, liên tục động viên bạn từng bước phá đảo trò chơi. Khi đối mặt với áp lực, kỹ năng "Ngưng Đọng Thời Không" sẽ can thiệp vào dòng chảy thời gian, cho bạn khoảng lặng hoàn hảo để suy nghĩ thấu đáo!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
-            { id: 'pet_dragon', name: 'Rồng Plasma Viễn Cổ', image: 'Pet_Dragon.png', cost: 100, description: 'Thần thú tối thượng của vũ trụ ảo, lao đi với tốc độ siêu thanh! Mang trong mình nguồn sức mạnh vô tận có thể thiêu rụi mọi chướng ngại. Sở hữu 2 kỹ năng độc quyền: "Hơi Thở Plasma" đốt cháy câu hỏi khó để đổi sang câu hỏi dễ hơn; và "Hào Quang Chân Lý" hiển thị tức thời đáp án đúng!', skills: [{id: 'swap_question', name: 'Hơi Thở Plasma'}, {id: 'show_answer', name: 'Hào Quang Chân Lý'}] }
+            { id: 'pet_1', name: 'Thỏ Hồng Không Gian', image: 'pet_1.png', description: 'Thỏ Hồng Không Gian là phi thuyền mini luôn mang năng lượng tích cực! Sở hữu tốc độ cực nhanh, cậu ấy sẵn sàng giúp bạn vượt qua mọi thử thách. Kỹ năng "Ngưng Đọng Thời Không" sẽ đóng băng toàn bộ hệ thống đếm ngược, giúp bạn có thêm thời gian để phân tích và chốt đáp án!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
+            { id: 'pet_2', name: 'Gấu Trúc Siêu Chip', image: 'pet_2.png', description: 'Trông có vẻ hiền lành, nhưng Gấu Trúc Siêu Chip sở hữu hệ điều hành thiên tài và cực kỳ bình tĩnh. Cậu ấy luôn tính toán kỹ lưỡng trước mọi câu hỏi. Kỹ năng "Tia Laser Thanh Trừng" sẽ phát ra một luồng sáng cường độ cao, quét sạch một nửa số đáp án nhiễu để bạn dễ dàng lựa chọn!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_3', name: 'Ong Vệ Tinh Nhí', image: 'pet_3.png', description: 'Hoạt động bền bỉ như một vệ tinh vi mô, Ong Vệ Tinh Nhí không ngừng bay khắp vũ trụ để thu thập dữ liệu học thuật. Cậu ấy là nguồn động lực tuyệt vời. Kỹ năng "Tầm Nhìn Đa Chiều" sẽ kích hoạt con mắt sinh cơ học, hé lộ ngay lập tức lời giải chi tiết ẩn giấu đằng sau câu hỏi!', skills: [{id: 'show_hint', name: 'Tầm Nhìn Đa Chiều'}] },
+            { id: 'pet_4', name: 'Cú Radar Tinh Anh', image: 'pet_4.png', description: 'Bậc thầy phân tích dữ liệu với đôi mắt hồng ngoại và lõi phép thuật lượng tử! Cú Radar Tinh Anh luôn nhìn thấu mọi bí ẩn của trò chơi. Khi gặp bế tắc, kỹ năng "Lõi Phân Tích AI" sẽ kích hoạt siêu máy tính, giải mã thẳng vào hệ thống để cung cấp ngay đáp án đúng cho bạn!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
+            { id: 'pet_5', name: 'Chuột Capybara Từ Tính', image: 'pet_5.png', description: 'Dù không mang vũ khí tối tân, Chuột Capybara Từ Tính lại là chuyên gia tâm lý học, biến mọi giờ học thành cuộc phiêu lưu xả stress! Kỹ năng "Lá Chắn Năng Lượng" sẽ tạo ra một trường lực bảo vệ. Nếu bạn lỡ chọn sai, lá chắn sẽ hấp thụ sát thương, giúp bạn bảo toàn nguyên vẹn điểm số!', skills: [{id: 'shield', name: 'Lá Chắn Năng Lượng'}] },
+            { id: 'pet_6', name: 'Cún Nâu Ngân Hà', image: 'pet_6.png', description: 'Người bạn đồng hành trung thành được trang bị trí tuệ nhân tạo cực đỉnh! Cún Nâu Ngân Hà không bao giờ chùn bước trước mọi thử thách. Kỹ năng "Bước Nhảy Lượng Tử" sẽ mở ra cổng không gian, hô biến câu hỏi khó nhằn hiện tại thành một câu hỏi hoàn toàn mới cùng chủ đề!', skills: [{id: 'swap_question', name: 'Bước Nhảy Lượng Tử'}] },
+            { id: 'pet_7', name: 'Gà Vàng Lõi Quang', image: 'pet_7.png', description: 'Thiết bị báo thức sinh học lanh lợi nhất đội hình! Gà Vàng Lõi Quang luôn sạc đầy năng lượng để cùng bạn vượt qua các nhiệm vụ. Kỹ năng "Tia Laser Thanh Trừng" sẽ khởi động vũ khí quang học, bắn bay phân nửa số đáp án sai lừa tình, thu hẹp phạm vi để bạn tự tin chốt hạ!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_8', name: 'Chúa Tể Plasma', image: 'pet_8.png', description: 'Vị vua dũng mãnh của dải ngân hà, luôn tiên phong trong mọi cuộc chinh phục tri thức! Chúa Tể Plasma sẽ truyền cho bạn nguồn sức mạnh vô song. Kỹ năng "Lõi Phân Tích AI" sẽ truy cập vào máy chủ tối cao, bẻ khóa toàn bộ hàng rào bảo mật để đem về đáp án chính xác tuyệt đối!', skills: [{id: 'show_answer', name: 'Lõi Phân Tích AI'}] },
+            { id: 'pet_9', name: 'Voi Siêu Bộ Nhớ', image: 'pet_9.png', description: 'Sở hữu ổ cứng siêu dung lượng cùng chiếc vòi đa cảm biến, Voi Siêu Bộ Nhớ lưu trữ mọi chiến thuật học tập hiệu quả. Cậu ấy luôn khuyên bạn giữ cái đầu lạnh. Kỹ năng "Tia Laser Thanh Trừng" sẽ dùng sóng âm quét sạch 50% các đáp án sai, dọn đường cho chiến thắng của bạn!', skills: [{id: 'fifty_fifty', name: 'Tia Laser Thanh Trừng'}] },
+            { id: 'pet_10', name: 'Trâu Giáp Titan', image: 'pet_10.png', description: 'Cỗ xe tăng bọc thép không bao giờ lùi bước! Trâu Giáp Titan sở hữu động cơ bền bỉ, liên tục động viên bạn từng bước phá đảo trò chơi. Khi đối mặt với áp lực, kỹ năng "Ngưng Đọng Thời Không" sẽ can thiệp vào dòng chảy thời gian, cho bạn khoảng lặng hoàn hảo để suy nghĩ thấu đáo!', skills: [{id: 'freeze_time', name: 'Ngưng Đọng Thời Không'}] },
+            { id: 'pet_dragon', name: 'Rồng Plasma Viễn Cổ', image: 'Pet_Dragon.png', description: 'Thần thú tối thượng của vũ trụ ảo, lao đi với tốc độ siêu thanh! Mang trong mình nguồn sức mạnh vô tận có thể thiêu rụi mọi chướng ngại. Sở hữu 2 kỹ năng độc quyền: "Hơi Thở Plasma" đốt cháy câu hỏi khó để đổi sang câu hỏi dễ hơn; và "Hào Quang Chân Lý" hiển thị tức thời đáp án đúng!', skills: [{id: 'swap_question', name: 'Hơi Thở Plasma'}, {id: 'show_answer', name: 'Hào Quang Chân Lý'}] }
         ],
         currentTrainIndex: 0,
         trainAnimationDir: 0,
@@ -6459,16 +6485,10 @@ const app = {
                             <button class="btn-primary" style="padding:12px 30px; font-size:1.2rem; border-radius: 15px;" onclick="app.shop.adminSavePet('${currentPet.id}')">Lưu Thay Đổi</button>
                         </div>
                     ` : `
-                        <div style="display:flex; flex-direction:row; gap:15px; align-items: center; width: 100%;">
-                            <div style="display:flex; flex-direction:column; gap:4px; font-size: 1rem; color: #ef4444; font-weight:bold; background: #fee2e2; padding: 8px 15px; border-radius: 12px; border: 2px solid #fca5a5; white-space: nowrap;">
-                                <span>Kho: ${remaining}</span>
-                                <span>Giá: ${currentPet.cost} 🍭</span>
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:center; width: 100%; text-align:center;">
+                            <div style="font-size: 1rem; color: #64748b; font-weight:bold; background: #f1f5f9; padding: 12px 15px; border-radius: 12px; border: 2px dashed #94a3b8;">
+                                Chức năng đổi thú cưng sẽ sớm ra mắt!
                             </div>
-                            <button class="asset-button asset-button--pet" style="flex:1; min-width:0;"
-                                onclick="app.shop.buyPet('${currentPet.id}')"
-                                ${(hasPet || remaining == 0) ? 'disabled' : ''} aria-label="Đổi thú cưng, giá ${currentPet.cost} kẹo">
-                                <img src="./public/ui/buttons/group2/exchange-pet.png" alt="" aria-hidden="true">
-                            </button>
                         </div>
                     `}
                 </div>
@@ -6506,8 +6526,7 @@ const app = {
                     const p = myPets[i];
                     if (p) {
                         const isEquipped = (equippedPet === p.pet_image);
-                        const shopInfo = this.shopData.find(x => x.image === p.pet_image) || { cost: 50 };
-                        const refund = Math.floor(shopInfo.cost / 2);
+                        const shopInfo = this.shopData.find(x => x.image === p.pet_image) || {};
 
                         html += `
                     <div style="flex: 0 0 280px; position:relative; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0;">
@@ -6527,11 +6546,8 @@ const app = {
                                 
                                 <div style="display:flex; flex-direction:column; gap:10px; width: 100%; align-items:center;">
                                     <div style="display:flex; gap:10px; width: 100%; justify-content:center;">
-                                        <button class="asset-button asset-button--pet" style="width:48%;" onclick="app.shop.equipPet('${p.pet_image}')" aria-label="${isEquipped ? 'Tắt khoang' : 'Kích hoạt'}">
+                                        <button class="asset-button asset-button--pet" style="width:60%;" onclick="app.shop.equipPet('${p.pet_image}')" aria-label="${isEquipped ? 'Tắt khoang' : 'Kích hoạt'}">
                                             <img src="./public/ui/buttons/group2/${isEquipped ? 'deactivate-pet.png' : 'activate-pet.png'}" alt="" aria-hidden="true">
-                                        </button>
-                                        <button class="asset-button asset-button--pet" style="width:48%;" onclick="app.shop.returnPet('${p.id}', '${p.pet_image}')" aria-label="Trả lại thú cưng">
-                                            <img src="./public/ui/buttons/group2/return-pet.png" alt="" aria-hidden="true">
                                         </button>
                                     </div>
                                     ${(() => {
@@ -6574,106 +6590,6 @@ const app = {
 
             box.innerHTML = html;
         },
-        async buyPet(petId) {
-            const user = app.data.currentUser;
-            if (!user) return;
-
-            let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
-            if (myPets.length >= 3) {
-                return alert("Bạn đã sở hữu tối đa 3 thú cưng! Hãy trả lại một bé để đổi bé mới.");
-            }
-
-            const pet = this.shopData.find(x => x.id === petId);
-            if (!pet) return;
-
-            if ((user.lollipops || 0) < pet.cost) {
-                return alert(`Bạn không đủ Kẹo! Cần ${pet.cost} 🍭.`);
-            }
-
-            const defaultStock = pet.id === 'pet_dragon' ? 5 : 8;
-            const reserved = await app.data.changePetStock(pet.id, -1, defaultStock);
-            if (!reserved) {
-                return alert('Thú cưng này vừa hết hàng hoặc số lượng đã thay đổi. Vui lòng thử lại.');
-            }
-
-            const previousLollipops = user.lollipops || 0;
-            const nextLollipops = previousLollipops - pet.cost;
-
-            const newPet = {
-                user_username: user.username, pet_name: pet.name, pet_image: pet.image, rarity: 'common'
-            };
-
-            if (window.supabase) {
-                const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: nextLollipops }).eq('id', user.id);
-                if (candyError) {
-                    await app.data.changePetStock(pet.id, 1, defaultStock);
-                    return alert('Không thể lưu số kẹo. Kho thú cưng đã được hoàn lại, vui lòng thử lại.');
-                }
-                const { data, error: petError } = await supabaseClient.from('user_pets').insert([newPet]).select();
-                if (petError || !data?.length) {
-                    await supabaseClient.from('game_users').update({ lollipops: previousLollipops }).eq('id', user.id);
-                    await app.data.changePetStock(pet.id, 1, defaultStock);
-                    return alert('Không thể nhận thú cưng. Kẹo và kho đã được hoàn lại, vui lòng thử lại.');
-                }
-                user.lollipops = nextLollipops;
-                app.data.userPets.push(data[0]);
-            } else {
-                user.lollipops = nextLollipops;
-                app.data.saveUsers();
-                newPet.id = 'temp_' + new Date().getTime();
-                app.data.userPets.push(newPet);
-            }
-
-            app.auth.updateHeader();
-            if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            this.switchTab('pets');
-        },
-        async returnPet(userPetId, petImage) {
-            const user = app.data.currentUser;
-            if (!user) return;
-
-            if (!confirm("Bạn có chắc chắn muốn trả lại thú cưng này về trạm? Bạn sẽ được hoàn lại 50% số kẹo đã đổi ban đầu.")) return;
-
-            const shopInfo = this.shopData.find(x => x.image === petImage) || { cost: 50, id: 'pet_1' };
-            const refund = Math.floor(shopInfo.cost / 2);
-
-            const defaultStock = shopInfo.id === 'pet_dragon' ? 5 : 8;
-            const returnedToStock = await app.data.changePetStock(shopInfo.id, 1, defaultStock);
-            if (!returnedToStock) {
-                return alert('Không thể cập nhật kho thú cưng dùng chung. Vui lòng thử lại.');
-            }
-
-            const previousLollipops = user.lollipops || 0;
-            const nextLollipops = previousLollipops + refund;
-            if (window.supabase && !userPetId.startsWith('temp_')) {
-                const { error: candyError } = await supabaseClient.from('game_users').update({ lollipops: nextLollipops }).eq('id', user.id);
-                if (candyError) {
-                    await app.data.changePetStock(shopInfo.id, -1, defaultStock);
-                    return alert('Không thể hoàn kẹo. Kho thú cưng đã được khôi phục, vui lòng thử lại.');
-                }
-                const { error: petError } = await supabaseClient.from('user_pets').delete().eq('id', userPetId);
-                if (petError) {
-                    await supabaseClient.from('game_users').update({ lollipops: previousLollipops }).eq('id', user.id);
-                    await app.data.changePetStock(shopInfo.id, -1, defaultStock);
-                    return alert('Không thể trả thú cưng. Kẹo và kho đã được khôi phục, vui lòng thử lại.');
-                }
-            } else {
-                user.lollipops = nextLollipops;
-                app.data.saveUsers();
-            }
-
-            user.lollipops = nextLollipops;
-            app.data.userPets = app.data.userPets.filter(x => x.id !== userPetId);
-
-            // Un-equip if equipped
-            let equippedPet = localStorage.getItem('equipped_pet_' + user.username);
-            if (equippedPet === petImage) {
-                localStorage.removeItem('equipped_pet_' + user.username);
-            }
-
-            app.auth.updateHeader();
-            this.switchTab('mypets');
-        },
         equipPet(petImage) {
             const user = app.data.currentUser;
             if (!user) return;
@@ -6696,6 +6612,105 @@ const app = {
             this.switchTab('pets');
         }
 
+    },
+
+    daily: {
+        todayKey() {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date()).split('/').reverse().join('-');
+        },
+        addStars(user, amount) {
+            if (!user || !amount) return;
+            user.stars = (user.stars || 0) + amount;
+            user.total_stars_earned = (user.total_stars_earned || 0) + amount;
+        },
+        getEnergy(user) {
+            if (!user) return 5;
+            const today = this.todayKey();
+            if (user.energy_date !== today) {
+                user.energy = 5;
+                user.energy_date = today;
+            }
+            return Number(user.energy ?? 5);
+        },
+        renderEnergy() {
+            const el = document.getElementById('energy-display');
+            if (!el) return;
+            const user = app.data.currentUser;
+            if (!user || user.role?.toLowerCase() === 'admin') { el.style.display = 'none'; return; }
+            const energy = this.getEnergy(user);
+            let hearts = '';
+            for (let i = 0; i < 5; i++) hearts += `<span class="heart ${i < energy ? 'heart--full' : 'heart--empty'}">${i < energy ? '❤️' : '🤍'}</span>`;
+            el.innerHTML = `<span class="energy-label">Năng lượng</span> ${hearts}`;
+            el.style.display = 'flex';
+        },
+        spendEnergy(user) {
+            const current = this.getEnergy(user);
+            if (current <= 0) return false;
+            user.energy = current - 1;
+            user.energy_date = this.todayKey();
+            if (window.supabase && user.id) {
+                supabaseClient.from('game_users').update({ energy: user.energy, energy_date: user.energy_date }).eq('id', user.id).then(() => {});
+            }
+            this.renderEnergy();
+            return true;
+        },
+        giftClaimedToday(user) {
+            return Boolean(user && user.daily_gift_date === this.todayKey());
+        },
+        rollGift() {
+            const r = Math.random();
+            if (r < 0.45) return { stars: 2, label: '2 Sao ⭐' };
+            if (r < 0.75) return { stars: 3, label: '3 Sao ⭐' };
+            if (r < 0.95) return { stars: 5, label: '5 Sao ⭐' };
+            return { stars: 10, label: '10 Sao ⭐' };
+        },
+        async claimDailyGift() {
+            const user = app.data.currentUser;
+            if (!user || this.giftClaimedToday(user)) return;
+            const gift = this.rollGift();
+            app.daily.addStars(user, gift.stars);
+            user.daily_gift_date = this.todayKey();
+            user.daily_gift_streak = (user.daily_gift_streak || 0) + 1;
+            if (window.supabase && user.id) {
+                await supabaseClient.from('game_users').update({
+                    stars: user.stars, total_stars_earned: user.total_stars_earned || 0, daily_gift_date: user.daily_gift_date, daily_gift_streak: user.daily_gift_streak
+                }).eq('id', user.id);
+            }
+            const modal = document.getElementById('daily-gift-modal');
+            if (modal) modal.style.display = 'none';
+            app.auth.updateHeader();
+            app.playSound('correct');
+            if (window.confetti) confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+            alert(`Chúc mừng! Bạn nhận được ${gift.label} từ hộp quà hôm nay!`);
+            return gift;
+        },
+        showGreeting() {
+            const user = app.data.currentUser;
+            if (!user) return;
+            const catWrapper = document.getElementById('map-cat-wrapper');
+            if (!catWrapper) return;
+            const existing = document.getElementById('map-greet-bubble');
+            if (existing) existing.remove();
+            const bubble = document.createElement('div');
+            bubble.id = 'map-greet-bubble';
+            bubble.className = 'map-greet-bubble';
+            bubble.innerHTML = `Chào mừng trở lại,<br><b>${app.data.sanitizeHTML(user.fullname)}</b>!`;
+            catWrapper.appendChild(bubble);
+            app.playSound('correct');
+            setTimeout(() => bubble.remove(), 4000);
+        },
+        onMapEnter() {
+            const user = app.data.currentUser;
+            this.renderEnergy();
+            if (!user || user.role?.toLowerCase() === 'admin') return;
+            this.showGreeting();
+            if (!this.giftClaimedToday(user)) {
+                const modal = document.getElementById('daily-gift-modal');
+                if (modal) modal.style.display = 'flex';
+            }
+        }
     }
 };
 

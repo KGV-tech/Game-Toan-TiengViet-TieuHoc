@@ -90,7 +90,7 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
   await expect(page.locator('#guide-history h3')).toHaveText('8. Kho Báu');
   await expect(page.getByRole('link', { name: 'Kho Báu' })).toBeVisible();
-  await expect(page.locator('.guide-reward-table')).toContainText('5 kẹo và có thể mở chủ đề kế tiếp');
+  await expect(page.locator('.guide-reward-table')).toContainText('5 sao và có thể mở chủ đề kế tiếp');
   await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toHaveCount(0);
@@ -932,7 +932,7 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await openOfflineHomepage(page);
 
   await page.evaluate(() => {
-    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', lollipops: 7 };
+    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', stars: 7 };
     app.data.userPets = [];
     app.shop.open();
     app.shop.switchTab('lucky');
@@ -948,14 +948,14 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await expect(page.locator('.pet-station-title')).toHaveCSS('white-space', 'normal');
 });
 
-test('Admin có avatar giáo viên, 1.000 kẹo và xem được giao diện thú cưng minh hoạ', async ({ page }, testInfo) => {
+test('Admin có avatar giáo viên, 1.000 sao và xem được giao diện thú cưng minh hoạ', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
   await page.evaluate(() => {
     app.data.currentUser = {
       id: 'demo-admin', username: 'admin', fullname: 'Giáo viên', role: 'admin',
-      avatar_key: 'teacher-female', lollipops: 1000,
+      avatar_key: 'teacher-female', stars: 1000,
     };
     app.data.userPets = [];
     app.auth.updateHeader();
@@ -1184,7 +1184,7 @@ async function showAuditState(page, state) {
     document.getElementById('exam-student-name').textContent = 'Minh Anh';
     document.getElementById('exam-questions-container').innerHTML = '<section class="exam-q-block"><div class="exam-q-text">Câu 1. Viết số thích hợp vào chỗ trống.</div><label class="exam-opt-label" for="audit-exam-answer">Đáp án <input id="audit-exam-answer" class="fill-input" inputmode="numeric" aria-label="Đáp án câu 1"></label></section>';
     document.getElementById('result-score').textContent = '0';
-    document.getElementById('result-msg').textContent = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận kẹo).';
+    document.getElementById('result-msg').textContent = 'Cố gắng thêm nữa bạn nhé (Cần ≥ 8 điểm để nhận sao).';
     document.getElementById('result-details').innerHTML = '<article><b>1. Số nào lớn nhất?</b><br>Con chọn: <span style="color:#f87171">Bỏ trống</span><br><span style="color:#4ade80">Đáp án: 12.453</span></article>';
     document.querySelector('#result-modal .result-layout').classList.remove('result-layout--single-column');
     document.getElementById('treasure-content-area').textContent = 'Kho báu minh họa cho phiên review UI.';
@@ -1193,14 +1193,14 @@ async function showAuditState(page, state) {
 
     const demoStudent = {
       id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', classlevel: '5',
-      totalscore: 1250, lollipops: 7,
+      totalscore: 1250, stars: 7,
       history: [{ title: 'Luyện tập Phân số', topic: 'Phân số', difficulty: 'Vừa', questionCount: 10, score: 9, date: '2026-08-08' }],
     };
     Object.assign(app.data, {
       currentUser: demoStudent,
       userPets: [{ id: 'pet-1', user_username: 'minh-hoa', pet_image: 'pet_1.png', pet_name: 'Thỏ Hồng Không Gian' }],
       userQuests: [{ id: 'progress-1', quest_id: 'quest-1', progress: 3, is_completed: false }],
-      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_lollipops: 2, assign_type: 'all', is_active: true }],
+      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_stars: 2, assign_type: 'all', is_active: true }],
     });
 
     if (studentTreasureTab) {
@@ -1218,8 +1218,8 @@ async function showAuditState(page, state) {
       Object.assign(app.data, {
         currentUser: { id: 'demo-admin', name: 'Giáo viên Demo', role: 'admin', classlevel: '5' },
         users: [
-          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, lollipops: 7, approved: true },
-          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, lollipops: 0, approved: false },
+          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, stars: 7, approved: true },
+          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, stars: 0, approved: false },
         ],
         questions: [{ id: 'question-1', classlevel: 'Lớp 5', subject: 'Toán', topic: 'Phân số', type: 'Trắc nghiệm', q: 'Phân số nào lớn hơn?', options: ['1/2', '1/3'], ans: '1/2' }],
         exams: [{ id: 'exam-1', name: 'Kiểm tra Toán tuần 1', classlevel: 'Lớp 5', subject: 'Toán', questions: ['question-1'] }],

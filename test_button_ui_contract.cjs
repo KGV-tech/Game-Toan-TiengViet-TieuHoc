@@ -33,9 +33,7 @@ assert.doesNotMatch(html, /sci-fi-button/, 'Group 1 markup must no longer use CS
 assert.doesNotMatch(main, /getElementById\('start-adv-icon'\)/, 'Subject selection must not reference the removed torch icon from the old button.');
 assert.match(main, /group2\/claim-candy\.png/, 'Quest reward must use the approved claim-candy asset.');
 assert.match(main, /group2\/start-mission-exam\.png/, 'Quest exam must use the approved mission-exam asset.');
-assert.match(main, /group2\/exchange-pet\.png/, 'Pet exchange must use the approved exchange asset.');
 assert.match(main, /isEquipped \? 'deactivate-pet\.png' : 'activate-pet\.png'/, 'Pet state must choose the approved activation artwork.');
-assert.match(main, /group2\/return-pet\.png/, 'Pet return must use the approved return asset.');
 assert.match(html, /group2\/shop-pets-tab\.png/, 'Shop pet tab must use its approved image asset.');
 assert.match(html, /group2\/shop-my-pets-tab\.png/, 'My-pets tab must use its approved image asset.');
 assert.match(html, /group2\/shop-lucky-tab\.png/, 'Lucky-shop tab must use its approved image asset.');
