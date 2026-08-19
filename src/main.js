@@ -62,9 +62,6 @@ const PLAYER_TITLES = [
     { stars: 0, name: 'Học Trò Tò Mò' }
 ];
 
-// Huy hiệu (emoji) tương ứng mỗi bậc danh hiệu, cùng thứ tự giảm dần với PLAYER_TITLES.
-const PLAYER_BADGES = ['👑', '🌌', '🧬', '🔭', '🌠', '🚀', '⚙️', '💡', '🛰️', '🧪', '🔬', '🔍', '🏆', '🏅', '🧠', '🧢', '🌟', '✨', '📚', '🌱'];
-
 // D2: bộ nhớ đệm getElementById để giảm truy vấn DOM lặp lại ở các hàm hot.
 const _domCache = new Map();
 function $id(id) {
@@ -835,9 +832,10 @@ const app = {
             const titleLine = isAdmin
                 ? ''
                 : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`;
-            const badgeLine = isAdmin
+            const progress = app.auth.getPlayerProgress(user);
+            const progressLine = isAdmin
                 ? ''
-                : `<span class="player-info-card__stats"><i aria-hidden="true">🎖️</i> Huy hiệu: <b>${app.auth.getPlayerBadge(user)}</b></span>`;
+                : `<div class="player-progress-bar" title="${progress.nextTitle ? 'Tiến tới: ' + progress.nextTitle : 'Đã đạt cấp cao nhất'}" aria-label="Tiến độ ${Math.round(progress.percent)}%"><div class="player-progress-fill" style="width:${progress.percent}%"></div></div>`;
             const avatarMarkup = avatar.image
                 ? `<img class="player-info-card__avatar player-info-card__avatar--teacher" src="${avatar.image}" alt="Avatar ${app.data.sanitizeHTML(avatar.label)}">`
                 : `<span class="player-info-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="Avatar ${app.data.sanitizeHTML(avatar.label)}"></span>`;
@@ -847,7 +845,7 @@ const app = {
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
                   <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
                   ${titleLine}
-                  ${badgeLine}
+                  ${progressLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
                 </span>`;
             $id('player-info').innerHTML = html;
@@ -876,10 +874,16 @@ const app = {
             const match = PLAYER_TITLES.find(t => earned >= t.stars);
             return (match || PLAYER_TITLES[PLAYER_TITLES.length - 1]).name;
         },
-        getPlayerBadge(user) {
+        getPlayerProgress(user) {
             const earned = this.getPlayerStars(user);
             const idx = PLAYER_TITLES.findIndex(t => earned >= t.stars);
-            return PLAYER_BADGES[Math.max(0, idx)] || PLAYER_BADGES[PLAYER_BADGES.length - 1];
+            const current = PLAYER_TITLES[Math.max(0, idx)] || PLAYER_TITLES[PLAYER_TITLES.length - 1];
+            const next = idx > 0 ? PLAYER_TITLES[idx - 1] : null;
+            let percent = 100;
+            if (next) {
+                percent = Math.min(100, Math.max(0, ((earned - current.stars) / (next.stars - current.stars)) * 100));
+            }
+            return { currentTitle: current.name, percent, nextTitle: next ? next.name : null };
         }
     },
 
