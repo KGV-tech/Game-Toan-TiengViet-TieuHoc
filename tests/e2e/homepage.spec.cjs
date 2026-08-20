@@ -1241,13 +1241,13 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
   await openOfflineHomepage(page);
 
   const templates = [
-    ['g4-m-angle-count-in-polygon', 'Điền khuyết', 'angle-count-in-polygon.jpg', '.magic-input'],
-    ['g4-m-angle-drag-classify', 'Kéo thả', 'angle-drag-classify.jpg', '.drag-slot'],
-    ['g4-m-angle-clock-classify', 'Kéo thả', 'angle-clock-classify.jpg', '.drag-slot'],
-    ['g4-m-angle-count-eight-angles', 'Điền khuyết', 'angle-count-eight-angles.jpg', '.magic-input'],
+    ['g4-m-angle-count-in-polygon', 'Điền khuyết', 'angle-count-in-polygon.jpg', '.magic-input', '.angle-count-rows'],
+    ['g4-m-angle-drag-classify', 'Kéo thả', 'angle-drag-classify.jpg', '.drag-slot', '.drag-inventory--angle'],
+    ['g4-m-angle-clock-classify', 'Kéo thả', 'angle-clock-classify.jpg', '.drag-slot', '.drag-inventory--angle'],
+    ['g4-m-angle-count-eight-angles', 'Điền khuyết', 'angle-count-eight-angles.jpg', '.magic-input', '.angle-count-rows'],
   ];
 
-  for (const [generator, questionType, previewImage, responseSelector] of templates) {
+  for (const [generator, questionType, previewImage, responseSelector, layoutSelector] of templates) {
     await page.evaluate(({ generator, questionType }) => {
       let seed = 20260820;
       const random = () => {
@@ -1257,10 +1257,34 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
       const question = window.Grade4MathTemplates.generateQuestion(generator, {}, random);
       app.data.currentUser = { username: 'demo-student', role: 'student' };
       app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+      document.getElementById('treasure-modal').style.display = 'none';
       document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
       document.getElementById('game-screen').classList.add('active');
       document.getElementById('game-play-view').classList.add('active');
       app.game.loadQuestion();
+    }, { generator, questionType });
+
+    await expect.poll(() => page.locator('#game-question-container svg').count()).toBeGreaterThan(0);
+    await expect(page.locator(`#game-question-container ${responseSelector}`)).toHaveCount(4);
+    const layoutRoot = questionType === 'Kéo thả' ? '#game-options-container' : '#game-question-container';
+    await expect(page.locator(`${layoutRoot} ${layoutSelector}`)).toHaveCount(1);
+    if (questionType === 'Kéo thả') {
+      await expect(page.locator('#game-options-container .drag-inventory--angle .drag-item')).toHaveCount(4);
+      expect(await page.locator('#game-options-container .drag-inventory--angle .drag-item').evaluateAll(items => {
+        const tops = items.map(item => Math.round(item.getBoundingClientRect().top));
+        return new Set(tops).size;
+      })).toBe(1);
+      await page.locator('#game-options-container .drag-inventory--angle .drag-item').first().click();
+      const firstSlot = page.locator('#game-question-container .angle-drag-row .drag-slot').first();
+      await expect(firstSlot).toHaveText(/Góc /);
+      expect(await firstSlot.evaluate(slot => {
+        const style = getComputedStyle(slot);
+        return style.whiteSpace === 'nowrap' && slot.scrollHeight <= slot.clientHeight;
+      })).toBe(true);
+    }
+    await captureUiReview(page, testInfo, `topic2-gameplay-${previewImage.replace('.jpg', '.png')}`);
+
+    await page.evaluate(({ generator, questionType }) => {
       app.data.questionTemplates = [{
         id: `${generator}-demo`, name: generator, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
         topic: '2. Góc và đơn vị đo góc', question_type: questionType, generator_key: generator,
@@ -1269,16 +1293,12 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
       app.admin.renderTemplateForm(0);
       document.getElementById('treasure-modal').style.display = 'block';
     }, { generator, questionType });
-
-    await expect.poll(() => page.locator('#game-question-container svg').count()).toBeGreaterThan(0);
-    await expect(page.locator(`#game-question-container ${responseSelector}`)).toHaveCount(4);
     await expect(page.locator('#template-topic')).toHaveValue('2. Góc và đơn vị đo góc');
     await expect(page.locator('#template-question-type')).toHaveValue(questionType);
     await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', new RegExp(`${previewImage}$`));
     await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
     await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({});
-    await captureUiReview(page, testInfo, `topic2-${previewImage.replace('.jpg', '.png')}`);
   }
 });
 

@@ -1586,8 +1586,8 @@ const app = {
             let qHtml = app.data.formatMathText(q.q);
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
-            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
                 questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>`;
@@ -1807,6 +1807,7 @@ const app = {
                 let numSlots = 0;
 
                 if (Array.isArray(q.angleItems)) {
+                    playCenter?.classList.add('play-center--angle-drag');
                     questionContainer.classList.add('question-box--template', 'question-box--angle-drag');
                     const instruction = app.data.formatMathText(q.instruction || 'Kéo thả tên loại góc thích hợp vào ô trống.');
                     html += `<div class="template-question-copy">${instruction}</div><div class="angle-drag-rows">`;
@@ -1859,7 +1860,7 @@ const app = {
                 document.getElementById('game-question-container').innerHTML = html;
 
                 const inventory = document.createElement('div');
-                inventory.className = 'drag-inventory';
+                inventory.className = Array.isArray(q.angleItems) ? 'drag-inventory drag-inventory--angle' : 'drag-inventory';
                 const filledAnswers = new Array(numSlots).fill(null);
 
                 opts.forEach((opt, idx) => {
@@ -2038,6 +2039,27 @@ const app = {
                         const allFilled = inputs.every(item => item.value.trim() !== '');
                         this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
                         btnCheck.disabled = !allFilled;
+                    };
+                });
+            } else if (qType === 'Điền khuyết' && Array.isArray(q.angleCountRows) && q.angleCountRows.length === 4) {
+                optContainer.className = '';
+                playCenter?.classList.add('play-center--angle-count');
+                questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--angle-count');
+                const inputs = [];
+                const instruction = app.data.formatMathText(q.instruction || 'Quan sát hình vẽ và điền số lượng từng loại góc.');
+                const rows = q.angleCountRows.map((row, index) => {
+                    const label = app.data.sanitizeHTML(row.label || String.fromCharCode(97 + index));
+                    const text = app.data.sanitizeHTML(row.text || 'góc');
+                    return `<label class="angle-count-row angle-count-row--tone-${index % 4}"><span class="angle-count-row__label">${label}.</span><span class="angle-count-row__text">${text}</span><input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Số ${text}"></label>`;
+                }).join('');
+                questionContainer.innerHTML = `<div class="angle-count-title">${instruction}</div><div class="angle-count-visual">${q.angleVisual || ''}</div><div class="angle-count-rows">${rows}</div>`;
+                q.angleCountRows.forEach((_, index) => {
+                    const input = document.getElementById(`fill-input-${index}`);
+                    inputs.push(input);
+                    input.oninput = () => {
+                        input.value = input.value.replace(/\D/g, '').slice(0, 2);
+                        this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
+                        btnCheck.disabled = !inputs.every(item => item.value.trim() !== '');
                     };
                 });
             } else if (qType === 'Điền khuyết') {
