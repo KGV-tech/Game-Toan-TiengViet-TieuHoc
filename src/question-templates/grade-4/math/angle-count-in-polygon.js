@@ -162,6 +162,14 @@ function generateAngleCountInPolygon(config = {}, random = Math.random) {
         type: 'Điền khuyết',
         templateId: 'g4-m-angle-count-in-polygon',
         q: prompt,
+        instruction: 'Quan sát hình vẽ và điền số lượng từng loại góc.',
+        angleVisual: svg,
+        angleCountRows: [
+            { label: 'a', text: 'góc nhọn' },
+            { label: 'b', text: 'góc vuông' },
+            { label: 'c', text: 'góc tù' },
+            { label: 'd', text: 'góc bẹt' }
+        ],
         options: [],
         ans: answers.join(', '),
         explanation,
