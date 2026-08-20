@@ -81,6 +81,8 @@ function generateAngleDragClassify(config = {}, random = Math.random) {
         type: 'Kéo thả',
         templateId: 'g4-m-angle-drag-classify',
         q: prompt,
+        instruction: 'Kéo thả tên loại góc thích hợp vào ô trống bên cạnh mỗi hình vẽ:',
+        angleItems: items,
         options: ANGLE_TYPES,
         ans: answers.join(', '),
         explanation,

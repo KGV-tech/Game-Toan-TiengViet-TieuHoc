@@ -505,9 +505,8 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
-  await expect(page.locator('#template-example .template-preview__canvas')).toBeVisible();
+  await expect(page.locator('#template-example .template-editor__preview-image')).toBeVisible();
   await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
-  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
   await page.locator('#template-generator').selectOption('number.safe_password_by_place_value');
   await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /safe-password-by-place-value\.jpg$/);
@@ -1236,6 +1235,52 @@ async function showAuditState(page, state) {
     }
   }, state);
 }
+
+test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và preview trong Kho Template', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const templates = [
+    ['g4-m-angle-count-in-polygon', 'Điền khuyết', 'angle-count-in-polygon.jpg', '.magic-input'],
+    ['g4-m-angle-drag-classify', 'Kéo thả', 'angle-drag-classify.jpg', '.drag-slot'],
+    ['g4-m-angle-clock-classify', 'Kéo thả', 'angle-clock-classify.jpg', '.drag-slot'],
+    ['g4-m-angle-count-eight-angles', 'Điền khuyết', 'angle-count-eight-angles.jpg', '.magic-input'],
+  ];
+
+  for (const [generator, questionType, previewImage, responseSelector] of templates) {
+    await page.evaluate(({ generator, questionType }) => {
+      let seed = 20260820;
+      const random = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 0x100000000;
+      };
+      const question = window.Grade4MathTemplates.generateQuestion(generator, {}, random);
+      app.data.currentUser = { username: 'demo-student', role: 'student' };
+      app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+      document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+      document.getElementById('game-screen').classList.add('active');
+      document.getElementById('game-play-view').classList.add('active');
+      app.game.loadQuestion();
+      app.data.questionTemplates = [{
+        id: `${generator}-demo`, name: generator, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+        topic: '2. Góc và đơn vị đo góc', question_type: questionType, generator_key: generator,
+        prompt_template: '{question}', config: {}
+      }];
+      app.admin.renderTemplateForm(0);
+      document.getElementById('treasure-modal').style.display = 'block';
+    }, { generator, questionType });
+
+    await expect.poll(() => page.locator('#game-question-container svg').count()).toBeGreaterThan(0);
+    await expect(page.locator(`#game-question-container ${responseSelector}`)).toHaveCount(4);
+    await expect(page.locator('#template-topic')).toHaveValue('2. Góc và đơn vị đo góc');
+    await expect(page.locator('#template-question-type')).toHaveValue(questionType);
+    await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', new RegExp(`${previewImage}$`));
+    await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+    await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({});
+    await captureUiReview(page, testInfo, `topic2-${previewImage.replace('.jpg', '.png')}`);
+  }
+});
 
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);

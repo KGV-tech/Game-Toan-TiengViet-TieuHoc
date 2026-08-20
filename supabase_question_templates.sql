@@ -303,3 +303,53 @@ WHERE NOT EXISTS (
     WHERE generator_key = 'number.four_operations_expressions'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Ôn tập và bổ sung'
 );
+
+-- Grade 4 Math, Topic 2: Góc và đơn vị đo góc.
+-- These generators own their geometry, so their configuration intentionally remains empty.
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Đếm các loại góc trong hình', 'Lớp 4', 'Toán', 'Học kỳ 1', '2. Góc và đơn vị đo góc',
+    'Điền khuyết', 'g4-m-angle-count-in-polygon', '{question}', '{}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'g4-m-angle-count-in-polygon'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '2. Góc và đơn vị đo góc'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Kéo thả phân loại góc', 'Lớp 4', 'Toán', 'Học kỳ 1', '2. Góc và đơn vị đo góc',
+    'Kéo thả', 'g4-m-angle-drag-classify', '{question}', '{}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'g4-m-angle-drag-classify'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '2. Góc và đơn vị đo góc'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Kéo thả phân loại góc qua đồng hồ', 'Lớp 4', 'Toán', 'Học kỳ 1', '2. Góc và đơn vị đo góc',
+    'Kéo thả', 'g4-m-angle-clock-classify', '{question}', '{}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'g4-m-angle-clock-classify'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '2. Góc và đơn vị đo góc'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
+    'Đếm 8 góc theo loại', 'Lớp 4', 'Toán', 'Học kỳ 1', '2. Góc và đơn vị đo góc',
+    'Điền khuyết', 'g4-m-angle-count-eight-angles', '{question}', '{}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE generator_key = 'g4-m-angle-count-eight-angles'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '2. Góc và đơn vị đo góc'
+);
