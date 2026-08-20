@@ -1308,6 +1308,57 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
   }
 });
 
+test('lượt luyện Chủ đề 2 tạo và chuyển đủ mười câu mà không làm treo giao diện', async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors } = await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(() => {
+    const topic = '2. Góc và đơn vị đo góc';
+    const definitions = [
+      ['g4-m-angle-count-in-polygon', 'Điền khuyết'],
+      ['g4-m-angle-drag-classify', 'Kéo thả'],
+      ['g4-m-angle-clock-classify', 'Kéo thả'],
+      ['g4-m-angle-count-eight-angles', 'Điền khuyết']
+    ];
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = definitions.map(([generator_key, question_type]) => ({
+      id: generator_key,
+      classlevel: 'Lớp 4',
+      subject: 'Toán',
+      semester: 'Học kỳ 1',
+      topic,
+      question_type,
+      generator_key,
+      prompt_template: '{question}',
+      config: {},
+      is_active: true
+    }));
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    const startedAt = performance.now();
+    app.game.startPlay();
+    const rendered = [];
+    for (let index = 0; index < app.game.state.questions.length; index += 1) {
+      app.game.state.currentIdx = index;
+      app.game.loadQuestion();
+      rendered.push({
+        templateId: app.game.state.questions[index].templateId,
+        svgCount: document.querySelectorAll('#game-question-container svg').length,
+        responseCount: document.querySelectorAll('#game-question-container .magic-input, #game-question-container .drag-slot').length
+      });
+    }
+    return { elapsed: performance.now() - startedAt, rendered };
+  });
+
+  expect(outcome.rendered).toHaveLength(10);
+  expect(outcome.rendered.every(item => item.svgCount > 0 && item.responseCount === 4)).toBe(true);
+  expect(outcome.elapsed).toBeLessThan(1_000);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });

@@ -154,6 +154,14 @@ const app = {
         formatMathText(value) {
             return String(value ?? '').replace(/\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
         },
+        formatMathHTML(value) {
+            // Câu hỏi động có thể chứa SVG. Chỉ định dạng số trong phần văn bản,
+            // tuyệt đối không đổi khoảng trắng trong thuộc tính như viewBox hoặc points.
+            return String(value ?? '')
+                .split(/(<\/?[a-z][^>]*>)/gi)
+                .map(part => /^<\/?[a-z]/i.test(part) ? part : this.formatMathText(part))
+                .join('');
+        },
         formatQuestionDetailHTML(value) {
             return String(value ?? '')
                 .split(/<br\s*\/?\s*>/i)
@@ -236,7 +244,7 @@ const app = {
                 const prompt = promptTemplate.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
                 return {
                     ...generated,
-                    q: this.formatMathText(prompt),
+                    q: this.formatMathHTML(prompt),
                     classlevel: template.classlevel,
                     subject: template.subject,
                     semester: template.semester,
@@ -1657,7 +1665,7 @@ const app = {
             let equipped = app.getEquippedPet(user);
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
-            let qHtml = app.data.formatMathText(q.q);
+            let qHtml = app.data.formatMathHTML(q.q);
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
             playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
@@ -1793,7 +1801,7 @@ const app = {
                 optContainer.className = '';
                 let slot;
                 if (q.q.includes('___')) {
-                    let [instruction, expression = ''] = app.data.formatMathText(q.q).split(/<br\s*\/?\s*>/i);
+                    let [instruction, expression = ''] = app.data.formatMathHTML(q.q).split(/<br\s*\/?\s*>/i);
                     if (!expression) {
                         const instructionMatch = instruction.match(/^(.+?:)\s*(.+___.+)$/);
                         if (instructionMatch) [, instruction, expression] = instructionMatch;
@@ -1920,7 +1928,7 @@ const app = {
                     }
                     html += `</div>`;
                 } else {
-                    html += app.data.formatMathText(q.q || '') + '<br><br>';
+                    html += app.data.formatMathHTML(q.q || '') + '<br><br>';
                     const ansArr = this.getAnsArr(q.ans);
                     html += `<div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">`;
                     for (let i = 0; i < ansArr.length; i++) {
@@ -2029,7 +2037,7 @@ const app = {
                     }
                 }
                 html += '</div>';
-                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathText(q.q) + html);
+                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathHTML(q.q) + html);
 
                 const slots = document.querySelectorAll('.seq-slot');
                 const updateFocus = () => {
@@ -3139,7 +3147,7 @@ const app = {
             this.state.questions.forEach((q, idx) => {
                 const qBlock = document.createElement('div');
                 qBlock.className = 'exam-q-block';
-                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathText(q.q)}</div>`;
+                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathHTML(q.q)}</div>`;
                 if (q.imageUrl) qBlock.innerHTML += `<img src="${q.imageUrl}" style="max-height:150px; margin-bottom:10px;"><br>`;
 
                 const optsContainer = document.createElement('div');
@@ -4267,7 +4275,7 @@ const app = {
               <td><input type="checkbox" class="q-select-cb" value="${i}" onchange="app.admin.updateBulkDeleteLabel()"></td>
               <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
-                <td>${app.data.formatMathText(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
+                <td>${app.data.formatMathHTML(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
               <td>
                 ${app.ui.compactAction('Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'compact-admin-action--add')}
                 ${app.ui.compactAction('Sửa', `app.admin.editQuestion(${i})`, 'compact-admin-action--edit')}
@@ -4335,7 +4343,7 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Nội dung câu hỏi</label>
-                  <textarea id="add-q-q" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathText(q.q) : ''}</textarea>
+                  <textarea id="add-q-q" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathHTML(q.q) : ''}</textarea>
                </div>
 
                <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
@@ -4878,7 +4886,7 @@ const app = {
                   <table style="width:100%; border-collapse: collapse; text-align: left;">
                      ${e.questions.map((q, i) => `
                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathText(q.q)}</td>
+                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathHTML(q.q)}</td>
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
                             ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
                             ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
@@ -5027,7 +5035,7 @@ const app = {
                 <h3>Thêm câu hỏi vào đề: ${e.name}</h3>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p><strong>Nội dung câu hỏi sẽ thêm:</strong></p>
-                    <p><i>${app.data.formatMathText(q.q)}</i></p>
+                    <p><i>${app.data.formatMathHTML(q.q)}</i></p>
                     <p><strong>Đáp án:</strong> ${app.data.formatMathText(q.ans)}</p>
                 </div>
                 
@@ -5232,7 +5240,7 @@ const app = {
                 exam.questions.forEach((q, i) => {
                     html += `
                   <div style="margin-bottom: 20px;">
-                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathText(q.q)}</p>
+                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathHTML(q.q)}</p>
                      ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${app.data.formatMathText(o)}</li>`).join('')}</ul>` : ''}
                      ${q.type === 'Điền khuyết' ? `<p>....................................................................</p>` : ''}
                   </div>
