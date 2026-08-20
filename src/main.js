@@ -1886,7 +1886,7 @@ const app = {
                     const instruction = app.data.formatMathText(q.instruction || 'Kéo thả tên loại góc thích hợp vào ô trống.');
                     html += `<div class="template-question-copy">${instruction}</div><div class="angle-drag-rows">`;
                     q.angleItems.forEach((item, index) => {
-                        html += `<div class="angle-drag-row angle-drag-row--tone-${index % 4}"><b>${app.data.sanitizeHTML(item.label)}.</b><span class="angle-drag-figure">${item.svg}</span><span class="angle-drag-arrow" aria-hidden="true">➜</span><div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}" aria-label="Ô thả đáp án câu ${app.data.sanitizeHTML(item.label)}"></div></div>`;
+                        html += `<div class="angle-drag-row angle-drag-row--tone-${index % 4}"><b>${app.data.sanitizeHTML(item.label)}.</b><span class="angle-drag-figure">${item.svg}</span><div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}" aria-label="Ô thả đáp án câu ${app.data.sanitizeHTML(item.label)}"></div></div>`;
                         numSlots++;
                     });
                     html += '</div>';

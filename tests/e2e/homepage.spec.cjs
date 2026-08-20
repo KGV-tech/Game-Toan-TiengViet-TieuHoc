@@ -1270,6 +1270,7 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
     await expect(page.locator(`${layoutRoot} ${layoutSelector}`)).toHaveCount(1);
     if (questionType === 'Kéo thả') {
       await expect(page.locator('#game-options-container .drag-inventory--angle .drag-item')).toHaveCount(4);
+      await expect(page.locator('#game-question-container .angle-drag-arrow')).toHaveCount(0);
       expect(await page.locator('#game-options-container .drag-inventory--angle .drag-item').evaluateAll(items => {
         const tops = items.map(item => Math.round(item.getBoundingClientRect().top));
         return new Set(tops).size;
@@ -1281,6 +1282,11 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
         const style = getComputedStyle(slot);
         return style.whiteSpace === 'nowrap' && slot.scrollHeight <= slot.clientHeight;
       })).toBe(true);
+      expect(await page.locator('#game-question-container .angle-drag-row').evaluateAll(rows => rows.every(row => {
+        const rowBox = row.getBoundingClientRect();
+        const slotBox = row.querySelector('.drag-slot').getBoundingClientRect();
+        return slotBox.left >= rowBox.left && slotBox.right <= rowBox.right;
+      }))).toBe(true);
     }
     await captureUiReview(page, testInfo, `topic2-gameplay-${previewImage.replace('.jpg', '.png')}`);
 
