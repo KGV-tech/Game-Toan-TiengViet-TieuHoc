@@ -326,6 +326,14 @@ assert(polygonAngle.q.includes('a) ___ góc nhọn'));
 assert(polygonAngle.q.includes('d) ___ góc bẹt'));
 assert.equal(polygonAngle.ans.split(', ').length, 4);
 
+const trapezoidWithHeight = generateQuestion('g4-m-angle-count-in-polygon', {}, () => 0.5);
+assert.deepEqual(
+    trapezoidWithHeight.ans.split(', ').map(Number),
+    [1, 4, 1, 1],
+    'Hình thang có đường cao BH phải tính hai góc vuông và một góc bẹt DHC tại H.'
+);
+assert.match(trapezoidWithHeight.explanation, /góc DHC tại H là góc bẹt/i);
+
 const polygonAngleAlias = generateQuestion('angle.count_in_polygon', {}, seededRandom(302));
 assert.equal(polygonAngleAlias.type, 'Điền khuyết');
 
