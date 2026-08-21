@@ -17,6 +17,18 @@ function hasHundredsDigitEight(text) {
     return Math.floor(numericValue(text) / 100) % 10 === 8;
 }
 
+const measurementTemplateIds = [
+    'measurement.mass_unit_convert', 'measurement.area_unit_convert', 'measurement.time_unit_convert',
+    'measurement.choose_appropriate_unit', 'measurement.compare_units', 'measurement.match_equivalences',
+    'measurement.unit_true_false', 'measurement.century_identification', 'measurement.word_problem_units'
+];
+measurementTemplateIds.forEach((templateId, index) => {
+    const generated = generateQuestion(templateId, {}, seededRandom(900 + index));
+    assert.equal(generated.topic, '4. Một số đơn vị đo Đại lượng', `${templateId} must belong to Topic 4.`);
+    assert.deepEqual(generated.partAnswerCounts, [1, 1, 1, 1], `${templateId} must score four equal parts.`);
+    assert.equal(generated.ans.split(', ').length, 4, `${templateId} must provide answers a–d.`);
+});
+
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
 assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');
