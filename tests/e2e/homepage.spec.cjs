@@ -1359,6 +1359,75 @@ test('lượt luyện Chủ đề 2 tạo và chuyển đủ mười câu mà kh
   expect(consoleErrors).toEqual([]);
 });
 
+test('lượt luyện Chủ đề 2 chỉ dùng template về góc khi kho có template gán nhầm chủ đề', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const templateIds = await page.evaluate(() => {
+    const topic = '2. Góc và đơn vị đo góc';
+    const angleTemplates = [
+      ['g4-m-angle-count-in-polygon', 'Điền khuyết'],
+      ['g4-m-angle-drag-classify', 'Kéo thả'],
+      ['g4-m-angle-clock-classify', 'Kéo thả'],
+      ['g4-m-angle-count-eight-angles', 'Điền khuyết']
+    ];
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = [
+      ...angleTemplates.map(([generator_key, question_type]) => ({
+        id: generator_key, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+        question_type, generator_key, prompt_template: '{question}', config: {}, is_active: true
+      })),
+      {
+        id: 'misfiled-matching', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+        question_type: 'Đối chiếu trùng khớp', generator_key: 'number.match_number_words',
+        prompt_template: 'Hãy nối mỗi số với cách đọc đúng.', config: {}, is_active: true
+      }
+    ];
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    app.game.startPlay();
+    return app.game.state.questions.map(question => question.templateId);
+  });
+
+  expect(templateIds).toHaveLength(10);
+  expect(templateIds.every(templateId => templateId.startsWith('g4-m-angle-'))).toBe(true);
+});
+
+test('lượt luyện không lặp nguyên câu khi template không sinh được biến thể mới', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(() => {
+    const topic = '3. Số có nhiều chữ số';
+    const alerts = [];
+    window.alert = message => alerts.push(message);
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [{
+      id: 'only-static', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Trắc nghiệm', q: 'Câu hỏi kho duy nhất', options: ['Đúng', 'Sai'], ans: 'Đúng'
+    }];
+    app.data.questionTemplates = [{
+      id: 'fixed-template', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      question_type: 'Trắc nghiệm', generator_key: 'number.smallest_of_four', prompt_template: '{question}', config: {}, is_active: true
+    }];
+    app.data.generateTemplateQuestion = () => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Trắc nghiệm', templateId: 'number.smallest_of_four',
+      q: 'Câu hỏi động không đổi', options: ['1', '2'], ans: '1'
+    });
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    app.game.startPlay();
+    return { alerts, questionCount: app.game.state.questions.length };
+  });
+
+  expect(outcome.questionCount).toBe(0);
+  expect(outcome.alerts).toEqual(['Chủ đề này chưa đủ câu hỏi khác nhau để tạo 10 câu. Hãy thêm câu hỏi hoặc template có biến thể.']);
+});
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
