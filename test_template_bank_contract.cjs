@@ -5,7 +5,7 @@ const source = fs.readFileSync('src/main.js', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8');
 const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
 const previewDirectory = 'src/assets/template-previews';
-const previewFiles = ['digit-at-place.jpg', 'smallest-of-four.jpg', 'largest-of-four.jpg', 'compose-from-places.jpg', 'missing-expanded-addend.jpg', 'four-arithmetic-blanks.jpg', 'four-arithmetic-comparisons.jpg', 'neighbor-numbers.jpg', 'compare-number-forms.jpg', 'place-value-true-false.jpg', 'safe-password-by-place-value.jpg', 'match-number-words.jpg'];
+const previewFiles = ['digit-at-place.jpg', 'smallest-of-four.jpg', 'largest-of-four.jpg', 'compose-from-places.jpg', 'missing-expanded-addend.jpg', 'four-arithmetic-blanks.jpg', 'four-arithmetic-comparisons.jpg', 'neighbor-numbers.jpg', 'compare-number-forms.jpg', 'place-value-true-false.jpg', 'safe-password-by-place-value.jpg', 'match-number-words.jpg', 'angle-count-in-polygon.jpg', 'angle-drag-classify.jpg', 'angle-clock-classify.jpg', 'angle-count-eight-angles.jpg'];
 
 assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin must show a Template Bank tab before Question Bank.');
 assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
@@ -65,6 +65,11 @@ assert(source.includes('number.compare_number_forms'), 'The Template Bank must e
 assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
 assert(source.includes('number.place_value_true_false'), 'The Template Bank must expose the place-value true/false generator.');
 assert(source.includes('number.safe_password_by_place_value'), 'The Template Bank must expose the safe-password generator.');
+assert(source.includes('g4-m-angle-count-in-polygon'), 'The Template Bank must expose the angle-count-in-polygon generator.');
+assert(source.includes('g4-m-angle-drag-classify'), 'The Template Bank must expose the angle-drag-classify generator.');
+assert(source.includes('g4-m-angle-clock-classify'), 'The Template Bank must expose the angle-clock-classify generator.');
+assert(source.includes('g4-m-angle-count-eight-angles'), 'The Template Bank must expose the eight-angle-count generator.');
+assert(source.includes("'2. Góc và đơn vị đo góc'"), 'The Template Bank must keep the four angle templates in Grade 4 Math Topic 2.');
 assert(css.includes('question-box--safe-password'), 'Safe-password questions must have a dedicated image layout.');
 assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
 assert(source.includes('template-safe-password-min-length'), 'Safe-password templates must let administrators choose the minimum number of password cells.');
@@ -80,6 +85,10 @@ assert(source.includes('Lớp tỷ (trăm tỷ, chục tỷ, tỷ)'), 'The edito
 assert(source.includes("condition1Scope = generatorKey === 'number.safe_password_by_place_value' ? 'random'"), 'Safe-password condition 1 must randomly choose from configured classes and places.');
 assert(!source.includes('renderSafePasswordCells'), 'Safe-password questions must not overlay SVG password cells on the safe image.');
 assert(migration.includes("'number.safe_password_by_place_value'"), 'Migration must seed the safe-password template.');
+assert(migration.includes("'g4-m-angle-count-in-polygon'"), 'Migration must seed the polygon angle-count template.');
+assert(migration.includes("'g4-m-angle-drag-classify'"), 'Migration must seed the drag-classify angle template.');
+assert(migration.includes("'g4-m-angle-clock-classify'"), 'Migration must seed the clock angle template.');
+assert(migration.includes("'g4-m-angle-count-eight-angles'"), 'Migration must seed the eight-angle-count template.');
 assert(source.includes('tf-statement'), 'Gameplay must render a separate true/false choice for each statement.');
 assert(source.includes('Đối chiếu trùng khớp'), 'The Template Bank must select the matching question type.');
 assert(source.includes("'Đúng/Sai'"), 'The Template Bank question-type list must include true/false questions.');

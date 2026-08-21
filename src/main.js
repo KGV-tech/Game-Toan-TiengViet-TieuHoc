@@ -153,6 +153,14 @@ const app = {
         formatMathText(value) {
             return String(value ?? '').replace(/\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
         },
+        formatMathHTML(value) {
+            // Câu hỏi động có thể chứa SVG. Chỉ định dạng số trong phần văn bản,
+            // tuyệt đối không đổi khoảng trắng trong thuộc tính như viewBox hoặc points.
+            return String(value ?? '')
+                .split(/(<\/?[a-z][^>]*>)/gi)
+                .map(part => /^<\/?[a-z]/i.test(part) ? part : this.formatMathText(part))
+                .join('');
+        },
         formatQuestionDetailHTML(value) {
             return String(value ?? '')
                 .split(/<br\s*\/?\s*>/i)
@@ -235,7 +243,7 @@ const app = {
                 const prompt = promptTemplate.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
                 return {
                     ...generated,
-                    q: this.formatMathText(prompt),
+                    q: this.formatMathHTML(prompt),
                     classlevel: template.classlevel,
                     subject: template.subject,
                     semester: template.semester,
@@ -1583,11 +1591,11 @@ const app = {
             let equipped = app.getEquippedPet(user);
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
-            let qHtml = app.data.formatMathText(q.q);
+            let qHtml = app.data.formatMathHTML(q.q);
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
-            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
                 questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>`;
@@ -1719,7 +1727,7 @@ const app = {
                 optContainer.className = '';
                 let slot;
                 if (q.q.includes('___')) {
-                    let [instruction, expression = ''] = app.data.formatMathText(q.q).split(/<br\s*\/?\s*>/i);
+                    let [instruction, expression = ''] = app.data.formatMathHTML(q.q).split(/<br\s*\/?\s*>/i);
                     if (!expression) {
                         const instructionMatch = instruction.match(/^(.+?:)\s*(.+___.+)$/);
                         if (instructionMatch) [, instruction, expression] = instructionMatch;
@@ -1806,7 +1814,17 @@ const app = {
                 let html = '';
                 let numSlots = 0;
 
-                if (q.q && (q.q.includes('___') || q.q.includes('...'))) {
+                if (Array.isArray(q.angleItems)) {
+                    playCenter?.classList.add('play-center--angle-drag');
+                    questionContainer.classList.add('question-box--template', 'question-box--angle-drag');
+                    const instruction = app.data.formatMathText(q.instruction || 'Kéo thả tên loại góc thích hợp vào ô trống.');
+                    html += `<div class="template-question-copy">${instruction}</div><div class="angle-drag-rows">`;
+                    q.angleItems.forEach((item, index) => {
+                        html += `<div class="angle-drag-row angle-drag-row--tone-${index % 4}"><b>${app.data.sanitizeHTML(item.label)}.</b><span class="angle-drag-figure">${item.svg}</span><div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}" aria-label="Ô thả đáp án câu ${app.data.sanitizeHTML(item.label)}"></div></div>`;
+                        numSlots++;
+                    });
+                    html += '</div>';
+                } else if (q.q && (q.q.includes('___') || q.q.includes('...'))) {
                     const parts = q.q.split(/\.\.\.|___/);
                     for (let i = 0; i < parts.length; i++) {
                         html += parts[i];
@@ -1836,7 +1854,7 @@ const app = {
                     }
                     html += `</div>`;
                 } else {
-                    html += app.data.formatMathText(q.q || '') + '<br><br>';
+                    html += app.data.formatMathHTML(q.q || '') + '<br><br>';
                     const ansArr = this.getAnsArr(q.ans);
                     html += `<div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">`;
                     for (let i = 0; i < ansArr.length; i++) {
@@ -1850,7 +1868,7 @@ const app = {
                 document.getElementById('game-question-container').innerHTML = html;
 
                 const inventory = document.createElement('div');
-                inventory.className = 'drag-inventory';
+                inventory.className = Array.isArray(q.angleItems) ? 'drag-inventory drag-inventory--angle' : 'drag-inventory';
                 const filledAnswers = new Array(numSlots).fill(null);
 
                 opts.forEach((opt, idx) => {
@@ -1953,7 +1971,7 @@ const app = {
                     }
                 }
                 html += '</div>';
-                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathText(q.q) + html);
+                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathHTML(q.q) + html);
 
                 const slots = document.querySelectorAll('.seq-slot');
                 const updateFocus = () => {
@@ -2037,6 +2055,27 @@ const app = {
                         const allFilled = inputs.every(item => item.value.trim() !== '');
                         this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
                         btnCheck.disabled = !allFilled;
+                    };
+                });
+            } else if (qType === 'Điền khuyết' && Array.isArray(q.angleCountRows) && q.angleCountRows.length === 4) {
+                optContainer.className = '';
+                playCenter?.classList.add('play-center--angle-count');
+                questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--angle-count');
+                const inputs = [];
+                const instruction = app.data.formatMathText(q.instruction || 'Quan sát hình vẽ và điền số lượng từng loại góc.');
+                const rows = q.angleCountRows.map((row, index) => {
+                    const label = app.data.sanitizeHTML(row.label || String.fromCharCode(97 + index));
+                    const text = app.data.sanitizeHTML(row.text || 'góc');
+                    return `<label class="angle-count-row angle-count-row--tone-${index % 4}"><span class="angle-count-row__label">${label}.</span><span class="angle-count-row__text">${text}</span><input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Số ${text}"></label>`;
+                }).join('');
+                questionContainer.innerHTML = `<div class="angle-count-title">${instruction}</div><div class="angle-count-visual">${q.angleVisual || ''}</div><div class="angle-count-rows">${rows}</div>`;
+                q.angleCountRows.forEach((_, index) => {
+                    const input = document.getElementById(`fill-input-${index}`);
+                    inputs.push(input);
+                    input.oninput = () => {
+                        input.value = input.value.replace(/\D/g, '').slice(0, 2);
+                        this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
+                        btnCheck.disabled = !inputs.every(item => item.value.trim() !== '');
                     };
                 });
             } else if (qType === 'Điền khuyết') {
@@ -3053,7 +3092,7 @@ const app = {
             this.state.questions.forEach((q, idx) => {
                 const qBlock = document.createElement('div');
                 qBlock.className = 'exam-q-block';
-                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathText(q.q)}</div>`;
+                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathHTML(q.q)}</div>`;
                 if (q.imageUrl) qBlock.innerHTML += `<img src="${q.imageUrl}" style="max-height:150px; margin-bottom:10px;"><br>`;
 
                 const optsContainer = document.createElement('div');
@@ -3618,6 +3657,20 @@ const app = {
             this.refreshTemplateTopics(existing?.topic || '');
             const generatorControl = document.getElementById('template-generator');
             generatorControl?.querySelector('option[value="number.four_operations_practice"]')?.remove();
+            const angleTemplateOptions = [
+                ['g4-m-angle-count-in-polygon', 'Đếm các loại góc trong hình'],
+                ['g4-m-angle-drag-classify', 'Kéo thả phân loại góc'],
+                ['g4-m-angle-clock-classify', 'Kéo thả phân loại góc qua đồng hồ'],
+                ['g4-m-angle-count-eight-angles', 'Đếm 8 góc theo loại']
+            ];
+            angleTemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
+            const angleRule = document.createElement('div');
+            angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
+            angleRule.hidden = true;
+            angleRule.innerHTML = '<h5>Hình và đáp án</h5><p>Game tự bốc hình góc hợp lệ, luôn có đủ bốn ý a–d và kiểm tra theo hình. Nhóm template này không dùng phạm vi số.</p>';
+            box.querySelector('.template-editor__rules')?.appendChild(angleRule);
             const arithmeticTemplateOptions = [
                 ['number.four_operations_fill_blanks', 'Bốn phép tính: điền số còn thiếu'],
                 ['number.four_operations_expressions', 'Bốn phép tính: tính giá trị biểu thức']
@@ -3630,6 +3683,7 @@ const app = {
             if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
             if (configurableGenerator) {
@@ -3746,6 +3800,38 @@ const app = {
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{codeLength}', 'số chữ số mật khẩu đã bốc'], ['{condition1}', 'quy tắc thứ nhất đã bốc'], ['{condition2}', 'quy tắc thứ hai đã bốc']]
                 },
+                'g4-m-angle-count-in-polygon': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo một hình học có đánh dấu góc và bốn ý a–d để đếm góc nhọn, góc vuông, góc tù, góc bẹt. Mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên hình vẽ cùng bốn ô điền mà game sinh.',
+                    previewImage: 'angle-count-in-polygon.jpg',
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ hình vẽ và bốn ý a–d do game sinh']]
+                },
+                'g4-m-angle-drag-classify': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn hình góc a–d, gồm đủ góc nhọn, vuông, tù và bẹt. Học sinh kéo tên loại góc vào đúng ô; mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn hình góc và các ô kéo thả.',
+                    previewImage: 'angle-drag-classify.jpg',
+                    type: 'Kéo thả',
+                    variables: [['{question}', 'toàn bộ bốn hình góc và các ô kéo thả do game sinh']]
+                },
+                'g4-m-angle-clock-classify': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn mặt đồng hồ a–d với góc do kim giờ và kim phút tạo thành. Học sinh kéo đúng loại góc vào mỗi ô; mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn mặt đồng hồ và các ô kéo thả.',
+                    previewImage: 'angle-clock-classify.jpg',
+                    type: 'Kéo thả',
+                    variables: [['{question}', 'toàn bộ bốn mặt đồng hồ và các ô kéo thả do game sinh']]
+                },
+                'g4-m-angle-count-eight-angles': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo một bảng gồm 8 góc và bốn ý a–d để đếm từng loại góc. Tổng bốn đáp án luôn bằng 8; mỗi ý đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bảng 8 góc cùng bốn ô điền.',
+                    previewImage: 'angle-count-eight-angles.jpg',
+                    type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ bảng 8 góc và bốn ý a–d do game sinh']]
+                },
                 'number.match_number_words': {
                     defaultPrompt: 'Hãy nối mỗi số với cách đọc đúng.',
                     guide: 'Tạo bài đối chiếu số với cách đọc tương ứng. Hai cột có số lượng mục lệch nhau một để tạo một lựa chọn nhiễu.',
@@ -3812,7 +3898,8 @@ const app = {
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value'; });
+            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate; });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
@@ -3829,6 +3916,7 @@ const app = {
             if (arithmeticLegend) arithmeticLegend.textContent = usesAllFourOperations ? 'Bốn phép tính dùng trong mỗi lượt' : 'Phép tính có thể bốc';
             document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
+            document.querySelectorAll('.template-editor__rule--angle-info').forEach(rule => { rule.hidden = !isAngleTemplate; });
         },
         insertTemplateVariable(token) {
             const input = document.getElementById('template-prompt');
@@ -3865,10 +3953,12 @@ const app = {
             const maximumDigits = Number(document.getElementById('template-maximum-digits')?.value || 1);
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
             const isSafePassword = generatorKey === 'number.safe_password_by_place_value';
+            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generatorKey);
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
-            const usesDigitCount = !isSafePassword && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey);
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits }, is_active: true };
+            const usesDigitCount = !isSafePassword && !isAngleTemplate && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey);
+            const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: isAngleTemplate ? {} : genericConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
@@ -3924,7 +4014,7 @@ const app = {
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
-            if (template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (!isAngleTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;
@@ -3997,7 +4087,7 @@ const app = {
               <td><input type="checkbox" class="q-select-cb" value="${i}" onchange="app.admin.updateBulkDeleteLabel()"></td>
               <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
-                <td>${app.data.formatMathText(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
+                <td>${app.data.formatMathHTML(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
               <td>
                 ${app.ui.compactAction('Thêm vào đề', `app.admin.addToExamPrompt(${i})`, 'compact-admin-action--add')}
                 ${app.ui.compactAction('Sửa', `app.admin.editQuestion(${i})`, 'compact-admin-action--edit')}
@@ -4065,7 +4155,7 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Nội dung câu hỏi</label>
-                  <textarea id="add-q-q" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathText(q.q) : ''}</textarea>
+                  <textarea id="add-q-q" oninput="app.admin.formatQuestionNumberText(this)" placeholder="Nội dung câu hỏi" class="form-input" style="flex:1; padding:8px; height:60px;">${q ? app.data.formatMathHTML(q.q) : ''}</textarea>
                </div>
 
                <div id="add-q-opts-wrapper" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
@@ -4608,7 +4698,7 @@ const app = {
                   <table style="width:100%; border-collapse: collapse; text-align: left;">
                      ${e.questions.map((q, i) => `
                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathText(q.q)}</td>
+                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathHTML(q.q)}</td>
                         <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
                             ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
                             ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
@@ -4757,7 +4847,7 @@ const app = {
                 <h3>Thêm câu hỏi vào đề: ${e.name}</h3>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p><strong>Nội dung câu hỏi sẽ thêm:</strong></p>
-                    <p><i>${app.data.formatMathText(q.q)}</i></p>
+                    <p><i>${app.data.formatMathHTML(q.q)}</i></p>
                     <p><strong>Đáp án:</strong> ${app.data.formatMathText(q.ans)}</p>
                 </div>
                 
@@ -4962,7 +5052,7 @@ const app = {
                 exam.questions.forEach((q, i) => {
                     html += `
                   <div style="margin-bottom: 20px;">
-                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathText(q.q)}</p>
+                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathHTML(q.q)}</p>
                      ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${app.data.formatMathText(o)}</li>`).join('')}</ul>` : ''}
                      ${q.type === 'Điền khuyết' ? `<p>....................................................................</p>` : ''}
                   </div>

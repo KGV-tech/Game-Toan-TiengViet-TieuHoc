@@ -81,6 +81,8 @@ function generateAngleClockClassify(config = {}, random = Math.random) {
         type: 'Kéo thả',
         templateId: 'g4-m-angle-clock-classify',
         q: prompt,
+        instruction: 'Quan sát các mặt đồng hồ rồi kéo thả tên loại góc thích hợp vào ô trống tương ứng:',
+        angleItems: items,
         options: ANGLE_TYPES,
         ans: answers.join(', '),
         explanation,
