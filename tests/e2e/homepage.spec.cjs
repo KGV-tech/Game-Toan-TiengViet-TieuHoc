@@ -1428,6 +1428,37 @@ test('lượt luyện không lặp nguyên câu khi template không sinh đượ
   expect(outcome.alerts).toEqual(['Chủ đề này chưa đủ câu hỏi khác nhau để tạo 10 câu. Hãy thêm câu hỏi hoặc template có biến thể.']);
 });
 
+test('lượt luyện Chủ đề 4 nạp generator đơn vị đo và tạo đủ mười câu', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(() => {
+    const topic = '4. Một số đơn vị đo Đại lượng';
+    const generatorKeys = [
+      'measurement.mass_unit_convert', 'measurement.area_unit_convert', 'measurement.time_unit_convert',
+      'measurement.choose_appropriate_unit', 'measurement.compare_units', 'measurement.match_equivalences',
+      'measurement.unit_true_false', 'measurement.century_identification', 'measurement.word_problem_units'
+    ];
+    const alerts = [];
+    window.alert = message => alerts.push(message);
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = generatorKeys.map(generator_key => ({
+      id: generator_key, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      question_type: 'Điền khuyết', generator_key, prompt_template: '{question}', config: {}, is_active: true
+    }));
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    app.game.startPlay();
+    return { alerts, ids: app.game.state.questions.map(question => question.templateId) };
+  });
+
+  expect(outcome.alerts).toEqual([]);
+  expect(outcome.ids).toHaveLength(10);
+  expect(outcome.ids.every(id => id.startsWith('measurement.'))).toBe(true);
+});
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
