@@ -1459,6 +1459,25 @@ test('lượt luyện Chủ đề 4 nạp generator đơn vị đo và tạo đ�
   expect(outcome.ids.every(id => id.startsWith('measurement.'))).toBe(true);
 });
 
+test('câu hỏi về thế kỉ hiển thị năm liền nhau, không có khoảng cách hàng nghìn', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const yearText = await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('measurement.century_identification', {}, () => 0);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+    return document.querySelector('.multi-choice-subquestion h3')?.textContent;
+  });
+
+  expect(yearText).toMatch(/Năm (?:1789|1900|1945|2026) thuộc thế kỉ nào/);
+  expect(yearText).not.toMatch(/Năm \d{1,3} \d{3}/);
+});
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
