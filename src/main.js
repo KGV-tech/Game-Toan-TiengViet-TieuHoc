@@ -218,6 +218,21 @@ const app = {
                 question?.q
             ].map(value => this.normalizeQuestionPart(value)).join('|');
         },
+        getQuestionContentKey(question) {
+            const normalize = value => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('vi-VN');
+            const serializedParts = [
+                question?.templateId || question?.generator_key,
+                question?.q,
+                question?.ans,
+                question?.options,
+                question?.subquestions,
+                question?.practiceRows,
+                question?.comparisonRows,
+                question?.statements,
+                question?.sequenceRounds
+            ];
+            return JSON.stringify(serializedParts).replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN') || normalize(question?.q);
+        },
         generateTemplateQuestion(template) {
             const registry = window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
@@ -897,7 +912,19 @@ const app = {
 
     game: {
         questionsPerRound: 10,
+        templateGeneratorsByTopic: {
+            '2. Góc và đơn vị đo góc': new Set([
+                'g4-m-angle-count-in-polygon', 'angle.count_in_polygon',
+                'g4-m-angle-drag-classify', 'angle.drag_classify',
+                'g4-m-angle-clock-classify', 'angle.clock_classify',
+                'g4-m-angle-count-eight-angles', 'angle.count_eight_angles'
+            ])
+        },
         state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        isTemplateAllowedForTopic(generatorKey, topic) {
+            const allowedGenerators = this.templateGeneratorsByTopic[topic];
+            return !generatorKey || !allowedGenerators || allowedGenerators.has(generatorKey);
+        },
         
         skills: {
             state: {
@@ -1374,7 +1401,9 @@ const app = {
                     return semesterTopics && same(q.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
                 })();
 
-                return matchSubject && matchClass && matchTopic && selectedSemester && !app.data.validateQuestionScoring(q);
+                return matchSubject && matchClass && matchTopic && selectedSemester
+                    && this.isTemplateAllowedForTopic(q.templateId || q.generator_key, selectedTopic)
+                    && !app.data.validateQuestionScoring(q);
             });
 
             const dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
@@ -1387,7 +1416,8 @@ const app = {
                 const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
                 const semesterTopics = selectedTopic && Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
                 const matchSemester = semesterTopics && same(template.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
-                return matchSubject && matchClass && matchTopic && matchSemester;
+                return matchSubject && matchClass && matchTopic && matchSemester
+                    && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
 
             if (pool.length === 0 && dynamicTemplates.length === 0) {
@@ -1436,11 +1466,18 @@ const app = {
                 return picked;
             };
 
+            const usedQuestionContentKeys = new Set();
+            const uniqueQuestions = questions => questions.filter(question => {
+                const contentKey = app.data.getQuestionContentKey(question);
+                if (usedQuestionContentKeys.has(contentKey)) return false;
+                usedQuestionContentKeys.add(contentKey);
+                return true;
+            });
             const staticTarget = dynamicTemplates.length ? Math.min(pool.length, Math.floor(targetCount / 2)) : targetCount;
-            let selected = pickDiverse(unseenPool, staticTarget);
+            let selected = uniqueQuestions(pickDiverse(unseenPool, staticTarget));
             if (selected.length < staticTarget) {
                 let needed = staticTarget - selected.length;
-                let extra = pickDiverse(seenPool, needed);
+                let extra = uniqueQuestions(pickDiverse(seenPool, needed));
                 selected = selected.concat(extra);
             }
 
@@ -1451,7 +1488,13 @@ const app = {
             while (templateQuestions.length < targetCount - staticQuestions.length && shuffledTemplates.length && attempts < targetCount * 4) {
                 const template = shuffledTemplates[attempts % shuffledTemplates.length];
                 const generated = app.data.generateTemplateQuestion(template);
-                if (generated && !app.data.validateQuestionScoring(generated)) templateQuestions.push(generated);
+                if (generated && !app.data.validateQuestionScoring(generated)) {
+                    const contentKey = app.data.getQuestionContentKey(generated);
+                    if (!usedQuestionContentKeys.has(contentKey)) {
+                        usedQuestionContentKeys.add(contentKey);
+                        templateQuestions.push(generated);
+                    }
+                }
                 attempts++;
             }
 
@@ -1460,11 +1503,13 @@ const app = {
             selected = [...templateQuestions, ...staticQuestions];
 
             if (selected.length < targetCount) {
-                selected = selected.concat(pickDiverse([...unseenPool, ...seenPool], targetCount - selected.length));
+                selected = selected.concat(uniqueQuestions(pickDiverse([...unseenPool, ...seenPool], targetCount - selected.length)));
             }
-            const reusableQuestions = [...unseenPool, ...seenPool];
-            while (selected.length < targetCount && reusableQuestions.length) {
-                selected.push(reusableQuestions[selected.length % reusableQuestions.length]);
+
+            if (selected.length < targetCount) {
+                this.state.questions = [];
+                alert('Chủ đề này chưa đủ câu hỏi khác nhau để tạo 10 câu. Hãy thêm câu hỏi hoặc template có biến thể.');
+                return;
             }
 
             pool = selected;
