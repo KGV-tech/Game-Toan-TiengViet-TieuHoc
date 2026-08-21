@@ -151,6 +151,19 @@ INSERT INTO public.question_templates (
     name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
 )
 SELECT
+    'Dãy số theo quy luật', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
+    'Chuỗi Quy luật', 'number.natural_sequence',
+    '{question}',
+    '{"minimum":10000,"maximum":9999999,"allowedSteps":[1000,2000,3000,4000,5000,6000,7000,8000,9000,-1000,-2000,-3000,-4000,-5000,-6000,-7000,-8000,-9000],"sequenceLengthMin":5,"sequenceLengthMax":7,"blankCountMin":2,"blankCountMax":3}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates WHERE generator_key = 'number.natural_sequence'
+      AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
+)
+SELECT
     'So sánh số với dạng tổng', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
     'So sánh', 'number.compare_number_forms',
     '{question}',

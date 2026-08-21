@@ -57,6 +57,10 @@ assert(source.includes('number.four_operations_expressions'), 'The Template Bank
 assert(source.includes('number.four_arithmetic_blanks'), 'The Template Bank must expose the four-arithmetic fill-in template.');
 assert(source.includes('number.four_arithmetic_comparisons'), 'The Template Bank must expose the four-arithmetic drag-comparison template.');
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
+assert(source.includes('number.natural_sequence'), 'The Template Bank must expose the reusable natural-sequence generator.');
+assert(source.includes('template-natural-sequence-steps'), 'Natural-sequence templates must expose configurable steps.');
+assert(source.includes('template-natural-sequence-length-min'), 'Natural-sequence templates must expose configurable sequence lengths.');
+assert(source.includes('template-natural-sequence-blank-min'), 'Natural-sequence templates must expose configurable blank counts.');
 assert(source.includes('number.compare_number_forms'), 'The Template Bank must expose the comparison template.');
 assert(source.includes('number.match_number_words'), 'The Template Bank must expose the number-word matching generator.');
 assert(source.includes('number.place_value_true_false'), 'The Template Bank must expose the place-value true/false generator.');
@@ -108,6 +112,7 @@ assert(migration.includes("'1. Ôn tập và bổ sung'"), 'Migration must creat
 assert(migration.includes("'number.four_operations_fill_blanks'"), 'Migration must add the Topic 1 four-operations fill-in template.');
 assert(migration.includes("'number.four_operations_expressions'"), 'Migration must add the Topic 1 calculate-expression template.');
 assert(migration.includes("'number.neighbor_numbers'"), 'Migration must seed the adjacent-number template.');
+assert(migration.includes("'number.natural_sequence'"), 'Migration must seed the natural-sequence template.');
 assert(migration.includes("'number.compare_number_forms'"), 'Migration must seed the comparison template.');
 assert(migration.includes("'number.match_number_words'"), 'Migration must seed the number-word matching template.');
 assert(migration.includes("'number.place_value_true_false'"), 'Migration must seed the place-value true/false template.');
