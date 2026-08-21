@@ -90,7 +90,7 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
   await expect(page.locator('#guide-history h3')).toHaveText('8. Kho Báu');
   await expect(page.getByRole('link', { name: 'Kho Báu' })).toBeVisible();
-  await expect(page.locator('.guide-reward-table')).toContainText('Làm đủ 5 ngày liên tiếp');
+  await expect(page.locator('#guide-rewards .guide-reward-table')).toContainText('Làm đủ 5 ngày liên tiếp');
   await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Dành cho Giáo viên' })).toHaveCount(0);
