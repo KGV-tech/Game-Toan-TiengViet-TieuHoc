@@ -71,12 +71,13 @@ function renderTrapezoidWithHeightSVG() {
         <text x="36" y="138" font-size="14" font-weight="bold" fill="#0f172a">D</text>
     </svg>`;
 
-    // Xét các góc đơn của tứ giác ABCD:
-    // Đỉnh A: vuông (1), Đỉnh D: vuông (1), Đỉnh B: tù (1), Đỉnh C: nhọn (1)
+    // Xét tất cả các tia đã vẽ, kể cả tại chân đường cao H:
+    // A và D: 2 góc vuông; H: DHB, BHC là 2 góc vuông và DHC là 1 góc bẹt.
+    // Đỉnh B: tù (1), đỉnh C: nhọn (1).
     return {
         svg,
-        counts: { acute: 1, right: 2, obtuse: 1, straight: 0 },
-        explanation: 'Xét tứ giác ABCD: góc đỉnh C là góc nhọn (1 góc); góc đỉnh A và góc đỉnh D là góc vuông (2 góc); góc đỉnh B là góc tù (1 góc); không có góc bẹt (0 góc).'
+        counts: { acute: 1, right: 4, obtuse: 1, straight: 1 },
+        explanation: 'Trong hình: góc đỉnh C là góc nhọn (1 góc); góc đỉnh A, đỉnh D, góc DHB và góc BHC là góc vuông (4 góc); góc đỉnh B là góc tù (1 góc); góc DHC tại H là góc bẹt (1 góc).'
     };
 }
 
@@ -162,6 +163,14 @@ function generateAngleCountInPolygon(config = {}, random = Math.random) {
         type: 'Điền khuyết',
         templateId: 'g4-m-angle-count-in-polygon',
         q: prompt,
+        instruction: 'Quan sát hình vẽ và điền số lượng từng loại góc.',
+        angleVisual: svg,
+        angleCountRows: [
+            { label: 'a', text: 'góc nhọn' },
+            { label: 'b', text: 'góc vuông' },
+            { label: 'c', text: 'góc tù' },
+            { label: 'd', text: 'góc bẹt' }
+        ],
         options: [],
         ans: answers.join(', '),
         explanation,

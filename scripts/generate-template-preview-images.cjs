@@ -16,7 +16,11 @@ const previews = [
   ['number.compare_number_forms', 'compare-number-forms.jpg', { minimum: 10000, maximum: 999999 }],
   ['number.place_value_true_false', 'place-value-true-false.jpg', { minimum: 10000000, maximum: 999999999, statementKinds: ['class', 'place'] }],
   ['number.safe_password_by_place_value', 'safe-password-by-place-value.jpg', { minimum: 10000000, maximum: 999999999, minimumCodeLength: 8, maximumCodeLength: 9 }],
-  ['number.match_number_words', 'match-number-words.jpg', { shapes: ['4:5'], digits: [6], digitStrategy: 'balanced' }]
+  ['number.match_number_words', 'match-number-words.jpg', { shapes: ['4:5'], digits: [6], digitStrategy: 'balanced' }],
+  ['g4-m-angle-count-in-polygon', 'angle-count-in-polygon.jpg', {}],
+  ['g4-m-angle-drag-classify', 'angle-drag-classify.jpg', {}],
+  ['g4-m-angle-clock-classify', 'angle-clock-classify.jpg', {}],
+  ['g4-m-angle-count-eight-angles', 'angle-count-eight-angles.jpg', {}]
 ];
 
 async function wait(milliseconds) {
@@ -48,6 +52,8 @@ async function main() {
         document.getElementById('game-play-view').classList.add('active');
         app.game.loadQuestion();
       }, { generator, config });
+      await page.waitForFunction(() => document.getElementById('game-question-container')?.textContent.trim().length > 0);
+      await page.waitForTimeout(120);
       await page.screenshot({ path: join(outputDirectory, fileName), type: 'jpeg', quality: 68 });
     }
   } finally {

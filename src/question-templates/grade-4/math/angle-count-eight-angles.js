@@ -107,6 +107,14 @@ function generateAngleCountEightAngles(config = {}, random = Math.random) {
         type: 'Điền khuyết',
         templateId: 'g4-m-angle-count-eight-angles',
         q: prompt,
+        instruction: 'Quan sát 8 góc dưới đây và điền số lượng mỗi loại góc.',
+        angleVisual: svg,
+        angleCountRows: [
+            { label: 'a', text: 'góc nhọn' },
+            { label: 'b', text: 'góc vuông' },
+            { label: 'c', text: 'góc tù' },
+            { label: 'd', text: 'góc bẹt' }
+        ],
         options: [],
         ans: answers.join(', '),
         explanation,

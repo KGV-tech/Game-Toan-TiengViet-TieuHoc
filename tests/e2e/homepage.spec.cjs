@@ -505,9 +505,8 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
-  await expect(page.locator('#template-example .template-preview__canvas')).toBeVisible();
+  await expect(page.locator('#template-example .template-editor__preview-image')).toBeVisible();
   await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
-  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
   await page.locator('#template-generator').selectOption('number.safe_password_by_place_value');
   await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /safe-password-by-place-value\.jpg$/);
@@ -1236,6 +1235,129 @@ async function showAuditState(page, state) {
     }
   }, state);
 }
+
+test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và preview trong Kho Template', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const templates = [
+    ['g4-m-angle-count-in-polygon', 'Điền khuyết', 'angle-count-in-polygon.jpg', '.magic-input', '.angle-count-rows'],
+    ['g4-m-angle-drag-classify', 'Kéo thả', 'angle-drag-classify.jpg', '.drag-slot', '.drag-inventory--angle'],
+    ['g4-m-angle-clock-classify', 'Kéo thả', 'angle-clock-classify.jpg', '.drag-slot', '.drag-inventory--angle'],
+    ['g4-m-angle-count-eight-angles', 'Điền khuyết', 'angle-count-eight-angles.jpg', '.magic-input', '.angle-count-rows'],
+  ];
+
+  for (const [generator, questionType, previewImage, responseSelector, layoutSelector] of templates) {
+    await page.evaluate(({ generator, questionType }) => {
+      let seed = 20260820;
+      const random = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 0x100000000;
+      };
+      const question = window.Grade4MathTemplates.generateQuestion(generator, {}, random);
+      app.data.currentUser = { username: 'demo-student', role: 'student' };
+      app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+      document.getElementById('treasure-modal').style.display = 'none';
+      document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+      document.getElementById('game-screen').classList.add('active');
+      document.getElementById('game-play-view').classList.add('active');
+      app.game.loadQuestion();
+    }, { generator, questionType });
+
+    await expect.poll(() => page.locator('#game-question-container svg').count()).toBeGreaterThan(0);
+    await expect(page.locator(`#game-question-container ${responseSelector}`)).toHaveCount(4);
+    const layoutRoot = questionType === 'Kéo thả' ? '#game-options-container' : '#game-question-container';
+    await expect(page.locator(`${layoutRoot} ${layoutSelector}`)).toHaveCount(1);
+    if (questionType === 'Kéo thả') {
+      await expect(page.locator('#game-options-container .drag-inventory--angle .drag-item')).toHaveCount(4);
+      await expect(page.locator('#game-question-container .angle-drag-arrow')).toHaveCount(0);
+      expect(await page.locator('#game-options-container .drag-inventory--angle .drag-item').evaluateAll(items => {
+        const tops = items.map(item => Math.round(item.getBoundingClientRect().top));
+        return new Set(tops).size;
+      })).toBe(1);
+      await page.locator('#game-options-container .drag-inventory--angle .drag-item').first().click();
+      const firstSlot = page.locator('#game-question-container .angle-drag-row .drag-slot').first();
+      await expect(firstSlot).toHaveText(/Góc /);
+      expect(await firstSlot.evaluate(slot => {
+        const style = getComputedStyle(slot);
+        return style.whiteSpace === 'nowrap' && slot.scrollHeight <= slot.clientHeight;
+      })).toBe(true);
+      expect(await page.locator('#game-question-container .angle-drag-row').evaluateAll(rows => rows.every(row => {
+        const rowBox = row.getBoundingClientRect();
+        const slotBox = row.querySelector('.drag-slot').getBoundingClientRect();
+        return slotBox.left >= rowBox.left && slotBox.right <= rowBox.right;
+      }))).toBe(true);
+    }
+    await captureUiReview(page, testInfo, `topic2-gameplay-${previewImage.replace('.jpg', '.png')}`);
+
+    await page.evaluate(({ generator, questionType }) => {
+      app.data.questionTemplates = [{
+        id: `${generator}-demo`, name: generator, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+        topic: '2. Góc và đơn vị đo góc', question_type: questionType, generator_key: generator,
+        prompt_template: '{question}', config: {}
+      }];
+      app.admin.renderTemplateForm(0);
+      document.getElementById('treasure-modal').style.display = 'block';
+    }, { generator, questionType });
+    await expect(page.locator('#template-topic')).toHaveValue('2. Góc và đơn vị đo góc');
+    await expect(page.locator('#template-question-type')).toHaveValue(questionType);
+    await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', new RegExp(`${previewImage}$`));
+    await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+    await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({});
+  }
+});
+
+test('lượt luyện Chủ đề 2 tạo và chuyển đủ mười câu mà không làm treo giao diện', async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors } = await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(() => {
+    const topic = '2. Góc và đơn vị đo góc';
+    const definitions = [
+      ['g4-m-angle-count-in-polygon', 'Điền khuyết'],
+      ['g4-m-angle-drag-classify', 'Kéo thả'],
+      ['g4-m-angle-clock-classify', 'Kéo thả'],
+      ['g4-m-angle-count-eight-angles', 'Điền khuyết']
+    ];
+    app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = definitions.map(([generator_key, question_type]) => ({
+      id: generator_key,
+      classlevel: 'Lớp 4',
+      subject: 'Toán',
+      semester: 'Học kỳ 1',
+      topic,
+      question_type,
+      generator_key,
+      prompt_template: '{question}',
+      config: {},
+      is_active: true
+    }));
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = [topic];
+    const startedAt = performance.now();
+    app.game.startPlay();
+    const rendered = [];
+    for (let index = 0; index < app.game.state.questions.length; index += 1) {
+      app.game.state.currentIdx = index;
+      app.game.loadQuestion();
+      rendered.push({
+        templateId: app.game.state.questions[index].templateId,
+        svgCount: document.querySelectorAll('#game-question-container svg').length,
+        responseCount: document.querySelectorAll('#game-question-container .magic-input, #game-question-container .drag-slot').length
+      });
+    }
+    return { elapsed: performance.now() - startedAt, rendered };
+  });
+
+  expect(outcome.rendered).toHaveLength(10);
+  expect(outcome.rendered.every(item => item.svgCount > 0 && item.responseCount === 4)).toBe(true);
+  expect(outcome.elapsed).toBeLessThan(1_000);
+  expect(consoleErrors).toEqual([]);
+});
 
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);

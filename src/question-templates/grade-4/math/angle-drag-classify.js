@@ -66,7 +66,7 @@ function generateAngleDragClassify(config = {}, random = Math.random) {
         return { label, type, svg };
     });
 
-    const rows = items.map(item => `<div style="display:inline-flex;align-items:center;margin:6px 12px;gap:8px;"><b style="font-size:1.1rem;">${item.label})</b> ${item.svg} <span style="font-size:1.2rem;color:#eab308;font-weight:bold;">➔</span> ___</div>`).join('<br>');
+    const rows = items.map(item => `<div style="display:inline-flex;align-items:center;margin:6px 12px;gap:8px;"><b style="font-size:1.1rem;">${item.label})</b> ${item.svg} ___</div>`).join('<br>');
 
     const prompt = `Kéo thả tên loại góc thích hợp vào ô trống bên cạnh mỗi hình vẽ:<br>${rows}`;
 
@@ -81,6 +81,8 @@ function generateAngleDragClassify(config = {}, random = Math.random) {
         type: 'Kéo thả',
         templateId: 'g4-m-angle-drag-classify',
         q: prompt,
+        instruction: 'Kéo thả tên loại góc thích hợp vào ô trống bên cạnh mỗi hình vẽ:',
+        angleItems: items,
         options: ANGLE_TYPES,
         ans: answers.join(', '),
         explanation,
