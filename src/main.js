@@ -1953,13 +1953,21 @@ const app = {
                 this.state.seqAnswers = new Array(numSlots).fill('');
                 this.state.focusedSeqSlot = 0;
 
-                for (let i = 0; i < parts.length; i++) {
-                    const text = parts[i].trim();
-                    if (text) html += `<div class="train-node">${text}</div>`;
-                    if (i < parts.length - 1) {
-                        if (text) html += `<div class="train-arrow">➔</div>`;
-                        html += `<div class="train-node train-slot seq-slot" data-index="${i}">?</div>`;
-                        if (i < parts.length - 2) html += `<div class="train-arrow">➔</div>`;
+                if (q.templateId === 'number.natural_sequence') {
+                    let slotIndex = 0;
+                    q.q.split(',').map(item => item.trim()).filter(Boolean).forEach((term, index, terms) => {
+                        html += term === '___' ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.sanitizeHTML(term)}</div>`;
+                        if (index < terms.length - 1) html += `<div class="train-arrow">➔</div>`;
+                    });
+                } else {
+                    for (let i = 0; i < parts.length; i++) {
+                        const text = parts[i].trim();
+                        if (text) html += `<div class="train-node">${text}</div>`;
+                        if (i < parts.length - 1) {
+                            if (text) html += `<div class="train-arrow">➔</div>`;
+                            html += `<div class="train-node train-slot seq-slot" data-index="${i}">?</div>`;
+                            if (i < parts.length - 2) html += `<div class="train-arrow">➔</div>`;
+                        }
                     }
                 }
                 html += '</div>';
@@ -2003,7 +2011,7 @@ const app = {
                         let currentVal = this.state.seqAnswers[idx];
                         if (btnText === 'Xóa') {
                             currentVal = currentVal.slice(0, -1);
-                        } else if (currentVal.length < 5) {
+                        } else if (currentVal.length < 7) {
                             currentVal += btnText;
                         }
 
@@ -3554,6 +3562,11 @@ const app = {
             const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
             const matchingDigits = (config.digits || [7, 8, 9]).join(', ');
             const matchingWeights = config.digitWeights ? Object.entries(config.digitWeights).map(([digit, weight]) => `${digit}:${weight}`).join(', ') : '';
+            const naturalSteps = (config.allowedSteps || [1000,2000,3000,4000,5000,6000,7000,8000,9000,-1000,-2000,-3000,-4000,-5000,-6000,-7000,-8000,-9000]).join(', ');
+            const naturalLengthMin = Number(config.sequenceLengthMin ?? 5);
+            const naturalLengthMax = Number(config.sequenceLengthMax ?? 7);
+            const naturalBlankMin = Number(config.blankCountMin ?? 2);
+            const naturalBlankMax = Number(config.blankCountMax ?? 3);
             const trueFalseKinds = config.statementKinds || ['class', 'place'];
             const digitCount = number => String(Math.max(0, Math.trunc(Number(number) || 0))).length;
             const rangeMinimumDigits = Math.max(1, Math.min(12, Number(config.minimumDigits ?? digitCount(config.minimum ?? 10000))));
@@ -3665,6 +3678,11 @@ const app = {
             arithmeticTemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            if (generatorControl && !generatorControl.querySelector('option[value="number.natural_sequence"]')) generatorControl.insertAdjacentHTML('beforeend', '<option value="number.natural_sequence">Dãy số theo quy luật</option>');
+            if (generatorControl && arithmeticTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
+            const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
+            box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
@@ -3885,6 +3903,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
+            document.querySelectorAll('.template-editor__rule--natural-sequence-controls').forEach(rule => { rule.hidden = generator !== 'number.natural_sequence'; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-controls').forEach(rule => { rule.hidden = !isFourArithmetic; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-layouts').forEach(rule => { rule.hidden = !['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator); });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-blank-positions').forEach(rule => { rule.hidden = generator !== 'number.four_arithmetic_blanks'; });
@@ -3941,11 +3960,25 @@ const app = {
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: isAngleTemplate ? {} : genericConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
-            const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || []).map(([token]) => token.slice(1, -1)));
+            const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
             if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
+            if (template.generator_key === 'number.natural_sequence') {
+                const sequenceMinimum = Number(value('template-natural-sequence-minimum'));
+                const sequenceMaximum = Number(value('template-natural-sequence-maximum'));
+                const allowedSteps = value('template-natural-sequence-steps').split(',').map(item => Number(item.trim())).filter(Number.isSafeInteger);
+                const sequenceLengthMin = Number(value('template-natural-sequence-length-min'));
+                const sequenceLengthMax = Number(value('template-natural-sequence-length-max'));
+                const blankCountMin = Number(value('template-natural-sequence-blank-min'));
+                const blankCountMax = Number(value('template-natural-sequence-blank-max'));
+                if (!Number.isSafeInteger(sequenceMinimum) || !Number.isSafeInteger(sequenceMaximum) || sequenceMinimum < 0 || sequenceMinimum >= sequenceMaximum) throw new Error('Phạm vi dãy số không hợp lệ.');
+                if (!allowedSteps.length || allowedSteps.some(step => step === 0)) throw new Error('Bước nhảy phải là các số nguyên khác 0, ngăn cách bằng dấu phẩy.');
+                if (!Number.isInteger(sequenceLengthMin) || !Number.isInteger(sequenceLengthMax) || sequenceLengthMin < 5 || sequenceLengthMax < sequenceLengthMin) throw new Error('Dãy số phải có ít nhất 5 số.');
+                if (!Number.isInteger(blankCountMin) || !Number.isInteger(blankCountMax) || blankCountMin < 1 || blankCountMax < blankCountMin || blankCountMax > sequenceLengthMin - 2) throw new Error('Số ô trống phải để lại ít nhất hai số đã biết.');
+                template.config = { minimum: sequenceMinimum, maximum: sequenceMaximum, allowedSteps, sequenceLengthMin, sequenceLengthMax, blankCountMin, blankCountMax };
+            }
             if (usesDigitCount && (!Number.isInteger(minimumDigits) || !Number.isInteger(maximumDigits) || minimumDigits < 1 || maximumDigits > 12 || minimumDigits > maximumDigits)) throw new Error('Số lượng chữ số phải là số nguyên từ 1 đến 12 và số ít nhất không được lớn hơn số nhiều nhất.');
             if (['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(template.generator_key)) {
                 if (!Number.isInteger(arithmeticMinimumDigits) || !Number.isInteger(arithmeticMaximumDigits) || arithmeticMinimumDigits < 2 || arithmeticMaximumDigits > 9 || arithmeticMinimumDigits > arithmeticMaximumDigits) throw new Error('Số chữ số phải từ 2 đến 9 và số ít nhất không lớn hơn số nhiều nhất.');

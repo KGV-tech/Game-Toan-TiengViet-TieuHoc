@@ -10,6 +10,7 @@
         'number.four_operations_fill_blanks': require('./four-operations-fill-blanks'),
         'number.four_operations_expressions': require('./four-operations-expressions'),
         'number.neighbor_numbers': require('./neighbor-numbers'),
+        'number.natural_sequence': require('./natural-sequence'),
         'number.compare_number_forms': require('./compare-number-forms'),
         'number.match_number_words': require('./match-number-words'),
         'number.place_value_true_false': require('./place-value-true-false'),
