@@ -69,7 +69,7 @@ assert(source.includes('g4-m-angle-count-in-polygon'), 'The Template Bank must e
 assert(source.includes('g4-m-angle-drag-classify'), 'The Template Bank must expose the angle-drag-classify generator.');
 assert(source.includes('g4-m-angle-clock-classify'), 'The Template Bank must expose the angle-clock-classify generator.');
 assert(source.includes('g4-m-angle-count-eight-angles'), 'The Template Bank must expose the eight-angle-count generator.');
-assert(source.includes("'2. Góc và đơn vị đo góc'"), 'The Template Bank must keep the four angle templates in Grade 4 Math Topic 2.');
+assert(migration.includes("'2. Góc và đơn vị đo góc'"), 'The Template Bank must keep the four angle templates in Grade 4 Math Topic 2.');
 assert(css.includes('question-box--safe-password'), 'Safe-password questions must have a dedicated image layout.');
 assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
 assert(source.includes('template-safe-password-min-length'), 'Safe-password templates must let administrators choose the minimum number of password cells.');

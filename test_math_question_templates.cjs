@@ -328,12 +328,12 @@ const gradeFourNaturalSequence = generateQuestion('number.natural_sequence', {
 }, seededRandom(17));
 assert.equal(gradeFourNaturalSequence.type, 'Chuỗi Quy luật');
 assert.equal(gradeFourNaturalSequence.topic, '3. Số có nhiều chữ số');
-assert.equal(gradeFourNaturalSequence.sequence.length, 5, 'The configured sequence length must be respected.');
-assert.equal(gradeFourNaturalSequence.blankIndexes.length, 2, 'The configured number of blanks must be respected.');
-assert(gradeFourNaturalSequence.sequence.every(value => value >= 10000 && value <= 9999999), 'Every generated term must stay within the configured range.');
-assert(gradeFourNaturalSequence.sequence.slice(1).every((value, index) => value - gradeFourNaturalSequence.sequence[index] === -7000), 'Every term must follow the selected fixed step.');
-assert.equal((gradeFourNaturalSequence.q.match(/___/g) || []).length, 2, 'The question must expose every generated blank.');
-assert.deepEqual(gradeFourNaturalSequence.ans.split(', ').map(numericValue), gradeFourNaturalSequence.blankIndexes.map(index => gradeFourNaturalSequence.sequence[index]), 'Answers must retain the left-to-right order of blanks.');
+assert.equal(gradeFourNaturalSequence.sequenceRounds.length, 4, 'The template must generate four independent sequences.');
+assert.deepEqual(gradeFourNaturalSequence.partAnswerCounts, [2, 2, 2, 2]);
+assert(gradeFourNaturalSequence.sequenceRounds.every(round => round.sequence.length === 5 && round.sequence.every(value => value >= 10000 && value <= 9999999)), 'Every sequence must stay within the configured range.');
+assert(gradeFourNaturalSequence.sequenceRounds.every(round => round.sequence.slice(1).every((value, index) => value - round.sequence[index] === -7000)), 'Every term must follow the selected fixed step.');
+assert.equal((gradeFourNaturalSequence.q.match(/___/g) || []).length, 8, 'Every round must expose its generated blanks.');
+assert.equal(gradeFourNaturalSequence.ans.split(', ').length, 8, 'Answers must retain every blank in round order.');
 
 const lowerGradeNaturalSequence = generateQuestion('number.natural_sequence', {
     minimum: 10,
@@ -344,10 +344,10 @@ const lowerGradeNaturalSequence = generateQuestion('number.natural_sequence', {
     blankCountMin: 3,
     blankCountMax: 3
 }, seededRandom(18));
-assert.equal(lowerGradeNaturalSequence.sequence.length, 7, 'The same generator must support another grade range.');
-assert([5, 6, 7, 8, 9].includes(lowerGradeNaturalSequence.step), 'The generator must only choose configured steps.');
-assert(lowerGradeNaturalSequence.sequence.every(value => value >= 10 && value <= 99), 'A lower-grade configuration must remain in its declared range.');
-assert.equal(lowerGradeNaturalSequence.blankIndexes.length, 3);
+assert(lowerGradeNaturalSequence.sequenceRounds.every(round => round.sequence.length === 7), 'The same generator must support another grade range.');
+assert(lowerGradeNaturalSequence.sequenceRounds.every(round => [5, 6, 7, 8, 9].includes(round.step)), 'The generator must only choose configured steps.');
+assert(lowerGradeNaturalSequence.sequenceRounds.every(round => round.sequence.every(value => value >= 10 && value <= 99)), 'A lower-grade configuration must remain in its declared range.');
+assert.deepEqual(lowerGradeNaturalSequence.partAnswerCounts, [3, 3, 3, 3]);
 assert.throws(() => generateQuestion('number.natural_sequence', {
     minimum: 10,
     maximum: 99,

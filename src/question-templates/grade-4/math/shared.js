@@ -46,7 +46,7 @@ function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, 
         imageUrl: item.imageUrl || '',
         openedImageUrl: item.openedImageUrl || ''
     }));
-    return {
+    const question = {
         classlevel: 'Lớp 4',
         subject: 'Toán',
         semester: 'Học kỳ 1',
@@ -60,11 +60,12 @@ function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, 
         templateVariables,
         subquestions: normalizedSubquestions
     };
+    return question;
 }
 
 function createFillBlankQuestion(templateId, prompt, answers, explanation, templateVariables = {}) {
     const answerList = Array.isArray(answers) ? answers : [answers];
-    return {
+    const question = {
         classlevel: 'Lớp 4',
         subject: 'Toán',
         semester: 'Học kỳ 1',
@@ -77,6 +78,8 @@ function createFillBlankQuestion(templateId, prompt, answers, explanation, templ
         explanation,
         templateVariables
     };
+    if (answerList.length === 4) question.partAnswerCounts = [1, 1, 1, 1];
+    return question;
 }
 
 function createComparisonQuestion(templateId, prompt, answer, explanation, templateVariables = {}) {

@@ -50,21 +50,23 @@ function generateNaturalSequence(config = {}, random = Math.random) {
     if (blankCountMax > sequenceLengthMin - 2) throw new Error('Dãy số phải còn ít nhất hai số đã biết.');
     if (!allowedSteps.length || allowedSteps.some(step => !Number.isSafeInteger(step) || step === 0)) throw new Error('Hãy khai báo ít nhất một bước nhảy nguyên khác 0.');
 
-    const length = randomInt(sequenceLengthMin, sequenceLengthMax, random);
-    const blankCount = randomInt(blankCountMin, Math.min(blankCountMax, length - 2), random);
-    const compatibleSteps = allowedSteps.filter(step => Math.abs(step) * (length - 1) <= maximum - minimum);
-    if (!compatibleSteps.length) throw new Error('Phạm vi số không đủ để tạo dãy theo các bước nhảy đã chọn.');
-
-    const step = choose(compatibleSteps, random);
-    const startMinimum = step > 0 ? minimum : minimum - step * (length - 1);
-    const startMaximum = step > 0 ? maximum - step * (length - 1) : maximum;
-    const start = randomInt(startMinimum, startMaximum, random);
-    const sequence = Array.from({ length }, (_, index) => start + step * index);
-    const blankIndexes = chooseBlankIndexes(length, blankCount, random);
-    const blankSet = new Set(blankIndexes);
-    const q = sequence.map((value, index) => blankSet.has(index) ? '___' : formatNumber(value)).join(', ');
-    const answers = blankIndexes.map(index => formatNumber(sequence[index]));
-    const explanation = ruleText(step);
+    const rounds = ['a', 'b', 'c', 'd'].map(label => {
+        const length = randomInt(sequenceLengthMin, sequenceLengthMax, random);
+        const blankCount = randomInt(blankCountMin, Math.min(blankCountMax, length - 2), random);
+        const compatibleSteps = allowedSteps.filter(step => Math.abs(step) * (length - 1) <= maximum - minimum);
+        if (!compatibleSteps.length) throw new Error('Phạm vi số không đủ để tạo dãy theo các bước nhảy đã chọn.');
+        const step = choose(compatibleSteps, random);
+        const startMinimum = step > 0 ? minimum : minimum - step * (length - 1);
+        const startMaximum = step > 0 ? maximum - step * (length - 1) : maximum;
+        const start = randomInt(startMinimum, startMaximum, random);
+        const sequence = Array.from({ length }, (_, index) => start + step * index);
+        const blankIndexes = chooseBlankIndexes(length, blankCount, random);
+        const blankSet = new Set(blankIndexes);
+        return { label, sequence, blankIndexes, step, display: sequence.map((value, index) => blankSet.has(index) ? '___' : formatNumber(value)).join(', ') };
+    });
+    const q = `Điền số thích hợp vào mỗi dãy:<br>${rounds.map(round => `${round.label}) ${round.display}`).join('<br>')}`;
+    const answers = rounds.flatMap(round => round.blankIndexes.map(index => formatNumber(round.sequence[index])));
+    const explanation = rounds.map(round => `${round.label}) ${ruleText(round.step)}`).join(' ');
 
     return {
         classlevel: 'Lớp 4',
@@ -79,14 +81,11 @@ function generateNaturalSequence(config = {}, random = Math.random) {
         explanation,
         templateVariables: {
             question: q,
-            sequence: sequence.map(formatNumber).join(', '),
-            step: formatNumber(Math.abs(step)),
-            direction: step > 0 ? 'tăng' : 'giảm',
+            sequence: rounds.map(round => `${round.label}) ${round.sequence.map(formatNumber).join(', ')}`).join('<br>'),
             blank: '___'
         },
-        sequence,
-        blankIndexes,
-        step
+        sequenceRounds: rounds,
+        partAnswerCounts: rounds.map(round => round.blankIndexes.length)
     };
 }
 

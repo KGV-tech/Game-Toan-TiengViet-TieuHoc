@@ -1953,7 +1953,18 @@ const app = {
                 this.state.seqAnswers = new Array(numSlots).fill('');
                 this.state.focusedSeqSlot = 0;
 
-                if (q.templateId === 'number.natural_sequence') {
+                if (q.templateId === 'number.natural_sequence' && Array.isArray(q.sequenceRounds)) {
+                    let slotIndex = 0;
+                    html = '<div class="template-sequence-title">Điền số thích hợp vào mỗi dãy:</div>';
+                    q.sequenceRounds.forEach(round => {
+                        html += `<div class="train-container ${randomShape}"><b>${round.label})</b>`;
+                        round.sequence.forEach((value, index) => {
+                            html += round.blankIndexes.includes(index) ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathNumber(value)}</div>`;
+                            if (index < round.sequence.length - 1) html += '<div class="train-arrow">➔</div>';
+                        });
+                        html += '</div>';
+                    });
+                } else if (q.templateId === 'number.natural_sequence') {
                     let slotIndex = 0;
                     q.q.split(',').map(item => item.trim()).filter(Boolean).forEach((term, index, terms) => {
                         html += term === '___' ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.sanitizeHTML(term)}</div>`;
@@ -3876,8 +3887,9 @@ const app = {
             if (generator === 'number.place_value_true_false') return preview('Số 14 021 983 · Hãy chọn ĐÚNG hay SAI:', `<div class="template-preview__true-false">${['Chữ số 4 thuộc lớp triệu.', 'Chữ số 1 ở hàng chục.', 'Chữ số 9 thuộc lớp đơn vị.', 'Chữ số 0 ở hàng trăm nghìn.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
             if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
             if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div class="template-preview__safe-icon">🔒</div><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
+            if (generator === 'number.natural_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['12 000, ___, 16 000, ___, 20 000', '84 000, 78 000, ___, ___, 60 000', '1 250, ___, 1 650, ___, 2 050', '7 000 000, ___, ___, 6 979 000, 6 972 000'].map(row => row.replaceAll('___', blank))), 'template-preview--fill');
             const question = generator === 'number.smallest_of_four' ? 'Hãy tìm số bé nhất trong các số sau.' : generator === 'number.largest_of_four' ? 'Hãy tìm số lớn nhất trong các số sau.' : 'Số nào dưới đây có chữ số hàng trăm là 8?';
-            return preview(question, `<div class="template-preview__mc"><div><b>a)</b>${choices(['15 870', '90 435', '12 345', '9 403'])}</div><div><b>b)</b>${choices(['24 680', '18 405', '32 901', '27 150'])}</div></div>`, 'template-preview--multiple-choice');
+            return preview(question, `<div class="template-preview__mc">${['15 870|90 435|12 345|9 403', '24 680|18 405|32 901|27 150', '57 281|63 405|81 720|40 913', '18 563|72 108|35 842|96 321'].map((row, index) => `<div><b>${'abcd'[index]})</b>${choices(row.split('|'))}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
         },
         showTemplateExample() {
             const generator = document.getElementById('template-generator')?.value;
