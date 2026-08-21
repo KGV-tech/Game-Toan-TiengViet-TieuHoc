@@ -569,7 +569,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   border-radius: 14px;
 }
 .question-box--four-part-fill .template-fill-row:not(:first-child) { justify-content: flex-start; }
-.question-box--four-part-fill .template-compose-row { font-size: clamp(1rem, 1.45vw, 1.28rem); }
+.question-box--four-part-fill .template-compose-row { font-size: clamp(.92rem, 1.25vw, 1.12rem); line-height: 1.25; }
 .question-box--four-part-fill .template-fill-row .magic-input { width: min(148px, 18vw); font-size: clamp(1.05rem, 1.55vw, 1.35rem); }
 .question-box--four-part-fill .template-compose-row .magic-input { width: min(124px, 15vw); }
 .question-box--four-part-fill .template-fill-row--tone-0,
@@ -1581,7 +1581,9 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view .play-center.play-center--four-part-mc {
     height: calc(100vh - 48px);
     max-height: calc(100vh - 48px);
-    overflow-y: hidden;
+    overflow-y: auto;
+    scrollbar-color: rgba(251, 191, 36, .9) rgba(15, 23, 42, .55);
+    scrollbar-width: thin;
     padding: 10px clamp(14px, 1.5vw, 22px) 14px;
 }
 #game-play-view .play-center--four-part-mc .game-header {
