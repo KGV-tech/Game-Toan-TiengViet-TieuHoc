@@ -32,7 +32,14 @@
 function generateQuestion(templateId, config = {}, random = Math.random) {
     const generator = generators[templateId];
     if (!generator) throw new Error(`Unknown Grade 4 Math template: ${templateId}`);
-    return generator(config, random);
+    const question = generator(config, random);
+    if (!Array.isArray(question.partAnswerCounts)) {
+        const fourParts = [question.subquestions, question.practiceRows, question.comparisonRows, question.statements].some(items => Array.isArray(items) && items.length === 4)
+            || (question.type === 'Đối chiếu trùng khớp' && String(question.ans || '').split(', ').filter(Boolean).length === 4)
+            || ['g4-m-angle-count-in-polygon', 'angle.count_in_polygon', 'g4-m-angle-drag-classify', 'angle.drag_classify', 'g4-m-angle-clock-classify', 'angle.clock_classify', 'g4-m-angle-count-eight-angles', 'angle.count_eight_angles'].includes(templateId);
+        if (fourParts) question.partAnswerCounts = [1, 1, 1, 1];
+    }
+    return question;
 }
 
 return { generateQuestion, templateIds: Object.keys(generators) };
