@@ -15,6 +15,7 @@
         'number.match_number_words': require('./match-number-words'),
         'number.place_value_true_false': require('./place-value-true-false'),
         'number.safe_password_by_place_value': require('./safe-password-by-place-value'),
+        ...require('./measurement-units'),
         'g4-m-angle-count-in-polygon': require('./angle-count-in-polygon'),
         'angle.count_in_polygon': require('./angle-count-in-polygon'),
         'g4-m-angle-drag-classify': require('./angle-drag-classify'),

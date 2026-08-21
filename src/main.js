@@ -3734,9 +3734,20 @@ const app = {
             arithmeticTemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const measurementTemplateOptions = [
+                ['measurement.mass_unit_convert', 'Đổi đơn vị khối lượng'], ['measurement.area_unit_convert', 'Đổi đơn vị diện tích'],
+                ['measurement.time_unit_convert', 'Đổi đơn vị thời gian'], ['measurement.choose_appropriate_unit', 'Chọn đơn vị đo phù hợp'],
+                ['measurement.compare_units', 'So sánh đại lượng cùng loại'], ['measurement.match_equivalences', 'Nối số đo tương đương'],
+                ['measurement.unit_true_false', 'Đúng/Sai về đơn vị đo'], ['measurement.century_identification', 'Xác định thế kỉ'],
+                ['measurement.word_problem_units', 'Bài toán thực tế đơn vị đo']
+            ];
+            measurementTemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             if (generatorControl && !generatorControl.querySelector('option[value="number.natural_sequence"]')) generatorControl.insertAdjacentHTML('beforeend', '<option value="number.natural_sequence">Dãy số theo quy luật</option>');
             if (generatorControl && arithmeticTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
+            if (generatorControl && measurementTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
