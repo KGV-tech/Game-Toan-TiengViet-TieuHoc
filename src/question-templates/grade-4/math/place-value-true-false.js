@@ -44,13 +44,13 @@ function generatePlaceValueTrueFalse(config = {}, random = Math.random) {
         if (kind === 'place') {
             const otherPlaces = availablePlaces.filter(item => item.divisor !== place.divisor);
             const placeName = truthValues[index] ? place.placeName : otherPlaces[randomInt(0, otherPlaces.length - 1, random)].placeName;
-            return { label: String.fromCharCode(65 + index), text: `Chữ số ${digit} ở ${placeName}.`, answer: truthValues[index] ? 'Đúng' : 'Sai', kind };
+            return { label: String.fromCharCode(65 + index), text: `Trong số ${formatNumber(number)}, chữ số ${digit} ở ${placeName}.`, answer: truthValues[index] ? 'Đúng' : 'Sai', kind };
         }
         const otherClasses = [...new Set(availablePlaces.map(item => item.className))].filter(className => className !== place.className);
         const className = truthValues[index] ? place.className : otherClasses[randomInt(0, otherClasses.length - 1, random)];
-        return { label: String.fromCharCode(65 + index), text: `Chữ số ${digit} thuộc ${className}.`, answer: truthValues[index] ? 'Đúng' : 'Sai', kind };
+        return { label: String.fromCharCode(65 + index), text: `Trong số ${formatNumber(number)}, chữ số ${digit} thuộc ${className}.`, answer: truthValues[index] ? 'Đúng' : 'Sai', kind };
     });
-    const prompt = `Số ${formatNumber(number)}`;
+    const prompt = 'Chọn Đúng/Sai?';
 
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',

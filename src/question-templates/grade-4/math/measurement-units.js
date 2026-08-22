@@ -66,13 +66,15 @@ function comparisons(random) {
 }
 function matching(random) {
     const pairs = shuffle([['4 yến', '40 kg'], ['15 tạ', '1 500 kg'], ['4 m²', '400 dm²'], ['2 phút 30 giây', '150 giây']], random);
-    return question('measurement.match_equivalences', 'Đối chiếu trùng khớp', 'Nối mỗi số đo với giá trị tương đương.', { options: [pairs.map(pair => pair[0]).join(', '), shuffle(pairs.map(pair => pair[1]), random).join(', ')], ans: pairs.map(pair => `${pair[0]}:${pair[1]}`).join(', '), explanation: 'Đổi đơn vị để tìm các cặp bằng nhau.' });
+    const distractor = shuffle(['7 yến', '9 tạ', '6 m²', '3 phút 20 giây'], random)[0];
+    const leftOptions = shuffle([...pairs.map(pair => pair[0]), distractor], random);
+    return question('measurement.match_equivalences', 'Đối chiếu trùng khớp', 'Nối mỗi số đo với giá trị tương đương.', { options: [leftOptions.join(', '), shuffle(pairs.map(pair => pair[1]), random).join(', ')], ans: pairs.map(pair => `${pair[0]}:${pair[1]}`).join(', '), explanation: 'Có một số đo không có cặp tương đương. Đổi đơn vị để tìm các cặp bằng nhau.' });
 }
 function trueFalse(random) {
     const statements = shuffle([
         ['6 tạ = 600 kg.', 'Đúng'], ['9 m² = 900 cm².', 'Sai'], ['1 phút 40 giây = 100 giây.', 'Đúng'], ['5 thế kỉ = 50 năm.', 'Sai']
     ], random).map((item, index) => ({ label: labels[index], text: item[0], answer: item[1] }));
-    return question('measurement.unit_true_false', 'Đúng/Sai', 'Chọn Đúng hoặc Sai cho mỗi nhận định.', { ans: statements.map(item => item.answer).join(', '), statements, explanation: 'Kiểm tra từng phép đổi đơn vị.' });
+    return question('measurement.unit_true_false', 'Đúng/Sai', 'Chọn Đúng/Sai?', { ans: statements.map(item => item.answer).join(', '), statements, explanation: 'Kiểm tra từng phép đổi đơn vị.' });
 }
 function century(random) {
     const years = shuffle([[1789, 'XVIII'], [1900, 'XIX'], [1945, 'XX'], [2026, 'XXI']], random);

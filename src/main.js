@@ -254,7 +254,10 @@ const app = {
                     'number.safe_password_by_place_value': [legacySafePrompt, safePrompt]
                 };
                 const savedPrompt = String(template.prompt_template || '{question}').trim();
-                const promptTemplate = legacySingleQuestionPrompts[template.generator_key]?.includes(savedPrompt)
+                const structuralMeasurementTemplate = String(template.generator_key || '').startsWith('measurement.');
+                const promptTemplate = structuralMeasurementTemplate && !savedPrompt.includes('{question}')
+                    ? '{question}'
+                    : legacySingleQuestionPrompts[template.generator_key]?.includes(savedPrompt)
                     ? '{question}'
                     : savedPrompt;
                 const prompt = promptTemplate.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
@@ -1610,7 +1613,6 @@ const app = {
         formatHistoryQuestion(detail) {
             const lines = [detail.q];
             if (detail.type === 'Đúng/Sai' && Array.isArray(detail.statements)) {
-                lines.push('Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:');
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
             }
             if (detail.type === 'Trắc nghiệm' && Array.isArray(detail.subquestions)) {
@@ -1737,7 +1739,7 @@ const app = {
                 });
             } else if (qType === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 questionContainer.classList.add('question-box--template', 'question-box--true-false');
-                questionContainer.innerHTML = `<div class="tf-template-number">${app.data.formatMathText(q.q)}</div><div class="tf-template-instruction">Hãy chọn <b>ĐÚNG</b> hay <b>SAI</b> cho các câu dưới đây:</div>`;
+                questionContainer.innerHTML = '<div class="tf-template-number">Chọn Đúng/Sai?</div>';
                 optContainer.className = 'tf-statements';
                 this.state.trueFalseSelections = new Array(q.statements.length).fill('');
                 q.statements.forEach((statement, index) => {
@@ -3854,9 +3856,9 @@ const app = {
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{left}', 'số ở vế trái'], ['{right_expanded}', 'vế phải ở dạng tổng'], ['{comparison}', 'biểu thức có ô chọn dấu'], ['{blank}', 'ô chọn dấu (___)']]
                 },
                 'number.place_value_true_false': {
-                    defaultPrompt: 'Số {number}<br>Hãy chọn ĐÚNG hay SAI cho các câu dưới đây:',
+                    defaultPrompt: 'Chọn Đúng/Sai?',
                     guide: 'Tạo một số nhiều chữ số và bốn nhận định Đúng/Sai về lớp hoặc hàng của chữ số. Mỗi chữ số được hỏi xuất hiện đúng một lần trong số đã cho.',
-                    hint: 'Dùng <code>{number}</code> cho hàng đầu; có thể chèn <code>{statements}</code> nếu cần hiển thị danh sách nhận định trong nội dung câu hỏi.',
+                    hint: 'Tiêu đề dùng chung là <code>Chọn Đúng/Sai?</code>. Mỗi nhận định tự nêu <code>{number}</code>; có thể chèn <code>{statements}</code> nếu cần xem danh sách nhận định.',
                     previewImage: 'place-value-true-false.jpg',
                     type: 'Đúng/Sai',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh'], ['{statements}', 'bốn nhận định A–D đã sinh về lớp hoặc hàng']]
@@ -3942,7 +3944,7 @@ const app = {
                 '17 784 − 4 884 <i class="template-preview__drop">?</i> 16 033 + 18 927',
                 '60 000 + 700 <i class="template-preview__drop">?</i> 60 700'
             ]), 'template-preview--comparison');
-            if (generator === 'number.place_value_true_false') return preview('Số 14 021 983 · Hãy chọn ĐÚNG hay SAI:', `<div class="template-preview__true-false">${['Chữ số 4 thuộc lớp triệu.', 'Chữ số 1 ở hàng chục.', 'Chữ số 9 thuộc lớp đơn vị.', 'Chữ số 0 ở hàng trăm nghìn.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
+            if (generator === 'number.place_value_true_false') return preview('Chọn Đúng/Sai?', `<div class="template-preview__true-false">${['Trong số 14 021 983, chữ số 4 thuộc lớp triệu.', 'Trong số 14 021 983, chữ số 1 ở hàng chục.', 'Trong số 14 021 983, chữ số 9 thuộc lớp đơn vị.', 'Trong số 14 021 983, chữ số 0 ở hàng trăm nghìn.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
             if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
             if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div class="template-preview__safe-icon">🔒</div><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
             if (generator === 'number.natural_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['12 000, ___, 16 000, ___, 20 000', '84 000, 78 000, ___, ___, 60 000', '1 250, ___, 1 650, ___, 2 050', '7 000 000, ___, ___, 6 979 000, 6 972 000'].map(row => row.replaceAll('___', blank))), 'template-preview--fill');

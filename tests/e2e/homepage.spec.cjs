@@ -1459,6 +1459,50 @@ test('lượt luyện Chủ đề 4 nạp generator đơn vị đo và tạo đ�
   expect(outcome.ids.every(id => id.startsWith('measurement.'))).toBe(true);
 });
 
+test('template Chủ đề 4 luôn giữ bốn phần khi Supabase còn prompt cũ', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(() => {
+    const template = {
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '4. Một số đơn vị đo Đại lượng',
+      question_type: 'Điền khuyết', generator_key: 'measurement.time_unit_convert',
+      prompt_template: 'Điền số thích hợp.', config: {}
+    };
+    const question = app.data.generateTemplateQuestion(template);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+    return { question: question.q, blanks: document.querySelectorAll('.magic-input').length };
+  });
+
+  expect(outcome.question).toContain('a)');
+  expect(outcome.question).toContain('d)');
+  expect(outcome.blanks).toBe(4);
+});
+
+test('mọi câu Đúng/Sai dùng một tiêu đề ngắn, không lặp hướng dẫn', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('number.place_value_true_false');
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.tf-template-number')).toHaveText('Chọn Đúng/Sai?');
+  await expect(page.locator('.tf-template-instruction')).toHaveCount(0);
+  await expect(page.locator('.tf-statement').first()).toContainText('Trong số');
+});
+
 test('câu hỏi về thế kỉ hiển thị năm liền nhau, không có khoảng cách hàng nghìn', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

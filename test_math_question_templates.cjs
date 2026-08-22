@@ -29,6 +29,15 @@ measurementTemplateIds.forEach((templateId, index) => {
     assert.equal(generated.ans.split(', ').length, 4, `${templateId} must provide answers a–d.`);
 });
 
+const measurementMatching = generateQuestion('measurement.match_equivalences', {}, seededRandom(912));
+const matchingColumns = measurementMatching.options.map(column => column.split(', ').filter(Boolean));
+assert.equal(Math.min(...matchingColumns.map(column => column.length)), 4, 'The matching template must keep four answerable pairs.');
+assert.equal(Math.max(...matchingColumns.map(column => column.length)), 5, 'The matching template must include exactly one distractor.');
+assert.equal(measurementMatching.ans.split(', ').length, 4, 'The distractor must not create an extra answer.');
+
+const measurementTrueFalse = generateQuestion('measurement.unit_true_false', {}, seededRandom(913));
+assert.equal(measurementTrueFalse.q, 'Chọn Đúng/Sai?', 'True/false templates must use the shared concise heading.');
+
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
 assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');
@@ -234,12 +243,14 @@ assert.equal(placeValueTrueFalse.type, 'Đúng/Sai');
 assert.equal(placeValueTrueFalse.statements.length, 4, 'The place-value true/false template must generate four statements.');
 assert.deepEqual(placeValueTrueFalse.statements.map(item => item.label), ['A', 'B', 'C', 'D']);
 assert(placeValueTrueFalse.statements.every(item => ['Đúng', 'Sai'].includes(item.answer)), 'Each statement must have a true/false answer.');
-const trueFalseDigits = placeValueTrueFalse.q.replace(/\D/g, '');
-assert.equal(new Set(trueFalseDigits).size, trueFalseDigits.length, 'True/false numbers must not repeat a digit, so each stated digit has one unambiguous location.');
-assert(placeValueTrueFalse.statements.every(item => trueFalseDigits.includes(item.text.match(/Chữ số (\d)/)[1])), 'Every stated digit must appear in the generated number.');
+const trueFalseDigits = placeValueTrueFalse.statements.map(statement => statement.text.match(/Trong số ([\d\s]+)/)[1].replace(/\s/g, ''));
+assert.equal(new Set(trueFalseDigits).size, 1, 'Every statement must identify the same generated number.');
+const trueFalseNumber = trueFalseDigits[0];
+assert.equal(new Set(trueFalseNumber).size, trueFalseNumber.length, 'True/false numbers must not repeat a digit, so each stated digit has one unambiguous location.');
+assert(placeValueTrueFalse.statements.every(item => trueFalseNumber.includes(item.text.match(/chữ số (\d)/i)[1])), 'Every stated digit must appear in the generated number.');
 assert.deepEqual(placeValueTrueFalse.statements.map(item => item.kind), ['class', 'place', 'class', 'place'], 'The default true/false template must mix class and place statements.');
 assert.match(placeValueTrueFalse.templateVariables.statements, /<br>/, 'The true/false template must expose its generated statements to administrators.');
-assert.match(placeValueTrueFalse.q, /^Số /, 'The number must be the first line of the true/false template.');
+assert.equal(placeValueTrueFalse.q, 'Chọn Đúng/Sai?', 'The true/false template must use the concise shared heading.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');
 
 const safePassword = generateQuestion('number.safe_password_by_place_value', {}, seededRandom(11));
