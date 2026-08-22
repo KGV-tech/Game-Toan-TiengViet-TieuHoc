@@ -38,6 +38,20 @@ assert.equal(measurementMatching.ans.split(', ').length, 4, 'The distractor must
 const measurementTrueFalse = generateQuestion('measurement.unit_true_false', {}, seededRandom(913));
 assert.equal(measurementTrueFalse.q, 'Chọn Đúng/Sai?', 'True/false templates must use the shared concise heading.');
 
+const centuryQuestion = generateQuestion('measurement.century_identification', {}, seededRandom(914));
+const anotherCenturyQuestion = generateQuestion('measurement.century_identification', {}, seededRandom(915));
+const yearForCentury = { XVIII: [1701, 1800], XIX: [1801, 1900], XX: [1901, 2000], XXI: [2001, 2100] };
+centuryQuestion.subquestions.forEach(item => {
+    const year = Number(item.prompt.match(/data-year="true">(\d{4})</)[1]);
+    const [minimum, maximum] = yearForCentury[item.answer];
+    assert(year >= minimum && year <= maximum, `Year ${year} must belong to century ${item.answer}.`);
+});
+assert.notDeepEqual(
+    centuryQuestion.subquestions.map(item => item.prompt),
+    anotherCenturyQuestion.subquestions.map(item => item.prompt),
+    'Century questions must generate fresh years rather than reuse a fixed list.'
+);
+
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
 assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');

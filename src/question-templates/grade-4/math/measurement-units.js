@@ -77,7 +77,12 @@ function trueFalse(random) {
     return question('measurement.unit_true_false', 'Đúng/Sai', 'Chọn Đúng/Sai?', { ans: statements.map(item => item.answer).join(', '), statements, explanation: 'Kiểm tra từng phép đổi đơn vị.' });
 }
 function century(random) {
-    const years = shuffle([[1789, 'XVIII'], [1900, 'XIX'], [1945, 'XX'], [2026, 'XXI']], random);
+    const years = shuffle([
+        [randomInt(1701, 1800, random), 'XVIII'],
+        [randomInt(1801, 1900, random), 'XIX'],
+        [randomInt(1901, 2000, random), 'XX'],
+        [randomInt(2001, 2100, random), 'XXI']
+    ], random);
     return createFourPartMultipleChoiceQuestion('measurement.century_identification', 'Mỗi năm sau thuộc thế kỉ nào?', years.map(([year, answer], index) => ({ label: labels[index], prompt: `Năm <span class="year-value" data-year="true">${year}</span> thuộc thế kỉ nào?`, options: shuffle(['XVIII', 'XIX', 'XX', 'XXI'], random), answer })), 'Năm 1–100 thuộc thế kỉ I; mỗi thế kỉ tiếp theo gồm 100 năm.');
 }
 function wordProblems(random) {
