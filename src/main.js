@@ -2138,6 +2138,26 @@ const app = {
                         btnCheck.disabled = !inputs.every(item => item.value.trim() !== '');
                     };
                 });
+            } else if (qType === 'Điền khuyết' && q.templateId === 'measurement.word_problem_units' && Array.isArray(q.practiceRows) && q.practiceRows.length === 4) {
+                optContainer.className = '';
+                questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--four-part-fill', 'question-box--measurement-word-problems');
+                const inputs = [];
+                const title = String(q.q || '').split(/<br\s*\/?\s*>/i)[0] || 'Điền đáp số thích hợp.';
+                const rows = q.practiceRows.map((row, index) => {
+                    const [before = '', after = ''] = String(row.display || '').split('___');
+                    const label = String.fromCharCode(97 + index);
+                    return `<label class="measurement-word-problem-row measurement-word-problem-row--tone-${index}"><span class="measurement-word-problem-row__label">${label})</span><span class="measurement-word-problem-row__text">${app.data.formatMathText(before)}<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Đáp số câu ${label}">${app.data.formatMathText(after)}</span></label>`;
+                }).join('');
+                questionContainer.innerHTML = `<div class="measurement-word-problems-title">${app.data.formatMathText(title)}</div><div class="measurement-word-problems-list">${rows}</div>`;
+                q.practiceRows.forEach((_, index) => {
+                    const input = document.getElementById(`fill-input-${index}`);
+                    inputs.push(input);
+                    input.oninput = () => {
+                        input.value = app.data.formatMathNumber(input.value);
+                        this.state.selectedAns = inputs.map(item => item.value.trim()).join(', ');
+                        btnCheck.disabled = !inputs.every(item => item.value.trim() !== '');
+                    };
+                });
             } else if (qType === 'Điền khuyết') {
                 optContainer.className = '';
                 const parts = (q.q || '').split(/\.\.\.|___/);

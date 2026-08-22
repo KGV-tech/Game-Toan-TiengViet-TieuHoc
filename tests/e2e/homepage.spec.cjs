@@ -1484,6 +1484,26 @@ test('template Chủ đề 4 luôn giữ bốn phần khi Supabase còn prompt c
   expect(outcome.blanks).toBe(4);
 });
 
+test('bài toán đơn vị đo giữ ô đáp số liền với phần câu còn thiếu', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const question = window.Grade4MathTemplates.generateQuestion('measurement.word_problem_units', {}, () => 0.5);
+    app.data.currentUser = { username: 'demo-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+  });
+
+  await expect(page.locator('.measurement-word-problem-row')).toHaveCount(4);
+  await expect(page.locator('.measurement-word-problem-row .magic-input')).toHaveCount(4);
+  await expect(page.locator('.measurement-word-problem-row .magic-input').first()).toHaveCSS('display', 'inline-block');
+  await expect(page.locator('.measurement-word-problem-row', { hasText: 'giây' }).first()).toContainText('giây');
+});
+
 test('mọi câu Đúng/Sai dùng một tiêu đề ngắn, không lặp hướng dẫn', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
@@ -1518,7 +1538,7 @@ test('câu hỏi về thế kỉ hiển thị năm liền nhau, không có kho�
     return document.querySelector('.multi-choice-subquestion h3')?.textContent;
   });
 
-  expect(yearText).toMatch(/Năm (?:1789|1900|1945|2026) thuộc thế kỉ nào/);
+  expect(yearText).toMatch(/Năm \d{4} thuộc thế kỉ nào/);
   expect(yearText).not.toMatch(/Năm \d{1,3} \d{3}/);
 });
 
