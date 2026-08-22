@@ -151,14 +151,16 @@ const app = {
             return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
         },
         formatMathText(value) {
-            return String(value ?? '').replace(/\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/g, digits => this.formatMathNumber(digits));
+            return String(value ?? '').replace(/(\bnăm\s+)(\d{1,4})\b|\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/giu, (match, yearPrefix, year) => {
+                return yearPrefix ? `${yearPrefix}${year}` : this.formatMathNumber(match);
+            });
         },
         formatMathHTML(value) {
             // Câu hỏi động có thể chứa SVG. Chỉ định dạng số trong phần văn bản,
             // tuyệt đối không đổi khoảng trắng trong thuộc tính như viewBox hoặc points.
             return String(value ?? '')
-                .split(/(<\/?[a-z][^>]*>)/gi)
-                .map(part => /^<\/?[a-z]/i.test(part) ? part : this.formatMathText(part))
+                .split(/(<span\b[^>]*\bdata-year\b[^>]*>[\s\S]*?<\/span>|<\/?[a-z][^>]*>)/gi)
+                .map(part => /^<span\b[^>]*\bdata-year\b/i.test(part) || /^<\/?[a-z]/i.test(part) ? part : this.formatMathText(part))
                 .join('');
         },
         formatQuestionDetailHTML(value) {
@@ -1698,7 +1700,7 @@ const app = {
                     const partPrompt = String(subquestion.prompt || '').trim();
                     row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
                     const heading = partPrompt
-                        ? `<h3><span>${partLabel})</span> ${app.data.formatMathText(partPrompt)}</h3>`
+                        ? `<h3><span>${partLabel})</span> ${app.data.formatMathHTML(partPrompt)}</h3>`
                         : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;
                     row.innerHTML = `<div class="multi-choice-subquestion__heading">${illustration}${heading}</div><div class="multi-choice-subquestion__options"></div>`;
                     const choices = row.querySelector('.multi-choice-subquestion__options');
