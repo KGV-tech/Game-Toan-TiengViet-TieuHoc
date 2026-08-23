@@ -45,15 +45,6 @@ function timeRows(random) {
     ];
     return labels.map(() => choose(kinds, random)());
 }
-function unitChoice(random) {
-    const data = [
-        ['Khối lượng một con voi thường đo bằng đơn vị nào?', ['kg', 'yến', 'tấn', 'dm²'], 'tấn'],
-        ['Khối lượng một bao gạo lớn thường đo bằng đơn vị nào?', ['kg', 'yến', 'tấn', 'mm²'], 'yến'],
-        ['Diện tích tấm bìa hình vuông cạnh 3 dm nên đo bằng đơn vị nào?', ['mm²', 'cm²', 'dm²', 'm²'], 'dm²'],
-        ['Thời gian chạy 100 m nên đo bằng đơn vị nào?', ['giây', 'phút', 'giờ', 'thế kỉ'], 'giây']
-    ];
-    return createFourPartMultipleChoiceQuestion('measurement.choose_appropriate_unit', 'Chọn đơn vị đo thích hợp nhất.', shuffle(data, random).map((item, index) => ({ label: labels[index], prompt: item[0], options: shuffle(item[1], random), answer: item[2] })), 'Chọn đơn vị phù hợp với đại lượng và tình huống thực tế.');
-}
 function comparisons(random) {
     const rows = [
         { left: '7 yến', lv: 70, right: '68 kg', rv: 68 },
@@ -98,7 +89,6 @@ const generators = {
     'measurement.mass_unit_convert': (config, random) => fillQuestion('measurement.mass_unit_convert', 'Điền số thích hợp.', massRows(random), 'Dùng 1 yến = 10 kg, 1 tạ = 100 kg, 1 tấn = 1 000 kg.'),
     'measurement.area_unit_convert': (config, random) => fillQuestion('measurement.area_unit_convert', 'Điền số thích hợp.', areaRows(random), 'Dùng các quan hệ giữa m², dm², cm² và mm².'),
     'measurement.time_unit_convert': (config, random) => fillQuestion('measurement.time_unit_convert', 'Điền số thích hợp.', timeRows(random), 'Dùng các quan hệ giữa tuần, ngày, giờ, phút và giây.'),
-    'measurement.choose_appropriate_unit': (config, random) => unitChoice(random),
     'measurement.compare_units': (config, random) => comparisons(random),
     'measurement.match_equivalences': (config, random) => matching(random),
     'measurement.unit_true_false': (config, random) => trueFalse(random),

@@ -1436,7 +1436,7 @@ test('lượt luyện Chủ đề 4 nạp generator đơn vị đo và tạo đ�
     const topic = '4. Một số đơn vị đo Đại lượng';
     const generatorKeys = [
       'measurement.mass_unit_convert', 'measurement.area_unit_convert', 'measurement.time_unit_convert',
-      'measurement.choose_appropriate_unit', 'measurement.compare_units', 'measurement.match_equivalences',
+      'measurement.compare_units', 'measurement.match_equivalences',
       'measurement.unit_true_false', 'measurement.century_identification', 'measurement.word_problem_units'
     ];
     const alerts = [];
