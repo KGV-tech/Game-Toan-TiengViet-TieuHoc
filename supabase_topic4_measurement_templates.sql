@@ -6,7 +6,6 @@ FROM (VALUES
   ('Đổi đơn vị khối lượng', 'Điền khuyết', 'measurement.mass_unit_convert', '{question}'),
   ('Đổi đơn vị diện tích', 'Điền khuyết', 'measurement.area_unit_convert', '{question}'),
   ('Đổi đơn vị thời gian', 'Điền khuyết', 'measurement.time_unit_convert', '{question}'),
-  ('Chọn đơn vị đo phù hợp', 'Trắc nghiệm', 'measurement.choose_appropriate_unit', '{question}'),
   ('So sánh đại lượng cùng loại', 'Kéo thả', 'measurement.compare_units', '{question}'),
   ('Nối số đo tương đương', 'Đối chiếu trùng khớp', 'measurement.match_equivalences', '{question}'),
   ('Đúng/Sai về đơn vị đo', 'Đúng/Sai', 'measurement.unit_true_false', '{question}'),
@@ -26,6 +25,12 @@ WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
   AND topic = '4. Một số đơn vị đo Đại lượng'
   AND generator_key IN (
     'measurement.mass_unit_convert', 'measurement.area_unit_convert', 'measurement.time_unit_convert',
-    'measurement.choose_appropriate_unit', 'measurement.compare_units', 'measurement.match_equivalences',
+    'measurement.compare_units', 'measurement.match_equivalences',
     'measurement.unit_true_false', 'measurement.century_identification', 'measurement.word_problem_units'
   );
+
+-- Remove the retired unit-choice template: its “most appropriate” wording can have more than one valid mathematical unit.
+DELETE FROM public.question_templates
+WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
+  AND topic = '4. Một số đơn vị đo Đại lượng'
+  AND generator_key = 'measurement.choose_appropriate_unit';

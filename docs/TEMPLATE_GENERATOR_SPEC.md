@@ -102,6 +102,7 @@ Các yêu cầu sinh:
 - Bài toán lời văn phải sinh cả số liệu và ngữ cảnh mới, nhưng giữ đúng đơn vị, kết quả, logic thực tế và độ khó lớp học.
 - Đáp án phải được tính từ dữ liệu sinh, không gắn thủ công với câu mẫu.
 - Năm thuộc thế kỉ phải sinh ngẫu nhiên trong khoảng thế kỉ đã chọn và không có khoảng trắng hàng nghìn.
+- Không dùng dạng “đơn vị đo thích hợp nhất/thường dùng” nếu có từ hai đơn vị cùng loại đều có thể đo đại lượng đó. Template `measurement.choose_appropriate_unit` đã bị loại bỏ theo quy tắc này.
 
 ## 9. Quy luật hiện có theo nhóm template
 

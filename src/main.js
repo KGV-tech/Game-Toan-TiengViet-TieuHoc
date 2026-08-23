@@ -3760,7 +3760,7 @@ const app = {
             });
             const measurementTemplateOptions = [
                 ['measurement.mass_unit_convert', 'Đổi đơn vị khối lượng'], ['measurement.area_unit_convert', 'Đổi đơn vị diện tích'],
-                ['measurement.time_unit_convert', 'Đổi đơn vị thời gian'], ['measurement.choose_appropriate_unit', 'Chọn đơn vị đo phù hợp'],
+                ['measurement.time_unit_convert', 'Đổi đơn vị thời gian'],
                 ['measurement.compare_units', 'So sánh đại lượng cùng loại'], ['measurement.match_equivalences', 'Nối số đo tương đương'],
                 ['measurement.unit_true_false', 'Đúng/Sai về đơn vị đo'], ['measurement.century_identification', 'Xác định thế kỉ'],
                 ['measurement.word_problem_units', 'Bài toán thực tế đơn vị đo']

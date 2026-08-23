@@ -19,9 +19,14 @@ function hasHundredsDigitEight(text) {
 
 const measurementTemplateIds = [
     'measurement.mass_unit_convert', 'measurement.area_unit_convert', 'measurement.time_unit_convert',
-    'measurement.choose_appropriate_unit', 'measurement.compare_units', 'measurement.match_equivalences',
+    'measurement.compare_units', 'measurement.match_equivalences',
     'measurement.unit_true_false', 'measurement.century_identification', 'measurement.word_problem_units'
 ];
+assert.throws(
+    () => generateQuestion('measurement.choose_appropriate_unit', {}, seededRandom(899)),
+    /Unknown Grade 4 Math template/,
+    'The ambiguous “choose the most appropriate unit” template must stay retired.'
+);
 measurementTemplateIds.forEach((templateId, index) => {
     const generated = generateQuestion(templateId, {}, seededRandom(900 + index));
     assert.equal(generated.topic, '4. Một số đơn vị đo Đại lượng', `${templateId} must belong to Topic 4.`);
