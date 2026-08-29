@@ -578,8 +578,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .measurement-word-problems-list { display: grid; gap: 10px; }
 .measurement-word-problem-row { display: block; box-sizing: border-box; width: 100%; min-height: 52px; padding: 10px 14px; border: 2px solid transparent; border-radius: 14px; color: #1e293b; font-size: clamp(1.02rem, 1.42vw, 1.35rem); font-weight: 700; line-height: 1.42; text-align: left; }
 .measurement-word-problem-row__label { display: inline; margin-right: 8px; font-weight: 900; }
-.measurement-word-problem-row__text { display: inline; }
-.measurement-word-problem-row .magic-input { display: inline-block; width: min(110px, 14vw); margin: 0 6px; padding: 2px 4px; vertical-align: baseline; font-size: clamp(1rem, 1.35vw, 1.25rem); }
+.measurement-word-problem-row__lead { display: inline; }
+.measurement-word-problem-answer { display: inline-flex; align-items: baseline; gap: 6px; margin-left: 6px; white-space: nowrap; vertical-align: baseline; }
+.measurement-word-problem-row .magic-input { display: inline-block; width: min(110px, 14vw); margin: 0; padding: 2px 4px; font-size: clamp(1rem, 1.35vw, 1.25rem); }
 .measurement-word-problem-row--tone-0 { background: rgba(255, 237, 213, .94); border-color: #fdba74; }
 .measurement-word-problem-row--tone-1 { background: rgba(224, 242, 254, .94); border-color: #7dd3fc; }
 .measurement-word-problem-row--tone-2 { background: rgba(220, 252, 231, .94); border-color: #86efac; }

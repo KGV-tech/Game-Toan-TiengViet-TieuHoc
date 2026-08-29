@@ -57,6 +57,21 @@ assert.notDeepEqual(
     'Century questions must generate fresh years rather than reuse a fixed list.'
 );
 
+const measurementWordProblemScenarioIds = new Set();
+for (let seed = 916; seed < 996; seed += 1) {
+    const generated = generateQuestion('measurement.word_problem_units', {}, seededRandom(seed));
+    assert.equal(generated.practiceRows.length, 4, 'Each measurement word-problem question must contain four parts.');
+    assert.equal(new Set(generated.practiceRows.map(row => row.scenarioId)).size, 4, 'A question must not repeat a real-world scenario.');
+    generated.practiceRows.forEach(row => {
+        measurementWordProblemScenarioIds.add(row.scenarioId);
+        assert(Number.isInteger(row.answer) && row.answer > 0, `${row.scenarioId} must produce a positive whole-number answer.`);
+        assert.match(row.display, /___/, `${row.scenarioId} must contain one answer blank.`);
+        assert.equal(typeof row.answerPrefix, 'string', `${row.scenarioId} must expose the phrase immediately before its answer.`);
+        assert.equal(typeof row.answerSuffix, 'string', `${row.scenarioId} must expose the unit immediately after its answer.`);
+    });
+}
+assert.equal(measurementWordProblemScenarioIds.size, 20, 'The measurement word-problem template must draw from all 20 approved scenarios.');
+
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
 assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');
