@@ -1500,8 +1500,9 @@ test('bài toán đơn vị đo giữ ô đáp số liền với phần câu cò
 
   await expect(page.locator('.measurement-word-problem-row')).toHaveCount(4);
   await expect(page.locator('.measurement-word-problem-row .magic-input')).toHaveCount(4);
-  await expect(page.locator('.measurement-word-problem-row .magic-input').first()).toHaveCSS('display', 'inline-block');
-  await expect(page.locator('.measurement-word-problem-row', { hasText: 'giây' }).first()).toContainText('giây');
+  await expect(page.locator('.measurement-word-problem-answer')).toHaveCount(4);
+  await expect(page.locator('.measurement-word-problem-answer').first()).toHaveCSS('display', 'inline-flex');
+  await expect(page.locator('.measurement-word-problem-answer').first()).toHaveCSS('white-space', 'nowrap');
 });
 
 test('mọi câu Đúng/Sai dùng một tiêu đề ngắn, không lặp hướng dẫn', async ({ page }) => {

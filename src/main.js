@@ -2146,7 +2146,10 @@ const app = {
                 const rows = q.practiceRows.map((row, index) => {
                     const [before = '', after = ''] = String(row.display || '').split('___');
                     const label = String.fromCharCode(97 + index);
-                    return `<label class="measurement-word-problem-row measurement-word-problem-row--tone-${index}"><span class="measurement-word-problem-row__label">${label})</span><span class="measurement-word-problem-row__text">${app.data.formatMathText(before)}<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Đáp số câu ${label}">${app.data.formatMathText(after)}</span></label>`;
+                    const lead = String(row.lead || before).trim();
+                    const answerPrefix = String(row.answerPrefix || '').trim();
+                    const answerSuffix = String(row.answerSuffix || after).trim();
+                    return `<label class="measurement-word-problem-row measurement-word-problem-row--tone-${index}"><span class="measurement-word-problem-row__label">${label})</span><span class="measurement-word-problem-row__lead">${app.data.formatMathText(lead)}</span><span class="measurement-word-problem-answer"><span>${app.data.formatMathText(answerPrefix)}</span><input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Đáp số câu ${label}"><span>${app.data.formatMathText(answerSuffix)}</span></span></label>`;
                 }).join('');
                 questionContainer.innerHTML = `<div class="measurement-word-problems-title">${app.data.formatMathText(title)}</div><div class="measurement-word-problems-list">${rows}</div>`;
                 q.practiceRows.forEach((_, index) => {

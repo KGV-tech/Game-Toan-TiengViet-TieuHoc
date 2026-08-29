@@ -13,8 +13,8 @@ const question = (templateId, type, prompt, extra = {}) => ({
     classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
     type, templateId, q: prompt, options: [], partAnswerCounts: [1, 1, 1, 1], ...extra
 });
-const fillQuestion = (templateId, title, rows, explanation) => question(templateId, 'Điền khuyết', `${title}<br>${rows.map((row, index) => `${labels[index]}) ${row.display}`).join('<br>')}`, {
-    ans: rows.map(row => String(row.answer)).join(', '), practiceRows: rows, explanation
+const fillQuestion = (templateId, title, rows, explanation, extra = {}) => question(templateId, 'Điền khuyết', `${title}<br>${rows.map((row, index) => `${labels[index]}) ${row.display}`).join('<br>')}`, {
+    ans: rows.map(row => String(row.answer)).join(', '), practiceRows: rows, explanation, ...extra
 });
 
 function massRows(random) {
@@ -76,14 +76,47 @@ function century(random) {
     ], random);
     return createFourPartMultipleChoiceQuestion('measurement.century_identification', 'Mỗi năm sau thuộc thế kỉ nào?', years.map(([year, answer], index) => ({ label: labels[index], prompt: `Năm <span class="year-value" data-year="true">${year}</span> thuộc thế kỉ nào?`, options: shuffle(['XVIII', 'XIX', 'XX', 'XXI'], random), answer })), 'Năm 1–100 thuộc thế kỉ I; mỗi thế kỉ tiếp theo gồm 100 năm.');
 }
-function wordProblems(random) {
-    const rows = [
-        { display: 'Một xe chở 3 tấn hàng, đã dỡ 8 tạ. Xe còn chở ___ kg hàng.', answer: 2200 },
-        { display: 'Thửa ruộng 4 000 m² chia đều 4 phần. Mỗi phần rộng ___ m².', answer: 1000 },
-        { display: 'Cuộc thi dài 5 phút. Nam làm xong sau 240 giây. Nam xong sớm hơn ___ giây.', answer: 60 },
-        { display: 'Kho có 2 tấn 5 tạ gạo, đã xuất 750 kg. Kho còn ___ kg gạo.', answer: 1750 }
+const displayNumber = value => formatNumber(value);
+const exactMultiple = (minimum, maximum, step, random) => randomInt(Math.ceil(minimum / step), Math.floor(maximum / step), random) * step;
+const wordProblemRow = (scenarioId, lead, answerPrefix, answer, answerSuffix) => ({
+    scenarioId, lead, answerPrefix, answer, answerSuffix,
+    display: `${lead} ${answerPrefix} ___ ${answerSuffix}`
+});
+const clockText = totalMinutes => {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    return minute === 0 ? `${hour} giờ` : `${hour} giờ ${minute} phút`;
+};
+
+function wordProblemScenarios(random) {
+    return [
+        () => { const tons = randomInt(3, 12, random), unloadedTạ = randomInt(1, tons * 10 - 1, random); return wordProblemRow('truck-unload', `Xe tải chở ${tons} tấn hàng, đã dỡ ${unloadedTạ} tạ.`, 'Xe còn chở', tons * 1000 - unloadedTạ * 100, 'kg hàng.'); },
+        () => { const totalTạ = randomInt(20, 80, random), soldKg = exactMultiple(50, totalTạ * 100 - 50, 50, random); return wordProblemRow('boat-fish-sale', `Một chiếc ghe chở ${totalTạ} tạ cá, đã bán ${displayNumber(soldKg)} kg.`, 'Trên ghe còn', totalTạ * 100 - soldKg, 'kg cá.'); },
+        () => { const tons = randomInt(4, 15, random), transferredTạ = randomInt(2, tons * 10 - 1, random); return wordProblemRow('cargo-ship-transfer', `Tàu chở ${tons} tấn hàng, đã chuyển ${transferredTạ} tạ xuống cảng.`, 'Trên tàu còn', tons * 1000 - transferredTạ * 100, 'kg hàng.'); },
+        () => { const tons = randomInt(3, 12, random), unloadedKg = exactMultiple(100, tons * 1000 - 100, 100, random); return wordProblemRow('train-unload', `Xe lửa chở ${tons} tấn hàng, đã bốc dỡ ${displayNumber(unloadedKg)} kg ở ga.`, 'Xe lửa còn chở', tons * 1000 - unloadedKg, 'kg hàng.'); },
+        () => { const tons = randomInt(2, 8, random), tạ = randomInt(1, 9, random), totalKg = tons * 1000 + tạ * 100, exportedKg = exactMultiple(50, totalKg - 50, 50, random); return wordProblemRow('rice-warehouse-export', `Kho có ${tons} tấn ${tạ} tạ gạo, đã xuất ${displayNumber(exportedKg)} kg.`, 'Kho còn', totalKg - exportedKg, 'kg gạo.'); },
+        () => { const totalTạ = randomInt(15, 60, random), soldKg = exactMultiple(50, totalTạ * 100 - 50, 50, random); return wordProblemRow('shop-rice-sale', `Cửa hàng nhập ${totalTạ} tạ gạo, đã bán ${displayNumber(soldKg)} kg.`, 'Cửa hàng còn', totalTạ * 100 - soldKg, 'kg gạo.'); },
+        () => { const totalTạ = randomInt(18, 70, random), soldKg = exactMultiple(50, totalTạ * 100 - 50, 50, random); return wordProblemRow('farm-vegetable-sale', `Trang trại thu hoạch ${totalTạ} tạ rau, đã bán ${displayNumber(soldKg)} kg.`, 'Trang trại còn', totalTạ * 100 - soldKg, 'kg rau.'); },
+        () => { const tons = randomInt(2, 8, random), extraKg = exactMultiple(100, 900, 100, random), totalKg = tons * 1000 + extraKg, deliveredKg = exactMultiple(50, totalKg - 50, 50, random); return wordProblemRow('factory-delivery', `Nhà máy đóng gói ${tons} tấn ${displayNumber(extraKg)} kg hàng, đã giao ${displayNumber(deliveredKg)} kg.`, 'Nhà máy còn', totalKg - deliveredKg, 'kg hàng.'); },
+        () => { const parts = randomInt(2, 8, random), each = exactMultiple(100, 800, 50, random), total = parts * each; return wordProblemRow('field-division', `Thửa ruộng rộng ${displayNumber(total)} m² chia đều ${parts} phần.`, 'Mỗi phần rộng', each, 'm².'); },
+        () => { const zones = randomInt(2, 6, random), each = exactMultiple(80, 260, 20, random), total = zones * each; return wordProblemRow('football-field-zones', `Sân bóng rộng ${displayNumber(total)} m² được chia đều thành ${zones} khu tập luyện.`, 'Mỗi khu rộng', each, 'm².'); },
+        () => { const beds = randomInt(3, 10, random), each = exactMultiple(30, 180, 10, random), total = beds * each; return wordProblemRow('garden-beds', `Khu vườn rộng ${displayNumber(total)} m² được chia đều thành ${beds} luống.`, 'Mỗi luống rộng', each, 'm².'); },
+        () => { const pieces = randomInt(3, 10, random), each = randomInt(4, 30, random), total = pieces * each; return wordProblemRow('cardboard-pieces', `Tấm bìa có diện tích ${displayNumber(total)} dm² được cắt thành ${pieces} phần bằng nhau.`, 'Mỗi phần có diện tích', each, 'dm².'); },
+        () => { const tiles = randomInt(20, 80, random), each = randomInt(2, 9, random), total = tiles * each; return wordProblemRow('floor-tiles', `Sàn nhà có diện tích ${displayNumber(total)} dm² được lát bằng ${tiles} viên gạch như nhau.`, 'Diện tích mỗi viên gạch là', each, 'dm².'); },
+        () => { const rooms = randomInt(2, 6, random), each = randomInt(12, 35, random), total = rooms * each; return wordProblemRow('house-rooms', `Một căn nhà có ${rooms} phòng, tổng diện tích ${displayNumber(total)} m² và các phòng rộng bằng nhau.`, 'Mỗi phòng rộng', each, 'm².'); },
+        () => { const durationMinutes = randomInt(4, 12, random), totalSeconds = durationMinutes * 60, earlySeconds = exactMultiple(20, Math.min(180, totalSeconds - 20), 10, random), finishedSeconds = totalSeconds - earlySeconds; return wordProblemRow('competition-early', `Cuộc thi dài ${durationMinutes} phút. Bạn An làm xong sau ${displayNumber(finishedSeconds)} giây.`, 'Bạn An xong sớm hơn', earlySeconds, 'giây.'); },
+        () => { const durationMinutes = randomInt(40, 90, random), elapsedSeconds = exactMultiple(60, durationMinutes * 60 - 30, 30, random); return wordProblemRow('football-match-remaining', `Trận bóng diễn ra trong ${durationMinutes} phút. Đã thi đấu ${Math.floor(elapsedSeconds / 60)} phút${elapsedSeconds % 60 ? ` ${elapsedSeconds % 60} giây` : ''}.`, 'Trận bóng còn', durationMinutes * 60 - elapsedSeconds, 'giây.'); },
+        () => { const start = randomInt(6, 16, random) * 60 + choose([0, 15, 30, 45], random), duration = exactMultiple(45, 180, 15, random), end = start + duration; return wordProblemRow('train-travel-time', `Chuyến tàu rời ga lúc ${clockText(start)} và đến ga lúc ${clockText(end)}.`, 'Thời gian tàu đi là', duration, 'phút.'); },
+        () => { const start = randomInt(13, 18, random) * 60 + choose([0, 15, 30], random), duration = exactMultiple(60, 150, 10, random), end = start + duration; return wordProblemRow('film-duration', `Bộ phim bắt đầu lúc ${clockText(start)} và kết thúc lúc ${clockText(end)}.`, 'Bộ phim kéo dài', duration, 'phút.'); },
+        () => { const start = randomInt(7, 10, random) * 60 + choose([0, 15, 30], random), duration = exactMultiple(45, 135, 15, random), end = start + duration; return wordProblemRow('lesson-duration', `Buổi học bắt đầu lúc ${clockText(start)} và kết thúc lúc ${clockText(end)}.`, 'Buổi học kéo dài', duration, 'phút.'); },
+        () => { const totalMinutes = randomInt(10, 20, random), totalSeconds = totalMinutes * 60, elapsedSeconds = exactMultiple(60, totalSeconds - 30, 30, random); return wordProblemRow('relay-time-remaining', `Đội chạy tiếp sức phải hoàn thành trong ${totalMinutes} phút. Đội đã chạy ${Math.floor(elapsedSeconds / 60)} phút${elapsedSeconds % 60 ? ` ${elapsedSeconds % 60} giây` : ''}.`, 'Đội còn', totalSeconds - elapsedSeconds, 'giây.'); }
     ];
-    return fillQuestion('measurement.word_problem_units', 'Điền đáp số thích hợp.', shuffle(rows, random), 'Đổi đơn vị về cùng đơn vị trước khi tính.');
+}
+function wordProblems(random) {
+    const rows = shuffle(wordProblemScenarios(random), random).slice(0, 4).map(createRow => createRow());
+    return fillQuestion('measurement.word_problem_units', 'Điền đáp số thích hợp.', rows, 'Đổi đơn vị về cùng đơn vị trước khi tính.', {
+        templateVariables: { scenarioIds: rows.map(row => row.scenarioId) }
+    });
 }
 const generators = {
     'measurement.mass_unit_convert': (config, random) => fillQuestion('measurement.mass_unit_convert', 'Điền số thích hợp.', massRows(random), 'Dùng 1 yến = 10 kg, 1 tạ = 100 kg, 1 tấn = 1 000 kg.'),
