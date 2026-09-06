@@ -681,6 +681,10 @@ const app = {
             return `${value}@game.local`;
         },
         async login() {
+            if (app.teamCompetition?.hasActiveLeaderAttempt?.()) {
+                const confirmed = await app.teamCompetition.confirmLeaderExit('account_switch');
+                if (!confirmed) return;
+            }
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
             const email = this.toAuthEmail(u);
@@ -749,6 +753,13 @@ const app = {
                     app.data.userPets = userPets;
                     document.getElementById('admin-station').style.display = 'none';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
+                }
+
+                // Team competitions are persisted separately from personal
+                // quests. Load the server snapshot only after Auth succeeds so
+                // RLS can scope the result to the teacher/leader account.
+                if (app.teamCompetition?.syncRemote) {
+                    await app.teamCompetition.syncRemote();
                 }
 
                 await app.data.updateUserScore();
@@ -836,6 +847,11 @@ const app = {
             }
         },
         async logout() {
+            if (app.teamCompetition?.hasActiveLeaderAttempt?.()) {
+                const confirmed = await app.teamCompetition.confirmLeaderExit('logout');
+                if (!confirmed) return;
+                if (app.router) app.router.open('map-screen');
+            }
             await supabaseClient.auth.signOut();
             app.data.currentUser = null;
             document.getElementById('username').value = '';
@@ -3255,6 +3271,9 @@ const app = {
     },
 
     admin: {
+        questMode: 'personal',
+        teamCompetitionDraft: null,
+        teamCompetitionBoardTimer: null,
         updateTopicDropdown() {
             const subEl = document.getElementById('add-q-sub');
             if (!subEl) return;
@@ -3317,6 +3336,7 @@ const app = {
             this.switchTab('players');
         },
         switchTab(tab) {
+            document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
                 { id: 'settings', label: 'Điều chỉnh' },
@@ -3335,7 +3355,26 @@ const app = {
             else if (tab === 'settings') this.renderSettings(box);
             else if (tab === 'quests') this.renderQuests(box);
         },
+        switchQuestMode(mode) {
+            this.questMode = mode === 'team' ? 'team' : 'personal';
+            this.renderQuests(document.getElementById('treasure-content-area'));
+        },
         renderQuests(box) {
+            if (!box) return;
+            const mode = this.questMode === 'team' ? 'team' : 'personal';
+            box.innerHTML = `
+                <section class="quest-workspace" aria-label="Quản lý nhiệm vụ">
+                    <div class="quest-workspace-tabs" role="tablist" aria-label="Loại nhiệm vụ">
+                        <button type="button" class="quest-workspace-tab ${mode === 'personal' ? 'active' : ''}" role="tab" aria-selected="${mode === 'personal'}" onclick="app.admin.switchQuestMode('personal')">Cá nhân</button>
+                        <button type="button" class="quest-workspace-tab ${mode === 'team' ? 'active' : ''}" role="tab" aria-selected="${mode === 'team'}" onclick="app.admin.switchQuestMode('team')">Đội nhóm</button>
+                    </div>
+                    <div id="admin-quest-subarea" class="quest-workspace-content"></div>
+                </section>`;
+            const subarea = document.getElementById('admin-quest-subarea');
+            if (mode === 'team') this.renderTeamCompetitions(subarea);
+            else this.renderPersonalQuests(subarea);
+        },
+        renderPersonalQuests(box) {
             const quests = app.data.quests || [];
             if (quests.length === 0) {
                 box.innerHTML = `<div class="quest-empty-state">
@@ -3387,7 +3426,322 @@ const app = {
 
             box.innerHTML = html;
         },
+        getTeamCompetitionStudents(classlevel) {
+            const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
+            return (app.data.users || []).filter(user => {
+                if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
+                return !cls || String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() === cls;
+            });
+        },
+        getTeamCompetitionExams(classlevel) {
+            const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
+            return (app.data.exams || []).filter(exam => {
+                if (cls && String(exam.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
+                return Array.isArray(exam.questions) && exam.questions.length > 0;
+            });
+        },
+        switchTeamCompetitionMode() {
+            this.syncTeamCompetitionDraftFromDom();
+            const draft = this.teamCompetitionDraft || {};
+            const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
+            const count = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
+            const students = this.getTeamCompetitionStudents(document.getElementById('team-comp-class')?.value || draft.classlevel || '5');
+            draft.participantMode = mode;
+            draft.teamCount = Number.isInteger(count) && count > 1 ? count : 2;
+            if (mode === 'random') {
+                try {
+                    draft.teams = app.teamCompetition.buildTeams({ students, teamCount: draft.teamCount, participantMode: 'random' });
+                } catch (_) {
+                    draft.teams = Array.from({ length: draft.teamCount }, (_, index) => ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
+                }
+            } else {
+                const previous = Array.isArray(draft.teams) ? draft.teams : [];
+                const validStudents = new Set(students.map(student => String(student.username)));
+                draft.teams = Array.from({ length: draft.teamCount }, (_, index) => {
+                    const source = previous[index] || ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null });
+                    const members = (source.memberUsernames || []).filter(username => validStudents.has(String(username)));
+                    return { ...source, memberUsernames: members, leaderUsername: members.includes(source.leaderUsername) ? source.leaderUsername : '' };
+                });
+            }
+            draft.selectedStudentUsernames = draft.teams.flatMap(team => team.memberUsernames || []);
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        randomizeTeamCompetition() {
+            this.syncTeamCompetitionDraftFromDom();
+            const draft = this.teamCompetitionDraft || {};
+            const students = this.getTeamCompetitionStudents(draft.classlevel || '5');
+            try {
+                draft.participantMode = 'random';
+                const teamCount = Number(draft.teamCount || 2);
+                const requestedQuotas = (draft.teams || []).map(team => Number(team.targetMemberCount)).filter(Number.isInteger);
+                const quotas = requestedQuotas.length === teamCount && requestedQuotas.every(size => size > 0) && requestedQuotas.reduce((sum, size) => sum + size, 0) === students.length ? requestedQuotas : undefined;
+                draft.teams = app.teamCompetition.buildTeams({ students, teamCount, participantMode: 'random', quotas, teams: draft.teams });
+                draft.selectedStudentUsernames = draft.teams.flatMap(team => team.memberUsernames || []);
+                this.teamCompetitionDraft = draft;
+                this.renderTeamCompetitionForm();
+            } catch (exception) {
+                alert(exception.message || 'Không thể chia đội ngẫu nhiên.');
+            }
+        },
+        syncTeamCompetitionDraftFromDom() {
+            if (!this.teamCompetitionDraft || !document.getElementById('team-comp-name')) return;
+            try { this.teamCompetitionDraft = this.collectTeamCompetitionForm(); } catch (_) { /* form may be mid-render */ }
+        },
+        collectTeamCompetitionForm() {
+            const draft = this.teamCompetitionDraft || {};
+            const classlevel = document.getElementById('team-comp-class')?.value || draft.classlevel || '5';
+            const teamCount = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
+            const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
+            const teamCards = Array.from(document.querySelectorAll('#team-comp-teams .team-config-card'));
+            const teams = teamCards.map((card, index) => {
+                const memberSelect = card.querySelector('.team-member-select');
+                const members = memberSelect ? Array.from(memberSelect.selectedOptions).map(option => option.value) : (draft.teams?.[index]?.memberUsernames || []);
+                return {
+                    id: card.dataset.teamId || draft.teams?.[index]?.id || `team-${index + 1}`,
+                    name: card.querySelector('.team-name-input')?.value.trim() || `Đội ${index + 1}`,
+                    memberUsernames: Array.from(new Set(members.filter(Boolean))),
+                    leaderUsername: card.querySelector('.team-leader-select')?.value || '',
+                    examId: card.querySelector('.team-exam-select')?.value || draft.teams?.[index]?.examId || null,
+                    targetMemberCount: card.querySelector('.team-target-count')?.value ? Number(card.querySelector('.team-target-count').value) : null
+                };
+            });
+            const hasTimer = Boolean(document.getElementById('team-comp-has-timer')?.checked);
+            const minutes = Number(document.getElementById('team-comp-time')?.value || 0);
+            const questionMode = document.getElementById('team-comp-question-mode')?.value || draft.questionMode || 'same';
+            return app.teamCompetition.normalizeCompetition({
+                ...draft,
+                name: document.getElementById('team-comp-name')?.value.trim() || '',
+                classlevel,
+                participantMode: mode,
+                teamCount: Number.isInteger(teamCount) ? teamCount : 2,
+                teams,
+                selectedStudentUsernames: teams.flatMap(team => team.memberUsernames),
+                questionMode,
+                commonExamId: document.getElementById('team-comp-common-exam')?.value || draft.commonExamId || null,
+                timeLimitMinutes: hasTimer && Number.isInteger(minutes) && minutes > 0 ? minutes : null,
+                status: draft.status || app.teamCompetition.STATUS.DRAFT
+            });
+        },
+        renderTeamCompetitionForm(editId = null) {
+            if (!app.teamCompetition) return;
+            if (editId) this.teamCompetitionDraft = app.teamCompetition.store.get(editId);
+            if (!this.teamCompetitionDraft) {
+                this.teamCompetitionDraft = app.teamCompetition.normalizeCompetition({
+                    name: '', classlevel: '5', participantMode: 'manual', teamCount: 2,
+                    teams: [
+                        { id: 'team-1', name: 'Đội 1', memberUsernames: [], leaderUsername: '' },
+                        { id: 'team-2', name: 'Đội 2', memberUsernames: [], leaderUsername: '' }
+                    ], questionMode: 'same', timeLimitMinutes: null, status: app.teamCompetition.STATUS.DRAFT
+                });
+            }
+            const draft = this.teamCompetitionDraft;
+            const box = document.getElementById('treasure-content-area');
+            if (!box) return;
+            const classlevel = draft.classlevel || '5';
+            const students = this.getTeamCompetitionStudents(classlevel);
+            const exams = this.getTeamCompetitionExams(classlevel);
+            const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
+            const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
+            draft.teamCount = teamCount;
+            draft.teams = teams;
+            const esc = value => app.data.sanitizeHTML(value ?? '');
+            const classOptions = [1, 2, 3, 4, 5].map(level => `<option value="${level}" ${String(level) === String(classlevel) ? 'selected' : ''}>Lớp ${level}</option>`).join('');
+            const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
+            const teamCards = teams.map((team, index) => {
+                const selected = new Set(team.memberUsernames || []);
+                const memberOptions = students.map(student => `<option value="${esc(student.username)}" ${selected.has(String(student.username)) ? 'selected' : ''}>${esc(student.fullname || student.username)} (${esc(student.username)})</option>`).join('');
+                const leaderOptions = students.map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(student.fullname || student.username)}</option>`).join('');
+                const perTeamExamOptions = exams.map(exam => `<option value="${esc(exam.id)}" ${String(team.examId) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
+                return `<article class="team-config-card" data-team-id="${esc(team.id)}">
+                    <div class="team-config-card__heading"><span class="team-card-number">${index + 1}</span><input class="form-input team-name-input" value="${esc(team.name)}" aria-label="Tên đội ${index + 1}" placeholder="Tên đội"></div>
+                    <label class="team-field-label">Số thành viên mục tiêu <span>(tuỳ chọn; phải khớp trước khi chuẩn bị)</span><input class="form-input team-target-count" type="number" min="1" max="100" value="${team.targetMemberCount ?? ''}" placeholder="Để trống nếu không đặt mục tiêu"></label>
+                    <label class="team-field-label">Thành viên <span>(Ctrl/Cmd để chọn nhiều)</span>
+                      <select class="form-input team-member-select" multiple size="${Math.min(7, Math.max(3, students.length))}" ${draft.participantMode === 'random' ? 'disabled' : ''}>${memberOptions}</select>
+                    </label>
+                    <label class="team-field-label">Trưởng nhóm
+                      <select class="form-input team-leader-select"><option value="">-- Chọn trưởng nhóm --</option>${leaderOptions}</select>
+                    </label>
+                    ${draft.questionMode === 'different' ? `<label class="team-field-label">Bài làm của đội<select class="form-input team-exam-select"><option value="">-- Chọn bộ đề --</option>${perTeamExamOptions}</select></label>` : ''}
+                </article>`;
+            }).join('');
+            const sameExam = draft.commonExamId || exams[0]?.id || '';
+            const statusLabel = app.teamCompetition.STATUS_LABELS[draft.status] || 'Nháp';
+            box.innerHTML = `<section class="team-competition-form" aria-label="Soạn trận thi đua đội nhóm">
+                <div class="team-form-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><span class="team-form-status">${statusLabel}</span></div>
+                <h3>Tạo trận thi đua đội nhóm</h3>
+                <p class="team-form-intro">Mỗi đội dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Các đội được phép khác số lượng thành viên.</p>
+                <div class="team-form-grid">
+                  <label class="team-field-label">Tên trận<input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
+                  <label class="team-field-label">Lớp<select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
+                  <label class="team-field-label">Số lượng nhóm<input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
+                  <label class="team-field-label">Cách chia học sinh<select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định (manual)</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chia ngẫu nhiên (auto)</option></select></label>
+                </div>
+                <div class="team-form-section"><div class="team-section-heading"><h4>Đội hình</h4><button type="button" class="btn-opt" onclick="app.admin.randomizeTeamCompetition()">Chia ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></div>
+                <div class="team-form-section"><h4>Bài làm</h4><div class="team-form-grid team-form-grid--compact">
+                  <label class="team-field-label">Cách giao bài<select id="team-comp-question-mode" class="form-input" onchange="app.admin.syncTeamCompetitionDraftFromDom(); app.admin.renderTeamCompetitionForm()"><option value="same" ${draft.questionMode !== 'different' ? 'selected' : ''}>Một bài giống nhau cho các nhóm</option><option value="different" ${draft.questionMode === 'different' ? 'selected' : ''}>Mỗi nhóm một bài khác nhau</option></select></label>
+                  ${draft.questionMode !== 'different' ? `<label class="team-field-label">Bộ đề chung<select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint">Chọn bộ đề riêng trong từng ô đội. Tất cả bộ đề phải có cùng số câu.</p>'}
+                </div></div>
+                <div class="team-form-section"><h4>Thời gian làm bài</h4><div class="team-timer-fields"><label><input id="team-comp-has-timer" type="checkbox" ${draft.timeLimitMinutes !== null ? 'checked' : ''} onchange="document.getElementById('team-comp-time').disabled = !this.checked"> Có thời gian</label><input id="team-comp-time" class="form-input" type="number" min="1" max="180" value="${draft.timeLimitMinutes || 15}" ${draft.timeLimitMinutes === null ? 'disabled' : ''} aria-label="Số phút làm bài"><span>phút</span><span class="team-form-hint">Bỏ chọn để không giới hạn.</span></div></div>
+                <div class="team-form-actions"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">Hủy</button><button type="button" class="btn-primary" onclick="app.admin.saveTeamCompetitionDraft(false)">Lưu Nháp</button><button type="button" class="btn-success" onclick="app.admin.saveTeamCompetitionDraft(true)">Đã chuẩn bị</button></div>
+            </section>`;
+        },
+        showAddTeamCompetitionForm(editId = null) {
+            this.questMode = 'team';
+            this.teamCompetitionDraft = editId ? app.teamCompetition?.store.get(editId) : null;
+            this.renderTeamCompetitionForm();
+        },
+        async saveTeamCompetitionDraft(asPrepared = false) {
+            if (!app.teamCompetition) return;
+            let candidate;
+            try { candidate = this.collectTeamCompetitionForm(); } catch (_) { return alert('Không đọc được biểu mẫu trận thi đua.'); }
+            if (candidate.status === app.teamCompetition.STATUS.ACTIVE || candidate.status === app.teamCompetition.STATUS.ENDED) return alert('Trận đã bắt đầu hoặc kết thúc, không thể sửa cấu hình.');
+            if (asPrepared) {
+                try {
+                    candidate = app.teamCompetition.prepareCompetition(candidate, { students: app.data.users || [], exams: app.data.exams || [], validateQuestionScoring: question => app.data.validateQuestionScoring(question) });
+                } catch (exception) {
+                    const messages = exception.validation?.errors?.map(item => item.message) || [exception.message];
+                    return alert(`Chưa thể chuẩn bị trận:\n- ${messages.join('\n- ')}`);
+                }
+            } else {
+                candidate.status = app.teamCompetition.STATUS.DRAFT;
+            }
+            const saved = app.teamCompetition.store.upsert(candidate);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') {
+                return alert('Không thể lưu trận thi đua lên Supabase. Bản nháp local vẫn được giữ; hãy kiểm tra kết nối/migration rồi thử lại.');
+            }
+            this.teamCompetitionDraft = null;
+            if (asPrepared) this.openTeamCompetitionBoard(saved.id);
+            else { this.questMode = 'team'; this.renderQuests(document.getElementById('treasure-content-area')); }
+        },
+        async deleteTeamCompetition(id) {
+            if (!app.teamCompetition || !confirm('Xóa bản ghi trận thi đua này?')) return;
+            app.teamCompetition.store.remove(id);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            this.renderQuests(document.getElementById('treasure-content-area'));
+        },
+        async prepareTeamCompetition(id) {
+            const match = app.teamCompetition?.store.get(id);
+            if (!match) return;
+            try {
+                const prepared = app.teamCompetition.prepareCompetition(match, { students: app.data.users || [], exams: app.data.exams || [], validateQuestionScoring: question => app.data.validateQuestionScoring(question) });
+                app.teamCompetition.store.upsert(prepared);
+                if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+                if (app.teamCompetition.remote?.getStatus?.() === 'error') throw new Error('Không thể chuẩn bị trận trên Supabase.');
+                this.openTeamCompetitionBoard(prepared.id);
+            } catch (exception) {
+                const messages = exception.validation?.errors?.map(item => item.message) || [exception.message];
+                alert(`Chưa thể chuẩn bị trận:\n- ${messages.join('\n- ')}`);
+            }
+        },
+        renderTeamCompetitions(box) {
+            if (!box || !app.teamCompetition) return;
+            const competitions = app.teamCompetition.store.list();
+            const remote = app.teamCompetition.remote;
+            const adapterNotice = !remote?.enabled
+                ? '<div class="team-local-adapter-notice">Đang chạy chế độ local/demo vì Supabase chưa được nạp. Khi đăng nhập thật, dữ liệu sẽ được đồng bộ qua migration thi đua nhóm.</div>'
+                : (remote.isReady?.()
+                    ? '<div class="team-remote-status-notice team-remote-status-notice--ready">Đã kết nối dữ liệu thi đua nhóm và realtime Supabase.</div>'
+                    : '<div class="team-remote-status-notice team-remote-status-notice--warning">Chưa đồng bộ được backend thi đua nhóm. Kiểm tra migration/RLS và kết nối trước khi bắt đầu trận.</div>');
+            let html = `<div class="team-competition-list-header"><div><h3>Thi đua theo nhóm</h3><p>Tạo trận trong lớp, chuẩn bị trước rồi trình chiếu bảng điểm cho cả lớp.</p></div><button type="button" class="btn-success" onclick="app.admin.showAddTeamCompetitionForm()">+ Tạo trận mới</button></div>${adapterNotice}`;
+            if (!competitions.length) {
+                box.innerHTML = html + '<div class="team-empty-state"><span aria-hidden="true">🏆</span><p>Chưa có trận đội nhóm nào. Bạn có thể soạn nhiều bản Nháp trước khi vào lớp.</p></div>';
+                return;
+            }
+            html += '<div class="team-competition-list">';
+            competitions.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0)).forEach(match => {
+                const token = encodeURIComponent(String(match.id));
+                const status = app.teamCompetition.STATUS_LABELS[match.status] || 'Nháp';
+                const teamSummary = match.teams.map(team => `${app.data.sanitizeHTML(team.name)} (${team.memberUsernames.length})`).join(' · ');
+                const action = match.status === app.teamCompetition.STATUS.DRAFT
+                    ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button><button type="button" class="btn-success" onclick="app.admin.prepareTeamCompetition(decodeURIComponent('${token}'))">Đã chuẩn bị</button>`
+                    : `<button type="button" class="btn-primary" onclick="app.admin.openTeamCompetitionBoard(decodeURIComponent('${token}'))">Mở bảng</button>${match.status === app.teamCompetition.STATUS.PREPARED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button>` : ''}`;
+                html += `<article class="team-competition-list-item"><div><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4><p>Lớp ${app.data.sanitizeHTML(match.classlevel)} · ${match.teamCount} đội · ${match.questionMode === 'different' ? 'Bài riêng' : 'Bài chung'}</p><p class="team-competition-list-teams">${teamSummary}</p></div><div class="team-competition-list-meta"><span class="team-status-pill team-status-pill--${match.status}">${status}</span><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
+            });
+            box.innerHTML = html + '</div>';
+        },
+        openTeamCompetitionBoard(id) {
+            this.questMode = 'team';
+            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            const box = document.getElementById('treasure-content-area');
+            const match = app.teamCompetition?.store.get(id);
+            if (!box || !match) return;
+            document.getElementById('treasure-modal')?.classList.add('team-board-fullscreen');
+            this.renderTeamCompetitionBoard(box, match.id);
+        },
+        renderTeamCompetitionBoard(box, id) {
+            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            const match = app.teamCompetition?.store.get(id);
+            if (!box || !match) return;
+            const status = app.teamCompetition.STATUS_LABELS[match.status] || 'Nháp';
+            const usersByName = new Map((app.data.users || []).map(user => [String(user.username), user]));
+            const token = encodeURIComponent(String(match.id));
+            const isLive = match.status === app.teamCompetition.STATUS.ACTIVE;
+            const cards = match.teams.map((team, index) => {
+                const memberNames = team.memberUsernames.map(username => app.data.sanitizeHTML(usersByName.get(String(username))?.fullname || username));
+                const score = Number(team.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+                const progress = Number(team.submittedCount || 0);
+                const total = (() => { const exam = app.teamCompetition.getExamForTeam(match, team); return exam?.questions?.length || 0; })();
+                const editAction = !isLive && match.status !== app.teamCompetition.STATUS.ENDED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Thay đổi</button>` : '';
+                const rank = app.teamCompetition.getTeamRank(match, team.id);
+                const elapsedSeconds = team.durationSeconds !== null
+                    ? Number(team.durationSeconds)
+                    : (isLive && (team.startedAt || match.startedAt) ? Math.max(0, Math.floor((Date.now() - Number(team.startedAt || match.startedAt)) / 1000)) : null);
+                const elapsedLabel = elapsedSeconds === null ? '' : ` · ${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
+                const metaRight = isLive ? `${team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : 'Đang làm')}${elapsedLabel}` : (match.status === app.teamCompetition.STATUS.ENDED ? 'Đã kết thúc' : '');
+                return `<article class="team-board-card team-board-card--${team.status || 'pending'}"><div class="team-board-card__top"><span class="team-card-number">${index + 1}</span><div><h3>${app.data.sanitizeHTML(team.name)}</h3><p>${isLive ? `${progress}/${total || '?'} câu đã nộp` : `${team.memberUsernames.length} thành viên`}</p></div><span class="team-board-score">${score}<small>/10</small></span></div><div class="team-board-card__progress"><span style="width:${total ? Math.min(100, progress / total * 100) : 0}%"></span></div><div class="team-board-card__meta"><span>${isLive || match.status === app.teamCompetition.STATUS.ENDED ? `Hạng ${rank}` : (team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : 'Sẵn sàng'))}</span><span>${metaRight}</span></div>${!isLive && match.status !== app.teamCompetition.STATUS.ENDED ? `<details class="team-board-members"><summary>Thành viên (${team.memberUsernames.length})</summary><p>${memberNames.join(', ') || 'Chưa phân công'}</p><p>Trưởng nhóm: ${app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn')}</p></details>` : ''}<div class="team-board-card__actions">${editAction}</div></article>`;
+            }).join('');
+            const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
+                ? `<button type="button" class="btn-start-massive team-board-start" onclick="app.admin.startTeamCompetition(decodeURIComponent('${token}'))">Bắt đầu thi đua</button>`
+                : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : '');
+            box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()">⛶ Mở toàn màn hình</button><span class="team-status-pill team-status-pill--${match.status}">${status}</span></div><header class="team-board-heading"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} đội · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo đội' : 'Một bài giống nhau'}</p></div>${globalAction}</header><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm đội được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
+            if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
+                const current = app.teamCompetition.store.get(match.id);
+                if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; return; }
+                if (current.timeLimitMinutes !== null && current.startedAt && Date.now() >= Number(current.startedAt) + Number(current.timeLimitMinutes) * 60 * 1000) {
+                    this.endTeamCompetition(current.id, true);
+                    return;
+                }
+                this.renderTeamCompetitionBoard(box, match.id);
+            }, 1000);
+        },
+        enterTeamBoardFullscreen() {
+            const board = document.querySelector('.team-competition-board');
+            if (board?.requestFullscreen) board.requestFullscreen().catch(() => {});
+        },
+        async startTeamCompetition(id) {
+            const match = app.teamCompetition?.store.get(id);
+            if (!match || match.status !== app.teamCompetition.STATUS.PREPARED) return;
+            if (!confirm('Bắt đầu thi đua? Sau khi bắt đầu không thể sửa đội hình hoặc bộ đề.')) return;
+            const started = app.teamCompetition.startCompetition(match, Date.now());
+            app.teamCompetition.store.upsert(started);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể bắt đầu trận trên Supabase. Vui lòng kiểm tra kết nối.');
+            this.openTeamCompetitionBoard(started.id);
+        },
+        async endTeamCompetition(id, automatic = false) {
+            const match = app.teamCompetition?.store.get(id);
+            if (!match || match.status !== app.teamCompetition.STATUS.ACTIVE) return;
+            if (!automatic && !confirm('Kết thúc trận ngay? Câu chưa nộp của các đội sẽ tính 0 điểm.')) return;
+            const attempts = app.teamCompetition.attemptStore.list().filter(attempt => String(attempt.competitionId) === String(id));
+            const scoreByTeam = {};
+            let updated = { ...match, teams: match.teams.map(team => ({ ...team })) };
+            attempts.forEach(attempt => {
+                let finalAttempt = attempt;
+                if (attempt.status === app.teamCompetition.ATTEMPT_STATUS.ACTIVE) finalAttempt = app.teamCompetition.lockAttempt(attempt, 'admin_end');
+                scoreByTeam[attempt.teamId] = Number(finalAttempt.score || 0);
+                updated.teams = updated.teams.map(team => String(team.id) === String(attempt.teamId) ? { ...team, score: Number(finalAttempt.score || 0), submittedCount: finalAttempt.submittedCount || 0, status: finalAttempt.status, completedAt: finalAttempt.completedAt, lockedAt: finalAttempt.lockedAt, durationSeconds: finalAttempt.durationSeconds } : team);
+            });
+            const ended = app.teamCompetition.endCompetition(updated, Date.now());
+            ended.results = app.teamCompetition.buildMemberResults(ended, scoreByTeam);
+            app.teamCompetition.store.upsert(ended);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể kết thúc trận trên Supabase. Vui lòng kiểm tra kết nối.');
+            this.openTeamCompetitionBoard(ended.id);
+        },
         showAddQuestForm() {
+            this.questMode = 'personal';
             const box = document.getElementById('treasure-content-area');
             let classOpts = [1, 2, 3, 4, 5].map(c => `<option value="${c}">Lớp ${c}</option>`).join('');
             const examOptions = (app.data.exams || []).map(exam => `<option value="${exam.id}">${app.data.sanitizeHTML(`${exam.classlevel} – ${exam.subject} – ${exam.period}: ${exam.name}`)}</option>`).join('');
@@ -5975,6 +6329,22 @@ const app = {
                 return false;
             });
 
+            const activeTeamMatches = app.teamCompetition?.getActiveForUser?.(user.username) || [];
+            let teamCompetitionHtml = '';
+            activeTeamMatches.forEach(match => {
+                const team = app.teamCompetition.getTeamsForUser(match, user.username)[0];
+                if (!team) return;
+                const attempt = app.teamCompetition.attemptStore.get(match.id, team.id);
+                const isLeader = String(team.leaderUsername) === String(user.username);
+                let action = '<span class="team-student-status">Theo dõi kết quả đội</span>';
+                if (isLeader && !attempt) action = `<button type="button" class="btn-success" onclick="app.teamCompetition.openLeaderAttempt(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Vào lượt trưởng nhóm</button>`;
+                else if (isLeader && attempt?.status === app.teamCompetition.ATTEMPT_STATUS.ACTIVE) action = `<button type="button" class="btn-primary" onclick="app.teamCompetition.openLeaderAttempt(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Tiếp tục lượt đội</button>`;
+                else if (isLeader && attempt) action = `<span class="team-student-status">${attempt.status === app.teamCompetition.ATTEMPT_STATUS.LOCKED ? 'Lượt đã khóa' : 'Đã hoàn thành'}</span>`;
+                const rank = app.teamCompetition.getTeamRank(match, team.id);
+                const score = Number(team.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+                teamCompetitionHtml += `<article class="student-team-competition-card"><div><p class="student-team-competition-kicker">Thi đua theo nhóm · ${app.teamCompetition.STATUS_LABELS[match.status]}</p><h4>${app.data.sanitizeHTML(match.name)}</h4><p>Đội của bạn: <strong>${app.data.sanitizeHTML(team.name)}</strong> · ${team.memberUsernames.length} thành viên · ${isLeader ? 'Bạn là trưởng nhóm' : 'Bạn tham gia cùng đội'}</p><p class="student-team-competition-score">Điểm đội: <strong>${score}/10</strong> · Hạng: <strong>${rank}</strong></p></div><div>${action}</div></article>`;
+            });
+
             // Hộp quà hằng ngày hiển thị trong trạm Nhiệm vụ
             let giftBoxHtml = '';
             if (!app.daily.giftClaimedToday(user)) {
@@ -5990,7 +6360,7 @@ const app = {
             }
 
             if (activeQuests.length === 0) {
-                container.innerHTML = giftBoxHtml + '<p style="text-align:center; padding: 20px;">Hiện tại chưa có nhiệm vụ nào.</p>';
+                container.innerHTML = giftBoxHtml + teamCompetitionHtml + (teamCompetitionHtml ? '' : '<p style="text-align:center; padding: 20px;">Hiện tại chưa có nhiệm vụ nào.</p>');
                 return;
             }
 
@@ -6028,7 +6398,7 @@ const app = {
                 </div>
             </div>`;
             });
-            container.innerHTML = giftBoxHtml + html;
+            container.innerHTML = giftBoxHtml + teamCompetitionHtml + html;
         },
         startExam(questId) {
             const quest = app.data.quests.find(item => item.id === questId);
@@ -6633,6 +7003,10 @@ const app = {
 
 // D1: phơi bày app ra toàn cục để các module (src/modules/*.js) gắn sub-module vào.
 window.app = app;
+// The team-competition adapter is loaded immediately after this file. Keep the
+// already-created client injectable without exposing another copy of the key or
+// creating a second Supabase connection.
+app.data.supabaseClient = supabaseClient;
 
 window.onload = async () => {
     try {
