@@ -9,7 +9,7 @@ Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp
 - Giữ nguyên chức năng tab con **Cá nhân**.
 - Thêm tab con **Đội nhóm** trong Admin → Quản lý nhiệm vụ.
 - Dùng module domain riêng và local/demo adapter để không refactor lớn `src/main.js`.
-- Không thêm migration, bảng, RLS, API key hoặc dữ liệu Supabase khi chưa có xác nhận dự án đích; phần tích hợp máy chủ được ghi thành việc chờ phê duyệt.
+- Không thêm dữ liệu/seed hoặc thay đổi API key. Schema/RLS/RPC chỉ triển khai sau khi project đích được xác nhận; project `bjgbbrufnryrtimtzvhn` hiện đã được xác nhận.
 - UI ưu tiên laptop/desktop và tablet ngang.
 
 ## Các pha thực hiện
@@ -51,14 +51,14 @@ Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp
 
 **Checkpoint:** đội 31 học sinh chia 4 đội lệch tối đa một người vẫn hợp lệ; điểm mỗi thành viên giống điểm đội.
 
-### Pha 4 — Tích hợp máy chủ (chờ phê duyệt)
+### Pha 4 — Tích hợp máy chủ
 
-1. Chốt schema/migration cho trận, đội, lượt làm, đáp án câu, kết quả thành viên.
-2. Chốt RLS/authorization cho giáo viên, trưởng nhóm và thành viên.
-3. Thay local adapter bằng Supabase adapter có optimistic update, chống race condition, idempotency và realtime.
-4. Kiểm tra đa tablet trong cùng lớp.
+1. Tạo `supabase/migrations/20260906_team_competitions.sql` cho trận, đội, lượt làm, đáp án câu, kết quả thành viên, RPC chấm điểm và Realtime.
+2. Chốt RLS/authorization cho giáo viên, trưởng nhóm và thành viên; giữ answer key trong schema `private`.
+3. Nối `src/modules/team-competition-supabase.js` để đồng bộ máy chủ, chống race condition, idempotency và realtime; local/demo vẫn là fallback khi schema chưa có.
+4. Chạy migration trong project đã xác nhận rồi kiểm tra đa tablet trong cùng lớp.
 
-**Blocker:** không thực hiện pha này trong lượt hiện tại nếu chưa được xác nhận triển khai vào đúng dự án Supabase.
+**Việc còn lại:** apply migration trong SQL Editor/CLI của project và kiểm thử với tài khoản thật; repo không tự seed hay thay đổi dữ liệu học sinh.
 
 ### Pha 5 — Xác minh và bàn giao
 
@@ -73,4 +73,4 @@ Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp
 - Admin có workspace Cá nhân/Đội nhóm, form tạo trận và bảng card đội.
 - Luồng trưởng nhóm và modal khóa lượt hoạt động ở chế độ local/demo.
 - Không phá hồi quy nhiệm vụ cá nhân.
-- Các việc Supabase còn lại được nêu rõ, không giả vờ là đã realtime production.
+- Migration/RLS/RPC/adapter production đã có trong repo; chỉ coi là realtime production sau khi migration được apply và kiểm thử với tài khoản thật.

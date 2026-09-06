@@ -755,6 +755,13 @@ const app = {
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'flex';
                 }
 
+                // Team competitions are persisted separately from personal
+                // quests. Load the server snapshot only after Auth succeeds so
+                // RLS can scope the result to the teacher/leader account.
+                if (app.teamCompetition?.syncRemote) {
+                    await app.teamCompetition.syncRemote();
+                }
+
                 await app.data.updateUserScore();
                 this.updateHeader();
 
@@ -3600,21 +3607,28 @@ const app = {
                 candidate.status = app.teamCompetition.STATUS.DRAFT;
             }
             const saved = app.teamCompetition.store.upsert(candidate);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') {
+                return alert('Không thể lưu trận thi đua lên Supabase. Bản nháp local vẫn được giữ; hãy kiểm tra kết nối/migration rồi thử lại.');
+            }
             this.teamCompetitionDraft = null;
             if (asPrepared) this.openTeamCompetitionBoard(saved.id);
             else { this.questMode = 'team'; this.renderQuests(document.getElementById('treasure-content-area')); }
         },
-        deleteTeamCompetition(id) {
+        async deleteTeamCompetition(id) {
             if (!app.teamCompetition || !confirm('Xóa bản ghi trận thi đua này?')) return;
             app.teamCompetition.store.remove(id);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
             this.renderQuests(document.getElementById('treasure-content-area'));
         },
-        prepareTeamCompetition(id) {
+        async prepareTeamCompetition(id) {
             const match = app.teamCompetition?.store.get(id);
             if (!match) return;
             try {
                 const prepared = app.teamCompetition.prepareCompetition(match, { students: app.data.users || [], exams: app.data.exams || [], validateQuestionScoring: question => app.data.validateQuestionScoring(question) });
                 app.teamCompetition.store.upsert(prepared);
+                if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+                if (app.teamCompetition.remote?.getStatus?.() === 'error') throw new Error('Không thể chuẩn bị trận trên Supabase.');
                 this.openTeamCompetitionBoard(prepared.id);
             } catch (exception) {
                 const messages = exception.validation?.errors?.map(item => item.message) || [exception.message];
@@ -3624,7 +3638,13 @@ const app = {
         renderTeamCompetitions(box) {
             if (!box || !app.teamCompetition) return;
             const competitions = app.teamCompetition.store.list();
-            let html = `<div class="team-competition-list-header"><div><h3>Thi đua theo nhóm</h3><p>Tạo trận trong lớp, chuẩn bị trước rồi trình chiếu bảng điểm cho cả lớp.</p></div><button type="button" class="btn-success" onclick="app.admin.showAddTeamCompetitionForm()">+ Tạo trận mới</button></div><div class="team-local-adapter-notice">Bản MVP hiện lưu ở chế độ local/demo. Để nhiều tablet và realtime production dùng chung dữ liệu, cần phê duyệt migration Supabase.</div>`;
+            const remote = app.teamCompetition.remote;
+            const adapterNotice = !remote?.enabled
+                ? '<div class="team-local-adapter-notice">Đang chạy chế độ local/demo vì Supabase chưa được nạp. Khi đăng nhập thật, dữ liệu sẽ được đồng bộ qua migration thi đua nhóm.</div>'
+                : (remote.isReady?.()
+                    ? '<div class="team-remote-status-notice team-remote-status-notice--ready">Đã kết nối dữ liệu thi đua nhóm và realtime Supabase.</div>'
+                    : '<div class="team-remote-status-notice team-remote-status-notice--warning">Chưa đồng bộ được backend thi đua nhóm. Kiểm tra migration/RLS và kết nối trước khi bắt đầu trận.</div>');
+            let html = `<div class="team-competition-list-header"><div><h3>Thi đua theo nhóm</h3><p>Tạo trận trong lớp, chuẩn bị trước rồi trình chiếu bảng điểm cho cả lớp.</p></div><button type="button" class="btn-success" onclick="app.admin.showAddTeamCompetitionForm()">+ Tạo trận mới</button></div>${adapterNotice}`;
             if (!competitions.length) {
                 box.innerHTML = html + '<div class="team-empty-state"><span aria-hidden="true">🏆</span><p>Chưa có trận đội nhóm nào. Bạn có thể soạn nhiều bản Nháp trước khi vào lớp.</p></div>';
                 return;
@@ -3690,15 +3710,17 @@ const app = {
             const board = document.querySelector('.team-competition-board');
             if (board?.requestFullscreen) board.requestFullscreen().catch(() => {});
         },
-        startTeamCompetition(id) {
+        async startTeamCompetition(id) {
             const match = app.teamCompetition?.store.get(id);
             if (!match || match.status !== app.teamCompetition.STATUS.PREPARED) return;
             if (!confirm('Bắt đầu thi đua? Sau khi bắt đầu không thể sửa đội hình hoặc bộ đề.')) return;
             const started = app.teamCompetition.startCompetition(match, Date.now());
             app.teamCompetition.store.upsert(started);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể bắt đầu trận trên Supabase. Vui lòng kiểm tra kết nối.');
             this.openTeamCompetitionBoard(started.id);
         },
-        endTeamCompetition(id, automatic = false) {
+        async endTeamCompetition(id, automatic = false) {
             const match = app.teamCompetition?.store.get(id);
             if (!match || match.status !== app.teamCompetition.STATUS.ACTIVE) return;
             if (!automatic && !confirm('Kết thúc trận ngay? Câu chưa nộp của các đội sẽ tính 0 điểm.')) return;
@@ -3714,6 +3736,8 @@ const app = {
             const ended = app.teamCompetition.endCompetition(updated, Date.now());
             ended.results = app.teamCompetition.buildMemberResults(ended, scoreByTeam);
             app.teamCompetition.store.upsert(ended);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể kết thúc trận trên Supabase. Vui lòng kiểm tra kết nối.');
             this.openTeamCompetitionBoard(ended.id);
         },
         showAddQuestForm() {
@@ -6979,6 +7003,10 @@ const app = {
 
 // D1: phơi bày app ra toàn cục để các module (src/modules/*.js) gắn sub-module vào.
 window.app = app;
+// The team-competition adapter is loaded immediately after this file. Keep the
+// already-created client injectable without exposing another copy of the key or
+// creating a second Supabase connection.
+app.data.supabaseClient = supabaseClient;
 
 window.onload = async () => {
     try {

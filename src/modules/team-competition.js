@@ -25,6 +25,9 @@
         competitions: [],
         attempts: []
     };
+    // Production adapter fills this cache with sanitized server snapshots. The
+    // local/demo path continues to read the existing exam library.
+    const remoteQuestionCache = new Map();
 
     function nowValue(value) {
         const parsed = value instanceof Date ? value.getTime() : Number(value);
@@ -411,6 +414,9 @@
             if (index === -1) current.push(item); else current[index] = item;
             saveAttempts(current);
             return item;
+        },
+        clear() {
+            saveAttempts([]);
         }
     };
 
@@ -582,6 +588,10 @@
     }
 
     function getQuestionsForTeam(competition, team) {
+        const cacheKey = `${competition?.id || ''}:${team?.id || ''}`;
+        if (remoteQuestionCache.has(cacheKey)) {
+            return remoteQuestionCache.get(cacheKey).map(question => ({ ...question }));
+        }
         const exam = getExamForTeam(competition, team);
         return Array.isArray(exam?.questions) ? exam.questions.slice() : [];
     }
@@ -722,6 +732,9 @@
     }
 
     function openLeaderAttempt(competitionId) {
+        if (api.remote?.isReady?.() && api.remote.openLeaderAttempt && !api.remote._delegating) {
+            return api.remote.openLeaderAttempt(competitionId);
+        }
         const user = app.data?.currentUser;
         if (!user || String(user.role || '').toLowerCase() === 'admin') return alert('Chỉ tài khoản học sinh được chỉ định làm trưởng nhóm mới có thể vào lượt.');
         const competition = store.get(competitionId);
@@ -762,6 +775,9 @@
     }
 
     function lockActiveAttempt(reason = 'leader_exit') {
+        if (api.remote?.isReady?.() && api.remote.lockActiveAttempt && !api.remote._delegating) {
+            return api.remote.lockActiveAttempt(reason);
+        }
         const attempt = api.state.activeAttempt;
         if (!attempt || attempt.status !== ATTEMPT_STATUS.ACTIVE) return attempt;
         clearPlayTimer();
@@ -796,7 +812,16 @@
                 api.state.leaveConfirmationOpen = false;
             };
             const onCancel = () => { cleanup(); close(); resolve(false); };
-            const onOk = () => { cleanup(); close(); lockActiveAttempt(reason); resolve(true); };
+            const onOk = async () => {
+                cleanup(); close();
+                try {
+                    await lockActiveAttempt(reason);
+                    resolve(true);
+                } catch (error) {
+                    alert(error?.message || 'Không thể khóa lượt thi đua trên máy chủ.');
+                    resolve(false);
+                }
+            };
             const cleanup = () => {
                 if (ok) ok.removeEventListener('click', onOk);
                 if (cancel) cancel.removeEventListener('click', onCancel);
@@ -813,6 +838,9 @@
     }
 
     function submitCurrentQuestion() {
+        if (api.remote?.isReady?.() && api.remote.submitCurrentQuestion && !api.remote._delegating) {
+            return api.remote.submitCurrentQuestion();
+        }
         const attempt = api.state.activeAttempt;
         if (!attempt || attempt.status !== ATTEMPT_STATUS.ACTIVE) return;
         const competition = store.get(attempt.competitionId);
@@ -887,6 +915,14 @@
         subscribe,
         getExamForTeam,
         getQuestionsForTeam,
+        setRemoteQuestions(competitionId, teamId, questions) {
+            const key = `${competitionId || ''}:${teamId || ''}`;
+            if (!key || !Array.isArray(questions)) return;
+            remoteQuestionCache.set(key, questions.map(question => ({ ...question })));
+        },
+        clearRemoteQuestions() { remoteQuestionCache.clear(); },
+        updateCompetitionTeamFromAttempt,
+        remote: null,
         shouldInvalidateAttemptOnReentry,
         getActiveForUser(username) {
             return listCompetitions().filter(item => item.status === STATUS.ACTIVE && getTeamsForUser(item, username).length > 0);
@@ -896,6 +932,11 @@
         requestLeaderExit,
         confirmLeaderExit,
         lockActiveAttempt,
+        renderLeaderQuestion,
+        renderLeaderLocked,
+        installBeforeUnload,
+        removeBeforeUnload,
+        clearPlayTimer,
         hasActiveLeaderAttempt() { return Boolean(activeLeaderAttempt()); },
         state: {
             activeCompetitionId: null,

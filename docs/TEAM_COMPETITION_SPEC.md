@@ -6,11 +6,11 @@
 
 ## Trạng thái triển khai hiện tại
 
-Vertical slice local/demo đã được thêm vào repo: domain validation/chia đội, workspace Admin, bảng thi đua, luồng trưởng nhóm và contract/browser tests. Adapter hiện dùng bộ nhớ/localStorage để phát triển và kiểm thử; chưa coi đây là nguồn dữ liệu production. Migration, RLS, API và realtime Supabase vẫn chờ xác nhận dự án đích theo `AGENTS.md` và được theo dõi trong `tasks/todo.md`.
+Vertical slice local/demo và lớp tích hợp production đã được thêm vào repo: domain validation/chia đội, workspace Admin, bảng thi đua, luồng trưởng nhóm, migration/RLS/RPC/realtime Supabase, adapter đồng bộ máy chủ và contract/browser tests. Project đích đã được người phụ trách xác nhận là `bjgbbrufnryrtimtzvhn` (`https://bjgbbrufnryrtimtzvhn.supabase.co`). File migration cần được chạy trong SQL Editor/CLI của đúng project trước khi bật luồng production; adapter vẫn tự rơi về local/demo khi SDK hoặc schema chưa sẵn sàng.
 
 Phiên bản này cập nhật quyết định về điều kiện thiết bị và điều hành tại lớp: thi đua diễn ra trực tiếp trong lớp, mỗi đội dùng chung **một tablet**, chỉ **một tài khoản trưởng nhóm** đăng nhập để làm bài, còn Admin có một bảng thi đua toàn màn hình để trình chiếu lên TV. Không được quay lại các quy tắc cũ “mỗi thành viên làm một phần” hoặc “các đội phải bằng số người”.
 
-Khi bắt đầu code, đọc toàn bộ tệp này cùng `docs/PROJECT_CONTEXT.md`, `docs/AI_WORKFLOW.md` và `docs/UX_DEVICE_POLICY.md`. Không hỏi lại các quyết định đã ghi là **Đã chốt**. Nếu triển khai cần thay đổi Supabase/migration/RLS, vẫn phải xin xác nhận dự án đích theo `AGENTS.md`.
+Khi bắt đầu code, đọc toàn bộ tệp này cùng `docs/PROJECT_CONTEXT.md`, `docs/AI_WORKFLOW.md` và `docs/UX_DEVICE_POLICY.md`. Không hỏi lại các quyết định đã ghi là **Đã chốt**. Nếu triển khai sang một project Supabase khác, phải xin xác nhận project mới theo `AGENTS.md`.
 
 ## Mục tiêu và bối cảnh sử dụng
 
@@ -240,7 +240,7 @@ Kiểm tra quyền ở máy chủ/RLS:
 - Không cho truy cập đáp án đúng hoặc dữ liệu câu hỏi của đội khác ngoài phạm vi cần thiết.
 - Chuyển trạng thái, ghi đáp án/điểm và phát sự kiện realtime phải có điều kiện trạng thái, chống race condition và gửi lặp; máy chủ là nguồn dữ liệu chuẩn cho Bảng thi đua.
 
-Việc thêm bảng, migration, RLS, API hoặc thay đổi quyền Supabase chỉ thực hiện sau khi người phụ trách xác nhận triển khai vào đúng dự án Supabase. Không chạy `supabase_rls.sql`; chỉ dùng `supabase_auth_security.sql` khi có xác nhận phù hợp.
+Việc thêm bảng, migration, RLS, API hoặc thay đổi quyền Supabase cho project đã xác nhận đã được thực hiện trong `supabase/migrations/20260906_team_competitions.sql`. Không chạy `supabase_rls.sql`; migration này yêu cầu `supabase_auth_security.sql` đã được triển khai trước đó và phải chạy trong đúng project `bjgbbrufnryrtimtzvhn`.
 
 ## Ngoài phạm vi MVP
 

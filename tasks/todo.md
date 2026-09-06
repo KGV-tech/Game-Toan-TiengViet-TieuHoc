@@ -11,12 +11,15 @@
 - [x] Thêm kết quả gán cùng điểm cho từng thành viên, không đụng điểm cá nhân.
 - [x] Thêm CSS scoped và kiểm tra laptop/tablet ngang.
 - [x] Bổ sung test Playwright, chạy toàn bộ test và kiểm tra diff.
+- [x] Tạo migration Supabase cho schema, RPC, RLS và Realtime.
+- [x] Thêm adapter Supabase đồng bộ snapshot, câu trả lời một lần và realtime; giữ fallback local/demo.
 
-## Chờ xác nhận trước khi làm
+## Chờ apply/kiểm thử production
 
-- [ ] Xác nhận đúng dự án Supabase đích.
-- [ ] Phê duyệt migration/schema, RLS, API và realtime cho thi đua đội nhóm.
-- [ ] Thay local/demo adapter bằng adapter Supabase và kiểm thử đa thiết bị.
+- [x] Xác nhận đúng dự án Supabase đích: `bjgbbrufnryrtimtzvhn`.
+- [x] Phê duyệt migration/schema, RLS, API và realtime cho thi đua đội nhóm.
+- [ ] Chạy `supabase/migrations/20260906_team_competitions.sql` trong project đã xác nhận.
+- [ ] Đăng nhập bằng tài khoản Admin/trưởng nhóm thật và kiểm thử nhiều tablet; không coi production-ready trước bước này.
 
 ## Ngoài phạm vi MVP
 
