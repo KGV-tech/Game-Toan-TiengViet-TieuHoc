@@ -180,3 +180,145 @@
   width: clamp(205px, 27vw, 385px);
   max-height: 62vh;
 }
+
+/* Self-service password change stays on the login screen without exposing profile data. */
+#login-screen .login-account-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 1.8vw, 22px);
+  margin-top: 13px;
+}
+
+#login-screen .login-account-links .login-register-link,
+#login-screen .login-account-links .login-password-link {
+  margin: 0;
+}
+
+#login-screen .login-password-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.auth-password-modal {
+  z-index: 1000;
+  padding: 20px;
+  background: rgba(1, 11, 26, 0.82);
+}
+
+.auth-password-card {
+  position: relative;
+  width: min(92vw, 470px);
+  max-height: min(88vh, 620px);
+  padding: clamp(26px, 4vh, 40px) clamp(24px, 4vw, 42px);
+  overflow: auto;
+  border: 2px solid #48d8ff;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(6, 40, 75, 0.98), rgba(1, 17, 40, 0.98));
+  box-shadow: 0 0 0 5px rgba(14, 92, 137, 0.42), 0 0 32px rgba(38, 189, 255, 0.48);
+  color: #f7fdff;
+  text-align: left;
+}
+
+.auth-password-card h2 {
+  margin: 0 32px 8px 0;
+  color: #fff;
+  font-size: clamp(1.45rem, 2.3vw, 1.9rem);
+  text-shadow: 0 0 10px rgba(79, 220, 255, 0.78);
+}
+
+.auth-password-intro,
+.auth-password-note {
+  margin: 0 0 18px;
+  color: #c9eaff;
+  font-size: clamp(0.86rem, 1.2vw, 1rem);
+  line-height: 1.45;
+}
+
+.auth-password-note {
+  margin: 12px 0 18px;
+  color: #8fe9ff;
+}
+
+.auth-password-card form {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-password-card label {
+  color: #e9f8ff;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.auth-password-card .input-glass {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 10px 13px;
+  border: 2px solid #4a7ba5;
+  border-radius: 10px;
+  background: rgba(1, 23, 52, 0.82);
+  color: #fff;
+  font: inherit;
+}
+
+.auth-password-card .input-glass:focus {
+  outline: 0;
+  border-color: #56e2ff;
+  box-shadow: 0 0 0 3px rgba(73, 210, 255, 0.25);
+}
+
+.auth-password-submit {
+  min-height: 48px;
+  margin-top: 2px;
+  border: 2px solid #85eaff;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #278bff, #1555d6);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #0c3d9a, 0 0 17px rgba(53, 173, 255, 0.45);
+}
+
+.auth-password-submit:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.auth-password-submit:focus-visible,
+.auth-password-close:focus-visible,
+#login-screen .login-password-link:focus-visible {
+  outline: 3px solid #fff29b;
+  outline-offset: 3px;
+}
+
+.auth-password-close {
+  position: absolute;
+  top: 11px;
+  right: 13px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #61dfff;
+  border-radius: 50%;
+  background: rgba(2, 25, 54, 0.86);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+  .auth-password-modal { align-items: flex-start; overflow-y: auto; }
+  .auth-password-card { width: min(74vw, 500px); max-height: none; margin: 12px auto; padding-block: 22px; }
+  .auth-password-intro { margin-bottom: 12px; }
+  .auth-password-card form { gap: 5px; }
+  .auth-password-card .input-glass { min-height: 38px; padding-block: 7px; }
+  .auth-password-note { margin-block: 8px 12px; }
+  .auth-password-submit { min-height: 42px; }
+}

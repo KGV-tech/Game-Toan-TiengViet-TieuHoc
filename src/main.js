@@ -21,6 +21,7 @@ const dummySupabase = {
     auth: {
         signInWithPassword: async () => ({ data: null, error: { message: 'Offline' } }),
         signUp: async () => ({ data: null, error: { message: 'Offline' } }),
+        updateUser: async () => ({ data: null, error: { message: 'Offline' } }),
         signOut: async () => ({ error: null })
     },
     functions: { invoke: async () => ({ data: null, error: { message: 'Offline' } }) },
@@ -661,8 +662,22 @@ const app = {
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
             document.getElementById('register-btn').onclick = () => this.register();
-            document.getElementById('link-to-register').onclick = () => app.router.open('register-screen');
-            document.getElementById('link-to-login').onclick = () => app.router.open('login-screen');
+            document.getElementById('link-to-register').onclick = (event) => { event.preventDefault(); app.router.open('register-screen'); };
+            document.getElementById('link-to-login').onclick = (event) => { event.preventDefault(); app.router.open('login-screen'); };
+            document.getElementById('link-to-change-password').onclick = () => this.openChangePasswordDialog();
+            document.getElementById('change-password-cancel').onclick = () => this.closeChangePasswordDialog();
+            document.getElementById('change-password-form').onsubmit = (event) => {
+                event.preventDefault();
+                this.changePassword();
+            };
+            document.getElementById('change-password-modal').onclick = (event) => {
+                if (event.target.id === 'change-password-modal') this.closeChangePasswordDialog();
+            };
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && document.getElementById('change-password-modal').classList.contains('active')) {
+                    this.closeChangePasswordDialog();
+                }
+            });
         },
         setAvatarGroup(group, button) {
             document.querySelectorAll('[data-avatar-group]').forEach(element => { element.hidden = element.dataset.avatarGroup !== group; });
@@ -679,6 +694,61 @@ const app = {
             if (value.includes('@')) return value;
             if (!/^[a-z0-9._-]{3,32}$/.test(value)) return '';
             return `${value}@game.local`;
+        },
+        openChangePasswordDialog() {
+            const modal = document.getElementById('change-password-modal');
+            const usernameInput = document.getElementById('change-password-username');
+            const loginUsername = document.getElementById('username').value.trim();
+            if (loginUsername) usernameInput.value = loginUsername;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            setTimeout(() => (usernameInput.value ? document.getElementById('change-password-old') : usernameInput).focus(), 0);
+        },
+        closeChangePasswordDialog(force = false) {
+            const modal = document.getElementById('change-password-modal');
+            if (this.changePasswordPending && !force) return;
+            document.getElementById('change-password-form').reset();
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.getElementById('link-to-change-password').focus();
+        },
+        async changePassword() {
+            const username = document.getElementById('change-password-username').value.trim();
+            const oldPassword = document.getElementById('change-password-old').value;
+            const newPassword = document.getElementById('change-password-new').value;
+            const confirmation = document.getElementById('change-password-confirm').value;
+            const email = this.toAuthEmail(username);
+
+            if (!email || !oldPassword || !newPassword || !confirmation) {
+                return alert('Vui lòng nhập đầy đủ tên đăng nhập và các mật khẩu.');
+            }
+            if (newPassword.length < 8) return alert('Mật khẩu mới cần có ít nhất 8 ký tự.');
+            if (newPassword !== confirmation) return alert('Hai lần nhập mật khẩu mới chưa giống nhau.');
+            if (newPassword === oldPassword) return alert('Mật khẩu mới cần khác mật khẩu cũ.');
+            if (this.changePasswordPending) return;
+
+            this.changePasswordPending = true;
+            app.ui.setButtonLoading('change-password-submit', true, 'Đang cập nhật…');
+            try {
+                const { data: authData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password: oldPassword });
+                if (signInError || !authData?.user) {
+                    return alert('Tên đăng nhập/email hoặc mật khẩu cũ không đúng.');
+                }
+
+                const { error: updateError } = await supabaseClient.auth.updateUser({ password: newPassword });
+                if (updateError) return alert('Chưa thể đổi mật khẩu. Vui lòng thử lại sau.');
+
+                document.getElementById('username').value = username;
+                document.getElementById('password').value = '';
+                this.closeChangePasswordDialog(true);
+                alert('Đổi mật khẩu thành công. Hãy đăng nhập lại bằng mật khẩu mới.');
+            } catch (_) {
+                alert('Chưa thể đổi mật khẩu. Vui lòng thử lại sau.');
+            } finally {
+                await supabaseClient.auth.signOut();
+                this.changePasswordPending = false;
+                app.ui.setButtonLoading('change-password-submit', false);
+            }
         },
         async login() {
             if (app.teamCompetition?.hasActiveLeaderAttempt?.()) {
@@ -791,6 +861,7 @@ const app = {
             const un = document.getElementById('reg-username').value.trim();
             const pw = document.getElementById('reg-password').value.trim();
             const cl = document.getElementById('reg-class').value;
+            const className = document.getElementById('reg-class-name')?.value.trim() || '';
             const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'boy-short';
 
             if (!fn || !un || !pw || !cl) {
@@ -817,6 +888,7 @@ const app = {
                 password: null,
                 auth_user_id: authData.user.id,
                 classlevel: cl,
+                class_name: className || null,
                 role: 'student',
                 avatar_key: Object.prototype.hasOwnProperty.call(this.avatarChoices, selectedAvatar) ? selectedAvatar : 'boy-short',
                 approved: false,
@@ -887,7 +959,7 @@ const app = {
                 ${avatarMarkup}
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
-                  <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}`}</small>
+                  <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}${user.class_name ? ` · ${app.data.sanitizeHTML(user.class_name)}` : ''}`}</small>
                   ${titleLine}
                   ${progressLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
@@ -5529,6 +5601,7 @@ const app = {
             const subBox = document.getElementById('admin-subcontent-area');
             const cols = [
                 { label: 'Cấp lớp', filterable: true },
+                { label: 'Lớp', filterable: true },
                 { label: 'Họ tên', filterable: true },
                 { label: 'Tên đăng nhập', filterable: true },
                 { label: 'Mật khẩu', filterable: false },
@@ -5552,7 +5625,7 @@ const app = {
                           ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
                 }
                 return `<tr>
-          <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
+          <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.class_name || '—')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
           <td>${app.data.sanitizeHTML(u.username)}</td><td>Không hiển thị (có thể đặt lại)</td>
           <td>${actionBtns}</td>
         </tr>`;
@@ -5605,6 +5678,11 @@ const app = {
                    <option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option>
                 </select>
              </div>
+
+             <div style="display:flex; align-items:center; margin-bottom:15px;">
+                <label for="add-class-name" style="width:130px; font-weight:bold; flex-shrink:0;">Lớp</label>
+                <input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}">
+             </div>
              
              ${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}
           </div>
@@ -5615,6 +5693,7 @@ const app = {
             const un = document.getElementById('add-username').value.trim();
             const pw = document.getElementById('add-password').value.trim();
             const cl = document.getElementById('add-class').value;
+            const className = document.getElementById('add-class-name')?.value.trim() || '';
             if (!fn || !un || (!editUsername && !pw)) return alert('Điền đủ thông tin!');
 
             if (editUsername) {
@@ -5623,7 +5702,8 @@ const app = {
                     if (un !== editUsername) return alert('Vì bảo mật, không đổi tên đăng nhập sau khi tạo. Hãy tạo tài khoản mới nếu cần.');
                     user.fullname = fn;
                     user.classlevel = cl;
-                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl }).eq('id', user.id);
+                    user.class_name = className || null;
+                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl, class_name: className || null }).eq('id', user.id);
                     if (error) return alert('Không thể cập nhật thông tin học sinh.');
                     if (pw) {
                         try {
@@ -5644,7 +5724,7 @@ const app = {
             } else {
                 if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
                 try {
-                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, password: pw });
+                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, class_name: className || null, password: pw });
                     // Realtime can insert this profile before the function response arrives.
                     if (!app.data.users.find(x => x.id === data.profile.id)) app.data.users.push(data.profile);
                 } catch (error) {
@@ -6013,7 +6093,7 @@ const app = {
             const students = app.data.users
                 .filter(user => user.role?.toLowerCase() !== 'admin')
                 .sort((left, right) => String(left.fullname || '').localeCompare(String(right.fullname || ''), 'vi'));
-            const options = students.map(user => `<option value="${app.data.sanitizeHTML(user.username)}">${app.data.sanitizeHTML(`${user.fullname} — Lớp ${user.classlevel || ''} (${user.username})`)}</option>`).join('');
+            const options = students.map(user => `<option value="${app.data.sanitizeHTML(user.username)}">${app.data.sanitizeHTML(`${user.fullname} — Lớp ${user.classlevel || ''}${user.class_name ? ` · ${user.class_name}` : ''} (${user.username})`)}</option>`).join('');
             box.innerHTML = `
                 <div class="admin-control-panel" style="align-items:center;">
                     <div class="acp-center" style="max-width:620px; width:100%;">
@@ -6094,7 +6174,7 @@ const app = {
                     ${app.ui.compactAction('Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--save')}
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
-                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Cấp lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.class_name || '—')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Sao hiện có: <b>${student.stars || 0}</b><br>Thú cưng: ${petRows}</p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
@@ -6112,6 +6192,7 @@ const app = {
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Username', 'Giá trị': student.username || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': 'Không xuất vì mật khẩu được bảo mật' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp', 'Giá trị': student.classlevel || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp con', 'Giá trị': student.class_name || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Sao hiện có', 'Giá trị': student.stars || 0 },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Câu đã gặp', 'Giá trị': seenQuestions.length }
             ];

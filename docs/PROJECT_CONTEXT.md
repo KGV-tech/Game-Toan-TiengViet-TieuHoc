@@ -15,6 +15,12 @@
 | `supabase/functions/admin-users/index.ts` | Edge Function cho thao tác quản trị người dùng. |
 | `test_*.cjs` | Kiểm thử hợp đồng Node.js. |
 
+### Hồ sơ học sinh và đăng nhập
+
+- `game_users.classlevel` tiếp tục lưu cấp lớp dạng số (`1`–`5`) để các bộ lọc nội dung hiện có không thay đổi.
+- `game_users.class_name` là lớp con do giáo viên đặt (ví dụ `4/4`); trường này có thể để trống với hồ sơ cũ.
+- Học sinh chỉ nhập username ngắn (ví dụ `quanganh`). Ứng dụng tự ánh xạ username sang email nội bộ dạng `username@game.local` cho Supabase Auth; email kỹ thuật này không được hiển thị như thông tin đăng nhập cho học sinh.
+
 ## Dữ liệu và bảo mật
 
 - Ứng dụng dùng Supabase từ trình duyệt.

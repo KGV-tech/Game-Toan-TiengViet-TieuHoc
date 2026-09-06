@@ -6,6 +6,8 @@ const ui = fs.readFileSync('src/modules/ui.js', 'utf8');
 const migration = fs.readFileSync('supabase_auth_security.sql', 'utf8');
 const adminFunction = fs.readFileSync('supabase/functions/admin-users/index.ts', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8') + fs.readFileSync('src/login-layout.css', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
+const classMigration = fs.readFileSync('supabase/migrations/20260906_game_users_class_name.sql', 'utf8');
 
 assert.match(source, /auth\.signInWithPassword/, 'Login must use Supabase Auth.');
 assert.match(source, /auth_user_id/, 'Profiles must be linked to an Auth identity.');
@@ -21,11 +23,26 @@ assert.match(source, /auth_account_exists/, 'The teacher UI must explain when an
 assert.match(source, /!app\.data\.users\.find\(x => x\.id === data\.profile\.id\)/, 'Creating a student must not duplicate the realtime profile in the teacher list.');
 assert.match(ui, /setButtonLoading\(buttonId, isLoading, loadingLabel/, 'Slow actions must show a clear loading state and prevent repeated clicks.');
 assert.match(source, /setButtonLoading\('login-btn', true, 'Đang đăng nhập…'\)/, 'Login must visibly say that sign-in is in progress before fetching protected data.');
+assert.match(html, /id="username"[^>]*placeholder="Tên đăng nhập: không dấu, viết liền, không khoảng trắng"/, 'The login field must explain that pupils enter only the short username.');
+assert.match(html, /id="reg-class-name"/, 'Registration must offer the optional class subfield.');
+assert.match(source, /class_name/, 'Client profile flows must preserve the class subfield.');
+assert.match(adminFunction, /class_name/, 'Admin account provisioning must accept the class subfield.');
+assert.match(adminFunction, /validClassName/, 'Admin account provisioning must bound the class subfield input.');
+assert.match(classMigration, /ADD COLUMN IF NOT EXISTS class_name\s+text/i, 'The class subfield migration must be additive and repeatable.');
+assert.match(html, /id="link-to-change-password"/, 'The login screen must offer a self-service password-change entry point.');
+assert.match(html, /id="change-password-form"/, 'The password-change dialog must collect the required credentials.');
+assert.match(html, /id="change-password-old"/, 'The dialog must require the current password.');
+assert.match(html, /id="change-password-new"/, 'The dialog must collect the new password.');
+assert.match(html, /id="change-password-confirm"/, 'The dialog must require confirmation of the new password.');
+assert.match(source, /async changePassword\(\)/, 'The client must have a dedicated password-change flow.');
+assert.match(source, /auth\.signInWithPassword\(\{ email, password: oldPassword \}\)/, 'The old password must be verified by Supabase Auth before it can be changed.');
+assert.match(source, /auth\.updateUser\(\{ password: newPassword \}\)/, 'The new password must be updated through Supabase Auth, not a browser table update.');
+assert.match(source, /changePasswordPending/, 'Password changes must prevent duplicate submissions while the request is pending.');
+assert.match(source, /setButtonLoading\('change-password-submit', true, 'Đang cập nhật…'\)/, 'Password changes must show a clear loading state.');
 assert.match(source, /Promise\.all\(\[/, 'Independent post-login data loads must run in parallel.');
 assert.match(source, /avatar_key/, 'New student profiles must save their selected avatar.');
 assert.match(migration, /avatar_key TEXT/, 'The user profile migration must persist an avatar key.');
 
-const html = fs.readFileSync('index.html', 'utf8');
 assert.match(html, /name="reg-avatar"/, 'Registration must offer an avatar selection.');
 assert.match(html, /id="player-info" class="player-info-card"/, 'The map must retain a dedicated player information card.');
 assert.match(source, /player-info-card__avatar/, 'The player card must render the chosen avatar.');

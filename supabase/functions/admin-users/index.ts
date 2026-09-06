@@ -14,6 +14,8 @@ const json = (body: unknown, status = 200, origin: string | null = null) => new 
 const internalEmail = (username: string) => `${username.toLowerCase()}@game.local`
 const normalizeUsername = (username: unknown) => typeof username === 'string' ? username.trim().toLowerCase() : ''
 const validUsername = (username: string) => /^[a-z0-9._-]{3,32}$/.test(username)
+const normalizeClassName = (className: unknown) => typeof className === 'string' ? className.trim() : ''
+const validClassName = (className: unknown) => className === undefined || className === null || (typeof className === 'string' && className.trim().length <= 64)
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
@@ -39,12 +41,13 @@ Deno.serve(async (request) => {
   if (caller?.role?.toLowerCase() !== 'admin') return json({ error: 'forbidden' }, 403, origin)
 
   const body = await request.json().catch(() => null)
-  const { action, fullname, classlevel, password } = body || {}
+  const { action, fullname, classlevel, password, class_name: rawClassName } = body || {}
+  const className = normalizeClassName(rawClassName)
   const username = normalizeUsername(body?.username)
   if (!validUsername(username)) return json({ error: 'invalid_username' }, 422, origin)
 
   if (action === 'create') {
-    if (typeof fullname !== 'string' || !fullname.trim() || !['1', '2', '3', '4', '5'].includes(String(classlevel)) || typeof password !== 'string' || password.length < 8) {
+    if (typeof fullname !== 'string' || !fullname.trim() || !['1', '2', '3', '4', '5'].includes(String(classlevel)) || typeof password !== 'string' || password.length < 8 || !validClassName(rawClassName)) {
       return json({ error: 'invalid_student_data' }, 422, origin)
     }
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -53,7 +56,7 @@ Deno.serve(async (request) => {
     if (createError || !created.user) return json({ error: 'auth_account_exists' }, 409, origin)
     const { data: profile, error: profileError } = await admin.from('game_users').insert({
       auth_user_id: created.user.id, username, fullname: fullname.trim(), password: null,
-      classlevel: String(classlevel), role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
+      classlevel: String(classlevel), class_name: className || null, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
     }).select().single()
     if (profileError) {
       await admin.auth.admin.deleteUser(created.user.id)

@@ -43,18 +43,41 @@
         <div class="glass-container login-panel" style="margin-top: 20vh;">
         <img src="./public/login_frame.webp" class="login-panel-frame" alt="">
         <h2 class="login-heading">Đăng nhập để bắt đầu</h2>
-        <label class="login-field" for="username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="username" placeholder="Tên đăng nhập" class="input-glass"></label>
+        <label class="login-field" for="username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="username" placeholder="Tên đăng nhập: không dấu, viết liền, không khoảng trắng" autocomplete="username" class="input-glass"></label>
         <label class="login-field" for="password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="password" placeholder="Mật khẩu" class="input-glass"><span class="login-eye" aria-hidden="true">◉</span></label>
         <button id="login-btn" class="login-action asset-button asset-button--auth" aria-label="Bắt đầu">
           <img src="./public/ui/buttons/group1/login-start.png" alt="" aria-hidden="true">
         </button>
-          <a href="#" id="link-to-register" class="link-glass login-register-link">Đăng ký tài khoản mới</a>
+          <div class="login-account-links">
+            <button type="button" id="link-to-change-password" class="link-glass login-password-link">Đổi mật khẩu</button>
+            <a href="#" id="link-to-register" class="link-glass login-register-link">Đăng ký tài khoản mới</a>
+          </div>
         </div>
       </div>
       <img src="./public/login_robot_transparent.webp" alt="Robot mèo hướng dẫn" class="login-mascot">
       <div
         style="position: absolute; bottom: 10px; right: 10px; color: white; font-weight: bold; font-size: 1rem; text-shadow: 1px 1px 2px #000; z-index: 100;">
         Ver. 1.00</div>
+    </div>
+
+    <div id="change-password-modal" class="modal auth-password-modal" aria-hidden="true">
+      <section class="modal-content auth-password-card" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+        <button type="button" id="change-password-cancel" class="auth-password-close" aria-label="Đóng cửa sổ đổi mật khẩu">×</button>
+        <h2 id="change-password-title">Đổi mật khẩu</h2>
+        <p class="auth-password-intro">Nhập đúng mật khẩu cũ để đặt mật khẩu mới cho tài khoản của em.</p>
+        <form id="change-password-form" novalidate>
+          <label for="change-password-username">Tên đăng nhập</label>
+          <input type="text" id="change-password-username" class="input-glass" placeholder="Ví dụ: quanganh" autocomplete="username" required>
+          <label for="change-password-old">Mật khẩu cũ</label>
+          <input type="password" id="change-password-old" class="input-glass" autocomplete="current-password" required>
+          <label for="change-password-new">Mật khẩu mới</label>
+          <input type="password" id="change-password-new" class="input-glass" autocomplete="new-password" minlength="8" required>
+          <label for="change-password-confirm">Nhập lại mật khẩu mới</label>
+          <input type="password" id="change-password-confirm" class="input-glass" autocomplete="new-password" minlength="8" required>
+          <p class="auth-password-note">Mật khẩu mới cần có ít nhất 8 ký tự.</p>
+          <button type="submit" id="change-password-submit" class="auth-password-submit">Lưu mật khẩu mới</button>
+        </form>
+      </section>
     </div>
 
     <!-- Màn hình Đăng ký -->
@@ -66,9 +89,10 @@
           <img src="./public/login_frame.webp" class="register-panel-frame" alt="">
           <h2 class="register-heading">Đăng ký tài khoản</h2>
           <label class="register-field" for="reg-fullname"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass"></label>
-          <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-username" placeholder="Tên đăng nhập" class="input-glass"></label>
+          <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-username" placeholder="Tên đăng nhập: không dấu, viết liền, không khoảng trắng" autocomplete="username" class="input-glass"></label>
           <label class="register-field" for="reg-password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass"></label>
           <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
+          <label class="register-field" for="reg-class-name"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><input type="text" id="reg-class-name" placeholder="Lớp (ví dụ: 4/4, không bắt buộc)" autocomplete="organization" class="input-glass" maxlength="64"></label>
           <fieldset class="avatar-picker">
             <legend>Chọn Avatar</legend>
             <div class="avatar-picker__tabs" role="tablist" aria-label="Nhóm avatar"><button type="button" class="active" role="tab" aria-selected="true" onclick="app.auth.setAvatarGroup('boys', this)">Bé trai</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('girls', this)">Bé gái</button><button type="button" role="tab" aria-selected="false" onclick="app.auth.setAvatarGroup('cartoons', this)">Hoạt hình</button></div>
