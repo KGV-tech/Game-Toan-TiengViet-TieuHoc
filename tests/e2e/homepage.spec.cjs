@@ -53,6 +53,22 @@ test('desktop: trang chủ hiển thị màn hình đăng nhập mà không gọ
   await captureUiReview(page, testInfo, 'login-desktop.png');
 });
 
+test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật khẩu trước khi đăng nhập', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
+
+  await page.locator('#username').fill('hoc-sinh-01');
+  await page.locator('#link-to-change-password').click();
+
+  await expect(page.locator('#change-password-modal')).toHaveClass(/active/);
+  await expect(page.locator('#change-password-username')).toHaveValue('hoc-sinh-01');
+  await expect(page.locator('#change-password-old')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#change-password-modal')).not.toHaveClass(/active/);
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('đăng ký có thể nhập lớp con dưới cấp lớp', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
