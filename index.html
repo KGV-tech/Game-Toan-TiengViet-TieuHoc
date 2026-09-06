@@ -542,6 +542,33 @@
       </div>
     </div>
 
+    <!-- Màn hình làm bài thi đua đội nhóm (mỗi đội dùng một tablet) -->
+    <div id="team-competition-play-screen" class="screen team-competition-play-screen"
+      aria-label="Làm bài thi đua đội nhóm">
+      <div class="team-play-shell">
+        <header class="team-play-header">
+          <div>
+            <p class="team-play-kicker">Thi đua theo nhóm</p>
+            <h1 id="team-play-title">Trận thi đua</h1>
+            <p id="team-play-team" class="team-play-team-label"></p>
+          </div>
+          <div class="team-play-status" aria-live="polite">
+            <span id="team-play-progress">Câu 1/10</span>
+            <strong id="team-play-score">Điểm đội: 0</strong>
+            <span id="team-play-timer" class="team-play-timer" hidden></span>
+          </div>
+        </header>
+        <div id="team-play-lock-notice" class="team-play-lock-notice" hidden></div>
+        <main id="team-play-question-container" class="team-play-question-container"></main>
+        <footer class="team-play-actions">
+          <button id="team-play-exit" class="btn-opt team-play-exit" type="button"
+            onclick="app.teamCompetition.requestLeaderExit('exit')" aria-label="Thoát lượt đội nhóm">Thoát lượt</button>
+          <button id="team-play-submit" class="btn-primary team-play-submit" type="button"
+            onclick="app.teamCompetition.submitCurrentQuestion()" aria-label="Nộp câu trả lời">Nộp câu trả lời</button>
+        </footer>
+      </div>
+    </div>
+
     <!-- Modal Kết Quả Chung -->
     <div id="result-modal" class="modal">
       <div class="modal-content glass-container-xl result-layout">
@@ -587,7 +614,7 @@
   </div>
 
   <!-- Modal Nhiệm vụ -->
-  <div id="quest-modal" class="modal">
+    <div id="quest-modal" class="modal">
     <div class="modal-content glass-container-xl"
       style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
       <button class="utility-close-button"
@@ -600,6 +627,20 @@
       </div>
       <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
         <!-- Quests rendered here by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Xác nhận rời lượt trưởng nhóm: chỉ có đúng hai lựa chọn OK/Hủy -->
+  <div id="team-leave-confirm-modal" class="modal team-leave-confirm-modal" role="dialog" aria-modal="true"
+    aria-labelledby="team-leave-confirm-title" aria-describedby="team-leave-confirm-message">
+    <div class="modal-content team-leave-confirm-card">
+      <h2 id="team-leave-confirm-title">Xác nhận rời lượt đội</h2>
+      <p id="team-leave-confirm-message">Nếu rời bây giờ, lượt của đội sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.</p>
+      <div class="team-leave-confirm-actions">
+        <button id="team-leave-confirm-ok" class="btn-danger" type="button">OK</button>
+        <button id="team-leave-confirm-cancel" class="btn-opt" type="button">Hủy</button>
       </div>
     </div>
   </div>
@@ -733,6 +774,7 @@
   <script defer src="./src/modules/router.js"></script>
   <script defer src="./src/modules/daily.js"></script>
   <script defer src="./src/modules/ui.js"></script>
+  <script defer src="./src/modules/team-competition.js"></script>
 </body>
 
 </html>
