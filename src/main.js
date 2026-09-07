@@ -4037,7 +4037,7 @@ const app = {
                 { label: 'Cấp lớp' }, { label: 'Môn' }, { label: 'Chủ đề' }, { label: 'Loại câu hỏi' }, { label: 'Template' }, { label: 'Câu hỏi mẫu' }, { label: 'Hành động' }
               ], visible, ({ item, index }) => `<tr>
                 <td>${app.data.sanitizeHTML(item.classlevel)}</td><td>${app.data.sanitizeHTML(item.subject)}</td><td>${app.data.sanitizeHTML(item.topic)}</td>
-                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.generator_key)}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
+                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
                 <td><button class="btn-opt action-btn" onclick="app.admin.renderTemplateForm(${index})">Sửa</button><button class="btn-danger action-btn" onclick="app.admin.deleteTemplate(${index})">Xóa</button></td>
               </tr>`, 'Chưa có cấu hình template. Hãy thêm generator và cấu hình mẫu từ code hoặc chạy migration Supabase.')}
             `;
@@ -4175,6 +4175,20 @@ const app = {
             angleTemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const topic5TemplateOptions = [
+                ['g4-m-add-sub-multi-digit', 'Bốn phép cộng và trừ số nhiều chữ số'],
+                ['g4-m-add-sub-word-problem', 'Bài toán thực tế: cộng và trừ'],
+                ['g4-m-add-sub-missing-term', 'Tìm số hạng, số bị trừ, số trừ hoặc hiệu'],
+                ['g4-m-add-sub-missing-digit', 'Tìm chữ số còn thiếu trong phép tính'],
+                ['g4-m-addition-property-fill', 'Điền số theo tính chất của phép cộng'],
+                ['g4-m-add-sub-expression', 'Tính giá trị biểu thức cộng, trừ'],
+                ['g4-m-sum-difference-direct', 'Tìm hai số biết tổng và hiệu'],
+                ['g4-m-sum-difference-context', 'Tìm hai số biết tổng và hiệu qua ngữ cảnh'],
+                ['g4-m-add-sub-true-false', 'Đúng/Sai về phép cộng và phép trừ']
+            ];
+            topic5TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             const angleRule = document.createElement('div');
             angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
             angleRule.hidden = true;
@@ -4201,9 +4215,10 @@ const app = {
             if (generatorControl && arithmeticTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
             if (generatorControl && measurementTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && topic5TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
-            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
             if (configurableGenerator) {
@@ -4320,6 +4335,42 @@ const app = {
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{codeLength}', 'số chữ số mật khẩu đã bốc'], ['{condition1}', 'quy tắc thứ nhất đã bốc'], ['{condition2}', 'quy tắc thứ hai đã bốc']]
                 },
+                'g4-m-add-sub-multi-digit': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 phép tính đặt tính rồi tính, luôn gồm 2 phép cộng và 2 phép trừ số nhiều chữ số.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 ý a–d và các ô điền đáp án.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ 4 phép tính a–d do game sinh']]
+                },
+                'g4-m-add-sub-word-problem': {
+                    defaultPrompt: '{question}', guide: 'Tạo bài toán thực tế về phép cộng hoặc phép trừ từ 30 ngữ cảnh đã duyệt; mỗi lượt có một ô trả lời.', hint: 'Dùng <code>{question}</code> để giữ nguyên đề bài và ô trả lời.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'đề bài thực tế và ô trả lời do game sinh']]
+                },
+                'g4-m-add-sub-missing-term': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 ý tìm số hạng, số bị trừ, số trừ hoặc hiệu còn thiếu.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 ý a–d.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ 4 phép tính a–d do game sinh']]
+                },
+                'g4-m-add-sub-missing-digit': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 phép cộng hoặc trừ với một chữ số bị khuyết; học sinh điền chữ số thích hợp.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 ý a–d.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ 4 phép tính a–d do game sinh']]
+                },
+                'g4-m-addition-property-fill': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 ý điền số vận dụng tính chất giao hoán và kết hợp của phép cộng.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 ý a–d.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ 4 ý a–d do game sinh']]
+                },
+                'g4-m-add-sub-expression': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 biểu thức chỉ dùng cộng và trừ; mỗi ý có một ô điền kết quả.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 ý a–d.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ 4 biểu thức a–d do game sinh']]
+                },
+                'g4-m-sum-difference-direct': {
+                    defaultPrompt: '{question}', guide: 'Cho tổng và hiệu, học sinh điền lần lượt số lớn và số bé.', hint: 'Dùng <code>{question}</code> để giữ nguyên đề bài cùng 2 ô trả lời.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'đề bài và 2 ô trả lời do game sinh']]
+                },
+                'g4-m-sum-difference-context': {
+                    defaultPrompt: '{question}', guide: 'Tạo bài toán tìm hai số biết tổng và hiệu từ 30 ngữ cảnh; học sinh điền cả hai đáp số.', hint: 'Dùng <code>{question}</code> để giữ nguyên đề bài cùng 2 ô trả lời.', preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'đề bài ngữ cảnh và 2 ô trả lời do game sinh']]
+                },
+                'g4-m-add-sub-true-false': {
+                    defaultPrompt: '{question}', guide: 'Tạo 4 nhận định Đúng/Sai về phép cộng và phép trừ.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 nhận định.', preview: 'live', type: 'Đúng/Sai',
+                    variables: [['{question}', 'toàn bộ 4 nhận định do game sinh']]
+                },
                 'g4-m-angle-count-in-polygon': {
                     defaultPrompt: '{question}',
                     guide: 'Tạo một hình học có đánh dấu góc và bốn ý a–d để đếm góc nhọn, góc vuông, góc tù, góc bẹt. Mỗi ý đúng được 0,25 điểm.',
@@ -4362,11 +4413,20 @@ const app = {
                 }
         },
         renderTemplatePreview(generator) {
-            const preview = (title, content, variant = '') => `<section class="template-preview__canvas ${variant}" aria-label="Minh họa giao diện khi học sinh làm bài"><div class="template-preview__topbar"><span>Minh họa giao diện học sinh</span><span>4 câu con · 0,25 điểm/câu</span></div><div class="template-preview__question">${title}</div>${content}</section>`;
+            const preview = (title, content, variant = '', score = '4 câu con · 0,25 điểm/câu') => `<section class="template-preview__canvas ${variant}" aria-label="Minh họa giao diện khi học sinh làm bài"><div class="template-preview__topbar"><span>Minh họa giao diện học sinh</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${content}</section>`;
             const fillRows = rows => `<div class="template-preview__rows">${rows.map((row, index) => `<div class="template-preview__line"><b>${'abcd'[index]})</b><span>${row}</span></div>`).join('')}</div>`;
             const blank = '<i class="template-preview__blank" aria-label="Ô điền đáp án"></i>';
             const choices = values => `<div class="template-preview__choices">${values.map((value, index) => `<span><b>${'ABCD'[index]}</b>${value}</span>`).join('')}</div>`;
             const arithmeticRows = ['125 + ___ = 368', '720 − ___ = 415', '24 × 3 = ___', '144 : 12 = ___'];
+            if (generator === 'g4-m-add-sub-multi-digit') return preview('Đặt tính rồi tính:', fillRows([`45 728 + 13 564 = ${blank}`, `80 934 − 27 658 = ${blank}`, `62 417 + 25 306 = ${blank}`, `91 205 − 48 739 = ${blank}`]), 'template-preview--fill');
+            if (generator === 'g4-m-add-sub-word-problem') return preview('Thư viện có 3 825 quyển sách, đã cho mượn 1 468 quyển. Thư viện còn lại bao nhiêu quyển sách?', `<p class="template-preview__answer-line">Trả lời: ${blank} quyển sách</p>`, 'template-preview--fill', '1 câu · 1 điểm');
+            if (generator === 'g4-m-add-sub-missing-term') return preview('Điền số thích hợp vào chỗ trống:', fillRows([`${blank} + 27 584 = 63 902`, `82 460 − ${blank} = 31 725`, `${blank} − 18 946 = 42 381`, `36 508 + 14 295 = ${blank}`]), 'template-preview--fill');
+            if (generator === 'g4-m-add-sub-missing-digit') return preview('Điền chữ số thích hợp vào ô trống:', fillRows([`4${blank}7 + 238 = 695`, `8${blank}2 − 346 = 506`, `2 5${blank} + 1 430 = 3 970`, `7 0${blank} − 285 = 422`]), 'template-preview--fill');
+            if (generator === 'g4-m-addition-property-fill') return preview('Điền số thích hợp vào chỗ trống:', fillRows([`37 + 58 = 58 + ${blank}`, `(125 + 75) + 40 = 125 + (${blank} + 40)`, `6 230 + 0 = ${blank}`, `4 809 + 191 = ${blank} + 4 809`]), 'template-preview--fill');
+            if (generator === 'g4-m-add-sub-expression') return preview('Tính giá trị của biểu thức:', fillRows([`12 580 + 3 420 − 2 165 = ${blank}`, `48 000 − 17 258 + 9 421 = ${blank}`, `6 735 + 8 265 − 4 500 = ${blank}`, `90 000 − 32 458 − 7 542 = ${blank}`]), 'template-preview--fill');
+            if (generator === 'g4-m-sum-difference-direct') return preview('Hai số có tổng là 84 và hiệu là 18. Tìm hai số đó.', `<div class="template-preview__rows"><div class="template-preview__line"><span>Số lớn: ${blank}</span></div><div class="template-preview__line"><span>Số bé: ${blank}</span></div></div>`, 'template-preview--fill', '2 đáp án · 0,5 điểm/đáp án');
+            if (generator === 'g4-m-sum-difference-context') return preview('Hai lớp trồng được 156 cây. Lớp 4A trồng nhiều hơn lớp 4B 24 cây. Hỏi mỗi lớp trồng được bao nhiêu cây?', `<div class="template-preview__rows"><div class="template-preview__line"><span>Lớp 4A: ${blank} cây</span></div><div class="template-preview__line"><span>Lớp 4B: ${blank} cây</span></div></div>`, 'template-preview--fill', '2 đáp án · 0,5 điểm/đáp án');
+            if (generator === 'g4-m-add-sub-true-false') return preview('Chọn Đúng hoặc Sai cho mỗi nhận định:', `<div class="template-preview__true-false">${['48 279 + 21 721 = 70 000.', '90 000 − 36 425 = 53 575.', '15 820 + 4 180 = 21 000.', '72 300 − 18 900 = 54 400.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
             if (generator === 'number.compose_from_places') return preview('Hãy điền số thích hợp vào chỗ trống:', fillRows([
                 `Số gồm 4 chục nghìn, 2 nghìn, 5 trăm và 3 chục là ${blank}`,
                 `Số gồm 8 nghìn, 6 trăm và 4 đơn vị là ${blank}`,
@@ -4410,7 +4470,10 @@ const app = {
             if (target) {
                 const previewImage = preset.previewImage || 'digit-at-place.jpg';
                 const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
-                target.innerHTML = `<div class="template-editor__preview-heading"><span aria-hidden="true">🖼️</span><b>Giao diện khi học sinh làm bài</b></div><img class="template-editor__preview-image" src="./src/assets/template-previews/${app.data.sanitizeHTML(previewImage)}" alt="Giao diện thực tế của template ${app.data.sanitizeHTML(previewLabel)}" loading="lazy" decoding="async">`;
+                const previewContent = preset.preview === 'live'
+                    ? this.renderTemplatePreview(generator)
+                    : `<img class="template-editor__preview-image" src="./src/assets/template-previews/${app.data.sanitizeHTML(previewImage)}" alt="Giao diện thực tế của template ${app.data.sanitizeHTML(previewLabel)}" loading="lazy" decoding="async">`;
+                target.innerHTML = `<div class="template-editor__preview-heading"><span aria-hidden="true">🖼️</span><b>Giao diện khi học sinh làm bài</b></div>${previewContent}`;
             }
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
@@ -4420,7 +4483,9 @@ const app = {
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate; });
+            const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
+            const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || (isTopic5Template && !topic5DigitRange); });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
@@ -4453,6 +4518,9 @@ const app = {
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
+            const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
+            const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
+            const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
             const safePasswordMaxLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
             const selectedSafeValues = group => [...document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`)].filter(input => input.checked).map(input => input.value);
@@ -4477,9 +4545,10 @@ const app = {
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generatorKey);
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
-            const usesDigitCount = !isSafePassword && !isAngleTemplate && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey);
+            const usesDigitCount = !isSafePassword && !isAngleTemplate && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: isAngleTemplate ? {} : genericConfig, is_active: true };
+            const topic5Config = topic5DigitRange ? { minimumDigits, maximumDigits } : {};
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: isAngleTemplate ? {} : (isTopic5Template ? topic5Config : genericConfig), is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
@@ -4535,7 +4604,7 @@ const app = {
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
-            if (!isAngleTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (!isAngleTemplate && !isTopic5Template && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;

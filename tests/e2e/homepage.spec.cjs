@@ -560,6 +560,37 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
 });
 
+test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã lưu', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.questionTemplates = [{
+      id: 'topic5-multi-digit', name: 'Bốn phép cộng và trừ số nhiều chữ số', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '5. Phép cộng và phép trừ', question_type: 'Điền khuyết', generator_key: 'g4-m-add-sub-multi-digit',
+      prompt_template: '{question}', config: { minimumDigits: 2, maximumDigits: 5 }, is_active: true
+    }];
+    app.admin.renderTemplateForm(0);
+    document.getElementById('treasure-modal').style.display = 'block';
+  });
+
+  await expect(page.locator('#template-generator')).toHaveValue('g4-m-add-sub-multi-digit');
+  await expect(page.locator('#template-question-type')).toHaveValue('Điền khuyết');
+  await expect(page.locator('#template-variables')).toContainText('{question}');
+  await expect(page.locator('#template-variables')).not.toContainText('{place}');
+  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
+  await expect(page.locator('#template-example')).toContainText('Đặt tính rồi tính:');
+  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
+  await expect(page.locator('.template-editor__rule--digit-controls').first()).toBeHidden();
+  await expect(page.locator('.template-editor__rule--range-controls')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ minimumDigits: 2, maximumDigits: 5 });
+
+  await page.evaluate(() => app.admin.renderTemplates(document.getElementById('treasure-content-area')));
+  const templateNameCell = page.locator('#treasure-content-area tbody tr').first().locator('td').nth(4);
+  await expect(templateNameCell).toHaveText('Bốn phép cộng và trừ số nhiều chữ số');
+  await expect(templateNameCell).not.toContainText('g4-m-add-sub-multi-digit');
+});
+
 test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh “Số đó là”', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

@@ -69,6 +69,21 @@ assert(source.includes('g4-m-angle-count-in-polygon'), 'The Template Bank must e
 assert(source.includes('g4-m-angle-drag-classify'), 'The Template Bank must expose the angle-drag-classify generator.');
 assert(source.includes('g4-m-angle-clock-classify'), 'The Template Bank must expose the angle-clock-classify generator.');
 assert(source.includes('g4-m-angle-count-eight-angles'), 'The Template Bank must expose the eight-angle-count generator.');
+[
+  'g4-m-add-sub-multi-digit',
+  'g4-m-add-sub-word-problem',
+  'g4-m-add-sub-missing-term',
+  'g4-m-add-sub-missing-digit',
+  'g4-m-addition-property-fill',
+  'g4-m-add-sub-expression',
+  'g4-m-sum-difference-direct',
+  'g4-m-sum-difference-context',
+  'g4-m-add-sub-true-false'
+].forEach(generatorKey => {
+  assert(source.includes(generatorKey), `The Template Bank must expose the Grade 4 Topic 5 generator ${generatorKey}.`);
+});
+assert(source.includes('item.name || item.generator_key'), 'The Template Bank table must show the saved template name before its code key.');
+assert(source.includes("preset.preview === 'live'"), 'Topic 5 templates must use a live preview instead of an unrelated legacy image.');
 assert(migration.includes("'2. Góc và đơn vị đo góc'"), 'The Template Bank must keep the four angle templates in Grade 4 Math Topic 2.');
 assert(css.includes('question-box--safe-password'), 'Safe-password questions must have a dedicated image layout.');
 assert(source.includes('safe-password-open-v1.png'), 'A correct safe-password answer must reveal the opened safe image.');
