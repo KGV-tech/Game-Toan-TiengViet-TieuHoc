@@ -12,10 +12,10 @@ async function openOfflineHomepage(page) {
 
 function demoUsers() {
   return [
-    { username: 'hs1', fullname: 'Học sinh 1', classlevel: '5', role: 'student', approved: true },
-    { username: 'hs2', fullname: 'Học sinh 2', classlevel: '5', role: 'student', approved: true },
-    { username: 'hs3', fullname: 'Học sinh 3', classlevel: '5', role: 'student', approved: true },
-    { username: 'hs4', fullname: 'Học sinh 4', classlevel: '5', role: 'student', approved: true }
+    { username: 'hs1', fullname: 'Học sinh 1', classlevel: '5', class_name: '5A', role: 'student', approved: true },
+    { username: 'hs2', fullname: 'Học sinh 2', classlevel: '5', class_name: '5A', role: 'student', approved: true },
+    { username: 'hs3', fullname: 'Học sinh 3', classlevel: '5', class_name: '5B', role: 'student', approved: true },
+    { username: 'hs4', fullname: 'Học sinh 4', classlevel: '5', class_name: '5B', role: 'student', approved: true }
   ];
 }
 
@@ -64,6 +64,27 @@ test('Admin tạo Đội nhóm, chuẩn bị và bắt đầu bảng thi đua', 
   await page.getByRole('button', { name: 'Bắt đầu thi đua' }).click();
   await expect(page.locator('.team-status-pill--active')).toBeVisible();
   await expect(page.locator('.team-board-card').first()).toContainText('0/2 câu đã nộp');
+});
+
+test('Admin có thể lọc đội hình thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.teamCompetition.store.clear();
+    app.admin.openAdmin();
+    app.admin.switchTab('quests');
+    app.admin.switchQuestMode('team');
+    app.admin.showAddTeamCompetitionForm();
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await page.locator('#team-comp-class-name').selectOption('5A');
+  await expect(page.locator('.team-member-select').first()).toContainText('Học sinh 1 · 5A');
+  await expect(page.locator('.team-member-select').first()).toContainText('Học sinh 2 · 5A');
+  await expect(page.locator('.team-member-select').first()).not.toContainText('Học sinh 3 · 5B');
+  await expect(page.locator('.team-member-select').first()).not.toContainText('Học sinh 4 · 5B');
 });
 
 test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủy thì ở lại', async ({ page }) => {

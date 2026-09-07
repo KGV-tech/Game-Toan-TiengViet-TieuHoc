@@ -64,6 +64,10 @@ assert.match(css, /label:hover span/, 'Hovering an avatar must enlarge its portr
 assert.match(css, /min-inline-size: 0/, 'The avatar fieldset must be allowed to shrink inside the registration panel.');
 assert.match(css, /max-width: 100%/, 'The avatar picker must never exceed its registration panel.');
 assert.doesNotMatch(html, /<em>/, 'Avatar names must not be shown beneath the portraits.');
-assert.match(css, /aspect-ratio: 1055 \/ 1610/, 'The registration frame must use the reduced height requested after the first extension.');
+assert.match(html, /register-panel--wide/, 'Registration must identify the new landscape panel.');
+assert.match(html, /register_frame_wide\.png/, 'Registration must use the approved wide frame asset.');
+assert.match(html, /register-form-grid/, 'Registration fields must be arranged in a two-column grid.');
+assert.match(html, /id="reg-gender"/, 'Registration must allow pupils to optionally declare gender.');
+assert.match(css, /aspect-ratio: 3 \/ 2/, 'The registration frame must use the approved compact landscape ratio.');
 
 console.log('Supabase Auth and RLS security contract verified.');

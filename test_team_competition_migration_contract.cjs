@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const file = 'supabase/migrations/20260906_team_competitions.sql';
 const sql = fs.readFileSync(file, 'utf8');
 const lower = sql.toLowerCase();
+const classNameMigration = fs.readFileSync('supabase/migrations/20260907_team_competitions_class_name.sql', 'utf8').toLowerCase();
 
 for (const table of [
   'team_competitions',
@@ -50,5 +51,6 @@ assert.doesNotMatch(lower, /drop table\s+public\.game_/);
 assert.doesNotMatch(lower, /delete\s+from\s+public\.game_users/);
 assert.doesNotMatch(lower, /grant\s+.*team_competition_answer_keys\s+to\s+(public|anon|authenticated)/);
 assert.doesNotMatch(lower, /supabase_rls\.sql\s*\n\s*run/);
+assert.match(classNameMigration, /alter table public\.team_competitions\s+add column if not exists class_name text/);
 
 console.log('team competition migration contract tests passed');
