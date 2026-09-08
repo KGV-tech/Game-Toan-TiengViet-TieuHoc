@@ -4072,11 +4072,40 @@ const app = {
         getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
             const section = String(className || '').trim();
-            return (app.data.users || []).filter(user => {
-                if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
-                if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
-                return !section || String(user.class_name || '').trim() === section;
-            });
+            const nameParts = user => String(user.fullname || user.username || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+            const students = (app.data.users || [])
+                .filter(user => {
+                    if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
+                    if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
+                    return !section || String(user.class_name || '').trim() === section;
+                });
+            const maxMiddlePartCount = students.reduce((maximum, user) => Math.max(maximum, Math.max(0, nameParts(user).length - 3)), 0);
+            const nameSortKeys = user => {
+                const parts = nameParts(user);
+                if (parts.length < 2) return parts;
+                const remainingMiddleParts = parts.slice(1, -2).reverse();
+                return [
+                    parts.at(-1),
+                    parts.at(-2),
+                    ...remainingMiddleParts,
+                    ...Array(Math.max(0, maxMiddlePartCount - remainingMiddleParts.length)).fill(''),
+                    parts[0]
+                ];
+            };
+            return students
+                .sort((left, right) => {
+                    const leftParts = nameSortKeys(left);
+                    const rightParts = nameSortKeys(right);
+                    const partCount = Math.max(leftParts.length, rightParts.length);
+                    for (let index = 0; index < partCount; index += 1) {
+                        const comparison = String(leftParts[index] || '').localeCompare(String(rightParts[index] || ''), 'vi');
+                        if (comparison) return comparison;
+                    }
+                    return String(left.username || '').localeCompare(String(right.username || ''), 'vi');
+                });
         },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)

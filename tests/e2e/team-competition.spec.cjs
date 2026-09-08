@@ -97,6 +97,45 @@ test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng
   await expect(page.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 4 · 5B');
 });
 
+test('Danh sách thành viên Nhóm được sắp theo tên, đệm từ phải sang trái rồi họ', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openOfflineHomepage(page);
+  const users = [
+    { username: 'lephuc', fullname: 'Lê Minh Phúc', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'nguyenphuc', fullname: 'Nguyễn Hoàng Minh Phúc', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'an', fullname: 'Trần Bảo An', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'phamphuc', fullname: 'Phạm Anh Phúc', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'nguyenanphuc', fullname: 'Nguyễn An Minh Phúc', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'lehoangphuc', fullname: 'Lê Hoàng Minh Phúc', classlevel: '4', class_name: '4/4', role: 'student', approved: true },
+    { username: 'binh', fullname: 'Võ Minh Bình', classlevel: '4', class_name: '4/4', role: 'student', approved: true }
+  ];
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.teamCompetition.store.clear();
+    app.admin.openAdmin();
+    app.admin.switchTab('quests');
+    app.admin.switchQuestMode('team');
+    app.admin.showAddTeamCompetitionForm();
+  }, { users, exam: demoExam() });
+
+  await page.locator('#team-comp-class').selectOption('4');
+  await page.locator('#team-comp-class-name').selectOption('4/4');
+  await page.locator('.team-target-count').first().fill('1');
+  await page.locator('.team-target-count').first().press('Tab');
+  await expect.poll(() => page.locator('.team-member-slot-select').first().locator('option').allTextContents()).toEqual([
+    '-- Chọn học sinh --',
+    'Trần Bảo An · 4/4 (an)',
+    'Võ Minh Bình · 4/4 (binh)',
+    'Phạm Anh Phúc · 4/4 (phamphuc)',
+    'Lê Minh Phúc · 4/4 (lephuc)',
+    'Nguyễn An Minh Phúc · 4/4 (nguyenanphuc)',
+    'Lê Hoàng Minh Phúc · 4/4 (lehoangphuc)',
+    'Nguyễn Hoàng Minh Phúc · 4/4 (nguyenphuc)'
+  ]);
+});
+
 test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủy thì ở lại', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await openOfflineHomepage(page);
