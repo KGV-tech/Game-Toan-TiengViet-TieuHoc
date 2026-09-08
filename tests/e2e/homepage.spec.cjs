@@ -53,7 +53,7 @@ test('desktop: trang chủ hiển thị màn hình đăng nhập mà không gọ
   await captureUiReview(page, testInfo, 'login-desktop.png');
 });
 
-test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật khẩu trước khi đăng nhập', async ({ page }) => {
+test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật khẩu trước khi đăng nhập', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
 
@@ -63,6 +63,15 @@ test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật
   await expect(page.locator('#change-password-modal')).toHaveClass(/active/);
   await expect(page.locator('#change-password-username')).toHaveValue('hoc-sinh-01');
   await expect(page.locator('#change-password-old')).toBeFocused();
+  await expect(page.locator('.auth-password-intro')).toHaveText('Nhập đúng mật khẩu cũ để đặt mật khẩu mới cho tài khoản của bạn.');
+  const passwordDialog = await page.locator('.auth-password-card').evaluate(card => ({
+    bottom: card.getBoundingClientRect().bottom,
+    clientHeight: card.clientHeight,
+    scrollHeight: card.scrollHeight
+  }));
+  expect(passwordDialog.bottom).toBeLessThanOrEqual(768);
+  expect(passwordDialog.scrollHeight).toBeLessThanOrEqual(passwordDialog.clientHeight);
+  await captureUiReview(page, testInfo, 'change-password-tablet.png');
   await page.keyboard.press('Escape');
   await expect(page.locator('#change-password-modal')).not.toHaveClass(/active/);
   expect(supabaseRequests).toEqual([]);
