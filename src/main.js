@@ -3430,6 +3430,8 @@ const app = {
         getExamQuestionStructureKind(question) {
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) return 'subquestions';
+            if (Array.isArray(question?.angleItems) && question.angleItems.length) return 'angleItems';
+            if (Array.isArray(question?.angleCountRows) && question.angleCountRows.length) return 'angleCountRows';
             if (Array.isArray(question?.practiceRows) && question.practiceRows.length) return 'practiceRows';
             if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) return 'comparisonRows';
             return '';
@@ -3438,16 +3440,28 @@ const app = {
             const kind = this.getExamQuestionStructureKind(question);
             if (!kind) return '';
             const esc = value => app.data.sanitizeHTML(value ?? '');
+            const safeSvgPreview = value => {
+                const raw = String(value || '').trim();
+                if (!/^<svg\b/i.test(raw)) return '';
+                return raw
+                    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+                    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                    .replace(/\s(?:href|xlink:href)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+            };
             const defaultLabel = (partIndex, uppercase = false) => String.fromCharCode((uppercase ? 65 : 97) + partIndex);
             const heading = {
                 statements: 'Bốn nhận định Đúng/Sai',
                 subquestions: 'Bốn câu hỏi con và các lựa chọn',
+                angleItems: 'Bốn hình góc và đáp án',
+                angleCountRows: 'Bốn ý đếm góc',
                 practiceRows: 'Các ý nhỏ trong bài',
                 comparisonRows: 'Bốn ý cần so sánh'
             }[kind];
             const description = {
-                statements: 'Chỉnh nội dung và đáp án riêng cho từng nhận định. Đáp án tổng sẽ tự ghép lại khi lưu.',
+                statements: 'Chỉnh nội dung và đáp án riêng cho từng nhận định; hệ thống tự ghép dữ liệu chấm khi lưu.',
                 subquestions: 'Mỗi ý có nội dung, 4 lựa chọn và đáp án riêng để giáo viên tự biên soạn.',
+                angleItems: 'Chỉnh nhãn và đáp án riêng cho từng hình góc; hình minh họa được giữ nguyên theo template.',
+                angleCountRows: 'Chỉnh nhãn, loại góc và số lượng đúng cho từng ý; hình minh họa được giữ nguyên theo template.',
                 practiceRows: 'Chỉnh nội dung hiển thị và đáp án của từng ý; dữ liệu phụ của template vẫn được giữ lại.',
                 comparisonRows: 'Chỉnh hai vế và dấu đúng cho từng ý; hệ thống tự cập nhật phần hiển thị.'
             }[kind];
@@ -3512,6 +3526,70 @@ const app = {
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Đáp án đúng của ý</span>
                                     <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(part?.answer ?? part?.ans ?? '')}" placeholder="Nhập đáp án đúng">
+                                </label>
+                            </article>`;
+                        }).join('')}
+                    </div>
+                </fieldset>`;
+            }
+
+            if (kind === 'angleItems') {
+                const defaultOptions = ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'];
+                return `<fieldset class="exam-structured-editor exam-structured-editor--angle-items" data-structured-kind="angleItems">
+                    <legend>${heading}</legend>
+                    <p class="exam-structured-editor__description">${description}</p>
+                    <div class="exam-structured-editor__parts">
+                        ${parts.map((part, partIndex) => {
+                            const label = part?.label || defaultLabel(partIndex);
+                            const currentAnswer = String(part?.type ?? part?.answer ?? '').trim();
+                            const options = [...new Set([
+                                ...(Array.isArray(question.options) ? question.options : []),
+                                ...defaultOptions,
+                                currentAnswer
+                            ].filter(Boolean))];
+                            const visual = safeSvgPreview(part?.svg);
+                            return `<article class="exam-structured-part exam-structured-part--angle-item" data-structured-part="${partIndex}">
+                                <div class="exam-structured-part__heading"><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>
+                                <div class="exam-structured-visual" aria-label="Hình minh họa ý ${esc(label)}">${visual || '<span class="exam-structured-visual__empty">Chưa có hình minh họa</span>'}</div>
+                                <label class="exam-form-field exam-structured-part__field">
+                                    <span>Nhãn ý</span>
+                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                </label>
+                                <label class="exam-form-field exam-structured-part__field">
+                                    <span>Đáp án ý ${esc(label)}</span>
+                                    <select id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input">
+                                        ${options.map(option => `<option value="${esc(option)}" ${option === currentAnswer ? 'selected' : ''}>${esc(option)}</option>`).join('')}
+                                    </select>
+                                </label>
+                            </article>`;
+                        }).join('')}
+                    </div>
+                </fieldset>`;
+            }
+
+            if (kind === 'angleCountRows') {
+                const answers = String(question.ans || '').split(/[|,]/).map(value => value.trim());
+                const visual = safeSvgPreview(question.angleVisual);
+                return `<fieldset class="exam-structured-editor exam-structured-editor--angle-count" data-structured-kind="angleCountRows">
+                    <legend>${heading}</legend>
+                    <p class="exam-structured-editor__description">${description}</p>
+                    ${visual ? `<div class="exam-structured-visual exam-structured-visual--shared" aria-label="Hình minh họa đếm góc">${visual}</div>` : ''}
+                    <div class="exam-structured-editor__parts">
+                        ${parts.map((part, partIndex) => {
+                            const label = part?.label || defaultLabel(partIndex);
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                                <div class="exam-structured-part__heading"><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>
+                                <label class="exam-form-field exam-structured-part__field">
+                                    <span>Nhãn ý</span>
+                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                </label>
+                                <label class="exam-form-field exam-structured-part__field">
+                                    <span>Loại góc</span>
+                                    <input type="text" id="add-e-q-structured-text-${index}-${partIndex}" class="form-input" value="${esc(part?.text || '')}" placeholder="Ví dụ: góc nhọn">
+                                </label>
+                                <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
+                                    <span>Số lượng đúng của ý ${esc(label)}</span>
+                                    <input type="text" inputmode="numeric" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập số lượng">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -3601,6 +3679,31 @@ const app = {
                     };
                 });
                 return { subquestions, ans: subquestions.map(part => part.answer).filter(Boolean).join(', ') };
+            }
+
+            if (kind === 'angleItems') {
+                const angleItems = question.angleItems.map((part, partIndex) => {
+                    const answer = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`) || part.type || part.answer || '';
+                    const nextPart = {
+                        ...part,
+                        label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                        type: answer
+                    };
+                    if (Object.prototype.hasOwnProperty.call(part, 'answer')) nextPart.answer = answer;
+                    return nextPart;
+                });
+                return { angleItems, ans: angleItems.map(part => part.type).filter(Boolean).join(', ') };
+            }
+
+            if (kind === 'angleCountRows') {
+                const originalAnswers = String(question.ans || '').split(/[|,]/).map(value => value.trim());
+                const angleCountRows = question.angleCountRows.map((part, partIndex) => ({
+                    ...part,
+                    label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                    text: valueOf(`add-e-q-structured-text-${index}-${partIndex}`) || part.text || ''
+                }));
+                const answers = question.angleCountRows.map((_, partIndex) => valueOf(`add-e-q-structured-answer-${index}-${partIndex}`) || originalAnswers[partIndex] || '');
+                return { angleCountRows, ans: answers.filter(Boolean).join(', ') };
             }
 
             if (kind === 'practiceRows') {
@@ -5756,8 +5859,8 @@ const app = {
                              </div>
                           </fieldset>
 
-                          <div class="exam-question-card__answer-grid">
-                             <label class="exam-form-field"><span>${structureKind ? 'Đáp án tổng (tự ghép)' : 'Đáp án đúng'}</span><input type="text" id="add-e-q-ans-${i}" placeholder="Đáp án đúng" class="form-input" value="${q ? q.ans : ''}"${structureKind ? ' readonly' : ''}></label>
+                          <div class="exam-question-card__answer-grid${structureKind ? ' exam-question-card__answer-grid--explanation-only' : ''}">
+                             ${structureKind ? '' : '<label class="exam-form-field"><span>Đáp án đúng</span><input type="text" id="add-e-q-ans-' + i + '" placeholder="Đáp án đúng" class="form-input" value="' + (q ? app.data.sanitizeHTML(q.ans) : '') + '"></label>'}
                              <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
                           </div>
                        </div>
@@ -5966,7 +6069,7 @@ const app = {
                         explanation: document.getElementById(`add-e-q-exp-${i}`).value.trim(),
                         options: []
                     };
-                    if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && !structureKind) {
+                    if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems')) {
                         newQ.options = [
                             document.getElementById(`add-e-q-opt1-${i}`).value.trim(),
                             document.getElementById(`add-e-q-opt2-${i}`).value.trim(),
