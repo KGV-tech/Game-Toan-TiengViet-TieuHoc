@@ -54,6 +54,154 @@
                     hk2: ['5. Vẻ đẹp cuộc sống', '6. Hương sắc trăm miền', '7. Tiếp bước cha ông', '8. Thế giới của chúng ta']
                 }
             }
+        },
+        lessonCatalog: {
+            "4": {
+                math: {
+                    hk1: [
+                        {
+                            topic: '1. Ôn tập và bổ sung',
+                            lessons: [
+                                { id: 'g4-math-hk1-b01', label: 'Bài 1. Ôn tập các số đến 100 000', page: 6 },
+                                { id: 'g4-math-hk1-b02', label: 'Bài 2. Ôn tập các phép tính trong phạm vi 100 000', page: 9 },
+                                { id: 'g4-math-hk1-b03', label: 'Bài 3. Số chẵn, số lẻ', page: 12 },
+                                { id: 'g4-math-hk1-b04', label: 'Bài 4. Biểu thức chứa chữ', page: 14 },
+                                { id: 'g4-math-hk1-b05', label: 'Bài 5. Giải bài toán có ba bước tính', page: 19 },
+                                { id: 'g4-math-hk1-b06', label: 'Bài 6. Luyện tập chung', page: 21 }
+                            ]
+                        },
+                        {
+                            topic: '2. Góc và đơn vị đo góc',
+                            lessons: [
+                                { id: 'g4-math-hk1-b07', label: 'Bài 7. Đo góc, đơn vị đo góc', page: 23 },
+                                { id: 'g4-math-hk1-b08', label: 'Bài 8. Góc nhọn, góc tù, góc bẹt', page: 26 },
+                                { id: 'g4-math-hk1-b09', label: 'Bài 9. Luyện tập chung', page: 31 }
+                            ]
+                        },
+                        {
+                            topic: '3. Số có nhiều chữ số',
+                            lessons: [
+                                { id: 'g4-math-hk1-b10', label: 'Bài 10. Số có sáu chữ số. Số 1 000 000', page: 33 },
+                                { id: 'g4-math-hk1-b11', label: 'Bài 11. Hàng và lớp', page: 37 },
+                                { id: 'g4-math-hk1-b12', label: 'Bài 12. Các số trong phạm vi lớp triệu', page: 41 },
+                                { id: 'g4-math-hk1-b13', label: 'Bài 13. Làm tròn số đến hàng trăm nghìn', page: 45 },
+                                { id: 'g4-math-hk1-b14', label: 'Bài 14. So sánh các số có nhiều chữ số', page: 47 },
+                                { id: 'g4-math-hk1-b15', label: 'Bài 15. Làm quen với dãy số tự nhiên', page: 50 },
+                                { id: 'g4-math-hk1-b16', label: 'Bài 16. Luyện tập chung', page: 52 }
+                            ]
+                        },
+                        {
+                            topic: '4. Một số đơn vị đo Đại lượng',
+                            lessons: [
+                                { id: 'g4-math-hk1-b17', label: 'Bài 17. Yến, tạ, tấn', page: 56 },
+                                { id: 'g4-math-hk1-b18', label: 'Bài 18. Đề-xi-mét vuông, mét vuông, mi-li-mét vuông', page: 60 },
+                                { id: 'g4-math-hk1-b19', label: 'Bài 19. Giây, thế kỉ', page: 66 },
+                                { id: 'g4-math-hk1-b20', label: 'Bài 20. Thực hành và trải nghiệm sử dụng một số đơn vị đo đại lượng', page: 69 },
+                                { id: 'g4-math-hk1-b21', label: 'Bài 21. Luyện tập chung', page: 73 }
+                            ]
+                        },
+                        {
+                            topic: '5. Phép cộng và phép trừ',
+                            lessons: [
+                                { id: 'g4-math-hk1-b22', label: 'Bài 22. Phép cộng các số có nhiều chữ số', page: 76 },
+                                { id: 'g4-math-hk1-b23', label: 'Bài 23. Phép trừ các số có nhiều chữ số', page: 79 },
+                                { id: 'g4-math-hk1-b24', label: 'Bài 24. Tính chất giao hoán và kết hợp của phép cộng', page: 82 },
+                                { id: 'g4-math-hk1-b25', label: 'Bài 25. Tìm hai số biết tổng và hiệu của hai số đó', page: 86 },
+                                { id: 'g4-math-hk1-b26', label: 'Bài 26. Luyện tập chung', page: 88 }
+                            ]
+                        },
+                        {
+                            topic: '6. Đường thẳng vuông góc. Đường thẳng song song',
+                            lessons: [
+                                { id: 'g4-math-hk1-b27', label: 'Bài 27. Hai đường thẳng vuông góc', page: 91 },
+                                { id: 'g4-math-hk1-b28', label: 'Bài 28. Thực hành và trải nghiệm về hai đường thẳng vuông góc', page: 94 },
+                                { id: 'g4-math-hk1-b29', label: 'Bài 29. Hai đường thẳng song song', page: 98 },
+                                { id: 'g4-math-hk1-b30', label: 'Bài 30. Thực hành và trải nghiệm về hai đường thẳng song song', page: 101 },
+                                { id: 'g4-math-hk1-b31', label: 'Bài 31. Hình bình hành, hình thoi', page: 105 },
+                                { id: 'g4-math-hk1-b32', label: 'Bài 32. Luyện tập chung', page: 110 }
+                            ]
+                        },
+                        {
+                            topic: '7. Ôn tập Học kì 1',
+                            lessons: [
+                                { id: 'g4-math-hk1-b33', label: 'Bài 33. Ôn tập các số đến lớp triệu', page: 114 },
+                                { id: 'g4-math-hk1-b34', label: 'Bài 34. Ôn tập phép cộng, phép trừ', page: 118 },
+                                { id: 'g4-math-hk1-b35', label: 'Bài 35. Ôn tập hình học', page: 121 },
+                                { id: 'g4-math-hk1-b36', label: 'Bài 36. Ôn tập đo lường', page: 125 },
+                                { id: 'g4-math-hk1-b37', label: 'Bài 37. Ôn tập chung', page: 127 }
+                            ]
+                        }
+                    ],
+                    hk2: [
+                        {
+                            topic: '8. Phép nhân và phép chia',
+                            lessons: [
+                                { id: 'g4-math-hk2-b38', label: 'Bài 38. Nhân với số có một chữ số', page: 4 },
+                                { id: 'g4-math-hk2-b39', label: 'Bài 39. Chia cho số có một chữ số', page: 6 },
+                                { id: 'g4-math-hk2-b40', label: 'Bài 40. Tính chất giao hoán và kết hợp của phép nhân', page: 9 },
+                                { id: 'g4-math-hk2-b41', label: 'Bài 41. Nhân, chia với 10, 100, 1 000,...', page: 14 },
+                                { id: 'g4-math-hk2-b42', label: 'Bài 42. Tính chất phân phối của phép nhân đối với phép cộng', page: 17 },
+                                { id: 'g4-math-hk2-b43', label: 'Bài 43. Nhân với số có hai chữ số', page: 20 },
+                                { id: 'g4-math-hk2-b44', label: 'Bài 44. Chia cho số có hai chữ số', page: 23 },
+                                { id: 'g4-math-hk2-b45', label: 'Bài 45. Thực hành và trải nghiệm ước lượng trong tính toán', page: 27 },
+                                { id: 'g4-math-hk2-b46', label: 'Bài 46. Tìm số trung bình cộng', page: 29 },
+                                { id: 'g4-math-hk2-b47', label: 'Bài 47. Bài toán liên quan đến rút về đơn vị', page: 31 },
+                                { id: 'g4-math-hk2-b48', label: 'Bài 48. Luyện tập chung', page: 33 }
+                            ]
+                        },
+                        {
+                            topic: '9. Làm quen với yếu tố Thống kê, Xác suất',
+                            lessons: [
+                                { id: 'g4-math-hk2-b49', label: 'Bài 49. Dãy số liệu thống kê', page: 36 },
+                                { id: 'g4-math-hk2-b50', label: 'Bài 50. Biểu đồ cột', page: 39 },
+                                { id: 'g4-math-hk2-b51', label: 'Bài 51. Số lần xuất hiện của một sự kiện', page: 43 },
+                                { id: 'g4-math-hk2-b52', label: 'Bài 52. Luyện tập chung', page: 47 }
+                            ]
+                        },
+                        {
+                            topic: '10. Phân số',
+                            lessons: [
+                                { id: 'g4-math-hk2-b53', label: 'Bài 53. Khái niệm phân số', page: 49 },
+                                { id: 'g4-math-hk2-b54', label: 'Bài 54. Phân số và phép chia số tự nhiên', page: 52 },
+                                { id: 'g4-math-hk2-b55', label: 'Bài 55. Tính chất cơ bản của phân số', page: 56 },
+                                { id: 'g4-math-hk2-b56', label: 'Bài 56. Rút gọn phân số', page: 59 },
+                                { id: 'g4-math-hk2-b57', label: 'Bài 57. Quy đồng mẫu số các phân số', page: 62 },
+                                { id: 'g4-math-hk2-b58', label: 'Bài 58. So sánh phân số', page: 64 },
+                                { id: 'g4-math-hk2-b59', label: 'Bài 59. Luyện tập chung', page: 69 }
+                            ]
+                        },
+                        {
+                            topic: '11. Phép cộng, phép trừ Phân số',
+                            lessons: [
+                                { id: 'g4-math-hk2-b60', label: 'Bài 60. Phép cộng phân số', page: 74 },
+                                { id: 'g4-math-hk2-b61', label: 'Bài 61. Phép trừ phân số', page: 80 },
+                                { id: 'g4-math-hk2-b62', label: 'Bài 62. Luyện tập chung', page: 83 }
+                            ]
+                        },
+                        {
+                            topic: '12. Phép nhân, phép chia Phân số',
+                            lessons: [
+                                { id: 'g4-math-hk2-b63', label: 'Bài 63. Phép nhân phân số', page: 86 },
+                                { id: 'g4-math-hk2-b64', label: 'Bài 64. Phép chia phân số', page: 91 },
+                                { id: 'g4-math-hk2-b65', label: 'Bài 65. Tìm phân số của một số', page: 95 },
+                                { id: 'g4-math-hk2-b66', label: 'Bài 66. Luyện tập chung', page: 98 }
+                            ]
+                        },
+                        {
+                            topic: '13. Ôn tập cuối năm',
+                            lessons: [
+                                { id: 'g4-math-hk2-b67', label: 'Bài 67. Ôn tập số tự nhiên', page: 102 },
+                                { id: 'g4-math-hk2-b68', label: 'Bài 68. Ôn tập phép tính với số tự nhiên', page: 105 },
+                                { id: 'g4-math-hk2-b69', label: 'Bài 69. Ôn tập phân số', page: 107 },
+                                { id: 'g4-math-hk2-b70', label: 'Bài 70. Ôn tập phép tính với phân số', page: 110 },
+                                { id: 'g4-math-hk2-b71', label: 'Bài 71. Ôn tập hình học và đo lường', page: 112 },
+                                { id: 'g4-math-hk2-b72', label: 'Bài 72. Ôn tập một số yếu tố thống kê và xác suất', page: 114 },
+                                { id: 'g4-math-hk2-b73', label: 'Bài 73. Ôn tập chung', page: 116 }
+                            ]
+                        }
+                    ]
+                }
+            }
         }
     };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
