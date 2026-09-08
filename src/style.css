@@ -305,8 +305,9 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .glass-container-xl { position: relative; z-index: 10; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(15px); padding: 20px 40px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.2); width: 95%; max-width: 1200px; color: white; display: flex; flex-direction: column; align-items: center; }
 
 /* Template editor: use the full admin modal rather than a narrow form column. */
-#treasure-modal .admin-panel { width: min(96vw, 1640px); max-width: min(96vw, 1640px); }
-#treasure-modal .admin-content { width: 100%; max-width: none; }
+#treasure-modal .admin-panel { width: min(96vw, 1640px); max-width: min(96vw, 1640px); align-items: stretch; }
+#treasure-modal .admin-content { width: 100%; min-width: 0; max-width: none; box-sizing: border-box; }
+#admin-e-subarea { width: 100%; }
 /* Older admin views used inline max-width:600px; let them use the workspace width. */
 #treasure-content-area > div[style*="max-width: 600px"] {
   width: 100% !important;
