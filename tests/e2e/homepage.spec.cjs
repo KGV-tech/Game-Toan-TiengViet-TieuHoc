@@ -1666,8 +1666,8 @@ test('soạn đề Toán lớp 4 dùng bố cục lưới cân đối trên desk
   });
 
   await expect(page.locator('.exam-composer')).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Soạn đề' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.getByRole('button', { name: /Soạn đề mới/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#btn-e-lib')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.exam-composer__meta')).toBeVisible();
   await expect(page.locator('.exam-question-card')).toHaveCount(10);
   await expect(page.locator('.exam-question-card__options').first()).toBeVisible();
