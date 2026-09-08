@@ -3398,8 +3398,8 @@ const app = {
                 selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
                 delete topicWrap.dataset.selected;
                 topicWrap.innerHTML = topics.length
-                    ? topics.map(topic => `<label style="display:inline-flex; align-items:center; gap:5px; margin:4px 12px 4px 0; cursor:pointer;"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()">${app.data.sanitizeHTML(topic)}</label>`).join('')
-                    : '<span style="color:#aaa;">Chưa có chủ đề cho lựa chọn này.</span>';
+                    ? topics.map(topic => `<label class="exam-composer__topic-option"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
+                    : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
 
@@ -5345,24 +5345,35 @@ const app = {
         },
         renderExams(box) {
             box.innerHTML = `
-        <div style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-           <div style="display:flex; width:100%; gap: 10px;">
-               <button class="btn-primary" id="btn-e-lib" style="flex:1; margin:0;" onclick="app.admin.renderESubTab('lib')">Thư viện</button>
-               <div id="e-count-indicator" style="flex:1; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius: 4px; font-weight: bold; color: #ffeb3b; font-size: 1rem;"></div>
-           </div>
-           <button class="btn-opt" id="btn-e-add" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
-           <button class="btn-opt" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
-           <button class="btn-opt" id="btn-e-imp" onclick="app.admin.renderESubTab('imp')">Nhập từ file (*.xlsx)</button>
-        </div>
-        <div id="admin-e-subarea"></div>
+        <section class="exam-workspace" aria-label="Kho đề kiểm tra">
+          <header class="exam-workspace__header">
+            <div>
+              <p class="exam-workspace__eyebrow">QUẢN LÝ ĐỀ KIỂM TRA</p>
+              <h3>Kho đề kiểm tra</h3>
+              <p class="exam-workspace__description">Tạo đề, xem lại nội dung và quản lý dữ liệu đề ở cùng một khu vực.</p>
+            </div>
+            <div id="e-count-indicator" class="exam-workspace__count" aria-live="polite"></div>
+          </header>
+          <nav class="exam-workspace__tabs" role="tablist" aria-label="Tác vụ kho đề">
+            <button type="button" class="exam-workspace__tab btn-primary" id="btn-e-lib" role="tab" aria-selected="true" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('lib')">Thư viện</button>
+            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-add" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
+            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-tpl" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
+            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-exp" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
+            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-imp" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('imp')">Nhập từ file (*.xlsx)</button>
+          </nav>
+          <div id="admin-e-subarea" role="tabpanel" aria-live="polite"></div>
+        </section>
       `;
             this.renderESubTab('lib');
         },
         renderESubTab(tab, editIdx) {
             ['lib', 'add', 'tpl', 'exp', 'imp'].forEach(t => {
                 const el = document.getElementById('btn-e-' + t);
-                if (el) el.className = (t === tab) ? 'btn-primary' : 'btn-opt';
+                if (el) {
+                    el.classList.toggle('btn-primary', t === tab);
+                    el.classList.toggle('btn-opt', t !== tab);
+                    el.setAttribute('aria-selected', String(t === tab));
+                }
             });
             const subBox = document.getElementById('admin-e-subarea');
 
@@ -5392,87 +5403,120 @@ const app = {
             }
             else if (tab === 'add') {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
+                const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 subBox.innerHTML = `
-            <div style="max-width: 600px; margin: 0 auto; text-align:left;">
-               <h3>${e ? 'Sửa đề kiểm tra' : 'Thêm đề kiểm tra mới'}</h3>
-               <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
-                  <select id="add-e-class" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
+            <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
+               <header class="exam-composer__header">
+                  <div>
+                     <p class="exam-composer__eyebrow">${e ? 'CHỈNH SỬA ĐỀ' : 'TẠO ĐỀ MỚI'}</p>
+                     <h3>${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}</h3>
+                     <p class="exam-composer__description">Điền thông tin đề trước, sau đó hoàn thiện đủ 10 câu hỏi bên dưới.</p>
+                  </div>
+                  <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có">
+                     <strong>${existingQuestionCount}</strong><span>/ ${app.game.questionsPerRound} câu đã có</span>
+                  </div>
+               </header>
+
+               <section class="exam-composer__section exam-composer__meta" aria-labelledby="exam-composer-meta-title">
+                  <div class="exam-composer__section-heading">
+                     <h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4>
+                     <p>Dùng các trường này để phân loại và tìm lại đề trong thư viện.</p>
+                  </div>
+                  <label class="exam-form-field">
+                     <span>Cấp lớp</span>
+                     <select id="add-e-class" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Lớp 1" ${e && e.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
                      <option value="Lớp 2" ${e && e.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
                      <option value="Lớp 3" ${e && e.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
                      <option value="Lớp 4" ${e && e.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
                      <option value="Lớp 5" ${e && e.classlevel === 'Lớp 5' ? 'selected' : (!e ? 'selected' : '')}>Lớp 5</option>
-                  </select>
-               </div>
-
-               <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Môn học</label>
-                  <select id="add-e-sub" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
+                     </select>
+                  </label>
+                  <label class="exam-form-field">
+                     <span>Môn học</span>
+                     <select id="add-e-sub" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Toán" ${e && e.subject === 'Toán' ? 'selected' : (!e ? 'selected' : '')}>Toán</option>
                      <option value="Tiếng Việt" ${e && e.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
-                  </select>
-               </div>
-
-               <div style="display:flex; align-items:center; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Kỳ kiểm tra</label>
-                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
+                     </select>
+                  </label>
+                  <label class="exam-form-field">
+                     <span>Kỳ kiểm tra</span>
+                     <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
                      <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
                      <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
                      <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
                      <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
-                  </select>
-               </div>
-
-               <div style="display:flex; align-items:flex-start; margin-bottom:10px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0; padding-top:8px;">Chủ đề</label>
-                  <div id="add-e-topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}' style="flex:1; padding:4px 0;"></div>
-               </div>
-
-               <div style="display:flex; align-items:center; margin-bottom:15px;">
-                  <label style="width:150px; font-weight:bold; flex-shrink:0;">Tên đề kiểm tra</label>
-                  <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" style="flex:1; padding:8px;" value="${e ? e.name : ''}">
-               </div>
-               <button type="button" class="btn-success" style="margin:0 0 15px;" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
+                     </select>
+                  </label>
+                  <label class="exam-form-field exam-form-field--wide">
+                     <span>Tên đề kiểm tra</span>
+                     <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? e.name : ''}">
+                  </label>
+                  <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
+                     <span>Chủ đề áp dụng</span>
+                     <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
+                     <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo đề tự động.</small>
+                  </div>
+                  <div class="exam-composer__meta-action">
+                     <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
+                     <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
+                  </div>
+               </section>
 
                ${e && e.questions && e.questions.length > 0 ? `
-               <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
-                  <h4 style="margin-bottom: 10px; color:#4ade80;">Danh sách câu hỏi hiện có trong đề:</h4>
-                  <table style="width:100%; border-collapse: collapse; text-align: left;">
+               <section class="exam-composer__section exam-composer__saved" aria-labelledby="exam-composer-saved-title">
+                  <div class="exam-composer__section-heading">
+                     <div>
+                        <h4 id="exam-composer-saved-title">2. Câu hỏi đã có trong đề</h4>
+                        <p>Kéo thứ tự bằng các nút Lên/Xuống hoặc xóa câu không cần dùng.</p>
+                     </div>
+                     <span class="exam-composer__section-count">${e.questions.length}/${app.game.questionsPerRound}</span>
+                  </div>
+                  <ol class="exam-composer__saved-list">
                      ${e.questions.map((q, i) => `
-                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px 5px;"><strong>Câu ${i + 1}:</strong> ${app.data.formatMathHTML(q.q)}</td>
-                        <td style="padding: 10px 5px; text-align:right; white-space:nowrap;">
-                            ${i > 0 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
-                            ${i < e.questions.length - 1 ? `<button class="btn-opt action-btn" style="padding:4px 8px;" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
-                            ${app.ui.compactAction('Xóa', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'compact-admin-action--delete')}
-                        </td>
-                     </tr>
+                     <li class="exam-composer__saved-item">
+                        <div class="exam-composer__saved-copy"><strong>Câu ${i + 1}</strong><span>${app.data.formatMathHTML(q.q)}</span></div>
+                        <div class="exam-composer__saved-actions">
+                           ${i > 0 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
+                           ${i < e.questions.length - 1 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
+                           ${app.ui.compactAction('Xóa', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'compact-admin-action--delete')}
+                        </div>
+                     </li>
                      `).join('')}
-                  </table>
-               </div>
+                  </ol>
+               </section>
                ` : ''}
 
-               <div style="margin-top: 20px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
-                  <h4 style="margin-bottom: 15px; color:#ffcc00;">Soạn câu hỏi cho đề kiểm tra này</h4>
-                  <div class="exam-question-grid">${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
+               <section class="exam-composer__section exam-composer__question-bank" aria-labelledby="exam-composer-questions-title">
+                  <div class="exam-composer__section-heading">
+                     <div>
+                        <h4 id="exam-composer-questions-title">${e && e.questions && e.questions.length > 0 ? '3' : '2'}. Soạn câu hỏi cho đề</h4>
+                        <p>Mỗi thẻ là một câu hoàn chỉnh. Các ô lựa chọn chỉ hiện khi loại câu hỏi cần dùng.</p>
+                     </div>
+                     <span class="exam-composer__section-count">${app.game.questionsPerRound} thẻ câu hỏi</span>
+                  </div>
+                  <div class="exam-question-list">
+                  ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
                     let q = e && e.questions && e.questions[i] ? e.questions[i] : null;
                     return `
-                    <div style="background: rgba(0,0,0,0.2); padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #ffcc00;">
-                       <h5 style="margin-top:0; margin-bottom: 10px;">Câu hỏi ${i + 1}</h5>
-                       
-                       <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Chủ đề</label>
-                          <select id="add-e-q-topic-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" data-selected="${q ? q.topic : ''}">
-                          </select>
-                       </div>
-
-                       
-
-                       <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Loại câu hỏi</label>
-                          <select id="add-e-q-type-${i}" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" onchange="app.admin.toggleQuestionType('add-e-q', ${i})">
+                    <article class="exam-question-card">
+                       <header class="exam-question-card__header">
+                          <div class="exam-question-card__title-wrap">
+                             <span class="exam-question-card__number">${i + 1}</span>
+                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Chưa điền nội dung.'}</p></div>
+                          </div>
+                          <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
+                       </header>
+                       <div class="exam-question-card__fields">
+                          <label class="exam-form-field">
+                             <span>Chủ đề</span>
+                             <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}">
+                             </select>
+                          </label>
+                          <label class="exam-form-field">
+                             <span>Loại câu hỏi</span>
+                             <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.toggleQuestionType('add-e-q', ${i})">
                              <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                              <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                              <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
@@ -5480,60 +5524,47 @@ const app = {
                              <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
                              <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
                              <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
-                          </select>
-                       </div>
+                             </select>
+                          </label>
+                          <label class="exam-form-field exam-form-field--full">
+                             <span>Nội dung câu</span>
+                             <textarea id="add-e-q-q-${i}" placeholder="Nội dung câu hỏi" class="form-input">${q ? q.q : ''}</textarea>
+                          </label>
 
-                       <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Nội dung câu</label>
-                          <textarea id="add-e-q-q-${i}" placeholder="Nội dung" class="form-input" style="flex:1; padding:6px; height:50px; font-size:0.9rem;">${q ? q.q : ''}</textarea>
-                       </div>
+                          <fieldset id="add-e-q-opts-wrapper-${i}" class="exam-question-card__conditional exam-question-card__options" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}">
+                             <legend>Các lựa chọn</legend>
+                             <div class="exam-question-card__option-grid">
+                                <label class="exam-question-card__option-field"><span>Lựa chọn 1</span><input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                                <label class="exam-question-card__option-field"><span>Lựa chọn 2</span><input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                                <label class="exam-question-card__option-field"><span>Lựa chọn 3</span><input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}"></label>
+                                <label class="exam-question-card__option-field"><span>Lựa chọn 4</span><input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}"></label>
+                             </div>
+                          </fieldset>
 
-                       <div id="add-e-q-opts-wrapper-${i}" style="display: ${q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả' ? 'none' : 'block'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-                          <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 1</label>
-                             <input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
-                          </div>
-                          <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 2</label>
-                             <input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
-                          </div>
-                          <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 3</label>
-                             <input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}">
-                          </div>
-                          <div style="display:flex; align-items:center; margin-bottom:0;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem;">Lựa chọn 4</label>
-                             <input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}">
-                          </div>
-                       </div>
-                       
-                       <div id="add-e-q-match-wrapper-${i}" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-                          <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem; color:#4ade80;">Cột Trái</label>
-                             <input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
-                          </div>
-                          <div style="display:flex; align-items:center; margin-bottom:5px;">
-                             <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.85rem; color:#60a5fa;">Cột Phải</label>
-                             <input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" style="flex:1; padding:6px; font-size:0.85rem;" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
-                          </div>
-                       </div>
+                          <fieldset id="add-e-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
+                             <legend>Nội dung hai cột đối chiếu</legend>
+                             <div class="exam-question-card__option-grid">
+                                <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                                <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                             </div>
+                          </fieldset>
 
-                       <div style="display:flex; align-items:center; margin-bottom:10px;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Đáp án đúng</label>
-                          <input type="text" id="add-e-q-ans-${i}" placeholder="Đáp án đúng" class="form-input" style="flex:1; padding:6px; font-size:0.9rem;" value="${q ? q.ans : ''}">
+                          <div class="exam-question-card__answer-grid">
+                             <label class="exam-form-field"><span>Đáp án đúng</span><input type="text" id="add-e-q-ans-${i}" placeholder="Đáp án đúng" class="form-input" value="${q ? q.ans : ''}"></label>
+                             <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
+                          </div>
                        </div>
-                       
-                       <div style="display:flex; align-items:center; margin-bottom:0;">
-                          <label style="width:120px; font-weight:bold; flex-shrink:0; font-size:0.9rem;">Lời giải chi tiết</label>
-                          <textarea id="add-e-q-exp-${i}" placeholder="Lời giải (tùy chọn)" class="form-input" style="flex:1; padding:6px; height:40px; font-size:0.9rem;">${q ? q.explanation || '' : ''}</textarea>
-                       </div>
-                    </div>
+                    </article>
                   `;
-                }).join('')}</div>
-               </div>
+                }).join('')}
+                  </div>
+               </section>
 
-               ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
-            </div>
+               <footer class="exam-composer__actions">
+                  <p>Đề cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
+                  ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
+               </footer>
+            </section>
           `;
                 setTimeout(() => app.admin.updateExamTopics(), 0);
             }
