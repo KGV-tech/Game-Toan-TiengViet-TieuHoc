@@ -14,5 +14,7 @@ assert.match(css, /\.matching-columns\s*\{[^}]*grid-template-columns:\s*minmax\(
 assert.match(css, /\.matching-col\.left-col\s*\{[^}]*justify-content:\s*space-between/s, 'The shorter number column must distribute items across the full matching height.');
 assert.match(css, /\.comparison-expression\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/s, 'Comparison expressions must use flexible columns.');
 assert.match(css, /\.comparison-expression__side\s*\{[^}]*overflow-wrap:\s*anywhere/s, 'Long comparison expressions must wrap inside their cards.');
+assert.match(css, /#treasure-modal \.admin-content\s*\{[^}]*max-height:\s*none/s, 'Admin content must use the available modal height instead of the generic short scroll box.');
+assert.match(css, /\.exam-composer__meta\s*\{[^}]*grid-template-columns:\s*minmax\(140px/s, 'Exam composer metadata must use a deliberate desktop grid.');
 
 console.log('Responsive UI contract verified.');
