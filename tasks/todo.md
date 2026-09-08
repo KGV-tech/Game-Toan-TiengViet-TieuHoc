@@ -36,3 +36,22 @@
 - [ ] Giữ các chủ đề đã chọn trong bản nháp/lúc lưu đề.
 - [ ] Tạo tự động đúng 10 câu từ kho câu hỏi và template.
 - [ ] Kiểm thử thủ công, kiểm thử browser và tạo PR.
+
+---
+
+## Phân cấp Bài học — Toán lớp 4
+
+### Đang làm
+
+- [ ] Tạo catalog 13 Chủ đề và 73 Bài học theo SGK Toán 4 Tập 1–2.
+- [ ] Thêm contract test cho catalog và luật chỉ hỗ trợ Lớp 4/Toán.
+- [ ] Nối metadata Bài học tương thích dữ liệu cũ, không đổi schema Supabase.
+- [ ] Thêm Bài học vào soạn câu hỏi, template, import/export, soạn đề và nhiệm vụ của Admin.
+- [ ] Giữ giao diện làm bài Toán/Tiếng Việt của học sinh chỉ theo Chủ đề.
+- [ ] Thêm browser test laptop/tablet ngang và chạy toàn bộ hồi quy.
+
+### Ngoài phạm vi lượt này
+
+- [ ] Danh mục Bài học Tiếng Việt.
+- [ ] Danh mục Bài học các cấp lớp khác.
+- [ ] Migration/RLS hoặc thay đổi dữ liệu Supabase production.

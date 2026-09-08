@@ -96,3 +96,29 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 2. Thêm state bản nháp đề, vùng chọn chủ đề và giữ nguyên luồng soạn thủ công.
 3. Thêm tạo tự động 10 câu từ kho/template theo lớp, môn, học kỳ và chủ đề đã chọn.
 4. Kiểm thử browser laptop 1280×800 và tablet ngang 1024×768, review diff, commit/PR.
+
+---
+
+# Kế hoạch phân cấp Bài học — Toán lớp 4
+
+## Phạm vi lượt này
+
+- Tạo catalog 13 Chủ đề/73 Bài học từ SGK Toán 4 Tập 1 và Tập 2.
+- Chỉ mở metadata và bộ lọc Bài học trong vùng Admin: câu hỏi, template, đề và nhiệm vụ.
+- Giữ nguyên giao diện làm bài của học sinh theo Chủ đề.
+- Không thay đổi schema/RLS/dữ liệu Supabase; tận dụng JSON hiện có và metadata trong `game_settings.data`.
+
+## Các lát triển khai
+
+1. Viết đặc tả và contract test catalog trước khi thêm hành vi.
+2. Thêm module curriculum và hydrate/persist metadata tương thích dữ liệu cũ.
+3. Tích hợp Bài học vào câu hỏi, import/export và template trong Admin.
+4. Tích hợp bộ lọc/metadata Bài học vào soạn đề và nhiệm vụ; giữ luồng học sinh topic-only.
+5. Thêm CSS scoped, browser test laptop/tablet ngang, chạy hồi quy, review diff và commit.
+
+## Checkpoint
+
+- **Catalog:** đúng 13 Chủ đề và 73 Bài học, quan hệ kỳ/chủ đề không lệch.
+- **Authoring:** Admin lưu/lọc được Bài học, dữ liệu cũ không có Bài học vẫn dùng được.
+- **Gameplay:** không có selector hoặc điều hướng Bài học ở màn hình học sinh.
+- **Bàn giao:** test contract + `npm test` xanh; chưa apply migration hay thay đổi Supabase production.
