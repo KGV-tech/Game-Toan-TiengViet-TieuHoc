@@ -31,20 +31,131 @@ test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và C�
   ]);
 });
 
-test('Tạo đề tự động điền 10 câu theo các chủ đề đã chọn để giáo viên chỉnh sửa', async ({ page }) => {
+test('Tạo đề tự động chỉ chọn nguồn có bốn ý để giáo viên chỉnh sửa', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openExamComposer(page);
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await expect.poll(() => page.locator('#add-e-topics input').count()).toBeGreaterThan(2);
   await page.evaluate(() => {
-    const topic = app.constants.topics['5'].math.hk1[0];
+    const topic = app.constants.topics['4'].math.hk1[2];
     app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
-      classlevel: 'Lớp 5', subject: 'Toán', semester: 'Học kỳ 1', topic,
-      type: 'Trắc nghiệm', q: `Câu tự động ${index + 1}`, options: ['A', 'B'], ans: 'A', explanation: ''
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'So sánh', q: `Câu cũ một ý ${index + 1}`, options: [], ans: '<', explanation: ''
     }));
+    app.data.questionTemplates = [{
+      id: 'template-four-part-auto', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      question_type: 'Chuỗi Quy luật', generator_key: 'number.natural_sequence', prompt_template: '{question}',
+      config: { minimum: 10000, maximum: 9999999, allowedSteps: [1000], sequenceLengthMin: 5, sequenceLengthMax: 5, blankCountMin: 2, blankCountMax: 2 }, is_active: true
+    }];
   });
-  await page.locator('#add-e-topics input').first().check();
+  await page.locator('#add-e-topics input').nth(2).check();
   await page.getByRole('button', { name: 'Tạo đề tự động' }).click();
   await expect(page.locator('textarea[id^="add-e-q-q-"]')).toHaveCount(10);
-  await expect.poll(() => page.locator('textarea[id^="add-e-q-q-"]').evaluateAll(items => items.map(item => item.value))).toEqual(expect.arrayContaining(['Câu tự động 1', 'Câu tự động 10']));
+  await expect(page.locator('[data-structured-kind="sequenceRounds"]')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind] .exam-structured-part')).toHaveCount(40);
+  await expect(page.locator('input[id^="add-e-q-ans-"]')).toHaveCount(0);
+  const answerCounts = await page.evaluate(() => app.admin.examComposerDraft.questions.map(question => app.data.getQuestionAnswerCount(question)));
+  expect(answerCounts).toEqual(Array(10).fill(8));
+});
+
+test('Tạo đề tự động tương thích câu cũ có bốn đáp án nhưng thiếu metadata', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await expect.poll(() => page.locator('#add-e-topics input').count()).toBeGreaterThan(2);
+  await page.evaluate(() => {
+    const topic = app.constants.topics['4'].math.hk1[2];
+    app.data.questionTemplates = [];
+    app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Điền khuyết', q: `Câu cũ ${index + 1}<br>a) Ý a<br>b) Ý b<br>c) Ý c<br>d) Ý d`,
+      options: [], ans: '1, 2, 3, 4', explanation: ''
+    }));
+  });
+  await page.locator('#add-e-topics input').nth(2).check();
+  await page.getByRole('button', { name: 'Tạo đề tự động' }).click();
+
+  await expect(page.locator('[data-structured-kind="answerParts"]')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind="answerParts"] .exam-structured-part')).toHaveCount(40);
+  await expect(page.locator('input[id^="add-e-q-ans-"]')).toHaveCount(0);
+
+  await page.locator('#add-e-name').fill('Đề tương thích câu cũ');
+  await page.locator('#add-e-q-structured-display-0-0').fill('Ý cũ đã chỉnh sửa');
+  await page.locator('#add-e-q-structured-answer-0-0').fill('10');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Lưu chỉnh sửa' }).click();
+  const savedQuestion = await page.evaluate(() => app.data.exams[0].questions[0]);
+  expect(savedQuestion.partAnswerCounts).toEqual([1, 1, 1, 1]);
+  expect(savedQuestion.ans).toBe('10, 2, 3, 4');
+  expect(savedQuestion.q).toContain('a) Ý cũ đã chỉnh sửa');
+});
+
+test('Tạo đề tự động không đưa câu một ý vào đề', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await expect.poll(() => page.locator('#add-e-topics input').count()).toBeGreaterThan(2);
+  await page.evaluate(() => {
+    const topic = app.constants.topics['4'].math.hk1[2];
+    app.data.questionTemplates = [];
+    app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: index % 2 ? 'Chuỗi Quy luật' : 'So sánh', q: `Câu cũ một ý ${index + 1}`, options: [], ans: index % 2 ? '34' : '<', explanation: ''
+    }));
+  });
+  await page.locator('#add-e-topics input').nth(2).check();
+  const dialogPromise = page.waitForEvent('dialog').then(async dialog => {
+    const message = dialog.message();
+    await dialog.accept();
+    return message;
+  });
+  await Promise.all([
+    dialogPromise,
+    page.getByRole('button', { name: 'Tạo đề tự động' }).click()
+  ]);
+  const dialogMessage = await dialogPromise;
+  expect(dialogMessage).toContain('cấu trúc bốn ý');
+  await expect(page.locator('[data-structured-kind]')).toHaveCount(0);
+});
+
+test('Tạo đề tự động báo rõ chủ đề chưa có nguồn bốn ý', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await expect.poll(() => page.locator('#add-e-topics input').count()).toBeGreaterThan(3);
+  const missingTopic = await page.evaluate(() => app.constants.topics['4'].math.hk1[3]);
+  await page.evaluate(() => {
+    const structuredTopic = app.constants.topics['4'].math.hk1[2];
+    const missingTopic = app.constants.topics['4'].math.hk1[3];
+    app.data.questionTemplates = [];
+    app.data.libraryQuestions = [
+      ...Array.from({ length: 10 }, (_, index) => ({
+        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: structuredTopic,
+        type: 'Điền khuyết', q: `Câu bốn ý ${index + 1}<br>a) Ý a<br>b) Ý b<br>c) Ý c<br>d) Ý d`,
+        options: [], ans: '1, 2, 3, 4', explanation: '',
+        practiceRows: ['a', 'b', 'c', 'd'].map((label, partIndex) => ({ label, display: `Ý ${label}`, answer: String(partIndex + 1) })),
+        partAnswerCounts: [1, 1, 1, 1]
+      })),
+      ...Array.from({ length: 10 }, (_, index) => ({
+        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: missingTopic,
+        type: 'So sánh', q: `Câu một ý ${index + 1}`, options: [], ans: '<', explanation: ''
+      }))
+    ];
+  });
+  await page.locator('#add-e-topics input').nth(2).check();
+  await page.locator('#add-e-topics input').nth(3).check();
+  const dialogPromise = page.waitForEvent('dialog').then(async dialog => {
+    const message = dialog.message();
+    await dialog.accept();
+    return message;
+  });
+  await Promise.all([
+    dialogPromise,
+    page.getByRole('button', { name: 'Tạo đề tự động' }).click()
+  ]);
+  const dialogMessage = await dialogPromise;
+  expect(dialogMessage).toContain('cấu trúc bốn ý');
+  expect(dialogMessage).toContain(missingTopic);
 });
 
 test('Tạo đề Toán lớp 4 phân bổ câu hỏi qua các chủ đề đã chọn', async ({ page }) => {
@@ -62,7 +173,10 @@ test('Tạo đề Toán lớp 4 phân bổ câu hỏi qua các chủ đề đã 
     app.data.questionTemplates = [];
     app.data.libraryQuestions = topics.flatMap((topic, topicIndex) => Array.from({ length: 10 }, (_, index) => ({
       classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
-      type: 'Trắc nghiệm', q: `Câu chủ đề ${topicIndex + 1}.${index + 1}`, options: ['A', 'B'], ans: 'A', explanation: ''
+      type: 'Điền khuyết', q: `Câu chủ đề ${topicIndex + 1}.${index + 1}<br>a) Ý a<br>b) Ý b<br>c) Ý c<br>d) Ý d`,
+      options: [], ans: '1, 2, 3, 4', explanation: '',
+      practiceRows: ['a', 'b', 'c', 'd'].map((label, partIndex) => ({ label, display: `Ý ${label}`, answer: String(partIndex + 1) })),
+      partAnswerCounts: [1, 1, 1, 1]
     })));
     const originalRandom = Math.random;
     Math.random = () => 0.5;
@@ -71,6 +185,7 @@ test('Tạo đề Toán lớp 4 phân bổ câu hỏi qua các chủ đề đã 
   }, selectedTopics);
 
   await expect(page.locator('select[id^="add-e-q-topic-"]')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind="practiceRows"]')).toHaveCount(10);
   const generatedTopics = await page.locator('select[id^="add-e-q-topic-"]').evaluateAll(selects => selects.map(select => select.value));
   expect(new Set(generatedTopics)).toEqual(new Set(selectedTopics));
   selectedTopics.forEach(topic => {
@@ -167,6 +282,9 @@ test('Soạn đề Toán lớp 4 hiển thị đồng nhất bốn ý cho các c
     const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => ({
       label, leftText: String(index + 1), rightText: String(index + 2), answer: '<'
     }));
+    const sequenceRounds = ['a', 'b', 'c', 'd'].map((label, index) => ({
+      label, sequence: [index + 1, index + 2, index + 3], blankIndexes: [1], display: `${index + 1}, ___, ${index + 3}`
+    }));
     const statements = ['A', 'B', 'C', 'D'].map((label, index) => ({
       label, text: `Nhận định ${label}`, answer: index % 2 === 0 ? 'Đúng' : 'Sai'
     }));
@@ -178,13 +296,13 @@ test('Soạn đề Toán lớp 4 hiển thị đồng nhất bốn ý cho các c
       makeQuestion(0, { instruction: 'Phân loại các góc.', angleItems, options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'] }, 'Kéo thả', 'Góc nhọn, Góc vuông, Góc tù, Góc bẹt'),
       makeQuestion(1, { subquestions }, 'Trắc nghiệm', 'A, B, C, D'),
       makeQuestion(2, { instruction: 'Đếm các góc.', angleVisual: svg, angleCountRows }, 'Điền khuyết', '1, 2, 2, 0'),
-      makeQuestion(3, { templateId: 'number.four_operations_expressions', practiceRows }, 'Điền khuyết', '2, 4, 6, 8'),
+      makeQuestion(3, { templateId: 'number.four_operations_expressions', subquestions: practiceRows }, 'Điền khuyết', '2, 4, 6, 8'),
       makeQuestion(4, { comparisonRows }, 'Kéo thả', '<, <, <, <'),
       makeQuestion(5, { statements }, 'Đúng/Sai', 'Đúng, Sai, Đúng, Sai'),
-      makeQuestion(6, { instruction: 'Phân loại các góc.', angleItems: angleItems.map(item => ({ ...item })), options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'] }, 'Kéo thả', 'Góc nhọn, Góc vuông, Góc tù, Góc bẹt'),
+      makeQuestion(6, { partAnswerCounts: [1, 1, 1, 1] }, 'Điền khuyết', '1, 2, 3, 4'),
       makeQuestion(7, { instruction: 'Đếm các góc.', angleVisual: svg, angleCountRows: angleCountRows.map(row => ({ ...row })) }, 'Điền khuyết', '1, 2, 2, 0'),
       makeQuestion(8, { subquestions: subquestions.map(item => ({ ...item })) }, 'Trắc nghiệm', 'A, B, C, D'),
-      makeQuestion(9, { templateId: 'number.four_operations_expressions', practiceRows: practiceRows.map(row => ({ ...row })) }, 'Điền khuyết', '2, 4, 6, 8')
+      makeQuestion(9, { templateId: 'number.natural_sequence', sequenceRounds, partAnswerCounts: [1, 1, 1, 1] }, 'Chuỗi Quy luật', '2, 3, 4, 5')
     ];
     app.data.exams = [{
       id: 'exam-grade-4-all-structured', name: 'Đề Toán lớp 4 bốn ý', classlevel: 'Lớp 4', subject: 'Toán',
@@ -198,10 +316,10 @@ test('Soạn đề Toán lớp 4 hiển thị đồng nhất bốn ý cho các c
 
   await expect(page.locator('.exam-question-card')).toHaveCount(10);
   await expect(page.locator('[data-structured-kind]')).toHaveCount(10);
-  for (const kind of ['angleItems', 'subquestions', 'angleCountRows', 'practiceRows', 'comparisonRows', 'statements']) {
+  for (const kind of ['angleItems', 'subquestions', 'angleCountRows', 'practiceRows', 'comparisonRows', 'statements', 'answerParts', 'sequenceRounds']) {
     await expect(page.locator(`[data-structured-kind="${kind}"]`).first().locator('.exam-structured-part')).toHaveCount(4);
   }
-  await expect(page.locator('[data-structured-kind="angleItems"] .exam-structured-visual')).toHaveCount(8);
+  await expect(page.locator('[data-structured-kind="angleItems"] .exam-structured-visual')).toHaveCount(4);
   await expect(page.locator('[data-structured-kind="angleCountRows"] .exam-structured-visual')).toHaveCount(2);
   await expect(page.locator('input[id^="add-e-q-ans-"]')).toHaveCount(0);
   await expect(page.locator('#add-e-q-opts-wrapper-0')).toBeVisible();
