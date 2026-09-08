@@ -41,7 +41,6 @@ assert.match(html, /group2\/shop-lucky-tab\.png/, 'Lucky-shop tab must use its a
 assert.match(html, /utility-close-button/, 'Treasure, quest, and shop panels must use lightweight X close buttons.');
 assert.match(main, /group2\/spin-lucky\.png/, 'Lucky spin must use the approved image asset.');
 assert.match(ui, /compactAction\(label, onClick/, 'Admin utilities must use compact CSS buttons.');
-assert.match(main, /compactAction\('Xem'/, 'View actions must use compact CSS buttons.');
 assert.match(main, /compactAction\('Thêm vào đề'/, 'Add-to-exam actions must use compact CSS buttons.');
 assert.match(css, /\.quest-empty-state/, 'Empty quest state must be centered.');
 assert.match(html, /utility-close-button/, 'Close and return controls must use the lightweight X button.');

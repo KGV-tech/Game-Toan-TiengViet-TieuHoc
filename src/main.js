@@ -3549,7 +3549,7 @@ const app = {
             const exams = Array.isArray(app.data.exams) ? app.data.exams : [];
             const countType = (items, type) => items.filter(item => item.question_type === type || item.type === type).length;
             const explanationCount = questions.filter(question => String(question.explanation || '').trim()).length;
-            const readyExams = exams.filter(exam => (exam.questions || []).length >= app.game.questionsPerRound).length;
+            const exactExams = exams.filter(exam => (exam.questions || []).length === app.game.questionsPerRound).length;
             return {
                 templates: {
                     count: templates.length,
@@ -3573,8 +3573,8 @@ const app = {
                     count: exams.length,
                     metrics: [
                         ['Đề đang soạn', exams.filter(exam => (exam.questions || []).length < app.game.questionsPerRound).length],
-                        [`Đủ ${app.game.questionsPerRound} câu`, readyExams],
-                        ['Đã sẵn sàng', readyExams]
+                        [`Đủ ${app.game.questionsPerRound} câu`, exactExams],
+                        [`Vượt ${app.game.questionsPerRound} câu`, exams.filter(exam => (exam.questions || []).length > app.game.questionsPerRound).length]
                     ],
                     countLabel: 'đề đã soạn'
                 }
@@ -6430,25 +6430,101 @@ const app = {
                 }
             }
         },
+        renderExamLibrary(box) {
+            const escape = value => app.data.sanitizeHTML(String(value || ''));
+            const exams = app.data.exams;
+            const target = app.game.questionsPerRound;
+            const counts = exams.map(exam => (exam.questions || []).length);
+            const stats = [
+                ['all', exams.length, 'Tổng số đề', 'Trong toàn bộ thư viện'],
+                ['exact', counts.filter(count => count === target).length, `Đủ ${target} câu`, 'Có thể mở để rà soát'],
+                ['under', counts.filter(count => count < target).length, `Chưa đủ ${target} câu`, 'Tiếp tục bổ sung nội dung'],
+                ['over', counts.filter(count => count > target).length, `Vượt ${target} câu`, 'Cần chọn lại số câu']
+            ];
+            const statsBox = document.getElementById('exam-library-stats');
+            if (statsBox) statsBox.innerHTML = stats.map(([key, count, label, hint]) => `<div class="exam-library-stat exam-library-stat--${key}"><span>${label}</span><strong>${count}</strong><small>${hint}</small></div>`).join('');
+            const indicator = document.getElementById('e-count-indicator');
+            if (indicator) indicator.textContent = `${exams.length} đề trong kho`;
+            const options = field => [...new Set(exams.map(exam => exam[field] || (field === 'classlevel' ? 'Lớp 5' : '')).filter(Boolean))]
+                .sort().map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join('');
+            box.innerHTML = `<section class="exam-library" aria-label="Thư viện đề">
+              <div class="exam-library-filters">
+                <label class="exam-library-search">Tìm trong thư viện đề<input id="exam-library-search" type="search" placeholder="Tên đề, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary()"></label>
+                <label>Cấp lớp<select id="exam-library-class" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
+                <label>Môn học<select id="exam-library-subject" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả môn</option>${options('subject')}</select></label>
+                <label>Số câu trong đề<select id="exam-library-status" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả đề</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
+              </div>
+              <div class="exam-library-result-heading"><p id="exam-library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.renderESubTab('lib')">Xóa bộ lọc</button></div>
+              <div id="exam-library-results"></div>
+            </section>`;
+            this.filterExamLibrary();
+            this.renderComposerCards();
+        },
+        filterExamLibrary(limit = 12) {
+            const results = document.getElementById('exam-library-results');
+            if (!results) return;
+            const escape = value => app.data.sanitizeHTML(String(value || ''));
+            const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+            const query = normalize(document.getElementById('exam-library-search').value.trim());
+            const classlevel = document.getElementById('exam-library-class').value;
+            const subject = document.getElementById('exam-library-subject').value;
+            const status = document.getElementById('exam-library-status').value;
+            const target = app.game.questionsPerRound;
+            // Keep the source index: filtering must never retarget edit, preview or delete.
+            const matches = app.data.exams.map((exam, index) => ({ exam, index })).filter(({ exam }) => {
+                const count = (exam.questions || []).length;
+                const searchText = [exam.name, exam.classlevel || 'Lớp 5', exam.subject, exam.period, ...(exam.questions || []).map(question => question.topic)].join(' ');
+                return (!query || normalize(searchText).includes(query))
+                    && (!classlevel || (exam.classlevel || 'Lớp 5') === classlevel)
+                    && (!subject || exam.subject === subject)
+                    && (!status || (status === 'exact' ? count === target : status === 'under' ? count < target : count > target));
+            });
+            document.getElementById('exam-library-result-count').textContent = `Hiển thị ${Math.min(limit, matches.length)} / ${matches.length} đề${matches.length !== app.data.exams.length ? ` · Kho có ${app.data.exams.length} đề` : ''}`;
+            if (!matches.length) {
+                const empty = app.data.exams.length === 0;
+                results.innerHTML = `<div class="exam-library-empty"><span aria-hidden="true">▤</span><h4>${empty ? 'Thư viện đang chờ đề đầu tiên' : 'Không tìm thấy đề'}</h4><p>${empty ? 'Bắt đầu một đề mới, hoặc nhập các đề đã có bằng công cụ Excel.' : 'Thử tên đề, chủ đề khác hoặc xóa bộ lọc để xem toàn bộ kho.'}</p>${empty ? '<button type="button" class="exam-library-button exam-library-button--primary" onclick="document.getElementById(\'btn-e-add\').click()">＋ Soạn đề đầu tiên</button>' : ''}</div>`;
+                return;
+            }
+            results.innerHTML = `<div class="exam-library-grid">${matches.slice(0, limit).map(({ exam, index }) => {
+                const count = (exam.questions || []).length;
+                const state = count === target ? 'exact' : count < target ? 'under' : 'over';
+                const label = count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
+                const topics = [...new Set((exam.questions || []).map(question => question.topic).filter(Boolean))];
+                return `<article class="exam-library-card exam-library-card--${state}">
+                  <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${label}</span></div>
+                  <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period || 'Chưa chọn thời gian')}</span></div>
+                  <h4>${escape(exam.name || 'Đề chưa đặt tên')}</h4>
+                  <div class="exam-library-card__topics">${topics.slice(0, 3).map(topic => `<span>${escape(topic)}</span>`).join('') || '<span>Chưa gắn chủ đề</span>'}${topics.length > 3 ? `<span>+${topics.length - 3} chủ đề</span>` : ''}</div>
+                  <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? 'Mở đề để kiểm tra nội dung' : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
+                  <footer><button type="button" class="exam-library-button" onclick="app.admin.viewExam(${index})">Xem đề</button><button type="button" class="exam-library-button exam-library-button--primary" onclick="app.admin.examComposerDraft = null; app.admin.editExam(${index})">Chỉnh sửa</button><button type="button" class="exam-library-delete" onclick="app.admin.deleteExam(${index})">Xóa đề</button></footer>
+                </article>`;
+            }).join('')}</div>${matches.length > limit ? `<button type="button" class="exam-library-button exam-library-more" onclick="app.admin.filterExamLibrary(${limit + 12})">Xem thêm đề (${matches.length - limit} còn lại)</button>` : ''}`;
+        },
         renderExams(box) {
             box.innerHTML = `
         <section class="exam-workspace" aria-label="Kho đề kiểm tra">
           <header class="exam-workspace__header">
             <div>
-              <p class="exam-workspace__eyebrow">QUẢN LÝ ĐỀ KIỂM TRA</p>
-              <h3>Kho đề kiểm tra</h3>
-              <p class="exam-workspace__description">Tạo đề, xem lại nội dung và quản lý dữ liệu đề ở cùng một khu vực.</p>
+              <p class="exam-workspace__eyebrow">THƯ VIỆN CỦA BẠN</p>
+              <h3>Mỗi đề bài, một hành trình mới</h3>
+              <p class="exam-workspace__description">Toàn bộ kho đề · Tìm nội dung, tiếp tục biên soạn hoặc bắt đầu một đề mới.</p>
             </div>
             <div id="e-count-indicator" class="exam-workspace__count" aria-live="polite"></div>
           </header>
-          <nav class="exam-workspace__tabs" role="tablist" aria-label="Tác vụ kho đề">
-            <button type="button" class="exam-workspace__tab btn-primary" id="btn-e-lib" role="tab" aria-selected="true" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('lib')">Thư viện</button>
-            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-add" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('add')">Soạn đề</button>
-            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-tpl" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('tpl')">Xuất file mẫu (*.xlsx)</button>
-            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-exp" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('exp')">Xuất dữ liệu (*.xlsx)</button>
-            <button type="button" class="exam-workspace__tab btn-opt" id="btn-e-imp" role="tab" aria-selected="false" aria-controls="admin-e-subarea" onclick="app.admin.renderESubTab('imp')">Nhập từ file (*.xlsx)</button>
-          </nav>
-          <div id="admin-e-subarea" role="tabpanel" aria-live="polite"></div>
+          <div id="exam-library-stats" class="exam-library-stats" aria-label="Thống kê toàn bộ kho đề"></div>
+          <div class="exam-library-toolbar" aria-label="Tác vụ kho đề">
+            <button type="button" class="exam-library-button" id="btn-e-lib" aria-pressed="true" onclick="app.admin.renderESubTab('lib')">▦ Thư viện đề</button>
+            <button type="button" class="exam-library-button exam-library-button--primary" id="btn-e-add" onclick="app.admin.examComposerDraft = null; app.admin.renderESubTab('add')">＋ Soạn đề mới</button>
+            <details class="exam-library-tools">
+              <summary>Công cụ Excel</summary>
+              <div class="exam-library-tools__items">
+                <button type="button" class="exam-library-button" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">↓ Tải file mẫu .xlsx</button>
+                <button type="button" class="exam-library-button" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">↗ Xuất kho đề .xlsx</button>
+                <button type="button" class="exam-library-button" id="btn-e-imp" onclick="app.admin.renderESubTab('imp')">↙ Nhập đề từ .xlsx</button>
+              </div>
+            </details>
+          </div>
+          <div id="admin-e-subarea"></div>
         </section>
       `;
             this.renderESubTab('lib');
@@ -6457,36 +6533,14 @@ const app = {
             ['lib', 'add', 'tpl', 'exp', 'imp'].forEach(t => {
                 const el = document.getElementById('btn-e-' + t);
                 if (el) {
-                    el.classList.toggle('btn-primary', t === tab);
-                    el.classList.toggle('btn-opt', t !== tab);
-                    el.setAttribute('aria-selected', String(t === tab));
+                    el.classList.toggle('is-active', t === tab);
+                    el.setAttribute('aria-pressed', String(t === tab));
                 }
             });
             const subBox = document.getElementById('admin-e-subarea');
 
             if (tab === 'lib') {
-                const cols = [
-                    { label: 'Cấp lớp', filterable: true },
-                    { label: 'Môn', filterable: true },
-                    { label: 'Kỳ kiểm tra', filterable: true },
-                    { label: 'Tên đề', filterable: true },
-                    { label: 'Số câu', filterable: false },
-                    { label: 'Hành động', filterable: false }
-                ];
-                let html = app.ui.renderTable(cols, app.data.exams, (e, i) => {
-                    return `<tr>
-              <td>${e.classlevel || 'Lớp 5'}</td><td>${e.subject}</td>
-              <td>${e.period}</td><td>${e.name}</td><td>${(e.questions || []).length}</td>
-              <td>
-                ${app.ui.compactAction('Xem', `app.admin.viewExam(${i})`, 'compact-admin-action--view')}
-                ${app.ui.compactAction('Sửa', `app.admin.editExam(${i})`, 'compact-admin-action--edit')}
-                ${app.ui.compactAction('Xóa', `app.admin.deleteExam(${i})`, 'compact-admin-action--delete')}
-              </td>
-            </tr>`;
-                });
-                subBox.innerHTML = html;
-                const ind = document.getElementById('e-count-indicator');
-                if (ind) ind.textContent = `Tổng: ${app.data.exams.length} đề`;
+                this.renderExamLibrary(subBox);
             }
             else if (tab === 'add') {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
