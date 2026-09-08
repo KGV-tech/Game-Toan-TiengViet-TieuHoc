@@ -68,6 +68,6 @@ assert.match(html, /register-panel--wide/, 'Registration must identify the new l
 assert.match(html, /register_frame_wide\.png/, 'Registration must use the approved wide frame asset.');
 assert.match(html, /register-form-grid/, 'Registration fields must be arranged in a two-column grid.');
 assert.match(html, /id="reg-gender"/, 'Registration must allow pupils to optionally declare gender.');
-assert.match(css, /aspect-ratio: 3 \/ 2\.25/, 'The registration frame must have enough height to keep fields inside its border.');
+assert.match(css, /aspect-ratio: 3 \/ 2\.6/, 'The registration frame must have enough height to keep fields inside its border.');
 
 console.log('Supabase Auth and RLS security contract verified.');
