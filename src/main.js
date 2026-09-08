@@ -3506,11 +3506,37 @@ const app = {
         getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
             const section = String(className || '').trim();
-            return (app.data.users || []).filter(user => {
-                if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
-                if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
-                return !section || String(user.class_name || '').trim() === section;
-            });
+            const nameSortKeys = user => {
+                const parts = String(user.fullname || user.username || '')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean);
+                if (parts.length < 2) return parts;
+                const nameIndex = parts.length - 1;
+                const beforeNameIndex = parts.length - 2;
+                return [
+                    parts[nameIndex],
+                    parts[beforeNameIndex],
+                    parts[0],
+                    ...parts.slice(1, beforeNameIndex).reverse()
+                ];
+            };
+            return (app.data.users || [])
+                .filter(user => {
+                    if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
+                    if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
+                    return !section || String(user.class_name || '').trim() === section;
+                })
+                .sort((left, right) => {
+                    const leftParts = nameSortKeys(left);
+                    const rightParts = nameSortKeys(right);
+                    const partCount = Math.max(leftParts.length, rightParts.length);
+                    for (let index = 0; index < partCount; index += 1) {
+                        const comparison = String(leftParts[index] || '').localeCompare(String(rightParts[index] || ''), 'vi');
+                        if (comparison) return comparison;
+                    }
+                    return String(left.username || '').localeCompare(String(right.username || ''), 'vi');
+                });
         },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
