@@ -1336,6 +1336,10 @@ async function showAuditState(page, state) {
   }, state);
 }
 
+function isAdminComposerState(state) {
+  return state.adminTab && ['templates', 'questions', 'exams'].includes(state.adminTab);
+}
+
 test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và preview trong Kho Template', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
@@ -1723,7 +1727,8 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
 
   for (const state of auditStates) {
     await showAuditState(page, state);
-    const visibleId = (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
+    const visibleId = isAdminComposerState(state) ? 'admin-compose-screen'
+      : (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
       : state.questBoard ? 'quest-modal'
         : state.shopTab ? 'shop-modal'
           : (state.modalId ?? state.screenId);
@@ -1731,10 +1736,14 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
     if (state.modalId !== 'guide-modal') {
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
-    if (state.adminTab) {
+    if (state.adminTab && !isAdminComposerState(state)) {
       await expect(page.locator('#admin-tabs')).toBeVisible();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
+    }
+    if (isAdminComposerState(state)) {
+      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
+      await expect(page.locator('#treasure-modal')).toBeHidden();
     }
     await captureUiReview(page, testInfo, `audit-desktop-${state.name}.png`);
   }
@@ -1750,7 +1759,8 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
 
   for (const state of auditStates) {
     await showAuditState(page, state);
-    const visibleId = (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
+    const visibleId = isAdminComposerState(state) ? 'admin-compose-screen'
+      : (state.adminTab || state.studentTreasureTab) ? 'treasure-modal'
       : state.questBoard ? 'quest-modal'
         : state.shopTab ? 'shop-modal'
           : (state.modalId ?? state.screenId);
@@ -1758,10 +1768,14 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
     if (state.modalId !== 'guide-modal') {
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
-    if (state.adminTab) {
+    if (state.adminTab && !isAdminComposerState(state)) {
       await expect(page.locator('#admin-tabs')).toBeVisible();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
+    }
+    if (isAdminComposerState(state)) {
+      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
+      await expect(page.locator('#treasure-modal')).toBeHidden();
     }
     await captureUiReview(page, testInfo, `audit-mobile-${state.name}.png`);
   }

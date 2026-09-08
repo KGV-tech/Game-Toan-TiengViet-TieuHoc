@@ -1049,6 +1049,7 @@ const app = {
             }
             await supabaseClient.auth.signOut();
             app.data.currentUser = null;
+            app.admin?.syncRoleAwareLabels();
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             app.router.open('login-screen');
@@ -1067,6 +1068,7 @@ const app = {
             const user = app.data.currentUser;
             const avatar = this.getAvatar(user.avatar_key);
             const isAdmin = user.role?.toLowerCase() === 'admin';
+            app.admin?.syncRoleAwareLabels();
             const starCount = Number(user.stars || 0).toLocaleString('vi-VN');
             const titleLine = isAdmin
                 ? ''
@@ -1303,6 +1305,10 @@ const app = {
                     app.router.animateCatTo(el, () => {
                         if (el.dataset.subject === 'exam') {
                             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
+                            if (isAdmin) {
+                                app.admin.openComposer('exams');
+                                return;
+                            }
                             const examAdminSelector = document.getElementById('exam-admin-class-selector');
                             if (examAdminSelector) examAdminSelector.style.display = isAdmin ? 'block' : 'none';
                             if (isAdmin && !app.exam.state.adminclasslevel) {
@@ -3486,6 +3492,226 @@ const app = {
         questMode: 'personal',
         teamCompetitionDraft: null,
         teamCompetitionBoardTimer: null,
+        composerState: {
+            module: 'exams',
+            classlevel: 'Lớp 5',
+            subject: 'Toán',
+            period: 'Học Kỳ 1',
+            search: ''
+        },
+        isAdminUser() {
+            return app.data.currentUser?.role?.toLowerCase() === 'admin';
+        },
+        syncRoleAwareLabels() {
+            const stationLabel = document.getElementById('exam-station-label');
+            const stationImage = document.getElementById('exam-station-image');
+            const admin = this.isAdminUser();
+            if (stationLabel) stationLabel.textContent = admin ? 'Soạn Đề' : 'Luyện Đề';
+            if (stationImage) stationImage.alt = admin ? 'Soạn Đề' : 'Luyện Đề';
+        },
+        getComposerContentBox() {
+            const composeScreen = document.getElementById('admin-compose-screen');
+            return composeScreen?.classList.contains('active')
+                ? document.getElementById('admin-compose-module-content')
+                : document.getElementById('treasure-content-area');
+        },
+        getComposerModuleMeta(module) {
+            return {
+                templates: {
+                    eyebrow: '01 · MẪU SINH CÂU',
+                    title: 'Template',
+                    description: 'Quản lý cấu trúc để hệ thống sinh câu hỏi đúng ý cô.',
+                    countLabel: 'mẫu đang dùng',
+                    openLabel: 'Mở kho Template',
+                    actionLabel: 'Tạo template'
+                },
+                questions: {
+                    eyebrow: '02 · NGÂN HÀNG NỘI DUNG',
+                    title: 'Câu Hỏi',
+                    description: 'Tạo, tìm, lọc và đưa câu hỏi vào đề bằng các thẻ nội dung dễ quét.',
+                    countLabel: 'câu trong kho',
+                    openLabel: 'Mở kho Câu Hỏi',
+                    actionLabel: 'Tạo câu hỏi'
+                },
+                exams: {
+                    eyebrow: '03 · BỘ ĐỀ HOÀN CHỈNH',
+                    title: 'Đề Kiểm Tra',
+                    description: 'Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh làm bài.',
+                    countLabel: 'đề đã soạn',
+                    openLabel: 'Mở kho Đề Kiểm Tra',
+                    actionLabel: 'Tạo đề mới'
+                }
+            }[module] || this.getComposerModuleMeta('exams');
+        },
+        getComposerStats() {
+            const templates = Array.isArray(app.data.questionTemplates) ? app.data.questionTemplates : [];
+            const questions = Array.isArray(app.data.libraryQuestions) ? app.data.libraryQuestions : [];
+            const exams = Array.isArray(app.data.exams) ? app.data.exams : [];
+            const countType = (items, type) => items.filter(item => item.question_type === type || item.type === type).length;
+            const explanationCount = questions.filter(question => String(question.explanation || '').trim()).length;
+            const readyExams = exams.filter(exam => (exam.questions || []).length >= app.game.questionsPerRound).length;
+            return {
+                templates: {
+                    count: templates.length,
+                    metrics: [
+                        ['Trắc nghiệm', countType(templates, 'Trắc nghiệm')],
+                        ['Điền khuyết', countType(templates, 'Điền khuyết')],
+                        ['Kéo thả', countType(templates, 'Kéo thả')]
+                    ],
+                    countLabel: 'mẫu đang dùng'
+                },
+                questions: {
+                    count: questions.length,
+                    metrics: [
+                        ['Chủ đề đã chọn', new Set(questions.map(question => question.topic).filter(Boolean)).size],
+                        ['Câu có lời giải', questions.length ? `${Math.round((explanationCount / questions.length) * 100)}%` : '0%'],
+                        ['Câu cần rà soát', questions.filter(question => !String(question.explanation || '').trim()).length]
+                    ],
+                    countLabel: 'câu trong kho'
+                },
+                exams: {
+                    count: exams.length,
+                    metrics: [
+                        ['Đề đang soạn', exams.filter(exam => (exam.questions || []).length < app.game.questionsPerRound).length],
+                        [`Đủ ${app.game.questionsPerRound} câu`, readyExams],
+                        ['Đã sẵn sàng', readyExams]
+                    ],
+                    countLabel: 'đề đã soạn'
+                }
+            };
+        },
+        renderComposerProfile() {
+            const profile = document.getElementById('admin-compose-profile');
+            if (!profile) return;
+            const user = app.data.currentUser || {};
+            const fullname = app.data.sanitizeHTML(user.fullname || 'Cô giáo Minh');
+            const avatar = app.auth.getAvatar(user.avatar_key || 'teacher-female');
+            const avatarLabel = app.data.sanitizeHTML(avatar.label || 'Quản trị viên');
+            const avatarMarkup = avatar.image
+                ? `<img class="admin-compose-profile__avatar admin-compose-profile__avatar--image" src="${avatar.image}" alt="Avatar ${avatarLabel}">`
+                : `<span class="admin-compose-profile__avatar" aria-hidden="true">CM</span>`;
+            profile.innerHTML = `${avatarMarkup}<span><strong>${fullname}</strong><small>Quản trị viên</small></span>`;
+        },
+        renderComposerCards() {
+            const container = document.getElementById('admin-compose-cards');
+            if (!container) return;
+            const stats = this.getComposerStats();
+            const modules = [
+                { id: 'templates', className: 'template', icon: 'T' },
+                { id: 'questions', className: 'questions', icon: 'Q' },
+                { id: 'exams', className: 'exams', icon: 'Đ' }
+            ];
+            const esc = value => app.data.sanitizeHTML(value ?? '');
+            container.innerHTML = modules.map(item => {
+                const meta = this.getComposerModuleMeta(item.id);
+                const moduleStats = stats[item.id];
+                const selected = this.composerState.module === item.id;
+                return `<button type="button" class="admin-compose-card admin-compose-card--${item.className}${selected ? ' is-selected' : ''}" data-admin-compose-module="${item.id}" aria-pressed="${selected}" onclick="app.admin.openComposerModule('${item.id}')">
+                    <span class="admin-compose-card__top"><span class="admin-compose-card__eyebrow">${esc(meta.eyebrow)}</span><span class="admin-compose-card__selected" aria-hidden="true">✓</span></span>
+                    <span class="admin-compose-card__icon" aria-hidden="true">${item.icon}</span>
+                    <h3>${esc(meta.title)}</h3>
+                    <p>${esc(meta.description)}</p>
+                    <span class="admin-compose-card__metrics">${moduleStats.metrics.map(([label, value]) => `<span class="admin-compose-card__metric"><span>${esc(label)}</span><strong>${esc(value)}</strong></span>`).join('')}</span>
+                    <span class="admin-compose-card__footer"><span class="admin-compose-card__count"><strong>${esc(moduleStats.count)}</strong><span>${esc(moduleStats.countLabel)}</span></span><span class="admin-compose-card__open">Mở kho →</span></span>
+                </button>`;
+            }).join('');
+        },
+        syncComposerContextUI() {
+            const state = this.composerState;
+            const ids = {
+                classlevel: 'admin-compose-class',
+                subject: 'admin-compose-subject',
+                period: 'admin-compose-period',
+                search: 'admin-compose-search'
+            };
+            Object.entries(ids).forEach(([key, id]) => {
+                const field = document.getElementById(id);
+                if (field && field.value !== state[key]) field.value = state[key] || '';
+            });
+            const context = document.getElementById('admin-compose-context');
+            if (context) context.dataset.context = `${state.classlevel} · ${state.subject} · ${state.period}`;
+            const moduleSummary = document.getElementById('admin-compose-module-summary');
+            if (moduleSummary) moduleSummary.innerHTML = `<span>${app.data.sanitizeHTML(state.classlevel)}</span><span>${app.data.sanitizeHTML(state.subject)}</span><span>${app.data.sanitizeHTML(state.period)}</span>`;
+        },
+        updateComposerContext() {
+            const read = id => document.getElementById(id)?.value || '';
+            this.composerState.classlevel = read('admin-compose-class') || 'Lớp 5';
+            this.composerState.subject = read('admin-compose-subject') || 'Toán';
+            this.composerState.period = read('admin-compose-period') || 'Học Kỳ 1';
+            this.composerState.search = read('admin-compose-search');
+            this.syncComposerContextUI();
+        },
+        renderComposerModule(module = 'exams') {
+            const allowed = ['templates', 'questions', 'exams'];
+            const selectedModule = allowed.includes(module) ? module : 'exams';
+            this.composerState.module = selectedModule;
+            const meta = this.getComposerModuleMeta(selectedModule);
+            const title = document.getElementById('admin-compose-module-title');
+            const kicker = document.getElementById('admin-compose-module-kicker');
+            const description = document.getElementById('admin-compose-module-description');
+            const panel = document.getElementById('admin-compose-module-panel');
+            const box = document.getElementById('admin-compose-module-content');
+            if (title) title.textContent = meta.title;
+            if (kicker) kicker.textContent = `ĐANG CHỌN · ${meta.eyebrow.replace(/^\d+\s*·\s*/, '')}`;
+            if (description) description.textContent = meta.description;
+            if (panel) panel.dataset.module = selectedModule;
+            if (box) {
+                box.innerHTML = '';
+                if (selectedModule === 'templates') this.renderTemplates(box);
+                else if (selectedModule === 'questions') this.renderQuestions(box);
+                else this.renderExams(box);
+            }
+            this.renderComposerCards();
+            this.syncComposerContextUI();
+        },
+        renderComposer() {
+            if (!this.isAdminUser()) return false;
+            this.syncRoleAwareLabels();
+            this.renderComposerProfile();
+            this.syncComposerContextUI();
+            this.renderComposerModule(this.composerState.module || 'exams');
+            return true;
+        },
+        openComposer(module = 'exams') {
+            if (!this.isAdminUser()) return false;
+            const allowed = ['templates', 'questions', 'exams'];
+            this.composerState.module = allowed.includes(module) ? module : 'exams';
+            const treasureModal = document.getElementById('treasure-modal');
+            if (treasureModal) {
+                treasureModal.style.display = 'none';
+                treasureModal.classList.remove('active');
+            }
+            app.router.open('admin-compose-screen');
+            this.renderComposer();
+            return true;
+        },
+        openComposerModule(module) {
+            if (!this.isAdminUser()) return false;
+            if (!document.getElementById('admin-compose-screen')?.classList.contains('active')) return this.openComposer(module);
+            this.renderComposerModule(module);
+            this.focusComposerSection('admin-compose-module-panel');
+            return true;
+        },
+        continueComposer() {
+            return this.openComposerModule(this.composerState.module || 'exams');
+        },
+        focusComposerSection(sectionId, button) {
+            const section = document.getElementById(sectionId);
+            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (button) {
+                document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
+            }
+        },
+        reviewComposer(button) {
+            this.openComposerModule('exams');
+            document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
+            setTimeout(() => this.renderESubTab('add'), 0);
+        },
+        closeComposer() {
+            if (!this.isAdminUser()) return false;
+            app.router.open('map-screen');
+            return true;
+        },
         supportsAdminLessons(classlevel, subject) {
             return Boolean(app.curriculum?.supportsLessons(classlevel, subject));
         },
@@ -4146,6 +4372,7 @@ const app = {
         },
         openAdmin() {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
+            document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
             modal.style.display = 'flex';
             modal.classList.add('active');
@@ -4153,13 +4380,15 @@ const app = {
             this.switchTab('players');
         },
         switchTab(tab) {
+            const module = tab;
+            const composerModules = module === 'templates' || module === 'questions' || module === 'exams';
+            if (composerModules && this.isAdminUser()) {
+                return this.openComposerModule(module);
+            }
             document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
                 { id: 'settings', label: 'Điều chỉnh' },
-                { id: 'templates', label: 'Kho Template' },
-                { id: 'questions', label: 'Kho Câu Hỏi' },
-                { id: 'exams', label: 'Kho Đề Kiểm tra' },
                 { id: 'quests', label: 'Quản lý Nhiệm vụ' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
@@ -4944,7 +5173,7 @@ const app = {
         templateFilters: { classlevel: '', subject: '', topic: '', lesson: '', questionType: '', generatorKey: '' },
         setTemplateFilter(key, value) {
             this.templateFilters[key] = value;
-            this.renderTemplates(document.getElementById('treasure-content-area'));
+            this.renderTemplates(this.getComposerContentBox());
         },
         selectAllTemplateOptions(group) {
             document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`).forEach(input => { input.checked = true; });
@@ -5103,7 +5332,7 @@ const app = {
             const displayedPrompt = (existingPrompt === '{question}' || existingPrompt === legacyFourPartPrompt || (existing?.generator_key === 'number.safe_password_by_place_value' && [legacySafePrompt, safePrompt].includes(existingPrompt))) && presetPrompt
                 ? presetPrompt
                 : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
-            const box = document.getElementById('treasure-content-area');
+            const box = this.getComposerContentBox();
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
               <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
               <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Diễn giải</b><p id="template-guide-copy"></p></div></aside>
@@ -5623,7 +5852,7 @@ const app = {
                 if (error) { alert('Không thể xóa template trên server.'); return; }
             }
             app.data.questionTemplates.splice(index, 1);
-            this.renderTemplates(document.getElementById('treasure-content-area'));
+            this.renderTemplates(this.getComposerContentBox());
         },
         renderQuestions(box) {
             box.innerHTML = `
