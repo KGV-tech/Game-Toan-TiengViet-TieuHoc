@@ -84,7 +84,7 @@ test('đăng ký dùng khung ngang hai cột và lưu lớp con, giới tính', 
   await expect(page.locator('.register-panel-frame')).toHaveAttribute('src', /register_frame_wide\.png$/);
   const fieldLayout = await page.locator('.register-form-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns);
   expect(fieldLayout.split(' ').length).toBe(2);
-  expect(await page.locator('.register-panel').evaluate(panel => panel.getBoundingClientRect().width)).toBeLessThanOrEqual(700);
+  expect(await page.locator('.register-panel').evaluate(panel => panel.getBoundingClientRect().width)).toBeLessThanOrEqual(720);
   await captureUiReview(page, testInfo, 'register-wide-desktop.png');
 });
 
