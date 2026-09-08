@@ -30,3 +30,19 @@ test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và C�
     ...topics.hk2
   ]);
 });
+
+test('Tạo đề tự động điền 10 câu theo các chủ đề đã chọn để giáo viên chỉnh sửa', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.evaluate(() => {
+    const topic = app.constants.topics['5'].math.hk1[0];
+    app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
+      classlevel: 'Lớp 5', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'Trắc nghiệm', q: `Câu tự động ${index + 1}`, options: ['A', 'B'], ans: 'A', explanation: ''
+    }));
+  });
+  await page.locator('#add-e-topics input').first().check();
+  await page.getByRole('button', { name: 'Tạo đề tự động' }).click();
+  await expect(page.locator('textarea[id^="add-e-q-q-"]')).toHaveCount(10);
+  await expect.poll(() => page.locator('textarea[id^="add-e-q-q-"]').evaluateAll(items => items.map(item => item.value))).toEqual(expect.arrayContaining(['Câu tự động 1', 'Câu tự động 10']));
+});
