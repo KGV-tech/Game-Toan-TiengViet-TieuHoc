@@ -64,16 +64,18 @@
 }
 
 #register-screen .register-panel {
+  /* One centred safe area keeps the two-column form independent of the artwork. */
+  --register-content-width: min(100%, 560px);
   position: relative;
   z-index: 10;
-  width: min(58vw, 900px);
-  min-width: 560px;
-  max-width: 900px;
+  width: min(46vw, 680px);
+  min-width: 520px;
+  max-width: 680px;
   aspect-ratio: 3 / 2.6;
   flex: none;
-  /* Keep the compact landscape frame visually attached to the logo. */
-  margin: clamp(-52px, -4vh, -28px) 0 0 !important;
-  padding: clamp(158px, 14vh, 195px) clamp(72px, 7vw, 110px) clamp(66px, 6vh, 98px);
+  /* The cropped asset has no transparent padding, so its content starts much closer to the edge. */
+  margin: clamp(-34px, -2.5vh, -18px) 0 0 !important;
+  padding: clamp(86px, 8vh, 108px) clamp(44px, 4vw, 62px) clamp(42px, 4vh, 58px);
   overflow: visible;
   background: transparent;
   border: 0;
@@ -109,7 +111,8 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(7px, 1vh, 10px) clamp(10px, 1.2vw, 16px);
-  width: 100%;
+  width: var(--register-content-width);
+  margin-inline: auto;
 }
 
 #register-screen .register-field {
@@ -149,8 +152,8 @@
 }
 
 #register-screen .avatar-picker {
-  width: 100%;
-  max-width: 100%;
+  width: var(--register-content-width);
+  max-width: var(--register-content-width);
   min-inline-size: 0;
   margin: clamp(9px, 1.1vh, 12px) auto clamp(6px, .8vh, 9px);
   padding: 6px 8px 7px;
@@ -166,7 +169,7 @@
 
 #register-screen .register-action {
   display: block;
-  width: min(44%, 330px);
+  width: min(42%, 280px);
   margin: clamp(5px, .8vh, 9px) auto 0;
   padding: 8px 14px;
 }
@@ -184,16 +187,19 @@
 #register-screen .login-mascot {
   right: clamp(18px, 4vw, 88px);
   bottom: -3vh;
-  z-index: 6;
+  /* The mascot remains readable even if a very narrow display pushes it near the frame. */
+  z-index: 14;
   width: clamp(205px, 27vw, 385px);
   max-height: 62vh;
 }
 
 @media (max-width: 1100px) and (orientation: landscape) {
   #register-screen .register-panel {
-    width: min(64vw, 720px);
+    --register-content-width: min(100%, 500px);
+    width: min(58vw, 620px);
     min-width: 0;
-    padding: clamp(132px, 13vh, 158px) clamp(55px, 6vw, 74px) clamp(52px, 5vh, 70px);
+    max-width: 620px;
+    padding: clamp(76px, 9vh, 96px) clamp(38px, 4vw, 54px) clamp(34px, 4vh, 46px);
   }
 
   #register-screen .register-logo { width: min(38vw, 390px); }

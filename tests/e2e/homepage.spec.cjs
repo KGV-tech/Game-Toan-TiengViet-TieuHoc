@@ -84,6 +84,7 @@ test('đăng ký dùng khung ngang hai cột và lưu lớp con, giới tính', 
   await expect(page.locator('.register-panel-frame')).toHaveAttribute('src', /register_frame_wide\.png$/);
   const fieldLayout = await page.locator('.register-form-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns);
   expect(fieldLayout.split(' ').length).toBe(2);
+  expect(await page.locator('.register-panel').evaluate(panel => panel.getBoundingClientRect().width)).toBeLessThanOrEqual(700);
   await captureUiReview(page, testInfo, 'register-wide-desktop.png');
 });
 
@@ -100,7 +101,11 @@ test('tablet ngang: biểu mẫu đăng ký hai cột không che Kim tự tháp 
   }));
   expect(layout.columns).toBe(2);
   expect(layout.box.right).toBeLessThan(900);
-  await expect(page.locator('#register-screen .login-mascot')).toBeVisible();
+  const paintOrder = await page.locator('#register-screen .login-mascot').evaluate(mascot => ({
+    mascot: Number.parseInt(getComputedStyle(mascot).zIndex, 10),
+    panel: Number.parseInt(getComputedStyle(document.querySelector('#register-screen .register-artwork-anchor')).zIndex, 10)
+  }));
+  expect(paintOrder.mascot).toBeGreaterThan(paintOrder.panel);
   await captureUiReview(page, testInfo, 'register-wide-tablet.png');
 });
 
