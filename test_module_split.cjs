@@ -6,6 +6,7 @@ globalThis.app = {};
 require('./src/modules/utils.js');
 require('./src/modules/safe-storage.js');
 require('./src/modules/constants.js');
+require('./src/modules/curriculum.js');
 require('./src/modules/router.js');
 require('./src/modules/daily.js');
 require('./src/modules/ui.js');
@@ -24,6 +25,10 @@ assert.ok(globalThis.app.ui && typeof globalThis.app.ui.compactAction === 'funct
   'src/modules/ui.js must attach app.ui.compactAction.');
 assert.ok(globalThis.app.constants.topics,
   'app.constants must expose the topics map.');
+assert.ok(globalThis.app.constants.lessonCatalog,
+  'app.constants must expose the lesson catalog.');
+assert.ok(globalThis.app.curriculum && typeof globalThis.app.curriculum.getLessons === 'function',
+  'curriculum module must expose getLessons.');
 assert.ok(Array.isArray(globalThis.app.constants.topics['5'].math.hk2),
   'Grade 5 Math HK2 topics must be an array.');
 assert.ok(globalThis.app.constants.topics['1'].vietnamese.hk2.length > 0,
