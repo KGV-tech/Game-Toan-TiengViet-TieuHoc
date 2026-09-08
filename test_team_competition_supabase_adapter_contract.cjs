@@ -16,7 +16,7 @@ require(adapterPath);
 
 const rows = {
   team_competitions: [{
-    id: '11111111-1111-4111-8111-111111111111', name: 'Trận server', classlevel: '5',
+    id: '11111111-1111-4111-8111-111111111111', name: 'Trận server', classlevel: '5', class_name: '5A',
     participant_mode: 'manual', question_mode: 'same', common_exam_id: null,
     time_limit_minutes: null, status: 'active', version: 1,
     created_at: '2026-09-06T00:00:00.000Z', updated_at: '2026-09-06T00:00:00.000Z',
@@ -76,6 +76,7 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.equal(api.remote.getStatus(), 'ready');
   const competition = api.store.get('11111111-1111-4111-8111-111111111111');
   assert.equal(competition.name, 'Trận server');
+  assert.equal(competition.className, '5A');
   assert.deepEqual(competition.teams[0].memberUsernames, ['hs1', 'hs2']);
   assert.equal(competition.teams[0].score, 5);
   assert.equal(api.getQuestionsForTeam(competition, competition.teams[0])[0].q, '1 + 1 = ?');

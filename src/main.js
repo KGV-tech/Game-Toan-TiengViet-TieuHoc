@@ -146,6 +146,9 @@ const app = {
             if (!str) return '';
             return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         },
+        genderLabel(value) {
+            return ({ male: 'Nam', female: 'Nữ', other: 'Khác / không muốn nêu' })[String(value || '')] || '—';
+        },
         formatMathNumber(value) {
             const digits = String(value ?? '').replace(/\s/g, '');
             if (!/^\d+$/.test(digits)) return String(value ?? '');
@@ -862,6 +865,7 @@ const app = {
             const pw = document.getElementById('reg-password').value.trim();
             const cl = document.getElementById('reg-class').value;
             const className = document.getElementById('reg-class-name')?.value.trim() || '';
+            const gender = document.getElementById('reg-gender')?.value || null;
             const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'boy-short';
 
             if (!fn || !un || !pw || !cl) {
@@ -889,6 +893,7 @@ const app = {
                 auth_user_id: authData.user.id,
                 classlevel: cl,
                 class_name: className || null,
+                gender,
                 role: 'student',
                 avatar_key: Object.prototype.hasOwnProperty.call(this.avatarChoices, selectedAvatar) ? selectedAvatar : 'boy-short',
                 approved: false,
@@ -3498,12 +3503,19 @@ const app = {
 
             box.innerHTML = html;
         },
-        getTeamCompetitionStudents(classlevel) {
+        getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
+            const section = String(className || '').trim();
             return (app.data.users || []).filter(user => {
                 if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
-                return !cls || String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() === cls;
+                if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
+                return !section || String(user.class_name || '').trim() === section;
             });
+        },
+        getTeamCompetitionClassNames(classlevel) {
+            return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
+                .map(user => String(user.class_name || '').trim()).filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right, 'vi'));
         },
         getTeamCompetitionExams(classlevel) {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
@@ -3517,7 +3529,7 @@ const app = {
             const draft = this.teamCompetitionDraft || {};
             const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
             const count = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
-            const students = this.getTeamCompetitionStudents(document.getElementById('team-comp-class')?.value || draft.classlevel || '5');
+            const students = this.getTeamCompetitionStudents(document.getElementById('team-comp-class')?.value || draft.classlevel || '5', document.getElementById('team-comp-class-name')?.value || draft.className || '');
             draft.participantMode = mode;
             draft.teamCount = Number.isInteger(count) && count > 1 ? count : 2;
             if (mode === 'random') {
@@ -3542,7 +3554,7 @@ const app = {
         randomizeTeamCompetition() {
             this.syncTeamCompetitionDraftFromDom();
             const draft = this.teamCompetitionDraft || {};
-            const students = this.getTeamCompetitionStudents(draft.classlevel || '5');
+            const students = this.getTeamCompetitionStudents(draft.classlevel || '5', draft.className || '');
             try {
                 draft.participantMode = 'random';
                 const teamCount = Number(draft.teamCount || 2);
@@ -3563,6 +3575,7 @@ const app = {
         collectTeamCompetitionForm() {
             const draft = this.teamCompetitionDraft || {};
             const classlevel = document.getElementById('team-comp-class')?.value || draft.classlevel || '5';
+            const className = document.getElementById('team-comp-class-name')?.value || draft.className || '';
             const teamCount = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
             const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
             const teamCards = Array.from(document.querySelectorAll('#team-comp-teams .team-config-card'));
@@ -3585,6 +3598,7 @@ const app = {
                 ...draft,
                 name: document.getElementById('team-comp-name')?.value.trim() || '',
                 classlevel,
+                className,
                 participantMode: mode,
                 teamCount: Number.isInteger(teamCount) ? teamCount : 2,
                 teams,
@@ -3611,7 +3625,9 @@ const app = {
             const box = document.getElementById('treasure-content-area');
             if (!box) return;
             const classlevel = draft.classlevel || '5';
-            const students = this.getTeamCompetitionStudents(classlevel);
+            const classNames = this.getTeamCompetitionClassNames(classlevel);
+            const className = draft.className || '';
+            const students = this.getTeamCompetitionStudents(classlevel, className);
             const exams = this.getTeamCompetitionExams(classlevel);
             const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
             const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
@@ -3619,11 +3635,13 @@ const app = {
             draft.teams = teams;
             const esc = value => app.data.sanitizeHTML(value ?? '');
             const classOptions = [1, 2, 3, 4, 5].map(level => `<option value="${level}" ${String(level) === String(classlevel) ? 'selected' : ''}>Lớp ${level}</option>`).join('');
+            const classNameOptions = [`<option value="">Tất cả học sinh Lớp ${esc(classlevel)}</option>`, ...classNames.map(name => `<option value="${esc(name)}" ${name === className ? 'selected' : ''}>Lớp ${esc(name)}</option>`)].join('');
             const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
             const teamCards = teams.map((team, index) => {
                 const selected = new Set(team.memberUsernames || []);
-                const memberOptions = students.map(student => `<option value="${esc(student.username)}" ${selected.has(String(student.username)) ? 'selected' : ''}>${esc(student.fullname || student.username)} (${esc(student.username)})</option>`).join('');
-                const leaderOptions = students.map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(student.fullname || student.username)}</option>`).join('');
+                const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
+                const memberOptions = students.map(student => `<option value="${esc(student.username)}" ${selected.has(String(student.username)) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
+                const leaderOptions = students.map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
                 const perTeamExamOptions = exams.map(exam => `<option value="${esc(exam.id)}" ${String(team.examId) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
                 return `<article class="team-config-card" data-team-id="${esc(team.id)}">
                     <div class="team-config-card__heading"><span class="team-card-number">${index + 1}</span><input class="form-input team-name-input" value="${esc(team.name)}" aria-label="Tên đội ${index + 1}" placeholder="Tên đội"></div>
@@ -3645,7 +3663,8 @@ const app = {
                 <p class="team-form-intro">Mỗi đội dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Các đội được phép khác số lượng thành viên.</p>
                 <div class="team-form-grid">
                   <label class="team-field-label">Tên trận<input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
-                  <label class="team-field-label">Lớp<select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
+                  <label class="team-field-label">Cấp lớp<select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
+                  <label class="team-field-label">Lớp<select id="team-comp-class-name" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classNameOptions}</select></label>
                   <label class="team-field-label">Số lượng nhóm<input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
                   <label class="team-field-label">Cách chia học sinh<select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định (manual)</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chia ngẫu nhiên (auto)</option></select></label>
                 </div>
@@ -3729,7 +3748,7 @@ const app = {
                 const action = match.status === app.teamCompetition.STATUS.DRAFT
                     ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button><button type="button" class="btn-success" onclick="app.admin.prepareTeamCompetition(decodeURIComponent('${token}'))">Đã chuẩn bị</button>`
                     : `<button type="button" class="btn-primary" onclick="app.admin.openTeamCompetitionBoard(decodeURIComponent('${token}'))">Mở bảng</button>${match.status === app.teamCompetition.STATUS.PREPARED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button>` : ''}`;
-                html += `<article class="team-competition-list-item"><div><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4><p>Lớp ${app.data.sanitizeHTML(match.classlevel)} · ${match.teamCount} đội · ${match.questionMode === 'different' ? 'Bài riêng' : 'Bài chung'}</p><p class="team-competition-list-teams">${teamSummary}</p></div><div class="team-competition-list-meta"><span class="team-status-pill team-status-pill--${match.status}">${status}</span><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
+                html += `<article class="team-competition-list-item"><div><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4><p>Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''} · ${match.teamCount} đội · ${match.questionMode === 'different' ? 'Bài riêng' : 'Bài chung'}</p><p class="team-competition-list-teams">${teamSummary}</p></div><div class="team-competition-list-meta"><span class="team-status-pill team-status-pill--${match.status}">${status}</span><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
             });
             box.innerHTML = html + '</div>';
         },
@@ -3767,7 +3786,7 @@ const app = {
             const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
                 ? `<button type="button" class="btn-start-massive team-board-start" onclick="app.admin.startTeamCompetition(decodeURIComponent('${token}'))">Bắt đầu thi đua</button>`
                 : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : '');
-            box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()">⛶ Mở toàn màn hình</button><span class="team-status-pill team-status-pill--${match.status}">${status}</span></div><header class="team-board-heading"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} đội · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo đội' : 'Một bài giống nhau'}</p></div>${globalAction}</header><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm đội được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
+            box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()">⛶ Mở toàn màn hình</button><span class="team-status-pill team-status-pill--${match.status}">${status}</span></div><header class="team-board-heading"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} đội · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo đội' : 'Một bài giống nhau'}</p></div>${globalAction}</header><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm đội được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
                 if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; return; }
@@ -5671,6 +5690,7 @@ const app = {
             const cols = [
                 { label: 'Cấp lớp', filterable: true },
                 { label: 'Lớp', filterable: true },
+                { label: 'Giới tính', filterable: true },
                 { label: 'Họ tên', filterable: true },
                 { label: 'Tên đăng nhập', filterable: true },
                 { label: 'Mật khẩu', filterable: false },
@@ -5694,7 +5714,7 @@ const app = {
                           ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
                 }
                 return `<tr>
-          <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.class_name || '—')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
+          <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.class_name || '—')}</td><td>${app.data.sanitizeHTML(app.data.genderLabel?.(u.gender) || '—')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
           <td>${app.data.sanitizeHTML(u.username)}</td><td>Không hiển thị (có thể đặt lại)</td>
           <td>${actionBtns}</td>
         </tr>`;
@@ -5752,6 +5772,16 @@ const app = {
                 <label for="add-class-name" style="width:130px; font-weight:bold; flex-shrink:0;">Lớp</label>
                 <input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}">
              </div>
+
+             <div style="display:flex; align-items:center; margin-bottom:15px;">
+                <label for="add-gender" style="width:130px; font-weight:bold; flex-shrink:0;">Giới tính</label>
+                <select id="add-gender" class="form-input" style="flex:1; padding:8px;">
+                   <option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option>
+                   <option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option>
+                   <option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option>
+                   <option value="other" ${u?.gender === 'other' ? 'selected' : ''}>Khác / không muốn nêu</option>
+                </select>
+             </div>
              
              ${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}
           </div>
@@ -5763,6 +5793,7 @@ const app = {
             const pw = document.getElementById('add-password').value.trim();
             const cl = document.getElementById('add-class').value;
             const className = document.getElementById('add-class-name')?.value.trim() || '';
+            const gender = document.getElementById('add-gender')?.value || null;
             if (!fn || !un || (!editUsername && !pw)) return alert('Điền đủ thông tin!');
 
             if (editUsername) {
@@ -5772,7 +5803,8 @@ const app = {
                     user.fullname = fn;
                     user.classlevel = cl;
                     user.class_name = className || null;
-                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl, class_name: className || null }).eq('id', user.id);
+                    user.gender = gender;
+                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl, class_name: className || null, gender }).eq('id', user.id);
                     if (error) return alert('Không thể cập nhật thông tin học sinh.');
                     if (pw) {
                         try {
@@ -5793,7 +5825,7 @@ const app = {
             } else {
                 if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
                 try {
-                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, class_name: className || null, password: pw });
+                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, class_name: className || null, gender, password: pw });
                     // Realtime can insert this profile before the function response arrives.
                     if (!app.data.users.find(x => x.id === data.profile.id)) app.data.users.push(data.profile);
                 } catch (error) {
@@ -6243,7 +6275,7 @@ const app = {
                     ${app.ui.compactAction('Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--save')}
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
-                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Cấp lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.class_name || '—')}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Cấp lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.class_name || '—')}</b><br>Giới tính: <b>${app.data.sanitizeHTML(app.data.genderLabel(student.gender))}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Sao hiện có: <b>${student.stars || 0}</b><br>Thú cưng: ${petRows}</p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
@@ -6262,6 +6294,7 @@ const app = {
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Mật khẩu', 'Giá trị': 'Không xuất vì mật khẩu được bảo mật' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp', 'Giá trị': student.classlevel || '' },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Lớp con', 'Giá trị': student.class_name || '' },
+                { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Giới tính', 'Giá trị': app.data.genderLabel(student.gender) },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Sao hiện có', 'Giá trị': student.stars || 0 },
                 { 'Nhóm dữ liệu': 'Thông tin', 'Nội dung': 'Câu đã gặp', 'Giá trị': seenQuestions.length }
             ];

@@ -69,13 +69,39 @@ test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật
   expect(consoleErrors).toEqual([]);
 });
 
-test('đăng ký có thể nhập lớp con dưới cấp lớp', async ({ page }) => {
+test('đăng ký dùng khung ngang hai cột và lưu lớp con, giới tính', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
   await page.locator('#link-to-register').click();
   await expect(page.locator('#register-screen')).toHaveClass(/active/);
+  await expect(page.locator('.register-panel')).toHaveClass(/register-panel--wide/);
+  await expect(page.locator('.register-form-grid')).toBeVisible();
+  await expect(page.locator('.register-form-grid #reg-fullname')).toBeVisible();
+  await expect(page.locator('.register-form-grid #reg-username')).toBeVisible();
+  await expect(page.locator('#reg-gender')).toHaveValue('');
   await expect(page.locator('#reg-class-name')).toHaveAttribute('placeholder', 'Lớp (ví dụ: 4/4, không bắt buộc)');
+  await expect(page.locator('.register-panel-frame')).toHaveAttribute('src', /register_frame_wide\.png$/);
+  const fieldLayout = await page.locator('.register-form-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns);
+  expect(fieldLayout.split(' ').length).toBe(2);
+  await captureUiReview(page, testInfo, 'register-wide-desktop.png');
+});
+
+test('tablet ngang: biểu mẫu đăng ký hai cột không che Kim tự tháp hoặc robot mèo', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await openOfflineHomepage(page);
+
+  await page.locator('#link-to-register').click();
+  const panel = page.locator('.register-panel');
+  await expect(panel).toBeVisible();
+  const layout = await page.locator('.register-form-grid').evaluate(grid => ({
+    columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+    box: grid.getBoundingClientRect().toJSON()
+  }));
+  expect(layout.columns).toBe(2);
+  expect(layout.box.right).toBeLessThan(900);
+  await expect(page.locator('#register-screen .login-mascot')).toBeVisible();
+  await captureUiReview(page, testInfo, 'register-wide-tablet.png');
 });
 
 test('mobile dọc: nhắc học sinh xoay màn hình', async ({ page }, testInfo) => {

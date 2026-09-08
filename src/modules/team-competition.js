@@ -160,6 +160,7 @@
         const students = Array.isArray(context.students) ? context.students : [];
         const exams = Array.isArray(context.exams) ? context.exams : [];
         const classlevel = normalizeClass(config.classlevel || config.classLevel);
+        const className = String(config.className || config.class_name || '').trim();
         if (!String(config.name || config.title || '').trim()) errors.push(error('name_required', 'Vui lòng nhập tên trận.'));
         if (!classlevel) errors.push(error('class_required', 'Vui lòng chọn lớp.'));
 
@@ -199,6 +200,7 @@
                 else {
                     if (!isApprovedStudent(student)) errors.push(error('student_not_approved', `${username} chưa được duyệt hoặc không phải học sinh.`, `teams.${index}`));
                     if (classlevel && normalizeClass(student.classlevel) !== classlevel) errors.push(error('student_wrong_class', `${username} không thuộc lớp ${classlevel}.`, `teams.${index}`));
+                    else if (className && String(student.class_name || '').trim() !== className) errors.push(error('student_wrong_class_section', `${username} không thuộc lớp ${className}.`, `teams.${index}`));
                 }
             });
             const leader = studentKey(team?.leaderUsername);
@@ -266,6 +268,7 @@
             id: String(input.id || makeId('match')),
             name: String(input.name || input.title || '').trim(),
             classlevel: normalizeClass(input.classlevel || input.classLevel),
+            className: String(input.className || input.class_name || '').trim(),
             participantMode: input.participantMode || input.mode || 'manual',
             selectedStudentUsernames: Array.from(new Set((input.selectedStudentUsernames || input.studentUsernames || teams.flatMap(team => team.memberUsernames) || []).map(studentKey).filter(Boolean))),
             teamCount,
