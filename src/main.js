@@ -350,7 +350,7 @@ const app = {
                     subject: template.subject,
                     semester: template.semester,
                     topic: template.topic,
-                    lesson: template.lesson || template.config?.lesson || '',
+                    lesson: app.curriculum?.getTemplateLesson(template) || template.lesson || template.config?.lesson || '',
                     type: template.question_type || generated.type,
                     templateId: template.generator_key
                 };
@@ -4072,40 +4072,11 @@ const app = {
         getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
             const section = String(className || '').trim();
-            const nameParts = user => String(user.fullname || user.username || '')
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean);
-            const students = (app.data.users || [])
-                .filter(user => {
-                    if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
-                    if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
-                    return !section || String(user.class_name || '').trim() === section;
-                });
-            const maxMiddlePartCount = students.reduce((maximum, user) => Math.max(maximum, Math.max(0, nameParts(user).length - 3)), 0);
-            const nameSortKeys = user => {
-                const parts = nameParts(user);
-                if (parts.length < 2) return parts;
-                const remainingMiddleParts = parts.slice(1, -2).reverse();
-                return [
-                    parts.at(-1),
-                    parts.at(-2),
-                    ...remainingMiddleParts,
-                    ...Array(Math.max(0, maxMiddlePartCount - remainingMiddleParts.length)).fill(''),
-                    parts[0]
-                ];
-            };
-            return students
-                .sort((left, right) => {
-                    const leftParts = nameSortKeys(left);
-                    const rightParts = nameSortKeys(right);
-                    const partCount = Math.max(leftParts.length, rightParts.length);
-                    for (let index = 0; index < partCount; index += 1) {
-                        const comparison = String(leftParts[index] || '').localeCompare(String(rightParts[index] || ''), 'vi');
-                        if (comparison) return comparison;
-                    }
-                    return String(left.username || '').localeCompare(String(right.username || ''), 'vi');
-                });
+            return (app.data.users || []).filter(user => {
+                if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
+                if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
+                return !section || String(user.class_name || '').trim() === section;
+            });
         },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
@@ -4810,8 +4781,12 @@ const app = {
             input.value = app.data.formatMathText(input.value);
         },
         getTemplateLesson(template) {
-            const value = template?.lesson || template?.config?.lesson || '';
+            const value = app.curriculum?.getTemplateLesson(template) || template?.lesson || template?.config?.lesson || '';
             return this.normalizeAdminLesson(value) || value;
+        },
+        getTemplateLessonDisplay(template) {
+            const lesson = this.getTemplateLesson(template);
+            return this.lessonLabel(lesson) || (lesson ? lesson : 'Toàn chủ đề');
         },
         renderTemplates(box) {
             const templates = app.data.questionTemplates || [];
@@ -4846,7 +4821,7 @@ const app = {
                 { label: 'Cấp lớp' }, { label: 'Môn' }, { label: 'Chủ đề' }, { label: 'Loại câu hỏi' }, { label: 'Template' }, { label: 'Bài học' }, { label: 'Câu hỏi mẫu' }, { label: 'Hành động' }
               ], visible, ({ item, index }) => `<tr>
                 <td>${app.data.sanitizeHTML(item.classlevel)}</td><td>${app.data.sanitizeHTML(item.subject)}</td><td>${app.data.sanitizeHTML(item.topic)}</td>
-                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(this.lessonLabel(this.getTemplateLesson(item)) || '—')}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
+                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(this.getTemplateLessonDisplay(item))}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
                 <td><button class="btn-opt action-btn" onclick="app.admin.renderTemplateForm(${index})">Sửa</button><button class="btn-danger action-btn" onclick="app.admin.deleteTemplate(${index})">Xóa</button></td>
               </tr>`, 'Chưa có cấu hình template. Hãy thêm generator và cấu hình mẫu từ code hoặc chạy migration Supabase.')}
             `;
@@ -4899,6 +4874,7 @@ const app = {
             }
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
             const config = existing?.config || {};
+            const selectedTemplateLesson = this.getTemplateLesson(existing);
             const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
             const selectedQuestionType = isMatching ? 'Đối chiếu trùng khớp' : (existing?.question_type || 'Trắc nghiệm');
             const templateQuestionTypes = ['Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
@@ -4961,7 +4937,7 @@ const app = {
                 <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input" onchange="app.admin.refreshTemplateLessons()"></select></label>
-                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(config.lesson || existing?.lesson || '')}"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu template áp dụng cho cả Chủ đề.</small></label>
+                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(selectedTemplateLesson)}"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu template áp dụng cho cả Chủ đề.</small></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
@@ -4998,7 +4974,7 @@ const app = {
                 const safeHeading = document.querySelector('.template-editor__rule--safe-password-controls h5');
                 if (safeHeading) safeHeading.textContent = '1b. Hàng ngẫu nhiên cho Điều kiện 1 · 2. Hàng ngẫu nhiên cho Điều kiện 2';
             }
-            this.refreshTemplateTopics(existing?.topic || '', config.lesson || existing?.lesson || '');
+            this.refreshTemplateTopics(existing?.topic || '', selectedTemplateLesson);
             const generatorControl = document.getElementById('template-generator');
             generatorControl?.querySelector('option[value="number.four_operations_practice"]')?.remove();
             const angleTemplateOptions = [
@@ -6393,7 +6369,10 @@ const app = {
                 if (!item || !same(item.classlevel, classlevel) || !same(item.subject, subject)) return false;
                 if (!topics.some(topic => same(item.topic, topic))) return false;
                 if (!lessonFilters.length) return true;
-                const itemLesson = item.lesson || item.config?.lesson || '';
+                const itemLesson = item.generator_key
+                    ? this.getTemplateLesson(item)
+                    : item.lesson || item.config?.lesson || '';
+                if (!itemLesson) return Boolean(item.generator_key);
                 return lessonFilters.some(lesson => same(itemLesson, lesson));
             };
             const used = new Set();
