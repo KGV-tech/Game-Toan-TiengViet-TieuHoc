@@ -3501,8 +3501,14 @@ const app = {
             lessonEl.disabled = !supported;
             const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, semester, topic }) : [];
             lessonEl.innerHTML = this.getLessonOptions(lessons, selected);
-            if (supported) lessonEl.value = this.normalizeAdminLesson(selected) || '';
-            else lessonEl.value = '';
+            if (supported) {
+                lessonEl.value = this.normalizeAdminLesson(selected) || '';
+                if (lessonEl.value) lessonEl.dataset.selected = lessonEl.value;
+                else delete lessonEl.dataset.selected;
+            } else {
+                delete lessonEl.dataset.selected;
+                lessonEl.value = '';
+            }
         },
         getExamLessons(classlevel, subject, topics = []) {
             if (!this.supportsAdminLessons(classlevel, subject)) return [];
@@ -3511,17 +3517,18 @@ const app = {
                 .filter(entry => !topicSet.size || topicSet.has(entry.topic))
                 .flatMap(entry => entry.lessons);
         },
-        getSelectedExamLessons() {
+        getExamLessonSelectionState() {
             const wrap = document.getElementById('add-e-lessons');
-            if (!wrap || wrap.hidden) return [];
-            const selected = Array.from(wrap.querySelectorAll('input:checked')).map(input => input.value);
-            const classlevel = document.getElementById('add-e-class')?.value || '';
-            const subject = document.getElementById('add-e-sub')?.value || '';
-            const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
-            const available = this.getExamLessons(classlevel, subject, topics);
-            return available.length && selected.length === available.length ? [] : selected;
+            if (!wrap || wrap.hidden) return { selectedLessons: [], unrestricted: true };
+            const inputs = Array.from(wrap.querySelectorAll('input[type="checkbox"]'));
+            const selectedLessons = inputs.filter(input => input.checked).map(input => input.value);
+            const unrestricted = selectedLessons.length === 0 || selectedLessons.length === inputs.length;
+            return { selectedLessons: unrestricted ? [] : selectedLessons, unrestricted };
         },
-        renderExamLessonFilters(classlevel, subject, topics, selectedLessons = []) {
+        getSelectedExamLessons() {
+            return this.getExamLessonSelectionState().selectedLessons;
+        },
+        renderExamLessonFilters(classlevel, subject, topics, selectedLessons = [], unrestricted = !selectedLessons.length) {
             const wrap = document.getElementById('add-e-lessons');
             const field = document.getElementById('add-e-lessons-field');
             if (!wrap || !field) return;
@@ -3529,14 +3536,17 @@ const app = {
             field.hidden = !supported;
             wrap.hidden = !supported;
             if (!supported) {
+                wrap.dataset.selectionMode = 'all';
                 wrap.innerHTML = '';
                 return;
             }
             const selected = new Set((selectedLessons || []).map(value => this.normalizeAdminLesson(value)).filter(Boolean));
+            const unrestrictedScope = unrestricted || !selected.size;
+            wrap.dataset.selectionMode = unrestrictedScope ? 'all' : 'selected';
             const entries = app.curriculum.getTopicEntries({ classlevel, subject })
                 .filter(entry => !(topics || []).length || topics.includes(entry.topic));
             wrap.innerHTML = entries.length
-                ? entries.map(entry => `<fieldset class="exam-composer__lesson-group"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${!selected.size || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
+                ? entries.map(entry => `<fieldset class="exam-composer__lesson-group"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
                 : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>';
         },
         updateExamQuestionLesson(index, selectedLesson = '') {
@@ -3551,8 +3561,14 @@ const app = {
             lessonEl.disabled = !supported;
             const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, topic }) : [];
             lessonEl.innerHTML = this.getLessonOptions(lessons, selected);
-            if (supported) lessonEl.value = this.normalizeAdminLesson(selected) || '';
-            else lessonEl.value = '';
+            if (supported) {
+                lessonEl.value = this.normalizeAdminLesson(selected) || '';
+                if (lessonEl.value) lessonEl.dataset.selected = lessonEl.value;
+                else delete lessonEl.dataset.selected;
+            } else {
+                delete lessonEl.dataset.selected;
+                lessonEl.value = '';
+            }
             lessonEl.closest('.exam-form-field')?.toggleAttribute('hidden', !supported);
         },
         updateTopicDropdown() {
@@ -3601,14 +3617,25 @@ const app = {
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
             const lessonWrap = document.getElementById('add-e-lessons');
             let selectedLessons = [];
+            let unrestrictedLessons = true;
             if (lessonWrap) {
-                try { selectedLessons = JSON.parse(lessonWrap.dataset.selected || '[]'); } catch (_) { selectedLessons = []; }
-                if (!selectedLessons.length) selectedLessons = Array.from(lessonWrap.querySelectorAll('input:checked')).map(input => input.value);
+                const hasDraftSelection = Object.prototype.hasOwnProperty.call(lessonWrap.dataset, 'selected');
+                if (hasDraftSelection) {
+                    try { selectedLessons = JSON.parse(lessonWrap.dataset.selected || '[]'); } catch (_) { selectedLessons = []; }
+                    unrestrictedLessons = lessonWrap.dataset.selectionMode !== 'selected';
+                } else {
+                    const selection = this.getExamLessonSelectionState();
+                    selectedLessons = selection.selectedLessons;
+                    unrestrictedLessons = selection.unrestricted;
+                }
                 const allowedLessonIds = new Set(this.getExamLessons(clsEl?.value || '', sub, questionTopics).map(lesson => lesson.id));
-                selectedLessons = selectedLessons.map(value => this.normalizeAdminLesson(value)).filter(value => allowedLessonIds.has(value));
+                selectedLessons = unrestrictedLessons
+                    ? []
+                    : selectedLessons.map(value => this.normalizeAdminLesson(value)).filter(value => allowedLessonIds.has(value));
+                if (!selectedLessons.length) unrestrictedLessons = true;
                 delete lessonWrap.dataset.selected;
             }
-            this.renderExamLessonFilters(clsEl?.value || '', sub, questionTopics, selectedLessons);
+            this.renderExamLessonFilters(clsEl?.value || '', sub, questionTopics, selectedLessons, unrestrictedLessons);
 
             let i = 0;
             while (true) {
@@ -4825,7 +4852,14 @@ const app = {
             lesson.disabled = !supported;
             const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, semester, topic }) : [];
             lesson.innerHTML = this.getLessonOptions(lessons, selected);
-            lesson.value = supported ? (this.normalizeAdminLesson(selected) || '') : '';
+            if (supported) {
+                lesson.value = this.normalizeAdminLesson(selected) || '';
+                if (lesson.value) lesson.dataset.selected = lesson.value;
+                else delete lesson.dataset.selected;
+            } else {
+                delete lesson.dataset.selected;
+                lesson.value = '';
+            }
         },
         renderTemplateForm(editIndex) {
             const existing = app.data.questionTemplates[editIndex];
@@ -6104,7 +6138,7 @@ const app = {
                   </div>
                   <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
                      <span>Bài học áp dụng</span>
-                     <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}'></div>
+                     <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
                      <small>Chỉ dành cho Lớp 4 – Toán. Bỏ chọn toàn bộ nghĩa là không giới hạn theo Bài học.</small>
                   </div>
                   <div class="exam-composer__meta-action">

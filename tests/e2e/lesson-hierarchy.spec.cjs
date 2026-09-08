@@ -34,6 +34,7 @@ test('Admin soạn câu hỏi thấy Bài học đúng điều kiện, học sin
   await page.evaluate(() => app.admin.renderQSubTab('add', 0));
   await page.locator('#add-q-sub').selectOption('Tiếng Việt');
   await expect(page.locator('#add-q-lesson-field')).toBeHidden();
+  await expect.poll(() => page.locator('#add-q-lesson').evaluate(select => select.dataset.selected || '')).toBe('');
 
   await page.evaluate(() => {
     document.getElementById('treasure-modal').style.display = 'none';
@@ -75,6 +76,31 @@ test('Soạn đề Toán lớp 4 có bộ lọc Bài học và tự động ch�
   await expect(page.locator('select[id^="add-e-q-lesson-"]').first()).toHaveValue('g4-math-hk1-b02');
   const selectedLessons = await page.locator('select[id^="add-e-q-lesson-"]').evaluateAll(selects => selects.map(select => select.value));
   expect(new Set(selectedLessons)).toEqual(new Set(['g4-math-hk1-b02']));
+
+  await page.locator('#add-e-sub').selectOption('Tiếng Việt');
+  await expect.poll(() => page.locator('#add-e-q-lesson-0').evaluate(select => select.dataset.selected || '')).toBe('');
+});
+
+test('Soạn đề giữ rõ trạng thái phạm vi Bài học khi đổi học kỳ', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openAdmin(page);
+  await page.evaluate(() => {
+    app.admin.switchTab('exams');
+    app.admin.renderESubTab('add');
+  });
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await page.locator('#add-e-topics input').first().check();
+  await page.evaluate(() => {
+    const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons input'));
+    lessonInputs.forEach(input => { input.checked = input.value === 'g4-math-hk1-b02'; });
+    app.admin.updateExamTopics();
+  });
+  await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'selected');
+  await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(1);
+
+  await page.locator('#add-e-period').selectOption('Giữa kỳ 2');
+  await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'all');
+  await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(36);
 });
 
 test('Kho template và nhiệm vụ Admin dùng cùng danh mục Bài học', async ({ page }) => {
