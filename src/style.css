@@ -34,7 +34,8 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; 
 .login-field .input-glass { height: 100%; margin: 0; padding: 0 12px; border: 0; background: transparent; color: #fff; font-size: clamp(1rem, 1.35vw, 1.22rem); }
 .login-field .input-glass::placeholder { color: #acd5e8; }
 .login-field .input-glass:-webkit-autofill, .login-field .input-glass:-webkit-autofill:hover, .login-field .input-glass:-webkit-autofill:focus { -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 1000px #0a345d inset; caret-color: #fff; transition: background-color 9999s ease-out 0s; }
-.login-eye { color: #dbeafa; font-size: 1.6rem; line-height: 1; text-shadow: 0 0 5px rgba(136, 224, 255, 0.6); }
+.login-eye { padding: 0; border: 0; background: transparent; color: #dbeafa; font-size: 1.6rem; line-height: 1; text-shadow: 0 0 5px rgba(136, 224, 255, 0.6); cursor: pointer; }
+.login-eye:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
 .login-action { margin: 10px auto 0; width: 54%; padding: 9px 20px; border: 3px solid #69d9ff; border-bottom: 5px solid #063877; border-radius: 10px; clip-path: polygon(7% 0, 93% 0, 100% 18%, 100% 82%, 93% 100%, 7% 100%, 0 82%, 0 18%); background: linear-gradient(180deg, #1760af, #0a3e83 54%, #082c63); font-size: clamp(1.25rem, 1.9vw, 1.7rem); text-transform: none; box-shadow: 0 0 0 4px #152d45, 0 0 18px rgba(40, 202, 255, 0.75), inset 0 2px 0 rgba(255,255,255,0.38); }
 .login-register-link { margin-top: 13px; color: #29c5ff; font-size: 0.92rem; font-weight: 800; text-decoration: none; text-shadow: 0 0 8px rgba(31, 204, 255, 0.8); }
 .avatar-picker { max-width: 100%; min-inline-size: 0; margin: 0 0 12px; padding: 9px 10px 10px; overflow: hidden; border: 1px solid rgba(109, 207, 255, .48); border-radius: 10px; background: rgba(3, 25, 51, .58); color: #dff6ff; text-align: left; }

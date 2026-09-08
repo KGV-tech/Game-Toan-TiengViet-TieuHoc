@@ -664,6 +664,14 @@ const app = {
         },
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
+            document.getElementById('toggle-password').onclick = () => {
+                const password = document.getElementById('password');
+                const visible = password.type === 'text';
+                password.type = visible ? 'password' : 'text';
+                const toggle = document.getElementById('toggle-password');
+                toggle.setAttribute('aria-pressed', String(!visible));
+                toggle.setAttribute('aria-label', visible ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
+            };
             document.getElementById('register-btn').onclick = () => this.register();
             document.getElementById('link-to-register').onclick = (event) => { event.preventDefault(); app.router.open('register-screen'); };
             document.getElementById('link-to-login').onclick = (event) => { event.preventDefault(); app.router.open('login-screen'); };
