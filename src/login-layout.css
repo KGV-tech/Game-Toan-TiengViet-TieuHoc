@@ -229,60 +229,63 @@
 
 .auth-password-modal {
   z-index: 1000;
-  padding: 20px;
+  padding: clamp(10px, 2vh, 20px);
+  overflow: hidden;
   background: rgba(1, 11, 26, 0.82);
 }
 
 .auth-password-card {
   position: relative;
-  width: min(92vw, 470px);
-  max-height: min(88vh, 620px);
-  padding: clamp(26px, 4vh, 40px) clamp(24px, 4vw, 42px);
-  overflow: auto;
+  box-sizing: border-box;
+  width: min(82vw, 540px);
+  max-height: min(90vh, 560px);
+  padding: clamp(16px, 2.6vh, 26px) clamp(20px, 3vw, 32px);
+  overflow: hidden;
   border: 2px solid #48d8ff;
   border-radius: 18px;
   background: linear-gradient(145deg, rgba(6, 40, 75, 0.98), rgba(1, 17, 40, 0.98));
   box-shadow: 0 0 0 5px rgba(14, 92, 137, 0.42), 0 0 32px rgba(38, 189, 255, 0.48);
   color: #f7fdff;
-  text-align: left;
+  text-align: center;
 }
 
 .auth-password-card h2 {
-  margin: 0 32px 8px 0;
+  margin: 0 32px 5px 0;
   color: #fff;
-  font-size: clamp(1.45rem, 2.3vw, 1.9rem);
+  font-size: clamp(1.3rem, 2.1vw, 1.7rem);
   text-shadow: 0 0 10px rgba(79, 220, 255, 0.78);
 }
 
 .auth-password-intro,
 .auth-password-note {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   color: #c9eaff;
   font-size: clamp(0.86rem, 1.2vw, 1rem);
-  line-height: 1.45;
+  line-height: 1.3;
 }
 
 .auth-password-note {
-  margin: 12px 0 18px;
+  margin: 7px 0 10px;
   color: #8fe9ff;
 }
 
 .auth-password-card form {
   display: grid;
-  gap: 8px;
+  gap: 5px;
+  text-align: left;
 }
 
 .auth-password-card label {
   color: #e9f8ff;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 
 .auth-password-card .input-glass {
   width: 100%;
-  min-height: 46px;
+  min-height: 40px;
   box-sizing: border-box;
-  padding: 10px 13px;
+  padding: 7px 11px;
   border: 2px solid #4a7ba5;
   border-radius: 10px;
   background: rgba(1, 23, 52, 0.82);
@@ -297,14 +300,14 @@
 }
 
 .auth-password-submit {
-  min-height: 48px;
+  min-height: 42px;
   margin-top: 2px;
   border: 2px solid #85eaff;
   border-radius: 11px;
   background: linear-gradient(180deg, #278bff, #1555d6);
   color: #fff;
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 5px 0 #0c3d9a, 0 0 17px rgba(53, 173, 255, 0.45);
@@ -339,11 +342,12 @@
 }
 
 @media (max-height: 540px) and (orientation: landscape) {
-  .auth-password-modal { align-items: flex-start; overflow-y: auto; }
-  .auth-password-card { width: min(74vw, 500px); max-height: none; margin: 12px auto; padding-block: 22px; }
-  .auth-password-intro { margin-bottom: 12px; }
-  .auth-password-card form { gap: 5px; }
-  .auth-password-card .input-glass { min-height: 38px; padding-block: 7px; }
-  .auth-password-note { margin-block: 8px 12px; }
-  .auth-password-submit { min-height: 42px; }
+  .auth-password-card { width: min(76vw, 500px); max-height: 94vh; padding-block: 12px; }
+  .auth-password-card h2 { margin-bottom: 3px; font-size: 1.25rem; }
+  .auth-password-intro { margin-bottom: 5px; font-size: .78rem; }
+  .auth-password-card form { gap: 3px; }
+  .auth-password-card label { font-size: .72rem; }
+  .auth-password-card .input-glass { min-height: 32px; padding-block: 4px; }
+  .auth-password-note { margin-block: 5px 6px; font-size: .72rem; }
+  .auth-password-submit { min-height: 35px; font-size: .78rem; }
 }
