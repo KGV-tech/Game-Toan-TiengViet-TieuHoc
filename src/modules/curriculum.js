@@ -4,7 +4,7 @@
     if (!root.app) root.app = {};
 
     const classNumberOf = value => {
-        const match = String(value ?? '').trim().match(/(?:Lớp\s*)?([1-5])$/i);
+        const match = String(value ?? '').trim().match(/^(?:Lớp\s*)?([1-5])$/i);
         return match ? match[1] : '';
     };
 

@@ -184,7 +184,7 @@ const app = {
         exams: [],
         petInventory: {},
         seenQuestionKeys: new Set(),
-        settings: { hardTimeLimit: 10, examTimeLimit: 30 },
+        settings: { hardTimeLimit: 10, examTimeLimit: 30, lessonMetadata: { questions: {}, quests: {} } },
         currentUser: null,
         async fetchAllFromSupabase(table, filterCol, filterVal) {
             if (!window.supabase) return [];
@@ -215,7 +215,14 @@ const app = {
                 .replace(/\s+/g, ' ')
                 .toLocaleLowerCase('vi-VN');
         },
-        getQuestionKey(question) {
+        ensureLessonMetadata() {
+            if (!this.settings || typeof this.settings !== 'object') this.settings = {};
+            if (!this.settings.lessonMetadata || typeof this.settings.lessonMetadata !== 'object') this.settings.lessonMetadata = {};
+            if (!this.settings.lessonMetadata.questions || typeof this.settings.lessonMetadata.questions !== 'object') this.settings.lessonMetadata.questions = {};
+            if (!this.settings.lessonMetadata.quests || typeof this.settings.lessonMetadata.quests !== 'object') this.settings.lessonMetadata.quests = {};
+            return this.settings.lessonMetadata;
+        },
+        getQuestionBaseKey(question) {
             return [
                 question?.classlevel,
                 question?.subject,
@@ -223,6 +230,76 @@ const app = {
                 question?.topic,
                 question?.q
             ].map(value => this.normalizeQuestionPart(value)).join('|');
+        },
+        getQuestionLessonMetadataKey(question) {
+            return question?.id ? `id:${question.id}` : `key:${this.getQuestionBaseKey(question)}`;
+        },
+        getQuestLessonMetadataKey(quest) {
+            return quest?.id ? `id:${quest.id}` : `key:${this.normalizeQuestionPart(quest?.title)}`;
+        },
+        hydrateQuestionLessons(questions) {
+            const metadata = this.ensureLessonMetadata().questions;
+            (questions || []).forEach(question => {
+                if (!question || question.lesson) return;
+                const stored = metadata[this.getQuestionLessonMetadataKey(question)];
+                if (stored?.lesson) question.lesson = stored.lesson;
+            });
+            return questions;
+        },
+        syncQuestionLessonMetadata(questions = this.libraryQuestions) {
+            const metadata = this.ensureLessonMetadata().questions;
+            (questions || []).forEach(question => {
+                if (!question) return;
+                const key = this.getQuestionLessonMetadataKey(question);
+                const lesson = String(question.lesson || '').trim();
+                if (lesson) metadata[key] = { lesson };
+                else if (metadata[key]) delete metadata[key];
+            });
+            return metadata;
+        },
+        hydrateQuestCurriculum(quests) {
+            const metadata = this.ensureLessonMetadata().quests;
+            (quests || []).forEach(quest => {
+                if (!quest || quest.curriculum) return;
+                const stored = metadata[this.getQuestLessonMetadataKey(quest)];
+                if (stored?.curriculum) quest.curriculum = stored.curriculum;
+            });
+            return quests;
+        },
+        syncQuestCurriculumMetadata(quests = this.quests) {
+            const metadata = this.ensureLessonMetadata().quests;
+            (quests || []).forEach(quest => {
+                if (!quest) return;
+                const curriculum = quest.curriculum && typeof quest.curriculum === 'object' ? quest.curriculum : null;
+                const key = this.getQuestLessonMetadataKey(quest);
+                if (curriculum && Object.values(curriculum).some(Boolean)) metadata[key] = { curriculum };
+                else if (metadata[key]) delete metadata[key];
+            });
+            return metadata;
+        },
+        async saveLessonMetadata() {
+            this.ensureLessonMetadata();
+            if (!window.supabase) {
+                app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+                return null;
+            }
+            const { error } = await supabaseClient.from('game_settings').update({ data: this.settings }).eq('id', 1);
+            if (error) {
+                console.error('Không thể đồng bộ metadata Bài học:', error);
+                app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+            }
+            return error;
+        },
+        getQuestionKey(question) {
+            const parts = [
+                question?.classlevel,
+                question?.subject,
+                question?.semester,
+                question?.topic
+            ];
+            if (question?.lesson) parts.push(question.lesson);
+            parts.push(question?.q);
+            return parts.map(value => this.normalizeQuestionPart(value)).join('|');
         },
         getQuestionContentKey(question) {
             const normalize = value => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('vi-VN');
@@ -235,7 +312,8 @@ const app = {
                 question?.practiceRows,
                 question?.comparisonRows,
                 question?.statements,
-                question?.sequenceRounds
+                question?.sequenceRounds,
+                question?.lesson
             ];
             return JSON.stringify(serializedParts).replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN') || normalize(question?.q);
         },
@@ -272,6 +350,7 @@ const app = {
                     subject: template.subject,
                     semester: template.semester,
                     topic: template.topic,
+                    lesson: template.lesson || template.config?.lesson || '',
                     type: template.question_type || generated.type,
                     templateId: template.generator_key
                 };
@@ -285,6 +364,7 @@ const app = {
             const subject = String(question.subject || '').trim().normalize('NFC');
             const semester = String(question.semester || '').trim().normalize('NFC');
             const topic = String(question.topic || '').trim().normalize('NFC');
+            const lesson = String(question.lesson || question.config?.lesson || '').trim();
             const classMatch = classlevel.match(/^Lớp\s+([1-5])$/i);
             const classNumber = classMatch ? classMatch[1] : '';
             const validSubjects = ['Toán', 'Tiếng Việt'];
@@ -297,6 +377,9 @@ const app = {
 
             const validTopics = app.constants.topics[classNumber]?.[subjectKey]?.[semesterKey] || [];
             if (!validTopics.includes(topic)) return `Chủ đề "${topic || '(trống)'}" không thuộc ${classlevel} – ${subject} – ${semester}.`;
+            if (lesson && (!app.curriculum?.supportsLessons(classlevel, subject) || !app.curriculum.isLessonValid({ classlevel, subject, semester, topic, lesson }))) {
+                return `Bài học "${lesson}" không thuộc ${classlevel} – ${subject} – ${semester} – ${topic}.`;
+            }
             return '';
         },
         getQuestionAnswerCount(question) {
@@ -411,6 +494,7 @@ const app = {
                 this.exams = [];
                 const localSettings = app.safeStorage.getItem('game_settings');
                 if (localSettings) this.settings = JSON.parse(localSettings);
+                this.ensureLessonMetadata();
 
                 // Realtime subscription
                 supabaseClient.channel('custom-all-channel')
@@ -453,9 +537,11 @@ const app = {
                         console.log('Realtime DB Change received (Questions)!', payload);
                         if (payload.eventType === 'INSERT') {
                             if (!this.libraryQuestions.find(q => q.id === payload.new.id)) this.libraryQuestions.push(payload.new);
+                            this.hydrateQuestionLessons(this.libraryQuestions);
                         } else if (payload.eventType === 'UPDATE') {
                             const idx = this.libraryQuestions.findIndex(q => q.id === payload.new.id);
                             if (idx > -1) this.libraryQuestions[idx] = payload.new;
+                            this.hydrateQuestionLessons(this.libraryQuestions);
                         } else if (payload.eventType === 'DELETE') {
                             this.libraryQuestions = this.libraryQuestions.filter(q => q.id !== payload.old.id);
                         }
@@ -528,6 +614,7 @@ const app = {
             }
         },
         async saveSettings() {
+            this.ensureLessonMetadata();
             if (!window.supabase) {
                 app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
                 return;
@@ -543,15 +630,21 @@ const app = {
             return error;
         },
         async saveLibrary() {
+            this.ensureLessonMetadata();
+            this.syncQuestionLessonMetadata();
             if (!window.supabase) {
                 localStorage.setItem('game_libraryQuestions', JSON.stringify(this.libraryQuestions));
                 return;
             }
 
             const toUpdate = [];
+            const toServerQuestion = question => {
+                const { lesson, ...serverQuestion } = question;
+                return serverQuestion;
+            };
 
             for (const q of this.libraryQuestions) {
-                if (q.id) toUpdate.push(q);
+                if (q.id) toUpdate.push(toServerQuestion(q));
             }
 
             if (toUpdate.length > 0) {
@@ -566,7 +659,10 @@ const app = {
                 const batchSize = 500;
                 for (let i = 0; i < uninserted.length; i += batchSize) {
                     const originalBatch = uninserted.slice(i, i + batchSize);
-                    const batch = originalBatch.map(q => { const { id, ...rest } = q; return rest; });
+                    const batch = originalBatch.map(q => {
+                        const { id, lesson, ...rest } = q;
+                        return rest;
+                    });
 
                     const { data, error } = await supabaseClient.from('game_questions').insert(batch).select();
                     if (!error && data && data.length === originalBatch.length) {
@@ -574,6 +670,8 @@ const app = {
                     }
                 }
             }
+            this.syncQuestionLessonMetadata();
+            await this.saveLessonMetadata();
         },
         async saveExams() {
             if (!window.supabase) {
@@ -801,6 +899,7 @@ const app = {
                 ]);
                 app.data.exams = exams;
                 if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
+                app.data.ensureLessonMetadata();
 
                 // Lazy load based on role
                 if (user.role?.toLowerCase() === 'admin') {
@@ -813,8 +912,10 @@ const app = {
                     app.data.users = users;
                     app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
                     app.data.libraryQuestions = questions;
+                    app.data.hydrateQuestionLessons(app.data.libraryQuestions);
                     app.data.questionTemplates = templates;
                     app.data.quests = quests;
+                    app.data.hydrateQuestCurriculum(app.data.quests);
                     document.getElementById('admin-station').style.display = 'flex';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
@@ -828,8 +929,10 @@ const app = {
                         app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
                     ]);
                     app.data.libraryQuestions = questions;
+                    app.data.hydrateQuestionLessons(app.data.libraryQuestions);
                     app.data.questionTemplates = templates;
                     app.data.quests = quests;
+                    app.data.hydrateQuestCurriculum(app.data.quests);
                     app.data.userQuests = userQuests;
                     app.data.userPets = userPets;
                     document.getElementById('admin-station').style.display = 'none';
@@ -2991,7 +3094,13 @@ const app = {
 
             // Update quests progress
             if (app.quest && typeof app.quest.updateProgress === 'function') {
-                app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId);
+                const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
+                const fallbackTopics = this.state.examName ? [] : (this.state.selectedTopics || []);
+                const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
+                app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId, {
+                    topics: playedTopics.length ? playedTopics : fallbackTopics,
+                    lessons: playedLessons
+                });
             }
 
             const scoreEl = document.getElementById('result-score');
@@ -3359,6 +3468,93 @@ const app = {
         questMode: 'personal',
         teamCompetitionDraft: null,
         teamCompetitionBoardTimer: null,
+        supportsAdminLessons(classlevel, subject) {
+            return Boolean(app.curriculum?.supportsLessons(classlevel, subject));
+        },
+        normalizeAdminLesson(value) {
+            const raw = String(value ?? '').trim();
+            if (!raw || !app.curriculum) return '';
+            const direct = app.curriculum.findLesson(raw);
+            if (direct) return direct.id;
+            const byLabel = app.curriculum.getAllLessons({ classlevel: 'Lớp 4', subject: 'Toán' })
+                .find(lesson => app.data.normalizeQuestionPart(lesson.label) === app.data.normalizeQuestionPart(raw));
+            return byLabel?.id || '';
+        },
+        lessonLabel(value) {
+            return app.curriculum?.getLessonLabel(value) || String(value || '');
+        },
+        getLessonOptions(lessons, selected = '', emptyLabel = 'Không gắn Bài học') {
+            const selectedId = this.normalizeAdminLesson(selected);
+            return [`<option value="">${app.data.sanitizeHTML(emptyLabel)}</option>`, ...(lessons || []).map(lesson => `<option value="${app.data.sanitizeHTML(lesson.id)}" ${lesson.id === selectedId ? 'selected' : ''}>${app.data.sanitizeHTML(lesson.label)}</option>`)].join('');
+        },
+        updateQuestionLessonDropdown(selectedLesson = '') {
+            const field = document.getElementById('add-q-lesson-field');
+            const lessonEl = document.getElementById('add-q-lesson');
+            if (!field || !lessonEl) return;
+            const classlevel = document.getElementById('add-q-class')?.value || '';
+            const subject = document.getElementById('add-q-sub')?.value || '';
+            const semester = document.getElementById('add-q-sem')?.value || '';
+            const topic = document.getElementById('add-q-topic')?.value || '';
+            const supported = this.supportsAdminLessons(classlevel, subject);
+            const selected = selectedLesson || lessonEl.value || lessonEl.dataset.selected || '';
+            field.hidden = !supported;
+            lessonEl.disabled = !supported;
+            const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, semester, topic }) : [];
+            lessonEl.innerHTML = this.getLessonOptions(lessons, selected);
+            if (supported) lessonEl.value = this.normalizeAdminLesson(selected) || '';
+            else lessonEl.value = '';
+        },
+        getExamLessons(classlevel, subject, topics = []) {
+            if (!this.supportsAdminLessons(classlevel, subject)) return [];
+            const topicSet = new Set(topics || []);
+            return app.curriculum.getTopicEntries({ classlevel, subject })
+                .filter(entry => !topicSet.size || topicSet.has(entry.topic))
+                .flatMap(entry => entry.lessons);
+        },
+        getSelectedExamLessons() {
+            const wrap = document.getElementById('add-e-lessons');
+            if (!wrap || wrap.hidden) return [];
+            const selected = Array.from(wrap.querySelectorAll('input:checked')).map(input => input.value);
+            const classlevel = document.getElementById('add-e-class')?.value || '';
+            const subject = document.getElementById('add-e-sub')?.value || '';
+            const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
+            const available = this.getExamLessons(classlevel, subject, topics);
+            return available.length && selected.length === available.length ? [] : selected;
+        },
+        renderExamLessonFilters(classlevel, subject, topics, selectedLessons = []) {
+            const wrap = document.getElementById('add-e-lessons');
+            const field = document.getElementById('add-e-lessons-field');
+            if (!wrap || !field) return;
+            const supported = this.supportsAdminLessons(classlevel, subject);
+            field.hidden = !supported;
+            wrap.hidden = !supported;
+            if (!supported) {
+                wrap.innerHTML = '';
+                return;
+            }
+            const selected = new Set((selectedLessons || []).map(value => this.normalizeAdminLesson(value)).filter(Boolean));
+            const entries = app.curriculum.getTopicEntries({ classlevel, subject })
+                .filter(entry => !(topics || []).length || topics.includes(entry.topic));
+            wrap.innerHTML = entries.length
+                ? entries.map(entry => `<fieldset class="exam-composer__lesson-group"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${!selected.size || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
+                : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>';
+        },
+        updateExamQuestionLesson(index, selectedLesson = '') {
+            const lessonEl = document.getElementById(`add-e-q-lesson-${index}`);
+            const topicEl = document.getElementById(`add-e-q-topic-${index}`);
+            if (!lessonEl || !topicEl) return;
+            const classlevel = document.getElementById('add-e-class')?.value || '';
+            const subject = document.getElementById('add-e-sub')?.value || '';
+            const topic = topicEl.value || topicEl.getAttribute('data-selected') || '';
+            const supported = this.supportsAdminLessons(classlevel, subject);
+            const selected = selectedLesson || lessonEl.value || lessonEl.dataset.selected || '';
+            lessonEl.disabled = !supported;
+            const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, topic }) : [];
+            lessonEl.innerHTML = this.getLessonOptions(lessons, selected);
+            if (supported) lessonEl.value = this.normalizeAdminLesson(selected) || '';
+            else lessonEl.value = '';
+            lessonEl.closest('.exam-form-field')?.toggleAttribute('hidden', !supported);
+        },
         updateTopicDropdown() {
             const subEl = document.getElementById('add-q-sub');
             if (!subEl) return;
@@ -3377,6 +3573,7 @@ const app = {
 
             const selected = topicEl.getAttribute('data-selected');
             topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+            this.updateQuestionLessonDropdown();
         },
         updateExamTopics() {
             const subEl = document.getElementById('add-e-sub');
@@ -3402,13 +3599,25 @@ const app = {
                     : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
+            const lessonWrap = document.getElementById('add-e-lessons');
+            let selectedLessons = [];
+            if (lessonWrap) {
+                try { selectedLessons = JSON.parse(lessonWrap.dataset.selected || '[]'); } catch (_) { selectedLessons = []; }
+                if (!selectedLessons.length) selectedLessons = Array.from(lessonWrap.querySelectorAll('input:checked')).map(input => input.value);
+                const allowedLessonIds = new Set(this.getExamLessons(clsEl?.value || '', sub, questionTopics).map(lesson => lesson.id));
+                selectedLessons = selectedLessons.map(value => this.normalizeAdminLesson(value)).filter(value => allowedLessonIds.has(value));
+                delete lessonWrap.dataset.selected;
+            }
+            this.renderExamLessonFilters(clsEl?.value || '', sub, questionTopics, selectedLessons);
 
             let i = 0;
             while (true) {
                 const topicEl = document.getElementById(`add-e-q-topic-${i}`);
                 if (!topicEl) break;
-                const selected = topicEl.getAttribute('data-selected');
+                const selected = topicEl.getAttribute('data-selected') || topicEl.value;
                 topicEl.innerHTML = questionTopics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+                if (selected && questionTopics.includes(selected)) topicEl.value = selected;
+                this.updateExamQuestionLesson(i);
                 i++;
             }
         },
@@ -3733,6 +3942,7 @@ const app = {
             return { comparisonRows, ans: comparisonRows.map(part => part.answer).filter(Boolean).join(', ') };
         },
         openAdmin() {
+            if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
             const modal = document.getElementById('treasure-modal');
             modal.style.display = 'flex';
             modal.classList.add('active');
@@ -3809,6 +4019,8 @@ const app = {
                     const exam = app.data.exams.find(item => item.id === q.exam_id);
                     target = `Đề: ${app.data.sanitizeHTML(exam?.name || 'Đã xóa')}`;
                 }
+                const curriculumLabel = this.getQuestCurriculumLabel(q);
+                if (curriculumLabel) target += `<br><small>Phạm vi: ${app.data.sanitizeHTML(curriculumLabel)}</small>`;
 
                 let assign = 'Toàn trường';
                 if (q.assign_type === 'class') assign = `Lớp ${q.assign_target}`;
@@ -4264,6 +4476,59 @@ const app = {
             if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể kết thúc trận trên Supabase. Vui lòng kiểm tra kết nối.');
             this.openTeamCompetitionBoard(ended.id);
         },
+        getQuestCurriculumLabel(quest) {
+            const curriculum = quest?.curriculum || {};
+            const parts = [];
+            if (curriculum.classlevel) parts.push(curriculum.classlevel);
+            if (curriculum.semester) parts.push(curriculum.semester);
+            if (curriculum.topic) parts.push(curriculum.topic);
+            if (curriculum.lesson) parts.push(this.lessonLabel(curriculum.lesson) || curriculum.lesson);
+            return parts.join(' · ');
+        },
+        updateQuestCurriculumFields() {
+            const subject = document.getElementById('quest-subject')?.value || '';
+            const field = document.getElementById('quest-curriculum-fields');
+            const classlevel = document.getElementById('quest-classlevel')?.value || '';
+            const semester = document.getElementById('quest-semester')?.value || '';
+            const topicEl = document.getElementById('quest-topic');
+            const lessonField = document.getElementById('quest-lesson-field');
+            const lessonEl = document.getElementById('quest-lesson');
+            if (!field || !topicEl || !lessonEl) return;
+            const isMath = subject === 'math';
+            field.hidden = !isMath;
+            if (!isMath) {
+                lessonField.hidden = true;
+                lessonEl.disabled = true;
+                return;
+            }
+            const classNumber = app.curriculum?.normalizeClassNumber(classlevel) || '';
+            const topics = classNumber
+                ? (app.constants.topics[classNumber]?.math?.[app.curriculum.normalizeSemesterKey(semester) || 'hk1'] || [])
+                : [];
+            const selectedTopic = topicEl.value;
+            topicEl.innerHTML = `<option value="">Không giới hạn Chủ đề</option>${topics.map(topic => `<option value="${app.data.sanitizeHTML(topic)}" ${topic === selectedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(topic)}</option>`).join('')}`;
+            const topic = topicEl.value;
+            const supportsLessons = this.supportsAdminLessons(classlevel, subject) && Boolean(topic);
+            lessonField.hidden = !supportsLessons;
+            lessonEl.disabled = !supportsLessons;
+            const selectedLesson = lessonEl.value || lessonEl.dataset.selected || '';
+            const lessons = supportsLessons ? app.curriculum.getLessons({ classlevel, subject: 'Toán', semester, topic }) : [];
+            lessonEl.innerHTML = this.getLessonOptions(lessons, selectedLesson);
+            lessonEl.value = supportsLessons ? (this.normalizeAdminLesson(selectedLesson) || '') : '';
+        },
+        getQuestCurriculumSelection() {
+            if (document.getElementById('quest-subject')?.value !== 'math') return {};
+            const classlevel = document.getElementById('quest-classlevel')?.value || '';
+            const semester = document.getElementById('quest-semester')?.value || '';
+            const topic = document.getElementById('quest-topic')?.value || '';
+            const lesson = this.normalizeAdminLesson(document.getElementById('quest-lesson')?.value || '');
+            const curriculum = {};
+            if (classlevel) curriculum.classlevel = classlevel;
+            if (semester && classlevel) curriculum.semester = semester;
+            if (topic && classlevel) curriculum.topic = topic;
+            if (lesson && classlevel === 'Lớp 4' && topic) curriculum.lesson = lesson;
+            return curriculum;
+        },
         showAddQuestForm() {
             this.questMode = 'personal';
             const box = document.getElementById('treasure-content-area');
@@ -4279,7 +4544,7 @@ const app = {
            <div style="display:flex; gap:15px; margin-bottom:15px;">
               <div class="form-group" style="flex:1;">
                  <label style="display:block; font-weight:bold; margin-bottom:5px;">Môn học:</label>
-                 <select id="quest-subject" class="form-input" style="width:100%;">
+                 <select id="quest-subject" class="form-input" style="width:100%;" onchange="app.admin.updateQuestCurriculumFields()">
                     <option value="any">Bất kỳ</option>
                     <option value="math">Toán</option>
                     <option value="vietnamese">Tiếng Việt</option>
@@ -4290,6 +4555,15 @@ const app = {
                  <input type="number" id="quest-score" class="form-input" style="width:100%;" value="80" min="0" max="100">
               </div>
            </div>
+           <section id="quest-curriculum-fields" class="admin-curriculum-panel" hidden aria-label="Phạm vi chương trình Toán">
+              <p class="admin-curriculum-panel__title">Phạm vi chương trình <small>(chỉ dành cho nhiệm vụ Toán)</small></p>
+              <div class="admin-curriculum-panel__grid">
+                 <label><span>Cấp lớp</span><select id="quest-classlevel" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Tất cả cấp lớp</option><option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option><option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option></select></label>
+                 <label><span>Học kỳ</span><select id="quest-semester" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="Học kỳ 1">Học kỳ 1</option><option value="Học kỳ 2">Học kỳ 2</option></select></label>
+                 <label><span>Chủ đề</span><select id="quest-topic" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Không giới hạn Chủ đề</option></select></label>
+                 <label id="quest-lesson-field" hidden><span>Bài học</span><select id="quest-lesson" class="form-input" data-selected=""></select><small>Không chọn để giao theo toàn bộ Chủ đề.</small></label>
+              </div>
+           </section>
            <div style="display:flex; gap:15px; margin-bottom:15px;">
               <div class="form-group" style="flex:1;">
                  <label style="display:block; font-weight:bold; margin-bottom:5px;">Số lượt yêu cầu:</label>
@@ -4324,6 +4598,7 @@ const app = {
            </div>
         </div>
       `;
+            this.updateQuestCurriculumFields();
         },
         async submitQuest() {
             const title = document.getElementById('quest-title').value.trim();
@@ -4334,15 +4609,27 @@ const app = {
             const assignType = document.getElementById('quest-assign-type').value;
             const assignTarget = document.getElementById('quest-assign-target').value.trim();
             const examId = document.getElementById('quest-exam').value || null;
+            const curriculum = this.getQuestCurriculumSelection();
 
             if (!title) return alert("Vui lòng nhập tên nhiệm vụ!");
             if (assignType !== 'all' && !assignTarget) return alert("Vui lòng nhập đích danh (Lớp/Username)!");
 
             const selectedExam = examId ? app.data.exams.find(exam => exam.id === examId) : null;
             if (examId && !selectedExam) return alert('Không tìm thấy đề kiểm tra đã chọn.');
+            if (curriculum.classlevel && curriculum.topic) {
+                const curriculumError = app.data.validateQuestionMetadata({
+                    classlevel: curriculum.classlevel,
+                    subject: 'Toán',
+                    semester: curriculum.semester || 'Học kỳ 1',
+                    topic: curriculum.topic,
+                    lesson: curriculum.lesson
+                });
+                if (curriculumError) return alert(curriculumError);
+            }
             const newQuest = {
                 title, target_subject: subject, target_score: score, target_count: count,
-                reward_stars: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true
+                reward_stars: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true,
+                ...(Object.keys(curriculum).length ? { curriculum } : {})
             };
             if (selectedExam) {
                 newQuest.target_subject = selectedExam.subject === 'Toán' ? 'math' : 'vietnamese';
@@ -4350,17 +4637,23 @@ const app = {
             }
 
             if (window.supabase) {
-                const { data, error } = await supabaseClient.from('game_quests').insert([newQuest]).select();
+                const { curriculum: _, ...serverQuest } = newQuest;
+                const { data, error } = await supabaseClient.from('game_quests').insert([serverQuest]).select();
                 if (error) {
                     console.error("Lỗi tạo nhiệm vụ:", error);
                     alert("Có lỗi khi tạo nhiệm vụ trên server!");
                 } else if (data && data.length > 0) {
-                    app.data.quests.push(data[0]);
+                    const savedQuest = { ...data[0], ...(Object.keys(curriculum).length ? { curriculum } : {}) };
+                    app.data.quests.push(savedQuest);
+                    app.data.syncQuestCurriculumMetadata();
+                    await app.data.saveLessonMetadata();
                     this.switchTab('quests');
                 }
             } else {
                 newQuest.id = 'temp_' + new Date().getTime();
                 app.data.quests.push(newQuest);
+                app.data.syncQuestCurriculumMetadata();
+                await app.data.saveLessonMetadata();
                 this.switchTab('quests');
             }
         },
@@ -4445,7 +4738,7 @@ const app = {
                 alert('Đã lưu cài đặt thành công!');
             }
         },
-        templateFilters: { classlevel: '', subject: '', topic: '', questionType: '', generatorKey: '' },
+        templateFilters: { classlevel: '', subject: '', topic: '', lesson: '', questionType: '', generatorKey: '' },
         setTemplateFilter(key, value) {
             this.templateFilters[key] = value;
             this.renderTemplates(document.getElementById('treasure-content-area'));
@@ -4460,15 +4753,22 @@ const app = {
         formatQuestionNumberText(input) {
             input.value = app.data.formatMathText(input.value);
         },
+        getTemplateLesson(template) {
+            const value = template?.lesson || template?.config?.lesson || '';
+            return this.normalizeAdminLesson(value) || value;
+        },
         renderTemplates(box) {
             const templates = app.data.questionTemplates || [];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
             const filters = this.templateFilters;
+            const templateLessonIds = [...new Set(templates.map(item => this.getTemplateLesson(item)).filter(Boolean))].sort();
+            const lessonFilterOptions = `<option value="">Bài học: tất cả</option>${templateLessonIds.map(id => `<option value="${app.data.sanitizeHTML(id)}" ${id === filters.lesson ? 'selected' : ''}>${app.data.sanitizeHTML(this.lessonLabel(id) || id)}</option>`).join('')}`;
             const visible = templates.map((item, index) => ({ item, index })).filter(({ item }) =>
                 (!filters.classlevel || item.classlevel === filters.classlevel) &&
                 (!filters.subject || item.subject === filters.subject) &&
                 (!filters.topic || item.topic === filters.topic) &&
+                (!filters.lesson || this.getTemplateLesson(item) === filters.lesson) &&
                 (!filters.questionType || item.question_type === filters.questionType) &&
                 (!filters.generatorKey || item.generator_key === filters.generatorKey)
             );
@@ -4481,15 +4781,16 @@ const app = {
                 <select class="filter-input" aria-label="Lọc cấp lớp" onchange="app.admin.setTemplateFilter('classlevel', this.value)">${optionList(['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'], filters.classlevel, 'Cấp lớp: tất cả')}</select>
                 <select class="filter-input" aria-label="Lọc môn học" onchange="app.admin.setTemplateFilter('subject', this.value)">${optionList(['Toán','Tiếng Việt'], filters.subject, 'Môn học: tất cả')}</select>
                 <select class="filter-input" aria-label="Lọc chủ đề" onchange="app.admin.setTemplateFilter('topic', this.value)">${optionList(unique('topic'), filters.topic, 'Chủ đề: tất cả')}</select>
+                <select class="filter-input" aria-label="Lọc Bài học" onchange="app.admin.setTemplateFilter('lesson', this.value)">${lessonFilterOptions}</select>
                 <select class="filter-input" aria-label="Lọc loại câu hỏi" onchange="app.admin.setTemplateFilter('questionType', this.value)">${optionList(unique('question_type'), filters.questionType, 'Loại câu hỏi: tất cả')}</select>
                 <select class="filter-input" aria-label="Lọc template" onchange="app.admin.setTemplateFilter('generatorKey', this.value)">${optionList(unique('generator_key'), filters.generatorKey, 'Template: tất cả')}</select>
               </div>
               <div style="margin-bottom:8px; color:#ffeb3b; font-weight:bold;">Hiển thị ${visible.length}/${templates.length} template</div>
               ${app.ui.renderTable([
-                { label: 'Cấp lớp' }, { label: 'Môn' }, { label: 'Chủ đề' }, { label: 'Loại câu hỏi' }, { label: 'Template' }, { label: 'Câu hỏi mẫu' }, { label: 'Hành động' }
+                { label: 'Cấp lớp' }, { label: 'Môn' }, { label: 'Chủ đề' }, { label: 'Loại câu hỏi' }, { label: 'Template' }, { label: 'Bài học' }, { label: 'Câu hỏi mẫu' }, { label: 'Hành động' }
               ], visible, ({ item, index }) => `<tr>
                 <td>${app.data.sanitizeHTML(item.classlevel)}</td><td>${app.data.sanitizeHTML(item.subject)}</td><td>${app.data.sanitizeHTML(item.topic)}</td>
-                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
+                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(this.lessonLabel(this.getTemplateLesson(item)) || '—')}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
                 <td><button class="btn-opt action-btn" onclick="app.admin.renderTemplateForm(${index})">Sửa</button><button class="btn-danger action-btn" onclick="app.admin.deleteTemplate(${index})">Xóa</button></td>
               </tr>`, 'Chưa có cấu hình template. Hãy thêm generator và cấu hình mẫu từ code hoặc chạy migration Supabase.')}
             `;
@@ -4500,13 +4801,31 @@ const app = {
             const semesterKey = semester === 'Học kỳ 2' ? 'hk2' : 'hk1';
             return app.constants.topics[classNumber]?.[subjectKey]?.[semesterKey] || [];
         },
-        refreshTemplateTopics(selectedTopic = '') {
+        refreshTemplateTopics(selectedTopic = '', selectedLesson = '') {
             const classlevel = document.getElementById('template-class').value;
             const subject = document.getElementById('template-subject').value;
             const semester = document.getElementById('template-semester').value;
             const topic = document.getElementById('template-topic');
             const topics = this.getTemplateTopics(classlevel, subject, semester);
-            topic.innerHTML = topics.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selectedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('');
+            const preservedTopic = selectedTopic || topic.value;
+            topic.innerHTML = topics.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === preservedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('');
+            this.refreshTemplateLessons(selectedLesson);
+        },
+        refreshTemplateLessons(selectedLesson = '') {
+            const field = document.getElementById('template-lesson-field');
+            const lesson = document.getElementById('template-lesson');
+            if (!field || !lesson) return;
+            const classlevel = document.getElementById('template-class')?.value || '';
+            const subject = document.getElementById('template-subject')?.value || '';
+            const semester = document.getElementById('template-semester')?.value || '';
+            const topic = document.getElementById('template-topic')?.value || '';
+            const supported = this.supportsAdminLessons(classlevel, subject);
+            const selected = selectedLesson || lesson.value || lesson.dataset.selected || '';
+            field.hidden = !supported;
+            lesson.disabled = !supported;
+            const lessons = supported ? app.curriculum.getLessons({ classlevel, subject, semester, topic }) : [];
+            lesson.innerHTML = this.getLessonOptions(lessons, selected);
+            lesson.value = supported ? (this.normalizeAdminLesson(selected) || '') : '';
         },
         renderTemplateForm(editIndex) {
             const existing = app.data.questionTemplates[editIndex];
@@ -4578,7 +4897,8 @@ const app = {
                 <label class="template-editor__field"><span>Cấp lớp</span><select id="template-class" class="form-input" onchange="app.admin.refreshTemplateTopics()">${[1,2,3,4,5].map(n => `<option value="Lớp ${n}" ${(existing?.classlevel || 'Lớp 4') === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
-                <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input"></select></label>
+                <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input" onchange="app.admin.refreshTemplateLessons()"></select></label>
+                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(config.lesson || existing?.lesson || '')}"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu template áp dụng cho cả Chủ đề.</small></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
@@ -4615,7 +4935,7 @@ const app = {
                 const safeHeading = document.querySelector('.template-editor__rule--safe-password-controls h5');
                 if (safeHeading) safeHeading.textContent = '1b. Hàng ngẫu nhiên cho Điều kiện 1 · 2. Hàng ngẫu nhiên cho Điều kiện 2';
             }
-            this.refreshTemplateTopics(existing?.topic || '');
+            this.refreshTemplateTopics(existing?.topic || '', config.lesson || existing?.lesson || '');
             const generatorControl = document.getElementById('template-generator');
             generatorControl?.querySelector('option[value="number.four_operations_practice"]')?.remove();
             const angleTemplateOptions = [
@@ -5000,7 +5320,9 @@ const app = {
             const usesDigitCount = !isSafePassword && !isAngleTemplate && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
             const topic5Config = topic5DigitRange ? { minimumDigits, maximumDigits } : {};
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: isAngleTemplate ? {} : (isTopic5Template ? topic5Config : genericConfig), is_active: true };
+            const templateConfig = isAngleTemplate ? {} : (isTopic5Template ? topic5Config : genericConfig);
+            const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
@@ -5055,6 +5377,7 @@ const app = {
                 if (!Number.isInteger(prefixWords) || prefixWords < 0 || (seedText && !Number.isInteger(Number(seedText)))) throw new Error('Từ tiền tố chung và seed phải là số nguyên hợp lệ.');
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
+            if (selectedLesson) template.config.lesson = selectedLesson;
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
             if (!isAngleTemplate && !isTopic5Template && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
@@ -5118,6 +5441,7 @@ const app = {
                     { label: 'Môn', filterable: true },
                     { label: 'Học kỳ', filterable: true },
                     { label: 'Chủ đề', filterable: true },
+                    { label: 'Bài học', filterable: true },
                     { label: 'Loại câu hỏi', filterable: true },
                     { label: 'Câu hỏi', filterable: true },
                     { label: 'Đáp án', filterable: false },
@@ -5127,7 +5451,7 @@ const app = {
                 let html = app.ui.renderTable(cols, app.data.libraryQuestions, (q, i) => {
                     return `<tr>
               <td><input type="checkbox" class="q-select-cb" value="${i}" onchange="app.admin.updateBulkDeleteLabel()"></td>
-              <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td>
+              <td>${q.classlevel || 'Lớp 5'}</td><td>${q.subject}</td><td>${q.semester || ''}</td><td>${q.topic}</td><td>${app.data.sanitizeHTML(this.lessonLabel(q.lesson) || '—')}</td>
               <td>${q.type || 'Trắc nghiệm'}</td>
                 <td>${app.data.formatMathHTML(q.q)}</td><td>${app.data.formatMathText(q.ans)}</td><td>${app.data.formatMathText(q.explanation || '')}</td>
               <td>
@@ -5176,8 +5500,14 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Chủ đề</label>
-                  <select id="add-q-topic" class="form-input" style="flex:1; padding:8px;" data-selected="${q ? q.topic : ''}">
+                  <select id="add-q-topic" class="form-input" style="flex:1; padding:8px;" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateQuestionLessonDropdown()">
                   </select>
+               </div>
+
+               <div id="add-q-lesson-field" class="admin-curriculum-field" hidden>
+                  <label for="add-q-lesson">Bài học</label>
+                  <select id="add-q-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
+                  <small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu câu hỏi áp dụng cho cả Chủ đề.</small>
                </div>
 
                </div>
@@ -5284,7 +5614,7 @@ const app = {
         downloadQTemplate(type) {
             let data = [];
             
-            const divider = (text) => ({ "Cấp lớp": text, "Môn học": "", "Học kỳ": "", "Chủ đề": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": "" });
+            const divider = (text) => ({ "Cấp lớp": text, "Môn học": "", "Học kỳ": "", "Chủ đề": "", "Bài học": "", "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": "" });
 
             if (type) {
                 data.push(divider("--- HƯỚNG DẪN CÁCH ĐIỀN CÁC CỘT ---"));
@@ -5293,6 +5623,7 @@ const app = {
                     "Môn học": "Nhập chính xác: Toán hoặc Tiếng Việt",
                     "Học kỳ": "Nhập chính xác: Học kỳ 1 hoặc Học kỳ 2",
                     "Chủ đề": "Phải thuộc danh sách các chủ đề hợp lệ (xem phần dưới cùng của file)",
+                    "Bài học": "Tùy chọn; chỉ dành cho Lớp 4 – Toán, nhập tên Bài học hoặc mã Bài học",
                     "Loại câu hỏi": type,
                     "Câu hỏi": "",
                     "Lựa chọn": "",
@@ -5421,6 +5752,7 @@ const app = {
                         "Môn học": "TOÁN",
                         "Học kỳ": "",
                         "Chủ đề": mathTopics,
+                        "Bài học": "",
                         "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
                     });
                     data.push({
@@ -5428,6 +5760,7 @@ const app = {
                         "Môn học": "TIẾNG VIỆT",
                         "Học kỳ": "",
                         "Chủ đề": vietTopics,
+                        "Bài học": "",
                         "Loại câu hỏi": "", "Câu hỏi": "", "Lựa chọn": "", "Đáp án đúng": "", "Lời giải chi tiết": ""
                     });
                 }
@@ -5442,6 +5775,7 @@ const app = {
                 "Môn học": q.subject,
                 "Học kỳ": q.semester || '',
                 "Chủ đề": q.topic,
+                "Bài học": this.lessonLabel(q.lesson),
                 "Loại câu hỏi": q.type,
                 "Câu hỏi": q.q,
                 "Lựa chọn": q.type === 'Đối chiếu trùng khớp' ? (q.options || []).join(' | ') : (q.options || []).join(', '),
@@ -5517,6 +5851,8 @@ const app = {
                     ].filter(o => o !== ''),
                 explanation: document.getElementById('add-q-exp').value
             };
+            const selectedLesson = document.getElementById('add-q-lesson')?.value || '';
+            if (selectedLesson) qObj.lesson = selectedLesson;
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
             const metadataError = app.data.validateQuestionMetadata(qObj);
             if (metadataError) return alert(metadataError);
@@ -5527,7 +5863,7 @@ const app = {
                 index !== editIdx && app.data.getQuestionKey(item) === app.data.getQuestionKey(qObj)
             );
             if (duplicateIndex !== -1) {
-                return alert('Câu hỏi này đã tồn tại trong đúng Lớp – Môn – Học kỳ – Chủ đề. Hệ thống không thêm câu trùng.');
+                return alert('Câu hỏi này đã tồn tại trong đúng Lớp – Môn – Học kỳ – Chủ đề – Bài học. Hệ thống không thêm câu trùng.');
             }
 
             if (editIdx !== null && editIdx !== undefined) {
@@ -5574,7 +5910,7 @@ const app = {
                     rows.forEach((row, rowIndex) => {
                         const questionText = String(row['Câu hỏi'] || '').trim();
                         const answer = row['Đáp án đúng'] ?? row['Đáp án'];
-                        const hasData = questionText || answer !== undefined || row['Cấp lớp'] || row['Lớp'] || row['Môn học'] || row['Môn'] || row['Học kỳ'] || row['Chủ đề'];
+                        const hasData = questionText || answer !== undefined || row['Cấp lớp'] || row['Lớp'] || row['Môn học'] || row['Môn'] || row['Học kỳ'] || row['Chủ đề'] || row['Bài học'];
                         if (!hasData || (!questionText && answer === undefined)) return;
 
                         const type = String(row['Loại câu hỏi'] || row['Loại'] || 'Trắc nghiệm').trim().normalize('NFC');
@@ -5593,6 +5929,8 @@ const app = {
                             ) : [],
                             explanation: row['Lời giải chi tiết'] || ''
                         };
+                        const lessonInput = String(row['Bài học'] ?? '').trim();
+                        if (lessonInput) question.lesson = this.normalizeAdminLesson(lessonInput) || lessonInput;
                         const location = `${files[fileIndex].name}, dòng ${rowIndex + 2}`;
                         const metadataError = app.data.validateQuestionMetadata(question);
                         const scoringError = app.data.validateQuestionScoring(question);
@@ -5709,6 +6047,7 @@ const app = {
             else if (tab === 'add') {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
+                const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
                 subBox.innerHTML = `
             <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
@@ -5762,6 +6101,11 @@ const app = {
                      <span>Chủ đề áp dụng</span>
                      <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
                      <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo đề tự động.</small>
+                  </div>
+                  <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
+                     <span>Bài học áp dụng</span>
+                     <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}'></div>
+                     <small>Chỉ dành cho Lớp 4 – Toán. Bỏ chọn toàn bộ nghĩa là không giới hạn theo Bài học.</small>
                   </div>
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
@@ -5819,8 +6163,12 @@ const app = {
                        <div class="exam-question-card__fields">
                           <label class="exam-form-field">
                              <span>Chủ đề</span>
-                             <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}">
+                             <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateExamQuestionLesson(${i})">
                              </select>
+                          </label>
+                          <label class="exam-form-field" hidden>
+                             <span>Bài học</span>
+                             <select id="add-e-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
                           </label>
                           <label class="exam-form-field">
                              <span>Loại câu hỏi</span>
@@ -5976,8 +6324,15 @@ const app = {
             const period = document.getElementById('add-e-period').value;
             const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
+            const lessonFilters = this.getSelectedExamLessons();
             const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
-            const eligible = item => item && same(item.classlevel, classlevel) && same(item.subject, subject) && topics.some(topic => same(item.topic, topic));
+            const eligible = item => {
+                if (!item || !same(item.classlevel, classlevel) || !same(item.subject, subject)) return false;
+                if (!topics.some(topic => same(item.topic, topic))) return false;
+                if (!lessonFilters.length) return true;
+                const itemLesson = item.lesson || item.config?.lesson || '';
+                return lessonFilters.some(lesson => same(itemLesson, lesson));
+            };
             const used = new Set();
             const addUnique = question => {
                 if (!question || typeof question !== 'object') return false;
@@ -6023,11 +6378,11 @@ const app = {
                     if (takeNextFromPool(pool)) madeProgress = true;
                 }
             }
-            if (questions.length < app.game.questionsPerRound) return alert(`Chưa đủ 10 câu phù hợp với các chủ đề đã chọn (hiện có ${questions.length} câu). Hãy bổ sung kho câu hỏi/template hoặc chọn thêm chủ đề.`);
+            if (questions.length < app.game.questionsPerRound) return alert(`Chưa đủ 10 câu phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu). Hãy bổ sung kho câu hỏi/template hoặc mở rộng phạm vi chọn.`);
             this.examComposerDraft = {
                 classlevel, subject, period,
                 name: document.getElementById('add-e-name').value,
-                topics, questions
+                topics, lessonFilters, questions
             };
             this.renderESubTab('add');
         },
@@ -6069,6 +6424,14 @@ const app = {
                         explanation: document.getElementById(`add-e-q-exp-${i}`).value.trim(),
                         options: []
                     };
+                    const selectedLesson = this.normalizeAdminLesson(document.getElementById(`add-e-q-lesson-${i}`)?.value || '');
+                    if (selectedLesson) {
+                        newQ.lesson = selectedLesson;
+                        const lessonContext = app.curriculum?.getLessonContext(selectedLesson);
+                        if (!newQ.semester && lessonContext) newQ.semester = lessonContext.semester === 'hk2' ? 'Học kỳ 2' : 'Học kỳ 1';
+                    } else {
+                        delete newQ.lesson;
+                    }
                     if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems')) {
                         newQ.options = [
                             document.getElementById(`add-e-q-opt1-${i}`).value.trim(),
@@ -6078,6 +6441,10 @@ const app = {
                         ];
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
+                    if (newQ.lesson) {
+                        const metadataError = app.data.validateQuestionMetadata(newQ);
+                        if (metadataError) return alert(`Câu ${i + 1}: ${metadataError}`);
+                    }
                     const scoringError = app.data.validateQuestionScoring(newQ);
                     if (scoringError) return alert(`Câu ${i + 1}: ${scoringError}`);
                     eObj.questions.push(newQ);
@@ -7177,17 +7544,24 @@ const app = {
                 app.data.saveUsers();
             }
         },
-        async updateProgress(subject, score, examId = null, questId = null) {
+        async updateProgress(subject, score, examId = null, questId = null, context = {}) {
             const user = app.data.currentUser;
             if (!user || user.role === 'admin') return;
 
             const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
+            const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+            const playedTopics = Array.isArray(context.topics) ? context.topics : [];
+            const playedLessons = Array.isArray(context.lessons) ? context.lessons : [];
             const activeQuests = (app.data.quests || []).filter(q => {
                 if (!q.is_active) return false;
                 if (q.assign_type === 'all' || (q.assign_type === 'class' && q.assign_target === clLvl) || (q.assign_type === 'user' && q.assign_target === user.username)) {
                     if (q.exam_id && (q.id !== questId || q.exam_id !== examId)) return false;
                     if (!q.exam_id && questId) return false;
                     if (q.target_subject === 'any' || q.target_subject === subject) {
+                        const curriculum = q.curriculum || {};
+                        if (curriculum.classlevel && app.curriculum?.normalizeClassNumber(curriculum.classlevel) !== clLvl) return false;
+                        if (curriculum.topic && !playedTopics.some(topic => same(topic, curriculum.topic))) return false;
+                        if (curriculum.lesson && !playedLessons.some(lesson => same(lesson, curriculum.lesson))) return false;
                         if (score >= q.target_score) return true;
                     }
                 }
