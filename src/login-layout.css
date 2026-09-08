@@ -246,7 +246,7 @@
   background: linear-gradient(145deg, rgba(6, 40, 75, 0.98), rgba(1, 17, 40, 0.98));
   box-shadow: 0 0 0 5px rgba(14, 92, 137, 0.42), 0 0 32px rgba(38, 189, 255, 0.48);
   color: #f7fdff;
-  text-align: left;
+  text-align: center;
 }
 
 .auth-password-card h2 {
@@ -272,6 +272,7 @@
 .auth-password-card form {
   display: grid;
   gap: 5px;
+  text-align: left;
 }
 
 .auth-password-card label {

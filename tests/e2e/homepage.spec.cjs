@@ -64,6 +64,7 @@ test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật
   await expect(page.locator('#change-password-username')).toHaveValue('hoc-sinh-01');
   await expect(page.locator('#change-password-old')).toBeFocused();
   await expect(page.locator('.auth-password-intro')).toHaveText('Nhập đúng mật khẩu cũ để đặt mật khẩu mới cho tài khoản của bạn.');
+  await expect(page.locator('#change-password-title')).toHaveCSS('text-align', 'center');
   const passwordDialog = await page.locator('.auth-password-card').evaluate(card => ({
     bottom: card.getBoundingClientRect().bottom,
     clientHeight: card.clientHeight,
