@@ -136,6 +136,8 @@ assert.match(missingAddend.templateVariables.expression, /___/, 'The expanded-fo
 const neighbors = generateQuestion('number.neighbor_numbers', { minimum: 10000, maximum: 99999 }, seededRandom(8));
 assert.equal(neighbors.type, 'Điền khuyết');
 assert.equal(neighbors.ans.split(',').length, 8, 'The neighbor template must require both adjacent numbers in all four parts.');
+assert.equal(neighbors.practiceRows.length, 4, 'The neighbor template must expose four editable rows to the exam composer.');
+assert(neighbors.practiceRows.every(row => row.answers.length === 2), 'Each neighbor row must expose its two answers separately.');
 assert.match(neighbors.templateVariables.neighbor_line, /___/, 'The neighbor template must expose a reusable blank-number line.');
 
 const fourArithmeticBlanks = generateQuestion('number.four_arithmetic_blanks', {

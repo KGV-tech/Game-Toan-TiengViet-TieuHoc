@@ -3,6 +3,7 @@ const fs = require('fs');
 
 const source = fs.readFileSync('src/main.js', 'utf8');
 const css = fs.readFileSync('src/style.css', 'utf8');
+const indexHtml = fs.readFileSync('index.html', 'utf8');
 const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
 const previewDirectory = 'src/assets/template-previews';
 const previewFiles = ['digit-at-place.jpg', 'smallest-of-four.jpg', 'largest-of-four.jpg', 'compose-from-places.jpg', 'missing-expanded-addend.jpg', 'four-arithmetic-blanks.jpg', 'four-arithmetic-comparisons.jpg', 'neighbor-numbers.jpg', 'compare-number-forms.jpg', 'place-value-true-false.jpg', 'safe-password-by-place-value.jpg', 'match-number-words.jpg', 'angle-count-in-polygon.jpg', 'angle-drag-classify.jpg', 'angle-clock-classify.jpg', 'angle-count-eight-angles.jpg'];
@@ -58,6 +59,7 @@ assert(source.includes('number.four_arithmetic_blanks'), 'The Template Bank must
 assert(source.includes('number.four_arithmetic_comparisons'), 'The Template Bank must expose the four-arithmetic drag-comparison template.');
 assert(source.includes('number.neighbor_numbers'), 'The Template Bank must expose the adjacent-number fill-in template.');
 assert(source.includes('number.natural_sequence'), 'The Template Bank must expose the reusable natural-sequence generator.');
+assert(indexHtml.includes('src/question-templates/grade-4/math/natural-sequence.js'), 'The browser must load the natural-sequence generator before the Template Bank registry.');
 assert(source.includes('template-natural-sequence-steps'), 'Natural-sequence templates must expose configurable steps.');
 assert(source.includes('template-natural-sequence-length-min'), 'Natural-sequence templates must expose configurable sequence lengths.');
 assert(source.includes('template-natural-sequence-blank-min'), 'Natural-sequence templates must expose configurable blank counts.');

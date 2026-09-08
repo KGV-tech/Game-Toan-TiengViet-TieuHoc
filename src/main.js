@@ -390,6 +390,13 @@ const app = {
         },
         validateQuestionScoring(question) {
             const count = this.getQuestionAnswerCount(question);
+            const partAnswerCounts = Array.isArray(question?.partAnswerCounts)
+                ? question.partAnswerCounts.map(Number)
+                : [];
+            const hasGroupedParts = partAnswerCounts.length === 4
+                && partAnswerCounts.every(partCount => Number.isInteger(partCount) && partCount > 0)
+                && partAnswerCounts.reduce((total, partCount) => total + partCount, 0) === count;
+            if (hasGroupedParts) return '';
             if (![1, 2, 4].includes(count)) {
                 return 'Mỗi câu hỏi chỉ được có 1, 2 hoặc 4 câu trả lời đúng để chấm theo thang điểm 1; 0,5; 0,25.';
             }
@@ -2211,10 +2218,21 @@ const app = {
                     html = '<div class="template-sequence-title">Điền số thích hợp vào mỗi dãy:</div>';
                     q.sequenceRounds.forEach(round => {
                         html += `<div class="train-container ${randomShape}"><b>${round.label})</b>`;
-                        round.sequence.forEach((value, index) => {
-                            html += round.blankIndexes.includes(index) ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathNumber(value)}</div>`;
-                            if (index < round.sequence.length - 1) html += '<div class="train-arrow">➔</div>';
-                        });
+                        const displayTerms = String(round.display || '').split(',').map(term => term.trim()).filter(Boolean);
+                        if (displayTerms.length) {
+                            displayTerms.forEach((term, index) => {
+                                const isBlank = term.replace(/\s/g, '') === '___';
+                                html += isBlank ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathText(term)}</div>`;
+                                if (index < displayTerms.length - 1) html += '<div class="train-arrow">➔</div>';
+                            });
+                        } else {
+                            const sequence = Array.isArray(round.sequence) ? round.sequence : [];
+                            const blankIndexes = Array.isArray(round.blankIndexes) ? round.blankIndexes : [];
+                            sequence.forEach((value, index) => {
+                                html += blankIndexes.includes(index) ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathNumber(value)}</div>`;
+                                if (index < sequence.length - 1) html += '<div class="train-arrow">➔</div>';
+                            });
+                        }
                         html += '</div>';
                     });
                 } else if (q.templateId === 'number.natural_sequence') {
@@ -3665,12 +3683,44 @@ const app = {
         },
         getExamQuestionStructureKind(question) {
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
-            if (Array.isArray(question?.subquestions) && question.subquestions.length) return 'subquestions';
+            if (Array.isArray(question?.subquestions) && question.subquestions.length) {
+                const hasChoiceFields = question.subquestions.some(part => Array.isArray(part?.options) && part.options.length)
+                    || question.subquestions.some(part => Object.prototype.hasOwnProperty.call(part || {}, 'prompt'));
+                return hasChoiceFields ? 'subquestions' : 'practiceRows';
+            }
             if (Array.isArray(question?.angleItems) && question.angleItems.length) return 'angleItems';
             if (Array.isArray(question?.angleCountRows) && question.angleCountRows.length) return 'angleCountRows';
+            if (Array.isArray(question?.sequenceRounds) && question.sequenceRounds.length) return 'sequenceRounds';
             if (Array.isArray(question?.practiceRows) && question.practiceRows.length) return 'practiceRows';
             if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) return 'comparisonRows';
+            const partAnswerCounts = Array.isArray(question?.partAnswerCounts)
+                ? question.partAnswerCounts.map(Number)
+                : [];
+            const answerCount = app.data.getQuestionAnswerCount(question);
+            const isFourPartAnswerGroup = partAnswerCounts.length === 4
+                && partAnswerCounts.every(partCount => Number.isInteger(partCount) && partCount > 0)
+                && partAnswerCounts.reduce((total, partCount) => total + partCount, 0) === answerCount;
+            const type = String(question?.type || '').trim().normalize('NFC');
+            const supportsGenericAnswerParts = ['Điền khuyết', 'Kéo thả'].includes(type);
+            if ((isFourPartAnswerGroup || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
             return '';
+        },
+        isFourPartExamQuestion(question) {
+            const kind = this.getExamQuestionStructureKind(question);
+            if (!kind) return false;
+            const parts = kind === 'answerParts'
+                ? null
+                : question?.[kind] || (kind === 'practiceRows' ? question?.subquestions : null);
+            if (parts && (!Array.isArray(parts) || parts.length !== 4)) return false;
+            const answerCount = app.data.getQuestionAnswerCount(question);
+            const partAnswerCounts = Array.isArray(question?.partAnswerCounts)
+                ? question.partAnswerCounts.map(Number)
+                : [];
+            const hasFourScoringParts = partAnswerCounts.length === 4
+                && partAnswerCounts.every(partCount => Number.isInteger(partCount) && partCount > 0)
+                && partAnswerCounts.reduce((total, partCount) => total + partCount, 0) === answerCount;
+            if (!hasFourScoringParts && answerCount !== 4) return false;
+            return !app.data.validateQuestionScoring(question);
         },
         renderExamQuestionStructure(question, index) {
             const kind = this.getExamQuestionStructureKind(question);
@@ -3690,18 +3740,34 @@ const app = {
                 subquestions: 'Bốn câu hỏi con và các lựa chọn',
                 angleItems: 'Bốn hình góc và đáp án',
                 angleCountRows: 'Bốn ý đếm góc',
+                sequenceRounds: 'Bốn dãy số theo quy luật',
                 practiceRows: 'Các ý nhỏ trong bài',
-                comparisonRows: 'Bốn ý cần so sánh'
+                comparisonRows: 'Bốn ý cần so sánh',
+                answerParts: 'Bốn ý và đáp án'
             }[kind];
             const description = {
                 statements: 'Chỉnh nội dung và đáp án riêng cho từng nhận định; hệ thống tự ghép dữ liệu chấm khi lưu.',
                 subquestions: 'Mỗi ý có nội dung, 4 lựa chọn và đáp án riêng để giáo viên tự biên soạn.',
                 angleItems: 'Chỉnh nhãn và đáp án riêng cho từng hình góc; hình minh họa được giữ nguyên theo template.',
                 angleCountRows: 'Chỉnh nhãn, loại góc và số lượng đúng cho từng ý; hình minh họa được giữ nguyên theo template.',
+                sequenceRounds: 'Mỗi dãy là một ý 0,25 điểm. Có thể sửa nội dung dãy và nhập các đáp án, cách nhau bằng dấu phẩy.',
                 practiceRows: 'Chỉnh nội dung hiển thị và đáp án của từng ý; dữ liệu phụ của template vẫn được giữ lại.',
-                comparisonRows: 'Chỉnh hai vế và dấu đúng cho từng ý; hệ thống tự cập nhật phần hiển thị.'
+                comparisonRows: 'Chỉnh hai vế và dấu đúng cho từng ý; hệ thống tự cập nhật phần hiển thị.',
+                answerParts: 'Chỉnh nội dung và đáp án riêng cho từng ý; hệ thống tự ghép dữ liệu chấm khi lưu.'
             }[kind];
-            const parts = question[kind];
+            const splitPromptParts = value => {
+                const lines = String(value || '').split(/<br\s*\/?\s*>/i).map(line => line.trim()).filter(Boolean);
+                const labeledLines = lines.filter(line => /^[a-dA-D][.)]\s*/.test(line));
+                const source = (labeledLines.length === 4 ? labeledLines : lines.slice(-4)).slice(0, 4);
+                while (source.length < 4) source.push('');
+                return source.map((line, partIndex) => ({
+                    label: defaultLabel(partIndex),
+                    display: line.replace(/^[a-dA-D][.)]\s*/, '').trim()
+                }));
+            };
+            const parts = kind === 'answerParts'
+                ? splitPromptParts(question.q)
+                : question[kind] || (kind === 'practiceRows' ? question.subquestions : []);
 
             if (kind === 'statements') {
                 return `<fieldset class="exam-structured-editor exam-structured-editor--statements" data-structured-kind="statements">
@@ -3833,6 +3899,63 @@ const app = {
                 </fieldset>`;
             }
 
+            if (kind === 'sequenceRounds') {
+                const answers = String(question.ans || '').split(/[|,]/).map(value => value.trim()).filter(Boolean);
+                let answerOffset = 0;
+                return `<fieldset class="exam-structured-editor exam-structured-editor--sequence-rounds" data-structured-kind="sequenceRounds">
+                    <legend>${heading}</legend>
+                    <p class="exam-structured-editor__description">${description}</p>
+                    <div class="exam-structured-editor__parts">
+                        ${parts.slice(0, 4).map((part, partIndex) => {
+                            const label = part?.label || defaultLabel(partIndex);
+                            const answerCount = Number(question.partAnswerCounts?.[partIndex]) || part?.blankIndexes?.length || 1;
+                            const roundAnswers = Array.isArray(part?.answers) && part.answers.length
+                                ? part.answers
+                                : answers.slice(answerOffset, answerOffset + answerCount);
+                            answerOffset += answerCount;
+                            const display = part?.display || (Array.isArray(part?.sequence)
+                                ? part.sequence.map((value, termIndex) => part.blankIndexes?.includes(termIndex) ? '___' : app.data.formatMathNumber(value)).join(', ')
+                                : '');
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                                <div class="exam-structured-part__heading"><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>
+                                <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
+                                    <span>Nội dung dãy ${esc(label)}</span>
+                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Ví dụ: 12, ___, 22, ___, 32">${esc(display)}</textarea>
+                                </label>
+                                <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
+                                    <span>Đáp án của ý ${esc(label)}</span>
+                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(roundAnswers.join(', '))}" placeholder="Nhập đáp án; nhiều ô cách nhau bằng dấu phẩy">
+                                </label>
+                            </article>`;
+                        }).join('')}
+                    </div>
+                </fieldset>`;
+            }
+
+            if (kind === 'answerParts') {
+                const answers = String(question.ans || '').split(/[|,]/).map(value => value.trim());
+                return `<fieldset class="exam-structured-editor exam-structured-editor--answer-parts" data-structured-kind="answerParts">
+                    <legend>${heading}</legend>
+                    <p class="exam-structured-editor__description">${description}</p>
+                    <div class="exam-structured-editor__parts">
+                        ${parts.slice(0, 4).map((part, partIndex) => {
+                            const label = part?.label || defaultLabel(partIndex);
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                                <div class="exam-structured-part__heading"><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>
+                                <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
+                                    <span>Nội dung ý ${esc(label)}</span>
+                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Nhập nội dung ý">${esc(part?.display || '')}</textarea>
+                                </label>
+                                <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
+                                    <span>Đáp án ý ${esc(label)}</span>
+                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập đáp án đúng">
+                                </label>
+                            </article>`;
+                        }).join('')}
+                    </div>
+                </fieldset>`;
+            }
+
             if (kind === 'practiceRows') {
                 return `<fieldset class="exam-structured-editor exam-structured-editor--practice-rows" data-structured-kind="practiceRows">
                     <legend>${heading}</legend>
@@ -3841,6 +3964,10 @@ const app = {
                         ${parts.map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex);
                             const display = part?.expression ?? part?.display ?? part?.text ?? part?.prompt ?? '';
+                            const answerCount = Number(question.partAnswerCounts?.[partIndex]) || 1;
+                            const answerValue = Array.isArray(part?.answers)
+                                ? part.answers.join(', ')
+                                : String(part?.answer ?? '');
                             return `<article class="exam-structured-part" data-structured-part="${partIndex}">
                                 <div class="exam-structured-part__heading"><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
@@ -3848,8 +3975,8 @@ const app = {
                                     <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Nhập phép tính hoặc nội dung ý">${esc(display)}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field">
-                                    <span>Đáp án ý ${esc(label)}</span>
-                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(part?.answer ?? '')}" placeholder="Nhập đáp án đúng">
+                                    <span>Đáp án ý ${esc(label)}${answerCount > 1 ? ' (cách nhau bằng dấu phẩy)' : ''}</span>
+                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answerValue)}" placeholder="${answerCount > 1 ? 'Nhập các đáp án theo thứ tự' : 'Nhập đáp án đúng'}">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -3892,6 +4019,7 @@ const app = {
             if (!kind) return {};
             const valueOf = id => document.getElementById(id)?.value.trim() ?? '';
             const defaultLabel = (partIndex, uppercase = false) => String.fromCharCode((uppercase ? 65 : 97) + partIndex);
+            const splitAnswers = value => String(value || '').split(/[|,]/).map(item => item.trim()).filter(Boolean);
 
             if (kind === 'statements') {
                 const statements = question.statements.map((part, partIndex) => ({
@@ -3915,6 +4043,42 @@ const app = {
                     };
                 });
                 return { subquestions, ans: subquestions.map(part => part.answer).filter(Boolean).join(', ') };
+            }
+
+            if (kind === 'sequenceRounds') {
+                const originalAnswers = splitAnswers(question.ans);
+                let answerOffset = 0;
+                const sequenceRounds = question.sequenceRounds.slice(0, 4).map((part, partIndex) => {
+                    const answerCount = Number(question.partAnswerCounts?.[partIndex]) || part?.blankIndexes?.length || 1;
+                    const answerText = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
+                    const answers = splitAnswers(answerText || originalAnswers.slice(answerOffset, answerOffset + answerCount).join(', '));
+                    answerOffset += answerCount;
+                    return {
+                        ...part,
+                        label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                        display: valueOf(`add-e-q-structured-display-${index}-${partIndex}`) || part.display || '',
+                        answers
+                    };
+                });
+                const partAnswerCounts = sequenceRounds.map((part, partIndex) => part.answers.length || Number(question.partAnswerCounts?.[partIndex]) || 1);
+                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const q = [promptPrefix, sequenceRounds.map((part, partIndex) => `${part.label || defaultLabel(partIndex)}) ${part.display}`).join('<br>')]
+                    .filter(Boolean)
+                    .join('<br>');
+                return { sequenceRounds, partAnswerCounts, ans: sequenceRounds.flatMap(part => part.answers).join(', '), q };
+            }
+
+            if (kind === 'answerParts') {
+                const parts = Array.from({ length: 4 }, (_, partIndex) => ({
+                    label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || defaultLabel(partIndex),
+                    display: valueOf(`add-e-q-structured-display-${index}-${partIndex}`),
+                    answer: valueOf(`add-e-q-structured-answer-${index}-${partIndex}`)
+                }));
+                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const q = [promptPrefix, parts.map(part => `${part.label}) ${part.display}`).join('<br>')]
+                    .filter(Boolean)
+                    .join('<br>');
+                return { partAnswerCounts: [1, 1, 1, 1], ans: parts.map(part => part.answer).filter(Boolean).join(', '), q };
             }
 
             if (kind === 'angleItems') {
@@ -3943,13 +4107,16 @@ const app = {
             }
 
             if (kind === 'practiceRows') {
-                const practiceRows = question.practiceRows.map((part, partIndex) => {
+                const sourceRows = question.practiceRows || question.subquestions || [];
+                const practiceRows = sourceRows.map((part, partIndex) => {
                     const display = valueOf(`add-e-q-structured-display-${index}-${partIndex}`);
+                    const answerText = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
                     const nextPart = {
                         ...part,
                         label: part.label || defaultLabel(partIndex),
-                        answer: valueOf(`add-e-q-structured-answer-${index}-${partIndex}`)
+                        answer: answerText
                     };
+                    if (Number(question.partAnswerCounts?.[partIndex]) > 1) nextPart.answers = splitAnswers(answerText);
                     if (Object.prototype.hasOwnProperty.call(part, 'expression')) nextPart.expression = display;
                     if (Object.prototype.hasOwnProperty.call(part, 'display')) nextPart.display = display;
                     if (Object.prototype.hasOwnProperty.call(part, 'text')) nextPart.text = display;
@@ -3957,7 +4124,12 @@ const app = {
                     if (!['expression', 'display', 'text', 'prompt'].some(key => Object.prototype.hasOwnProperty.call(part, key))) nextPart.display = display;
                     return nextPart;
                 });
-                return { practiceRows, ans: practiceRows.map(part => part.answer).filter(Boolean).join(', ') };
+                const ans = practiceRows.flatMap((part, partIndex) => Number(question.partAnswerCounts?.[partIndex]) > 1 ? splitAnswers(part.answer) : [part.answer]).filter(Boolean).join(', ');
+                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const q = [promptPrefix, practiceRows.map((part, partIndex) => `${part.label || defaultLabel(partIndex)}) ${part.expression ?? part.display ?? part.text ?? part.prompt ?? ''}`).join('<br>')]
+                    .filter(Boolean)
+                    .join('<br>');
+                return { practiceRows, ans, q };
             }
 
             const comparisonRows = question.comparisonRows.map((part, partIndex) => {
@@ -3966,7 +4138,11 @@ const app = {
                 const answer = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
                 return { ...part, label: part.label || defaultLabel(partIndex), leftText, rightText, display: `${leftText} ___ ${rightText}`, answer };
             });
-            return { comparisonRows, ans: comparisonRows.map(part => part.answer).filter(Boolean).join(', ') };
+            const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+            const q = [promptPrefix, comparisonRows.map((part, partIndex) => `${part.label || defaultLabel(partIndex)}) ${part.display}`).join('<br>')]
+                .filter(Boolean)
+                .join('<br>');
+            return { comparisonRows, ans: comparisonRows.map(part => part.answer).filter(Boolean).join(', '), q };
         },
         openAdmin() {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
@@ -6365,6 +6541,7 @@ const app = {
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const lessonFilters = this.getSelectedExamLessons();
             const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+            const requiresFourPartStructure = same(classlevel, 'Lớp 4') && same(subject, 'Toán');
             const eligible = item => {
                 if (!item || !same(item.classlevel, classlevel) || !same(item.subject, subject)) return false;
                 if (!topics.some(topic => same(item.topic, topic))) return false;
@@ -6376,9 +6553,15 @@ const app = {
                 return lessonFilters.some(lesson => same(itemLesson, lesson));
             };
             const used = new Set();
+            let skippedSinglePartQuestions = false;
             const addUnique = question => {
                 if (!question || typeof question !== 'object') return false;
                 const copy = JSON.parse(JSON.stringify(question));
+                // Đề Toán lớp 4 phải giữ đúng mô hình 4 ý để giáo viên chỉnh sửa từng ý.
+                if (requiresFourPartStructure && !this.isFourPartExamQuestion(copy)) {
+                    skippedSinglePartQuestions = true;
+                    return false;
+                }
                 if (app.data.validateQuestionScoring(copy)) return false;
                 const key = app.data.getQuestionContentKey(copy);
                 if (used.has(key)) return false;
@@ -6420,7 +6603,18 @@ const app = {
                     if (takeNextFromPool(pool)) madeProgress = true;
                 }
             }
-            if (questions.length < app.game.questionsPerRound) return alert(`Chưa đủ 10 câu phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu). Hãy bổ sung kho câu hỏi/template hoặc mở rộng phạm vi chọn.`);
+            const missingTopics = requiresFourPartStructure
+                ? topics.filter(topic => !questions.some(question => same(question.topic, topic)))
+                : [];
+            if (missingTopics.length) {
+                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn có cấu trúc bốn ý phù hợp: ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template có đủ 4 ý a–d hoặc bỏ chọn chủ đề đó.`);
+            }
+            if (questions.length < app.game.questionsPerRound) {
+                const structureHint = skippedSinglePartQuestions
+                    ? ' Các câu chỉ có một ý đã được bỏ qua; hãy bổ sung câu hỏi/template có đủ 4 ý a–d.'
+                    : '';
+                return alert(`Chưa đủ 10 câu có cấu trúc bốn ý phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu).${structureHint}`);
+            }
             this.examComposerDraft = {
                 classlevel, subject, period,
                 name: document.getElementById('add-e-name').value,
@@ -6474,7 +6668,7 @@ const app = {
                     } else {
                         delete newQ.lesson;
                     }
-                    if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems')) {
+                    if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems' || structureKind === 'answerParts')) {
                         newQ.options = [
                             document.getElementById(`add-e-q-opt1-${i}`).value.trim(),
                             document.getElementById(`add-e-q-opt2-${i}`).value.trim(),
@@ -6483,6 +6677,9 @@ const app = {
                         ];
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
+                    if (structureKind && !this.isFourPartExamQuestion(newQ)) {
+                        return alert(`Câu ${i + 1}: cần đủ 4 ý và đáp án riêng cho từng ý trước khi lưu.`);
+                    }
                     if (newQ.lesson) {
                         const metadataError = app.data.validateQuestionMetadata(newQ);
                         if (metadataError) return alert(`Câu ${i + 1}: ${metadataError}`);
