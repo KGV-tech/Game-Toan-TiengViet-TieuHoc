@@ -67,7 +67,9 @@ test('Soạn đề Toán lớp 4 có bộ lọc Bài học và tự động ch�
     app.data.questionTemplates = [];
     app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
       classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic, lesson: 'g4-math-hk1-b02',
-      type: 'Trắc nghiệm', q: `Câu Bài 2 ${index + 1}`, options: ['Đúng', 'Sai'], ans: 'Đúng', explanation: ''
+      type: 'Điền khuyết', q: `Câu Bài 2 ${index + 1}<br>a) Ý a<br>b) Ý b<br>c) Ý c<br>d) Ý d`, options: [], ans: '1, 2, 3, 4', explanation: '',
+      practiceRows: ['a', 'b', 'c', 'd'].map((label, partIndex) => ({ label, display: `Ý ${label}`, answer: String(partIndex + 1) })),
+      partAnswerCounts: [1, 1, 1, 1]
     }));
     app.admin.autoGenerateExam();
   });

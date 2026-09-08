@@ -625,7 +625,7 @@ test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã l
   await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
   await expect(page.locator('.template-editor__rule--digit-controls').first()).toBeHidden();
   await expect(page.locator('.template-editor__rule--range-controls')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ minimumDigits: 2, maximumDigits: 5 });
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ minimumDigits: 2, maximumDigits: 5, lesson: 'g4-math-hk1-b26' });
 
   await page.evaluate(() => app.admin.renderTemplates(document.getElementById('treasure-content-area')));
   const templateNameCell = page.locator('#treasure-content-area tbody tr').first().locator('td').nth(4);
@@ -1404,7 +1404,7 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
     await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', new RegExp(`${previewImage}$`));
     await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
-    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({});
+    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ lesson: 'g4-math-hk1-b08' });
   }
 });
 
