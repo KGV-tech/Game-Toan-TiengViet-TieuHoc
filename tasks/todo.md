@@ -27,3 +27,12 @@
 - [ ] Mỗi thành viên một thiết bị hoặc tự lập/đổi đội.
 - [ ] Resume/đổi trưởng nhóm sau khi lượt đã khóa.
 - [ ] Tự động dùng thời gian để phá hòa.
+
+---
+
+## Soạn đề theo chủ đề và tự động tạo câu
+
+- [ ] Lọc chủ đề theo kỳ kiểm tra, hỗ trợ Cả năm và chọn nhiều chủ đề.
+- [ ] Giữ các chủ đề đã chọn trong bản nháp/lúc lưu đề.
+- [ ] Tạo tự động đúng 10 câu từ kho câu hỏi và template.
+- [ ] Kiểm thử thủ công, kiểm thử browser và tạo PR.

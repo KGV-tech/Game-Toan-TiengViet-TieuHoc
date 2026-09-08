@@ -3376,17 +3376,31 @@ const app = {
             if (!subEl) return;
             const sub = subEl.value;
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
-
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
+            const period = document.getElementById('add-e-period')?.value || 'Giữa kỳ 1';
+            const topics = period === 'Cả năm'
+                ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
+                : [...((period.includes('kỳ 2') ? topicsObj.hk2 : topicsObj.hk1) || [])];
+            const topicWrap = document.getElementById('add-e-topics');
+            let selectedTopics = [];
+            if (topicWrap) {
+                try { selectedTopics = JSON.parse(topicWrap.dataset.selected || '[]'); } catch (_) { selectedTopics = []; }
+                if (!selectedTopics.length) selectedTopics = Array.from(topicWrap.querySelectorAll('input:checked')).map(input => input.value);
+                selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
+                delete topicWrap.dataset.selected;
+                topicWrap.innerHTML = topics.length
+                    ? topics.map(topic => `<label style="display:inline-flex; align-items:center; gap:5px; margin:4px 12px 4px 0; cursor:pointer;"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()">${app.data.sanitizeHTML(topic)}</label>`).join('')
+                    : '<span style="color:#aaa;">Chưa có chủ đề cho lựa chọn này.</span>';
+            }
+            const questionTopics = selectedTopics.length ? selectedTopics : topics;
 
             let i = 0;
             while (true) {
                 const topicEl = document.getElementById(`add-e-q-topic-${i}`);
                 if (!topicEl) break;
                 const selected = topicEl.getAttribute('data-selected');
-                topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+                topicEl.innerHTML = questionTopics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
                 i++;
             }
         },
@@ -5369,7 +5383,7 @@ const app = {
                 if (ind) ind.textContent = `Tổng: ${app.data.exams.length} đề`;
             }
             else if (tab === 'add') {
-                let e = editIdx !== undefined ? app.data.exams[editIdx] : null;
+                let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 subBox.innerHTML = `
             <div style="max-width: 600px; margin: 0 auto; text-align:left;">
                <h3>${e ? 'Sửa đề kiểm tra' : 'Thêm đề kiểm tra mới'}</h3>
@@ -5394,18 +5408,25 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Kỳ kiểm tra</label>
-                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;">
+                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
                      <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
                      <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
                      <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
                      <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
+                     <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
                   </select>
+               </div>
+
+               <div style="display:flex; align-items:flex-start; margin-bottom:10px;">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0; padding-top:8px;">Chủ đề</label>
+                  <div id="add-e-topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}' style="flex:1; padding:4px 0;"></div>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Tên đề kiểm tra</label>
                   <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" style="flex:1; padding:8px;" value="${e ? e.name : ''}">
                </div>
+               <button type="button" class="btn-success" style="margin:0 0 15px;" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
 
                ${e && e.questions && e.questions.length > 0 ? `
                <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
@@ -5600,12 +5621,50 @@ const app = {
           `;
             }
         },
+        autoGenerateExam() {
+            const classlevel = document.getElementById('add-e-class').value;
+            const subject = document.getElementById('add-e-sub').value;
+            const period = document.getElementById('add-e-period').value;
+            const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
+            if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
+            const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+            const eligible = item => same(item.classlevel, classlevel) && same(item.subject, subject) && topics.some(topic => same(item.topic, topic));
+            const used = new Set();
+            const addUnique = question => {
+                const copy = JSON.parse(JSON.stringify(question));
+                if (app.data.validateQuestionScoring(copy)) return false;
+                const key = app.data.getQuestionContentKey(copy);
+                if (used.has(key)) return false;
+                used.add(key);
+                questions.push(copy);
+                return true;
+            };
+            const questions = [];
+            [...(app.data.libraryQuestions || [])].filter(eligible).sort(() => Math.random() - 0.5).some(question => {
+                addUnique(question);
+                return questions.length === app.game.questionsPerRound;
+            });
+            const templates = (app.data.questionTemplates || []).filter(template => template.is_active !== false && eligible(template));
+            let attempts = 0;
+            while (questions.length < app.game.questionsPerRound && templates.length && attempts < 100) {
+                addUnique(app.data.generateTemplateQuestion(templates[attempts % templates.length]) || {});
+                attempts += 1;
+            }
+            if (questions.length < app.game.questionsPerRound) return alert(`Chưa đủ 10 câu phù hợp với các chủ đề đã chọn (hiện có ${questions.length} câu). Hãy bổ sung kho câu hỏi/template hoặc chọn thêm chủ đề.`);
+            this.examComposerDraft = {
+                classlevel, subject, period,
+                name: document.getElementById('add-e-name').value,
+                topics, questions
+            };
+            this.renderESubTab('add');
+        },
         submitAddExam(editIdx) {
             const eObj = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
                 classlevel: document.getElementById('add-e-class').value,
                 period: document.getElementById('add-e-period').value,
+                topics: Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value),
                 questions: []
             };
             if (!eObj.name || !eObj.subject) return alert('Vui lòng điền đủ Tên Đề và Môn');
@@ -5667,6 +5726,7 @@ const app = {
                 alert('Đã tạo đề kiểm tra mới!');
             }
             app.data.saveExams();
+            this.examComposerDraft = null;
             this.renderESubTab('lib');
         },
         submitInjectQ(qIdx, eIdx) {
