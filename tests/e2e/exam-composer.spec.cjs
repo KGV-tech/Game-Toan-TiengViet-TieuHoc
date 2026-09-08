@@ -140,3 +140,84 @@ test('Soạn đề Toán lớp 4 hiện và lưu đủ bốn ý cùng đáp án 
   expect(savedQuestions[1].subquestions[2]).toMatchObject({ prompt: 'Ý trắc nghiệm c đã được chỉnh sửa', answer: 'D' });
   expect(savedQuestions[1].ans).toBe('A, B, D, D');
 });
+
+test('Soạn đề Toán lớp 4 hiển thị đồng nhất bốn ý cho các cấu trúc template', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+
+  await page.evaluate(() => {
+    const topicAngles = app.constants.topics['4'].math.hk1[1];
+    const topicNumbers = app.constants.topics['4'].math.hk1[2];
+    const svg = '<svg viewBox="0 0 20 20" width="80" height="48"><circle cx="10" cy="10" r="7" fill="#0284c7"></circle></svg>';
+    const angleItems = ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'].map((type, index) => ({
+      label: String.fromCharCode(97 + index), type, svg
+    }));
+    const angleCountRows = [
+      { label: 'a', text: 'góc nhọn' },
+      { label: 'b', text: 'góc vuông' },
+      { label: 'c', text: 'góc tù' },
+      { label: 'd', text: 'góc bẹt' }
+    ];
+    const subquestions = ['a', 'b', 'c', 'd'].map((label, index) => ({
+      label, prompt: `Câu con ${label}`, options: ['A', 'B', 'C', 'D'], answer: ['A', 'B', 'C', 'D'][index]
+    }));
+    const practiceRows = ['a', 'b', 'c', 'd'].map((label, index) => ({
+      label, expression: `${index + 1} + ${index + 1} = ___`, answer: String((index + 1) * 2)
+    }));
+    const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => ({
+      label, leftText: String(index + 1), rightText: String(index + 2), answer: '<'
+    }));
+    const statements = ['A', 'B', 'C', 'D'].map((label, index) => ({
+      label, text: `Nhận định ${label}`, answer: index % 2 === 0 ? 'Đúng' : 'Sai'
+    }));
+    const makeQuestion = (index, structure, type, ans, topic = index % 2 ? topicNumbers : topicAngles) => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic, type,
+      q: `Câu nhiều phần ${index + 1}`, ans, options: [], explanation: '', ...structure
+    });
+    const questions = [
+      makeQuestion(0, { instruction: 'Phân loại các góc.', angleItems, options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'] }, 'Kéo thả', 'Góc nhọn, Góc vuông, Góc tù, Góc bẹt'),
+      makeQuestion(1, { subquestions }, 'Trắc nghiệm', 'A, B, C, D'),
+      makeQuestion(2, { instruction: 'Đếm các góc.', angleVisual: svg, angleCountRows }, 'Điền khuyết', '1, 2, 2, 0'),
+      makeQuestion(3, { templateId: 'number.four_operations_expressions', practiceRows }, 'Điền khuyết', '2, 4, 6, 8'),
+      makeQuestion(4, { comparisonRows }, 'Kéo thả', '<, <, <, <'),
+      makeQuestion(5, { statements }, 'Đúng/Sai', 'Đúng, Sai, Đúng, Sai'),
+      makeQuestion(6, { instruction: 'Phân loại các góc.', angleItems: angleItems.map(item => ({ ...item })), options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'] }, 'Kéo thả', 'Góc nhọn, Góc vuông, Góc tù, Góc bẹt'),
+      makeQuestion(7, { instruction: 'Đếm các góc.', angleVisual: svg, angleCountRows: angleCountRows.map(row => ({ ...row })) }, 'Điền khuyết', '1, 2, 2, 0'),
+      makeQuestion(8, { subquestions: subquestions.map(item => ({ ...item })) }, 'Trắc nghiệm', 'A, B, C, D'),
+      makeQuestion(9, { templateId: 'number.four_operations_expressions', practiceRows: practiceRows.map(row => ({ ...row })) }, 'Điền khuyết', '2, 4, 6, 8')
+    ];
+    app.data.exams = [{
+      id: 'exam-grade-4-all-structured', name: 'Đề Toán lớp 4 bốn ý', classlevel: 'Lớp 4', subject: 'Toán',
+      period: 'Giữa kỳ 1', topics: [topicAngles, topicNumbers], questions
+    }];
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = [];
+    app.admin.examComposerDraft = null;
+    app.admin.renderESubTab('add', 0);
+  });
+
+  await expect(page.locator('.exam-question-card')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind]')).toHaveCount(10);
+  for (const kind of ['angleItems', 'subquestions', 'angleCountRows', 'practiceRows', 'comparisonRows', 'statements']) {
+    await expect(page.locator(`[data-structured-kind="${kind}"]`).first().locator('.exam-structured-part')).toHaveCount(4);
+  }
+  await expect(page.locator('[data-structured-kind="angleItems"] .exam-structured-visual')).toHaveCount(8);
+  await expect(page.locator('[data-structured-kind="angleCountRows"] .exam-structured-visual')).toHaveCount(2);
+  await expect(page.locator('input[id^="add-e-q-ans-"]')).toHaveCount(0);
+  await expect(page.locator('#add-e-q-opts-wrapper-0')).toBeVisible();
+
+  await page.locator('#add-e-q-structured-answer-0-0').selectOption('Góc tù');
+  await page.locator('#add-e-q-structured-answer-2-0').fill('9');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Lưu chỉnh sửa' }).click();
+  const savedQuestions = await page.evaluate(() => app.data.exams[0].questions);
+  const answerCounts = await page.evaluate(() => app.data.exams[0].questions.map(question => app.data.getQuestionAnswerCount(question)));
+  expect(savedQuestions).toHaveLength(10);
+  expect(answerCounts).toEqual(Array(10).fill(4));
+  expect(savedQuestions[0].angleItems[0]).toMatchObject({ type: 'Góc tù' });
+  expect(savedQuestions[0].ans).toBe('Góc tù, Góc vuông, Góc tù, Góc bẹt');
+  expect(savedQuestions[0].options).toEqual(['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt']);
+  expect(savedQuestions[2].ans).toBe('9, 2, 2, 0');
+  expect(savedQuestions[2].angleCountRows).toHaveLength(4);
+});
