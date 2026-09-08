@@ -74,3 +74,25 @@ Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp
 - Luồng trưởng nhóm và modal khóa lượt hoạt động ở chế độ local/demo.
 - Không phá hồi quy nhiệm vụ cá nhân.
 - Migration/RLS/RPC/adapter production đã có trong repo; chỉ coi là realtime production sau khi migration được apply và kiểm thử với tài khoản thật.
+
+---
+
+# Kế hoạch triển khai soạn đề theo chủ đề và tự động tạo câu
+
+## Mục tiêu
+
+Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ đề phù hợp rồi vẫn có thể soạn thủ công như trước hoặc bấm **Tạo đề tự động** để điền sẵn đúng 10 câu từ kho câu hỏi/template và chỉnh sửa trước khi lưu.
+
+## Quyết định triển khai
+
+- `Giữa/Cuối kỳ 1` chỉ hiện chủ đề Học kỳ 1; `Giữa/Cuối kỳ 2` chỉ hiện chủ đề Học kỳ 2; `Cả năm` gộp hai học kỳ của đúng môn/lớp.
+- Chủ đề được lưu cùng đề dưới dạng mảng `topics`; đề cũ không có trường này vẫn mở và soạn thủ công bình thường.
+- Tạo tự động chỉ cập nhật bản nháp form, không ghi kho câu hỏi hay đề lên Supabase cho đến khi giáo viên bấm lưu.
+- Bốc câu hợp lệ từ kho trước, bổ sung câu sinh từ template; bỏ câu trùng và báo rõ nếu không đủ 10 câu.
+
+## Các lát triển khai
+
+1. Thêm contract/UI test cho lọc chủ đề theo kỳ và chọn nhiều chủ đề.
+2. Thêm state bản nháp đề, vùng chọn chủ đề và giữ nguyên luồng soạn thủ công.
+3. Thêm tạo tự động 10 câu từ kho/template theo lớp, môn, học kỳ và chủ đề đã chọn.
+4. Kiểm thử browser laptop 1280×800 và tablet ngang 1024×768, review diff, commit/PR.

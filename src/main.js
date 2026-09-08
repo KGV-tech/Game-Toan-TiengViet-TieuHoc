@@ -3376,17 +3376,31 @@ const app = {
             if (!subEl) return;
             const sub = subEl.value;
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
-
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
+            const period = document.getElementById('add-e-period')?.value || 'Giữa kỳ 1';
+            const topics = period === 'Cả năm'
+                ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
+                : [...((period.includes('kỳ 2') ? topicsObj.hk2 : topicsObj.hk1) || [])];
+            const topicWrap = document.getElementById('add-e-topics');
+            let selectedTopics = [];
+            if (topicWrap) {
+                try { selectedTopics = JSON.parse(topicWrap.dataset.selected || '[]'); } catch (_) { selectedTopics = []; }
+                if (!selectedTopics.length) selectedTopics = Array.from(topicWrap.querySelectorAll('input:checked')).map(input => input.value);
+                selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
+                delete topicWrap.dataset.selected;
+                topicWrap.innerHTML = topics.length
+                    ? topics.map(topic => `<label style="display:inline-flex; align-items:center; gap:5px; margin:4px 12px 4px 0; cursor:pointer;"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()">${app.data.sanitizeHTML(topic)}</label>`).join('')
+                    : '<span style="color:#aaa;">Chưa có chủ đề cho lựa chọn này.</span>';
+            }
+            const questionTopics = selectedTopics.length ? selectedTopics : topics;
 
             let i = 0;
             while (true) {
                 const topicEl = document.getElementById(`add-e-q-topic-${i}`);
                 if (!topicEl) break;
                 const selected = topicEl.getAttribute('data-selected');
-                topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+                topicEl.innerHTML = questionTopics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
                 i++;
             }
         },
@@ -5394,12 +5408,18 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Kỳ kiểm tra</label>
-                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;">
+                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
                      <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
                      <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
                      <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
                      <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
+                     <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
                   </select>
+               </div>
+
+               <div style="display:flex; align-items:flex-start; margin-bottom:10px;">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0; padding-top:8px;">Chủ đề</label>
+                  <div id="add-e-topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}' style="flex:1; padding:4px 0;"></div>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
