@@ -1641,6 +1641,79 @@ test('câu hỏi về thế kỉ hiển thị năm liền nhau, không có kho�
   expect(yearText).not.toMatch(/Năm \d{1,3} \d{3}/);
 });
 
+test('soạn đề Toán lớp 4 dùng bố cục lưới cân đối trên desktop và tablet ngang', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'demo-teacher', role: 'admin', classlevel: '4' };
+    app.data.exams = [{
+      id: 'exam-layout-demo', name: 'Kiểm tra Toán lớp 4 · Chủ đề 2', classlevel: 'Lớp 4', subject: 'Toán', period: 'Giữa kỳ 1',
+      questions: [{
+        classlevel: 'Lớp 4', subject: 'Toán', topic: '2. Góc và đơn vị đo góc', type: 'Trắc nghiệm',
+        q: 'Góc nào dưới đây là góc nhọn?', options: ['Góc có số đo 45°', 'Góc có số đo 90°', 'Góc có số đo 120°', 'Góc có số đo 180°'], ans: 'Góc có số đo 45°', explanation: 'Góc nhọn có số đo bé hơn 90°.'
+      }]
+    }];
+    app.admin.openAdmin();
+    app.admin.switchTab('exams');
+    app.admin.renderESubTab('add', 0);
+  });
+
+  await expect(page.locator('.exam-composer')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Soạn đề' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.locator('.exam-composer__meta')).toBeVisible();
+  await expect(page.locator('.exam-question-card')).toHaveCount(10);
+  await expect(page.locator('.exam-question-card__options').first()).toBeVisible();
+  await expect(page.locator('#add-e-class')).toHaveValue('Lớp 4');
+  await expect(page.locator('#add-e-sub')).toHaveValue('Toán');
+  await expect(page.locator('#add-e-q-topic-0')).toHaveValue('2. Góc và đơn vị đo góc');
+  await expect(page.locator('#add-e-q-ans-0')).toHaveValue('Góc có số đo 45°');
+  await page.locator('#add-e-q-type-0').selectOption('Đối chiếu trùng khớp');
+  await expect(page.locator('#add-e-q-opts-wrapper-0')).toBeHidden();
+  await expect(page.locator('#add-e-q-match-wrapper-0')).toBeVisible();
+  await page.locator('#add-e-q-type-0').selectOption('Trắc nghiệm');
+  await expect(page.locator('#add-e-q-opts-wrapper-0')).toBeVisible();
+
+  const desktopLayout = await page.locator('.exam-composer__meta').evaluate(element => ({
+    columns: getComputedStyle(element).gridTemplateColumns.split(' ').length,
+    overflow: document.documentElement.scrollWidth > window.innerWidth
+  }));
+  expect(desktopLayout.columns).toBe(4);
+  expect(desktopLayout.overflow).toBe(false);
+  const desktopScreenshot = 'test-results/ui-review/soan-de-desktop.png';
+  await page.screenshot({ path: desktopScreenshot });
+  await testInfo.attach('soan-de-desktop.png', { path: desktopScreenshot, contentType: 'image/png' });
+
+  const questionScreenshot = 'test-results/ui-review/soan-de-question-desktop.png';
+  await page.locator('#treasure-content-area').evaluate(element => {
+    const question = element.querySelector('.exam-question-card');
+    element.scrollTop = question ? question.offsetTop - 20 : 0;
+  });
+  await page.screenshot({ path: questionScreenshot });
+  await testInfo.attach('soan-de-question-desktop.png', { path: questionScreenshot, contentType: 'image/png' });
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.locator('#treasure-content-area').evaluate(element => { element.scrollTop = 0; });
+  const tabletLayout = await page.locator('.exam-composer__meta').evaluate(element => ({
+    columns: getComputedStyle(element).gridTemplateColumns.split(' ').length,
+    overflow: document.documentElement.scrollWidth > window.innerWidth
+  }));
+  expect(tabletLayout.columns).toBe(2);
+  expect(tabletLayout.overflow).toBe(false);
+  const tabletScreenshot = 'test-results/ui-review/soan-de-tablet.png';
+  await page.screenshot({ path: tabletScreenshot });
+  await testInfo.attach('soan-de-tablet.png', { path: tabletScreenshot, contentType: 'image/png' });
+
+  const tabletQuestionScreenshot = 'test-results/ui-review/soan-de-question-tablet.png';
+  await page.locator('#treasure-content-area').evaluate(element => {
+    const question = element.querySelector('.exam-question-card');
+    element.scrollTop = question ? question.offsetTop - 20 : 0;
+  });
+  await page.screenshot({ path: tabletQuestionScreenshot });
+  await testInfo.attach('soan-de-question-tablet.png', { path: tabletQuestionScreenshot, contentType: 'image/png' });
+});
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
