@@ -8,7 +8,8 @@ const migration = fs.readFileSync('supabase_question_templates.sql', 'utf8');
 const previewDirectory = 'src/assets/template-previews';
 const previewFiles = ['digit-at-place.jpg', 'smallest-of-four.jpg', 'largest-of-four.jpg', 'compose-from-places.jpg', 'missing-expanded-addend.jpg', 'four-arithmetic-blanks.jpg', 'four-arithmetic-comparisons.jpg', 'neighbor-numbers.jpg', 'compare-number-forms.jpg', 'place-value-true-false.jpg', 'safe-password-by-place-value.jpg', 'match-number-words.jpg', 'angle-count-in-polygon.jpg', 'angle-drag-classify.jpg', 'angle-clock-classify.jpg', 'angle-count-eight-angles.jpg'];
 
-assert(source.includes("{ id: 'templates', label: 'Kho Template' }"), 'Admin must show a Template Bank tab before Question Bank.');
+assert(source.includes("const composerModules = module === 'templates' || module === 'questions' || module === 'exams';"), 'Admin must route Template, Question Bank, and Exam tabs into Soạn Đề.');
+assert(indexHtml.includes('id="admin-compose-cards"'), 'Admin must expose the Template, Question Bank, and Exam workspaces in Soạn Đề.');
 assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
 assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');

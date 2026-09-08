@@ -133,7 +133,11 @@ test('Kho template và nhiệm vụ Admin dùng cùng danh mục Bài học', as
   });
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config.lesson)).toBe('g4-math-hk1-b02');
 
-  await page.evaluate(() => app.admin.showAddQuestForm());
+  await page.evaluate(() => {
+    app.admin.openAdmin();
+    app.admin.switchTab('quests');
+    app.admin.showAddQuestForm();
+  });
   await expect(page.locator('#quest-curriculum-fields')).toBeHidden();
   await page.locator('#quest-subject').selectOption('math');
   await page.locator('#quest-classlevel').selectOption('Lớp 4');
