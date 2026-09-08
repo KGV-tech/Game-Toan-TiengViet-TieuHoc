@@ -1,4 +1,4 @@
-// Thi đua đội nhóm: domain rules + local/demo adapter.
+// Thi đua nhóm: domain rules + local/demo adapter.
 // Production persistence/realtime must be wired to an approved Supabase schema separately.
 ;(function (root) {
     const app = root.app || (root.app = {});
@@ -125,7 +125,7 @@
             const requestedLeader = source?.leaderUsername || (Array.isArray(options.leaders) ? options.leaders[index] : '');
             return {
                 id: source?.id || makeId(`team${index + 1}`),
-                name: String(source?.name || options.names?.[index] || `Đội ${index + 1}`).trim() || `Đội ${index + 1}`,
+                name: String(source?.name || options.names?.[index] || `Nhóm ${index + 1}`).trim() || `Nhóm ${index + 1}`,
                 memberUsernames,
                 leaderUsername: requestedLeader || memberUsernames[0] || '',
                 examId: source?.examId || options.examIds?.[index] || null,
@@ -166,8 +166,8 @@
 
         const teams = Array.isArray(config.teams) ? config.teams : [];
         const teamCount = Number(config.teamCount || teams.length);
-        if (!Number.isInteger(teamCount) || teamCount < 2) errors.push(error('team_count_invalid', 'Số đội phải là số nguyên từ 2 trở lên.'));
-        if (teams.length !== teamCount) errors.push(error('team_count_mismatch', 'Số đội và danh sách đội chưa khớp.'));
+        if (!Number.isInteger(teamCount) || teamCount < 2) errors.push(error('team_count_invalid', 'Số nhóm phải là số nguyên từ 2 trở lên.'));
+        if (teams.length !== teamCount) errors.push(error('team_count_mismatch', 'Số nhóm và danh sách nhóm chưa khớp.'));
 
         const rosterByKey = new Map();
         students.forEach(student => {
@@ -179,19 +179,19 @@
             const members = Array.isArray(team?.memberUsernames)
                 ? team.memberUsernames.map(studentKey).filter(Boolean)
                 : [];
-            if (!members.length) errors.push(error('team_empty', `Đội ${index + 1} phải có ít nhất một thành viên.`, `teams.${index}`));
+            if (!members.length) errors.push(error('team_empty', `Nhóm ${index + 1} phải có ít nhất một thành viên.`, `teams.${index}`));
             const targetCount = team?.targetMemberCount === '' || team?.targetMemberCount === null || team?.targetMemberCount === undefined
                 ? null
                 : Number(team.targetMemberCount);
             if (targetCount !== null && (!Number.isInteger(targetCount) || targetCount < 1)) {
-                errors.push(error('target_member_count_invalid', `Số thành viên mục tiêu của đội ${index + 1} không hợp lệ.`, `teams.${index}`));
+                errors.push(error('target_member_count_invalid', `Số thành viên trong nhóm ${index + 1} không hợp lệ.`, `teams.${index}`));
             } else if (targetCount !== null && targetCount !== members.length) {
-                errors.push(error('target_member_count_mismatch', `Đội ${index + 1} phải có đúng ${targetCount} thành viên theo mục tiêu đã nhập.`, `teams.${index}`));
+                errors.push(error('target_member_count_mismatch', `Nhóm ${index + 1} phải có đúng ${targetCount} thành viên.`, `teams.${index}`));
             }
             const uniqueMembers = new Set();
             members.forEach(username => {
                 if (uniqueMembers.has(username) || assigned.has(username)) {
-                    errors.push(error('duplicate_student', `Học sinh ${username} chỉ được thuộc một đội.`, `teams.${index}`));
+                    errors.push(error('duplicate_student', `Học sinh ${username} chỉ được thuộc một nhóm.`, `teams.${index}`));
                 }
                 uniqueMembers.add(username);
                 assigned.add(username);
@@ -204,8 +204,8 @@
                 }
             });
             const leader = studentKey(team?.leaderUsername);
-            if (!leader) errors.push(error('leader_required', `Đội ${index + 1} phải có đúng một trưởng nhóm.`, `teams.${index}`));
-            else if (!uniqueMembers.has(leader)) errors.push(error('leader_not_member', `Trưởng nhóm đội ${index + 1} phải là thành viên của đội.`, `teams.${index}`));
+            if (!leader) errors.push(error('leader_required', `Nhóm ${index + 1} phải có đúng một trưởng nhóm.`, `teams.${index}`));
+            else if (!uniqueMembers.has(leader)) errors.push(error('leader_not_member', `Trưởng nhóm nhóm ${index + 1} phải là thành viên của nhóm.`, `teams.${index}`));
         });
 
         const mode = config.questionMode || config.assignmentMode || 'same';
@@ -213,12 +213,12 @@
         if (!examIds.length || examIds.some(id => !id)) errors.push(error('exam_required', 'Mỗi trận phải gắn bộ đề.'));
         const selectedExams = examIds.map(id => examForId(exams, id));
         selectedExams.forEach((exam, index) => {
-            if (!exam) errors.push(error('exam_not_found', `Không tìm thấy bộ đề của đội ${index + 1}.`, `teams.${index}`));
-            else if (!Array.isArray(exam.questions) || exam.questions.length < 1) errors.push(error('exam_empty', `Bộ đề của đội ${index + 1} chưa có câu hỏi.`, `teams.${index}`));
-            else if (classlevel && normalizeClass(exam.classlevel) !== classlevel) errors.push(error('exam_wrong_class', `Bộ đề của đội ${index + 1} không thuộc lớp ${classlevel}.`, `teams.${index}`));
+            if (!exam) errors.push(error('exam_not_found', `Không tìm thấy bộ đề của nhóm ${index + 1}.`, `teams.${index}`));
+            else if (!Array.isArray(exam.questions) || exam.questions.length < 1) errors.push(error('exam_empty', `Bộ đề của nhóm ${index + 1} chưa có câu hỏi.`, `teams.${index}`));
+            else if (classlevel && normalizeClass(exam.classlevel) !== classlevel) errors.push(error('exam_wrong_class', `Bộ đề của nhóm ${index + 1} không thuộc lớp ${classlevel}.`, `teams.${index}`));
             else if (typeof context.validateQuestionScoring === 'function') {
                 const invalidQuestion = exam.questions.findIndex(question => context.validateQuestionScoring(question));
-                if (invalidQuestion !== -1) errors.push(error('question_scoring_invalid', `Câu ${invalidQuestion + 1} của bộ đề đội ${index + 1} chưa có cấu trúc chấm điểm hợp lệ.`, `teams.${index}`));
+                if (invalidQuestion !== -1) errors.push(error('question_scoring_invalid', `Câu ${invalidQuestion + 1} của bộ đề nhóm ${index + 1} chưa có cấu trúc chấm điểm hợp lệ.`, `teams.${index}`));
             }
         });
         const questionCounts = selectedExams.filter(Boolean).map(exam => Array.isArray(exam.questions) ? exam.questions.length : 0).filter(Boolean);
@@ -237,11 +237,20 @@
         const members = Array.isArray(team?.memberUsernames)
             ? team.memberUsernames.map(studentKey).filter(Boolean)
             : (Array.isArray(team?.members) ? team.members.map(studentKey).filter(Boolean) : []);
+        const hasSnapshot = Array.isArray(team?.memberSelectionSnapshot?.memberUsernames);
+        const snapshotMembers = hasSnapshot
+            ? team.memberSelectionSnapshot.memberUsernames.map(studentKey).filter(Boolean)
+            : [];
         return {
             id: String(team?.id || makeId(`team${index + 1}`)),
-            name: String(team?.name || `Đội ${index + 1}`).trim() || `Đội ${index + 1}`,
+            name: String(team?.name || `Nhóm ${index + 1}`).trim() || `Nhóm ${index + 1}`,
             memberUsernames: Array.from(new Set(members)),
             leaderUsername: studentKey(team?.leaderUsername || team?.leader || members[0]),
+            memberSelectionState: team?.memberSelectionState === 'saved' ? 'saved' : 'editing',
+            memberSelectionSnapshot: {
+                memberUsernames: Array.from(new Set(snapshotMembers)),
+                leaderUsername: studentKey(team?.memberSelectionSnapshot?.leaderUsername || snapshotMembers[0])
+            },
             examId: team?.examId || null,
             targetMemberCount: team?.targetMemberCount === '' || team?.targetMemberCount === null || team?.targetMemberCount === undefined
                 ? null
@@ -664,7 +673,7 @@
         const notice = typeof document !== 'undefined' ? document.getElementById('team-play-lock-notice') : null;
         const submit = typeof document !== 'undefined' ? document.getElementById('team-play-submit') : null;
         const exit = typeof document !== 'undefined' ? document.getElementById('team-play-exit') : null;
-        if (container) container.innerHTML = '<div class="team-play-locked-panel"><strong>Lượt đội đã khóa</strong><p>Các câu đã nộp vẫn được tính điểm; câu chưa nộp tính 0. Không thể làm tiếp.</p></div>';
+        if (container) container.innerHTML = '<div class="team-play-locked-panel"><strong>Lượt nhóm đã khóa</strong><p>Các câu đã nộp vẫn được tính điểm; câu chưa nộp tính 0. Không thể làm tiếp.</p></div>';
         if (notice) { notice.hidden = false; notice.textContent = message || 'Lượt làm đã kết thúc.'; }
         if (submit) submit.disabled = true;
         if (exit) {
@@ -683,7 +692,7 @@
         if (title) title.textContent = competition.name || 'Trận thi đua';
         if (teamLabel) teamLabel.textContent = `${team.name} · Trưởng nhóm: ${app.data?.currentUser?.fullname || attempt.leaderUsername}`;
         if (progress) progress.textContent = `Câu ${Math.min((attempt.currentIndex || 0) + 1, questionCount)}/${questionCount}`;
-        if (score) score.textContent = `Điểm đội: ${Number(attempt.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}`;
+        if (score) score.textContent = `Điểm nhóm: ${Number(attempt.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}`;
         if (timer && competition.timeLimitMinutes !== null) timer.hidden = false;
     }
 
@@ -714,9 +723,9 @@
         const competition = store.get(attempt.competitionId);
         const team = competition?.teams.find(item => String(item.id) === String(attempt.teamId));
         const questions = getQuestionsForTeam(competition, team);
-        if (!competition || !team || !questions.length) return renderLeaderLocked('Không tìm thấy bộ câu hỏi của đội.');
+        if (!competition || !team || !questions.length) return renderLeaderLocked('Không tìm thấy bộ câu hỏi của nhóm.');
         if (attempt.status !== ATTEMPT_STATUS.ACTIVE || attempt.currentIndex >= questions.length) {
-            renderLeaderLocked(attempt.status === ATTEMPT_STATUS.COMPLETED ? 'Đội đã nộp đủ bài.' : 'Lượt làm đã bị khóa.');
+            renderLeaderLocked(attempt.status === ATTEMPT_STATUS.COMPLETED ? 'Nhóm đã nộp đủ bài.' : 'Lượt làm đã bị khóa.');
             return;
         }
         const index = attempt.currentIndex;
@@ -745,7 +754,7 @@
         const team = competition.teams.find(item => String(item.leaderUsername) === String(user.username));
         if (!team) return alert('Tài khoản này không phải trưởng nhóm của trận.');
         const questions = getQuestionsForTeam(competition, team);
-        if (!questions.length) return alert('Đội chưa có bộ câu hỏi hợp lệ.');
+        if (!questions.length) return alert('Nhóm chưa có bộ câu hỏi hợp lệ.');
         try {
             const existing = attemptStore.get(competition.id, team.id);
             if (shouldInvalidateAttemptOnReentry(existing, navigationType(), hasAttemptSessionMarker(existing))) {
@@ -770,10 +779,10 @@
             }
             if (app.router) app.router.open('team-competition-play-screen');
             if (attempt.status === ATTEMPT_STATUS.ACTIVE) renderLeaderQuestion();
-            else renderLeaderLocked('Lượt của đội đã được khóa trước đó.');
+            else renderLeaderLocked('Lượt của nhóm đã được khóa trước đó.');
             return attempt;
         } catch (exception) {
-            return alert(exception.message || 'Không thể mở lượt thi đua đội.');
+            return alert(exception.message || 'Không thể mở lượt thi đua nhóm.');
         }
     }
 
@@ -789,7 +798,7 @@
         updateCompetitionTeamFromAttempt(locked);
         setAttemptSessionMarker(locked, false);
         removeBeforeUnload();
-        renderLeaderLocked(reason === 'timeout' ? 'Hết giờ — lượt đội đã tự động khóa.' : 'Lượt đội đã khóa và không thể làm tiếp.');
+        renderLeaderLocked(reason === 'timeout' ? 'Hết giờ — lượt nhóm đã tự động khóa.' : 'Lượt nhóm đã khóa và không thể làm tiếp.');
         return locked;
     }
 
@@ -797,14 +806,14 @@
         if (!activeLeaderAttempt()) return Promise.resolve(true);
         const modal = typeof document !== 'undefined' ? document.getElementById('team-leave-confirm-modal') : null;
         if (!modal) {
-            return Promise.resolve(typeof root.confirm === 'function' && root.confirm('Nếu rời bây giờ, lượt đội sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'));
+            return Promise.resolve(typeof root.confirm === 'function' && root.confirm('Nếu rời bây giờ, lượt nhóm sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'));
         }
         const ok = document.getElementById('team-leave-confirm-ok');
         const cancel = document.getElementById('team-leave-confirm-cancel');
         const message = document.getElementById('team-leave-confirm-message');
         if (message) message.textContent = reason === 'timeout'
-            ? 'Hết giờ, lượt đội sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'
-            : 'Nếu rời bây giờ, lượt của đội sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.';
+            ? 'Hết giờ, lượt nhóm sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'
+            : 'Nếu rời bây giờ, lượt của nhóm sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.';
         modal.style.display = 'flex';
         modal.classList.add('active');
         api.state.leaveConfirmationOpen = true;
@@ -870,7 +879,7 @@
                 setAttemptSessionMarker(completed, false);
                 removeBeforeUnload();
                 clearPlayTimer();
-                renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(completed.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
+                renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm nhóm: ${Number(completed.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
             } else {
                 renderLeaderQuestion();
             }

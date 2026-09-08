@@ -1991,7 +1991,7 @@ input[type="text"], input[type="password"], select, textarea {
     transition: width .4s ease;
 }
 
-/* Thi đua đội nhóm — ưu tiên laptop và tablet ngang */
+/* Thi đua nhóm — ưu tiên laptop và tablet ngang */
 .quest-workspace { display: flex; flex-direction: column; gap: 16px; min-height: 100%; color: #e2e8f0; }
 .quest-workspace-tabs { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 4px; border-bottom: 1px solid rgba(125, 211, 252, .35); }
 .quest-workspace-tab { min-width: 150px; padding: 11px 22px; border: 2px solid rgba(125, 211, 252, .5); border-radius: 999px; background: rgba(7, 55, 87, .72); color: #dff7ff; font-size: 1rem; text-transform: none; }
@@ -2032,11 +2032,27 @@ input[type="text"], input[type="password"], select, textarea {
 .team-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .team-config-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .team-config-card { display: grid; gap: 10px; padding: 13px; border: 2px solid rgba(96, 165, 250, .42); border-radius: 14px; background: rgba(30, 41, 59, .76); }
+.team-config-card--saved { border-color: rgba(74, 222, 128, .78); background: rgba(20, 83, 45, .3); }
 .team-config-card__heading { display: flex; align-items: center; gap: 8px; }
 .team-config-card__heading .team-name-input { margin: 0; flex: 1; min-width: 0; }
 .team-card-number { display: inline-grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: #2563eb; color: #fff; font-weight: 900; }
-.team-member-select { min-height: 110px; color: #0f172a; background: #f8fafc; }
+.team-config-card__status { min-height: 20px; color: #fde68a; font-size: .8rem; font-weight: 800; }
+.team-config-card--saved .team-config-card__status { color: #bbf7d0; }
+.team-member-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.team-member-slot-label { display: grid; gap: 4px; color: #bae6fd; font-size: .78rem; font-weight: 800; }
+.team-member-slot-select { color: #0f172a; background: #f8fafc; }
+.team-member-selection-hint { margin: 0; padding: 10px; border: 1px dashed rgba(125, 211, 252, .4); border-radius: 8px; color: #94a3b8; font-size: .8rem; font-weight: 600; }
 .team-leader-select, .team-exam-select, #team-comp-common-exam { color: #0f172a; background: #f8fafc; }
+.team-config-card__actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.team-config-card__actions button { min-width: 100px; text-transform: none; }
+.team-membership-summary { display: grid; gap: 10px; margin-top: 18px; padding: 15px; border: 1px solid rgba(250, 204, 21, .42); border-radius: 14px; background: rgba(120, 53, 15, .22); }
+.team-membership-summary h4 { margin: 0; color: #fde68a; }
+.team-membership-summary__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 9px; }
+.team-membership-summary__group { min-width: 0; padding: 10px; border: 1px solid rgba(125, 211, 252, .28); border-radius: 10px; background: rgba(15, 23, 42, .5); }
+.team-membership-summary__group--saved { border-color: rgba(74, 222, 128, .55); }
+.team-membership-summary__group strong { display: flex; align-items: center; gap: 7px; color: #e0f2fe; }
+.team-membership-summary__group strong span { display: inline-grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: #2563eb; color: #fff; font-size: .76rem; }
+.team-membership-summary__group p { margin: 7px 0 0; color: #cbd5e1; font-size: .8rem; line-height: 1.45; }
 .team-timer-fields { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; color: #e0f2fe; font-weight: 800; }
 .team-timer-fields label { display: inline-flex; align-items: center; gap: 7px; }
 .team-timer-fields input[type="checkbox"] { width: 19px; height: 19px; accent-color: #22c55e; }

@@ -33,7 +33,7 @@ function demoExam(id = 'exam-team') {
   };
 }
 
-test('Admin tạo Đội nhóm, chuẩn bị và bắt đầu bảng thi đua', async ({ page }) => {
+test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openOfflineHomepage(page);
   await page.evaluate(({ users, exam }) => {
@@ -47,14 +47,22 @@ test('Admin tạo Đội nhóm, chuẩn bị và bắt đầu bảng thi đua', 
   }, { users: demoUsers(), exam: demoExam() });
 
   await expect(page.getByRole('tab', { name: 'Cá nhân' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Đội nhóm' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Nhóm' })).toBeVisible();
   await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
   await page.locator('#team-comp-name').fill('Trận Toán khởi động');
   await page.locator('#team-comp-common-exam').selectOption('exam-team');
-  await page.locator('.team-member-select').nth(0).selectOption(['hs1', 'hs2', 'hs3']);
-  await page.locator('.team-member-select').nth(1).selectOption(['hs4']);
+  await page.locator('.team-target-count').nth(0).fill('3');
+  await page.locator('.team-target-count').nth(0).press('Tab');
+  await page.locator('.team-member-slot-select').nth(0).selectOption('hs1');
+  await page.locator('.team-member-slot-select').nth(1).selectOption('hs2');
+  await page.locator('.team-member-slot-select').nth(2).selectOption('hs3');
+  await page.locator('.team-target-count').nth(1).fill('1');
+  await page.locator('.team-target-count').nth(1).press('Tab');
+  await page.locator('.team-config-card').nth(1).locator('.team-member-slot-select').selectOption('hs4');
   await page.locator('.team-leader-select').nth(0).selectOption('hs1');
   await page.locator('.team-leader-select').nth(1).selectOption('hs4');
+  await page.locator('.team-config-card').nth(0).getByRole('button', { name: 'Lưu' }).click();
+  await page.locator('.team-config-card').nth(1).getByRole('button', { name: 'Lưu' }).click();
   await page.getByRole('button', { name: 'Đã chuẩn bị' }).click();
 
   await expect(page.locator('.team-competition-board')).toBeVisible();
@@ -66,7 +74,7 @@ test('Admin tạo Đội nhóm, chuẩn bị và bắt đầu bảng thi đua', 
   await expect(page.locator('.team-board-card').first()).toContainText('0/2 câu đã nộp');
 });
 
-test('Admin có thể lọc đội hình thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {
+test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openOfflineHomepage(page);
   await page.evaluate(({ users, exam }) => {
@@ -81,10 +89,12 @@ test('Admin có thể lọc đội hình thi đua theo lớp con trong cùng c�
   }, { users: demoUsers(), exam: demoExam() });
 
   await page.locator('#team-comp-class-name').selectOption('5A');
-  await expect(page.locator('.team-member-select').first()).toContainText('Học sinh 1 · 5A');
-  await expect(page.locator('.team-member-select').first()).toContainText('Học sinh 2 · 5A');
-  await expect(page.locator('.team-member-select').first()).not.toContainText('Học sinh 3 · 5B');
-  await expect(page.locator('.team-member-select').first()).not.toContainText('Học sinh 4 · 5B');
+  await page.locator('.team-target-count').first().fill('1');
+  await page.locator('.team-target-count').first().press('Tab');
+  await expect(page.locator('.team-member-slot-select').first()).toContainText('Học sinh 1 · 5A');
+  await expect(page.locator('.team-member-slot-select').first()).toContainText('Học sinh 2 · 5A');
+  await expect(page.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 3 · 5B');
+  await expect(page.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 4 · 5B');
 });
 
 test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủy thì ở lại', async ({ page }) => {
@@ -98,8 +108,8 @@ test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủ
       id: 'match-leader-test', name: 'Trận tablet', classlevel: '5', teamCount: 2,
       participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, timeLimitMinutes: null,
       status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
-        { id: 'team-a', name: 'Đội A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
-        { id: 'team-b', name: 'Đội B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+        { id: 'team-a', name: 'Nhóm A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+        { id: 'team-b', name: 'Nhóm B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
       ]
     });
     app.teamCompetition.store.clear();
@@ -125,7 +135,7 @@ test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủ
   await expect(page.locator('#map-screen')).toHaveClass(/active/);
 });
 
-test('Admin chia ngẫu nhiên gần đều và hiển thị mục tiêu thành viên từng đội', async ({ page }) => {
+test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên từng nhóm', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await openOfflineHomepage(page);
   await page.evaluate(({ users, exam }) => {
@@ -140,8 +150,46 @@ test('Admin chia ngẫu nhiên gần đều và hiển thị mục tiêu thành 
   }, { users: demoUsers(), exam: demoExam() });
 
   await page.locator('#team-comp-mode').selectOption('random');
-  await expect(page.locator('.team-member-select').nth(0)).toBeDisabled();
-  await expect.poll(() => page.locator('.team-member-select').evaluateAll(selects => selects.map(select => select.selectedOptions.length))).toEqual([2, 2]);
+  await expect(page.locator('.team-member-slot-select').nth(0)).toBeDisabled();
+  await expect.poll(() => page.locator('.team-member-slot-select').evaluateAll(selects => selects.map(select => select.value).filter(Boolean).length)).toEqual(4);
   await expect.poll(() => page.locator('.team-target-count').evaluateAll(inputs => inputs.map(input => input.value))).toEqual(['2', '2']);
   await expect(page.locator('.team-leader-select').nth(0)).not.toHaveValue('');
+});
+
+test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trưởng nhóm từ thành viên đã chọn', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.teamCompetition.store.clear();
+    app.admin.openAdmin();
+    app.admin.switchTab('quests');
+    app.admin.switchQuestMode('team');
+    app.admin.showAddTeamCompetitionForm();
+  }, { users: demoUsers(), exam: demoExam() });
+
+  const firstGroup = page.locator('.team-config-card').first();
+  await firstGroup.locator('.team-target-count').fill('2');
+  await firstGroup.locator('.team-target-count').press('Tab');
+  await expect(firstGroup.locator('.team-member-slot-select')).toHaveCount(2);
+
+  await firstGroup.locator('.team-member-slot-select').nth(0).selectOption('hs1');
+  await firstGroup.locator('.team-member-slot-select').nth(1).selectOption('hs2');
+  await expect(firstGroup.locator('.team-leader-select')).toContainText('Học sinh 1');
+  await expect(firstGroup.locator('.team-leader-select')).not.toContainText('Học sinh 3');
+  await firstGroup.locator('.team-leader-select').selectOption('hs2');
+  await firstGroup.getByRole('button', { name: 'Lưu' }).click();
+
+  await expect(firstGroup.getByRole('button', { name: 'Sửa' })).toBeVisible();
+  await expect(page.locator('.team-membership-summary')).toContainText('Học sinh 1');
+  await page.locator('.team-config-card').nth(1).locator('.team-target-count').fill('1');
+  await page.locator('.team-config-card').nth(1).locator('.team-target-count').press('Tab');
+  await expect(page.locator('.team-config-card').nth(1).locator('.team-member-slot-select').first()).not.toContainText('Học sinh 1');
+  await expect(page.locator('.team-config-card').nth(1).locator('.team-member-slot-select').first()).not.toContainText('Học sinh 2');
+
+  await firstGroup.getByRole('button', { name: 'Sửa' }).click();
+  await expect(firstGroup.getByRole('button', { name: 'Cập nhật' })).toBeVisible();
+  await expect(firstGroup.getByRole('button', { name: 'Hủy' })).toBeVisible();
 });
