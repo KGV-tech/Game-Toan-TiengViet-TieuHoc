@@ -188,9 +188,9 @@
         </div>
 
         <!-- Đề Kiểm tra -->
-        <div class="station station-practice station-artwork" data-subject="exam" style="top: 30%; left: 45%;">
-          <img src="./public/stations-v3/luyen-de.png" alt="Luyện đề" loading="lazy" decoding="async" class="station-img">
-          <span class="station-label">Luyện Đề</span>
+        <div id="exam-station" class="station station-practice station-artwork" data-subject="exam" style="top: 30%; left: 45%;">
+          <img id="exam-station-image" src="./public/stations-v3/luyen-de.png" alt="Luyện Đề" loading="lazy" decoding="async" class="station-img">
+          <span id="exam-station-label" class="station-label">Luyện Đề</span>
         </div>
 
         <!-- Cài Đặt (Admin) -->
@@ -227,6 +227,128 @@
           <img id="map-cat" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="floating-cat"
             style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
+      </div>
+    </div>
+
+    <!-- Màn hình Soạn Đề (Admin) -->
+    <div id="admin-compose-screen" class="screen admin-compose-screen" aria-labelledby="admin-compose-title">
+      <div class="admin-compose-shell">
+        <aside class="admin-compose-sidebar" aria-label="Điều hướng Soạn Đề">
+          <header class="admin-compose-brand">
+            <span class="admin-compose-brand__mark" aria-hidden="true">✦</span>
+            <div>
+              <strong>SOẠN ĐỀ</strong>
+              <small>Khu vực Admin</small>
+            </div>
+          </header>
+
+          <button type="button" class="admin-compose-back" onclick="app.admin.closeComposer()">← Về bản đồ</button>
+
+          <section id="admin-compose-quickstart" class="admin-compose-quickstart" aria-labelledby="admin-compose-quickstart-title">
+            <div class="admin-compose-quickstart__copy">
+              <p class="admin-compose-kicker">BẮT ĐẦU NHANH</p>
+              <h2 id="admin-compose-quickstart-title">Hôm nay cô muốn làm gì?</h2>
+              <p>Chọn khu vực bên dưới để mở kho nội dung. Mọi thao tác đều dành cho việc soạn — học sinh vẫn làm bài ở trạm Luyện Đề.</p>
+              <button id="admin-compose-continue" type="button" class="admin-compose-quickstart__action" onclick="app.admin.continueComposer()">Tiếp tục lần trước →</button>
+            </div>
+            <img src="./public/robot_cat_normal.webp" alt="Robot mèo hỗ trợ soạn đề" class="admin-compose-quickstart__mascot">
+          </section>
+
+          <nav id="admin-compose-steps" class="admin-compose-steps" aria-label="Các bước soạn đề">
+            <p class="admin-compose-sidebar__heading">CÁC BƯỚC SOẠN ĐỀ</p>
+            <button type="button" class="admin-compose-step is-active" data-compose-step="workspace" onclick="app.admin.focusComposerSection('admin-compose-workspaces', this)">
+              <span class="admin-compose-step__number">01</span>
+              <span><strong>Chọn khu vực</strong><small>Template, câu hỏi, đề</small></span>
+            </button>
+            <button type="button" class="admin-compose-step" data-compose-step="content" onclick="app.admin.focusComposerSection('admin-compose-module-panel', this)">
+              <span class="admin-compose-step__number">02</span>
+              <span><strong>Biên tập nội dung</strong><small>Chọn và chỉnh sửa</small></span>
+            </button>
+            <button type="button" class="admin-compose-step" data-compose-step="review" onclick="app.admin.reviewComposer(this)">
+              <span class="admin-compose-step__number">03</span>
+              <span><strong>Rà soát &amp; lưu</strong><small>Sẵn sàng giao bài</small></span>
+            </button>
+          </nav>
+
+          <aside class="admin-compose-permission" role="note">
+            <strong>PHÂN QUYỀN RÕ RÀNG</strong>
+            <p>Chỉ Admin nhìn thấy màn hình này. Học sinh vẫn dùng trạm <b>Luyện Đề</b> như hiện tại.</p>
+          </aside>
+        </aside>
+
+        <main class="admin-compose-main">
+          <header class="admin-compose-header">
+            <div>
+              <p class="admin-compose-breadcrumb">Bản đồ / Không gian Admin</p>
+              <div class="admin-compose-title-line">
+                <h1 id="admin-compose-title">Soạn Đề</h1>
+                <span class="admin-compose-badge">ADMIN ONLY</span>
+              </div>
+              <p class="admin-compose-intro">Chọn đúng khu vực để bắt đầu. Mỗi ô là một không gian riêng, giúp cô soạn nội dung nhanh mà không phải làm thử đề như học sinh.</p>
+            </div>
+            <div id="admin-compose-profile" class="admin-compose-profile" aria-label="Tài khoản Admin">
+              <span class="admin-compose-profile__avatar" aria-hidden="true">CM</span>
+              <span><strong>Cô giáo Minh</strong><small>Quản trị viên</small></span>
+            </div>
+          </header>
+
+          <section id="admin-compose-context" class="admin-compose-context" aria-label="Ngữ cảnh soạn đề">
+            <label class="admin-compose-field" for="admin-compose-class">
+              <span>Cấp lớp</span>
+              <select id="admin-compose-class" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
+                <option value="Lớp 5" selected>Lớp 5</option>
+                <option value="Lớp 4">Lớp 4</option>
+                <option value="Lớp 3">Lớp 3</option>
+                <option value="Lớp 2">Lớp 2</option>
+                <option value="Lớp 1">Lớp 1</option>
+              </select>
+            </label>
+            <label class="admin-compose-field" for="admin-compose-subject">
+              <span>Môn học</span>
+              <select id="admin-compose-subject" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
+                <option value="Toán" selected>Toán</option>
+                <option value="Tiếng Việt">Tiếng Việt</option>
+              </select>
+            </label>
+            <label class="admin-compose-field" for="admin-compose-period">
+              <span>Thời gian</span>
+              <select id="admin-compose-period" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
+                <option value="Học Kỳ 1">Học Kỳ 1</option>
+                <option value="Học Kỳ 2">Học Kỳ 2</option>
+                <option value="Cả Năm">Cả Năm</option>
+              </select>
+            </label>
+            <label class="admin-compose-field admin-compose-field--search" for="admin-compose-search">
+              <span>Tìm nhanh trong kho</span>
+              <input id="admin-compose-search" class="admin-compose-input" type="search" placeholder="Tên template, câu hỏi, đề kiểm tra…" oninput="app.admin.updateComposerContext()">
+            </label>
+          </section>
+
+          <section id="admin-compose-workspaces" class="admin-compose-workspaces" aria-labelledby="admin-compose-workspaces-title">
+            <div class="admin-compose-section-heading">
+              <div>
+                <h2 id="admin-compose-workspaces-title">Bạn muốn soạn phần nào?</h2>
+                <p>Chạm vào một ô để xem các thao tác chính.</p>
+              </div>
+              <span class="admin-compose-section-count">03 khu vực độc lập</span>
+            </div>
+            <div id="admin-compose-cards" class="admin-compose-cards"></div>
+          </section>
+
+          <section id="admin-compose-module-panel" class="admin-compose-module-panel" aria-labelledby="admin-compose-module-title">
+            <header class="admin-compose-module-header">
+              <div>
+                <p id="admin-compose-module-kicker" class="admin-compose-module-kicker">ĐANG CHỌN · BỘ ĐỀ HOÀN CHỈNH</p>
+                <h2 id="admin-compose-module-title">Đề Kiểm Tra</h2>
+                <p id="admin-compose-module-description">Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh làm bài.</p>
+              </div>
+              <div id="admin-compose-module-summary" class="admin-compose-module-summary" aria-live="polite"></div>
+            </header>
+            <div id="admin-compose-module-content" class="admin-compose-module-content" aria-live="polite">
+              <p>Chọn một khu vực để bắt đầu biên tập nội dung.</p>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
 

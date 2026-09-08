@@ -2325,3 +2325,263 @@ input[type="text"], input[type="password"], select, textarea {
 @media (prefers-reduced-motion: reduce) {
     .team-board-card__progress span, .quest-workspace-tab { transition: none; }
 }
+
+/* Admin Soạn Đề — dark workspace based on the approved dashboard mockup. */
+.admin-compose-screen {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: clamp(12px, 1.5vw, 24px);
+    background:
+        radial-gradient(circle at 78% 8%, rgba(14, 116, 144, .22), transparent 32%),
+        radial-gradient(circle at 20% 100%, rgba(91, 33, 182, .16), transparent 34%),
+        linear-gradient(135deg, #020b14 0%, #071925 52%, #06121f 100%);
+    color: #e4f5ff;
+}
+.admin-compose-shell {
+    display: grid;
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+    width: min(100%, 1900px);
+    min-height: calc(100vh - clamp(24px, 3vw, 48px));
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid rgba(102, 183, 226, .34);
+    border-radius: 18px;
+    background: rgba(3, 16, 29, .88);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .42), inset 0 0 46px rgba(20, 184, 166, .06);
+}
+.admin-compose-sidebar {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px 18px 18px;
+    border-right: 1px solid rgba(102, 183, 226, .3);
+    background:
+        linear-gradient(180deg, rgba(3, 25, 40, .96), rgba(2, 15, 27, .95)),
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, .18), transparent 40%);
+}
+.admin-compose-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.admin-compose-brand__mark {
+    display: grid;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 2px solid #67e8f9;
+    border-radius: 15px;
+    background: linear-gradient(145deg, #67e8f9, #0ea5e9);
+    color: #082f49;
+    font-size: 1.7rem;
+    box-shadow: 0 0 22px rgba(34, 211, 238, .35);
+}
+.admin-compose-brand strong { display: block; color: #f7fdff; font-size: 1.07rem; letter-spacing: .12em; line-height: 1.2; }
+.admin-compose-brand small { display: block; margin-top: 3px; color: #8eb8d0; font-size: .78rem; font-weight: 700; }
+.admin-compose-back {
+    align-self: flex-start;
+    padding: 6px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: #b6d6e8;
+    box-shadow: none;
+    font-size: .9rem;
+    text-transform: none;
+    text-shadow: none;
+}
+.admin-compose-back:hover { border-bottom-color: #67e8f9; background: transparent; color: #f8fdff; box-shadow: none; filter: none; transform: none; }
+.admin-compose-quickstart {
+    position: relative;
+    min-height: 205px;
+    overflow: hidden;
+    padding: 17px 15px 16px;
+    border: 1px solid rgba(67, 220, 244, .72);
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(10, 86, 109, .92), rgba(8, 48, 71, .82) 58%, rgba(6, 30, 49, .95));
+    box-shadow: inset 0 0 22px rgba(34, 211, 238, .12), 0 10px 22px rgba(0, 0, 0, .2);
+}
+.admin-compose-quickstart::after { position: absolute; right: -30px; bottom: -48px; width: 150px; height: 150px; border: 1px solid rgba(103, 232, 249, .25); border-radius: 50%; content: ''; }
+.admin-compose-quickstart__copy { position: relative; z-index: 1; padding-right: 35px; }
+.admin-compose-kicker, .admin-compose-sidebar__heading, .admin-compose-module-kicker {
+    margin: 0;
+    color: #8eeaff;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+.admin-compose-quickstart h2 { margin: 11px 0 8px; color: #f8fdff; font-size: clamp(1.12rem, 1.8vw, 1.36rem); line-height: 1.15; text-shadow: 0 0 10px rgba(125, 211, 252, .28); }
+.admin-compose-quickstart p:not(.admin-compose-kicker) { margin: 0; color: #b8d9e8; font-size: .78rem; line-height: 1.45; }
+.admin-compose-quickstart__action {
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    padding: 9px 11px;
+    border: 1px solid #73ecff;
+    border-bottom-width: 2px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #5ee7f7, #19b9dc);
+    color: #062c44;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: none;
+    text-shadow: none;
+    box-shadow: 0 5px 14px rgba(8, 145, 178, .3);
+}
+.admin-compose-quickstart__action:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.admin-compose-quickstart__mascot { position: absolute; right: 3px; bottom: -7px; z-index: 0; width: 74px; max-height: 130px; object-fit: contain; filter: drop-shadow(0 7px 9px rgba(0, 0, 0, .45)); opacity: .92; }
+.admin-compose-steps { display: grid; gap: 9px; }
+.admin-compose-sidebar__heading { margin-bottom: 1px; color: #8dbbd5; }
+.admin-compose-step {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 9px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: #93b4c9;
+    box-shadow: none;
+    text-align: left;
+    text-transform: none;
+    text-shadow: none;
+}
+.admin-compose-step:hover { transform: none; border-color: rgba(103, 232, 249, .35); background: rgba(14, 116, 144, .14); color: #effcff; box-shadow: none; filter: none; }
+.admin-compose-step.is-active { border-color: rgba(55, 214, 239, .7); background: linear-gradient(90deg, rgba(14, 116, 144, .36), rgba(7, 55, 87, .26)); color: #f4fdff; box-shadow: inset 0 0 16px rgba(34, 211, 238, .09); }
+.admin-compose-step__number { display: grid; width: 35px; height: 35px; place-items: center; border: 1px solid rgba(125, 211, 252, .42); border-radius: 50%; color: #8ebbd1; font-size: .74rem; font-weight: 900; }
+.admin-compose-step.is-active .admin-compose-step__number { border-color: #5ee7f7; background: #4dd6ef; color: #07324a; box-shadow: 0 0 12px rgba(34, 211, 238, .4); }
+.admin-compose-step strong, .admin-compose-step small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-compose-step strong { font-size: .88rem; }
+.admin-compose-step small { margin-top: 3px; color: #779eb4; font-size: .72rem; font-weight: 600; }
+.admin-compose-step.is-active small { color: #a6d7e9; }
+.admin-compose-permission { margin-top: auto; padding: 15px; border: 1px solid rgba(245, 179, 45, .52); border-radius: 14px; background: linear-gradient(145deg, rgba(71, 53, 19, .55), rgba(22, 28, 24, .65)); }
+.admin-compose-permission strong { display: block; color: #ffd15a; font-size: .78rem; letter-spacing: .1em; }
+.admin-compose-permission p { margin: 10px 0 0; color: #c9d3d5; font-size: .77rem; line-height: 1.5; }
+.admin-compose-permission b { color: #f4fbff; }
+.admin-compose-main { min-width: 0; overflow: auto; padding: clamp(22px, 2.3vw, 36px) clamp(22px, 3vw, 54px) 34px; }
+.admin-compose-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; min-width: 0; }
+.admin-compose-breadcrumb { margin: 0 0 4px; color: #7db2cf; font-size: .94rem; font-weight: 900; }
+.admin-compose-title-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-compose-title-line h1 { margin: 0; color: #eefaff; font-size: clamp(2.25rem, 4vw, 3.45rem); font-weight: 900; letter-spacing: -.045em; line-height: 1; text-shadow: 0 0 22px rgba(125, 211, 252, .26); }
+.admin-compose-badge { padding: 6px 10px; border: 1px solid rgba(74, 222, 128, .62); border-radius: 999px; background: rgba(20, 83, 45, .28); color: #94f5bb; font-size: .77rem; font-weight: 900; letter-spacing: .06em; }
+.admin-compose-intro { max-width: 820px; margin: 12px 0 0; color: #9bc1d5; font-size: 1.05rem; line-height: 1.48; }
+.admin-compose-profile { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; padding: 7px 12px 7px 7px; border: 1px solid rgba(99, 183, 226, .43); border-radius: 999px; background: rgba(7, 36, 56, .82); }
+.admin-compose-profile__avatar { display: grid; width: 38px; height: 38px; place-items: center; border: 2px solid #67e8f9; border-radius: 50%; background: linear-gradient(145deg, #0e7490, #164e63); color: #dffbff; font-size: .72rem; font-weight: 900; }
+.admin-compose-profile__avatar--image { object-fit: cover; }
+.admin-compose-profile strong, .admin-compose-profile small { display: block; white-space: nowrap; }
+.admin-compose-profile strong { color: #effaff; font-size: .83rem; }
+.admin-compose-profile small { margin-top: 2px; color: #93bdd1; font-size: .7rem; font-weight: 700; }
+.admin-compose-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(250px, 1.45fr); gap: 12px; margin-top: 22px; padding: 14px; border: 1px solid rgba(57, 183, 224, .5); border-radius: 16px; background: linear-gradient(145deg, rgba(8, 38, 56, .92), rgba(5, 25, 42, .78)); box-shadow: inset 0 0 20px rgba(34, 211, 238, .05); }
+.admin-compose-field { display: grid; min-width: 0; gap: 6px; color: #9dbfd0; font-size: .75rem; font-weight: 900; }
+.admin-compose-select, .admin-compose-input { width: 100%; min-width: 0; min-height: 42px; margin: 0; padding: 9px 12px; border: 1px solid rgba(119, 186, 216, .35); border-radius: 9px; outline: none; background: rgba(1, 16, 28, .86); color: #e6f7ff; font: inherit; font-size: .9rem; font-weight: 800; box-shadow: inset 0 2px 8px rgba(0, 0, 0, .28); }
+.admin-compose-select:focus, .admin-compose-input:focus { border-color: #67e8f9; box-shadow: 0 0 0 3px rgba(34, 211, 238, .15), inset 0 2px 8px rgba(0, 0, 0, .28); }
+.admin-compose-select option { background: #082238; color: #f4fbff; }
+.admin-compose-input::placeholder { color: #638ba1; }
+.admin-compose-workspaces { margin-top: 26px; }
+.admin-compose-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
+.admin-compose-section-heading h2 { margin: 0; color: #eefaff; font-size: clamp(1.45rem, 2.2vw, 1.85rem); line-height: 1.15; }
+.admin-compose-section-heading p { margin: 5px 0 0; color: #8fb6cb; font-size: .9rem; }
+.admin-compose-section-count { color: #63e6f7; font-size: .8rem; font-weight: 900; white-space: nowrap; }
+.admin-compose-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.admin-compose-card {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 282px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 16px 14px;
+    overflow: hidden;
+    border: 1px solid currentColor;
+    border-bottom-width: 5px;
+    border-radius: 18px;
+    color: #f8fdff;
+    text-align: left;
+    text-transform: none;
+    text-shadow: none;
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease, border-color .2s ease;
+}
+.admin-compose-card::after { position: absolute; right: -38px; bottom: -55px; width: 170px; height: 170px; border: 1px solid currentColor; border-radius: 50%; content: ''; opacity: .22; }
+.admin-compose-card:hover { transform: translateY(-3px); filter: brightness(1.07); }
+.admin-compose-card:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
+.admin-compose-card.is-selected { border-width: 2px; border-bottom-width: 6px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .13), 0 12px 28px rgba(0, 0, 0, .3), inset 0 0 26px rgba(255, 255, 255, .08); }
+.admin-compose-card__top { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.admin-compose-card__eyebrow { color: currentColor; font-size: .74rem; font-weight: 900; letter-spacing: .1em; }
+.admin-compose-card__icon { display: grid; flex: 0 0 50px; width: 50px; height: 50px; place-items: center; border: 1px solid rgba(255, 255, 255, .35); border-radius: 14px; background: rgba(255, 255, 255, .2); color: #08253a; font-size: 1.48rem; font-weight: 900; }
+.admin-compose-card__selected { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid rgba(255, 255, 255, .65); border-radius: 50%; background: rgba(255, 255, 255, .72); color: #071522; font-size: 1rem; font-weight: 900; opacity: 0; }
+.admin-compose-card.is-selected .admin-compose-card__selected { opacity: 1; }
+.admin-compose-card h3 { position: relative; z-index: 1; margin: 12px 0 6px; color: #fbfeff; font-size: clamp(1.25rem, 2.1vw, 1.7rem); line-height: 1.08; }
+.admin-compose-card > p { position: relative; z-index: 1; min-height: 3.2em; margin: 0; color: rgba(239, 251, 255, .82); font-size: .86rem; line-height: 1.4; }
+.admin-compose-card__metrics { position: relative; z-index: 1; display: grid; gap: 4px; margin-top: 14px; padding: 10px 11px; border: 1px solid rgba(255, 255, 255, .21); border-radius: 11px; background: rgba(0, 10, 19, .2); }
+.admin-compose-card__metric { display: flex; justify-content: space-between; gap: 10px; color: rgba(237, 249, 255, .78); font-size: .75rem; font-weight: 700; }
+.admin-compose-card__metric strong { color: currentColor; font-size: .78rem; }
+.admin-compose-card__footer { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 13px; border-top: 1px solid rgba(255, 255, 255, .23); }
+.admin-compose-card__count strong { display: block; color: #fff; font-size: 1.55rem; line-height: 1; }
+.admin-compose-card__count span { display: block; margin-top: 4px; color: rgba(238, 250, 255, .75); font-size: .72rem; font-weight: 800; }
+.admin-compose-card__open { color: currentColor; font-size: .84rem; font-weight: 900; white-space: nowrap; }
+.admin-compose-card--template { border-color: #f6bb47; border-bottom-color: #ad6d08; background: linear-gradient(145deg, rgba(104, 70, 19, .8), rgba(32, 38, 31, .9)); color: #ffd15a; }
+.admin-compose-card--template .admin-compose-card__icon { background: #ffc857; }
+.admin-compose-card--questions { border-color: #51e0f5; border-bottom-color: #0e92ab; background: linear-gradient(145deg, rgba(10, 94, 111, .84), rgba(8, 48, 65, .92)); color: #57e3f5; }
+.admin-compose-card--questions .admin-compose-card__icon { background: #52d7ee; }
+.admin-compose-card--exams { border-color: #bd9cff; border-bottom-color: #7950b7; background: linear-gradient(145deg, rgba(65, 50, 116, .86), rgba(28, 31, 72, .94)); color: #c4a1ff; }
+.admin-compose-card--exams .admin-compose-card__icon { background: #b895ff; }
+.admin-compose-module-panel { --composer-accent: #c09cff; margin-top: 22px; padding: 20px; border: 1px solid rgba(57, 183, 224, .5); border-radius: 17px; background: linear-gradient(145deg, rgba(6, 32, 48, .94), rgba(5, 20, 35, .88)); box-shadow: inset 0 0 24px rgba(34, 211, 238, .045); }
+.admin-compose-module-panel[data-module="templates"] { --composer-accent: #ffd15a; border-color: rgba(246, 187, 71, .58); background: linear-gradient(145deg, rgba(45, 35, 18, .84), rgba(5, 20, 35, .9)); }
+.admin-compose-module-panel[data-module="questions"] { --composer-accent: #57e3f5; border-color: rgba(81, 224, 245, .58); }
+.admin-compose-module-panel[data-module="exams"] { --composer-accent: #c4a1ff; border-color: rgba(189, 156, 255, .58); background: linear-gradient(145deg, rgba(24, 25, 61, .88), rgba(5, 20, 35, .9)); }
+.admin-compose-module-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid rgba(125, 211, 252, .22); }
+.admin-compose-module-kicker { color: var(--composer-accent); }
+.admin-compose-module-header h2 { margin: 5px 0 6px; color: color-mix(in srgb, var(--composer-accent) 26%, #f1eaff); font-size: clamp(1.5rem, 2.5vw, 2.15rem); }
+.admin-compose-module-header > div:first-child > p:last-child { max-width: 760px; margin: 0; color: #a9c6d4; font-size: .9rem; line-height: 1.45; }
+.admin-compose-module-summary { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; min-width: 190px; }
+.admin-compose-module-summary span { padding: 7px 10px; border: 1px solid rgba(125, 211, 252, .34); border-radius: 9px; background: rgba(8, 47, 73, .48); color: #bdeeff; font-size: .76rem; font-weight: 800; }
+.admin-compose-module-panel[data-module="templates"] .admin-compose-module-summary span { border-color: rgba(246, 187, 71, .42); color: #ffe29a; }
+.admin-compose-module-panel[data-module="questions"] .admin-compose-module-summary span { border-color: rgba(81, 224, 245, .42); color: #b9f7ff; }
+.admin-compose-module-panel[data-module="exams"] .admin-compose-module-summary span { border-color: rgba(189, 156, 255, .42); color: #e1d1ff; }
+.admin-compose-module-content { min-width: 0; padding-top: 16px; color: #e2f3fb; }
+.admin-compose-module-content > p { margin: 8px 0; color: #9dbbcc; }
+.admin-compose-module-content .exam-workspace__header h3,
+.admin-compose-module-content .template-editor__header h3 { color: #e9faff; }
+.admin-compose-module-content .exam-workspace__tabs { margin-top: 14px; }
+.admin-compose-module-content table { max-width: 100%; }
+.admin-compose-module-content .form-input,
+.admin-compose-module-content .filter-input { color: #0f172a; }
+.admin-compose-module-content .template-editor,
+.admin-compose-module-content .exam-workspace { padding-left: 0; padding-right: 0; }
+.admin-compose-screen button:disabled { cursor: not-allowed; }
+
+@media (max-width: 1120px) {
+    .admin-compose-shell { grid-template-columns: minmax(226px, 260px) minmax(0, 1fr); }
+    .admin-compose-sidebar { padding-left: 14px; padding-right: 14px; }
+    .admin-compose-main { padding-left: 24px; padding-right: 24px; }
+    .admin-compose-intro { font-size: .94rem; }
+    .admin-compose-context { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(210px, 1.2fr); }
+    .admin-compose-card { min-height: 265px; padding-left: 13px; padding-right: 13px; }
+    .admin-compose-card h3 { font-size: 1.22rem; }
+}
+@media (max-width: 900px) {
+    .admin-compose-header { flex-direction: column; }
+    .admin-compose-profile { align-self: flex-start; }
+    .admin-compose-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-compose-field--search { grid-column: 1 / -1; }
+    .admin-compose-cards { grid-template-columns: 1fr; }
+    .admin-compose-card { min-height: 0; }
+    .admin-compose-card > p { min-height: 0; }
+}
+@media (max-width: 700px) {
+    .admin-compose-screen { padding: 0; }
+    .admin-compose-shell { display: block; min-height: 100vh; border: 0; border-radius: 0; }
+    .admin-compose-sidebar { border-right: 0; border-bottom: 1px solid rgba(102, 183, 226, .3); }
+    .admin-compose-quickstart { min-height: 175px; }
+    .admin-compose-permission { margin-top: 0; }
+    .admin-compose-main { overflow: visible; padding: 22px 16px 28px; }
+    .admin-compose-module-header { flex-direction: column; }
+    .admin-compose-module-summary { justify-content: flex-start; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-compose-card { transition: none; }
+}
