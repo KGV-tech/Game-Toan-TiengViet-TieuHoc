@@ -33,6 +33,7 @@ assert.deepEqual(quotaTeams.map(group => group.length), [2, 5, 3]);
 const targetTeams = team.buildTeams({ students: students.slice(0, 5), teamCount: 2, participantMode: 'random', quotas: [3, 2], rng: () => 0.4 });
 assert.deepEqual(targetTeams.map(group => group.memberUsernames.length), [3, 2]);
 assert.deepEqual(targetTeams.map(group => group.targetMemberCount), [3, 2]);
+assert.deepEqual(targetTeams.map(group => group.name), ['Nhóm 1', 'Nhóm 2']);
 
 const validConfig = {
   name: 'Trận khởi động',
@@ -88,6 +89,8 @@ assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8 }, { id: 'b', score:
 
 const draft = team.normalizeCompetition({ ...validConfig, id: 'match-1' });
 assert.equal(draft.status, team.STATUS.DRAFT);
+assert.equal(draft.teams[0].memberSelectionState, 'editing');
+assert.deepEqual(draft.teams[0].memberSelectionSnapshot, { memberUsernames: [], leaderUsername: '' });
 assert.equal(team.transitionStatus(draft, team.STATUS.PREPARED).status, team.STATUS.PREPARED);
 assert.throws(() => team.transitionStatus(draft, team.STATUS.ACTIVE), /Invalid team competition transition/);
 const prepared = team.transitionStatus(draft, team.STATUS.PREPARED);

@@ -664,6 +664,14 @@ const app = {
         },
         init() {
             document.getElementById('login-btn').onclick = () => this.login();
+            document.getElementById('toggle-password').onclick = () => {
+                const password = document.getElementById('password');
+                const visible = password.type === 'text';
+                password.type = visible ? 'password' : 'text';
+                const toggle = document.getElementById('toggle-password');
+                toggle.setAttribute('aria-pressed', String(!visible));
+                toggle.setAttribute('aria-label', visible ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
+            };
             document.getElementById('register-btn').onclick = () => this.register();
             document.getElementById('link-to-register').onclick = (event) => { event.preventDefault(); app.router.open('register-screen'); };
             document.getElementById('link-to-login').onclick = (event) => { event.preventDefault(); app.router.open('login-screen'); };
@@ -3376,17 +3384,31 @@ const app = {
             if (!subEl) return;
             const sub = subEl.value;
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
-
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const topics = [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])];
+            const period = document.getElementById('add-e-period')?.value || 'Giữa kỳ 1';
+            const topics = period === 'Cả năm'
+                ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
+                : [...((period.includes('kỳ 2') ? topicsObj.hk2 : topicsObj.hk1) || [])];
+            const topicWrap = document.getElementById('add-e-topics');
+            let selectedTopics = [];
+            if (topicWrap) {
+                try { selectedTopics = JSON.parse(topicWrap.dataset.selected || '[]'); } catch (_) { selectedTopics = []; }
+                if (!selectedTopics.length) selectedTopics = Array.from(topicWrap.querySelectorAll('input:checked')).map(input => input.value);
+                selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
+                delete topicWrap.dataset.selected;
+                topicWrap.innerHTML = topics.length
+                    ? topics.map(topic => `<label style="display:inline-flex; align-items:center; gap:5px; margin:4px 12px 4px 0; cursor:pointer;"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()">${app.data.sanitizeHTML(topic)}</label>`).join('')
+                    : '<span style="color:#aaa;">Chưa có chủ đề cho lựa chọn này.</span>';
+            }
+            const questionTopics = selectedTopics.length ? selectedTopics : topics;
 
             let i = 0;
             while (true) {
                 const topicEl = document.getElementById(`add-e-q-topic-${i}`);
                 if (!topicEl) break;
                 const selected = topicEl.getAttribute('data-selected');
-                topicEl.innerHTML = topics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+                topicEl.innerHTML = questionTopics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
                 i++;
             }
         },
@@ -3443,7 +3465,7 @@ const app = {
                 <section class="quest-workspace" aria-label="Quản lý nhiệm vụ">
                     <div class="quest-workspace-tabs" role="tablist" aria-label="Loại nhiệm vụ">
                         <button type="button" class="quest-workspace-tab ${mode === 'personal' ? 'active' : ''}" role="tab" aria-selected="${mode === 'personal'}" onclick="app.admin.switchQuestMode('personal')">Cá nhân</button>
-                        <button type="button" class="quest-workspace-tab ${mode === 'team' ? 'active' : ''}" role="tab" aria-selected="${mode === 'team'}" onclick="app.admin.switchQuestMode('team')">Đội nhóm</button>
+                        <button type="button" class="quest-workspace-tab ${mode === 'team' ? 'active' : ''}" role="tab" aria-selected="${mode === 'team'}" onclick="app.admin.switchQuestMode('team')">Nhóm</button>
                     </div>
                     <div id="admin-quest-subarea" class="quest-workspace-content"></div>
                 </section>`;
@@ -3536,13 +3558,13 @@ const app = {
                 try {
                     draft.teams = app.teamCompetition.buildTeams({ students, teamCount: draft.teamCount, participantMode: 'random' });
                 } catch (_) {
-                    draft.teams = Array.from({ length: draft.teamCount }, (_, index) => ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
+                    draft.teams = Array.from({ length: draft.teamCount }, (_, index) => ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
                 }
             } else {
                 const previous = Array.isArray(draft.teams) ? draft.teams : [];
                 const validStudents = new Set(students.map(student => String(student.username)));
                 draft.teams = Array.from({ length: draft.teamCount }, (_, index) => {
-                    const source = previous[index] || ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null });
+                    const source = previous[index] || ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null });
                     const members = (source.memberUsernames || []).filter(username => validStudents.has(String(username)));
                     return { ...source, memberUsernames: members, leaderUsername: members.includes(source.leaderUsername) ? source.leaderUsername : '' };
                 });
@@ -3565,8 +3587,82 @@ const app = {
                 this.teamCompetitionDraft = draft;
                 this.renderTeamCompetitionForm();
             } catch (exception) {
-                alert(exception.message || 'Không thể chia đội ngẫu nhiên.');
+                alert(exception.message || 'Không thể chọn ngẫu nhiên học sinh.');
             }
+        },
+        getReservedTeamMemberUsernames(teams, activeIndex) {
+            const reserved = new Set();
+            (teams || []).forEach((team, index) => {
+                if (index === activeIndex) return;
+                const snapshot = team?.memberSelectionSnapshot?.memberUsernames;
+                const hasSnapshot = Array.isArray(snapshot) && snapshot.length > 0;
+                const members = team?.memberSelectionState === 'saved'
+                    ? (hasSnapshot ? snapshot : (team?.memberUsernames || []))
+                    : (hasSnapshot ? snapshot : []);
+                members.forEach(username => reserved.add(String(username)));
+            });
+            return reserved;
+        },
+        updateTeamMemberSlots(index) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            if (!team) return;
+            const count = Number(team.targetMemberCount);
+            if (Number.isInteger(count) && count > 0) {
+                team.memberUsernames = team.memberUsernames.slice(0, count);
+                if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = '';
+            } else {
+                team.memberUsernames = [];
+                team.leaderUsername = '';
+            }
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        changeTeamMemberSlot(index) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            if (!team) return;
+            if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = '';
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        saveTeamMembers(index) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            if (!team) return;
+            const targetCount = Number(team.targetMemberCount);
+            if (!Number.isInteger(targetCount) || targetCount < 1) return alert('Hãy nhập số thành viên trong nhóm.');
+            if (team.memberUsernames.length !== targetCount) return alert(`Nhóm ${index + 1} cần chọn đủ ${targetCount} thành viên trước khi lưu.`);
+            if (new Set(team.memberUsernames).size !== team.memberUsernames.length) return alert('Một học sinh chỉ được chọn một lần trong nhóm.');
+            if (!team.memberUsernames.includes(team.leaderUsername)) return alert('Hãy chọn trưởng nhóm từ danh sách thành viên của nhóm.');
+            const reserved = this.getReservedTeamMemberUsernames(draft.teams, index);
+            if (team.memberUsernames.some(username => reserved.has(String(username)))) return alert('Có học sinh đã thuộc một nhóm đã lưu. Hãy chọn học sinh khác.');
+            team.memberSelectionState = 'saved';
+            team.memberSelectionSnapshot = { memberUsernames: [...team.memberUsernames], leaderUsername: team.leaderUsername };
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        editTeamMembers(index) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            if (!team) return;
+            team.memberSelectionState = 'editing';
+            team.memberSelectionSnapshot = team.memberSelectionSnapshot?.memberUsernames?.length
+                ? team.memberSelectionSnapshot
+                : { memberUsernames: [...team.memberUsernames], leaderUsername: team.leaderUsername };
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        cancelTeamMemberEdit(index) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            const snapshot = team?.memberSelectionSnapshot;
+            if (!team || !snapshot?.memberUsernames?.length) return;
+            team.memberUsernames = [...snapshot.memberUsernames];
+            team.leaderUsername = snapshot.leaderUsername || '';
+            team.memberSelectionState = 'saved';
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
         },
         syncTeamCompetitionDraftFromDom() {
             if (!this.teamCompetitionDraft || !document.getElementById('team-comp-name')) return;
@@ -3580,15 +3676,19 @@ const app = {
             const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
             const teamCards = Array.from(document.querySelectorAll('#team-comp-teams .team-config-card'));
             const teams = teamCards.map((card, index) => {
-                const memberSelect = card.querySelector('.team-member-select');
-                const members = memberSelect ? Array.from(memberSelect.selectedOptions).map(option => option.value) : (draft.teams?.[index]?.memberUsernames || []);
+                const memberSlots = Array.from(card.querySelectorAll('.team-member-slot-select'));
+                const members = memberSlots.length
+                    ? memberSlots.map(select => select.value).filter(Boolean)
+                    : (draft.teams?.[index]?.memberUsernames || []);
                 return {
                     id: card.dataset.teamId || draft.teams?.[index]?.id || `team-${index + 1}`,
-                    name: card.querySelector('.team-name-input')?.value.trim() || `Đội ${index + 1}`,
+                    name: card.querySelector('.team-name-input')?.value.trim() || `Nhóm ${index + 1}`,
                     memberUsernames: Array.from(new Set(members.filter(Boolean))),
                     leaderUsername: card.querySelector('.team-leader-select')?.value || '',
                     examId: card.querySelector('.team-exam-select')?.value || draft.teams?.[index]?.examId || null,
-                    targetMemberCount: card.querySelector('.team-target-count')?.value ? Number(card.querySelector('.team-target-count').value) : null
+                    targetMemberCount: card.querySelector('.team-target-count')?.value ? Number(card.querySelector('.team-target-count').value) : null,
+                    memberSelectionState: card.dataset.memberSelectionState || draft.teams?.[index]?.memberSelectionState || 'editing',
+                    memberSelectionSnapshot: draft.teams?.[index]?.memberSelectionSnapshot || { memberUsernames: [], leaderUsername: '' }
                 };
             });
             const hasTimer = Boolean(document.getElementById('team-comp-has-timer')?.checked);
@@ -3616,8 +3716,8 @@ const app = {
                 this.teamCompetitionDraft = app.teamCompetition.normalizeCompetition({
                     name: '', classlevel: '5', participantMode: 'manual', teamCount: 2,
                     teams: [
-                        { id: 'team-1', name: 'Đội 1', memberUsernames: [], leaderUsername: '' },
-                        { id: 'team-2', name: 'Đội 2', memberUsernames: [], leaderUsername: '' }
+                        { id: 'team-1', name: 'Nhóm 1', memberUsernames: [], leaderUsername: '' },
+                        { id: 'team-2', name: 'Nhóm 2', memberUsernames: [], leaderUsername: '' }
                     ], questionMode: 'same', timeLimitMinutes: null, status: app.teamCompetition.STATUS.DRAFT
                 });
             }
@@ -3630,7 +3730,7 @@ const app = {
             const students = this.getTeamCompetitionStudents(classlevel, className);
             const exams = this.getTeamCompetitionExams(classlevel);
             const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
-            const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Đội ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
+            const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
             draft.teamCount = teamCount;
             draft.teams = teams;
             const esc = value => app.data.sanitizeHTML(value ?? '');
@@ -3638,40 +3738,68 @@ const app = {
             const classNameOptions = [`<option value="">Tất cả học sinh Lớp ${esc(classlevel)}</option>`, ...classNames.map(name => `<option value="${esc(name)}" ${name === className ? 'selected' : ''}>Lớp ${esc(name)}</option>`)].join('');
             const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
             const teamCards = teams.map((team, index) => {
-                const selected = new Set(team.memberUsernames || []);
+                const targetCount = Number.isInteger(Number(team.targetMemberCount)) && Number(team.targetMemberCount) > 0
+                    ? Number(team.targetMemberCount)
+                    : ((team.memberUsernames || []).length || null);
+                const selectedMembers = (team.memberUsernames || []).slice(0, targetCount || 0);
+                const selectionState = team.memberSelectionState === 'saved' ? 'saved' : 'editing';
+                const isSaved = selectionState === 'saved';
+                const reservedMembers = this.getReservedTeamMemberUsernames(teams, index);
                 const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
-                const memberOptions = students.map(student => `<option value="${esc(student.username)}" ${selected.has(String(student.username)) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
-                const leaderOptions = students.map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
+                const memberSlots = targetCount
+                    ? Array.from({ length: targetCount }, (_, slotIndex) => {
+                        const selectedUsername = String(selectedMembers[slotIndex] || '');
+                        const selectedInOtherSlots = new Set(selectedMembers.filter((username, selectedIndex) => selectedIndex !== slotIndex).map(String));
+                        const options = students.filter(student => {
+                            const username = String(student.username);
+                            return username === selectedUsername || (!reservedMembers.has(username) && !selectedInOtherSlots.has(username));
+                        }).map(student => `<option value="${esc(student.username)}" ${selectedUsername === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
+                        return `<label class="team-member-slot-label">Thành viên ${slotIndex + 1}<select class="form-input team-member-slot-select" ${isSaved || draft.participantMode === 'random' ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index})"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
+                    }).join('')
+                    : '<p class="team-member-selection-hint">Nhập số thành viên trong nhóm để hiện các ô chọn học sinh.</p>';
+                const leaderOptions = students.filter(student => selectedMembers.includes(String(student.username))).map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
                 const perTeamExamOptions = exams.map(exam => `<option value="${esc(exam.id)}" ${String(team.examId) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
-                return `<article class="team-config-card" data-team-id="${esc(team.id)}">
-                    <div class="team-config-card__heading"><span class="team-card-number">${index + 1}</span><input class="form-input team-name-input" value="${esc(team.name)}" aria-label="Tên đội ${index + 1}" placeholder="Tên đội"></div>
-                    <label class="team-field-label">Số thành viên mục tiêu <span>(tuỳ chọn; phải khớp trước khi chuẩn bị)</span><input class="form-input team-target-count" type="number" min="1" max="100" value="${team.targetMemberCount ?? ''}" placeholder="Để trống nếu không đặt mục tiêu"></label>
-                    <label class="team-field-label">Thành viên <span>(Ctrl/Cmd để chọn nhiều)</span>
-                      <select class="form-input team-member-select" multiple size="${Math.min(7, Math.max(3, students.length))}" ${draft.participantMode === 'random' ? 'disabled' : ''}>${memberOptions}</select>
-                    </label>
+                const memberNames = selectedMembers.map(username => students.find(student => String(student.username) === String(username))?.fullname || username);
+                const actionButtons = isSaved
+                    ? `<button type="button" class="btn-opt" onclick="app.admin.editTeamMembers(${index})">Sửa</button>`
+                    : `<button type="button" class="btn-primary" onclick="app.admin.saveTeamMembers(${index})">${team.memberSelectionSnapshot?.memberUsernames?.length ? 'Cập nhật' : 'Lưu'}</button>${team.memberSelectionSnapshot?.memberUsernames?.length ? `<button type="button" class="btn-opt" onclick="app.admin.cancelTeamMemberEdit(${index})">Hủy</button>` : ''}`;
+                return `<article class="team-config-card ${isSaved ? 'team-config-card--saved' : ''}" data-team-id="${esc(team.id)}" data-member-selection-state="${selectionState}">
+                    <div class="team-config-card__heading"><span class="team-card-number">${index + 1}</span><input class="form-input team-name-input" value="${esc(team.name)}" aria-label="Tên nhóm ${index + 1}" placeholder="Tên nhóm" ${isSaved ? 'readonly' : ''}></div>
+                    <div class="team-config-card__status" aria-live="polite">${isSaved ? `Đã lưu · ${memberNames.length}/${targetCount} thành viên` : 'Chưa lưu danh sách thành viên'}</div>
+                    <label class="team-field-label">Số thành viên trong nhóm<input class="form-input team-target-count" type="number" min="1" max="${Math.max(1, students.length)}" value="${targetCount ?? ''}" placeholder="Nhập số lượng" ${isSaved ? 'disabled' : ''} onchange="app.admin.updateTeamMemberSlots(${index})"></label>
+                    <div class="team-field-label">Chọn thành viên từ danh sách
+                      <div class="team-member-slots">${memberSlots}</div>
+                    </div>
                     <label class="team-field-label">Trưởng nhóm
-                      <select class="form-input team-leader-select"><option value="">-- Chọn trưởng nhóm --</option>${leaderOptions}</select>
+                      <select class="form-input team-leader-select" ${isSaved ? 'disabled' : ''}><option value="">-- Chọn trưởng nhóm --</option>${leaderOptions}</select>
                     </label>
-                    ${draft.questionMode === 'different' ? `<label class="team-field-label">Bài làm của đội<select class="form-input team-exam-select"><option value="">-- Chọn bộ đề --</option>${perTeamExamOptions}</select></label>` : ''}
+                    ${draft.questionMode === 'different' ? `<label class="team-field-label">Bài làm của nhóm<select class="form-input team-exam-select"><option value="">-- Chọn bộ đề --</option>${perTeamExamOptions}</select></label>` : ''}
+                    <div class="team-config-card__actions">${actionButtons}</div>
                 </article>`;
+            }).join('');
+            const memberSummary = teams.map((team, index) => {
+                const members = team.memberSelectionState === 'saved' ? (team.memberUsernames || []) : [];
+                const names = members.map(username => students.find(student => String(student.username) === String(username))?.fullname || username);
+                return `<article class="team-membership-summary__group ${members.length ? 'team-membership-summary__group--saved' : ''}"><strong><span>${index + 1}</span>${esc(team.name || `Nhóm ${index + 1}`)}</strong><p>${members.length ? esc(names.join(' · ')) : 'Chưa lưu thành viên'}</p></article>`;
             }).join('');
             const sameExam = draft.commonExamId || exams[0]?.id || '';
             const statusLabel = app.teamCompetition.STATUS_LABELS[draft.status] || 'Nháp';
-            box.innerHTML = `<section class="team-competition-form" aria-label="Soạn trận thi đua đội nhóm">
+            box.innerHTML = `<section class="team-competition-form" aria-label="Soạn trận thi đua nhóm">
                 <div class="team-form-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><span class="team-form-status">${statusLabel}</span></div>
-                <h3>Tạo trận thi đua đội nhóm</h3>
-                <p class="team-form-intro">Mỗi đội dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Các đội được phép khác số lượng thành viên.</p>
+                <h3>Tạo trận thi đua nhóm</h3>
+                <p class="team-form-intro">Mỗi nhóm dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Các nhóm được phép khác số lượng thành viên.</p>
                 <div class="team-form-grid">
                   <label class="team-field-label">Tên trận<input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
                   <label class="team-field-label">Cấp lớp<select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
                   <label class="team-field-label">Lớp<select id="team-comp-class-name" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classNameOptions}</select></label>
                   <label class="team-field-label">Số lượng nhóm<input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
-                  <label class="team-field-label">Cách chia học sinh<select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định (manual)</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chia ngẫu nhiên (auto)</option></select></label>
+                  <label class="team-field-label">Cách chọn học sinh<select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định (manual)</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chọn ngẫu nhiên (random)</option></select></label>
                 </div>
-                <div class="team-form-section"><div class="team-section-heading"><h4>Đội hình</h4><button type="button" class="btn-opt" onclick="app.admin.randomizeTeamCompetition()">Chia ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></div>
+                <div class="team-form-section"><div class="team-section-heading"><h4>Chọn nhóm</h4><button type="button" class="btn-opt" onclick="app.admin.randomizeTeamCompetition()">Chọn ngẫu nhiên</button></div><p class="team-form-hint">Lưu từng nhóm để thành viên của nhóm đó không còn xuất hiện trong các nhóm khác.</p><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></div>
+                <section class="team-membership-summary" aria-live="polite"><h4>Danh sách thành viên theo nhóm</h4><div class="team-membership-summary__grid">${memberSummary}</div></section>
                 <div class="team-form-section"><h4>Bài làm</h4><div class="team-form-grid team-form-grid--compact">
                   <label class="team-field-label">Cách giao bài<select id="team-comp-question-mode" class="form-input" onchange="app.admin.syncTeamCompetitionDraftFromDom(); app.admin.renderTeamCompetitionForm()"><option value="same" ${draft.questionMode !== 'different' ? 'selected' : ''}>Một bài giống nhau cho các nhóm</option><option value="different" ${draft.questionMode === 'different' ? 'selected' : ''}>Mỗi nhóm một bài khác nhau</option></select></label>
-                  ${draft.questionMode !== 'different' ? `<label class="team-field-label">Bộ đề chung<select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint">Chọn bộ đề riêng trong từng ô đội. Tất cả bộ đề phải có cùng số câu.</p>'}
+                  ${draft.questionMode !== 'different' ? `<label class="team-field-label">Bộ đề chung<select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint">Chọn bộ đề riêng trong từng ô nhóm. Tất cả bộ đề phải có cùng số câu.</p>'}
                 </div></div>
                 <div class="team-form-section"><h4>Thời gian làm bài</h4><div class="team-timer-fields"><label><input id="team-comp-has-timer" type="checkbox" ${draft.timeLimitMinutes !== null ? 'checked' : ''} onchange="document.getElementById('team-comp-time').disabled = !this.checked"> Có thời gian</label><input id="team-comp-time" class="form-input" type="number" min="1" max="180" value="${draft.timeLimitMinutes || 15}" ${draft.timeLimitMinutes === null ? 'disabled' : ''} aria-label="Số phút làm bài"><span>phút</span><span class="team-form-hint">Bỏ chọn để không giới hạn.</span></div></div>
                 <div class="team-form-actions"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">Hủy</button><button type="button" class="btn-primary" onclick="app.admin.saveTeamCompetitionDraft(false)">Lưu Nháp</button><button type="button" class="btn-success" onclick="app.admin.saveTeamCompetitionDraft(true)">Đã chuẩn bị</button></div>
@@ -3737,7 +3865,7 @@ const app = {
                     : '<div class="team-remote-status-notice team-remote-status-notice--warning">Chưa đồng bộ được backend thi đua nhóm. Kiểm tra migration/RLS và kết nối trước khi bắt đầu trận.</div>');
             let html = `<div class="team-competition-list-header"><div><h3>Thi đua theo nhóm</h3><p>Tạo trận trong lớp, chuẩn bị trước rồi trình chiếu bảng điểm cho cả lớp.</p></div><button type="button" class="btn-success" onclick="app.admin.showAddTeamCompetitionForm()">+ Tạo trận mới</button></div>${adapterNotice}`;
             if (!competitions.length) {
-                box.innerHTML = html + '<div class="team-empty-state"><span aria-hidden="true">🏆</span><p>Chưa có trận đội nhóm nào. Bạn có thể soạn nhiều bản Nháp trước khi vào lớp.</p></div>';
+                box.innerHTML = html + '<div class="team-empty-state"><span aria-hidden="true">🏆</span><p>Chưa có trận thi đua nhóm nào. Bạn có thể soạn nhiều bản Nháp trước khi vào lớp.</p></div>';
                 return;
             }
             html += '<div class="team-competition-list">';
@@ -3748,7 +3876,7 @@ const app = {
                 const action = match.status === app.teamCompetition.STATUS.DRAFT
                     ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button><button type="button" class="btn-success" onclick="app.admin.prepareTeamCompetition(decodeURIComponent('${token}'))">Đã chuẩn bị</button>`
                     : `<button type="button" class="btn-primary" onclick="app.admin.openTeamCompetitionBoard(decodeURIComponent('${token}'))">Mở bảng</button>${match.status === app.teamCompetition.STATUS.PREPARED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button>` : ''}`;
-                html += `<article class="team-competition-list-item"><div><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4><p>Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''} · ${match.teamCount} đội · ${match.questionMode === 'different' ? 'Bài riêng' : 'Bài chung'}</p><p class="team-competition-list-teams">${teamSummary}</p></div><div class="team-competition-list-meta"><span class="team-status-pill team-status-pill--${match.status}">${status}</span><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
+                html += `<article class="team-competition-list-item"><div><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4><p>Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''} · ${match.teamCount} nhóm · ${match.questionMode === 'different' ? 'Bài riêng' : 'Bài chung'}</p><p class="team-competition-list-teams">${teamSummary}</p></div><div class="team-competition-list-meta"><span class="team-status-pill team-status-pill--${match.status}">${status}</span><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
             });
             box.innerHTML = html + '</div>';
         },
@@ -3786,7 +3914,7 @@ const app = {
             const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
                 ? `<button type="button" class="btn-start-massive team-board-start" onclick="app.admin.startTeamCompetition(decodeURIComponent('${token}'))">Bắt đầu thi đua</button>`
                 : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : '');
-            box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()">⛶ Mở toàn màn hình</button><span class="team-status-pill team-status-pill--${match.status}">${status}</span></div><header class="team-board-heading"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} đội · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo đội' : 'Một bài giống nhau'}</p></div>${globalAction}</header><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm đội được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
+            box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">← Danh sách trận</button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()">⛶ Mở toàn màn hình</button><span class="team-status-pill team-status-pill--${match.status}">${status}</span></div><header class="team-board-heading"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} nhóm · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo nhóm' : 'Một bài giống nhau'}</p></div>${globalAction}</header><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
                 if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; return; }
@@ -3804,7 +3932,7 @@ const app = {
         async startTeamCompetition(id) {
             const match = app.teamCompetition?.store.get(id);
             if (!match || match.status !== app.teamCompetition.STATUS.PREPARED) return;
-            if (!confirm('Bắt đầu thi đua? Sau khi bắt đầu không thể sửa đội hình hoặc bộ đề.')) return;
+            if (!confirm('Bắt đầu thi đua? Sau khi bắt đầu không thể sửa danh sách nhóm hoặc bộ đề.')) return;
             const started = app.teamCompetition.startCompetition(match, Date.now());
             app.teamCompetition.store.upsert(started);
             if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
@@ -3814,7 +3942,7 @@ const app = {
         async endTeamCompetition(id, automatic = false) {
             const match = app.teamCompetition?.store.get(id);
             if (!match || match.status !== app.teamCompetition.STATUS.ACTIVE) return;
-            if (!automatic && !confirm('Kết thúc trận ngay? Câu chưa nộp của các đội sẽ tính 0 điểm.')) return;
+            if (!automatic && !confirm('Kết thúc trận ngay? Câu chưa nộp của các nhóm sẽ tính 0 điểm.')) return;
             const attempts = app.teamCompetition.attemptStore.list().filter(attempt => String(attempt.competitionId) === String(id));
             const scoreByTeam = {};
             let updated = { ...match, teams: match.teams.map(team => ({ ...team })) };
@@ -5263,7 +5391,7 @@ const app = {
                 if (ind) ind.textContent = `Tổng: ${app.data.exams.length} đề`;
             }
             else if (tab === 'add') {
-                let e = editIdx !== undefined ? app.data.exams[editIdx] : null;
+                let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 subBox.innerHTML = `
             <div style="max-width: 600px; margin: 0 auto; text-align:left;">
                <h3>${e ? 'Sửa đề kiểm tra' : 'Thêm đề kiểm tra mới'}</h3>
@@ -5288,18 +5416,25 @@ const app = {
 
                <div style="display:flex; align-items:center; margin-bottom:10px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Kỳ kiểm tra</label>
-                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;">
+                  <select id="add-e-period" class="form-input" style="flex:1; padding:8px;" onchange="app.admin.updateExamTopics()">
                      <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
                      <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
                      <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
                      <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
+                     <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
                   </select>
+               </div>
+
+               <div style="display:flex; align-items:flex-start; margin-bottom:10px;">
+                  <label style="width:150px; font-weight:bold; flex-shrink:0; padding-top:8px;">Chủ đề</label>
+                  <div id="add-e-topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}' style="flex:1; padding:4px 0;"></div>
                </div>
 
                <div style="display:flex; align-items:center; margin-bottom:15px;">
                   <label style="width:150px; font-weight:bold; flex-shrink:0;">Tên đề kiểm tra</label>
                   <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" style="flex:1; padding:8px;" value="${e ? e.name : ''}">
                </div>
+               <button type="button" class="btn-success" style="margin:0 0 15px;" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
 
                ${e && e.questions && e.questions.length > 0 ? `
                <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
@@ -5321,7 +5456,7 @@ const app = {
 
                <div style="margin-top: 20px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
                   <h4 style="margin-bottom: 15px; color:#ffcc00;">Soạn câu hỏi cho đề kiểm tra này</h4>
-                  ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
+                  <div class="exam-question-grid">${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
                     let q = e && e.questions && e.questions[i] ? e.questions[i] : null;
                     return `
                     <div style="background: rgba(0,0,0,0.2); padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #ffcc00;">
@@ -5394,7 +5529,7 @@ const app = {
                        </div>
                     </div>
                   `;
-                }).join('')}
+                }).join('')}</div>
                </div>
 
                ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
@@ -5494,12 +5629,50 @@ const app = {
           `;
             }
         },
+        autoGenerateExam() {
+            const classlevel = document.getElementById('add-e-class').value;
+            const subject = document.getElementById('add-e-sub').value;
+            const period = document.getElementById('add-e-period').value;
+            const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
+            if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
+            const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+            const eligible = item => same(item.classlevel, classlevel) && same(item.subject, subject) && topics.some(topic => same(item.topic, topic));
+            const used = new Set();
+            const addUnique = question => {
+                const copy = JSON.parse(JSON.stringify(question));
+                if (app.data.validateQuestionScoring(copy)) return false;
+                const key = app.data.getQuestionContentKey(copy);
+                if (used.has(key)) return false;
+                used.add(key);
+                questions.push(copy);
+                return true;
+            };
+            const questions = [];
+            [...(app.data.libraryQuestions || [])].filter(eligible).sort(() => Math.random() - 0.5).some(question => {
+                addUnique(question);
+                return questions.length === app.game.questionsPerRound;
+            });
+            const templates = (app.data.questionTemplates || []).filter(template => template.is_active !== false && eligible(template));
+            let attempts = 0;
+            while (questions.length < app.game.questionsPerRound && templates.length && attempts < 100) {
+                addUnique(app.data.generateTemplateQuestion(templates[attempts % templates.length]) || {});
+                attempts += 1;
+            }
+            if (questions.length < app.game.questionsPerRound) return alert(`Chưa đủ 10 câu phù hợp với các chủ đề đã chọn (hiện có ${questions.length} câu). Hãy bổ sung kho câu hỏi/template hoặc chọn thêm chủ đề.`);
+            this.examComposerDraft = {
+                classlevel, subject, period,
+                name: document.getElementById('add-e-name').value,
+                topics, questions
+            };
+            this.renderESubTab('add');
+        },
         submitAddExam(editIdx) {
             const eObj = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
                 classlevel: document.getElementById('add-e-class').value,
                 period: document.getElementById('add-e-period').value,
+                topics: Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value),
                 questions: []
             };
             if (!eObj.name || !eObj.subject) return alert('Vui lòng điền đủ Tên Đề và Môn');
@@ -5561,6 +5734,7 @@ const app = {
                 alert('Đã tạo đề kiểm tra mới!');
             }
             app.data.saveExams();
+            this.examComposerDraft = null;
             this.renderESubTab('lib');
         },
         submitInjectQ(qIdx, eIdx) {
@@ -6519,13 +6693,13 @@ const app = {
                 if (!team) return;
                 const attempt = app.teamCompetition.attemptStore.get(match.id, team.id);
                 const isLeader = String(team.leaderUsername) === String(user.username);
-                let action = '<span class="team-student-status">Theo dõi kết quả đội</span>';
+                let action = '<span class="team-student-status">Theo dõi kết quả nhóm</span>';
                 if (isLeader && !attempt) action = `<button type="button" class="btn-success" onclick="app.teamCompetition.openLeaderAttempt(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Vào lượt trưởng nhóm</button>`;
-                else if (isLeader && attempt?.status === app.teamCompetition.ATTEMPT_STATUS.ACTIVE) action = `<button type="button" class="btn-primary" onclick="app.teamCompetition.openLeaderAttempt(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Tiếp tục lượt đội</button>`;
+                else if (isLeader && attempt?.status === app.teamCompetition.ATTEMPT_STATUS.ACTIVE) action = `<button type="button" class="btn-primary" onclick="app.teamCompetition.openLeaderAttempt(decodeURIComponent('${encodeURIComponent(String(match.id))}'))">Tiếp tục lượt nhóm</button>`;
                 else if (isLeader && attempt) action = `<span class="team-student-status">${attempt.status === app.teamCompetition.ATTEMPT_STATUS.LOCKED ? 'Lượt đã khóa' : 'Đã hoàn thành'}</span>`;
                 const rank = app.teamCompetition.getTeamRank(match, team.id);
                 const score = Number(team.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
-                teamCompetitionHtml += `<article class="student-team-competition-card"><div><p class="student-team-competition-kicker">Thi đua theo nhóm · ${app.teamCompetition.STATUS_LABELS[match.status]}</p><h4>${app.data.sanitizeHTML(match.name)}</h4><p>Đội của bạn: <strong>${app.data.sanitizeHTML(team.name)}</strong> · ${team.memberUsernames.length} thành viên · ${isLeader ? 'Bạn là trưởng nhóm' : 'Bạn tham gia cùng đội'}</p><p class="student-team-competition-score">Điểm đội: <strong>${score}/10</strong> · Hạng: <strong>${rank}</strong></p></div><div>${action}</div></article>`;
+                teamCompetitionHtml += `<article class="student-team-competition-card"><div><p class="student-team-competition-kicker">Thi đua theo nhóm · ${app.teamCompetition.STATUS_LABELS[match.status]}</p><h4>${app.data.sanitizeHTML(match.name)}</h4><p>Nhóm của bạn: <strong>${app.data.sanitizeHTML(team.name)}</strong> · ${team.memberUsernames.length} thành viên · ${isLeader ? 'Bạn là trưởng nhóm' : 'Bạn tham gia cùng nhóm'}</p><p class="student-team-competition-score">Điểm nhóm: <strong>${score}/10</strong> · Hạng: <strong>${rank}</strong></p></div><div>${action}</div></article>`;
             });
 
             // Hộp quà hằng ngày hiển thị trong trạm Nhiệm vụ
