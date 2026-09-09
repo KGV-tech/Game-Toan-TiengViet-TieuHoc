@@ -124,7 +124,7 @@ test('Luyện Đề giữ lựa chọn cũ và vẫn nhận đề theo phạm vi
 test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và Cả năm gộp hai học kỳ', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openExamComposer(page);
-  const topics = await page.evaluate(() => app.constants.topics['5'].math);
+  const topics = await page.evaluate(() => app.constants.topics['4'].math);
 
   await expect(page.locator('#add-e-topics')).toBeVisible();
   const hk1Topics = await page.locator('#add-e-topics input').evaluateAll(inputs => inputs.map(input => input.value));

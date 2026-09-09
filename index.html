@@ -248,10 +248,24 @@
             <div class="admin-compose-quickstart__copy">
               <p class="admin-compose-kicker">BẮT ĐẦU NHANH</p>
               <h2 id="admin-compose-quickstart-title">Hôm nay cô muốn làm gì?</h2>
-              <p>Chọn khu vực bên dưới để mở kho nội dung. Mọi thao tác đều dành cho việc soạn — học sinh vẫn làm bài ở trạm Luyện Đề.</p>
-              <button id="admin-compose-continue" type="button" class="admin-compose-quickstart__action" onclick="app.admin.continueComposer()">Tiếp tục lần trước →</button>
             </div>
-            <img src="./public/robot_cat_normal.webp" alt="Robot mèo hỗ trợ soạn đề" class="admin-compose-quickstart__mascot">
+            <div class="admin-compose-quickstart__actions" role="group" aria-label="Chọn khu vực soạn nhanh">
+              <button type="button" class="admin-compose-quickstart-card admin-compose-quickstart-card--template" data-quickstart-module="templates" aria-pressed="false" onclick="app.admin.openComposerModule('templates')">
+                <span class="admin-compose-quickstart-card__icon" aria-hidden="true">T</span>
+                <span class="admin-compose-quickstart-card__copy"><strong>Soạn template</strong><small>Khung sinh câu</small></span>
+                <span class="admin-compose-quickstart-card__arrow" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="admin-compose-quickstart-card admin-compose-quickstart-card--questions" data-quickstart-module="questions" aria-pressed="false" onclick="app.admin.openComposerModule('questions')">
+                <span class="admin-compose-quickstart-card__icon" aria-hidden="true">Q</span>
+                <span class="admin-compose-quickstart-card__copy"><strong>Soạn câu hỏi</strong><small>Ngân hàng nội dung</small></span>
+                <span class="admin-compose-quickstart-card__arrow" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="admin-compose-quickstart-card admin-compose-quickstart-card--exams" data-quickstart-module="exams" aria-pressed="false" onclick="app.admin.openComposerModule('exams')">
+                <span class="admin-compose-quickstart-card__icon" aria-hidden="true">Đ</span>
+                <span class="admin-compose-quickstart-card__copy"><strong>Soạn Đề</strong><small>Bộ đề hoàn chỉnh</small></span>
+                <span class="admin-compose-quickstart-card__arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
           </section>
 
           <nav id="admin-compose-steps" class="admin-compose-steps" aria-label="Các bước soạn đề">
@@ -305,8 +319,8 @@
             <label class="admin-compose-field" for="admin-compose-class">
               <span>Cấp lớp</span>
               <select id="admin-compose-class" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
-                <option value="Lớp 5" selected>Lớp 5</option>
-                <option value="Lớp 4">Lớp 4</option>
+                <option value="Lớp 4" selected>Lớp 4</option>
+                <option value="Lớp 5">Lớp 5</option>
                 <option value="Lớp 3">Lớp 3</option>
                 <option value="Lớp 2">Lớp 2</option>
                 <option value="Lớp 1">Lớp 1</option>

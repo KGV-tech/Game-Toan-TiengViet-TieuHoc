@@ -555,9 +555,9 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   });
 
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
-  await expect(page.locator('#template-example .template-editor__preview-image')).toBeVisible();
-  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /four-arithmetic-blanks\.jpg$/);
-  await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(page.locator('#template-example .template-editor__preview-summary')).toBeVisible();
+  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
+  await expect(page.locator('#template-example')).not.toContainText('Giao diện khi học sinh làm bài');
   await expect(page.locator('.template-editor__guide b')).toHaveText('Diễn giải');
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls h5')).toHaveCount(0);
   await expect.poll(() => page.locator('.template-editor__rules').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(2);
@@ -574,11 +574,14 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
-  await expect(page.locator('#template-example .template-editor__preview-image')).toBeVisible();
-  await expect(page.locator('#template-example')).not.toContainText('Ví dụ kết quả');
+  await page.locator('#template-preview-open').click();
+  await expect(page.locator('#template-preview-dialog')).toBeVisible();
+  await expect(page.locator('#template-preview-dialog .template-preview__line')).toHaveCount(4);
+  await expect(page.locator('#template-preview-dialog')).toContainText('Hãy điền số thích hợp');
+  await page.locator('#template-preview-back').click();
   await captureUiReview(page, testInfo, 'four-arithmetic-template-config.png');
   await page.locator('#template-generator').selectOption('number.safe_password_by_place_value');
-  await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', /safe-password-by-place-value\.jpg$/);
+  await expect(page.locator('#template-example .template-editor__preview-summary')).toContainText('Mật khẩu két sắt theo hàng');
 
   await page.evaluate(() => {
     app.data.questionTemplates = [{
@@ -621,16 +624,19 @@ test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã l
   await expect(page.locator('#template-variables')).toContainText('{question}');
   await expect(page.locator('#template-variables')).not.toContainText('{place}');
   await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
-  await expect(page.locator('#template-example')).toContainText('Đặt tính rồi tính:');
-  await expect(page.locator('#template-example .template-preview__line')).toHaveCount(4);
+  await expect(page.locator('#template-example .template-editor__preview-summary')).toContainText('Bốn phép cộng và trừ số nhiều chữ số');
+  await page.locator('#template-preview-open').click();
+  await expect(page.locator('#template-preview-dialog')).toContainText('Đặt tính rồi tính:');
+  await expect(page.locator('#template-preview-dialog .template-preview__line')).toHaveCount(4);
+  await page.locator('#template-preview-back').click();
   await expect(page.locator('.template-editor__rule--digit-controls').first()).toBeHidden();
   await expect(page.locator('.template-editor__rule--range-controls')).toBeVisible();
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ minimumDigits: 2, maximumDigits: 5, lesson: 'g4-math-hk1-b26' });
 
   await page.evaluate(() => app.admin.renderTemplates(document.getElementById('treasure-content-area')));
-  const templateNameCell = page.locator('#treasure-content-area tbody tr').first().locator('td').nth(4);
-  await expect(templateNameCell).toHaveText('Bốn phép cộng và trừ số nhiều chữ số');
-  await expect(templateNameCell).not.toContainText('g4-m-add-sub-multi-digit');
+  const templateCard = page.locator('#treasure-content-area .template-library-card').first();
+  await expect(templateCard.locator('h4')).toHaveText('Bốn phép cộng và trừ số nhiều chữ số');
+  await expect(templateCard).not.toContainText('g4-m-add-sub-multi-digit');
 });
 
 test('lập số theo hàng căn trái bốn câu và giữ ô đáp án cạnh “Số đó là”', async ({ page }, testInfo) => {
@@ -949,7 +955,7 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
   });
 
   await expect(page.locator('.template-editor__rule--safe-password-class-controls')).toBeVisible();
-  await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
+  await expect(page.locator('#treasure-title')).toHaveText('Soạn Đề');
   await expect(page.locator('.template-editor__rule--safe-password-controls')).toBeVisible();
   await expect(page.locator('#template-safe-password-condition1-classes')).toContainText('Lớp tỷ');
   await expect(page.locator('#template-safe-password-condition1-places')).toContainText('Triệu');
@@ -1405,8 +1411,11 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
     }, { generator, questionType });
     await expect(page.locator('#template-topic')).toHaveValue('2. Góc và đơn vị đo góc');
     await expect(page.locator('#template-question-type')).toHaveValue(questionType);
-    await expect(page.locator('#template-example .template-editor__preview-image')).toHaveAttribute('src', new RegExp(`${previewImage}$`));
-    await expect.poll(() => page.locator('#template-example .template-editor__preview-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+    await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
+    await page.locator('#template-preview-open').click();
+    await expect(page.locator('#template-preview-dialog')).toBeVisible();
+    await expect(page.locator('#template-preview-dialog')).toContainText(questionType === 'Kéo thả' ? 'Kéo thả' : 'Đếm');
+    await page.locator('#template-preview-back').click();
     await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
     await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ lesson: 'g4-math-hk1-b08' });
   }
