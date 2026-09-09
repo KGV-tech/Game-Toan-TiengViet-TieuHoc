@@ -21,6 +21,13 @@ test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và tr�
   await expect(page.locator('.exam-composer__question-bank')).toContainText('Soạn câu hỏi cho đề');
   await expect(page.locator('.exam-question-card')).toHaveCount(10);
   await expect(page.locator('#add-e-period option')).toHaveText(['Học Kỳ 1', 'Học Kỳ 2', 'Cả Năm']);
+  await expect(page.locator('[data-question-index="0"] [data-structured-kind="subquestions"] .exam-structured-part')).toHaveCount(4);
+  await expect(page.locator('.exam-structured-part__checkbox')).toHaveCount(40);
+  await expect(page.locator('#add-e-q-structured-part-count-0')).toHaveValue('4');
+  const firstPartCheckbox = page.locator('[data-question-index="0"] .exam-structured-part__checkbox').first();
+  await firstPartCheckbox.click();
+  await expect(firstPartCheckbox).toBeChecked();
+  await expect(page.locator('#add-e-q-structured-selection-status-0')).toContainText('1, 2 hoặc 4');
 
   const detailLayout = await page.locator('.exam-composer__meta').evaluate(element => {
     const style = getComputedStyle(element);
@@ -223,8 +230,9 @@ test('Tạo đề tự động không đưa câu một ý vào đề', async ({ 
     page.getByRole('button', { name: 'Tạo đề tự động' }).click()
   ]);
   const dialogMessage = await dialogPromise;
-  expect(dialogMessage).toContain('cấu trúc bốn ý');
-  await expect(page.locator('[data-structured-kind]')).toHaveCount(0);
+  expect(dialogMessage).toContain('cấu trúc 1, 2 hoặc 4 ý');
+  await expect(page.locator('[data-structured-kind]')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind="subquestions"] .exam-structured-part')).toHaveCount(40);
 });
 
 test('Tạo đề tự động báo rõ chủ đề chưa có nguồn bốn ý', async ({ page }) => {
@@ -263,7 +271,7 @@ test('Tạo đề tự động báo rõ chủ đề chưa có nguồn bốn ý',
     page.getByRole('button', { name: 'Tạo đề tự động' }).click()
   ]);
   const dialogMessage = await dialogPromise;
-  expect(dialogMessage).toContain('cấu trúc bốn ý');
+  expect(dialogMessage).toContain('cấu trúc 1, 2 hoặc 4 ý');
   expect(dialogMessage).toContain(missingTopic);
 });
 
@@ -363,6 +371,18 @@ test('Soạn đề Toán lớp 4 hiện và lưu đủ bốn ý cùng đáp án 
   expect(savedQuestions[1].subquestions).toHaveLength(4);
   expect(savedQuestions[1].subquestions[2]).toMatchObject({ prompt: 'Ý trắc nghiệm c đã được chỉnh sửa', answer: 'D' });
   expect(savedQuestions[1].ans).toBe('A, B, D, D');
+
+  await page.evaluate(() => app.admin.renderESubTab('add', 0));
+  await page.locator('#add-e-q-structured-part-count-1').selectOption('2');
+  await expect(page.locator('[data-question-index="1"] .exam-structured-part__checkbox:checked')).toHaveCount(2);
+  await expect(page.locator('#add-e-q-structured-selection-status-1')).toContainText('2/4');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Lưu chỉnh sửa' }).click();
+  const selectedQuestions = await page.evaluate(() => app.data.exams[0].questions);
+  expect(selectedQuestions[1].subquestions).toHaveLength(2);
+  expect(selectedQuestions[1].partAnswerCounts).toEqual([1, 1]);
+  expect(selectedQuestions[1].ans).toBe('A, B');
+  expect(selectedQuestions[1].selectedParts).toEqual([0, 1]);
 });
 
 test('Soạn đề Toán lớp 4 hiển thị đồng nhất bốn ý cho các cấu trúc template', async ({ page }) => {

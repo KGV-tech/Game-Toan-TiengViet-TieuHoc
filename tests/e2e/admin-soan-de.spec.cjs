@@ -16,7 +16,7 @@ async function openOfflineHomepage(page) {
   return { consoleErrors, supabaseRequests };
 }
 
-test('Admin mở Soạn Đề với quick start, thẻ thống kê và bộ lọc Thời gian', async ({ page }) => {
+test('Admin mở Soạn Đề với quick start, thẻ thống kê và ngữ cảnh mặc định', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
 
@@ -42,25 +42,79 @@ test('Admin mở Soạn Đề với quick start, thẻ thống kê và bộ lọ
   await expect(page.locator('#admin-compose-quickstart')).toContainText('Hôm nay cô muốn làm gì?');
   await expect(page.locator('#admin-compose-steps')).toContainText('CÁC BƯỚC SOẠN ĐỀ');
   await expect(page.locator('#admin-compose-quickstart')).toHaveCount(1);
-  await expect(page.locator('#admin-compose-class')).toHaveValue('Lớp 4');
+  await expect(page.locator('#admin-compose-context')).toHaveCount(0);
+  await expect(page.locator('#admin-compose-class')).toHaveCount(0);
   await expect(page.locator('#admin-compose-continue')).toHaveCount(0);
   await expect(page.locator('.admin-compose-quickstart-card')).toHaveCount(3);
   await expect(page.getByRole('button', { name: /Soạn template/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn câu hỏi/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn Đề/ }).first()).toBeVisible();
-  await expect(page.locator('#admin-compose-period')).toHaveValue('Học Kỳ 1');
-  await expect(page.locator('#admin-compose-period option')).toHaveText(['Học Kỳ 1', 'Học Kỳ 2', 'Cả Năm']);
   await expect(page.locator('.admin-compose-card')).toHaveCount(3);
   await expect(page.locator('.admin-compose-card__metrics')).toHaveCount(3);
   await expect(page.locator('#admin-compose-screen')).toContainText('Học sinh vẫn dùng trạm Luyện Đề');
-
-  await page.locator('#admin-compose-period').selectOption('Cả Năm');
-  await expect(page.locator('#admin-compose-context')).toContainText('Cả Năm');
+  await expect(page.locator('#admin-compose-module-summary')).toContainText('Lớp 4');
+  await expect(page.locator('#admin-compose-module-summary')).toContainText('Toán');
+  await expect(page.locator('#admin-compose-module-summary')).toContainText('Học Kỳ 1');
 
   await page.getByRole('button', { name: /Câu Hỏi/ }).first().click();
   await expect(page.locator('.admin-compose-card--questions')).toHaveClass(/is-selected/);
   await expect(page.locator('#admin-compose-module-panel')).toHaveAttribute('data-module', 'questions');
   await expect(page.locator('#admin-compose-module-panel')).toContainText('Câu Hỏi');
+
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
+test('Kho câu hỏi dùng thẻ tương tác, bộ lọc và thao tác rõ ràng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Cô giáo Minh', role: 'admin' };
+    app.data.libraryQuestions = [
+      {
+        id: 'question-card-1', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+        topic: '1. Ôn tập và bổ sung', lesson: 'g4-math-hk1-b01', type: 'Trắc nghiệm',
+        q: 'Tìm số lớn nhất trong các số sau.', options: ['12 345', '54 321', '23 456', '34 567'],
+        ans: '54 321', explanation: 'So sánh các chữ số theo từng hàng.'
+      },
+      {
+        id: 'question-card-2', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+        topic: '2. Góc và đơn vị đo góc', lesson: 'g4-math-hk1-b02', type: 'Điền khuyết',
+        q: 'Một góc vuông có số đo là bao nhiêu độ?', options: [], ans: '90°', explanation: ''
+      }
+    ];
+    app.admin.openComposer('questions');
+  });
+
+  await expect(page.locator('.question-library')).toBeVisible();
+  await expect(page.locator('#admin-q-subarea table')).toHaveCount(0);
+  await expect(page.locator('.question-library-card')).toHaveCount(2);
+  await expect(page.getByLabel('Tìm trong kho câu hỏi')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Soạn câu hỏi/ }).first()).toBeVisible();
+  await expect(page.locator('.question-library-card__answer')).toHaveCount(2);
+  await expect(page.locator('.question-library-card__options')).toHaveCount(1);
+
+  const search = page.getByLabel('Tìm trong kho câu hỏi');
+  await search.fill('số lớn nhất');
+  await expect(page.locator('.question-library-card')).toHaveCount(1);
+  await expect(page.locator('.question-library-card h4')).toContainText('Tìm số lớn nhất');
+  await expect(search).toBeFocused();
+
+  await page.locator('.question-library-card .q-select-cb').check();
+  await expect(page.getByRole('button', { name: /Xóa các câu đã chọn \(1\)/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Thêm vào đề', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sửa', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xóa', exact: true })).toBeVisible();
+
+  await search.fill('');
+  await page.getByLabel('Chọn tất cả câu đang hiển thị').check();
+  await expect(page.locator('.question-library-card .q-select-cb:checked')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: /Xóa các câu đã chọn \(2\)/ })).toBeVisible();
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('.question-library')).toBeVisible();
+  await expect.poll(() => page.locator('.question-library__grid').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)).toBe(1);
 
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
@@ -91,6 +145,12 @@ test('Kho template dùng thẻ trực quan, có tạo mới và Preview khung c�
   await expect(page.locator('#template-example')).not.toContainText('Giao diện khi học sinh làm bài');
   await expect(page.locator('.template-editor__preview-image')).toHaveCount(0);
   await expect(page.locator('#template-preview-open')).toBeVisible();
+  await expect(page.locator('.template-part-checkbox')).toHaveCount(4);
+  await expect(page.locator('.template-part-checkbox:checked')).toHaveCount(4);
+  await page.locator('#template-part-count').selectOption('2');
+  await expect(page.locator('.template-part-checkbox:checked')).toHaveCount(2);
+  const selectedTemplateConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(selectedTemplateConfig.selectedParts).toEqual([0, 1]);
 
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();

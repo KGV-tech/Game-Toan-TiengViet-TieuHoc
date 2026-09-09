@@ -8,12 +8,10 @@ const main = fs.readFileSync('src/main.js', 'utf8');
 assert.match(html, /id="admin-compose-screen"/, 'Admin needs a dedicated Soạn Đề screen.');
 assert.match(html, /id="admin-compose-quickstart"/, 'Soạn Đề must expose the quick-start panel.');
 assert.match(html, /Các bước soạn đề/, 'The admin workflow label must be Các bước soạn đề.');
-assert.match(html, /id="admin-compose-period"/, 'Soạn Đề needs a time filter.');
-assert.match(html, /<option value="Học Kỳ 1">Học Kỳ 1<\/option>/, 'The time filter must offer Học Kỳ 1.');
-assert.match(html, /<option value="Học Kỳ 2">Học Kỳ 2<\/option>/, 'The time filter must offer Học Kỳ 2.');
-assert.match(html, /<option value="Cả Năm">Cả Năm<\/option>/, 'The time filter must offer Cả Năm.');
+assert.doesNotMatch(html, /id="admin-compose-context"/, 'Soạn Đề must not duplicate the filters already owned by each workspace.');
+assert.match(main, /id="add-e-period"/, 'The exam composer must keep its own time scope.');
 assert.match(html, /id="admin-compose-question-nav"/, 'The detail composer must expose question navigation.');
-assert.doesNotMatch(html, /id="admin-compose-period"[\s\S]*?Kỳ kiểm tra/, 'The Soạn Đề filter must not be labelled Kỳ kiểm tra.');
+assert.match(main, /<span>Thời gian<\/span>[\s\S]{0,120}id="add-e-period"/, 'The exam composer time scope must be labelled Thời gian.');
 assert.match(html, /id="exam-station-label"/, 'The student/admin exam station needs a role-aware label.');
 
 assert.match(main, /openComposer\(module = 'exams'\)/, 'Admin needs a dedicated Soạn Đề entry point.');
@@ -30,5 +28,8 @@ assert.match(css, /\.admin-compose-card--template/, 'Template needs a distinct v
 assert.match(css, /\.admin-compose-card--questions/, 'Question bank needs a distinct visual accent.');
 assert.match(css, /\.admin-compose-card--exams/, 'Exam workspace needs a distinct visual accent.');
 assert.match(css, /\.admin-compose-card\.is-selected/, 'Selected workspace cards need an explicit visual state.');
+assert.match(main, /question-library/, 'The question bank must use the interactive question-library surface.');
+assert.match(css, /\.question-library/, 'The question bank must have a dedicated card-based visual system.');
+assert.doesNotMatch(main, /app\.ui\.renderTable\(cols, app\.data\.libraryQuestions/, 'The question bank must not render the legacy table.');
 
 console.log('Admin Soạn Đề contract verified.');
