@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.question_templates (
     subject TEXT NOT NULL CHECK (subject IN ('Toán', 'Tiếng Việt')),
     semester TEXT NOT NULL CHECK (semester IN ('Học kỳ 1', 'Học kỳ 2')),
     topic TEXT NOT NULL,
+    lesson TEXT,
     question_type TEXT NOT NULL DEFAULT 'Trắc nghiệm',
     generator_key TEXT NOT NULL CHECK (char_length(trim(generator_key)) BETWEEN 1 AND 120),
     prompt_template TEXT NOT NULL CHECK (char_length(trim(prompt_template)) BETWEEN 1 AND 500),
@@ -15,10 +16,18 @@ CREATE TABLE IF NOT EXISTS public.question_templates (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+-- Keep the schema file safe to rerun against databases created before the
+-- normalized lesson field was introduced.
+ALTER TABLE public.question_templates
+    ADD COLUMN IF NOT EXISTS lesson TEXT;
+
 CREATE INDEX IF NOT EXISTS question_templates_catalog_idx
     ON public.question_templates (classlevel, subject, semester, topic, question_type);
 CREATE INDEX IF NOT EXISTS question_templates_generator_idx
     ON public.question_templates (generator_key) WHERE is_active;
+CREATE INDEX IF NOT EXISTS question_templates_lesson_idx
+    ON public.question_templates (classlevel, subject, semester, topic, lesson)
+    WHERE is_active;
 
 ALTER TABLE public.question_templates ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.question_templates FROM anon;

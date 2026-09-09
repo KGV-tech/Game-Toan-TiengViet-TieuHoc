@@ -256,7 +256,7 @@
 
           <nav id="admin-compose-steps" class="admin-compose-steps" aria-label="Các bước soạn đề">
             <p class="admin-compose-sidebar__heading">CÁC BƯỚC SOẠN ĐỀ</p>
-            <button type="button" class="admin-compose-step is-active" data-compose-step="workspace" onclick="app.admin.focusComposerSection('admin-compose-workspaces', this)">
+            <button type="button" class="admin-compose-step is-active" data-compose-step="workspace" aria-current="step" onclick="app.admin.focusComposerSection('admin-compose-workspaces', this)">
               <span class="admin-compose-step__number">01</span>
               <span><strong>Chọn khu vực</strong><small>Template, câu hỏi, đề</small></span>
             </button>
@@ -269,6 +269,15 @@
               <span><strong>Rà soát &amp; lưu</strong><small>Sẵn sàng giao bài</small></span>
             </button>
           </nav>
+
+          <section id="admin-compose-question-nav" class="admin-compose-question-nav" hidden aria-labelledby="admin-compose-question-nav-title">
+            <div class="admin-compose-question-nav__heading">
+              <p id="admin-compose-question-nav-title" class="admin-compose-sidebar__heading">CÂU HỎI TRONG ĐỀ</p>
+              <span id="admin-compose-question-nav-count" aria-live="polite">0/0</span>
+            </div>
+            <div id="admin-compose-question-nav-list" class="admin-compose-question-nav__list" role="group" aria-label="Các câu hỏi trong đề"></div>
+            <small>Chọn số câu để đi thẳng tới thẻ cần chỉnh sửa.</small>
+          </section>
 
           <aside class="admin-compose-permission" role="note">
             <strong>PHÂN QUYỀN RÕ RÀNG</strong>
@@ -344,7 +353,7 @@
               </div>
               <div id="admin-compose-module-summary" class="admin-compose-module-summary" aria-live="polite"></div>
             </header>
-            <div id="admin-compose-module-content" class="admin-compose-module-content" aria-live="polite">
+            <div id="admin-compose-module-content" class="admin-compose-module-content">
               <p>Chọn một khu vực để bắt đầu biên tập nội dung.</p>
             </div>
           </section>
@@ -911,6 +920,9 @@
   <script defer src="./src/question-templates/grade-4/math/match-number-words.js"></script>
   <script defer src="./src/question-templates/grade-4/math/place-value-true-false.js"></script>
   <script defer src="./src/question-templates/grade-4/math/safe-password-by-place-value.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/even-odd.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/variable-expressions.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/review-b01-b04.js"></script>
   <script defer src="./src/question-templates/grade-4/math/measurement-units.js"></script>
   <script defer src="./src/question-templates/grade-4/math/topic-5.js"></script>
   <script defer src="./src/question-templates/grade-4/math/angle-count-in-polygon.js"></script>
@@ -923,6 +935,7 @@
   <script defer src="./src/modules/safe-storage.js"></script>
   <script defer src="./src/modules/constants.js"></script>
   <script defer src="./src/modules/curriculum.js"></script>
+  <script defer src="./src/modules/template-manifest.js"></script>
   <script defer src="./src/modules/router.js"></script>
   <script defer src="./src/modules/daily.js"></script>
   <script defer src="./src/modules/ui.js"></script>

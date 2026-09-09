@@ -3261,6 +3261,17 @@ const app = {
             }
             el.classList.add('active');
         },
+        periodMatches(examPeriod, selectedPeriod) {
+            const normalize = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            const examValue = normalize(examPeriod);
+            const selectedValue = normalize(selectedPeriod);
+            if (examValue === selectedValue) return true;
+            const newScopeAliases = {
+                'học kỳ 1': new Set(['giữa kỳ 1', 'cuối kỳ 1']),
+                'học kỳ 2': new Set(['giữa kỳ 2', 'cuối kỳ 2'])
+            };
+            return Boolean(newScopeAliases[examValue]?.has(selectedValue));
+        },
 
         getQuestionType(question) {
             if (Array.isArray(question?.comparisonRows)) return 'Kéo thả';
@@ -3372,10 +3383,9 @@ const app = {
             const filtered = app.data.exams.filter(e => {
                 const eSub = String(e.subject || '').trim().toLowerCase();
                 const eClass = String(e.classlevel || '').trim().toLowerCase().replace('lớp ', '');
-                const ePer = String(e.period || '').trim().toLowerCase();
                 return (eSub === mappedSubject.toLowerCase() || eSub.includes(mappedSubject.toLowerCase())) &&
                     eClass === clLevel &&
-                    ePer === this.filters.period.toLowerCase();
+                    this.periodMatches(e.period, this.filters.period);
             });
             if (filtered.length === 0) return alert('Không tìm thấy đề kiểm tra phù hợp trong Kho Đề Kiểm tra.');
 
@@ -3543,6 +3553,22 @@ const app = {
                 }
             }[module] || this.getComposerModuleMeta('exams');
         },
+        getComposerPeriodOptions() {
+            return [
+                { value: 'Học Kỳ 1', label: 'Học Kỳ 1' },
+                { value: 'Học Kỳ 2', label: 'Học Kỳ 2' },
+                { value: 'Cả Năm', label: 'Cả Năm' }
+            ];
+        },
+        normalizeComposerPeriod(period = '') {
+            const value = String(period ?? '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            if (value === 'cả năm') return 'Cả Năm';
+            if (value.includes('kỳ 2')) return 'Học Kỳ 2';
+            return 'Học Kỳ 1';
+        },
+        getComposerTopicColor(index = 0) {
+            return ['#c2a1ff', '#53def0', '#ffbf69', '#85e5bd', '#f7a8d8', '#f5da73'][index % 6];
+        },
         getComposerStats() {
             const templates = Array.isArray(app.data.questionTemplates) ? app.data.questionTemplates : [];
             const questions = Array.isArray(app.data.libraryQuestions) ? app.data.libraryQuestions : [];
@@ -3663,6 +3689,7 @@ const app = {
             }
             this.renderComposerCards();
             this.syncComposerContextUI();
+            this.syncComposerQuestionNav();
         },
         renderComposer() {
             if (!this.isAdminUser()) return false;
@@ -3670,6 +3697,7 @@ const app = {
             this.renderComposerProfile();
             this.syncComposerContextUI();
             this.renderComposerModule(this.composerState.module || 'exams');
+            this.setComposerStep('workspace');
             return true;
         },
         openComposer(module = 'exams') {
@@ -3689,23 +3717,76 @@ const app = {
             if (!this.isAdminUser()) return false;
             if (!document.getElementById('admin-compose-screen')?.classList.contains('active')) return this.openComposer(module);
             this.renderComposerModule(module);
+            this.setComposerStep('content');
             this.focusComposerSection('admin-compose-module-panel');
             return true;
         },
         continueComposer() {
             return this.openComposerModule(this.composerState.module || 'exams');
         },
+        setComposerStep(step = 'workspace') {
+            const activeStep = ['workspace', 'content', 'review'].includes(step) ? step : 'workspace';
+            document.querySelectorAll('.admin-compose-step').forEach(stepEl => {
+                const selected = stepEl.dataset.composeStep === activeStep;
+                stepEl.classList.toggle('is-active', selected);
+                if (selected) stepEl.setAttribute('aria-current', 'step');
+                else stepEl.removeAttribute('aria-current');
+            });
+        },
+        getComposerScrollBehavior() {
+            const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+            return media?.matches ? 'auto' : 'smooth';
+        },
         focusComposerSection(sectionId, button) {
             const section = document.getElementById(sectionId);
-            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (button) {
-                document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
+            if (section) section.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'start' });
+            const requestedStep = button?.dataset.composeStep || (sectionId === 'admin-compose-workspaces' ? 'workspace' : 'content');
+            this.setComposerStep(requestedStep);
+        },
+        syncComposerQuestionNav() {
+            const nav = document.getElementById('admin-compose-question-nav');
+            const list = document.getElementById('admin-compose-question-nav-list');
+            if (!nav || !list) return;
+            const cards = Array.from(document.querySelectorAll('#admin-e-subarea .exam-question-card'));
+            const shouldShow = this.composerState.module === 'exams' && cards.length > 0;
+            nav.hidden = !shouldShow;
+            if (!shouldShow) {
+                list.innerHTML = '';
+                return;
             }
+            const currentIndex = list.querySelector('[aria-current="true"]')?.dataset.questionNavIndex || '';
+            if (list.children.length !== cards.length) {
+                list.innerHTML = cards.map((card, index) => `<button type="button" class="admin-compose-question-nav__item" data-question-nav-index="${index}" aria-label="Đi tới Câu ${index + 1}" onclick="app.admin.focusComposerQuestion(${index}, this)"><span>${String(index + 1).padStart(2, '0')}</span><i aria-hidden="true"></i></button>`).join('');
+            }
+            const filledCount = cards.filter(card => card.classList.contains('is-filled')).length;
+            const count = document.getElementById('admin-compose-question-nav-count');
+            if (count) count.textContent = `${filledCount}/${cards.length}`;
+            list.querySelectorAll('[data-question-nav-index]').forEach(button => {
+                const index = Number(button.dataset.questionNavIndex);
+                const filled = cards[index]?.classList.contains('is-filled');
+                button.classList.toggle('is-filled', filled);
+                button.setAttribute('aria-label', `Đi tới Câu ${index + 1}${filled ? ', đã điền' : ', chưa điền'}`);
+                if (String(index) === currentIndex) button.setAttribute('aria-current', 'true');
+                else button.removeAttribute('aria-current');
+            });
+        },
+        focusComposerQuestion(index, button) {
+            const card = document.querySelector(`#admin-e-subarea .exam-question-card[data-question-index="${index}"]`);
+            if (!card) return;
+            this.setComposerStep('content');
+            document.querySelectorAll('#admin-compose-question-nav [data-question-nav-index]').forEach(navButton => {
+                if (navButton === button || navButton.dataset.questionNavIndex === String(index)) navButton.setAttribute('aria-current', 'true');
+                else navButton.removeAttribute('aria-current');
+            });
+            card.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'start' });
         },
         reviewComposer(button) {
             this.openComposerModule('exams');
-            document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
-            setTimeout(() => this.renderESubTab('add'), 0);
+            this.setComposerStep(button?.dataset.composeStep || 'review');
+            setTimeout(() => {
+                this.renderESubTab('add');
+                this.setComposerStep('review');
+            }, 0);
         },
         closeComposer() {
             if (!this.isAdminUser()) return false;
@@ -3789,9 +3870,16 @@ const app = {
             wrap.dataset.selectionMode = unrestrictedScope ? 'all' : 'selected';
             const entries = app.curriculum.getTopicEntries({ classlevel, subject })
                 .filter(entry => !(topics || []).length || topics.includes(entry.topic));
-            wrap.innerHTML = entries.length
-                ? entries.map(entry => `<fieldset class="exam-composer__lesson-group"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
-                : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>';
+            const totalLessons = entries.reduce((total, entry) => total + entry.lessons.length, 0);
+            const selectedCount = unrestrictedScope
+                ? totalLessons
+                : entries.flatMap(entry => entry.lessons).filter(lesson => selected.has(lesson.id)).length;
+            const summary = entries.length
+                ? (unrestrictedScope ? `Đang áp dụng toàn bộ ${totalLessons} Bài học trong Chủ đề đã chọn` : `Đang chọn ${selectedCount}/${totalLessons} Bài học`)
+                : 'Chọn Chủ đề để hiện các Bài học tương ứng';
+            wrap.innerHTML = `<div id="add-e-lessons-summary" class="exam-composer__lessons-summary" role="status">${app.data.sanitizeHTML(summary)}</div>${entries.length
+                ? entries.map((entry, topicIndex) => `<fieldset class="exam-composer__lesson-group" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
+                : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>'}`;
         },
         updateExamQuestionLesson(index, selectedLesson = '') {
             const lessonEl = document.getElementById(`add-e-q-lesson-${index}`);
@@ -3843,10 +3931,10 @@ const app = {
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const period = document.getElementById('add-e-period')?.value || 'Giữa kỳ 1';
-            const topics = period === 'Cả năm'
+            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period')?.value || 'Học Kỳ 1');
+            const topics = period === 'Cả Năm'
                 ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
-                : [...((period.includes('kỳ 2') ? topicsObj.hk2 : topicsObj.hk1) || [])];
+                : [...((period === 'Học Kỳ 2' ? topicsObj.hk2 : topicsObj.hk1) || [])];
             const topicWrap = document.getElementById('add-e-topics');
             let selectedTopics = [];
             if (topicWrap) {
@@ -3855,7 +3943,7 @@ const app = {
                 selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
                 delete topicWrap.dataset.selected;
                 topicWrap.innerHTML = topics.length
-                    ? topics.map(topic => `<label class="exam-composer__topic-option"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
+                    ? topics.map((topic, topicIndex) => `<label class="exam-composer__topic-option${selectedTopics.includes(topic) ? ' is-selected' : ''}" data-topic-index="${topicIndex}" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
                     : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
@@ -3891,6 +3979,96 @@ const app = {
                 this.updateExamQuestionLesson(i);
                 i++;
             }
+            this.syncExamComposerTopicStates();
+        },
+        syncExamComposerTopicStates() {
+            document.querySelectorAll('#add-e-topics .exam-composer__topic-option').forEach(option => {
+                const input = option.querySelector('input[type="checkbox"]');
+                const selected = Boolean(input?.checked);
+                option.classList.toggle('is-selected', selected);
+                option.dataset.selected = String(selected);
+            });
+        },
+        updateExamQuestionCard(index) {
+            const card = document.querySelector(`.exam-question-card[data-question-index="${index}"]`);
+            if (!card) return;
+            const questionText = document.getElementById(`add-e-q-q-${index}`)?.value.trim() || '';
+            const answerText = [
+                document.getElementById(`add-e-q-ans-${index}`)?.value,
+                ...Array.from(card.querySelectorAll('input[id*="-opt"], input[id*="-match-"]')).map(input => input.value),
+                ...Array.from(card.querySelectorAll('input[id*="structured"], textarea[id*="structured"]')).map(input => input.value)
+            ].some(value => String(value || '').trim());
+            const filled = Boolean(questionText || answerText);
+            const status = card.querySelector('.exam-question-card__status');
+            const subtitle = card.querySelector('.exam-question-card__title-wrap p');
+            card.classList.toggle('is-filled', filled);
+            card.classList.toggle('is-empty', !filled);
+            status?.classList.toggle('exam-question-card__status--filled', filled);
+            if (status) status.textContent = filled ? 'Đã điền' : 'Chưa điền';
+            if (subtitle) subtitle.textContent = filled ? 'Nội dung đã nhập, tiếp tục hoàn thiện.' : 'Bắt đầu từ nội dung câu hỏi.';
+            this.updateExamComposerProgress();
+            this.syncComposerQuestionNav();
+        },
+        updateExamComposerProgress() {
+            const composer = document.querySelector('.exam-composer');
+            if (!composer) return;
+            const total = app.game.questionsPerRound;
+            const count = composer.querySelectorAll('.exam-question-card.is-filled').length;
+            const progress = composer.querySelector('.exam-composer__progress');
+            const progressStrong = progress?.querySelector('.exam-composer__progress-heading strong');
+            const progressTrack = progress?.querySelector('.exam-composer__progress-track i');
+            const progressHint = progress?.querySelector('small');
+            const sectionCount = composer.querySelector('.exam-composer__question-bank .exam-composer__section-count');
+            if (progressStrong) progressStrong.textContent = count;
+            if (progressTrack) progressTrack.style.width = `${Math.min(100, count / total * 100)}%`;
+            if (progressHint) progressHint.textContent = count === total ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, total - count)} câu cần hoàn thiện`;
+            if (sectionCount) sectionCount.innerHTML = `<strong>${count}</strong> / ${total} câu đã có`;
+        },
+        clearExamComposerError() {
+            const error = document.getElementById('add-e-form-error');
+            if (error) {
+                error.hidden = true;
+                error.textContent = '';
+            }
+            document.querySelectorAll('.exam-composer [aria-invalid="true"]').forEach(field => {
+                field.removeAttribute('aria-invalid');
+                if (field.id !== 'add-e-name' && field.getAttribute('aria-describedby') === 'add-e-form-error') field.removeAttribute('aria-describedby');
+            });
+        },
+        showExamComposerError(message, fieldId = '') {
+            const error = document.getElementById('add-e-form-error');
+            if (!error) return alert(message);
+            this.clearExamComposerError();
+            error.textContent = message;
+            error.hidden = false;
+            const field = fieldId ? document.getElementById(fieldId) : null;
+            if (field) {
+                field.setAttribute('aria-invalid', 'true');
+                if (!field.getAttribute('aria-describedby')) field.setAttribute('aria-describedby', error.id);
+                field.focus({ preventScroll: true });
+            }
+            error.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'center' });
+            return false;
+        },
+        bindExamComposerInteractions() {
+            const composer = document.querySelector('.exam-composer');
+            if (!composer || composer.dataset.interactionsBound === 'true') return;
+            composer.dataset.interactionsBound = 'true';
+            const update = event => {
+                const card = event.target.closest?.('.exam-question-card');
+                if (!card) return;
+                this.updateExamQuestionCard(card.dataset.questionIndex);
+            };
+            composer.addEventListener('input', event => {
+                this.clearExamComposerError();
+                update(event);
+            });
+            composer.addEventListener('change', event => {
+                this.clearExamComposerError();
+                update(event);
+            });
+            composer.querySelectorAll('.exam-question-card').forEach(card => this.updateExamQuestionCard(card.dataset.questionIndex));
+            this.syncComposerQuestionNav();
         },
         toggleQuestionType(prefix, idx = '') {
             const suffix = idx !== '' ? `-${idx}` : '';
@@ -5300,6 +5478,22 @@ const app = {
             const arithmeticOperations = config.operations || ['+', '-', '*', '/'];
             const arithmeticLayouts = config.layouts || ['expressionLeft', 'expressionRight', 'twoExpressions'];
             const arithmeticBlankPositions = config.blankPositions || ['first', 'second', 'third', 'fourth'];
+            const phase2TemplateKeys = [
+                'number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form',
+                'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'
+            ];
+            const phase2NumberMinimum = Number(config.minimum ?? 0);
+            const phase2NumberMaximum = Number(config.maximum ?? 9999);
+            const phase2ListLengthMin = Number(config.listLengthMin ?? 6);
+            const phase2ListLengthMax = Number(config.listLengthMax ?? 8);
+            const phase2SequenceSteps = (config.sequenceSteps || [2, 4, 6]).join(', ');
+            const phase2DigitCount = Number(config.digitCount ?? 4);
+            const phase2Parities = config.parities || ['even', 'odd'];
+            const phase2VariableMinimum = Number(config.variableMinimum ?? 10);
+            const phase2VariableMaximum = Number(config.variableMaximum ?? 99);
+            const phase2ConstantMinimum = Number(config.constantMinimum ?? 2);
+            const phase2ConstantMaximum = Number(config.constantMaximum ?? 9);
+            const phase2Operations = config.operations || ['add', 'subtract', 'multiply', 'divide'];
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
@@ -5357,6 +5551,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--safe-password-range-controls" aria-label="Khoảng giá trị mật khẩu"><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 0)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? (10 ** safePasswordMaxLength - 1))}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-controls"><h5>Độ dài mật khẩu</h5><p>Game nêu số chữ số ngay trong câu hỏi; két sắt chỉ là ảnh minh họa. Mỗi lượt, độ dài được bốc trong khoảng khai báo.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số chữ số ít nhất</span><input id="template-safe-password-min-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMinLength}"></label><label class="template-editor__field"><span>Số chữ số nhiều nhất</span><input id="template-safe-password-max-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMaxLength}"></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Điều kiện 1</legend><p>Chữ số ở một hàng được chọn phải khác một chữ số được chọn.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-places')">Tất cả</button></div><div id="template-safe-password-condition1-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition1Places, 'safe-condition1-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-digits')">Tất cả</button></div><div id="template-safe-password-condition1-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition1Digits, 'safe-condition1-digits')).join('')}</div></fieldset><fieldset><legend>Điều kiện 2</legend><p>Game tự bốc một hàng khác nếu còn hàng phù hợp với độ dài mật khẩu.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-places')">Tất cả</button></div><div id="template-safe-password-condition2-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition2Places, 'safe-condition2-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-digits')">Tất cả</button></div><div id="template-safe-password-condition2-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition2Digits, 'safe-condition2-digits')).join('')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-class-controls"><h5>Phân biệt “lớp” và “hàng”</h5><p><b>Lớp</b> luôn gồm ba hàng; <b>hàng</b> chỉ là một vị trí. Ở mỗi điều kiện, chọn một kiểu rồi cấu hình danh sách tương ứng bên dưới.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Điều kiện 1 áp dụng theo</span><select id="template-safe-password-condition1-scope" class="form-input"><option value="place" ${safeCondition1Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition1Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label><label class="template-editor__field"><span>Điều kiện 2 áp dụng theo</span><select id="template-safe-password-condition2-scope" class="form-input"><option value="place" ${safeCondition2Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition2Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Lớp có thể bốc cho Điều kiện 1</legend><div id="template-safe-password-condition1-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition1Classes, 'safe-condition1-classes')).join('')}</div></fieldset><fieldset><legend>Lớp có thể bốc cho Điều kiện 2</legend><div id="template-safe-password-condition2-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition2Classes, 'safe-condition2-classes')).join('')}</div></fieldset></div></div>
+                <div class="template-editor__rule template-editor__rule--phase2-controls" hidden><h5>Phạm vi Bài 3 và Bài 4</h5><p>Chỉ các trường phù hợp với generator đang chọn mới được dùng khi lưu. Bài 6 dùng blueprint ôn tập cố định Bài 1–4.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất (Bài 3)</span><input id="template-phase2-minimum" class="form-input" type="number" min="0" value="${phase2NumberMinimum}"></label><label class="template-editor__field"><span>Số lớn nhất (Bài 3)</span><input id="template-phase2-maximum" class="form-input" type="number" min="1" value="${phase2NumberMaximum}"></label><label class="template-editor__field"><span>Thẻ số (Bài 3)</span><select id="template-phase2-digit-count" class="form-input">${[3,4].map(value => `<option value="${value}" ${phase2DigitCount === value ? 'selected' : ''}>${value} thẻ</option>`).join('')}</select></label><label class="template-editor__field"><span>Số phần tử ít nhất</span><input id="template-phase2-list-length-min" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMin}"></label><label class="template-editor__field"><span>Số phần tử nhiều nhất</span><input id="template-phase2-list-length-max" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMax}"></label></div><div class="template-editor__fields"><label class="template-editor__field"><span>Số a nhỏ nhất (Bài 4)</span><input id="template-phase2-variable-minimum" class="form-input" type="number" min="1" value="${phase2VariableMinimum}"></label><label class="template-editor__field"><span>Số a lớn nhất (Bài 4)</span><input id="template-phase2-variable-maximum" class="form-input" type="number" min="1" value="${phase2VariableMaximum}"></label><label class="template-editor__field"><span>Hằng số nhỏ nhất</span><input id="template-phase2-constant-minimum" class="form-input" type="number" min="2" value="${phase2ConstantMinimum}"></label><label class="template-editor__field"><span>Hằng số lớn nhất</span><input id="template-phase2-constant-maximum" class="form-input" type="number" min="2" value="${phase2ConstantMaximum}"></label></div><div class="template-editor__fields"><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy dãy chẵn/lẻ</span><input id="template-phase2-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(phase2SequenceSteps)}" placeholder="2, 4, 6"></label></div><fieldset><legend>Phép tính Bài 4</legend><div id="template-phase2-operations" class="template-editor__checks">${checkbox('add', 'Cộng', phase2Operations, 'phase2-operations')}${checkbox('subtract', 'Trừ', phase2Operations, 'phase2-operations')}${checkbox('multiply', 'Nhân', phase2Operations, 'phase2-operations')}${checkbox('divide', 'Chia hết', phase2Operations, 'phase2-operations')}</div></fieldset><fieldset><legend>Dạng chẵn/lẻ Bài 3</legend><div id="template-phase2-parities" class="template-editor__checks">${checkbox('even', 'Số chẵn', phase2Parities, 'phase2-parities')}${checkbox('odd', 'Số lẻ', phase2Parities, 'phase2-parities')}</div></fieldset></div>
               </div></div>
               <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
             </section>`;
@@ -5405,6 +5600,18 @@ const app = {
             topic5TemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const phase2TemplateOptions = [
+                ['number.even_odd_classify', 'Bài 3 · Nhận biết số chẵn, số lẻ'],
+                ['number.even_odd_count', 'Bài 3 · Đếm số chẵn, số lẻ trong dãy'],
+                ['number.even_odd_sequence', 'Bài 3 · Dãy số chẵn, số lẻ'],
+                ['number.even_odd_form', 'Bài 3 · Lập số từ thẻ số'],
+                ['number.variable_expression_value', 'Bài 4 · Tính giá trị biểu thức chứa chữ'],
+                ['number.variable_expression_choice', 'Bài 4 · Chọn giá trị biểu thức chứa chữ'],
+                ['number.hk1_review_b01_b04', 'Bài 6 · Ôn tập chung Bài 1–4']
+            ];
+            phase2TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             const angleRule = document.createElement('div');
             angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
             angleRule.hidden = true;
@@ -5432,11 +5639,12 @@ const app = {
             if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
             if (generatorControl && measurementTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && topic5TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && phase2TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
-            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
-            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(existing?.generator_key);
+            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -5619,6 +5827,55 @@ const app = {
                     type: 'Điền khuyết',
                     variables: [['{question}', 'toàn bộ bảng 8 góc và bốn ý a–d do game sinh']]
                 },
+                'number.even_odd_classify': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn câu trắc nghiệm nhận biết số chẵn hoặc số lẻ; phương án nhiễu dùng tính chất đối lập.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu con do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu nhận biết chẵn/lẻ do game sinh']]
+                },
+                'number.even_odd_count': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn câu đếm số chẵn hoặc số lẻ trong các dãy số không lặp.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn dãy số và phương án.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu đếm chẵn/lẻ do game sinh']]
+                },
+                'number.even_odd_sequence': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn dãy số chẵn hoặc lẻ tăng đều theo bước nhảy chẵn; học sinh chọn số tiếp theo.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn dãy do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn dãy chẵn/lẻ do game sinh']]
+                },
+                'number.even_odd_form': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn câu lập số từ các thẻ chữ số khác nhau, sau đó nhận biết chẵn/lẻ theo hàng đơn vị.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bộ thẻ và phương án do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu lập số từ thẻ do game sinh']]
+                },
+                'number.variable_expression_value': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn ý điền kết quả bằng cách thay giá trị của a vào biểu thức chứa chữ; phép chia luôn chia hết.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn biểu thức và ô điền.',
+                    preview: 'live', type: 'Điền khuyết',
+                    variables: [['{question}', 'toàn bộ bốn biểu thức chứa chữ do game sinh']]
+                },
+                'number.variable_expression_choice': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn câu trắc nghiệm: cho giá trị a và yêu cầu chọn giá trị đúng của biểu thức chứa chữ.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu con do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu tính biểu thức chứa chữ do game sinh']]
+                },
+                'number.hk1_review_b01_b04': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bộ ôn tập chung Bài 6 gồm đúng bốn kỹ năng Bài 1–4 đã học.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu ôn tập có nhãn kỹ năng.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bộ ôn tập Bài 1–4 do game sinh'], ['{skills}', 'danh sách kỹ năng của bộ ôn tập']]
+                },
                 'number.match_number_words': {
                     defaultPrompt: 'Hãy nối mỗi số với cách đọc đúng.',
                     guide: 'Tạo bài đối chiếu số với cách đọc tương ứng. Hai cột có số lượng mục lệch nhau một để tạo một lựa chọn nhiễu.',
@@ -5670,6 +5927,13 @@ const app = {
                 '60 000 + 700 <i class="template-preview__drop">?</i> 60 700'
             ]), 'template-preview--comparison');
             if (generator === 'number.place_value_true_false') return preview('Chọn Đúng/Sai?', `<div class="template-preview__true-false">${['Trong số 14 021 983, chữ số 4 thuộc lớp triệu.', 'Trong số 14 021 983, chữ số 1 ở hàng chục.', 'Trong số 14 021 983, chữ số 9 thuộc lớp đơn vị.', 'Trong số 14 021 983, chữ số 0 ở hàng trăm nghìn.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
+            if (generator === 'number.even_odd_classify') return preview('Chọn số chẵn hoặc số lẻ:', `<div class="template-preview__mc">${['Số nào là số chẵn?', 'Số nào là số lẻ?', 'Số nào là số chẵn?', 'Số nào là số lẻ?'].map((title, index) => `<div><b>${'abcd'[index]})</b>${title}${choices([index % 2 ? '7 231' : '4 268', index % 2 ? '5 108' : '3 417', index % 2 ? '9 452' : '8 025', index % 2 ? '1 999' : '6 734'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.even_odd_count') return preview('Đếm số chẵn, số lẻ trong dãy:', `<div class="template-preview__mc">${['2, 4, 7, 9, 12, 15', '3, 6, 8, 11, 14, 18', '21, 22, 25, 28, 30, 33', '40, 43, 46, 51, 54, 57'].map((values, index) => `<div><b>${'abcd'[index]})</b>Dãy số: ${values}<br>Có bao nhiêu số ${index % 2 ? 'lẻ' : 'chẵn'}?${choices(['2', '3', '4', '5'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.even_odd_sequence') return preview('Tìm số tiếp theo trong dãy:', `<div class="template-preview__mc">${['2, 4, 6, 8, ___', '3, 5, 7, 9, ___', '10, 14, 18, 22, ___', '15, 17, 19, 21, ___'].map((sequence, index) => `<div><b>${'abcd'[index]})</b>${sequence}${choices([index % 2 ? '23' : '10', index % 2 ? '12' : '14', index % 2 ? '11' : '12', index % 2 ? '25' : '16'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.even_odd_form') return preview('Lập số từ các thẻ số:', `<div class="template-preview__mc">${['1, 2, 4, 7', '2, 3, 5, 8', '1, 3, 6, 9', '2, 4, 7, 8'].map((cards, index) => `<div><b>${'abcd'[index]})</b>Từ các thẻ ${cards}, chọn số ${index % 2 ? 'lẻ' : 'chẵn'}:${choices(index % 2 ? ['2 358', '5 832', '8 235', '3 258'] : ['1 472', '2 174', '4 712', '7 421'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.variable_expression_value') return preview('Tính giá trị biểu thức chứa chữ:', fillRows([`Cho a = 24; a + 8 = ${blank}`, `Cho a = 45; a − 7 = ${blank}`, `Cho a = 12; a × 3 = ${blank}`, `Cho a = 48; a ÷ 6 = ${blank}`]), 'template-preview--fill');
+            if (generator === 'number.variable_expression_choice') return preview('Chọn giá trị đúng:', `<div class="template-preview__mc">${['a = 24; a + 8', 'a = 45; a − 7', 'a = 12; a × 3', 'a = 48; a ÷ 6'].map((expression, index) => `<div><b>${'abcd'[index]})</b>${expression} = ?${choices(index === 0 ? ['30', '32', '34', '36'] : index === 1 ? ['36', '38', '40', '42'] : index === 2 ? ['24', '30', '36', '42'] : ['6', '7', '8', '9'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.hk1_review_b01_b04') return preview('Luyện tập chung Bài 1–4:', `<div class="template-preview__mc">${['Chữ số hàng trăm trong 12 345 là?', '25 000 + 3 600 = ?', 'Số nào là số lẻ?', 'Cho a = 18, a + 7 = ?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b><small>Bài ${index + 1}</small>${prompt}${choices(index === 0 ? ['2', '3', '4', '5'] : index === 1 ? ['27 600', '28 600', '28 100', '29 600'] : index === 2 ? ['2 408', '3 517', '6 824', '9 130'] : ['23', '24', '25', '26'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
             if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div class="template-preview__safe-icon">🔒</div><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
             if (generator === 'number.natural_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['12 000, ___, 16 000, ___, 20 000', '84 000, 78 000, ___, ___, 60 000', '1 250, ___, 1 650, ___, 2 050', '7 000 000, ___, ___, 6 979 000, 6 972 000'].map(row => row.replaceAll('___', blank))), 'template-preview--fill');
@@ -5701,7 +5965,11 @@ const app = {
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
             const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || (isTopic5Template && !topic5DigitRange); });
+            const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
+            const isPhase2Template = phase2TemplateKeys.includes(generator);
+            const isPhase2B03 = generator.startsWith('number.even_odd_');
+            const isPhase2B04 = generator.startsWith('number.variable_expression_');
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || (isTopic5Template && !topic5DigitRange); });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
@@ -5719,6 +5987,11 @@ const app = {
             document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--angle-info').forEach(rule => { rule.hidden = !isAngleTemplate; });
+            document.querySelectorAll('.template-editor__rule--phase2-controls').forEach(rule => { rule.hidden = !isPhase2B03 && !isPhase2B04; });
+            document.querySelectorAll('#template-phase2-minimum, #template-phase2-maximum, #template-phase2-list-length-min, #template-phase2-list-length-max, #template-phase2-digit-count, #template-phase2-sequence-steps').forEach(input => { input.disabled = !isPhase2B03; });
+            document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
+            document.querySelectorAll('#template-phase2-operations input').forEach(input => { input.disabled = !isPhase2B04; });
+            document.querySelectorAll('#template-phase2-parities input').forEach(input => { input.disabled = !isPhase2B03; });
         },
         insertTemplateVariable(token) {
             const input = document.getElementById('template-prompt');
@@ -5737,6 +6010,10 @@ const app = {
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
+            const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
+            const isPhase2Template = phase2TemplateKeys.includes(generatorKey);
+            const isPhase2B03 = generatorKey.startsWith('number.even_odd_');
+            const isPhase2B04 = generatorKey.startsWith('number.variable_expression_');
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
             const safePasswordMaxLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
             const selectedSafeValues = group => [...document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`)].filter(input => input.checked).map(input => input.value);
@@ -5754,6 +6031,18 @@ const app = {
             const arithmeticOperations = selectedSafeValues('arithmetic-operations');
             const arithmeticLayouts = selectedSafeValues('arithmetic-layouts');
             const arithmeticBlankPositions = selectedSafeValues('arithmetic-blank-positions');
+            const phase2Minimum = Number(value('template-phase2-minimum'));
+            const phase2Maximum = Number(value('template-phase2-maximum'));
+            const phase2ListLengthMin = Number(value('template-phase2-list-length-min'));
+            const phase2ListLengthMax = Number(value('template-phase2-list-length-max'));
+            const phase2DigitCount = Number(value('template-phase2-digit-count'));
+            const phase2SequenceSteps = value('template-phase2-sequence-steps').split(',').map(item => Number(item.trim())).filter(Number.isSafeInteger);
+            const phase2VariableMinimum = Number(value('template-phase2-variable-minimum'));
+            const phase2VariableMaximum = Number(value('template-phase2-variable-maximum'));
+            const phase2ConstantMinimum = Number(value('template-phase2-constant-minimum'));
+            const phase2ConstantMaximum = Number(value('template-phase2-constant-maximum'));
+            const phase2Operations = selectedSafeValues('phase2-operations');
+            const phase2Parities = selectedSafeValues('phase2-parities');
             const minimumDigits = Number(document.getElementById('template-minimum-digits')?.value || 1);
             const maximumDigits = Number(document.getElementById('template-maximum-digits')?.value || 1);
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
@@ -5761,18 +6050,40 @@ const app = {
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generatorKey);
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
-            const usesDigitCount = !isSafePassword && !isAngleTemplate && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
+            const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
             const topic5Config = topic5DigitRange ? { minimumDigits, maximumDigits } : {};
-            const templateConfig = isAngleTemplate ? {} : (isTopic5Template ? topic5Config : genericConfig);
+            const phase2Config = isPhase2B03
+                ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
+                : (isPhase2B04
+                    ? { variableMinimum: phase2VariableMinimum, variableMaximum: phase2VariableMaximum, constantMinimum: phase2ConstantMinimum, constantMaximum: phase2ConstantMaximum, operations: phase2Operations }
+                    : { skills: ['b01', 'b02', 'b03', 'b04'] });
+            const templateConfig = isAngleTemplate ? {} : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig));
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
             const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
             const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
             if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
+            if (isPhase2B03) {
+                if (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+                if (!phase2Parities.length || phase2Parities.some(parity => !['even', 'odd'].includes(parity))) throw new Error('Hãy chọn ít nhất một dạng số chẵn hoặc số lẻ.');
+                if (generatorKey === 'number.even_odd_count' && (!Number.isInteger(phase2ListLengthMin) || !Number.isInteger(phase2ListLengthMax) || phase2ListLengthMin < 5 || phase2ListLengthMax < phase2ListLengthMin || phase2ListLengthMax > 12 || phase2Maximum - phase2Minimum + 1 < phase2ListLengthMax)) throw new Error('Số phần tử dãy Bài 3 phải từ 5 đến 12 và không vượt số giá trị trong phạm vi.');
+                if (generatorKey === 'number.even_odd_sequence' && (!phase2SequenceSteps.length || phase2SequenceSteps.some(step => !Number.isSafeInteger(step) || step <= 0 || step % 2 !== 0))) throw new Error('Bước nhảy dãy Bài 3 phải là các số nguyên dương, chẵn.');
+                if (generatorKey === 'number.even_odd_sequence' && phase2SequenceSteps.some(step => phase2Parities.some(parity => {
+                    const sequenceMaximum = phase2Maximum - step * 4;
+                    const parityValue = parity === 'even' ? 0 : 1;
+                    return phase2Minimum > sequenceMaximum || (phase2Minimum % 2 !== parityValue && phase2Minimum + 1 > sequenceMaximum);
+                }))) throw new Error('Bước nhảy dãy Bài 3 không phù hợp với phạm vi số và dạng chẵn/lẻ đã chọn.');
+                if (generatorKey === 'number.even_odd_form' && ![3, 4].includes(phase2DigitCount)) throw new Error('Số thẻ Bài 3 phải là 3 hoặc 4.');
+            }
+            if (isPhase2B04) {
+                if (!Number.isSafeInteger(phase2VariableMinimum) || !Number.isSafeInteger(phase2VariableMaximum) || phase2VariableMinimum < 1 || phase2VariableMinimum > phase2VariableMaximum) throw new Error('Phạm vi giá trị của chữ a không hợp lệ.');
+                if (!Number.isSafeInteger(phase2ConstantMinimum) || !Number.isSafeInteger(phase2ConstantMaximum) || phase2ConstantMinimum < 2 || phase2ConstantMinimum > phase2ConstantMaximum) throw new Error('Phạm vi hằng số Bài 4 không hợp lệ.');
+                if (!phase2Operations.length || phase2Operations.some(operation => !['add', 'subtract', 'multiply', 'divide'].includes(operation))) throw new Error('Hãy chọn ít nhất một phép tính cho Bài 4.');
+            }
             if (template.generator_key === 'number.natural_sequence') {
                 const sequenceMinimum = Number(value('template-natural-sequence-minimum'));
                 const sequenceMaximum = Number(value('template-natural-sequence-maximum'));
@@ -5822,8 +6133,9 @@ const app = {
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
             if (selectedLesson) template.config.lesson = selectedLesson;
+            else delete template.config.lesson;
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
-            if (!isAngleTemplate && !isTopic5Template && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (!isAngleTemplate && !isPhase2Template && !isTopic5Template && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;
@@ -6233,32 +6545,32 @@ const app = {
                 {
                     "Cấp lớp": "--- HƯỚNG DẪN CÁCH ĐIỀN ---",
                     "Môn": "",
-                    "Kỳ kiểm tra": "",
+                    "Thời gian": "",
                     "Tên đề": ""
                 },
                 {
                     "Cấp lớp": "Nhập: Lớp 1, Lớp 2, Lớp 3, Lớp 4 hoặc Lớp 5",
                     "Môn": "Nhập: Toán hoặc Tiếng Việt",
-                    "Kỳ kiểm tra": "Nhập: Giữa kỳ 1, Cuối kỳ 1, Giữa kỳ 2, hoặc Cuối kỳ 2",
-                    "Tên đề": "Tên đề (ví dụ: Đề thi thử Giữa kỳ 1 Toán 5)"
+                    "Thời gian": "Nhập: Học Kỳ 1, Học Kỳ 2 hoặc Cả Năm",
+                    "Tên đề": "Tên đề (ví dụ: Đề thi thử Học Kỳ 1 Toán 5)"
                 },
                 {
                     "Cấp lớp": "--- CÁC VÍ DỤ (VUI LÒNG XÓA ĐỂ NHẬP MỚI) ---",
                     "Môn": "",
-                    "Kỳ kiểm tra": "",
+                    "Thời gian": "",
                     "Tên đề": ""
                 },
                 {
                     "Cấp lớp": "Lớp 5",
                     "Môn": "Toán",
-                    "Kỳ kiểm tra": "Giữa kỳ 1",
-                    "Tên đề": "Đề thi Giữa kỳ 1 Môn Toán Lớp 5"
+                    "Thời gian": "Học Kỳ 1",
+                    "Tên đề": "Đề thi Học Kỳ 1 Môn Toán Lớp 5"
                 },
                 {
                     "Cấp lớp": "Lớp 3",
                     "Môn": "Tiếng Việt",
-                    "Kỳ kiểm tra": "Cuối kỳ 2",
-                    "Tên đề": "Đề ôn thi Cuối kỳ 2 Tiếng Việt 3"
+                    "Thời gian": "Cả Năm",
+                    "Tên đề": "Đề ôn tập Cả Năm Tiếng Việt 3"
                 }
             ];
             app.ui.exportToExcel(data, "Mau_Nhap_De_Kiem_Tra.xlsx");
@@ -6267,7 +6579,7 @@ const app = {
             const data = app.data.exams.map(e => ({
                 "Cấp lớp": e.classlevel,
                 "Môn": e.subject,
-                "Kỳ kiểm tra": e.period,
+                "Thời gian": this.normalizeComposerPeriod(e.period),
                 "Tên đề": e.name,
                 "Số câu hỏi": (e.questions || []).length
             }));
@@ -6492,7 +6804,7 @@ const app = {
                 const topics = [...new Set((exam.questions || []).map(question => question.topic).filter(Boolean))];
                 return `<article class="exam-library-card exam-library-card--${state}">
                   <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${label}</span></div>
-                  <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period || 'Chưa chọn thời gian')}</span></div>
+                  <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period ? this.normalizeComposerPeriod(exam.period) : 'Chưa chọn thời gian')}</span></div>
                   <h4>${escape(exam.name || 'Đề chưa đặt tên')}</h4>
                   <div class="exam-library-card__topics">${topics.slice(0, 3).map(topic => `<span>${escape(topic)}</span>`).join('') || '<span>Chưa gắn chủ đề</span>'}${topics.length > 3 ? `<span>+${topics.length - 3} chủ đề</span>` : ''}</div>
                   <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? 'Mở đề để kiểm tra nội dung' : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
@@ -6546,22 +6858,25 @@ const app = {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
+                const selectedPeriod = this.normalizeComposerPeriod(e?.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
             <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
-                  <div>
+                  <div class="exam-composer__header-copy">
                      <p class="exam-composer__eyebrow">${e ? 'CHỈNH SỬA ĐỀ' : 'TẠO ĐỀ MỚI'}</p>
                      <h3>${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}</h3>
-                     <p class="exam-composer__description">Điền thông tin đề trước, sau đó hoàn thiện đủ 10 câu hỏi bên dưới.</p>
+                     <p class="exam-composer__description">Điền thông tin chung, chọn chủ đề và hoàn thiện từng câu hỏi trong một không gian rõ ràng.</p>
                   </div>
-                  <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có">
-                     <strong>${existingQuestionCount}</strong><span>/ ${app.game.questionsPerRound} câu đã có</span>
+                  <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có" aria-live="polite">
+                     <div class="exam-composer__progress-heading"><span>TIẾN ĐỘ SOẠN</span><span><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu</span></div>
+                     <div class="exam-composer__progress-track" aria-hidden="true"><i style="width:${Math.min(100, existingQuestionCount / app.game.questionsPerRound * 100)}%"></i></div>
+                     <small>${existingQuestionCount === app.game.questionsPerRound ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, app.game.questionsPerRound - existingQuestionCount)} câu cần hoàn thiện`}</small>
                   </div>
                </header>
 
-               <section class="exam-composer__section exam-composer__meta" aria-labelledby="exam-composer-meta-title">
+               <section class="exam-composer__section exam-composer__meta" data-composer-section="meta" aria-labelledby="exam-composer-meta-title">
                   <div class="exam-composer__section-heading">
-                     <h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4>
+                     <div><span class="exam-composer__section-kicker">BƯỚC 01 · KHỞI TẠO</span><h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4></div>
                      <p>Dùng các trường này để phân loại và tìm lại đề trong thư viện.</p>
                   </div>
                   <label class="exam-form-field">
@@ -6581,30 +6896,27 @@ const app = {
                      <option value="Tiếng Việt" ${e && e.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
                      </select>
                   </label>
-                  <label class="exam-form-field">
-                     <span>Kỳ kiểm tra</span>
-                     <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
-                     <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
-                     <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
-                     <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
-                     <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
-                     <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
-                     </select>
-                  </label>
-                  <label class="exam-form-field exam-form-field--wide">
-                     <span>Tên đề kiểm tra</span>
-                     <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? e.name : ''}">
-                  </label>
+                   <label class="exam-form-field">
+                      <span>Thời gian</span>
+                      <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
+                      ${this.getComposerPeriodOptions().map(option => `<option value="${option.value}" ${selectedPeriod === option.value ? 'selected' : ''}>${option.label}</option>`).join('')}
+                      </select>
+                   </label>
+                   <label class="exam-form-field exam-form-field--wide">
+                      <span>Tên đề kiểm tra <em aria-hidden="true">*</em></span>
+                      <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-e-form-error">
+                   </label>
+                   <div id="add-e-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
                   <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
                      <span>Chủ đề áp dụng</span>
                      <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
                      <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo đề tự động.</small>
                   </div>
-                  <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
-                     <span>Bài học áp dụng</span>
-                     <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
-                     <small>Chỉ dành cho Lớp 4 – Toán. Bỏ chọn toàn bộ nghĩa là không giới hạn theo Bài học.</small>
-                  </div>
+                   <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
+                      <span>Bài học áp dụng</span>
+                      <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
+                      <small>Chỉ dành cho Lớp 4 – Toán. Sau khi chọn Chủ đề, bỏ chọn các Bài học chưa học để thu hẹp nguồn câu hỏi.</small>
+                   </div>
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
                      <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
@@ -6635,13 +6947,13 @@ const app = {
                </section>
                ` : ''}
 
-               <section class="exam-composer__section exam-composer__question-bank" aria-labelledby="exam-composer-questions-title">
+               <section class="exam-composer__section exam-composer__question-bank" data-composer-section="questions" aria-labelledby="exam-composer-questions-title">
                   <div class="exam-composer__section-heading">
                      <div>
-                        <h4 id="exam-composer-questions-title">${e && e.questions && e.questions.length > 0 ? '3' : '2'}. Soạn câu hỏi cho đề</h4>
-                        <p>Mỗi thẻ là một câu hoàn chỉnh. Các ô lựa chọn chỉ hiện khi loại câu hỏi cần dùng.</p>
+                        <span class="exam-composer__section-kicker">BƯỚC ${e && e.questions && e.questions.length > 0 ? '03' : '02'} · BIÊN TẬP</span><h4 id="exam-composer-questions-title">Soạn câu hỏi cho đề</h4>
+                        <p>Mỗi thẻ là một câu hoàn chỉnh. Chọn loại câu để mở đúng nhóm trường cần biên tập.</p>
                      </div>
-                     <span class="exam-composer__section-count">${app.game.questionsPerRound} thẻ câu hỏi</span>
+                     <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu đã có</span>
                   </div>
                   <div class="exam-question-list">
                   ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
@@ -6650,11 +6962,11 @@ const app = {
                     const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
                     const optionsDisplay = hasStructuredOptions || (q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả') ? 'none' : 'block';
                     return `
-                    <article class="exam-question-card">
+                    <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}">
                        <header class="exam-question-card__header">
                           <div class="exam-question-card__title-wrap">
                              <span class="exam-question-card__number">${i + 1}</span>
-                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Chưa điền nội dung.'}</p></div>
+                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
                           </div>
                           <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
                        </header>
@@ -6720,9 +7032,16 @@ const app = {
                   <p>Đề cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
                   ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
                </footer>
-            </section>
-          `;
-                setTimeout(() => app.admin.updateExamTopics(), 0);
+             </section>
+           `;
+                this.setComposerStep('content');
+                this.syncComposerQuestionNav();
+                setTimeout(() => {
+                    app.admin.updateExamTopics();
+                    app.admin.bindExamComposerInteractions();
+                    app.admin.updateExamComposerProgress();
+                    app.admin.syncComposerQuestionNav();
+                }, 0);
             }
             else if (tab === 'tpl') {
                 subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
@@ -6747,15 +7066,15 @@ const app = {
                     html += `<p style="color:#aaa;">Không có đề kiểm tra nào phù hợp với Cấp lớp và Môn của câu hỏi này.</p>`;
                 } else {
                     const cols = [
-                        { label: 'Kỳ kiểm tra', filterable: true },
+                        { label: 'Thời gian', filterable: true },
                         { label: 'Tên đề', filterable: true },
                         { label: 'Số câu', filterable: false },
                         { label: 'Hành động', filterable: false }
                     ];
                     html += app.ui.renderTable(cols, matchingExams, (item, idx) => {
                         return `<tr>
-                      <td>${item.e.period}</td>
-                      <td>${item.e.name}</td>
+                      <td>${app.data.sanitizeHTML(this.normalizeComposerPeriod(item.e.period))}</td>
+                      <td>${app.data.sanitizeHTML(item.e.name)}</td>
                       <td>${(item.e.questions || []).length}</td>
                       <td>
                           <button class="btn-success action-btn" onclick="app.admin.renderESubTab('inject_q', {qIdx: ${qIdx}, eIdx: ${item.i}})">Chọn đề này</button>
@@ -6819,7 +7138,7 @@ const app = {
         autoGenerateExam() {
             const classlevel = document.getElementById('add-e-class').value;
             const subject = document.getElementById('add-e-sub').value;
-            const period = document.getElementById('add-e-period').value;
+            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period').value);
             const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const lessonFilters = this.getSelectedExamLessons();
@@ -6910,14 +7229,15 @@ const app = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
                 classlevel: document.getElementById('add-e-class').value,
-                period: document.getElementById('add-e-period').value,
+                period: this.normalizeComposerPeriod(document.getElementById('add-e-period').value),
                 topics: Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value),
                 questions: []
             };
-            if (!eObj.name || !eObj.subject) return alert('Vui lòng điền đủ Tên Đề và Môn');
+            if (!eObj.name || !eObj.subject) return this.showExamComposerError('Vui lòng điền đủ Tên đề và Môn.', !eObj.name ? 'add-e-name' : 'add-e-sub');
 
             let i = 0;
             let newQuestionsCount = 0;
+            let firstIncompleteQuestion = null;
             while (document.getElementById(`add-e-q-q-${i}`)) {
                 const qTextEl = document.getElementById(`add-e-q-q-${i}`);
                 const qText = qTextEl.value.trim();
@@ -6960,27 +7280,25 @@ const app = {
                         ];
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
-                    if (structureKind && !this.isFourPartExamQuestion(newQ)) {
-                        return alert(`Câu ${i + 1}: cần đủ 4 ý và đáp án riêng cho từng ý trước khi lưu.`);
-                    }
+                    if (structureKind && !this.isFourPartExamQuestion(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần đủ 4 ý và đáp án riêng cho từng ý trước khi lưu.`, `add-e-q-q-${i}`);
                     if (newQ.lesson) {
                         const metadataError = app.data.validateQuestionMetadata(newQ);
-                        if (metadataError) return alert(`Câu ${i + 1}: ${metadataError}`);
+                        if (metadataError) return this.showExamComposerError(`Câu ${i + 1}: ${metadataError}`, `add-e-q-q-${i}`);
                     }
                     const scoringError = app.data.validateQuestionScoring(newQ);
-                    if (scoringError) return alert(`Câu ${i + 1}: ${scoringError}`);
+                    if (scoringError) return this.showExamComposerError(`Câu ${i + 1}: ${scoringError}`, `add-e-q-q-${i}`);
                     eObj.questions.push(newQ);
                     const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
                     if (!exists) {
                         app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ))); // add a copy to global bank
                     }
                     newQuestionsCount++;
-                }
+                } else if (firstIncompleteQuestion === null) firstIncompleteQuestion = i;
                 i++;
             }
 
             if (eObj.questions.length !== app.game.questionsPerRound) {
-                return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
+                return this.showExamComposerError('Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.', firstIncompleteQuestion === null ? '' : `add-e-q-q-${firstIncompleteQuestion}`);
             }
 
             if (newQuestionsCount > 0) {
@@ -7066,7 +7384,7 @@ const app = {
                             name: row["Tên đề"],
                             subject: row["Môn"],
                             classlevel: row["Cấp lớp"] || 'Lớp 5',
-                            period: row["Kỳ kiểm tra"] || 'Giữa kỳ 1',
+                            period: this.normalizeComposerPeriod(row["Thời gian"] || row["Kỳ kiểm tra"] || 'Học Kỳ 1'),
                             questions: []
                         });
                         count++;
@@ -7088,7 +7406,7 @@ const app = {
              </div>
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
-             <h2 style="text-align:center;">BÀI KIỂM TRA ${exam.period.toUpperCase()}</h2>
+             <h2 style="text-align:center;">BÀI KIỂM TRA ${this.normalizeComposerPeriod(exam.period).toUpperCase()}</h2>
              <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classlevel}</p>
              <hr style="margin:20px 0;">
        `;
