@@ -40,18 +40,18 @@ test('Kho Template tự gắn Bài học cho template cũ và phân biệt phạ
     app.admin.switchTab('templates');
   }, topics);
 
-  await expect(page.getByRole('columnheader', { name: 'Bài học' })).toBeVisible();
-  const table = page.locator('table.data-table');
-  await expect(table).toContainText('Bài 11. Hàng và lớp');
-  await expect(table).toContainText('Bài 24. Tính chất giao hoán và kết hợp của phép cộng');
-  await expect(table).toContainText('Toàn chủ đề');
+  await expect(page.locator('.template-library')).toBeVisible();
+  const library = page.locator('.template-library');
+  await expect(library).toContainText('Bài 11. Hàng và lớp');
+  await expect(library).toContainText('Bài 24. Tính chất giao hoán và kết hợp của phép cộng');
+  await expect(library).toContainText('Toàn chủ đề');
 
   const lessonFilterValues = await page.getByLabel('Lọc Bài học').locator('option').evaluateAll(options => options.map(option => option.value));
   expect(lessonFilterValues).toEqual(expect.arrayContaining(['g4-math-hk1-b11', 'g4-math-hk1-b24']));
   expect(lessonFilterValues.slice(1)).not.toContain('');
 
-  const propertyRow = page.locator('tbody tr').filter({ hasText: 'Legacy tính chất phép cộng' });
-  await propertyRow.getByRole('button', { name: 'Sửa' }).click();
+  const propertyCard = page.locator('.template-library-card').filter({ hasText: 'Legacy tính chất phép cộng' });
+  await propertyCard.getByRole('button', { name: 'Sửa template' }).click();
   await expect(page.locator('#template-lesson-field')).toBeVisible();
   await expect(page.locator('#template-lesson')).toHaveValue('g4-math-hk1-b24');
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config.lesson)).toBe('g4-math-hk1-b24');

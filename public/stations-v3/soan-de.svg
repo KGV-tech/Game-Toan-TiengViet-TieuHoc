@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150" role="img" aria-labelledby="title desc">
+  <title id="title">Soạn Đề</title>
+  <desc id="desc">Biển hiệu khu vực Soạn Đề dành cho quản trị viên</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#123b5c"/>
+      <stop offset="1" stop-color="#071727"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path d="M18 8h204l12 18-12 18v87H18V44L6 26 18 8Z" fill="url(#sky)" stroke="#5ee7f7" stroke-width="4"/>
+  <path d="M25 26h190v82H25z" fill="#091521" stroke="url(#panel)" stroke-width="5"/>
+  <path d="M25 26h190" stroke="#d5b7ff" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="39" cy="67" r="10" fill="#ffd15a"/>
+  <path d="m39 52 3.5 10.5L53 66l-10.5 3.5L39 80l-3.5-10.5L25 66l10.5-3.5Z" fill="#fff4bc"/>
+  <text x="123" y="74" fill="#f5f2ff" font-family="Arial, sans-serif" font-size="29" font-weight="800" text-anchor="middle" letter-spacing="1">SOẠN ĐỀ</text>
+  <path d="M43 130v12m154-12v12M31 142h178" stroke="#5ee7f7" stroke-width="5" stroke-linecap="round"/>
+</svg>

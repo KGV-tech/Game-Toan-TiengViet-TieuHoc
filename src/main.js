@@ -3504,7 +3504,7 @@ const app = {
         teamCompetitionBoardTimer: null,
         composerState: {
             module: 'exams',
-            classlevel: 'Lớp 5',
+            classlevel: 'Lớp 4',
             subject: 'Toán',
             period: 'Học Kỳ 1',
             search: ''
@@ -3515,9 +3515,17 @@ const app = {
         syncRoleAwareLabels() {
             const stationLabel = document.getElementById('exam-station-label');
             const stationImage = document.getElementById('exam-station-image');
+            const station = document.getElementById('exam-station');
             const admin = this.isAdminUser();
             if (stationLabel) stationLabel.textContent = admin ? 'Soạn Đề' : 'Luyện Đề';
-            if (stationImage) stationImage.alt = admin ? 'Soạn Đề' : 'Luyện Đề';
+            if (station) {
+                station.dataset.role = admin ? 'admin' : 'student';
+                station.setAttribute('aria-label', admin ? 'Mở khu vực Soạn Đề' : 'Mở khu vực Luyện Đề');
+            }
+            if (stationImage) {
+                stationImage.src = admin ? './public/stations-v3/soan-de.png' : './public/stations-v3/luyen-de.png';
+                stationImage.alt = admin ? 'Soạn Đề' : 'Luyện Đề';
+            }
         },
         getComposerContentBox() {
             const composeScreen = document.getElementById('admin-compose-screen');
@@ -3658,10 +3666,18 @@ const app = {
             if (context) context.dataset.context = `${state.classlevel} · ${state.subject} · ${state.period}`;
             const moduleSummary = document.getElementById('admin-compose-module-summary');
             if (moduleSummary) moduleSummary.innerHTML = `<span>${app.data.sanitizeHTML(state.classlevel)}</span><span>${app.data.sanitizeHTML(state.subject)}</span><span>${app.data.sanitizeHTML(state.period)}</span>`;
+            this.syncQuickstartUI();
+        },
+        syncQuickstartUI() {
+            document.querySelectorAll('[data-quickstart-module]').forEach(button => {
+                const selected = button.dataset.quickstartModule === this.composerState.module;
+                button.classList.toggle('is-selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
         },
         updateComposerContext() {
             const read = id => document.getElementById(id)?.value || '';
-            this.composerState.classlevel = read('admin-compose-class') || 'Lớp 5';
+            this.composerState.classlevel = read('admin-compose-class') || 'Lớp 4';
             this.composerState.subject = read('admin-compose-subject') || 'Toán';
             this.composerState.period = read('admin-compose-period') || 'Học Kỳ 1';
             this.composerState.search = read('admin-compose-search');
@@ -3670,6 +3686,7 @@ const app = {
         renderComposerModule(module = 'exams') {
             const allowed = ['templates', 'questions', 'exams'];
             const selectedModule = allowed.includes(module) ? module : 'exams';
+            this.closeTemplatePreview();
             this.composerState.module = selectedModule;
             const meta = this.getComposerModuleMeta(selectedModule);
             const title = document.getElementById('admin-compose-module-title');
@@ -3720,9 +3737,6 @@ const app = {
             this.setComposerStep('content');
             this.focusComposerSection('admin-compose-module-panel');
             return true;
-        },
-        continueComposer() {
-            return this.openComposerModule(this.composerState.module || 'exams');
         },
         setComposerStep(step = 'workspace') {
             const activeStep = ['workspace', 'content', 'review'].includes(step) ? step : 'workspace';
@@ -5371,7 +5385,15 @@ const app = {
             const lesson = this.getTemplateLesson(template);
             return this.lessonLabel(lesson) || (lesson ? lesson : 'Toàn chủ đề');
         },
+        getTemplateCardTone(template) {
+            const type = String(template?.question_type || '').toLocaleLowerCase('vi-VN');
+            if (type.includes('kéo') || type.includes('đối chiếu')) return 'violet';
+            if (type.includes('đúng')) return 'green';
+            if (type.includes('điền')) return 'cyan';
+            return 'amber';
+        },
         renderTemplates(box) {
+            if (!box) return;
             const templates = app.data.questionTemplates || [];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
@@ -5386,27 +5408,48 @@ const app = {
                 (!filters.questionType || item.question_type === filters.questionType) &&
                 (!filters.generatorKey || item.generator_key === filters.generatorKey)
             );
+            const esc = value => app.data.sanitizeHTML(value ?? '');
+            const cardMarkup = ({ item, index }) => {
+                const tone = this.getTemplateCardTone(item);
+                const name = item.name || item.generator_key || 'Template chưa đặt tên';
+                const classlevel = item.classlevel || 'Chưa gắn cấp lớp';
+                const subject = item.subject || 'Chưa gắn môn học';
+                const type = item.question_type || 'Chưa chọn loại câu';
+                const topic = item.topic || 'Chưa gắn chủ đề';
+                const lesson = this.getTemplateLessonDisplay(item);
+                const prompt = item.prompt_template || 'Chưa có mẫu câu hiển thị.';
+                const status = item.is_active === false ? 'Tạm ẩn' : 'Đang dùng';
+                return `<article class="template-library-card template-library-card--${tone}" data-template-card-index="${index}">
+                  <header class="template-library-card__header">
+                    <span class="template-library-card__icon" aria-hidden="true">${type.includes('Điền') ? '✎' : type.includes('Đúng') ? '✓' : type.includes('Kéo') ? '↔' : 'T'}</span>
+                    <div class="template-library-card__heading"><span class="template-library-card__type">${esc(type)}</span><span class="template-library-card__status">${status}</span></div>
+                  </header>
+                  <h4>${esc(name)}</h4>
+                  <div class="template-library-card__context"><span>${esc(classlevel)}</span><span>${esc(subject)}</span></div>
+                  <div class="template-library-card__curriculum"><span>Chủ đề</span><strong>${esc(topic)}</strong><span>Bài học</span><strong>${esc(lesson)}</strong></div>
+                  <div class="template-library-card__prompt"><span>Mẫu câu hiển thị</span><p>${esc(prompt)}</p></div>
+                  <footer class="template-library-card__actions"><button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa template</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button></footer>
+                </article>`;
+            };
+            const emptyMarkup = `<div class="template-library__empty" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có template phù hợp' : 'Kho template đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một template mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>`;
 
             box.innerHTML = `
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                <div><h3 style="margin:0; color:#ffeb3b;">Kho Template</h3><small>Generator được tạo trong code; tại đây chỉ sửa hoặc nhân bản cấu hình áp dụng của generator đó.</small></div>
-              </div>
-              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:12px;">
-                <select class="filter-input" aria-label="Lọc cấp lớp" onchange="app.admin.setTemplateFilter('classlevel', this.value)">${optionList(['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'], filters.classlevel, 'Cấp lớp: tất cả')}</select>
-                <select class="filter-input" aria-label="Lọc môn học" onchange="app.admin.setTemplateFilter('subject', this.value)">${optionList(['Toán','Tiếng Việt'], filters.subject, 'Môn học: tất cả')}</select>
-                <select class="filter-input" aria-label="Lọc chủ đề" onchange="app.admin.setTemplateFilter('topic', this.value)">${optionList(unique('topic'), filters.topic, 'Chủ đề: tất cả')}</select>
-                <select class="filter-input" aria-label="Lọc Bài học" onchange="app.admin.setTemplateFilter('lesson', this.value)">${lessonFilterOptions}</select>
-                <select class="filter-input" aria-label="Lọc loại câu hỏi" onchange="app.admin.setTemplateFilter('questionType', this.value)">${optionList(unique('question_type'), filters.questionType, 'Loại câu hỏi: tất cả')}</select>
-                <select class="filter-input" aria-label="Lọc template" onchange="app.admin.setTemplateFilter('generatorKey', this.value)">${optionList(unique('generator_key'), filters.generatorKey, 'Template: tất cả')}</select>
-              </div>
-              <div style="margin-bottom:8px; color:#ffeb3b; font-weight:bold;">Hiển thị ${visible.length}/${templates.length} template</div>
-              ${app.ui.renderTable([
-                { label: 'Cấp lớp' }, { label: 'Môn' }, { label: 'Chủ đề' }, { label: 'Loại câu hỏi' }, { label: 'Template' }, { label: 'Bài học' }, { label: 'Câu hỏi mẫu' }, { label: 'Hành động' }
-              ], visible, ({ item, index }) => `<tr>
-                <td>${app.data.sanitizeHTML(item.classlevel)}</td><td>${app.data.sanitizeHTML(item.subject)}</td><td>${app.data.sanitizeHTML(item.topic)}</td>
-                <td>${app.data.sanitizeHTML(item.question_type)}</td><td>${app.data.sanitizeHTML(item.name || item.generator_key)}</td><td>${app.data.sanitizeHTML(this.getTemplateLessonDisplay(item))}</td><td>${app.data.sanitizeHTML(item.prompt_template)}</td>
-                <td><button class="btn-opt action-btn" onclick="app.admin.renderTemplateForm(${index})">Sửa</button><button class="btn-danger action-btn" onclick="app.admin.deleteTemplate(${index})">Xóa</button></td>
-              </tr>`, 'Chưa có cấu hình template. Hãy thêm generator và cấu hình mẫu từ code hoặc chạy migration Supabase.')}
+              <section class="template-library" aria-labelledby="template-library-title">
+                <header class="template-library__header">
+                  <div><p class="template-library__eyebrow">01 · MẪU SINH CÂU</p><h3 id="template-library-title">Kho Template</h3><p>Chọn một thẻ để chỉnh cấu hình, xem Preview hoặc tạo mẫu mới theo đúng Bài học.</p></div>
+                  <div class="template-library__header-actions"><span class="template-library__count" role="status">${visible.length}/${templates.length} mẫu</span><button type="button" id="btn-template-create" class="template-library__create" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>
+                </header>
+                <div class="template-library__filters" aria-label="Bộ lọc kho template">
+                  <label><span>Cấp lớp</span><select class="filter-input template-library__select" aria-label="Lọc cấp lớp" onchange="app.admin.setTemplateFilter('classlevel', this.value)">${optionList(['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'], filters.classlevel, 'Tất cả cấp lớp')}</select></label>
+                  <label><span>Môn học</span><select class="filter-input template-library__select" aria-label="Lọc môn học" onchange="app.admin.setTemplateFilter('subject', this.value)">${optionList(['Toán','Tiếng Việt'], filters.subject, 'Tất cả môn học')}</select></label>
+                  <label><span>Chủ đề</span><select class="filter-input template-library__select" aria-label="Lọc chủ đề" onchange="app.admin.setTemplateFilter('topic', this.value)">${optionList(unique('topic'), filters.topic, 'Tất cả chủ đề')}</select></label>
+                  <label><span>Bài học</span><select class="filter-input template-library__select" aria-label="Lọc Bài học" onchange="app.admin.setTemplateFilter('lesson', this.value)">${lessonFilterOptions}</select></label>
+                  <label><span>Loại câu hỏi</span><select class="filter-input template-library__select" aria-label="Lọc loại câu hỏi" onchange="app.admin.setTemplateFilter('questionType', this.value)">${optionList(unique('question_type'), filters.questionType, 'Tất cả loại câu')}</select></label>
+                  <label><span>Generator</span><select class="filter-input template-library__select" aria-label="Lọc template" onchange="app.admin.setTemplateFilter('generatorKey', this.value)">${optionList(unique('generator_key'), filters.generatorKey, 'Tất cả generator')}</select></label>
+                </div>
+                <div class="template-library__result-heading"><div><strong>Hiển thị ${visible.length} template</strong><span> · ${visible.length === templates.length ? 'Đang xem toàn bộ kho' : `đã lọc từ ${templates.length} mẫu`}</span></div><span class="template-library__hint">Mỗi thẻ gắn với một Bài học cụ thể</span></div>
+                ${visible.length ? `<div class="template-library__grid">${visible.map(cardMarkup).join('')}</div>` : emptyMarkup}
+              </section>
             `;
         },
         getTemplateTopics(classlevel, subject, semester) {
@@ -5448,14 +5491,33 @@ const app = {
                 lesson.value = '';
             }
         },
+        getNewTemplateDraft() {
+            const generatorKey = 'number.digit_at_place';
+            const preset = this.templatePresets?.[generatorKey];
+            const topic = this.getTemplateTopics('Lớp 4', 'Toán', 'Học kỳ 1')[0] || '';
+            return {
+                name: 'Template mới',
+                classlevel: 'Lớp 4',
+                subject: 'Toán',
+                semester: 'Học kỳ 1',
+                topic,
+                lesson: null,
+                question_type: preset?.type || 'Trắc nghiệm',
+                generator_key: generatorKey,
+                prompt_template: preset?.defaultPrompt || 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
+                config: { minimum: 10000, maximum: 99999, minimumDigits: 5, maximumDigits: 5, allowedPlaces: ['tens', 'hundreds'], allowedDigits: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+                is_active: true
+            };
+        },
         renderTemplateForm(editIndex) {
-            const existing = app.data.questionTemplates[editIndex];
+            const isNew = editIndex === null;
+            const existing = isNew ? this.getNewTemplateDraft() : app.data.questionTemplates[editIndex];
             if (!existing) {
                 alert('Hãy chọn một template có sẵn để sửa hoặc lưu thành bản mới.');
                 this.switchTab('templates');
                 return;
             }
-            document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
+            document.getElementById('treasure-title').textContent = 'Soạn Đề';
             const config = existing?.config || {};
             const selectedTemplateLesson = this.getTemplateLesson(existing);
             const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
@@ -5528,7 +5590,7 @@ const app = {
                 : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
             const box = this.getComposerContentBox();
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
-              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE</p><h3 id="template-editor-title">Sửa template</h3><p>Chỉnh cấu hình hiện có, hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
+              <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE · LỚP 4</p><h3 id="template-editor-title">${isNew ? 'Tạo template mới' : 'Sửa template'}</h3><p>${isNew ? 'Tạo một cấu hình mới để sinh câu hỏi sát từng Bài học.' : 'Chỉnh cấu hình hiện có, xem Preview hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.'}</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
               <aside class="template-editor__guide" role="status"><span aria-hidden="true">💡</span><div><b>Diễn giải</b><p id="template-guide-copy"></p></div></aside>
               <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
                 <label class="template-editor__field template-editor__field--wide"><span>Tên template</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
@@ -5540,7 +5602,7 @@ const app = {
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
-              <div class="template-editor__section"><h4>2. Câu hỏi hiển thị</h4><label class="template-editor__field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input">${app.data.sanitizeHTML(displayedPrompt)}</textarea></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview"></div></div>
+              <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · ĐẦU RA</p><h4 id="template-display-title">2. Câu hỏi hiển thị</h4></div><span class="template-editor__section-note">Cô đang soạn câu sẽ gửi tới học sinh</span></div><p class="template-editor__section-intro">Viết câu dẫn bằng chữ và chèn các biến màu vàng khi muốn giữ phần nội dung do game tự sinh. Cô có thể xem đúng khung câu hỏi ở nút Preview bên dưới.</p><label class="template-editor__field template-editor__prompt-field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input" aria-describedby="template-prompt-help">${app.data.sanitizeHTML(displayedPrompt)}</textarea><small id="template-prompt-help">Biến <code>{question}</code> giữ nguyên câu hỏi động; các biến khác chèn một phần cụ thể như hàng, chữ số hoặc ô đáp án.</small></label><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div><div class="template-editor__preview-cta"><div><strong>Muốn xem câu này chạy ra sao?</strong><span>Preview chỉ hiển thị khung câu hỏi và các đáp án, không kèm hình minh họa của game.</span></div><button type="button" id="template-preview-open" class="template-editor__preview-button" onclick="app.admin.openTemplatePreview()"><span aria-hidden="true">◉</span> Preview</button></div></section>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule template-editor__rule--range-controls" aria-label="Số lượng chữ số"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-minimum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-maximum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMaximumDigits}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
@@ -5553,7 +5615,8 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--safe-password-class-controls"><h5>Phân biệt “lớp” và “hàng”</h5><p><b>Lớp</b> luôn gồm ba hàng; <b>hàng</b> chỉ là một vị trí. Ở mỗi điều kiện, chọn một kiểu rồi cấu hình danh sách tương ứng bên dưới.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Điều kiện 1 áp dụng theo</span><select id="template-safe-password-condition1-scope" class="form-input"><option value="place" ${safeCondition1Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition1Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label><label class="template-editor__field"><span>Điều kiện 2 áp dụng theo</span><select id="template-safe-password-condition2-scope" class="form-input"><option value="place" ${safeCondition2Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition2Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Lớp có thể bốc cho Điều kiện 1</legend><div id="template-safe-password-condition1-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition1Classes, 'safe-condition1-classes')).join('')}</div></fieldset><fieldset><legend>Lớp có thể bốc cho Điều kiện 2</legend><div id="template-safe-password-condition2-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition2Classes, 'safe-condition2-classes')).join('')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--phase2-controls" hidden><h5>Phạm vi Bài 3 và Bài 4</h5><p>Chỉ các trường phù hợp với generator đang chọn mới được dùng khi lưu. Bài 6 dùng blueprint ôn tập cố định Bài 1–4.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất (Bài 3)</span><input id="template-phase2-minimum" class="form-input" type="number" min="0" value="${phase2NumberMinimum}"></label><label class="template-editor__field"><span>Số lớn nhất (Bài 3)</span><input id="template-phase2-maximum" class="form-input" type="number" min="1" value="${phase2NumberMaximum}"></label><label class="template-editor__field"><span>Thẻ số (Bài 3)</span><select id="template-phase2-digit-count" class="form-input">${[3,4].map(value => `<option value="${value}" ${phase2DigitCount === value ? 'selected' : ''}>${value} thẻ</option>`).join('')}</select></label><label class="template-editor__field"><span>Số phần tử ít nhất</span><input id="template-phase2-list-length-min" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMin}"></label><label class="template-editor__field"><span>Số phần tử nhiều nhất</span><input id="template-phase2-list-length-max" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMax}"></label></div><div class="template-editor__fields"><label class="template-editor__field"><span>Số a nhỏ nhất (Bài 4)</span><input id="template-phase2-variable-minimum" class="form-input" type="number" min="1" value="${phase2VariableMinimum}"></label><label class="template-editor__field"><span>Số a lớn nhất (Bài 4)</span><input id="template-phase2-variable-maximum" class="form-input" type="number" min="1" value="${phase2VariableMaximum}"></label><label class="template-editor__field"><span>Hằng số nhỏ nhất</span><input id="template-phase2-constant-minimum" class="form-input" type="number" min="2" value="${phase2ConstantMinimum}"></label><label class="template-editor__field"><span>Hằng số lớn nhất</span><input id="template-phase2-constant-maximum" class="form-input" type="number" min="2" value="${phase2ConstantMaximum}"></label></div><div class="template-editor__fields"><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy dãy chẵn/lẻ</span><input id="template-phase2-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(phase2SequenceSteps)}" placeholder="2, 4, 6"></label></div><fieldset><legend>Phép tính Bài 4</legend><div id="template-phase2-operations" class="template-editor__checks">${checkbox('add', 'Cộng', phase2Operations, 'phase2-operations')}${checkbox('subtract', 'Trừ', phase2Operations, 'phase2-operations')}${checkbox('multiply', 'Nhân', phase2Operations, 'phase2-operations')}${checkbox('divide', 'Chia hết', phase2Operations, 'phase2-operations')}</div></fieldset><fieldset><legend>Dạng chẵn/lẻ Bài 3</legend><div id="template-phase2-parities" class="template-editor__checks">${checkbox('even', 'Số chẵn', phase2Parities, 'phase2-parities')}${checkbox('odd', 'Số lẻ', phase2Parities, 'phase2-parities')}</div></fieldset></div>
               </div></div>
-              <footer class="template-editor__actions"><button class="btn-opt" onclick="app.admin.switchTab('templates')">Hủy</button><button class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button></footer>
+              <footer class="template-editor__actions"><button type="button" class="btn-opt" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="btn-primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
+              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
             </section>`;
             if (existing?.generator_key === 'number.safe_password_by_place_value') {
                 document.getElementById('template-minimum').value = app.data.formatMathNumber(config.minimum ?? 0);
@@ -5886,7 +5949,7 @@ const app = {
                 }
         },
         renderTemplatePreview(generator) {
-            const preview = (title, content, variant = '', score = '4 câu con · 0,25 điểm/câu') => `<section class="template-preview__canvas ${variant}" aria-label="Minh họa giao diện khi học sinh làm bài"><div class="template-preview__topbar"><span>Minh họa giao diện học sinh</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${content}</section>`;
+            const preview = (title, content, variant = '', score = '4 câu con · 0,25 điểm/câu') => `<section class="template-preview__canvas ${variant}" aria-label="Khung câu hỏi mẫu"><div class="template-preview__topbar"><span>Khung câu hỏi</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${content}</section>`;
             const fillRows = rows => `<div class="template-preview__rows">${rows.map((row, index) => `<div class="template-preview__line"><b>${'abcd'[index]})</b><span>${row}</span></div>`).join('')}</div>`;
             const blank = '<i class="template-preview__blank" aria-label="Ô điền đáp án"></i>';
             const choices = values => `<div class="template-preview__choices">${values.map((value, index) => `<span><b>${'ABCD'[index]}</b>${value}</span>`).join('')}</div>`;
@@ -5935,10 +5998,113 @@ const app = {
             if (generator === 'number.variable_expression_choice') return preview('Chọn giá trị đúng:', `<div class="template-preview__mc">${['a = 24; a + 8', 'a = 45; a − 7', 'a = 12; a × 3', 'a = 48; a ÷ 6'].map((expression, index) => `<div><b>${'abcd'[index]})</b>${expression} = ?${choices(index === 0 ? ['30', '32', '34', '36'] : index === 1 ? ['36', '38', '40', '42'] : index === 2 ? ['24', '30', '36', '42'] : ['6', '7', '8', '9'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.hk1_review_b01_b04') return preview('Luyện tập chung Bài 1–4:', `<div class="template-preview__mc">${['Chữ số hàng trăm trong 12 345 là?', '25 000 + 3 600 = ?', 'Số nào là số lẻ?', 'Cho a = 18, a + 7 = ?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b><small>Bài ${index + 1}</small>${prompt}${choices(index === 0 ? ['2', '3', '4', '5'] : index === 1 ? ['27 600', '28 600', '28 100', '29 600'] : index === 2 ? ['2 408', '3 517', '6 824', '9 130'] : ['23', '24', '25', '26'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
-            if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn mật khẩu mở khóa két sắt đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div class="template-preview__safe-icon">🔒</div><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
+            if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn đáp án đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
             if (generator === 'number.natural_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['12 000, ___, 16 000, ___, 20 000', '84 000, 78 000, ___, ___, 60 000', '1 250, ___, 1 650, ___, 2 050', '7 000 000, ___, ___, 6 979 000, 6 972 000'].map(row => row.replaceAll('___', blank))), 'template-preview--fill');
+            if (generator === 'g4-m-angle-count-in-polygon') return preview('Đếm các loại góc trong hình:', fillRows(['Góc nhọn: ___', 'Góc vuông: ___', 'Góc tù: ___', 'Góc bẹt: ___'].map(row => row.replace('___', blank))), 'template-preview--fill');
+            if (generator === 'g4-m-angle-drag-classify') return preview('Kéo thả tên loại góc vào đúng ô:', `<div class="template-preview__angle-list">${['Góc A', 'Góc B', 'Góc C', 'Góc D'].map((label, index) => `<div><b>${'ABCD'[index]}.</b><span>${label}</span><i class="template-preview__drop">Kéo đáp án</i></div>`).join('')}</div>`, 'template-preview--comparison');
+            if (generator === 'g4-m-angle-clock-classify') return preview('Kéo thả tên loại góc vào mặt đồng hồ:', `<div class="template-preview__angle-list">${['2 giờ 00 phút', '3 giờ 00 phút', '4 giờ 00 phút', '6 giờ 00 phút'].map((label, index) => `<div><b>${'ABCD'[index]}.</b><span>${label}</span><i class="template-preview__drop">Kéo đáp án</i></div>`).join('')}</div>`, 'template-preview--comparison');
+            if (generator === 'g4-m-angle-count-eight-angles') return preview('Đếm 8 góc và điền số lượng theo loại:', fillRows(['Góc nhọn: ___', 'Góc vuông: ___', 'Góc tù: ___', 'Góc bẹt: ___'].map(row => row.replace('___', blank))), 'template-preview--fill');
             const question = generator === 'number.smallest_of_four' ? 'Hãy tìm số bé nhất trong các số sau.' : generator === 'number.largest_of_four' ? 'Hãy tìm số lớn nhất trong các số sau.' : 'Số nào dưới đây có chữ số hàng trăm là 8?';
             return preview(question, `<div class="template-preview__mc">${['15 870|90 435|12 345|9 403', '24 680|18 405|32 901|27 150', '57 281|63 405|81 720|40 913', '18 563|72 108|35 842|96 321'].map((row, index) => `<div><b>${'abcd'[index]})</b>${choices(row.split('|'))}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+        },
+        cancelTemplateForm() {
+            this.closeTemplatePreview();
+            this.switchTab('templates');
+        },
+        openTemplatePreview() {
+            const dialog = document.getElementById('template-preview-dialog');
+            const content = document.getElementById('template-preview-content');
+            if (!dialog || !content) return;
+            const generator = document.getElementById('template-generator')?.value || 'number.digit_at_place';
+            content.innerHTML = this.renderTemplatePreview(generator);
+            this.templatePreviewReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            if (!this.templatePreviewKeyHandler) {
+                this.templatePreviewKeyHandler = event => {
+                    const currentDialog = document.getElementById('template-preview-dialog');
+                    if (!currentDialog || currentDialog.hidden) return;
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this.closeTemplatePreview();
+                        return;
+                    }
+                    if (event.key !== 'Tab') return;
+                    const focusables = [...currentDialog.querySelectorAll('button:not([disabled])')];
+                    if (!focusables.length) return;
+                    const first = focusables[0];
+                    const last = focusables[focusables.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                };
+            }
+            document.addEventListener('keydown', this.templatePreviewKeyHandler);
+            dialog.hidden = false;
+            dialog.classList.add('is-open');
+            requestAnimationFrame(() => dialog.querySelector('.template-preview-dialog__close')?.focus());
+        },
+        closeTemplatePreview() {
+            const dialog = document.getElementById('template-preview-dialog');
+            if (!dialog || dialog.hidden) return;
+            dialog.hidden = true;
+            dialog.classList.remove('is-open');
+            if (this.templatePreviewKeyHandler) document.removeEventListener('keydown', this.templatePreviewKeyHandler);
+            if (this.templatePreviewReturnFocus && document.contains(this.templatePreviewReturnFocus)) this.templatePreviewReturnFocus.focus();
+            this.templatePreviewReturnFocus = null;
+        },
+        getTemplatePreviewRecord() {
+            let template;
+            try {
+                template = this.collectTemplateForm();
+            } catch (error) {
+                alert(error.message);
+                return null;
+            }
+            const question = app.data.generateTemplateQuestion(template);
+            if (!question) {
+                alert('Không thể sinh câu hỏi từ cấu hình này. Hãy kiểm tra lại Template và các quy tắc sinh số.');
+                return null;
+            }
+            return { template, question };
+        },
+        syncComposerContextFromTemplate(template) {
+            this.composerState.classlevel = template.classlevel || 'Lớp 4';
+            this.composerState.subject = template.subject || 'Toán';
+            this.composerState.period = template.semester === 'Học kỳ 2' ? 'Học Kỳ 2' : 'Học Kỳ 1';
+            this.syncComposerContextUI();
+        },
+        savePreviewToNewExam() {
+            const record = this.getTemplatePreviewRecord();
+            if (!record) return;
+            const { template, question } = record;
+            this.syncComposerContextFromTemplate(template);
+            this.examComposerDraft = {
+                name: '',
+                classlevel: template.classlevel,
+                subject: template.subject,
+                period: template.semester === 'Học kỳ 2' ? 'Học Kỳ 2' : 'Học Kỳ 1',
+                topics: template.topic ? [template.topic] : [],
+                lessonFilters: template.lesson ? [template.lesson] : [],
+                questions: [question]
+            };
+            this.closeTemplatePreview();
+            this.openComposerModule('exams');
+            setTimeout(() => this.renderESubTab('add'), 0);
+        },
+        savePreviewToExistingExam() {
+            const record = this.getTemplatePreviewRecord();
+            if (!record) return;
+            const question = JSON.parse(JSON.stringify(record.question));
+            const existingIndex = (app.data.libraryQuestions || []).findIndex(item => app.data.getQuestionContentKey(item) === app.data.getQuestionContentKey(question));
+            const questionIndex = existingIndex >= 0 ? existingIndex : app.data.libraryQuestions.push(question) - 1;
+            if (existingIndex < 0) app.data.saveLibrary();
+            this.syncComposerContextFromTemplate(record.template);
+            this.closeTemplatePreview();
+            this.openComposerModule('exams');
+            setTimeout(() => this.renderESubTab('select_for_q', questionIndex), 0);
         },
         showTemplateExample() {
             const generator = document.getElementById('template-generator')?.value;
@@ -5947,14 +6113,8 @@ const app = {
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
             const variables = document.getElementById('template-variables');
-            if (target) {
-                const previewImage = preset.previewImage || 'digit-at-place.jpg';
-                const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
-                const previewContent = preset.preview === 'live'
-                    ? this.renderTemplatePreview(generator)
-                    : `<img class="template-editor__preview-image" src="./src/assets/template-previews/${app.data.sanitizeHTML(previewImage)}" alt="Giao diện thực tế của template ${app.data.sanitizeHTML(previewLabel)}" loading="lazy" decoding="async">`;
-                target.innerHTML = `<div class="template-editor__preview-heading"><span aria-hidden="true">🖼️</span><b>Giao diện khi học sinh làm bài</b></div>${previewContent}`;
-            }
+            const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
+            if (target) target.innerHTML = `<div class="template-editor__preview-summary"><span class="template-editor__preview-summary-icon" aria-hidden="true">✦</span><div><strong>Mẫu đầu ra</strong><span>${app.data.sanitizeHTML(previewLabel)}</span></div><b>${app.data.sanitizeHTML(preset.type || 'Câu hỏi')}</b></div><p>Preview sẽ giữ đúng dạng <strong>${app.data.sanitizeHTML(preset.type || 'câu hỏi')}</strong>, các ô trả lời và đáp án mà generator này tạo ra.</p>`;
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
             if (variables) variables.innerHTML = `<b>Biến có thể chèn</b><div>${preset.variables.map(([token, description]) => `<button type="button" class="template-variable" title="${app.data.sanitizeHTML(description)}" onclick="app.admin.insertTemplateVariable('${token}')"><code>${token}</code><span>${app.data.sanitizeHTML(description)}</span></button>`).join('')}</div>`;
@@ -6143,15 +6303,16 @@ const app = {
         async saveTemplate(editIndex, asCopy = false) {
             let template;
             try { template = this.collectTemplateForm(); } catch (error) { alert(error.message); return; }
-            if (!app.data.questionTemplates[editIndex]) return alert('Không tìm thấy template gốc.');
-            const isUpdate = !asCopy;
-            if (window.supabase && (!isUpdate || !app.data.questionTemplates[editIndex].id.startsWith('temp_'))) {
-                const query = isUpdate ? supabaseClient.from('question_templates').update(template).eq('id', app.data.questionTemplates[editIndex].id) : supabaseClient.from('question_templates').insert([template]);
+            const original = editIndex === null ? null : app.data.questionTemplates[editIndex];
+            if (editIndex !== null && !original) return alert('Không tìm thấy template gốc.');
+            const isUpdate = Boolean(original && !asCopy);
+            if (window.supabase && (!isUpdate || !String(original.id || '').startsWith('temp_'))) {
+                const query = isUpdate ? supabaseClient.from('question_templates').update(template).eq('id', original.id) : supabaseClient.from('question_templates').insert([template]);
                 const { data, error } = await query.select();
                 if (error || !data?.[0]) { alert('Không thể lưu template trên server. Hãy chạy file SQL tạo bảng trước.'); return; }
                 if (isUpdate) app.data.questionTemplates[editIndex] = data[0]; else app.data.questionTemplates.push(data[0]);
             } else {
-                if (isUpdate) template.id = app.data.questionTemplates[editIndex].id; else template.id = `temp_${Date.now()}`;
+                if (isUpdate) template.id = original.id; else template.id = `temp_${Date.now()}`;
                 if (isUpdate) app.data.questionTemplates[editIndex] = template; else app.data.questionTemplates.push(template);
             }
             this.switchTab('templates');
@@ -6159,7 +6320,7 @@ const app = {
         async deleteTemplate(index) {
             const template = app.data.questionTemplates[index];
             if (!template || !confirm(`Xóa template “${template.name}”?`)) return;
-            if (window.supabase && !template.id.startsWith('temp_')) {
+            if (window.supabase && !String(template.id || '').startsWith('temp_')) {
                 const { error } = await supabaseClient.from('question_templates').delete().eq('id', template.id);
                 if (error) { alert('Không thể xóa template trên server.'); return; }
             }
@@ -6858,7 +7019,9 @@ const app = {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
-                const selectedPeriod = this.normalizeComposerPeriod(e?.period || 'Học Kỳ 1');
+                const selectedClasslevel = e?.classlevel || this.composerState.classlevel || 'Lớp 4';
+                const selectedSubject = e?.subject || this.composerState.subject || 'Toán';
+                const selectedPeriod = this.normalizeComposerPeriod(e?.period || this.composerState.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
             <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
@@ -6882,18 +7045,18 @@ const app = {
                   <label class="exam-form-field">
                      <span>Cấp lớp</span>
                      <select id="add-e-class" class="form-input" onchange="app.admin.updateExamTopics()">
-                     <option value="Lớp 1" ${e && e.classlevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
-                     <option value="Lớp 2" ${e && e.classlevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
-                     <option value="Lớp 3" ${e && e.classlevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
-                     <option value="Lớp 4" ${e && e.classlevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
-                     <option value="Lớp 5" ${e && e.classlevel === 'Lớp 5' ? 'selected' : (!e ? 'selected' : '')}>Lớp 5</option>
+                     <option value="Lớp 1" ${selectedClasslevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
+                     <option value="Lớp 2" ${selectedClasslevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
+                     <option value="Lớp 3" ${selectedClasslevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
+                     <option value="Lớp 4" ${selectedClasslevel === 'Lớp 4' ? 'selected' : ''}>Lớp 4</option>
+                     <option value="Lớp 5" ${selectedClasslevel === 'Lớp 5' ? 'selected' : ''}>Lớp 5</option>
                      </select>
                   </label>
                   <label class="exam-form-field">
                      <span>Môn học</span>
                      <select id="add-e-sub" class="form-input" onchange="app.admin.updateExamTopics()">
-                     <option value="Toán" ${e && e.subject === 'Toán' ? 'selected' : (!e ? 'selected' : '')}>Toán</option>
-                     <option value="Tiếng Việt" ${e && e.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
+                     <option value="Toán" ${selectedSubject === 'Toán' ? 'selected' : ''}>Toán</option>
+                     <option value="Tiếng Việt" ${selectedSubject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
                      </select>
                   </label>
                    <label class="exam-form-field">
