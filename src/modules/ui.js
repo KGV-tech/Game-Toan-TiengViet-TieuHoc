@@ -27,8 +27,9 @@
                 <img src="./public/ui/buttons/${group}/${asset}.png" alt="" aria-hidden="true">
             </button>`;
         },
-        compactAction(label, onClick, variant = '') {
-            return `<button class="action-btn compact-admin-action ${variant}" onclick="${onClick}">${label}</button>`;
+        compactAction(label, onClick, variant = '', id = '') {
+            const buttonId = id ? ` id="${id}"` : '';
+            return `<button type="button"${buttonId} class="action-btn compact-admin-action ${variant}" onclick="${onClick}">${label}</button>`;
         },
         renderTabs(tabData, currentTabId, onClickFnString) {
             let html = '';

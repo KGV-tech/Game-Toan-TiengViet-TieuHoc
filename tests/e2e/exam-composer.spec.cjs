@@ -92,6 +92,55 @@ test('đề vẫn có bản chờ đồng bộ và báo lỗi khi Supabase từ 
   await expect.poll(() => page.evaluate(() => app.data.exams.some(item => item.name === 'Đề chờ đồng bộ'))).toBe(true);
 });
 
+test('bản chờ đồng bộ giữ nội dung mới khi máy chủ còn bản cũ cùng tên', async ({ page }) => {
+  await openExamComposer(page);
+
+  const result = await page.evaluate(() => {
+    const makeQuestion = text => ({ classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: 'Số có nhiều chữ số', type: 'Điền khuyết', q: text, ans: '1' });
+    const remote = { id: 'remote-old', name: 'Đề cần giữ', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1', questions: [makeQuestion('Nội dung cũ')] };
+    const local = { name: 'Đề cần giữ', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1', questions: [makeQuestion('Nội dung mới')] };
+    const merged = app.data.mergeExamSnapshots([remote], [local]);
+    return { count: merged.length, question: merged[0].questions[0].q };
+  });
+
+  expect(result).toEqual({ count: 1, question: 'Nội dung mới' });
+});
+
+test('saveExams loại bản đề chưa có id bị trùng nội dung', async ({ page }) => {
+  await openExamComposer(page);
+
+  const result = await page.evaluate(async () => {
+    const question = { classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: 'Số có nhiều chữ số', type: 'Điền khuyết', q: '12 + 34 = ___', ans: '46', options: [] };
+    const makeExam = () => ({ name: 'Đề trùng nội dung', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1', topics: ['Số có nhiều chữ số'], questions: [question] });
+    app.data.exams = [makeExam(), makeExam()];
+    await app.data.saveExams();
+    return { count: app.data.exams.length, localCount: JSON.parse(localStorage.getItem('game_exams')).length };
+  });
+
+  expect(result).toEqual({ count: 1, localCount: 1 });
+});
+
+test('Realtime INSERT không nhân bản đề khi đến trước kết quả lưu', async ({ page }) => {
+  await openExamComposer(page);
+
+  const result = await page.evaluate(() => {
+    const question = {
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: 'Số có nhiều chữ số', type: 'Trắc nghiệm', q: '12 + 34 = ___', ans: '46', options: [],
+      subquestions: [{ label: 'a', prompt: 'Chọn số đúng', options: ['46', '47'], answer: '46' }]
+    };
+    const localExam = { name: 'Đề realtime không trùng', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1', topics: ['Số có nhiều chữ số'], questions: [question] };
+    const serverQuestion = {
+      answer: '46', options: ['46', '47'], prompt: 'Chọn số đúng', label: 'a',
+    };
+    const serverExam = { ...localExam, id: 'server-exam-id', questions: [{ ...question, subquestions: [serverQuestion] }] };
+    app.data.exams = [localExam];
+    app.data.applyExamRealtimeChange({ eventType: 'INSERT', new: serverExam });
+    return { count: app.data.exams.length, id: app.data.exams[0].id };
+  });
+
+  expect(result).toEqual({ count: 1, id: 'server-exam-id' });
+});
+
 test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và trạng thái tương tác', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openExamComposer(page);
@@ -284,6 +333,68 @@ test('Tạo đề tự động tương thích câu cũ có bốn đáp án nhưn
   expect(savedQuestion.partAnswerCounts).toEqual([1, 1, 1, 1]);
   expect(savedQuestion.ans).toBe('10, 2, 3, 4');
   expect(savedQuestion.q).toContain('a) Ý cũ đã chỉnh sửa');
+});
+
+test('Tạo đề tự động chuẩn hóa câu So sánh cũ thành bốn câu con', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.locator('#add-e-class').selectOption('Lớp 4');
+  await expect.poll(() => page.locator('#add-e-topics input').count()).toBeGreaterThan(2);
+  await page.evaluate(() => {
+    const topic = app.constants.topics['4'].math.hk1[2];
+    app.data.questionTemplates = [];
+    app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+      type: 'So sánh',
+      q: `Điền dấu thích hợp:<br>a) ${100 + index} ___ ${200 + index}<br>b) ${300 + index} ___ ${250 + index}<br>c) ${400 + index} ___ ${400 + index}<br>d) ${500 + index} ___ ${600 + index}`,
+      options: [], ans: '<, >, =, <', explanation: ''
+    }));
+  });
+  await page.locator('#add-e-topics input').nth(2).check();
+  await page.getByRole('button', { name: 'Tạo đề tự động' }).click();
+
+  await expect(page.locator('[data-structured-kind="comparisonRows"]')).toHaveCount(10);
+  await expect(page.locator('[data-structured-kind="comparisonRows"] .exam-structured-part')).toHaveCount(40);
+  const generated = await page.evaluate(() => app.admin.examComposerDraft.questions.map(question => ({ kind: app.admin.getExamQuestionStructureKind(question), parts: question.comparisonRows?.length || 0 })));
+  expect(generated).toEqual(Array.from({ length: 10 }, () => ({ kind: 'comparisonRows', parts: 4 })));
+});
+
+test('nút lưu đề khóa thao tác lặp trong khi đang chờ đồng bộ', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExamComposer(page);
+  await page.evaluate(() => {
+    const topic = app.constants.topics['4'].math.hk1[2];
+    const makeQuestion = index => ({
+      classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic, type: 'Điền khuyết',
+      q: `Câu ${index + 1}<br>a) Ý a<br>b) Ý b<br>c) Ý c<br>d) Ý d`,
+      options: [], ans: '1, 2, 3, 4', explanation: '',
+      practiceRows: ['a', 'b', 'c', 'd'].map((label, partIndex) => ({ label, display: `Ý ${label}`, answer: String(partIndex + 1) })),
+      partAnswerCounts: [1, 1, 1, 1]
+    });
+    app.admin.examComposerDraft = {
+      classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1', name: 'Đề không tạo trùng', topics: [topic],
+      questions: Array.from({ length: 10 }, (_, index) => makeQuestion(index))
+    };
+    app.admin.renderESubTab('add');
+    app.data.saveLibrary = async () => {};
+    window.__examSaveCalls = 0;
+    app.data.saveExams = async () => {
+      window.__examSaveCalls += 1;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return null;
+    };
+  });
+  await expect(page.locator('#add-e-q-q-9')).toBeVisible();
+  page.on('dialog', dialog => dialog.accept());
+
+  await page.evaluate(() => {
+    const saveButton = document.querySelector('.exam-composer__actions .compact-admin-action--save');
+    saveButton.click();
+    saveButton.click();
+  });
+
+  await expect.poll(() => page.evaluate(() => window.__examSaveCalls)).toBe(1);
+  await expect.poll(() => page.evaluate(() => app.data.exams.length)).toBe(1);
 });
 
 test('Tạo đề tự động không đưa câu một ý vào đề', async ({ page }) => {
