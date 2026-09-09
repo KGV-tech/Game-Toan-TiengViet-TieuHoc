@@ -10,13 +10,15 @@ Chạy test browser:
 npm run test:browser
 ```
 
-Sau mỗi lần chạy, tải hai ảnh này lên Kimi để review giao diện:
+Sau mỗi lần chạy, Codex xem các ảnh liên quan để kiểm tra giao diện và lưu bằng chứng cục bộ. Các ảnh đăng nhập gồm:
 
 - `test-results/ui-review/login-desktop.png`
 - `test-results/ui-review/login-mobile-landscape.png`
 - `test-results/ui-review/login-mobile-portrait-rotate.png` (màn hình nhắc xoay ngang là hành vi dự kiến)
 
 Khi chạy `npm run test:browser`, Playwright còn tạo bộ ảnh audit `audit-desktop-*.png` và `audit-mobile-*.png` cho đăng ký, bản đồ, cấu hình/làm bài, đề thi, kho báu, nhiệm vụ, cửa hàng và sáu tab quản trị. Các ảnh này dùng dữ liệu minh họa cục bộ, không phải dữ liệu học sinh hoặc Supabase thật. Test cũng xác nhận mọi modal dùng `display` nội tuyến (Hướng dẫn, Kho báu, Nhiệm vụ, Cửa hàng) phải tắt trước ảnh kế tiếp, nên ảnh modal không bị che phủ.
+
+Chỉ gửi ảnh sang Kimi khi người dùng yêu cầu rõ ràng Kimi review cho phạm vi đó, theo `docs/AI_WORKFLOW.md`. Việc kiểm thử và bàn giao mặc định không chờ Kimi.
 
 ## Trước khi chạy
 

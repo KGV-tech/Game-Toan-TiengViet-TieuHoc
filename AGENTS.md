@@ -3,7 +3,7 @@
 ## Đọc trước khi làm việc
 
 1. Đọc `docs/PROJECT_CONTEXT.md` để hiểu cấu trúc game và các giới hạn an toàn.
-2. Đọc `docs/AI_WORKFLOW.md` để theo đúng vòng Codex → Kimi → Codex → Playwright.
+2. Đọc `docs/AI_WORKFLOW.md` để theo quy trình Codex tự review → kiểm thử → bàn giao; Kimi chỉ dùng khi người dùng yêu cầu.
 3. Đọc `docs/UX_DEVICE_POLICY.md` trước mọi thay đổi/review UI để ưu tiên đúng thiết bị.
 4. Chỉ mở các tệp liên quan trực tiếp đến yêu cầu hiện tại; không đoán khi chưa có bằng chứng.
 
@@ -50,7 +50,13 @@ Mọi thay đổi UI ưu tiên laptop và tablet ngang theo `docs/UX_DEVICE_POLI
 1. Xác nhận phạm vi, tệp sẽ sửa và tiêu chí hoàn thành.
 2. Viết hoặc cập nhật kiểm thử phù hợp trước thay đổi hành vi.
 3. Sửa một phạm vi nhỏ, chạy các kiểm thử liên quan rồi chạy toàn bộ kiểm thử.
-4. Gửi commit lên nhánh riêng; Kimi review đúng link commit không thay đổi.
-5. Chỉ merge vào `main` khi review bắt buộc đã đạt và kiểm thử xanh.
+4. Codex tự review diff và xử lý các lỗi có bằng chứng, sau đó gửi commit lên nhánh riêng.
+5. Chỉ merge vào `main` khi các lỗi bắt buộc đã xử lý, kiểm thử xanh và người dùng đã cho phép.
 
-Xem mẫu prompt Kimi tại `docs/KIMI_REVIEW_PROMPT.md` và checklist browser tại `docs/PLAYWRIGHT_TESTING.md`.
+## Chính sách Kimi review — cập nhật 09/09/2026
+
+- Mặc định bỏ qua Kimi review cho mọi công việc tiếp theo. Chỉ thực hiện khi người dùng yêu cầu rõ ràng; một yêu cầu review chỉ áp dụng cho phạm vi được chỉ định, không tự bật lại cho các công việc sau.
+- Không tự gửi code/ảnh sang Kimi, không yêu cầu đăng nhập và không chờ Kimi APPROVE để bàn giao hoặc merge. Không hỏi lại người dùng có muốn bỏ qua Kimi hay không.
+- Codex tự review, kiểm thử Node/Playwright và các giới hạn an toàn vẫn áp dụng theo `docs/AI_WORKFLOW.md`.
+
+Xem checklist browser tại `docs/PLAYWRIGHT_TESTING.md`. Mẫu `docs/KIMI_REVIEW_PROMPT.md` được giữ để dùng khi người dùng yêu cầu Kimi review.
