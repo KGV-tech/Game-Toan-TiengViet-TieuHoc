@@ -124,3 +124,99 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 - **Authoring:** Admin lưu/lọc được Bài học, dữ liệu cũ không có Bài học vẫn dùng được.
 - **Gameplay:** không có selector hoặc điều hướng Bài học ở màn hình học sinh.
 - **Bàn giao:** test contract + `npm test` xanh; chưa apply migration hay thay đổi Supabase production.
+
+---
+
+# Kế hoạch tái xây dựng hệ thống Template — Toán lớp 4
+
+> Hồ sơ chi tiết: [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLATE_SYSTEM.md).
+> Quy trình: tài liệu/kiểm kê → từng phase nội dung → test/preview → người dùng duyệt → phase kế tiếp. Chưa tạo mới hoặc rebuild hàng loạt Template trong lượt lập kế hoạch này.
+
+## Mục tiêu
+
+- Biến `lesson` thành phạm vi authoring chuẩn cho mọi Template active.
+- Tách Template quá rộng theo đúng một Bài học; giữ các bài “Luyện tập chung” như lesson review có blueprint kỹ năng.
+- Bổ sung generator/family còn thiếu theo lộ trình SGK Toán 4, tham khảo dạng bài trong Vở bài tập Tập 1.
+- Giữ nguyên logic gameplay học sinh, hợp đồng generator 4 ý và quyền/RLS hiện có.
+- Rebuild có thể rollback bằng `is_active=false`, không xoá vật lý dữ liệu cũ trong đợt đầu.
+
+## Phases và checkpoint
+
+### Phase 0 — Hồ sơ hệ thống và đề xuất (đang hoàn tất)
+
+- [x] Tạo `docs/templates/` và `TEMPLATE_SYSTEM.md`.
+- [x] Ghi mô hình generator/record/đề, data flow, Supabase lifecycle và contract.
+- [x] Ghi kiểm kê registry hiện có, gaps HK1 và ma trận family B01–B37.
+- [x] Đề xuất phase HK2 sau khi có nguồn Tập 2.
+
+**Checkpoint:** người dùng duyệt kiến trúc và chọn bắt đầu Phase 1.
+
+### Phase 1 — Kiểm kê dữ liệu và manifest (đã duyệt, đang bàn giao SQL)
+
+- [x] Dùng phiên Admin/export được phép để lấy toàn bộ `question_templates` hiện có.
+- [x] Đối chiếu `classlevel/subject/semester/topic/lesson/generator_key/config` với `lessonCatalog`.
+- [x] Phân loại từng record: giữ/gắn lesson, tạo record hẹp, sửa generator, archive.
+- [ ] Apply các migration `20260909_question_templates_lesson.sql` và `20260909_question_templates_phase1_lesson_mapping.sql` vào đúng project sau khi xác nhận quyền/project.
+- [x] Tạo manifest + validator + contract test; chưa seed Template nội dung mới.
+
+**Checkpoint:** người dùng đã duyệt mapping Phase 1; gói SQL chỉ cập nhật 28 record gắn trực tiếp. Không tạo B05; 18 record còn lại chờ harden/tách/thay.
+
+### Phase 2 — Bài 1–6
+
+- [ ] Tách B01/B02 khỏi record số/phép tính tổng quát.
+- [ ] Thêm family số chẵn/lẻ B03, biểu thức chứa chữ B04; bài toán ba bước B05 tạm hoãn.
+- [ ] Tạo blueprint review B06.
+- [ ] Preview, test nhiều seed, kiểm tra không vượt phạm vi bài.
+
+**Checkpoint:** người dùng duyệt danh sách Template và preview trước seed.
+
+### Phase 3 — Bài 7–9
+
+- [ ] Bổ sung đo góc/đơn vị độ cho B07.
+- [ ] Tách phân loại góc cho B08 và review B09.
+- [ ] Kiểm thử SVG, keyboard fallback, focus và reduced motion.
+
+### Phase 4 — Bài 10–16
+
+- [ ] Bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn.
+- [ ] Tách so sánh, dãy số và review theo lesson.
+
+### Phase 5 — Bài 17–21
+
+- [ ] Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
+- [ ] Rà lại bài toán lời văn/đơn vị và config biên.
+
+### Phase 6 — Bài 22–26
+
+- [ ] Tách cộng, trừ, tính chất, tổng-hiệu và review.
+- [ ] Không dùng một generator cộng/trừ tổng quát đại diện cho toàn Chủ đề.
+
+### Phase 7 — Bài 27–32
+
+- [ ] Xây family vuông góc, song song, thực hành và hình bình hành/hình thoi.
+- [ ] Tạo review B32 và test geometry theo dữ liệu, không chỉ snapshot pixel.
+
+### Phase 8 — Bài 33–37
+
+- [ ] Tạo blueprint ôn số, cộng/trừ, hình học, đo lường và toàn HK1.
+- [ ] Kiểm tra tỷ trọng kỹ năng khi tạo Đề tự động.
+
+### Phase 9 — HK2
+
+- [ ] Chỉ bắt đầu sau khi có SGK/VBT Tập 2 hoặc nguồn được xác nhận.
+- [ ] Lập mapping B38–B73 và triển khai theo lát nhỏ như HK1.
+
+### Phase 10 — Seed, archive và bàn giao
+
+- [ ] Seed idempotent các record đã duyệt.
+- [ ] Archive record cũ quá rộng sau khi kiểm tra dependency.
+- [ ] Chạy contract Node + `npm test` + visual/accessibility review.
+- [ ] Tự review diff, commit/push nhánh riêng.
+- [ ] Chỉ merge `main` sau khi người dùng yêu cầu và các checkpoint bắt buộc đạt.
+
+## Điều kiện không được tự quyết
+
+- Không tạo hàng loạt Template trước khi mapping Phase 1 được duyệt.
+- Không apply migration/seed vào Supabase production nếu chưa xác nhận đúng project và quyền.
+- Không xoá vật lý record cũ trong rebuild đầu.
+- Không suy diễn nội dung HK2 từ HK1 hoặc chỉ từ tên bài trong `constants.js`.

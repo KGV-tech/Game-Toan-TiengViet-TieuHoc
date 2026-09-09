@@ -55,3 +55,44 @@
 - [ ] Danh mục Bài học Tiếng Việt.
 - [ ] Danh mục Bài học các cấp lớp khác.
 - [ ] Migration/RLS hoặc thay đổi dữ liệu Supabase production.
+
+---
+
+## Tái xây dựng hệ thống Template — theo lộ trình Bài học
+
+Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLATE_SYSTEM.md). Đây là kế hoạch có cổng duyệt; chưa rebuild dữ liệu hoặc tạo Template mới trước khi người dùng duyệt phase tương ứng.
+
+### Phase 0 — Hồ sơ và đề xuất
+
+- [x] Tạo folder `docs/templates/`.
+- [x] Tạo tài liệu kiến trúc Template, generator, Supabase, contract, kiểm thử và rollback.
+- [x] Ghi ma trận đề xuất Template Bài 1–37 HK1.
+- [x] Ghi điều kiện chờ nguồn SGK/VBT Tập 2 cho HK2.
+
+### Phase 1 — Kiểm kê trước khi rebuild (đã duyệt mapping trực tiếp)
+
+- [x] Lấy danh sách Template thật bằng phiên Admin/export được phép.
+- [x] Đối chiếu từng record với `lessonCatalog` và generator registry.
+- [x] Phân loại giữ/gắn lesson/tách/sửa/archive.
+- [ ] Xác nhận/apply migration cột `question_templates.lesson` và mapping Phase 1 ở đúng project.
+- [x] Tạo manifest/validator và contract test lesson mapping.
+- [x] Gửi mapping; người dùng đã duyệt nhóm gắn trực tiếp, không tạo B05.
+
+### Các phase nội dung chờ duyệt
+
+- [ ] Phase 2: Rebuild Bài 1–6, gồm số chẵn/lẻ, biểu thức chứa chữ và review; bài toán ba bước B05 tạm hoãn.
+- [ ] Phase 3: Rebuild Bài 7–9, gồm đo góc, phân loại góc và review góc.
+- [ ] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review.
+- [ ] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
+- [ ] Phase 6: Rebuild Bài 22–26, gồm cộng, trừ, tính chất, tổng-hiệu và review.
+- [ ] Phase 7: Rebuild Bài 27–32, gồm vuông góc, song song, hình bình hành/hình thoi và review.
+- [ ] Phase 8: Rebuild Bài 33–37, gồm các bộ ôn tập HK1 có blueprint kỹ năng.
+- [ ] Phase 9: Kiểm kê/rebuild HK2 sau khi có nguồn Tập 2 được xác nhận.
+- [ ] Phase 10: Seed idempotent, archive có rollback, test đầy đủ và bàn giao.
+
+### Rào chắn an toàn
+
+- [ ] Không tạo Template mới trước checkpoint mapping Phase 1.
+- [ ] Không xoá vật lý Template cũ trong rebuild đầu.
+- [ ] Không đổi RLS/API key hoặc mở quyền `anon`.
+- [ ] Không merge `main` trước khi người dùng yêu cầu và test/checkpoint đạt.
