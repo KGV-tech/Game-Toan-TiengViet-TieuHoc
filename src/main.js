@@ -4833,57 +4833,76 @@ const app = {
         },
         renderPersonalQuests(box) {
             const quests = app.data.quests || [];
-            if (quests.length === 0) {
-                box.innerHTML = `<div class="quest-empty-state">
-                    ${app.ui.compactAction('+ Tạo mới', 'app.admin.showAddQuestForm()', 'compact-admin-action--create')}
-                    <p>Chưa có nhiệm vụ nào được tạo.</p>
-                </div>`;
-                return;
-            }
-            let html = `<div class="utility-actions utility-actions--center">
-          ${app.ui.compactAction('+ Tạo mới', 'app.admin.showAddQuestForm()', 'compact-admin-action--create')}
-      </div>`;
-
-            const cols = [
-                { label: 'Tên NV' },
-                { label: 'Môn/Điểm' },
-                { label: 'Số lượt' },
-                { label: 'Thưởng' },
-                { label: 'Chỉ định' },
-                { label: 'Trạng thái' },
-                { label: 'Hành động' }
-            ];
-
-            html += app.ui.renderTable(cols, quests, (q, i) => {
-                const status = q.is_active ? '<span style="color:#16a34a; font-weight:bold;">Đang chạy</span>' : '<span style="color:#dc2626; font-weight:bold;">Tạm dừng</span>';
-                let target = q.target_subject === 'any' ? 'Bất kỳ' : (q.target_subject === 'math' ? 'Toán' : 'Tiếng Việt');
-                target += ` (>= ${q.target_score}đ)`;
-                if (q.exam_id) {
-                    const exam = app.data.exams.find(item => item.id === q.exam_id);
-                    target = `Đề: ${app.data.sanitizeHTML(exam?.name || 'Đã xóa')}`;
-                }
+            const esc = value => app.data.sanitizeHTML(String(value ?? ''));
+            const activeCount = quests.filter(quest => quest.is_active !== false).length;
+            const pausedCount = quests.length - activeCount;
+            const scopedCount = quests.filter(quest => this.getQuestCurriculumLabel(quest)).length;
+            const subjectLabel = value => value === 'math' ? 'Toán' : (value === 'vietnamese' ? 'Tiếng Việt' : 'Bất kỳ');
+            const assignLabel = quest => {
+                if (quest.assign_type === 'class') return `Lớp ${esc(quest.assign_target || '—')}`;
+                if (quest.assign_type === 'user') return `HS: ${esc(quest.assign_target || '—')}`;
+                return 'Toàn trường';
+            };
+            const cards = quests.map((q, i) => {
+                const isActive = q.is_active !== false;
                 const curriculumLabel = this.getQuestCurriculumLabel(q);
-                if (curriculumLabel) target += `<br><small>Phạm vi: ${app.data.sanitizeHTML(curriculumLabel)}</small>`;
+                const exam = q.exam_id ? (app.data.exams || []).find(item => item.id === q.exam_id) : null;
+                const target = exam
+                    ? `Đề: ${esc(exam?.name || 'Đã xóa')}`
+                    : `${subjectLabel(q.target_subject)} · tối thiểu ${esc(q.target_score ?? 0)} điểm`;
+                const scope = curriculumLabel ? esc(curriculumLabel) : 'Chưa giới hạn theo chương trình';
+                return `<article class="personal-quest-card ${isActive ? '' : 'personal-quest-card--paused'}">
+                    <header class="personal-quest-card__header">
+                        <div class="personal-quest-card__identity">
+                            <span class="personal-quest-card__icon" aria-hidden="true">${isActive ? '✦' : '◌'}</span>
+                            <div>
+                                <p class="personal-quest-card__eyebrow">${subjectLabel(q.target_subject)} · ${q.exam_id ? 'Đề kiểm tra' : 'Luyện tập'}</p>
+                                <h4>${esc(q.title || 'Nhiệm vụ chưa đặt tên')}</h4>
+                            </div>
+                        </div>
+                        <span class="personal-quest-status ${isActive ? 'personal-quest-status--active' : 'personal-quest-status--paused'}">${isActive ? 'Đang chạy' : 'Tạm dừng'}</span>
+                    </header>
+                    <div class="personal-quest-card__facts">
+                        <div><span>Mục tiêu</span><strong>${target}</strong></div>
+                        <div><span>Số lượt</span><strong>${esc(q.target_count ?? 0)} lượt</strong></div>
+                        <div><span>Phần thưởng</span><strong>${esc(q.reward_stars ?? 0)} ⭐</strong></div>
+                    </div>
+                    <div class="personal-quest-card__scope">
+                        <span>Phạm vi chương trình</span>
+                        <strong>${scope}</strong>
+                    </div>
+                    <footer class="personal-quest-card__footer">
+                        <span class="personal-quest-card__audience"><span aria-hidden="true">◎</span> ${assignLabel(q)}</span>
+                        <div class="personal-quest-card__actions">
+                            <button type="button" class="action-btn personal-quest-toggle ${isActive ? 'personal-quest-toggle--pause' : 'personal-quest-toggle--resume'}" onclick="app.admin.toggleQuest(${i})">${isActive ? 'Tạm dừng' : 'Bật lại'}</button>
+                            ${app.ui.compactAction('Xóa', `app.admin.deleteQuest(${i})`, 'compact-admin-action--delete')}
+                        </div>
+                    </footer>
+                </article>`;
+            }).join('');
 
-                let assign = 'Toàn trường';
-                if (q.assign_type === 'class') assign = `Lớp ${q.assign_target}`;
-                if (q.assign_type === 'user') assign = `HS: ${q.assign_target}`;
-
-                return `<tr>
-              <td>${app.data.sanitizeHTML(q.title)}</td>
-              <td>${target}</td>
-              <td>${q.target_count}</td>
-              <td>${q.reward_stars} ⭐</td>
-              <td>${assign}</td>
-              <td>${status}</td>
-              <td>
-                  <button class="action-btn btn-danger" onclick="app.admin.toggleQuest(${i})">${q.is_active ? 'Dừng' : 'Bật'}</button>
-                  ${app.ui.compactAction('Xóa', `app.admin.deleteQuest(${i})`, 'compact-admin-action--delete')}
-              </td>
-          </tr>`;
-            }, "Chưa có nhiệm vụ nào được tạo.");
-
-            box.innerHTML = html;
+            box.innerHTML = `<section class="personal-quest-workspace" aria-label="Nhiệm vụ cá nhân">
+                <header class="personal-quest-workspace__hero">
+                    <div>
+                        <span class="personal-quest-workspace__kicker">Kho giao nhiệm vụ · Cá nhân</span>
+                        <h3>Giao nhiệm vụ học tập</h3>
+                        <p>Tạo mục tiêu rõ ràng cho học sinh, gắn đúng nội dung và theo dõi trạng thái ngay trong một màn hình.</p>
+                    </div>
+                    <button type="button" id="btn-personal-quest-create" class="personal-quest-create" onclick="app.admin.showAddQuestForm()"><span aria-hidden="true">＋</span> Tạo nhiệm vụ</button>
+                </header>
+                <div class="personal-quest-overview" aria-label="Tổng quan nhiệm vụ">
+                    <div class="personal-quest-stat personal-quest-stat--violet"><span>Đang chạy</span><strong>${activeCount}</strong><small>Mục tiêu đang giao</small></div>
+                    <div class="personal-quest-stat personal-quest-stat--cyan"><span>Đã tạo</span><strong>${quests.length}</strong><small>Tổng nhiệm vụ cá nhân</small></div>
+                    <div class="personal-quest-stat personal-quest-stat--amber"><span>Có phạm vi</span><strong>${scopedCount}</strong><small>Đã gắn bài học/chủ đề</small></div>
+                </div>
+                <div class="personal-quest-list-heading">
+                    <div><span class="personal-quest-list-heading__kicker">Danh sách điều phối</span><h4>Nhiệm vụ cá nhân</h4><p>${pausedCount ? `${pausedCount} nhiệm vụ đang tạm dừng · ` : ''}Chọn một thẻ để xem nhanh mục tiêu và phạm vi giao bài.</p></div>
+                    <span class="personal-quest-list-heading__count">${quests.length} nhiệm vụ</span>
+                </div>
+                <div class="personal-quest-list">
+                    ${cards || `<div class="personal-quest-empty"><span class="personal-quest-empty__icon" aria-hidden="true">✦</span><div><h4>Chưa có nhiệm vụ cá nhân</h4><p>Bắt đầu bằng một mục tiêu nhỏ, rõ ràng và phù hợp với lộ trình học.</p></div><button type="button" class="personal-quest-empty__button" onclick="app.admin.showAddQuestForm()">Tạo nhiệm vụ đầu tiên <span aria-hidden="true">→</span></button></div>`}
+                </div>
+            </section>`;
         },
         getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
@@ -5402,71 +5421,42 @@ const app = {
         showAddQuestForm() {
             this.questMode = 'personal';
             const box = document.getElementById('treasure-content-area');
-            let classOpts = [1, 2, 3, 4, 5].map(c => `<option value="${c}">Lớp ${c}</option>`).join('');
             const examOptions = (app.data.exams || []).map(exam => `<option value="${exam.id}">${app.data.sanitizeHTML(`${exam.classlevel} – ${exam.subject} – ${exam.period}: ${exam.name}`)}</option>`).join('');
             box.innerHTML = `
-        <div style="max-width: 600px; margin: 0 auto; text-align: left; padding: 20px;">
-           <h3 style="margin-bottom: 20px; color: #ffeb3b; text-align:center;">Tạo Nhiệm Vụ Mới</h3>
-           <div class="form-group" style="margin-bottom:15px;">
-              <label style="display:block; font-weight:bold; margin-bottom:5px;">Tên nhiệm vụ:</label>
-              <input type="text" id="quest-title" class="form-input" style="width:100%;" placeholder="VD: Hoàn thành 3 bài Toán xuất sắc">
-           </div>
-           <div style="display:flex; gap:15px; margin-bottom:15px;">
-              <div class="form-group" style="flex:1;">
-                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Môn học:</label>
-                 <select id="quest-subject" class="form-input" style="width:100%;" onchange="app.admin.updateQuestCurriculumFields()">
-                    <option value="any">Bất kỳ</option>
-                    <option value="math">Toán</option>
-                    <option value="vietnamese">Tiếng Việt</option>
-                 </select>
-              </div>
-              <div class="form-group" style="flex:1;">
-                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Điểm tối thiểu:</label>
-                 <input type="number" id="quest-score" class="form-input" style="width:100%;" value="80" min="0" max="100">
-              </div>
-           </div>
-           <section id="quest-curriculum-fields" class="admin-curriculum-panel" hidden aria-label="Phạm vi chương trình Toán">
-              <p class="admin-curriculum-panel__title">Phạm vi chương trình <small>(chỉ dành cho nhiệm vụ Toán)</small></p>
-              <div class="admin-curriculum-panel__grid">
-                 <label><span>Cấp lớp</span><select id="quest-classlevel" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Tất cả cấp lớp</option><option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option><option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option></select></label>
-                 <label><span>Học kỳ</span><select id="quest-semester" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="Học kỳ 1">Học kỳ 1</option><option value="Học kỳ 2">Học kỳ 2</option></select></label>
-                 <label><span>Chủ đề</span><select id="quest-topic" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Không giới hạn Chủ đề</option></select></label>
-                 <label id="quest-lesson-field" hidden><span>Bài học</span><select id="quest-lesson" class="form-input" data-selected=""></select><small>Không chọn để giao theo toàn bộ Chủ đề.</small></label>
-              </div>
-           </section>
-           <div style="display:flex; gap:15px; margin-bottom:15px;">
-              <div class="form-group" style="flex:1;">
-                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Số lượt yêu cầu:</label>
-                 <input type="number" id="quest-count" class="form-input" style="width:100%;" value="3" min="1">
-              </div>
-              <div class="form-group" style="flex:1;">
-                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Phần thưởng (Sao):</label>
-                 <input type="number" id="quest-reward" class="form-input" style="width:100%;" value="20" min="1">
-              </div>
-            </div>
-            <div class="form-group" style="margin-bottom:15px;">
-               <label style="display:block; font-weight:bold; margin-bottom:5px;">Đề kiểm tra giao kèm (tùy chọn):</label>
-               <select id="quest-exam" class="form-input" style="width:100%;">
-                  <option value="">Không gắn đề — nhiệm vụ luyện tập thông thường</option>
-                  ${examOptions}
-               </select>
-               <small style="display:block; margin-top:5px; color:#cbd5e1;">Nếu chọn đề, học sinh chỉ được tính tiến độ khi làm đúng đề này từ nút “Làm đề”.</small>
-            </div>
-            <div class="form-group" style="margin-bottom:15px;">
-              <label style="display:block; font-weight:bold; margin-bottom:5px;">Chỉ định cho:</label>
-              <select id="quest-assign-type" class="form-input" style="width:100%;" onchange="document.getElementById('quest-assign-target').style.display = this.value === 'all' ? 'none' : 'block'">
-                 <option value="all">Toàn trường</option>
-                 <option value="class">Theo Lớp</option>
-                 <option value="user">Đích danh Học sinh (Username)</option>
-              </select>
-              <input type="text" id="quest-assign-target" class="form-input" style="width:100%; margin-top:10px; display:none;" placeholder="Nhập tên lớp (VD: 5) hoặc Username">
-           </div>
-           
-           <div style="text-align:center; margin-top: 20px;">
-              ${app.ui.compactAction('Hủy', "app.admin.switchTab('quests')", 'compact-admin-action--cancel')}
-              ${app.ui.compactAction('Lưu', 'app.admin.submitQuest()', 'compact-admin-action--save')}
-           </div>
-        </div>
+                <section class="quest-form-workspace" aria-label="Tạo nhiệm vụ cá nhân">
+                    <header class="quest-form-workspace__hero">
+                        <div><button type="button" class="quest-form-workspace__back" onclick="app.admin.switchTab('quests')"><span aria-hidden="true">←</span> Danh sách nhiệm vụ</button><span class="quest-form-workspace__kicker">Nhiệm vụ cá nhân · Tạo mới</span><h3>Tạo nhiệm vụ học tập</h3><p>Chọn mục tiêu, phạm vi và đối tượng. Một nhiệm vụ rõ ràng sẽ giúp học sinh biết chính xác mình cần hoàn thành điều gì.</p></div>
+                        <div class="quest-form-workspace__badge"><strong>01</strong><span>Bản nháp mới</span></div>
+                    </header>
+                    <section class="quest-form-section quest-form-section--primary" aria-labelledby="quest-form-basic-title">
+                        <header class="quest-form-section__header"><span class="quest-form-section__number">01</span><div><h4 id="quest-form-basic-title">Mục tiêu nhiệm vụ</h4><p>Đặt tên và chỉ số hoàn thành để cô dễ theo dõi tiến độ.</p></div></header>
+                        <div class="quest-form-grid">
+                            <label class="quest-form-field quest-form-field--wide"><span>Tên nhiệm vụ</span><input type="text" id="quest-title" class="form-input" placeholder="Ví dụ: Hoàn thành 3 bài Toán xuất sắc"><small>Viết ngắn gọn, bắt đầu bằng một động từ rõ ràng.</small></label>
+                            <label class="quest-form-field"><span>Môn học</span><select id="quest-subject" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="any">Bất kỳ</option><option value="math">Toán</option><option value="vietnamese">Tiếng Việt</option></select></label>
+                            <label class="quest-form-field"><span>Điểm tối thiểu</span><div class="quest-form-input-with-unit"><input type="number" id="quest-score" class="form-input" value="80" min="0" max="100"><span>điểm</span></div></label>
+                            <label class="quest-form-field"><span>Số lượt yêu cầu</span><div class="quest-form-input-with-unit"><input type="number" id="quest-count" class="form-input" value="3" min="1"><span>lượt</span></div></label>
+                            <label class="quest-form-field"><span>Phần thưởng</span><div class="quest-form-input-with-unit"><input type="number" id="quest-reward" class="form-input" value="20" min="1"><span>⭐</span></div></label>
+                        </div>
+                    </section>
+                    <section id="quest-curriculum-fields" class="admin-curriculum-panel quest-form-section quest-form-curriculum" hidden aria-label="Phạm vi chương trình Toán">
+                        <header class="quest-form-section__header"><span class="quest-form-section__number quest-form-section__number--amber">02</span><div><h4>Phạm vi chương trình</h4><p>Chỉ hiện khi nhiệm vụ dành cho Toán; có thể đi sâu đến đúng Bài học.</p></div></header>
+                        <div class="quest-form-grid quest-form-grid--curriculum">
+                            <label class="quest-form-field"><span>Cấp lớp</span><select id="quest-classlevel" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Tất cả cấp lớp</option><option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option><option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option></select></label>
+                            <label class="quest-form-field"><span>Học kỳ</span><select id="quest-semester" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="Học kỳ 1">Học kỳ 1</option><option value="Học kỳ 2">Học kỳ 2</option></select></label>
+                            <label class="quest-form-field quest-form-field--wide"><span>Chủ đề</span><select id="quest-topic" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Không giới hạn Chủ đề</option></select></label>
+                            <label id="quest-lesson-field" class="quest-form-field quest-form-field--wide" hidden><span>Bài học</span><select id="quest-lesson" class="form-input" data-selected=""></select><small>Không chọn để giao theo toàn bộ Chủ đề.</small></label>
+                        </div>
+                    </section>
+                    <section class="quest-form-section" aria-labelledby="quest-form-delivery-title">
+                        <header class="quest-form-section__header"><span class="quest-form-section__number quest-form-section__number--violet">03</span><div><h4 id="quest-form-delivery-title">Cách giao nhiệm vụ</h4><p>Có thể gắn đề kiểm tra và giới hạn đúng nhóm học sinh cần nhận.</p></div></header>
+                        <div class="quest-form-grid">
+                            <label class="quest-form-field quest-form-field--wide"><span>Đề kiểm tra giao kèm <small>(tùy chọn)</small></span><select id="quest-exam" class="form-input"><option value="">Không gắn đề — nhiệm vụ luyện tập thông thường</option>${examOptions}</select><small>Nếu chọn đề, học sinh chỉ được tính tiến độ khi làm đúng đề này từ nút “Làm đề”.</small></label>
+                            <label class="quest-form-field"><span>Chỉ định cho</span><select id="quest-assign-type" class="form-input" onchange="const showTarget = this.value !== 'all'; document.getElementById('quest-assign-target').style.display = showTarget ? 'block' : 'none'; document.getElementById('quest-assign-target-field').hidden = !showTarget"><option value="all">Toàn trường</option><option value="class">Theo Lớp</option><option value="user">Đích danh Học sinh (Username)</option></select></label>
+                            <label id="quest-assign-target-field" class="quest-form-field quest-form-field--wide" hidden><span>Đích danh <small>(chỉ dùng khi chọn theo lớp/học sinh)</small></span><input type="text" id="quest-assign-target" class="form-input" placeholder="Nhập tên lớp (VD: 5) hoặc Username"></label>
+                        </div>
+                    </section>
+                    <footer class="quest-form-actions"><p><span aria-hidden="true">✦</span> Cô có thể kiểm tra lại phạm vi trước khi lưu.</p><div>${app.ui.compactAction('Hủy', "app.admin.switchTab('quests')", 'compact-admin-action--cancel')}${app.ui.compactAction('Lưu nhiệm vụ', 'app.admin.submitQuest()', 'compact-admin-action--save')}</div></footer>
+                </section>
       `;
             this.updateQuestCurriculumFields();
         },
@@ -5565,25 +5555,50 @@ const app = {
             }
         },
         renderSettings(box) {
+            const hardTime = Number(app.data.settings.hardTimeLimit) || 10;
+            const examTime = Number(app.data.settings.examTimeLimit) || 30;
             box.innerHTML = `
-        <div style="max-width: 600px; margin: 0 auto; text-align: left; padding: 20px;">
-           <h3 style="margin-bottom: 20px; color: #ffeb3b;">Điều Chỉnh Hệ Thống</h3>
-           
-           <div style="display:flex; align-items:center; margin-bottom:15px;">
-              <label style="flex:1; font-weight:bold; font-size: 1.1rem;">Thời gian đếm ngược mức độ Khó (giây):</label>
-              <input type="number" id="setting-hard-time" class="form-input" min="5" max="30" value="${app.data.settings.hardTimeLimit || 10}" style="width: 100px; padding:8px; text-align:center;">
-           </div>
-           
-           <div style="display:flex; align-items:center; margin-bottom:25px;">
-              <label style="flex:1; font-weight:bold; font-size: 1.1rem;">Thời gian đếm ngược Giải đề Kiểm tra (phút):</label>
-              <input type="number" id="setting-exam-time" class="form-input" min="1" max="99" value="${app.data.settings.examTimeLimit || 30}" style="width: 100px; padding:8px; text-align:center;">
-           </div>
-           
-           <div style="text-align:center;">
-              ${app.ui.compactAction('Lưu thay đổi', 'app.admin.saveSettings()', 'compact-admin-action--save')}
-           </div>
-        </div>
-      `;
+                <section class="settings-workspace" aria-label="Điều chỉnh hệ thống">
+                    <header class="settings-workspace__hero">
+                        <div>
+                            <span class="settings-workspace__kicker">Cấu hình trải nghiệm · Admin</span>
+                            <h3>Nhịp độ học tập</h3>
+                            <p>Điều chỉnh khoảng thời gian để học sinh có đủ nhịp suy nghĩ ở phần luyện tập và bài kiểm tra.</p>
+                        </div>
+                        <div class="settings-workspace__badge"><strong>02</strong><span>tham số đang dùng</span></div>
+                    </header>
+                    <div class="settings-overview" aria-label="Giá trị hiện tại">
+                        <article class="settings-overview-card settings-overview-card--amber"><span class="settings-overview-card__icon" aria-hidden="true">◷</span><div><span>Mức độ Khó</span><strong>${hardTime} giây</strong><small>Thời gian cho mỗi câu</small></div></article>
+                        <article class="settings-overview-card settings-overview-card--cyan"><span class="settings-overview-card__icon" aria-hidden="true">◴</span><div><span>Giải đề kiểm tra</span><strong>${examTime} phút</strong><small>Thời lượng cho một đề</small></div></article>
+                    </div>
+                    <section class="settings-panel" aria-labelledby="settings-panel-title">
+                        <header class="settings-panel__header">
+                            <div><span class="settings-panel__kicker">Điều khiển thời gian</span><h4 id="settings-panel-title">Cài đặt nhịp độ</h4></div>
+                            <p>Giá trị chỉ áp dụng cho trải nghiệm học sinh sau khi cô lưu thay đổi.</p>
+                        </header>
+                        <div class="settings-fields">
+                            <label class="settings-field" for="setting-hard-time">
+                                <span class="settings-field__icon settings-field__icon--amber" aria-hidden="true">✦</span>
+                                <span class="settings-field__content"><strong>Mức độ Khó</strong><small>Đếm ngược cho câu hỏi khó trong phần luyện tập.</small></span>
+                                <span class="settings-field__range">5–30 giây</span>
+                                <span class="settings-input-wrap"><input type="number" id="setting-hard-time" class="form-input" min="5" max="30" value="${hardTime}" inputmode="numeric" aria-describedby="setting-hard-time-help"><span>giây</span></span>
+                                <small id="setting-hard-time-help" class="settings-field__help">Tối thiểu 5 · tối đa 30</small>
+                            </label>
+                            <label class="settings-field" for="setting-exam-time">
+                                <span class="settings-field__icon settings-field__icon--cyan" aria-hidden="true">◈</span>
+                                <span class="settings-field__content"><strong>Giải đề kiểm tra</strong><small>Thời lượng đếm ngược cho một đề hoàn chỉnh.</small></span>
+                                <span class="settings-field__range">1–99 phút</span>
+                                <span class="settings-input-wrap"><input type="number" id="setting-exam-time" class="form-input" min="1" max="99" value="${examTime}" inputmode="numeric" aria-describedby="setting-exam-time-help"><span>phút</span></span>
+                                <small id="setting-exam-time-help" class="settings-field__help">Tối thiểu 1 · tối đa 99</small>
+                            </label>
+                        </div>
+                        <footer class="settings-save-bar">
+                            <p><span aria-hidden="true">✓</span> Cài đặt được lưu cho các lượt chơi tiếp theo.</p>
+                            <button type="button" id="settings-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveSettings()">Lưu thay đổi <span aria-hidden="true">→</span></button>
+                        </footer>
+                    </section>
+                </section>
+            `;
         },
         async saveSettings() {
             const hardTime = parseInt(document.getElementById('setting-hard-time').value, 10);
@@ -8249,53 +8264,82 @@ const app = {
         },
         renderPlayers(box) {
             box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px;">
-           <button class="btn-primary" id="btn-sub-players" style="flex:1;" onclick="app.admin.renderPlayersList(false)">Danh sách học sinh</button>
-           <button class="btn-opt" id="btn-sub-pending" style="flex:1;" onclick="app.admin.renderPlayersList(true)">Phê duyệt</button>
-           <button class="btn-success" id="btn-sub-add" style="flex:1;" onclick="app.admin.showAddPlayerForm()">+ Thêm mới</button>
-        </div>
-        <div id="admin-subcontent-area"></div>
-      `;
+                <section class="admin-roster-workspace" aria-label="Quản lý học sinh">
+                    <header class="admin-roster-workspace__hero">
+                        <div>
+                            <span class="admin-roster-workspace__kicker">Dữ liệu lớp học · Admin</span>
+                            <h3>Học sinh &amp; lớp học</h3>
+                            <p>Quản lý hồ sơ, trạng thái duyệt và thông tin đăng nhập trong một không gian gọn gàng.</p>
+                        </div>
+                        <div class="admin-roster-workspace__badge"><span aria-hidden="true">◎</span><strong>Roster</strong><small>Danh sách an toàn</small></div>
+                    </header>
+                    <div class="admin-roster-toolbar">
+                        <div class="admin-roster-switcher" role="tablist" aria-label="Danh sách học sinh">
+                            <button type="button" class="roster-mode-button btn-primary" id="btn-sub-players" role="tab" aria-selected="true" onclick="app.admin.renderPlayersList(false)"><span aria-hidden="true">▦</span> Danh sách học sinh</button>
+                            <button type="button" class="roster-mode-button btn-opt" id="btn-sub-pending" role="tab" aria-selected="false" onclick="app.admin.renderPlayersList(true)"><span aria-hidden="true">◷</span> Chờ phê duyệt</button>
+                        </div>
+                        <button type="button" class="roster-add-button btn-success" id="btn-sub-add" onclick="app.admin.showAddPlayerForm()"><span aria-hidden="true">＋</span> Thêm học sinh</button>
+                    </div>
+                    <div id="admin-subcontent-area"></div>
+                </section>
+            `;
             this.renderPlayersList(false);
         },
         renderPlayersList(isPending) {
-            document.getElementById('btn-sub-players').className = isPending ? 'btn-opt' : 'btn-primary';
-            document.getElementById('btn-sub-pending').className = isPending ? 'btn-primary' : 'btn-opt';
-
+            const playersButton = document.getElementById('btn-sub-players');
+            const pendingButton = document.getElementById('btn-sub-pending');
+            if (playersButton) {
+                playersButton.className = `roster-mode-button ${isPending ? 'btn-opt' : 'btn-primary'}`;
+                playersButton.setAttribute('aria-selected', String(!isPending));
+            }
+            if (pendingButton) {
+                pendingButton.className = `roster-mode-button ${isPending ? 'btn-primary' : 'btn-opt'}`;
+                pendingButton.setAttribute('aria-selected', String(isPending));
+            }
             const subBox = document.getElementById('admin-subcontent-area');
-            const cols = [
-                { label: 'Cấp lớp', filterable: true },
-                { label: 'Lớp', filterable: true },
-                { label: 'Giới tính', filterable: true },
-                { label: 'Họ tên', filterable: true },
-                { label: 'Tên đăng nhập', filterable: true },
-                { label: 'Mật khẩu', filterable: false },
-                { label: 'Hành động', filterable: false }
-            ];
-
-            let users = app.data.users.filter(u => u.role?.toLowerCase() !== 'admin');
+            if (!subBox) return;
+            const allStudents = (app.data.users || []).filter(u => u.role?.toLowerCase() !== 'admin');
+            const approvedStudents = allStudents.filter(u => u.approved !== false);
+            const pendingStudents = allStudents.filter(u => u.approved === false);
+            const classCount = new Set(allStudents.map(u => String(u.class_name || '').trim()).filter(Boolean)).size;
+            let users = allStudents;
             if (isPending) {
                 users = users.filter(u => u.approved === false);
             } else {
                 users = users.filter(u => u.approved !== false); // true or undefined (legacy)
             }
-
-            let html = app.ui.renderTable(cols, users, (u, i) => {
-                let actionBtns = '';
-                if (isPending) {
-                    actionBtns = `${app.ui.compactAction('Duyệt', `app.admin.approveUser('${u.username}')`, 'compact-admin-action--approve')}
-                          ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
-                } else {
-                    actionBtns = `${app.ui.compactAction('Sửa', `app.admin.showAddPlayerForm('${u.username}')`, 'compact-admin-action--edit')}
-                          ${app.ui.compactAction('Xóa', `app.admin.deleteUser('${u.username}')`, 'compact-admin-action--delete')}`;
-                }
-                return `<tr>
-          <td>${app.data.sanitizeHTML(u.classlevel || '')}</td><td>${app.data.sanitizeHTML(u.class_name || '—')}</td><td>${app.data.sanitizeHTML(app.data.genderLabel?.(u.gender) || '—')}</td><td>${app.data.sanitizeHTML(u.fullname || '')}</td>
-          <td>${app.data.sanitizeHTML(u.username)}</td><td>Không hiển thị (có thể đặt lại)</td>
-          <td>${actionBtns}</td>
-        </tr>`;
-            }, isPending ? "Không có học sinh nào chờ duyệt" : "Chưa có học sinh nào");
-            subBox.innerHTML = html;
+            const esc = value => app.data.sanitizeHTML(String(value ?? ''));
+            const cards = users.map(u => {
+                const rawUsername = String(u.username || '');
+                const encodedUsername = encodeURIComponent(rawUsername);
+                const rawName = String(u.fullname || rawUsername || 'Học sinh').trim();
+                const initials = rawName.split(/\s+/).filter(Boolean).slice(-2).map(part => part.charAt(0)).join('').toLocaleUpperCase('vi-VN');
+                const actionBtns = isPending
+                    ? `${app.ui.compactAction('Duyệt', `app.admin.approveUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--approve')}${app.ui.compactAction('Xóa', `app.admin.deleteUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--delete')}`
+                    : `${app.ui.compactAction('Sửa', `app.admin.showAddPlayerForm(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--edit')}${app.ui.compactAction('Xóa', `app.admin.deleteUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--delete')}`;
+                return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}">
+                    <header class="admin-student-card__header">
+                        <span class="admin-student-card__avatar" aria-hidden="true">${esc(initials || 'HS')}</span>
+                        <div class="admin-student-card__identity"><p>Học sinh · Lớp ${esc(u.classlevel || '—')}</p><h4>${esc(rawName)}</h4><span>@${esc(rawUsername)}</span></div>
+                        <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
+                    </header>
+                    <div class="admin-student-card__meta">
+                        <div><span>Lớp</span><strong>${esc(u.class_name || 'Chưa xếp lớp')}</strong></div>
+                        <div><span>Giới tính</span><strong>${esc(app.data.genderLabel?.(u.gender) || 'Chưa khai báo')}</strong></div>
+                    </div>
+                    <div class="admin-student-card__security"><span aria-hidden="true">▣</span> Mật khẩu được bảo mật · có thể đặt lại</div>
+                    <footer class="admin-student-card__actions">${actionBtns}</footer>
+                </article>`;
+            }).join('');
+            subBox.innerHTML = `<div class="admin-roster-subview">
+                <div class="admin-roster-stats" aria-label="Tổng quan học sinh">
+                    <div class="admin-roster-stat admin-roster-stat--cyan"><span>Tổng học sinh</span><strong>${allStudents.length}</strong><small>Không tính tài khoản Admin</small></div>
+                    <div class="admin-roster-stat admin-roster-stat--green"><span>Đã duyệt</span><strong>${approvedStudents.length}</strong><small>Có thể tham gia học tập</small></div>
+                    <div class="admin-roster-stat admin-roster-stat--amber"><span>Chờ xử lý</span><strong>${pendingStudents.length}</strong><small>${classCount} lớp đang có dữ liệu</small></div>
+                </div>
+                <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
+                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào'}</h4><p>${isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.'}</p></div></div>`}</div>
+            </div>`;
         },
         async approveUser(username) {
             let user = app.data.users.find(u => u.username === username);
@@ -8314,56 +8358,34 @@ const app = {
         },
         showAddPlayerForm(editUsername) {
             const subBox = document.getElementById('admin-subcontent-area');
+            if (!subBox) return;
             let u = (editUsername && typeof editUsername === 'string') ? app.data.users.find(x => x.username === editUsername) : null;
             subBox.innerHTML = `
-          <h3>${u ? 'Sửa thông tin học sinh' : 'Thêm học sinh mới'}</h3>
-          <div style="max-width: 500px; margin: 0 auto; text-align:left;">
-             <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Họ và tên</label>
-                <input type="text" id="add-fullname" placeholder="Họ và tên" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.fullname) : ''}">
-             </div>
-             
-             <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Tên đăng nhập</label>
-                <input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.username) : ''}">
-             </div>
-             
-             <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">${u ? 'Mật khẩu mới' : 'Mật khẩu'}</label>
-                <input type="password" id="add-password" placeholder="${u ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 8 ký tự'}" class="form-input" style="flex:1; padding:8px;" value="">
-             </div>
-             
-             <div style="display:flex; align-items:center; margin-bottom:15px;">
-                <label style="width:130px; font-weight:bold; flex-shrink:0;">Cấp lớp</label>
-                <select id="add-class" class="form-input" style="flex:1; padding:8px;">
-                   <option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option>
-                   <option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option>
-                   <option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option>
-                   <option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option>
-                   <option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option>
-                </select>
-             </div>
-
-             <div style="display:flex; align-items:center; margin-bottom:15px;">
-                <label for="add-class-name" style="width:130px; font-weight:bold; flex-shrink:0;">Lớp</label>
-                <input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" style="flex:1; padding:8px;" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}">
-             </div>
-
-             <div style="display:flex; align-items:center; margin-bottom:15px;">
-                <label for="add-gender" style="width:130px; font-weight:bold; flex-shrink:0;">Giới tính</label>
-                <select id="add-gender" class="form-input" style="flex:1; padding:8px;">
-                   <option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option>
-                   <option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option>
-                   <option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option>
-                   <option value="other" ${u?.gender === 'other' ? 'selected' : ''}>Khác / không muốn nêu</option>
-                </select>
-             </div>
-             
-             ${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? editUsername : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}
-          </div>
+                <section class="admin-student-form" aria-label="${u ? 'Sửa thông tin học sinh' : 'Thêm học sinh mới'}">
+                    <header class="admin-student-form__header">
+                        <button type="button" class="admin-student-form__back" onclick="app.admin.renderPlayersList(false)"><span aria-hidden="true">←</span> Danh sách học sinh</button>
+                        <div><span class="admin-student-form__kicker">Hồ sơ học sinh · ${u ? 'Chỉnh sửa' : 'Tạo mới'}</span><h3>${u ? 'Sửa thông tin học sinh' : 'Thêm học sinh mới'}</h3><p>Thông tin này giúp cô phân lớp, giao nhiệm vụ và bảo vệ tài khoản rõ ràng hơn.</p></div>
+                        <span class="admin-student-form__badge" aria-hidden="true">${u ? '✎' : '＋'}</span>
+                    </header>
+                    <div class="admin-student-form__panel">
+                        <div class="admin-student-form__notice"><span aria-hidden="true">i</span><p>Mật khẩu không hiển thị trong danh sách. Khi cần, cô có thể đặt lại từ hồ sơ này.</p></div>
+                        <div class="admin-student-form__grid">
+                            <label class="admin-student-form__field admin-student-form__field--wide"><span>Họ và tên</span><input type="text" id="add-fullname" placeholder="Ví dụ: Nguyễn Minh An" class="form-input" value="${u ? app.data.sanitizeHTML(u.fullname) : ''}"></label>
+                            <label class="admin-student-form__field"><span>Tên đăng nhập</span><input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" value="${u ? app.data.sanitizeHTML(u.username) : ''}"></label>
+                            <label class="admin-student-form__field"><span>${u ? 'Mật khẩu mới' : 'Mật khẩu'}</span><input type="password" id="add-password" placeholder="${u ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 8 ký tự'}" class="form-input" value="" aria-describedby="add-password-help"><small id="add-password-help">${u ? 'Không nhập nếu giữ mật khẩu hiện tại.' : 'Dùng ít nhất 8 ký tự.'}</small></label>
+                            <label class="admin-student-form__field"><span>Cấp lớp</span><select id="add-class" class="form-input"><option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option><option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option><option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option><option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option><option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option></select></label>
+                            <label class="admin-student-form__field"><span>Lớp</span><input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}"></label>
+                            <label class="admin-student-form__field"><span>Giới tính</span><select id="add-gender" class="form-input"><option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option><option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option><option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option><option value="other" ${u?.gender === 'other' ? 'selected' : ''}>Khác / không muốn nêu</option></select></label>
+                        </div>
+                        <footer class="admin-student-form__actions"><button type="button" class="action-btn admin-student-form__cancel" onclick="app.admin.renderPlayersList(false)">Hủy</button>${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? encodeURIComponent(editUsername) : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}</footer>
+                    </div>
+                </section>
         `;
         },
         async addPlayerSubmit(editUsername) {
+            if (typeof editUsername === 'string' && editUsername) {
+                try { editUsername = decodeURIComponent(editUsername); } catch (_) { /* giữ giá trị gốc nếu username cũ không mã hóa */ }
+            }
             const fn = document.getElementById('add-fullname').value.trim();
             const un = document.getElementById('add-username').value.trim();
             const pw = document.getElementById('add-password').value.trim();
