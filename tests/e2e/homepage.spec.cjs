@@ -1687,20 +1687,18 @@ test('soạn đề Toán lớp 4 dùng bố cục lưới cân đối trên desk
   }));
   expect(desktopLayout.columns).toBe(4);
   expect(desktopLayout.overflow).toBe(false);
+  await page.locator('.exam-composer__header').evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   const desktopScreenshot = 'test-results/ui-review/soan-de-desktop.png';
   await page.screenshot({ path: desktopScreenshot });
   await testInfo.attach('soan-de-desktop.png', { path: desktopScreenshot, contentType: 'image/png' });
 
   const questionScreenshot = 'test-results/ui-review/soan-de-question-desktop.png';
-  await page.locator('#treasure-content-area').evaluate(element => {
-    const question = element.querySelector('.exam-question-card');
-    element.scrollTop = question ? question.offsetTop - 20 : 0;
-  });
+  await page.locator('.exam-question-card').first().evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await page.screenshot({ path: questionScreenshot });
   await testInfo.attach('soan-de-question-desktop.png', { path: questionScreenshot, contentType: 'image/png' });
 
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.locator('#treasure-content-area').evaluate(element => { element.scrollTop = 0; });
+  await page.locator('.exam-composer__header').evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   const tabletLayout = await page.locator('.exam-composer__meta').evaluate(element => ({
     columns: getComputedStyle(element).gridTemplateColumns.split(' ').length,
     overflow: document.documentElement.scrollWidth > window.innerWidth
@@ -1712,10 +1710,7 @@ test('soạn đề Toán lớp 4 dùng bố cục lưới cân đối trên desk
   await testInfo.attach('soan-de-tablet.png', { path: tabletScreenshot, contentType: 'image/png' });
 
   const tabletQuestionScreenshot = 'test-results/ui-review/soan-de-question-tablet.png';
-  await page.locator('#treasure-content-area').evaluate(element => {
-    const question = element.querySelector('.exam-question-card');
-    element.scrollTop = question ? question.offsetTop - 20 : 0;
-  });
+  await page.locator('.exam-question-card').first().evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await page.screenshot({ path: tabletQuestionScreenshot });
   await testInfo.attach('soan-de-question-tablet.png', { path: tabletQuestionScreenshot, contentType: 'image/png' });
 });
