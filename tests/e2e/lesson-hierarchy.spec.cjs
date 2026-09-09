@@ -136,6 +136,7 @@ test('Kho template và nhiệm vụ Admin dùng cùng danh mục Bài học', as
     app.admin.renderTemplateForm(0);
   });
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config.lesson)).toBe('g4-math-hk1-b02');
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().lesson)).toBe('g4-math-hk1-b02');
 
   await page.evaluate(() => {
     app.admin.openAdmin();
