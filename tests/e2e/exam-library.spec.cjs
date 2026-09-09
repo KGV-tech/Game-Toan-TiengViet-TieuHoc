@@ -213,30 +213,51 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__angle-count-row')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__sequence-round')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__answer-part')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__comparison-slot')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('<');
+  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('>');
+  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('=');
+  await expect(page.locator('#print-area .exam-print__comparison-row .exam-print__answer-line')).toHaveCount(0);
 
   const spacing = await page.locator('#print-area .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
     const style = getComputedStyle(element);
     return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
   }));
-  expect(spacing[0].lineHeight / spacing[0].fontSize).toBeGreaterThan(1.5);
-  expect(spacing[0].paddingTop).toBeGreaterThanOrEqual(20);
-  expect(spacing[1].marginTop).toBeGreaterThanOrEqual(20);
+  expect(spacing[0].lineHeight / spacing[0].fontSize).toBeGreaterThanOrEqual(1.4);
+  expect(spacing[0].paddingTop).toBeLessThanOrEqual(18);
+  expect(spacing[1].marginTop).toBeLessThanOrEqual(18);
 
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'In PDF / A4', exact: true }).click();
   const printPage = await popupPromise;
   await printPage.waitForLoadState('domcontentloaded');
   await expect(printPage.locator('body > #print-document')).toHaveCount(1);
+  await expect(printPage.locator('#exam-print-styles')).toHaveCount(1);
   await expect(printPage.locator('#print-document .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
   await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(10);
   await expect(printPage.locator('#print-document .exam-print__subquestion')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__question-heading small')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__comparison-slot')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('<');
+  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('>');
+  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('=');
+  await expect(printPage.locator('#print-document .exam-print__comparison-row .exam-print__answer-line')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__angle-item')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__angle-count-row')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__sequence-round')).toHaveCount(4);
   await expect(printPage.locator('.admin-panel, #treasure-modal, .admin-compose-shell')).toHaveCount(0);
+  await printPage.waitForLoadState('load');
   await printPage.emulateMedia({ media: 'print' });
   await expect(printPage.locator('body > #print-document')).toBeVisible();
+  const printSpacing = await printPage.locator('#print-document .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
+    const style = getComputedStyle(element);
+    return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
+  }));
+  expect(printSpacing[0].lineHeight / printSpacing[0].fontSize).toBeLessThanOrEqual(1.6);
+  expect(printSpacing[0].paddingTop).toBeLessThanOrEqual(12);
+  expect(printSpacing[1].marginTop).toBeLessThanOrEqual(14);
   await page.setViewportSize({ width: 1024, height: 768 });
   expect(await page.locator('#print-area').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
 });

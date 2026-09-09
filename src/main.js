@@ -251,6 +251,39 @@ const app = {
         clearPendingExamSnapshot() {
             app.safeStorage?.setItem('game_exams_pending_sync', '');
         },
+        applyExamRealtimeChange(payload) {
+            if (!Array.isArray(this.exams)) this.exams = [];
+            const incoming = payload?.new;
+            const incomingId = String(incoming?.id ?? '');
+
+            if (payload?.eventType === 'INSERT' && incoming) {
+                const existingIndex = incomingId
+                    ? this.exams.findIndex(exam => String(exam?.id ?? '') === incomingId)
+                    : -1;
+                if (existingIndex > -1) {
+                    this.exams[existingIndex] = incoming;
+                    return;
+                }
+
+                // Realtime có thể về trước kết quả insert().select(). Khi đó thay
+                // bản cục bộ chưa có id bằng bản máy chủ thay vì thêm một thẻ trùng.
+                const duplicateIndex = this.exams.findIndex(exam => this.getExamContentKey(exam) === this.getExamContentKey(incoming));
+                if (duplicateIndex > -1) this.exams[duplicateIndex] = incoming;
+                else this.exams.push(incoming);
+                return;
+            }
+
+            if (payload?.eventType === 'UPDATE' && incoming) {
+                const existingIndex = this.exams.findIndex(exam => String(exam?.id ?? '') === incomingId);
+                if (existingIndex > -1) this.exams[existingIndex] = incoming;
+                return;
+            }
+
+            if (payload?.eventType === 'DELETE' && payload.old) {
+                const deletedId = String(payload.old.id ?? '');
+                this.exams = this.exams.filter(exam => String(exam?.id ?? '') !== deletedId);
+            }
+        },
         mergeExamSnapshots(remoteExams, localExams) {
             const merged = Array.isArray(remoteExams) ? remoteExams.slice() : [];
             const metadataKey = exam => [exam?.name, exam?.classlevel, exam?.subject, exam?.period]
@@ -265,7 +298,17 @@ const app = {
                     else merged[index] = localExam;
                     return;
                 }
-                if (!merged.some(remoteExam => metadataKey(remoteExam) === metadataKey(localExam))) merged.push(localExam);
+                const contentKey = this.getExamContentKey(localExam);
+                const exactIndex = merged.findIndex(remoteExam => this.getExamContentKey(remoteExam) === contentKey);
+                if (exactIndex > -1) return;
+                const metadataIndex = merged.findIndex(remoteExam => metadataKey(remoteExam) === metadataKey(localExam));
+                if (metadataIndex > -1) {
+                    // Bản chờ đồng bộ là bản người dùng vừa tạo/chỉnh sửa. Giữ nó trong
+                    // phiên đăng nhập hiện tại thay vì để bản remote cũ che mất nội dung.
+                    merged[metadataIndex] = localExam;
+                    return;
+                }
+                merged.push(localExam);
             });
             return merged;
         },
@@ -363,7 +406,17 @@ const app = {
             return parts.map(value => this.normalizeQuestionPart(value)).join('|');
         },
         getQuestionContentKey(question) {
-            const normalize = value => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('vi-VN');
+            const normalize = value => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('vi-VN');
+            const canonicalize = value => {
+                if (Array.isArray(value)) return value.map(canonicalize);
+                if (value && typeof value === 'object') {
+                    return Object.keys(value).sort().reduce((result, key) => {
+                        result[key] = canonicalize(value[key]);
+                        return result;
+                    }, {});
+                }
+                return typeof value === 'string' ? normalize(value) : value;
+            };
             const serializedParts = [
                 question?.templateId || question?.generator_key,
                 question?.q,
@@ -376,7 +429,24 @@ const app = {
                 question?.sequenceRounds,
                 question?.lesson
             ];
-            return JSON.stringify(serializedParts).replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN') || normalize(question?.q);
+            return JSON.stringify(canonicalize(serializedParts)) || normalize(question?.q);
+        },
+        getExamContentKey(exam) {
+            const normalize = value => this.normalizeQuestionPart(value);
+            const topics = Array.isArray(exam?.topics)
+                ? exam.topics.map(normalize).filter(Boolean).sort()
+                : [];
+            const questions = Array.isArray(exam?.questions)
+                ? exam.questions.map(question => [normalize(question?.type), this.getQuestionContentKey(question)])
+                : [];
+            return JSON.stringify([
+                normalize(exam?.name),
+                normalize(exam?.classlevel),
+                normalize(exam?.subject),
+                normalize(exam?.period),
+                topics,
+                questions
+            ]);
         },
         generateTemplateQuestion(template) {
             const registry = window.Grade4MathTemplates;
@@ -630,14 +700,7 @@ const app = {
                     })
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_exams' }, async (payload) => {
                         console.log('Realtime DB Change received (Exams)!', payload);
-                        if (payload.eventType === 'INSERT') {
-                            if (!this.exams.find(e => e.id === payload.new.id)) this.exams.push(payload.new);
-                        } else if (payload.eventType === 'UPDATE') {
-                            const idx = this.exams.findIndex(e => e.id === payload.new.id);
-                            if (idx > -1) this.exams[idx] = payload.new;
-                        } else if (payload.eventType === 'DELETE') {
-                            this.exams = this.exams.filter(e => e.id !== payload.old.id);
-                        }
+                        this.applyExamRealtimeChange(payload);
                         if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
                             if (document.querySelector('.tab-btn.active').textContent.includes('Kho Đề')) {
                                 app.admin.renderExams();
@@ -751,6 +814,16 @@ const app = {
             await this.saveLessonMetadata();
         },
         async saveExams() {
+            const seenLocalExamKeys = new Set();
+            this.exams = (Array.isArray(this.exams) ? this.exams : []).filter(exam => {
+                // Chỉ dọn các bản chưa có id: đây là những bản chưa từng tồn tại trên
+                // máy chủ, nên loại bản trùng là an toàn và không xóa dữ liệu remote.
+                if (exam?.id) return true;
+                const contentKey = this.getExamContentKey(exam);
+                if (seenLocalExamKeys.has(contentKey)) return false;
+                seenLocalExamKeys.add(contentKey);
+                return true;
+            });
             // Luôn giữ một bản cục bộ để không làm mất đề khi mạng/Supabase lỗi.
             this.saveLocalExams();
             if (!window.supabase) {
@@ -760,6 +833,7 @@ const app = {
 
             const toUpdate = [];
             const toInsert = [];
+            const newExamBatch = [];
             let firstError = null;
 
             try {
@@ -768,6 +842,7 @@ const app = {
                     else {
                         const { id, ...rest } = e;
                         toInsert.push(rest);
+                        newExamBatch.push(e);
                     }
                 }
 
@@ -777,14 +852,13 @@ const app = {
                 }
 
                 if (toInsert.length > 0) {
-                    const originalBatch = this.exams.filter(e => !e.id);
                     const { data, error } = await supabaseClient.from('game_exams').insert(toInsert).select();
                     if (error) {
                         firstError ||= error;
-                    } else if (data && data.length === originalBatch.length) {
-                        for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
+                    } else if (data && data.length === newExamBatch.length) {
+                        for (let j = 0; j < data.length; j++) newExamBatch[j].id = data[j].id;
                     } else {
-                        firstError ||= new Error('Supabase không trả về đầy đủ dữ liệu đề vừa lưu.');
+                        firstError ||= new Error(`Supabase không trả về đầy đủ dữ liệu đề vừa lưu (${data?.length || 0}/${newExamBatch.length}).`);
                     }
                 }
             } catch (error) {
@@ -991,17 +1065,27 @@ const app = {
                 app.data.currentUser = user;
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
+                const localExams = app.data.loadLocalExams();
+                const pendingExamSnapshot = app.data.loadPendingExamSnapshot();
                 const [exams, settingsData] = await Promise.all([
                     app.data.fetchAllFromSupabase('game_exams'),
                     app.data.fetchAllFromSupabase('game_settings'),
                     app.data.refreshPetInventory()
                 ]);
-                app.data.exams = exams;
+                const isAdmin = user.role?.toLowerCase() === 'admin';
+                if (isAdmin && exams.length > 0 && pendingExamSnapshot !== null) {
+                    // Giữ lại đề mới/chỉnh sửa đang chờ đồng bộ nếu lần lưu trước gặp lỗi mạng hoặc RLS.
+                    app.data.exams = app.data.mergeExamSnapshots(exams, pendingExamSnapshot);
+                } else if (isAdmin && exams.length === 0) {
+                    app.data.exams = pendingExamSnapshot ?? localExams;
+                } else {
+                    app.data.exams = exams;
+                }
                 if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
                 app.data.ensureLessonMetadata();
 
                 // Lazy load based on role
-                if (user.role?.toLowerCase() === 'admin') {
+                if (isAdmin) {
                     const [users, questions, templates, quests] = await Promise.all([
                         app.data.fetchAllFromSupabase('game_users'),
                         app.data.fetchAllFromSupabase('game_questions'),
@@ -3591,6 +3675,7 @@ const app = {
         questMode: 'personal',
         teamCompetitionDraft: null,
         teamCompetitionBoardTimer: null,
+        examSavePending: false,
         composerState: {
             module: 'exams',
             classlevel: 'Lớp 4',
@@ -3661,6 +3746,18 @@ const app = {
             if (value === 'cả năm') return 'Cả Năm';
             if (value.includes('kỳ 2')) return 'Học Kỳ 2';
             return 'Học Kỳ 1';
+        },
+        setExamSavePending(isPending) {
+            this.examSavePending = Boolean(isPending);
+            app.ui.setButtonLoading('exam-composer-save', this.examSavePending, 'Đang lưu…');
+        },
+        getExamSyncErrorMessage(error) {
+            const rawMessage = String(error?.message || error || '').replace(/\s+/g, ' ').trim();
+            const detail = rawMessage ? ` Chi tiết máy chủ: ${rawMessage.slice(0, 260)}.` : '';
+            const permissionHint = /(permission|row-level|rls|42501|not authorized)/i.test(rawMessage)
+                ? ' Tài khoản Admin hoặc chính sách quyền trên Supabase chưa cho phép ghi bảng game_exams.'
+                : ' Hãy kiểm tra kết nối và phiên đăng nhập Admin.';
+            return `Đề đã được lưu trên thiết bị nhưng chưa đồng bộ lên máy chủ.${permissionHint}${detail}`;
         },
         getComposerTopicColor(index = 0) {
             return ['#c2a1ff', '#53def0', '#ffbf69', '#85e5bd', '#f7a8d8', '#f5da73'][index % 6];
@@ -4279,6 +4376,69 @@ const app = {
                 partAnswerCounts: [1, 1, 1, 1]
             };
         },
+        getExamQuestionLabeledLines(question) {
+            const raw = String(question?.q || '')
+                .replace(/<br\s*\/?\s*>/gi, '\n')
+                .replace(/<\/(?:p|div|li|tr|h[1-6])\s*>/gi, '\n')
+                .replace(/<[^>]*>/g, '')
+                .replace(/\r\n?/g, '\n');
+            return raw.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+                const match = line.match(/^([a-dA-D])[.)]\s*(.*)$/);
+                return match ? { label: match[1].toLowerCase(), text: match[2].trim() } : null;
+            }).filter(Boolean);
+        },
+        normalizeExamQuestionStructure(question) {
+            if (!question || typeof question !== 'object') return question;
+            const copy = JSON.parse(JSON.stringify(question));
+            const structuredKeys = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows'];
+            if (structuredKeys.some(key => Array.isArray(copy[key]) && copy[key].length)) return copy;
+
+            const answers = String(copy.ans || '').split(/[|,]/).map(value => value.trim()).filter(Boolean);
+            if (answers.length !== 4) return copy;
+
+            const type = String(copy.type || '').trim().normalize('NFC');
+            const labeledLines = this.getExamQuestionLabeledLines(copy);
+            if (labeledLines.length !== 4) return copy;
+
+            if (type.includes('So sánh')) {
+                copy.comparisonRows = labeledLines.map((line, index) => {
+                    const separator = line.text.match(/^(.*?)\s*_{3,}\s*(.*)$/);
+                    return {
+                        label: line.label,
+                        leftText: separator ? separator[1].trim() : line.text,
+                        rightText: separator ? separator[2].trim() : '',
+                        display: line.text,
+                        answer: answers[index]
+                    };
+                });
+                copy.partAnswerCounts = [1, 1, 1, 1];
+                return copy;
+            }
+
+            if (type.includes('Đúng/Sai')) {
+                copy.statements = labeledLines.map((line, index) => ({
+                    label: line.label.toUpperCase(),
+                    text: line.text,
+                    answer: answers[index]
+                }));
+                copy.partAnswerCounts = [1, 1, 1, 1];
+                return copy;
+            }
+
+            if (type.includes('Trắc nghiệm')) {
+                const sharedOptions = Array.isArray(copy.options) ? copy.options.slice() : [];
+                copy.subquestions = labeledLines.map((line, index) => ({
+                    label: line.label,
+                    prompt: line.text,
+                    options: sharedOptions.slice(),
+                    answer: answers[index]
+                }));
+                copy.partAnswerCounts = [1, 1, 1, 1];
+                return copy;
+            }
+
+            return copy;
+        },
         getExamQuestionStructureKind(question) {
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) {
@@ -4291,13 +4451,10 @@ const app = {
             if (Array.isArray(question?.sequenceRounds) && question.sequenceRounds.length) return 'sequenceRounds';
             if (Array.isArray(question?.practiceRows) && question.practiceRows.length) return 'practiceRows';
             if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) return 'comparisonRows';
-            const partAnswerCounts = Array.isArray(question?.partAnswerCounts)
-                ? question.partAnswerCounts.map(Number)
-                : [];
             const answerCount = app.data.getQuestionAnswerCount(question);
             const isSupportedAnswerGroup = app.data.getValidPartAnswerCounts(question, answerCount);
             const type = String(question?.type || '').trim().normalize('NFC');
-            const supportsGenericAnswerParts = ['Điền khuyết', 'Kéo thả'].includes(type);
+            const supportsGenericAnswerParts = ['Điền khuyết', 'Kéo thả', 'So sánh', 'Trắc nghiệm', 'Đúng/Sai', 'Chuỗi Quy luật'].includes(type);
             if ((isSupportedAnswerGroup || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
             return '';
         },
@@ -4314,6 +4471,18 @@ const app = {
             if (!this.getSupportedPartCounts(partCount).includes(partCount)) return false;
             if (!hasGroupedParts && answerCount !== partCount) return false;
             return !app.data.validateQuestionScoring(question);
+        },
+        getExamQuestionPartCount(question) {
+            const kind = this.getExamQuestionStructureKind(question);
+            if (!kind) return 0;
+            if (kind === 'answerParts') {
+                const groupedParts = app.data.getValidPartAnswerCounts(question);
+                return groupedParts?.length || app.data.getQuestionAnswerCount(question);
+            }
+            return Array.isArray(question?.[kind]) ? question[kind].length : 0;
+        },
+        isExactlyFourPartExamQuestion(question) {
+            return this.getExamQuestionPartCount(question) === 4 && this.isFourPartExamQuestion(question);
         },
         renderExamQuestionStructure(question, index) {
             const kind = this.getExamQuestionStructureKind(question);
@@ -7593,10 +7762,10 @@ const app = {
                      <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu đã có</span>
                   </div>
                   <div class="exam-question-list">
-                  ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
-                    const q = e && e.questions && e.questions[i] ? e.questions[i] : null;
-                    const editorQuestion = q || this.getEmptyExamQuestionDraft();
-                    const structureKind = this.getExamQuestionStructureKind(editorQuestion);
+                   ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
+                     const q = e && e.questions && e.questions[i] ? e.questions[i] : null;
+                     const editorQuestion = this.normalizeExamQuestionStructure(q || this.getEmptyExamQuestionDraft());
+                     const structureKind = this.getExamQuestionStructureKind(editorQuestion);
                     const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
                     const optionsDisplay = hasStructuredOptions || (editorQuestion && editorQuestion.type && editorQuestion.type !== 'Trắc nghiệm' && editorQuestion.type !== 'Kéo thả') ? 'none' : 'block';
                     return `
@@ -7668,7 +7837,7 @@ const app = {
 
                <footer class="exam-composer__actions">
                   <p>Đề cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
-                  ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
+                   ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save', 'exam-composer-save')}
                </footer>
              </section>
            `;
@@ -7795,13 +7964,14 @@ const app = {
             const used = new Set();
             let skippedSinglePartQuestions = false;
             const addUnique = question => {
-                if (!question || typeof question !== 'object') return false;
-                const copy = JSON.parse(JSON.stringify(question));
-                // Đề Toán lớp 4 dùng cấu trúc câu con có thể chia đều 1, 2 hoặc 4 ý.
-                if (requiresFourPartStructure && !this.isFourPartExamQuestion(copy)) {
-                    skippedSinglePartQuestions = true;
-                    return false;
-                }
+                 if (!question || typeof question !== 'object') return false;
+                 let copy = JSON.parse(JSON.stringify(question));
+                 if (requiresFourPartStructure) copy = this.normalizeExamQuestionStructure(copy);
+                 // Đề Toán lớp 4 cần đúng bốn câu con để đề tự động hiển thị đồng nhất.
+                 if (requiresFourPartStructure && !this.isExactlyFourPartExamQuestion(copy)) {
+                     skippedSinglePartQuestions = true;
+                     return false;
+                 }
                 if (app.data.validateQuestionScoring(copy)) return false;
                 const key = app.data.getQuestionContentKey(copy);
                 if (used.has(key)) return false;
@@ -7847,11 +8017,11 @@ const app = {
                 ? topics.filter(topic => !questions.some(question => same(question.topic, topic)))
                 : [];
             if (missingTopics.length) {
-                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn có cấu trúc 1, 2 hoặc 4 ý phù hợp: ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template có số ý được chia đều hoặc bỏ chọn chủ đề đó.`);
+                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn có cấu trúc 1, 2 hoặc 4 ý phù hợp (Toán lớp 4 cần đủ 4 ý để hiển thị đồng nhất): ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template có đủ bốn ý hoặc bỏ chọn chủ đề đó.`);
             }
             if (questions.length < app.game.questionsPerRound) {
                 const structureHint = skippedSinglePartQuestions
-                    ? ' Các câu không có cấu trúc 1, 2 hoặc 4 ý đã được bỏ qua; hãy bổ sung câu hỏi/template có số ý được chia đều.'
+                    ? ' Các câu không có cấu trúc 1, 2 hoặc 4 ý đã được bỏ qua; với Toán lớp 4, mỗi câu tự động cần đủ 4 ý và nguồn cũ có đủ 4 dòng sẽ được chuẩn hóa.'
                     : '';
                 return alert(`Chưa đủ 10 câu có cấu trúc 1, 2 hoặc 4 ý phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu).${structureHint}`);
             }
@@ -7863,6 +8033,9 @@ const app = {
             this.renderESubTab('add');
         },
         async submitAddExam(editIdx) {
+            if (this.examSavePending) return;
+            this.setExamSavePending(true);
+            try {
             const eObj = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
@@ -7883,7 +8056,7 @@ const app = {
                 const originalQuestion = editIdx !== null && editIdx !== undefined
                     ? app.data.exams[editIdx]?.questions?.[i]
                     : this.examComposerDraft?.questions?.[i];
-                const editorQuestion = originalQuestion || this.getEmptyExamQuestionDraft();
+                const editorQuestion = this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft());
                 const structureKind = this.getExamQuestionStructureKind(editorQuestion);
                 const structurePatch = structureKind ? this.readExamQuestionStructure(editorQuestion, i) : {};
                 const ansText = structureKind
@@ -7892,7 +8065,7 @@ const app = {
 
                 if (qText && ansText) {
                     const newQ = {
-                        ...(originalQuestion ? JSON.parse(JSON.stringify(originalQuestion)) : {}),
+                        ...(originalQuestion ? JSON.parse(JSON.stringify(editorQuestion)) : {}),
                         classlevel: eObj.classlevel,
                         subject: eObj.subject,
                         topic: document.getElementById(`add-e-q-topic-${i}`).value,
@@ -7950,22 +8123,31 @@ const app = {
             }
 
             let saveError = null;
+            let duplicateExam = false;
             if (editIdx !== null && editIdx !== undefined) {
                 const oldId = app.data.exams[editIdx]?.id;
                 if (oldId) eObj.id = oldId;
                 app.data.exams[editIdx] = eObj;
             } else {
-                app.data.exams.push(eObj);
+                const contentKey = app.data.getExamContentKey(eObj);
+                const duplicateIndex = app.data.exams.findIndex(exam => app.data.getExamContentKey(exam) === contentKey);
+                if (duplicateIndex > -1) duplicateExam = true;
+                else app.data.exams.push(eObj);
             }
             saveError = await app.data.saveExams();
             this.examComposerDraft = null;
             this.renderESubTab('lib');
             if (saveError) {
-                alert('Đề đã được lưu trên thiết bị này nhưng chưa đồng bộ lên máy chủ. Vui lòng kiểm tra kết nối hoặc quyền quản trị rồi lưu lại.');
+                alert(this.getExamSyncErrorMessage(saveError));
+            } else if (duplicateExam) {
+                alert('Đề này đã có trong Kho Đề; hệ thống không tạo thêm bản trùng.');
             } else if (editIdx !== null && editIdx !== undefined) {
                 alert('Đã cập nhật đề kiểm tra!');
             } else {
                 alert('Đã tạo đề kiểm tra mới!');
+            }
+            } finally {
+                this.setExamSavePending(false);
             }
         },
         submitInjectQ(qIdx, eIdx) {
@@ -8110,12 +8292,14 @@ const app = {
         },
         renderExamPrintComparisonRows(question) {
             const parts = Array.isArray(question?.comparisonRows) ? question.comparisonRows : [];
-            return `<div class="exam-print__parts exam-print__parts--comparison">${parts.map((part, partIndex) => {
+            return `<div class="exam-print__parts exam-print__parts--comparison">
+                <p class="exam-print__comparison-choices" aria-label="Các dấu có thể chọn"><strong>Chọn một dấu:</strong><span><span class="exam-print__choice-box" aria-hidden="true">□</span> &lt;</span><span><span class="exam-print__choice-box" aria-hidden="true">□</span> &gt;</span><span><span class="exam-print__choice-box" aria-hidden="true">□</span> =</span></p>
+                ${parts.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex);
                 const left = this.getExamPrintText(part?.leftText || '');
                 const right = this.getExamPrintText(part?.rightText || '');
                 const fallback = this.getExamPrintTextWithBlanks(part?.display || '');
-                return `<div class="exam-print__comparison-row"><span class="exam-print__part-label">${label})</span>${left || right ? `<span class="exam-print__comparison-side">${left}</span><span class="exam-print__answer-line exam-print__answer-line--short"></span><span class="exam-print__comparison-side">${right}</span>` : `<span class="exam-print__comparison-fallback">${fallback}</span>`}</div>`;
+                return `<div class="exam-print__comparison-row"><span class="exam-print__part-label">${label})</span>${left || right ? `<span class="exam-print__comparison-side">${left}</span><span class="exam-print__comparison-slot" role="img" aria-label="Ô điền dấu"></span><span class="exam-print__comparison-side">${right}</span>` : `<span class="exam-print__comparison-side exam-print__comparison-fallback">${fallback}</span><span class="exam-print__comparison-slot" role="img" aria-label="Ô điền dấu"></span><span class="exam-print__comparison-side"></span>`}</div>`;
             }).join('')}</div>`;
         },
         renderExamPrintPracticeRows(question) {
@@ -8170,18 +8354,19 @@ const app = {
             }).join('')}</div>`;
         },
         renderExamPrintQuestionParts(question) {
-            const kind = this.getExamQuestionStructureKind(question);
-            if (kind === 'subquestions') return this.renderExamPrintSubquestions(question);
-            if (kind === 'statements') return this.renderExamPrintStatements(question);
-            if (kind === 'comparisonRows') return this.renderExamPrintComparisonRows(question);
-            if (kind === 'practiceRows') return this.renderExamPrintPracticeRows(question);
-            if (kind === 'angleItems') return this.renderExamPrintAngleItems(question);
-            if (kind === 'angleCountRows') return this.renderExamPrintAngleCountRows(question);
-            if (kind === 'sequenceRounds') return this.renderExamPrintSequenceRounds(question);
-            if (kind === 'answerParts') return this.renderExamPrintAnswerParts(question);
+            const printableQuestion = this.normalizeExamQuestionStructure(question);
+            const kind = this.getExamQuestionStructureKind(printableQuestion);
+            if (kind === 'subquestions') return this.renderExamPrintSubquestions(printableQuestion);
+            if (kind === 'statements') return this.renderExamPrintStatements(printableQuestion);
+            if (kind === 'comparisonRows') return this.renderExamPrintComparisonRows(printableQuestion);
+            if (kind === 'practiceRows') return this.renderExamPrintPracticeRows(printableQuestion);
+            if (kind === 'angleItems') return this.renderExamPrintAngleItems(printableQuestion);
+            if (kind === 'angleCountRows') return this.renderExamPrintAngleCountRows(printableQuestion);
+            if (kind === 'sequenceRounds') return this.renderExamPrintSequenceRounds(printableQuestion);
+            if (kind === 'answerParts') return this.renderExamPrintAnswerParts(printableQuestion);
 
-            const options = Array.isArray(question?.options) ? question.options.filter(option => String(option ?? '').trim()) : [];
-            const rawLines = this.getExamPrintRawText(question?.q).split('\n').map(line => line.trim()).filter(Boolean);
+            const options = Array.isArray(printableQuestion?.options) ? printableQuestion.options.filter(option => String(option ?? '').trim()) : [];
+            const rawLines = this.getExamPrintRawText(printableQuestion?.q).split('\n').map(line => line.trim()).filter(Boolean);
             const extraLines = rawLines.slice(1);
             return `<div class="exam-print__parts exam-print__parts--generic">
                 ${extraLines.length ? extraLines.map(line => `<div class="exam-print__generic-line">${this.getExamPrintTextWithBlanks(line)}</div>`).join('') : ''}
@@ -8190,9 +8375,8 @@ const app = {
         },
         renderExamPrintQuestion(question, index) {
             const number = index + 1;
-            const type = app.data.sanitizeHTML(question?.type || 'Câu hỏi');
             return `<article class="exam-print__question" data-print-question="${number}">
-                <h3 class="exam-print__question-heading"><span>Câu ${number}</span><small>(${type})</small></h3>
+                <h3 class="exam-print__question-heading"><span>Câu ${number}</span></h3>
                 <p class="exam-print__lead">${this.getExamPrintLead(question)}</p>
                 ${this.renderExamPrintQuestionParts(question)}
             </article>`;
@@ -8229,7 +8413,16 @@ const app = {
                 return;
             }
             const name = String(exam.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
-            const stylesheetHref = app.data.sanitizeHTML(new URL('src/style.css', document.baseURI).href);
+            const sourceStylesheet = Array.from(document.styleSheets).find(stylesheet => stylesheet.href?.includes('/src/style.css'));
+            let stylesheetText = '';
+            try {
+                stylesheetText = sourceStylesheet
+                    ? Array.from(sourceStylesheet.cssRules).map(rule => rule.cssText).join('\n')
+                    : '';
+            } catch (error) {
+                console.warn('Không thể nội tuyến CSS bản in, sẽ dùng stylesheet dự phòng:', error);
+            }
+            const stylesheetHref = app.data.sanitizeHTML(new URL('./src/style.css?v=exam-composer-v1', document.baseURI).href);
             let printed = false;
             const print = () => {
                 if (printed || printWindow.closed) return;
@@ -8237,13 +8430,26 @@ const app = {
                 printWindow.focus();
                 printWindow.print();
             };
-            printWindow.addEventListener('load', print, { once: true });
             printWindow.document.open();
-            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title><link rel="stylesheet" href="${stylesheetHref}"></head><body>${this.renderExamPrintContent(exam, 'print-document')}</body></html>`);
+            const styleMarkup = stylesheetText
+                ? `<style id="exam-print-styles">${stylesheetText}</style>`
+                : `<link rel="stylesheet" href="${stylesheetHref}">`;
+            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title>${styleMarkup}</head><body>${this.renderExamPrintContent(exam, 'print-document')}</body></html>`);
             printWindow.document.close();
-            window.setTimeout(() => {
-                if (printWindow.document.readyState === 'complete') print();
-            }, 0);
+            let styleWaitAttempts = 0;
+            const printWhenReady = () => {
+                if (printed || printWindow.closed) return;
+                const stylesheet = printWindow.document.querySelector('link[rel="stylesheet"]');
+                // Chờ CSS tải xong để trình duyệt không mở bản in ở kiểu chữ mặc định
+                // trước khi stylesheet A4 được áp dụng.
+                if (!stylesheet || stylesheet.sheet || styleWaitAttempts >= 80) {
+                    print();
+                    return;
+                }
+                styleWaitAttempts++;
+                printWindow.setTimeout(printWhenReady, 25);
+            };
+            printWindow.setTimeout(printWhenReady, 0);
         },
         viewExam(idx) {
             const exam = app.data.exams[idx];
