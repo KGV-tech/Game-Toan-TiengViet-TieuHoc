@@ -3261,6 +3261,17 @@ const app = {
             }
             el.classList.add('active');
         },
+        periodMatches(examPeriod, selectedPeriod) {
+            const normalize = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            const examValue = normalize(examPeriod);
+            const selectedValue = normalize(selectedPeriod);
+            if (examValue === selectedValue) return true;
+            const newScopeAliases = {
+                'học kỳ 1': new Set(['giữa kỳ 1', 'cuối kỳ 1']),
+                'học kỳ 2': new Set(['giữa kỳ 2', 'cuối kỳ 2'])
+            };
+            return Boolean(newScopeAliases[examValue]?.has(selectedValue));
+        },
 
         getQuestionType(question) {
             if (Array.isArray(question?.comparisonRows)) return 'Kéo thả';
@@ -3372,10 +3383,9 @@ const app = {
             const filtered = app.data.exams.filter(e => {
                 const eSub = String(e.subject || '').trim().toLowerCase();
                 const eClass = String(e.classlevel || '').trim().toLowerCase().replace('lớp ', '');
-                const ePer = String(e.period || '').trim().toLowerCase();
                 return (eSub === mappedSubject.toLowerCase() || eSub.includes(mappedSubject.toLowerCase())) &&
                     eClass === clLevel &&
-                    ePer === this.filters.period.toLowerCase();
+                    this.periodMatches(e.period, this.filters.period);
             });
             if (filtered.length === 0) return alert('Không tìm thấy đề kiểm tra phù hợp trong Kho Đề Kiểm tra.');
 
@@ -3543,6 +3553,22 @@ const app = {
                 }
             }[module] || this.getComposerModuleMeta('exams');
         },
+        getComposerPeriodOptions() {
+            return [
+                { value: 'Học Kỳ 1', label: 'Học Kỳ 1' },
+                { value: 'Học Kỳ 2', label: 'Học Kỳ 2' },
+                { value: 'Cả Năm', label: 'Cả Năm' }
+            ];
+        },
+        normalizeComposerPeriod(period = '') {
+            const value = String(period ?? '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            if (value === 'cả năm') return 'Cả Năm';
+            if (value.includes('kỳ 2')) return 'Học Kỳ 2';
+            return 'Học Kỳ 1';
+        },
+        getComposerTopicColor(index = 0) {
+            return ['#c2a1ff', '#53def0', '#ffbf69', '#85e5bd', '#f7a8d8', '#f5da73'][index % 6];
+        },
         getComposerStats() {
             const templates = Array.isArray(app.data.questionTemplates) ? app.data.questionTemplates : [];
             const questions = Array.isArray(app.data.libraryQuestions) ? app.data.libraryQuestions : [];
@@ -3663,6 +3689,7 @@ const app = {
             }
             this.renderComposerCards();
             this.syncComposerContextUI();
+            this.syncComposerQuestionNav();
         },
         renderComposer() {
             if (!this.isAdminUser()) return false;
@@ -3670,6 +3697,7 @@ const app = {
             this.renderComposerProfile();
             this.syncComposerContextUI();
             this.renderComposerModule(this.composerState.module || 'exams');
+            this.setComposerStep('workspace');
             return true;
         },
         openComposer(module = 'exams') {
@@ -3689,23 +3717,76 @@ const app = {
             if (!this.isAdminUser()) return false;
             if (!document.getElementById('admin-compose-screen')?.classList.contains('active')) return this.openComposer(module);
             this.renderComposerModule(module);
+            this.setComposerStep('content');
             this.focusComposerSection('admin-compose-module-panel');
             return true;
         },
         continueComposer() {
             return this.openComposerModule(this.composerState.module || 'exams');
         },
+        setComposerStep(step = 'workspace') {
+            const activeStep = ['workspace', 'content', 'review'].includes(step) ? step : 'workspace';
+            document.querySelectorAll('.admin-compose-step').forEach(stepEl => {
+                const selected = stepEl.dataset.composeStep === activeStep;
+                stepEl.classList.toggle('is-active', selected);
+                if (selected) stepEl.setAttribute('aria-current', 'step');
+                else stepEl.removeAttribute('aria-current');
+            });
+        },
+        getComposerScrollBehavior() {
+            const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+            return media?.matches ? 'auto' : 'smooth';
+        },
         focusComposerSection(sectionId, button) {
             const section = document.getElementById(sectionId);
-            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (button) {
-                document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
+            if (section) section.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'start' });
+            const requestedStep = button?.dataset.composeStep || (sectionId === 'admin-compose-workspaces' ? 'workspace' : 'content');
+            this.setComposerStep(requestedStep);
+        },
+        syncComposerQuestionNav() {
+            const nav = document.getElementById('admin-compose-question-nav');
+            const list = document.getElementById('admin-compose-question-nav-list');
+            if (!nav || !list) return;
+            const cards = Array.from(document.querySelectorAll('#admin-e-subarea .exam-question-card'));
+            const shouldShow = this.composerState.module === 'exams' && cards.length > 0;
+            nav.hidden = !shouldShow;
+            if (!shouldShow) {
+                list.innerHTML = '';
+                return;
             }
+            const currentIndex = list.querySelector('[aria-current="true"]')?.dataset.questionNavIndex || '';
+            if (list.children.length !== cards.length) {
+                list.innerHTML = cards.map((card, index) => `<button type="button" class="admin-compose-question-nav__item" data-question-nav-index="${index}" aria-label="Đi tới Câu ${index + 1}" onclick="app.admin.focusComposerQuestion(${index}, this)"><span>${String(index + 1).padStart(2, '0')}</span><i aria-hidden="true"></i></button>`).join('');
+            }
+            const filledCount = cards.filter(card => card.classList.contains('is-filled')).length;
+            const count = document.getElementById('admin-compose-question-nav-count');
+            if (count) count.textContent = `${filledCount}/${cards.length}`;
+            list.querySelectorAll('[data-question-nav-index]').forEach(button => {
+                const index = Number(button.dataset.questionNavIndex);
+                const filled = cards[index]?.classList.contains('is-filled');
+                button.classList.toggle('is-filled', filled);
+                button.setAttribute('aria-label', `Đi tới Câu ${index + 1}${filled ? ', đã điền' : ', chưa điền'}`);
+                if (String(index) === currentIndex) button.setAttribute('aria-current', 'true');
+                else button.removeAttribute('aria-current');
+            });
+        },
+        focusComposerQuestion(index, button) {
+            const card = document.querySelector(`#admin-e-subarea .exam-question-card[data-question-index="${index}"]`);
+            if (!card) return;
+            this.setComposerStep('content');
+            document.querySelectorAll('#admin-compose-question-nav [data-question-nav-index]').forEach(navButton => {
+                if (navButton === button || navButton.dataset.questionNavIndex === String(index)) navButton.setAttribute('aria-current', 'true');
+                else navButton.removeAttribute('aria-current');
+            });
+            card.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'start' });
         },
         reviewComposer(button) {
             this.openComposerModule('exams');
-            document.querySelectorAll('.admin-compose-step').forEach(step => step.classList.toggle('is-active', step === button));
-            setTimeout(() => this.renderESubTab('add'), 0);
+            this.setComposerStep(button?.dataset.composeStep || 'review');
+            setTimeout(() => {
+                this.renderESubTab('add');
+                this.setComposerStep('review');
+            }, 0);
         },
         closeComposer() {
             if (!this.isAdminUser()) return false;
@@ -3789,9 +3870,16 @@ const app = {
             wrap.dataset.selectionMode = unrestrictedScope ? 'all' : 'selected';
             const entries = app.curriculum.getTopicEntries({ classlevel, subject })
                 .filter(entry => !(topics || []).length || topics.includes(entry.topic));
-            wrap.innerHTML = entries.length
-                ? entries.map(entry => `<fieldset class="exam-composer__lesson-group"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
-                : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>';
+            const totalLessons = entries.reduce((total, entry) => total + entry.lessons.length, 0);
+            const selectedCount = unrestrictedScope
+                ? totalLessons
+                : entries.flatMap(entry => entry.lessons).filter(lesson => selected.has(lesson.id)).length;
+            const summary = entries.length
+                ? (unrestrictedScope ? `Đang áp dụng toàn bộ ${totalLessons} Bài học trong Chủ đề đã chọn` : `Đang chọn ${selectedCount}/${totalLessons} Bài học`)
+                : 'Chọn Chủ đề để hiện các Bài học tương ứng';
+            wrap.innerHTML = `<div id="add-e-lessons-summary" class="exam-composer__lessons-summary" role="status">${app.data.sanitizeHTML(summary)}</div>${entries.length
+                ? entries.map((entry, topicIndex) => `<fieldset class="exam-composer__lesson-group" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
+                : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>'}`;
         },
         updateExamQuestionLesson(index, selectedLesson = '') {
             const lessonEl = document.getElementById(`add-e-q-lesson-${index}`);
@@ -3843,10 +3931,10 @@ const app = {
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const period = document.getElementById('add-e-period')?.value || 'Giữa kỳ 1';
-            const topics = period === 'Cả năm'
+            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period')?.value || 'Học Kỳ 1');
+            const topics = period === 'Cả Năm'
                 ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
-                : [...((period.includes('kỳ 2') ? topicsObj.hk2 : topicsObj.hk1) || [])];
+                : [...((period === 'Học Kỳ 2' ? topicsObj.hk2 : topicsObj.hk1) || [])];
             const topicWrap = document.getElementById('add-e-topics');
             let selectedTopics = [];
             if (topicWrap) {
@@ -3855,7 +3943,7 @@ const app = {
                 selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
                 delete topicWrap.dataset.selected;
                 topicWrap.innerHTML = topics.length
-                    ? topics.map((topic, topicIndex) => `<label class="exam-composer__topic-option${selectedTopics.includes(topic) ? ' is-selected' : ''}" data-topic-index="${topicIndex}"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
+                    ? topics.map((topic, topicIndex) => `<label class="exam-composer__topic-option${selectedTopics.includes(topic) ? ' is-selected' : ''}" data-topic-index="${topicIndex}" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
                     : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
@@ -3919,6 +4007,7 @@ const app = {
             if (status) status.textContent = filled ? 'Đã điền' : 'Chưa điền';
             if (subtitle) subtitle.textContent = filled ? 'Nội dung đã nhập, tiếp tục hoàn thiện.' : 'Bắt đầu từ nội dung câu hỏi.';
             this.updateExamComposerProgress();
+            this.syncComposerQuestionNav();
         },
         updateExamComposerProgress() {
             const composer = document.querySelector('.exam-composer');
@@ -3935,6 +4024,32 @@ const app = {
             if (progressHint) progressHint.textContent = count === total ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, total - count)} câu cần hoàn thiện`;
             if (sectionCount) sectionCount.innerHTML = `<strong>${count}</strong> / ${total} câu đã có`;
         },
+        clearExamComposerError() {
+            const error = document.getElementById('add-e-form-error');
+            if (error) {
+                error.hidden = true;
+                error.textContent = '';
+            }
+            document.querySelectorAll('.exam-composer [aria-invalid="true"]').forEach(field => {
+                field.removeAttribute('aria-invalid');
+                if (field.id !== 'add-e-name' && field.getAttribute('aria-describedby') === 'add-e-form-error') field.removeAttribute('aria-describedby');
+            });
+        },
+        showExamComposerError(message, fieldId = '') {
+            const error = document.getElementById('add-e-form-error');
+            if (!error) return alert(message);
+            this.clearExamComposerError();
+            error.textContent = message;
+            error.hidden = false;
+            const field = fieldId ? document.getElementById(fieldId) : null;
+            if (field) {
+                field.setAttribute('aria-invalid', 'true');
+                if (!field.getAttribute('aria-describedby')) field.setAttribute('aria-describedby', error.id);
+                field.focus({ preventScroll: true });
+            }
+            error.scrollIntoView({ behavior: this.getComposerScrollBehavior(), block: 'center' });
+            return false;
+        },
         bindExamComposerInteractions() {
             const composer = document.querySelector('.exam-composer');
             if (!composer || composer.dataset.interactionsBound === 'true') return;
@@ -3944,9 +4059,16 @@ const app = {
                 if (!card) return;
                 this.updateExamQuestionCard(card.dataset.questionIndex);
             };
-            composer.addEventListener('input', update);
-            composer.addEventListener('change', update);
+            composer.addEventListener('input', event => {
+                this.clearExamComposerError();
+                update(event);
+            });
+            composer.addEventListener('change', event => {
+                this.clearExamComposerError();
+                update(event);
+            });
             composer.querySelectorAll('.exam-question-card').forEach(card => this.updateExamQuestionCard(card.dataset.questionIndex));
+            this.syncComposerQuestionNav();
         },
         toggleQuestionType(prefix, idx = '') {
             const suffix = idx !== '' ? `-${idx}` : '';
@@ -6289,32 +6411,32 @@ const app = {
                 {
                     "Cấp lớp": "--- HƯỚNG DẪN CÁCH ĐIỀN ---",
                     "Môn": "",
-                    "Kỳ kiểm tra": "",
+                    "Thời gian": "",
                     "Tên đề": ""
                 },
                 {
                     "Cấp lớp": "Nhập: Lớp 1, Lớp 2, Lớp 3, Lớp 4 hoặc Lớp 5",
                     "Môn": "Nhập: Toán hoặc Tiếng Việt",
-                    "Kỳ kiểm tra": "Nhập: Giữa kỳ 1, Cuối kỳ 1, Giữa kỳ 2, hoặc Cuối kỳ 2",
-                    "Tên đề": "Tên đề (ví dụ: Đề thi thử Giữa kỳ 1 Toán 5)"
+                    "Thời gian": "Nhập: Học Kỳ 1, Học Kỳ 2 hoặc Cả Năm",
+                    "Tên đề": "Tên đề (ví dụ: Đề thi thử Học Kỳ 1 Toán 5)"
                 },
                 {
                     "Cấp lớp": "--- CÁC VÍ DỤ (VUI LÒNG XÓA ĐỂ NHẬP MỚI) ---",
                     "Môn": "",
-                    "Kỳ kiểm tra": "",
+                    "Thời gian": "",
                     "Tên đề": ""
                 },
                 {
                     "Cấp lớp": "Lớp 5",
                     "Môn": "Toán",
-                    "Kỳ kiểm tra": "Giữa kỳ 1",
-                    "Tên đề": "Đề thi Giữa kỳ 1 Môn Toán Lớp 5"
+                    "Thời gian": "Học Kỳ 1",
+                    "Tên đề": "Đề thi Học Kỳ 1 Môn Toán Lớp 5"
                 },
                 {
                     "Cấp lớp": "Lớp 3",
                     "Môn": "Tiếng Việt",
-                    "Kỳ kiểm tra": "Cuối kỳ 2",
-                    "Tên đề": "Đề ôn thi Cuối kỳ 2 Tiếng Việt 3"
+                    "Thời gian": "Cả Năm",
+                    "Tên đề": "Đề ôn tập Cả Năm Tiếng Việt 3"
                 }
             ];
             app.ui.exportToExcel(data, "Mau_Nhap_De_Kiem_Tra.xlsx");
@@ -6323,7 +6445,7 @@ const app = {
             const data = app.data.exams.map(e => ({
                 "Cấp lớp": e.classlevel,
                 "Môn": e.subject,
-                "Kỳ kiểm tra": e.period,
+                "Thời gian": this.normalizeComposerPeriod(e.period),
                 "Tên đề": e.name,
                 "Số câu hỏi": (e.questions || []).length
             }));
@@ -6548,7 +6670,7 @@ const app = {
                 const topics = [...new Set((exam.questions || []).map(question => question.topic).filter(Boolean))];
                 return `<article class="exam-library-card exam-library-card--${state}">
                   <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${label}</span></div>
-                  <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period || 'Chưa chọn thời gian')}</span></div>
+                  <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period ? this.normalizeComposerPeriod(exam.period) : 'Chưa chọn thời gian')}</span></div>
                   <h4>${escape(exam.name || 'Đề chưa đặt tên')}</h4>
                   <div class="exam-library-card__topics">${topics.slice(0, 3).map(topic => `<span>${escape(topic)}</span>`).join('') || '<span>Chưa gắn chủ đề</span>'}${topics.length > 3 ? `<span>+${topics.length - 3} chủ đề</span>` : ''}</div>
                   <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? 'Mở đề để kiểm tra nội dung' : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
@@ -6602,6 +6724,7 @@ const app = {
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
+                const selectedPeriod = this.normalizeComposerPeriod(e?.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
             <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
@@ -6639,30 +6762,27 @@ const app = {
                      <option value="Tiếng Việt" ${e && e.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
                      </select>
                   </label>
-                  <label class="exam-form-field">
-                     <span>Thời gian</span>
-                     <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
-                     <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
-                     <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
-                     <option value="Giữa kỳ 2" ${e && e.period === 'Giữa kỳ 2' ? 'selected' : ''}>Giữa kỳ 2</option>
-                     <option value="Cuối kỳ 2" ${e && e.period === 'Cuối kỳ 2' ? 'selected' : ''}>Cuối kỳ 2</option>
-                     <option value="Cả năm" ${e && e.period === 'Cả năm' ? 'selected' : ''}>Cả năm</option>
-                     </select>
-                  </label>
-                  <label class="exam-form-field exam-form-field--wide">
-                     <span>Tên đề kiểm tra</span>
-                     <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? e.name : ''}">
-                  </label>
+                   <label class="exam-form-field">
+                      <span>Thời gian</span>
+                      <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
+                      ${this.getComposerPeriodOptions().map(option => `<option value="${option.value}" ${selectedPeriod === option.value ? 'selected' : ''}>${option.label}</option>`).join('')}
+                      </select>
+                   </label>
+                   <label class="exam-form-field exam-form-field--wide">
+                      <span>Tên đề kiểm tra <em aria-hidden="true">*</em></span>
+                      <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-e-form-error">
+                   </label>
+                   <div id="add-e-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
                   <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
                      <span>Chủ đề áp dụng</span>
                      <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
                      <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo đề tự động.</small>
                   </div>
-                  <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
-                     <span>Bài học áp dụng</span>
-                     <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
-                     <small>Chỉ dành cho Lớp 4 – Toán. Bỏ chọn toàn bộ nghĩa là không giới hạn theo Bài học.</small>
-                  </div>
+                   <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
+                      <span>Bài học áp dụng</span>
+                      <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
+                      <small>Chỉ dành cho Lớp 4 – Toán. Sau khi chọn Chủ đề, bỏ chọn các Bài học chưa học để thu hẹp nguồn câu hỏi.</small>
+                   </div>
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
                      <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
@@ -6778,12 +6898,15 @@ const app = {
                   <p>Đề cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
                   ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save')}
                </footer>
-            </section>
-          `;
+             </section>
+           `;
+                this.setComposerStep('content');
+                this.syncComposerQuestionNav();
                 setTimeout(() => {
                     app.admin.updateExamTopics();
                     app.admin.bindExamComposerInteractions();
                     app.admin.updateExamComposerProgress();
+                    app.admin.syncComposerQuestionNav();
                 }, 0);
             }
             else if (tab === 'tpl') {
@@ -6809,15 +6932,15 @@ const app = {
                     html += `<p style="color:#aaa;">Không có đề kiểm tra nào phù hợp với Cấp lớp và Môn của câu hỏi này.</p>`;
                 } else {
                     const cols = [
-                        { label: 'Kỳ kiểm tra', filterable: true },
+                        { label: 'Thời gian', filterable: true },
                         { label: 'Tên đề', filterable: true },
                         { label: 'Số câu', filterable: false },
                         { label: 'Hành động', filterable: false }
                     ];
                     html += app.ui.renderTable(cols, matchingExams, (item, idx) => {
                         return `<tr>
-                      <td>${item.e.period}</td>
-                      <td>${item.e.name}</td>
+                      <td>${app.data.sanitizeHTML(this.normalizeComposerPeriod(item.e.period))}</td>
+                      <td>${app.data.sanitizeHTML(item.e.name)}</td>
                       <td>${(item.e.questions || []).length}</td>
                       <td>
                           <button class="btn-success action-btn" onclick="app.admin.renderESubTab('inject_q', {qIdx: ${qIdx}, eIdx: ${item.i}})">Chọn đề này</button>
@@ -6881,7 +7004,7 @@ const app = {
         autoGenerateExam() {
             const classlevel = document.getElementById('add-e-class').value;
             const subject = document.getElementById('add-e-sub').value;
-            const period = document.getElementById('add-e-period').value;
+            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period').value);
             const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const lessonFilters = this.getSelectedExamLessons();
@@ -6972,14 +7095,15 @@ const app = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
                 classlevel: document.getElementById('add-e-class').value,
-                period: document.getElementById('add-e-period').value,
+                period: this.normalizeComposerPeriod(document.getElementById('add-e-period').value),
                 topics: Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value),
                 questions: []
             };
-            if (!eObj.name || !eObj.subject) return alert('Vui lòng điền đủ Tên Đề và Môn');
+            if (!eObj.name || !eObj.subject) return this.showExamComposerError('Vui lòng điền đủ Tên đề và Môn.', !eObj.name ? 'add-e-name' : 'add-e-sub');
 
             let i = 0;
             let newQuestionsCount = 0;
+            let firstIncompleteQuestion = null;
             while (document.getElementById(`add-e-q-q-${i}`)) {
                 const qTextEl = document.getElementById(`add-e-q-q-${i}`);
                 const qText = qTextEl.value.trim();
@@ -7022,27 +7146,25 @@ const app = {
                         ];
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
-                    if (structureKind && !this.isFourPartExamQuestion(newQ)) {
-                        return alert(`Câu ${i + 1}: cần đủ 4 ý và đáp án riêng cho từng ý trước khi lưu.`);
-                    }
+                    if (structureKind && !this.isFourPartExamQuestion(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần đủ 4 ý và đáp án riêng cho từng ý trước khi lưu.`, `add-e-q-q-${i}`);
                     if (newQ.lesson) {
                         const metadataError = app.data.validateQuestionMetadata(newQ);
-                        if (metadataError) return alert(`Câu ${i + 1}: ${metadataError}`);
+                        if (metadataError) return this.showExamComposerError(`Câu ${i + 1}: ${metadataError}`, `add-e-q-q-${i}`);
                     }
                     const scoringError = app.data.validateQuestionScoring(newQ);
-                    if (scoringError) return alert(`Câu ${i + 1}: ${scoringError}`);
+                    if (scoringError) return this.showExamComposerError(`Câu ${i + 1}: ${scoringError}`, `add-e-q-q-${i}`);
                     eObj.questions.push(newQ);
                     const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
                     if (!exists) {
                         app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ))); // add a copy to global bank
                     }
                     newQuestionsCount++;
-                }
+                } else if (firstIncompleteQuestion === null) firstIncompleteQuestion = i;
                 i++;
             }
 
             if (eObj.questions.length !== app.game.questionsPerRound) {
-                return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
+                return this.showExamComposerError('Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.', firstIncompleteQuestion === null ? '' : `add-e-q-q-${firstIncompleteQuestion}`);
             }
 
             if (newQuestionsCount > 0) {
@@ -7128,7 +7250,7 @@ const app = {
                             name: row["Tên đề"],
                             subject: row["Môn"],
                             classlevel: row["Cấp lớp"] || 'Lớp 5',
-                            period: row["Kỳ kiểm tra"] || 'Giữa kỳ 1',
+                            period: this.normalizeComposerPeriod(row["Thời gian"] || row["Kỳ kiểm tra"] || 'Học Kỳ 1'),
                             questions: []
                         });
                         count++;
@@ -7150,7 +7272,7 @@ const app = {
              </div>
           </div>
           <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
-             <h2 style="text-align:center;">BÀI KIỂM TRA ${exam.period.toUpperCase()}</h2>
+             <h2 style="text-align:center;">BÀI KIỂM TRA ${this.normalizeComposerPeriod(exam.period).toUpperCase()}</h2>
              <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classlevel}</p>
              <hr style="margin:20px 0;">
        `;

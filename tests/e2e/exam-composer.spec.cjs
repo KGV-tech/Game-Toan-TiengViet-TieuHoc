@@ -20,6 +20,7 @@ test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và tr�
   await expect(page.locator('#exam-composer-meta-title')).toHaveText('1. Thông tin chung của đề');
   await expect(page.locator('.exam-composer__question-bank')).toContainText('Soạn câu hỏi cho đề');
   await expect(page.locator('.exam-question-card')).toHaveCount(10);
+  await expect(page.locator('#add-e-period option')).toHaveText(['Học Kỳ 1', 'Học Kỳ 2', 'Cả Năm']);
 
   const detailLayout = await page.locator('.exam-composer__meta').evaluate(element => {
     const style = getComputedStyle(element);
@@ -47,6 +48,79 @@ test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và tr�
   await expect(page.getByRole('button', { name: 'Tạo đề tự động' })).toBeVisible();
 });
 
+test('chi tiết Soạn Đề giữ được ngữ cảnh khi rà soát nhiều câu hỏi', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openExamComposer(page);
+
+  await expect(page.locator('#admin-compose-question-nav')).toBeVisible();
+  await expect(page.locator('#admin-compose-question-nav [data-question-nav-index]')).toHaveCount(10);
+  await expect(page.locator('.admin-compose-step[data-compose-step="content"]')).toHaveAttribute('aria-current', 'step');
+
+  const shellBounds = await page.locator('.admin-compose-shell').evaluate(element => {
+    const shell = element.getBoundingClientRect();
+    const sidebar = element.querySelector('.admin-compose-sidebar').getBoundingClientRect();
+    const main = element.querySelector('.admin-compose-main').getBoundingClientRect();
+    return { shellBottom: shell.bottom, sidebarBottom: sidebar.bottom, mainBottom: main.bottom };
+  });
+  expect(shellBounds.sidebarBottom).toBeLessThanOrEqual(shellBounds.shellBottom + 1);
+  expect(shellBounds.mainBottom).toBeLessThanOrEqual(shellBounds.shellBottom + 1);
+
+  await page.locator('[data-question-nav-index="6"]').click();
+  await expect(page.locator('.exam-question-card[data-question-index="6"]')).toBeInViewport();
+  await expect(page.locator('[data-question-nav-index="6"]')).toHaveAttribute('aria-current', 'true');
+});
+
+test('chi tiết Soạn Đề báo lỗi ngay tại trường bắt buộc', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openExamComposer(page);
+
+  await page.getByRole('button', { name: 'Tạo đề kiểm tra' }).click();
+  await expect(page.locator('#add-e-form-error')).toBeVisible();
+  await expect(page.locator('#add-e-form-error')).toContainText('Tên đề');
+  await expect(page.locator('#add-e-name')).toHaveAttribute('aria-invalid', 'true');
+
+  await page.locator('#add-e-name').fill('Đề kiểm tra thử');
+  await expect(page.locator('#add-e-form-error')).toBeHidden();
+  await expect(page.locator('#add-e-name')).not.toHaveAttribute('aria-invalid', 'true');
+});
+
+test('Soạn Đề tôn trọng reduced-motion và giữ điều hướng bằng bàn phím', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openExamComposer(page);
+
+  await expect.poll(() => page.evaluate(() => app.admin.getComposerScrollBehavior())).toBe('auto');
+  const questionNav = page.locator('[data-question-nav-index="3"]');
+  await questionNav.focus();
+  await expect(questionNav).toBeFocused();
+  await expect(questionNav).toHaveAttribute('aria-label', 'Đi tới Câu 4, chưa điền');
+});
+
+test('Luyện Đề giữ lựa chọn cũ và vẫn nhận đề theo phạm vi học kỳ mới', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openExamComposer(page);
+
+  const result = await page.evaluate(() => {
+    const questions = Array.from({ length: 10 }, (_, index) => ({
+      classlevel: 'Lớp 5', subject: 'Toán', topic: 'Phân số', type: 'Trắc nghiệm',
+      q: `Câu hỏi tương thích ${index + 1}`, options: ['A', 'B', 'C', 'D'], ans: 'A'
+    }));
+    app.data.currentUser = { username: 'student', fullname: 'Học sinh', role: 'student', classlevel: '5' };
+    app.data.exams = [{ id: 'exam-new-period', name: 'Đề Học Kỳ 1', classlevel: 'Lớp 5', subject: 'Toán', period: 'Học Kỳ 1', questions }];
+    app.exam.filters = { subject: 'math', period: 'Giữa kỳ 1' };
+    window.confirm = () => true;
+    const periodLabels = Array.from(document.querySelectorAll('#exam-select-screen .period-select button')).map(button => button.textContent.trim());
+    const keepsLegacyPeriodsSeparate = !app.exam.periodMatches('Cuối kỳ 1', 'Giữa kỳ 1');
+    app.exam.start();
+    return { periodLabels, examName: app.exam.state.name, questionCount: app.exam.state.questions.length, keepsLegacyPeriodsSeparate };
+  });
+
+  expect(result.periodLabels).toEqual(['Giữa kỳ 1', 'Cuối kỳ 1', 'Giữa kỳ 2', 'Cuối kỳ 2']);
+  expect(result.keepsLegacyPeriodsSeparate).toBe(true);
+  expect(result.examName).toBe('Đề Học Kỳ 1');
+  expect(result.questionCount).toBe(10);
+});
+
 test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và Cả năm gộp hai học kỳ', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openExamComposer(page);
@@ -56,10 +130,10 @@ test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và C�
   const hk1Topics = await page.locator('#add-e-topics input').evaluateAll(inputs => inputs.map(input => input.value));
   expect(hk1Topics).toEqual(topics.hk1);
 
-  await page.locator('#add-e-period').selectOption('Cuối kỳ 2');
+  await page.locator('#add-e-period').selectOption('Học Kỳ 2');
   await expect.poll(() => page.locator('#add-e-topics input').evaluateAll(inputs => inputs.map(input => input.value))).toEqual(topics.hk2);
 
-  await page.locator('#add-e-period').selectOption('Cả năm');
+  await page.locator('#add-e-period').selectOption('Cả Năm');
   await expect.poll(() => page.locator('#add-e-topics input').evaluateAll(inputs => inputs.map(input => input.value))).toEqual([
     ...topics.hk1,
     ...topics.hk2

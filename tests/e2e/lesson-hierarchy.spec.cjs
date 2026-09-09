@@ -58,6 +58,9 @@ test('Soạn đề Toán lớp 4 có bộ lọc Bài học và tự động ch�
   await expect(page.locator('#add-e-lessons-field')).toBeVisible();
   await expect(page.locator('#add-e-lessons input')).toHaveCount(37);
   await page.locator('#add-e-topics input').first().check();
+  await expect(page.locator('#add-e-lessons .exam-composer__lesson-group')).toHaveCount(1);
+  await expect(page.locator('#add-e-lessons input')).toHaveCount(6);
+  await expect(page.locator('#add-e-lessons-summary')).toContainText('6 Bài học');
 
   await page.evaluate(() => {
     const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons input'));
@@ -99,8 +102,9 @@ test('Soạn đề giữ rõ trạng thái phạm vi Bài học khi đổi học
   });
   await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'selected');
   await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(1);
+  await expect(page.locator('#add-e-lessons-summary')).toHaveText('Đang chọn 1/6 Bài học');
 
-  await page.locator('#add-e-period').selectOption('Giữa kỳ 2');
+  await page.locator('#add-e-period').selectOption('Học Kỳ 2');
   await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'all');
   await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(36);
 });
