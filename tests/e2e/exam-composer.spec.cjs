@@ -12,6 +12,86 @@ async function openExamComposer(page) {
   });
 }
 
+async function openExamComposerWithSupabaseFailure(page) {
+  await page.route('https://cdn.jsdelivr.net/**', route => {
+    if (route.request().url().includes('@supabase/supabase-js')) {
+      return route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.supabase = {
+          createClient() {
+            const query = {
+              select() { return this; },
+              range() { return Promise.resolve({ data: [], error: null }); },
+              upsert() { return Promise.resolve({ error: null }); },
+              insert() { return { select: () => Promise.resolve({ data: null, error: { message: 'permission denied for table game_exams' } }) }; }
+            };
+            return {
+              from() { return query; },
+              channel() { return { on() { return this; }, subscribe() { return this; } }; },
+              auth: { signInWithPassword: async () => ({ data: null, error: { message: 'stub' } }) }
+            };
+          }
+        };`
+      });
+    }
+    return route.fulfill({ contentType: 'application/javascript', body: '' });
+  });
+  await page.goto('/');
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.exams = [];
+  });
+}
+
+test('đề đã lưu ở chế độ local vẫn còn sau khi refresh', async ({ page }) => {
+  await openExamComposer(page);
+
+  const exam = {
+    id: 'local-exam-persistence',
+    name: 'Đề Toán lớp 4 đã lưu',
+    classlevel: 'Lớp 4',
+    subject: 'Toán',
+    period: 'Học Kỳ 1',
+    topics: ['Số có nhiều chữ số'],
+    questions: [{ q: '12 + 34 = ?', ans: '46', type: 'Điền khuyết' }]
+  };
+
+  await page.evaluate(async savedExam => {
+    app.data.exams = [savedExam];
+    await app.data.saveExams();
+  }, exam);
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => app.data.exams.some(item => item.name === 'Đề Toán lớp 4 đã lưu'))).toBe(true);
+});
+
+test('đề vẫn có bản chờ đồng bộ và báo lỗi khi Supabase từ chối lưu', async ({ page }) => {
+  await openExamComposerWithSupabaseFailure(page);
+
+  const result = await page.evaluate(async () => {
+    app.data.exams = [{
+      name: 'Đề chờ đồng bộ',
+      classlevel: 'Lớp 4',
+      subject: 'Toán',
+      period: 'Học Kỳ 1',
+      questions: []
+    }];
+    const error = await app.data.saveExams();
+    return {
+      error: error?.message,
+      local: JSON.parse(localStorage.getItem('game_exams')),
+      pending: JSON.parse(localStorage.getItem('game_exams_pending_sync'))
+    };
+  });
+
+  expect(result.error).toBe('permission denied for table game_exams');
+  expect(result.local[0].name).toBe('Đề chờ đồng bộ');
+  expect(result.pending.exams[0].name).toBe('Đề chờ đồng bộ');
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => app.data.exams.some(item => item.name === 'Đề chờ đồng bộ'))).toBe(true);
+});
+
 test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và trạng thái tương tác', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openExamComposer(page);
