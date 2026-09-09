@@ -34,7 +34,7 @@ test('Admin mở Soạn Đề với quick start, thẻ thống kê và bộ lọ
   });
   await expect.poll(() => page.locator('#admin-compose-screen').evaluate(element => element.classList.contains('active'))).toBe(true);
   await expect(page.locator('#exam-station-label')).toHaveText('Soạn Đề');
-  await expect(page.locator('#exam-station-image')).toHaveAttribute('src', /soan-de\.svg$/);
+  await expect(page.locator('#exam-station-image')).toHaveAttribute('src', /soan-de\.png$/);
   await page.evaluate(() => app.admin.openComposer());
 
   await expect(page.locator('#admin-compose-screen')).toHaveClass(/active/);

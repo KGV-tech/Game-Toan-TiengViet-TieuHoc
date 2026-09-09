@@ -3523,7 +3523,7 @@ const app = {
                 station.setAttribute('aria-label', admin ? 'Mở khu vực Soạn Đề' : 'Mở khu vực Luyện Đề');
             }
             if (stationImage) {
-                stationImage.src = admin ? './public/stations-v3/soan-de.svg' : './public/stations-v3/luyen-de.png';
+                stationImage.src = admin ? './public/stations-v3/soan-de.png' : './public/stations-v3/luyen-de.png';
                 stationImage.alt = admin ? 'Soạn Đề' : 'Luyện Đề';
             }
         },
