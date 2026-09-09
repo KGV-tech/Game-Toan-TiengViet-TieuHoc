@@ -48,7 +48,12 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
 
   await expect(page.getByRole('tab', { name: 'Cá nhân' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Nhóm' })).toBeVisible();
+  await expect(page.locator('.team-dashboard-hero')).toBeVisible();
+  await expect(page.locator('.team-dashboard-stat')).toHaveCount(4);
+  await expect(page.locator('.team-competition-list-heading')).toContainText('Các trận thi đua');
   await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
+  await expect(page.locator('.team-form-hero')).toBeVisible();
+  await expect(page.locator('.team-form-step')).toHaveCount(3);
   await page.locator('#team-comp-name').fill('Trận Toán khởi động');
   await page.locator('#team-comp-common-exam').selectOption('exam-team');
   await page.locator('.team-target-count').nth(0).fill('3');
@@ -66,6 +71,8 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await page.getByRole('button', { name: 'Đã chuẩn bị' }).click();
 
   await expect(page.locator('.team-competition-board')).toBeVisible();
+  await expect(page.locator('.team-board-hero')).toBeVisible();
+  await expect(page.locator('.team-board-summary')).toBeVisible();
   await expect(page.locator('.team-board-card')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
