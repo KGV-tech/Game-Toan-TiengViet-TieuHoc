@@ -47,5 +47,6 @@ Metadata Bài học của câu hỏi và nhiệm vụ được lưu trong cấu 
 - Contract test kiểm tra danh mục, số lượng, quan hệ Chủ đề–Bài học và luật chỉ hỗ trợ Toán 4.
 - Browser test kiểm tra hiển thị có điều kiện trong Admin và không rò Bài học sang luồng học sinh.
 - Chạy toàn bộ `test_*.cjs`, sau đó `npm test`, kiểm tra diff và commit trên nhánh riêng.
-- Không merge hoặc triển khai Supabase khi chưa có review bắt buộc và chấp thuận của người dùng.
+- Chỉ merge khi Codex đã review, các lỗi bắt buộc đã xử lý, kiểm thử xanh và người dùng đã cho phép, theo `docs/AI_WORKFLOW.md`. Kimi review chỉ thực hiện khi người dùng yêu cầu rõ ràng.
+- Không triển khai Supabase khi chưa có chấp thuận riêng của người dùng cho đúng dự án và phạm vi thay đổi.
 

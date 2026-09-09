@@ -1,5 +1,7 @@
 # Kế hoạch triển khai thi đua đội nhóm
 
+> Cập nhật quy trình 09/09/2026 cho mọi kế hoạch trong tệp này: mặc định bỏ qua Kimi review; chỉ thực hiện khi người dùng yêu cầu rõ ràng. Codex tự review và kiểm thử theo `docs/AI_WORKFLOW.md`.
+
 ## Mục tiêu
 
 Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp học: giáo viên tạo trận, chia đội, chọn trưởng nhóm/bộ đề/thời gian, chuẩn bị và trình chiếu bảng thi đua; trưởng nhóm làm bài trên một tablet và bị khóa lượt khi rời giữa chừng. Điểm đội được gán giống nhau cho từng thành viên nhưng không làm thay đổi hệ thống điểm cá nhân hiện có.
@@ -64,7 +66,7 @@ Triển khai vertical slice an toàn cho thi đua đội nhóm trong một lớp
 
 1. Chạy test contract liên quan, sau đó toàn bộ `test_*.cjs` và `npm test`.
 2. Chạy Playwright ở 1280×720 và 1024×768 ngang; kiểm tra console/runtime.
-3. Review diff, tạo commit nhánh `codex/`, gửi Kimi review theo commit cố định.
+3. Codex tự review diff và tạo commit nhánh `codex/`. Chỉ gửi Kimi review commit cố định khi người dùng yêu cầu rõ ràng.
 4. Chỉ merge sau khi finding bắt buộc đã xử lý và người dùng đồng ý.
 
 ## Tiêu chí hoàn thành lượt hiện tại

@@ -4,7 +4,7 @@
 
 Game ưu tiên trải nghiệm học tập trên **laptop** và **tablet**. Điện thoại không phải nền tảng mục tiêu vì học sinh tiểu học không được khuyến khích dùng điện thoại để chơi game.
 
-Quyết định này áp dụng cho mọi đề xuất thiết kế, sửa lỗi giao diện, review Kimi và kiểm thử Playwright.
+Quyết định này áp dụng cho mọi đề xuất thiết kế, sửa lỗi giao diện, review và kiểm thử Playwright. Kimi review chỉ thực hiện khi người dùng yêu cầu, theo `docs/AI_WORKFLOW.md`.
 
 ## Thứ tự ưu tiên
 
@@ -20,7 +20,7 @@ Quyết định này áp dụng cho mọi đề xuất thiết kế, sửa lỗi
 - Không coi một đề xuất **chỉ cải thiện điện thoại** là lỗi P0/P1 hoặc điều kiện chặn merge.
 - Không thêm tính năng, breakpoint, layout hay màn hình riêng chỉ để tối ưu điện thoại nếu không có yêu cầu mới từ người phụ trách dự án.
 - Vẫn sửa nếu lỗi trên điện thoại gây ảnh hưởng đến laptop/tablet, liên quan an toàn/khả năng truy cập, hoặc làm ứng dụng trắng trang/không dùng được ngoài ý định hiển thị hướng dẫn xoay ngang.
-- Khi Kimi nêu vấn đề chỉ trên điện thoại, ghi nhãn: `Ngoài phạm vi ưu tiên — điện thoại không phải nền tảng mục tiêu`; chỉ chuyển thành việc cần làm khi người phụ trách xác nhận.
+- Khi review nêu vấn đề chỉ trên điện thoại, ghi nhãn: `Ngoài phạm vi ưu tiên — điện thoại không phải nền tảng mục tiêu`; chỉ chuyển thành việc cần làm khi người phụ trách xác nhận.
 
 ## Quy tắc thiết kế và kiểm thử
 

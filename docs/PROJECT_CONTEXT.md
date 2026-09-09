@@ -42,13 +42,17 @@
 - Không xếp đề xuất chỉ tối ưu điện thoại thành lỗi bắt buộc, trừ khi ảnh hưởng laptop/tablet, an toàn, khả năng truy cập hoặc làm ứng dụng vỡ nghiêm trọng.
 - Xem quy định và kích thước kiểm thử cụ thể tại `docs/UX_DEVICE_POLICY.md`.
 
+## Quy trình review hiện hành
+
+Theo yêu cầu người dùng ngày 09/09/2026, Kimi review mặc định tắt cho mọi công việc tiếp theo; chỉ thực hiện trong phạm vi người dùng yêu cầu rõ ràng. Codex tự review và chạy kiểm thử phù hợp trước khi bàn giao. Quy trình và điều kiện merge được quy định tại `docs/AI_WORKFLOW.md`; không chờ kết quả Kimi khi người dùng chưa yêu cầu review.
+
 ## Gói ngữ cảnh cho một yêu cầu
 
-Khi giao việc cho Codex hoặc Kimi, luôn kèm:
+Khi giao việc cho Codex, hoặc cho Kimi khi người dùng yêu cầu review, luôn kèm:
 
 1. Mục tiêu và hành vi mong muốn.
 2. Link commit hoặc nhánh chính xác.
 3. Các tệp liên quan và kết quả kiểm thử gần nhất.
 4. Ràng buộc: không thay đổi Supabase, không xóa dữ liệu, không refactor ngoài phạm vi.
 
-Với Kimi web, dùng URL commit cố định thay vì chỉ đưa tên nhánh để tránh đọc cache cũ.
+Nếu người dùng yêu cầu dùng Kimi web, cung cấp URL commit cố định thay vì chỉ đưa tên nhánh để tránh đọc cache cũ.

@@ -276,4 +276,4 @@ Việc thêm bảng, migration, RLS, API hoặc thay đổi quyền Supabase cho
 
 ## Khi triển khai
 
-Tuân thủ vòng trong `docs/AI_WORKFLOW.md`: viết/cập nhật test trước thay đổi hành vi, phát triển từng phạm vi nhỏ, chạy test liên quan rồi toàn bộ test, commit nhánh riêng, Kimi review commit cố định, sau đó Playwright kiểm thử UI. Không refactor lớn `src/main.js` đồng thời với tính năng này.
+Tuân thủ vòng trong `docs/AI_WORKFLOW.md`: viết/cập nhật test trước thay đổi hành vi, phát triển từng phạm vi nhỏ, Codex tự review, chạy test liên quan rồi toàn bộ test và Playwright kiểm thử UI, commit nhánh riêng rồi bàn giao/merge khi người dùng đã cho phép. Kimi review mặc định bỏ qua, chỉ thực hiện khi người dùng yêu cầu rõ ràng. Không refactor lớn `src/main.js` đồng thời với tính năng này.
