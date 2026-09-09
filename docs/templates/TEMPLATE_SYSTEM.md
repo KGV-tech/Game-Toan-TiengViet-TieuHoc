@@ -1,6 +1,6 @@
 # Hệ thống Template câu hỏi — Toán lớp 4
 
-> Trạng thái: **PROPOSED / chờ duyệt theo giai đoạn**
+> Trạng thái: **Phase 2 đã triển khai trong repo / chờ preview và apply migration**
 > Cập nhật: 09/09/2026
 > Phạm vi tài liệu: kiến trúc, dữ liệu, generator, Supabase, lộ trình nội dung và kế hoạch thay mới toàn bộ Template.
 
@@ -11,10 +11,10 @@ Template là một phần lõi của game: nó vừa cung cấp câu hỏi cho h
 Tài liệu này là hồ sơ thiết kế trước khi triển khai. Trong lượt tạo tài liệu này:
 
 - Đã lập kiến trúc và lộ trình đề xuất.
-- Chưa xoá, chưa tạo mới hoặc sửa hàng loạt Template trong Supabase.
-- Chưa thay generator hiện hữu.
+- Không xoá hoặc sửa hàng loạt Template cũ trong Supabase.
+- Phase 2 đã thêm các generator mới cho B03, B04 và blueprint review B06 trong repo; migration seed vẫn chờ người dùng apply.
 - Migration thêm trường `lesson` đã có trong repo từ công việc trước, nhưng chưa được apply vào Supabase production.
-- Chỉ bắt đầu Giai đoạn 1 sau khi người dùng duyệt checkpoint tương ứng.
+- Không tạo B05: family bài toán ba bước vẫn bị hoãn theo yêu cầu người dùng.
 
 Nguyên tắc duyệt:
 
@@ -252,10 +252,10 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | Khu vực | Hiện trạng | Hướng xử lý |
 | --- | --- | --- |
 | Bài 1–2 | Một số generator số và bốn phép tính đang dùng chung Chủ đề hoặc suy luận bằng key. | Tách record theo Bài 1/Bài 2, giới hạn phạm vi số/phép tính và đổi tên rõ. |
-| Bài 3 | Chưa có family riêng cho số chẵn/lẻ. | Thêm phân loại, đếm, dãy và lập số chẵn/lẻ. |
-| Bài 4 | Chưa có generator biểu thức chứa chữ. | Thêm thay giá trị, tính giá trị và chọn biểu thức. |
-| Bài 5 | Chưa có family bài toán ba bước. | Thêm generator dữ kiện 3 bước, kiểm tra từng bước. |
-| Bài 6 | Chưa có bộ luyện tập chung có chủ đích. | Tạo pool review có nhãn kỹ năng, không trộn kiến thức mới. |
+| Bài 3 | Đã có family riêng trong Phase 2: phân loại, đếm, dãy và lập số. | Tiếp tục preview/seed; kiểm tra thêm khi có dữ liệu Admin thật. |
+| Bài 4 | Đã có generator thay giá trị và chọn giá trị biểu thức chứa chữ. | Tiếp tục preview/seed; không mở rộng sang semantics ngoài SGK. |
+| Bài 5 | Chưa triển khai theo yêu cầu người dùng. | Tạm hoãn generator bài toán ba bước, không seed hoặc gắn vào review. |
+| Bài 6 | Đã có blueprint review B01–B04 trong Phase 2. | Giữ đúng bốn kỹ năng đã học, không trộn nội dung B05. |
 | Bài 7 | Các generator góc hiện tại chủ yếu bị suy luận về Bài 8. | Bổ sung đo góc/đơn vị độ và tách Bài 7 khỏi Bài 8. |
 | Bài 9 | Chưa có review góc riêng. | Tạo pool review Bài 9. |
 | Bài 10, 12, 13 | Thiếu số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn. | Thêm generator đúng từng kỹ năng. |
@@ -278,8 +278,8 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | B02 `g4-math-hk1-b02` | Cộng/trừ trong 100 000; nhân/chia trong phạm vi đã học; biểu thức nhiều bước; bài toán thực tế; Đúng/Sai phép tính. |
 | B03 `g4-math-hk1-b03` | Phân loại chẵn/lẻ; đếm số chẵn/lẻ trong đoạn; dãy chẵn/lẻ; lập số chẵn/lẻ từ thẻ số. |
 | B04 `g4-math-hk1-b04` | Thay giá trị vào biểu thức chứa chữ; tính giá trị; chọn biểu thức đúng; so sánh giá trị đơn giản. |
-| B05 `g4-math-hk1-b05` | Bài toán ba bước: tìm dữ kiện trung gian, chọn phép tính, hoàn thiện lời giải và kiểm tra kết quả. |
-| B06 `g4-math-hk1-b06` | Review có nhãn kỹ năng của B01–B05; không sinh nội dung vượt quá cụm này. |
+| B05 `g4-math-hk1-b05` | Tạm hoãn theo duyệt của người dùng; chưa tạo generator/record. |
+| B06 `g4-math-hk1-b06` | Review có nhãn kỹ năng của B01–B04; không sinh nội dung vượt quá cụm này. |
 
 ### Giai đoạn nội dung B — Góc và đơn vị đo góc
 
@@ -579,16 +579,16 @@ Kết quả: 28 record **GẮN** đã có manifest/migration; 18 record cần ha
 
 Phụ thuộc: Phase 1 và duyệt family nội dung A.
 
-Thực hiện:
+Đã triển khai trong repo:
 
-- tách B01/B02 khỏi các record tổng quát;
-- thêm số chẵn/lẻ B03;
-- thêm biểu thức chứa chữ B04;
-- chưa thêm bài toán ba bước B05; family này tạm hoãn theo duyệt ngày 09/09/2026;
-- tạo review B06 có blueprint;
-- preview theo dạng bài VBT và test nhiều seed.
+- thêm bốn generator số chẵn/lẻ B03;
+- thêm hai generator biểu thức chứa chữ B04;
+- tạo review B06 cố định B01–B04;
+- nối bảy lựa chọn/preset/preview vào Admin editor;
+- tạo migration seed idempotent, không chứa B05;
+- kiểm thử contract nhiều seed và browser editor ở desktop.
 
-Checkpoint: duyệt card/preview và dữ liệu mẫu trước khi seed chính thức.
+Checkpoint còn lại: duyệt card/preview và dữ liệu mẫu, sau đó người dùng apply migration vào đúng project trước khi archive/tách record cũ B01/B02.
 
 ### Phase 3 — Rebuild Bài 7–9
 
@@ -686,7 +686,7 @@ Thực hiện:
 3. **Archive bằng `is_active=false`**, không xoá vật lý trong đợt rebuild đầu.
 4. **Dùng generator cũ khi semantics còn đúng**, nhưng tạo record mới hẹp; chỉ viết generator mới khi dạng bài hoặc interaction khác bản chất.
 5. **Ưu tiên hoàn tất HK1 trước**, vì hiện đã có SGK/VBT Tập 1 để kiểm chứng; HK2 chờ nguồn Tập 2.
-6. **Làm Phase 1 trước Phase 2**, để không tạo thêm Template khi chưa biết chính xác record cũ nào cần giữ/tách/archive. Phase 1 mapping trực tiếp đã được duyệt; B05 vẫn tạm hoãn.
+6. **Làm Phase 1 trước Phase 2**, để không tạo thêm Template khi chưa biết chính xác record cũ nào cần giữ/tách/archive. Phase 1 mapping trực tiếp đã được duyệt; Phase 2 đã triển khai B03/B04/B06, còn B05 vẫn tạm hoãn.
 
 ## 16. Checklist bàn giao cuối cùng
 

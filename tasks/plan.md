@@ -163,12 +163,12 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 
 ### Phase 2 — Bài 1–6
 
-- [ ] Tách B01/B02 khỏi record số/phép tính tổng quát.
-- [ ] Thêm family số chẵn/lẻ B03, biểu thức chứa chữ B04; bài toán ba bước B05 tạm hoãn.
-- [ ] Tạo blueprint review B06.
-- [ ] Preview, test nhiều seed, kiểm tra không vượt phạm vi bài.
+- [x] Giữ mapping trực tiếp B01/B02 của Phase 1 và chưa archive record tổng quát khi chưa có dependency check.
+- [x] Thêm family số chẵn/lẻ B03 và biểu thức chứa chữ B04; bài toán ba bước B05 tạm hoãn.
+- [x] Tạo blueprint review B06 chỉ bao phủ B01–B04.
+- [x] Thêm migration seed idempotent, preview Admin và test nhiều seed; kiểm tra không vượt phạm vi bài.
 
-**Checkpoint:** người dùng duyệt danh sách Template và preview trước seed.
+**Checkpoint:** người dùng duyệt danh sách Template và preview trước khi apply migration seed; việc archive/tách record B01/B02 để phase dữ liệu sau.
 
 ### Phase 3 — Bài 7–9
 

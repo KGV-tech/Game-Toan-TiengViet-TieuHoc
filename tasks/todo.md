@@ -78,9 +78,9 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [x] Tạo manifest/validator và contract test lesson mapping.
 - [x] Gửi mapping; người dùng đã duyệt nhóm gắn trực tiếp, không tạo B05.
 
-### Các phase nội dung chờ duyệt
+### Các phase nội dung
 
-- [ ] Phase 2: Rebuild Bài 1–6, gồm số chẵn/lẻ, biểu thức chứa chữ và review; bài toán ba bước B05 tạm hoãn.
+- [x] Phase 2: Rebuild Bài 1–6 trong repo, gồm bốn family số chẵn/lẻ B03, hai family biểu thức chứa chữ B04 và review B06 B01–B04; bài toán ba bước B05 tạm hoãn. Chờ preview/apply migration.
 - [ ] Phase 3: Rebuild Bài 7–9, gồm đo góc, phân loại góc và review góc.
 - [ ] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review.
 - [ ] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
