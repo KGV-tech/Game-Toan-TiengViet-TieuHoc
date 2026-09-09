@@ -202,6 +202,7 @@ test('thang điểm chỉ chấp nhận 1, 2 hoặc 4 đáp án và giữ điể
   const scores = await page.evaluate(() => ({
     single: app.game.calculateQuestionScore({ type: 'Điền khuyết', ans: '42' }, '42'),
     twoParts: app.game.calculateQuestionScore({ type: 'Điền khuyết', ans: 'đỏ, xanh' }, 'đỏ, vàng'),
+    groupedPair: app.game.calculateQuestionScore({ type: 'Điền khuyết', ans: '12, 14', partAnswerCounts: [2] }, ['12', '14']),
     fourParts: app.game.calculateQuestionScore({
       type: 'Đúng/Sai',
       statements: [
@@ -214,6 +215,7 @@ test('thang điểm chỉ chấp nhận 1, 2 hoặc 4 đáp án và giữ điể
 
   expect(scores.single).toMatchObject({ answerCount: 1, correctCount: 1, points: 1, isCorrect: true });
   expect(scores.twoParts).toMatchObject({ answerCount: 2, correctCount: 1, points: 0.5, isCorrect: false });
+  expect(scores.groupedPair).toMatchObject({ answerCount: 1, correctCount: 1, points: 1, isCorrect: true });
   expect(scores.fourParts).toMatchObject({ answerCount: 4, correctCount: 3, points: 0.75, isCorrect: false });
   expect(scores.invalidThree).toContain('1, 2 hoặc 4');
   expect(scores.invalidFive).toContain('1, 2 hoặc 4');
@@ -1414,7 +1416,8 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
     await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
     await page.locator('#template-preview-open').click();
     await expect(page.locator('#template-preview-dialog')).toBeVisible();
-    await expect(page.locator('#template-preview-dialog')).toContainText(questionType === 'Kéo thả' ? 'Kéo thả' : 'Đếm');
+    await expect(page.locator('#template-preview-dialog')).toContainText(questionType === 'Kéo thả' ? 'Kéo đáp án' : 'góc nhọn');
+    await expect(page.locator('#template-preview-dialog .template-preview__line, #template-preview-dialog .template-preview__angle-list > div')).toHaveCount(4);
     await page.locator('#template-preview-back').click();
     await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
     await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ lesson: 'g4-math-hk1-b08' });

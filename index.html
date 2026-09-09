@@ -315,38 +315,6 @@
             </div>
           </header>
 
-          <section id="admin-compose-context" class="admin-compose-context" aria-label="Ngữ cảnh soạn đề">
-            <label class="admin-compose-field" for="admin-compose-class">
-              <span>Cấp lớp</span>
-              <select id="admin-compose-class" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
-                <option value="Lớp 4" selected>Lớp 4</option>
-                <option value="Lớp 5">Lớp 5</option>
-                <option value="Lớp 3">Lớp 3</option>
-                <option value="Lớp 2">Lớp 2</option>
-                <option value="Lớp 1">Lớp 1</option>
-              </select>
-            </label>
-            <label class="admin-compose-field" for="admin-compose-subject">
-              <span>Môn học</span>
-              <select id="admin-compose-subject" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
-                <option value="Toán" selected>Toán</option>
-                <option value="Tiếng Việt">Tiếng Việt</option>
-              </select>
-            </label>
-            <label class="admin-compose-field" for="admin-compose-period">
-              <span>Thời gian</span>
-              <select id="admin-compose-period" class="admin-compose-select" onchange="app.admin.updateComposerContext()">
-                <option value="Học Kỳ 1">Học Kỳ 1</option>
-                <option value="Học Kỳ 2">Học Kỳ 2</option>
-                <option value="Cả Năm">Cả Năm</option>
-              </select>
-            </label>
-            <label class="admin-compose-field admin-compose-field--search" for="admin-compose-search">
-              <span>Tìm nhanh trong kho</span>
-              <input id="admin-compose-search" class="admin-compose-input" type="search" placeholder="Tên template, câu hỏi, đề kiểm tra…" oninput="app.admin.updateComposerContext()">
-            </label>
-          </section>
-
           <section id="admin-compose-workspaces" class="admin-compose-workspaces" aria-labelledby="admin-compose-workspaces-title">
             <div class="admin-compose-section-heading">
               <div>

@@ -140,6 +140,35 @@ assert.equal(neighbors.practiceRows.length, 4, 'The neighbor template must expos
 assert(neighbors.practiceRows.every(row => row.answers.length === 2), 'Each neighbor row must expose its two answers separately.');
 assert.match(neighbors.templateVariables.neighbor_line, /___/, 'The neighbor template must expose a reusable blank-number line.');
 
+const selectedDigitParts = generateQuestion('number.digit_at_place', {
+    minimum: 10000, maximum: 99999, selectedParts: [0, 2]
+}, seededRandom(801));
+assert.equal(selectedDigitParts.subquestions.length, 2, 'Selecting two parts must keep exactly two generated subquestions.');
+assert.deepEqual(selectedDigitParts.partAnswerCounts, [1, 1], 'Two selected single-answer parts must keep equal scoring groups.');
+assert.equal(selectedDigitParts.ans.split(', ').length, 2, 'Selecting two parts must keep answer order and count.');
+assert.deepEqual(selectedDigitParts.selectedParts, [0, 1], 'Selected part indexes are normalized to the saved question order.');
+
+const selectedNeighborPart = generateQuestion('number.neighbor_numbers', {
+    minimum: 10000, maximum: 99999, selectedParts: [2]
+}, seededRandom(802));
+assert.equal(selectedNeighborPart.practiceRows.length, 1, 'Selecting one part must keep one neighbor row.');
+assert.deepEqual(selectedNeighborPart.partAnswerCounts, [2], 'A neighbor row keeps its two blanks as one scoring group.');
+assert.equal(selectedNeighborPart.ans.split(', ').length, 2, 'A selected neighbor row must keep both adjacent-number answers.');
+
+const selectedExpandedPart = generateQuestion('number.missing_expanded_addend', {
+    minimum: 10000, maximum: 99999, selectedParts: [1, 3]
+}, seededRandom(804));
+assert.equal(selectedExpandedPart.ans.split(', ').length, 2, 'A prompt-only four-part template must keep two selected answers.');
+assert.equal(selectedExpandedPart.q.split('<br>').filter(line => /^[a-d]\)/.test(line)).length, 2, 'A prompt-only four-part template must keep two selected lines.');
+
+const selectedSequenceParts = generateQuestion('number.natural_sequence', {
+    minimum: 10000, maximum: 9999999, allowedSteps: [1000], sequenceLengthMin: 5,
+    sequenceLengthMax: 5, blankCountMin: 2, blankCountMax: 2, selectedParts: [1, 3]
+}, seededRandom(803));
+assert.equal(selectedSequenceParts.sequenceRounds.length, 2, 'A sequence template must support two selected rounds.');
+assert.equal(selectedSequenceParts.partAnswerCounts.length, 2, 'Sequence scoring groups must follow selected rounds.');
+assert.equal(selectedSequenceParts.ans.split(', ').length, selectedSequenceParts.partAnswerCounts.reduce((sum, count) => sum + count, 0));
+
 const fourArithmeticBlanks = generateQuestion('number.four_arithmetic_blanks', {
     minimumDigits: 2,
     maximumDigits: 2,

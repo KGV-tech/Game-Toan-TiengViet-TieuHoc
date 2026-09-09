@@ -34,6 +34,11 @@ assert(source.includes('hundredBillions'), 'Template editor must support place v
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
 assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
+assert(source.includes('template-part-checkbox'), 'Template editor must expose a checkbox for each default subquestion.');
+assert(source.includes('template-part-count'), 'Template editor must expose the supported 1/2/4 subquestion counts.');
+assert(source.includes('exam-structured-part__checkbox'), 'Exam question editors must expose a checkbox for each structured subquestion.');
+assert(source.includes('getEmptyExamQuestionDraft'), 'Blank exam composer cards must start with four editable subquestions.');
+assert(source.includes('getValidPartAnswerCounts'), 'Question scoring must validate grouped subquestion answers.');
 assert(source.includes('presetPrompt'), 'Templates stored with {question} must show a readable default prompt in the editor.');
 assert(source.includes('defaultPrompt'), 'Every dynamic template must declare its readable default prompt.');
 assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
