@@ -1,6 +1,8 @@
-# Mẫu yêu cầu Kimi review
+# Mẫu yêu cầu Kimi review — chỉ dùng khi người dùng yêu cầu
 
-Tạo chat mới trong Kimi, chọn model phù hợp, rồi thay nội dung trong ngoặc vuông và gửi:
+> Chính sách từ 09/09/2026: mặc định bỏ qua Kimi review. Tệp này chỉ là mẫu tham khảo, không tạo yêu cầu review hay điều kiện chặn bàn giao/merge. Xem `docs/AI_WORKFLOW.md`.
+
+Chỉ khi người dùng yêu cầu rõ ràng Kimi review cho một phạm vi cụ thể, tạo chat mới trong Kimi, chọn model phù hợp, rồi thay nội dung trong ngoặc vuông và gửi:
 
 ```text
 Bạn là reviewer độc lập cho game học Toán và Tiếng Việt tiểu học.
