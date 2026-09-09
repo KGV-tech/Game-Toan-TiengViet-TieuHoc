@@ -3855,7 +3855,7 @@ const app = {
                 selectedTopics = selectedTopics.filter(topic => topics.includes(topic));
                 delete topicWrap.dataset.selected;
                 topicWrap.innerHTML = topics.length
-                    ? topics.map(topic => `<label class="exam-composer__topic-option"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
+                    ? topics.map((topic, topicIndex) => `<label class="exam-composer__topic-option${selectedTopics.includes(topic) ? ' is-selected' : ''}" data-topic-index="${topicIndex}"><input type="checkbox" value="${app.data.sanitizeHTML(topic)}" ${selectedTopics.includes(topic) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(topic)}</span></label>`).join('')
                     : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
@@ -3891,6 +3891,62 @@ const app = {
                 this.updateExamQuestionLesson(i);
                 i++;
             }
+            this.syncExamComposerTopicStates();
+        },
+        syncExamComposerTopicStates() {
+            document.querySelectorAll('#add-e-topics .exam-composer__topic-option').forEach(option => {
+                const input = option.querySelector('input[type="checkbox"]');
+                const selected = Boolean(input?.checked);
+                option.classList.toggle('is-selected', selected);
+                option.dataset.selected = String(selected);
+            });
+        },
+        updateExamQuestionCard(index) {
+            const card = document.querySelector(`.exam-question-card[data-question-index="${index}"]`);
+            if (!card) return;
+            const questionText = document.getElementById(`add-e-q-q-${index}`)?.value.trim() || '';
+            const answerText = [
+                document.getElementById(`add-e-q-ans-${index}`)?.value,
+                ...Array.from(card.querySelectorAll('input[id*="-opt"], input[id*="-match-"]')).map(input => input.value),
+                ...Array.from(card.querySelectorAll('input[id*="structured"], textarea[id*="structured"]')).map(input => input.value)
+            ].some(value => String(value || '').trim());
+            const filled = Boolean(questionText || answerText);
+            const status = card.querySelector('.exam-question-card__status');
+            const subtitle = card.querySelector('.exam-question-card__title-wrap p');
+            card.classList.toggle('is-filled', filled);
+            card.classList.toggle('is-empty', !filled);
+            status?.classList.toggle('exam-question-card__status--filled', filled);
+            if (status) status.textContent = filled ? 'Đã điền' : 'Chưa điền';
+            if (subtitle) subtitle.textContent = filled ? 'Nội dung đã nhập, tiếp tục hoàn thiện.' : 'Bắt đầu từ nội dung câu hỏi.';
+            this.updateExamComposerProgress();
+        },
+        updateExamComposerProgress() {
+            const composer = document.querySelector('.exam-composer');
+            if (!composer) return;
+            const total = app.game.questionsPerRound;
+            const count = composer.querySelectorAll('.exam-question-card.is-filled').length;
+            const progress = composer.querySelector('.exam-composer__progress');
+            const progressStrong = progress?.querySelector('.exam-composer__progress-heading strong');
+            const progressTrack = progress?.querySelector('.exam-composer__progress-track i');
+            const progressHint = progress?.querySelector('small');
+            const sectionCount = composer.querySelector('.exam-composer__question-bank .exam-composer__section-count');
+            if (progressStrong) progressStrong.textContent = count;
+            if (progressTrack) progressTrack.style.width = `${Math.min(100, count / total * 100)}%`;
+            if (progressHint) progressHint.textContent = count === total ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, total - count)} câu cần hoàn thiện`;
+            if (sectionCount) sectionCount.innerHTML = `<strong>${count}</strong> / ${total} câu đã có`;
+        },
+        bindExamComposerInteractions() {
+            const composer = document.querySelector('.exam-composer');
+            if (!composer || composer.dataset.interactionsBound === 'true') return;
+            composer.dataset.interactionsBound = 'true';
+            const update = event => {
+                const card = event.target.closest?.('.exam-question-card');
+                if (!card) return;
+                this.updateExamQuestionCard(card.dataset.questionIndex);
+            };
+            composer.addEventListener('input', update);
+            composer.addEventListener('change', update);
+            composer.querySelectorAll('.exam-question-card').forEach(card => this.updateExamQuestionCard(card.dataset.questionIndex));
         },
         toggleQuestionType(prefix, idx = '') {
             const suffix = idx !== '' ? `-${idx}` : '';
@@ -6549,19 +6605,21 @@ const app = {
                 subBox.innerHTML = `
             <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
-                  <div>
+                  <div class="exam-composer__header-copy">
                      <p class="exam-composer__eyebrow">${e ? 'CHỈNH SỬA ĐỀ' : 'TẠO ĐỀ MỚI'}</p>
                      <h3>${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}</h3>
-                     <p class="exam-composer__description">Điền thông tin đề trước, sau đó hoàn thiện đủ 10 câu hỏi bên dưới.</p>
+                     <p class="exam-composer__description">Điền thông tin chung, chọn chủ đề và hoàn thiện từng câu hỏi trong một không gian rõ ràng.</p>
                   </div>
-                  <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có">
-                     <strong>${existingQuestionCount}</strong><span>/ ${app.game.questionsPerRound} câu đã có</span>
+                  <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có" aria-live="polite">
+                     <div class="exam-composer__progress-heading"><span>TIẾN ĐỘ SOẠN</span><span><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu</span></div>
+                     <div class="exam-composer__progress-track" aria-hidden="true"><i style="width:${Math.min(100, existingQuestionCount / app.game.questionsPerRound * 100)}%"></i></div>
+                     <small>${existingQuestionCount === app.game.questionsPerRound ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, app.game.questionsPerRound - existingQuestionCount)} câu cần hoàn thiện`}</small>
                   </div>
                </header>
 
-               <section class="exam-composer__section exam-composer__meta" aria-labelledby="exam-composer-meta-title">
+               <section class="exam-composer__section exam-composer__meta" data-composer-section="meta" aria-labelledby="exam-composer-meta-title">
                   <div class="exam-composer__section-heading">
-                     <h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4>
+                     <div><span class="exam-composer__section-kicker">BƯỚC 01 · KHỞI TẠO</span><h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4></div>
                      <p>Dùng các trường này để phân loại và tìm lại đề trong thư viện.</p>
                   </div>
                   <label class="exam-form-field">
@@ -6582,7 +6640,7 @@ const app = {
                      </select>
                   </label>
                   <label class="exam-form-field">
-                     <span>Kỳ kiểm tra</span>
+                     <span>Thời gian</span>
                      <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Giữa kỳ 1" ${e && e.period === 'Giữa kỳ 1' ? 'selected' : ''}>Giữa kỳ 1</option>
                      <option value="Cuối kỳ 1" ${e && e.period === 'Cuối kỳ 1' ? 'selected' : ''}>Cuối kỳ 1</option>
@@ -6635,13 +6693,13 @@ const app = {
                </section>
                ` : ''}
 
-               <section class="exam-composer__section exam-composer__question-bank" aria-labelledby="exam-composer-questions-title">
+               <section class="exam-composer__section exam-composer__question-bank" data-composer-section="questions" aria-labelledby="exam-composer-questions-title">
                   <div class="exam-composer__section-heading">
                      <div>
-                        <h4 id="exam-composer-questions-title">${e && e.questions && e.questions.length > 0 ? '3' : '2'}. Soạn câu hỏi cho đề</h4>
-                        <p>Mỗi thẻ là một câu hoàn chỉnh. Các ô lựa chọn chỉ hiện khi loại câu hỏi cần dùng.</p>
+                        <span class="exam-composer__section-kicker">BƯỚC ${e && e.questions && e.questions.length > 0 ? '03' : '02'} · BIÊN TẬP</span><h4 id="exam-composer-questions-title">Soạn câu hỏi cho đề</h4>
+                        <p>Mỗi thẻ là một câu hoàn chỉnh. Chọn loại câu để mở đúng nhóm trường cần biên tập.</p>
                      </div>
-                     <span class="exam-composer__section-count">${app.game.questionsPerRound} thẻ câu hỏi</span>
+                     <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu đã có</span>
                   </div>
                   <div class="exam-question-list">
                   ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
@@ -6650,11 +6708,11 @@ const app = {
                     const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
                     const optionsDisplay = hasStructuredOptions || (q && q.type && q.type !== 'Trắc nghiệm' && q.type !== 'Kéo thả') ? 'none' : 'block';
                     return `
-                    <article class="exam-question-card">
+                    <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}">
                        <header class="exam-question-card__header">
                           <div class="exam-question-card__title-wrap">
                              <span class="exam-question-card__number">${i + 1}</span>
-                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Chưa điền nội dung.'}</p></div>
+                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
                           </div>
                           <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
                        </header>
@@ -6722,7 +6780,11 @@ const app = {
                </footer>
             </section>
           `;
-                setTimeout(() => app.admin.updateExamTopics(), 0);
+                setTimeout(() => {
+                    app.admin.updateExamTopics();
+                    app.admin.bindExamComposerInteractions();
+                    app.admin.updateExamComposerProgress();
+                }, 0);
             }
             else if (tab === 'tpl') {
                 subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;

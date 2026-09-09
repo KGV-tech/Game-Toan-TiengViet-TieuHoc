@@ -12,6 +12,41 @@ async function openExamComposer(page) {
   });
 }
 
+test('chi tiết Soạn Đề đồng bộ với bố cục thẻ tối và trạng thái tương tác', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openExamComposer(page);
+
+  await expect(page.locator('.exam-composer__meta')).toBeVisible();
+  await expect(page.locator('#exam-composer-meta-title')).toHaveText('1. Thông tin chung của đề');
+  await expect(page.locator('.exam-composer__question-bank')).toContainText('Soạn câu hỏi cho đề');
+  await expect(page.locator('.exam-question-card')).toHaveCount(10);
+
+  const detailLayout = await page.locator('.exam-composer__meta').evaluate(element => {
+    const style = getComputedStyle(element);
+    return { borderRadius: style.borderRadius, backgroundImage: style.backgroundImage };
+  });
+  expect(detailLayout.borderRadius).toBe('20px');
+  expect(detailLayout.backgroundImage).toContain('linear-gradient');
+
+  const topicLayout = await page.locator('.exam-composer__topic-option').first().evaluate(element => {
+    const style = getComputedStyle(element);
+    return { height: element.getBoundingClientRect().height, borderRadius: style.borderRadius };
+  });
+  expect(topicLayout.height).toBeGreaterThanOrEqual(56);
+  expect(topicLayout.borderRadius).toBe('12px');
+
+  const firstTopic = page.locator('.exam-composer__topic-option').first();
+  await firstTopic.locator('input').check();
+  await expect(firstTopic).toHaveClass(/is-selected/);
+  const selectedTopicColor = await firstTopic.evaluate(element => getComputedStyle(element).color);
+  expect(selectedTopicColor).not.toBe('rgb(219, 234, 254)');
+
+  await page.locator('#add-e-q-q-0').fill('Câu hỏi thử nghiệm');
+  await expect(page.locator('.exam-question-card').first()).toHaveClass(/is-filled/);
+  await expect(page.locator('.exam-question-card__status--filled').first()).toContainText('Đã điền');
+  await expect(page.getByRole('button', { name: 'Tạo đề tự động' })).toBeVisible();
+});
+
 test('Soạn đề chỉ hiện chủ đề của học kỳ đã chọn và Cả năm gộp hai học kỳ', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openExamComposer(page);
