@@ -3640,3 +3640,342 @@ input[type="text"], input[type="password"], select, textarea {
     .template-editor__preview-button:hover,
     .template-preview-dialog__action:hover { transform: none; }
 }
+
+/* Bản xem đề và bản in A4: giữ nội dung học sinh ở một canvas sạch, thoáng. */
+.exam-detail-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 2px 0 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .25);
+}
+.exam-detail-toolbar h3 {
+    min-width: 0;
+    color: #e8f5ff;
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.exam-detail-toolbar__actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+}
+.exam-detail-toolbar__actions .compact-admin-action { margin: 0; }
+
+.exam-print {
+    width: 100%;
+    margin-top: 20px;
+    padding: clamp(28px, 4vw, 48px) clamp(24px, 5vw, 64px);
+    border: 1px solid #d9e1ea;
+    border-radius: 4px;
+    background: #fff;
+    color: #111827;
+    font-family: 'Quicksand', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    text-align: left;
+    box-shadow: 0 12px 30px rgba(3, 10, 24, .16);
+}
+.exam-print__header {
+    text-align: center;
+}
+.exam-print__kicker {
+    margin: 0 0 7px;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+}
+.exam-print__title {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(1.55rem, 3vw, 2.3rem);
+    font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+.exam-print__meta {
+    margin: 10px 0 0;
+    color: #334155;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+.exam-print__rule {
+    height: 1px;
+    margin: 26px 0 4px;
+    background: #94a3b8;
+}
+.exam-print__questions {
+    display: block;
+}
+.exam-print__question {
+    margin: 0;
+    padding: 26px 0 4px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    line-height: 1.75;
+}
+.exam-print__question + .exam-print__question {
+    margin-top: 28px;
+    padding-top: 30px;
+    border-top: 1px solid #dbe3ec;
+}
+.exam-print__question-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 1.15rem;
+    line-height: 1.45;
+}
+.exam-print__question-heading small {
+    color: #475569;
+    font-size: .9rem;
+    font-weight: 700;
+}
+.exam-print__lead {
+    margin: 0 0 14px;
+    color: #1f2937;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+.exam-print__parts {
+    display: grid;
+    gap: 11px;
+}
+.exam-print__subquestion {
+    padding: 13px 15px 14px;
+    border: 1px solid #d5dee8;
+    border-radius: 8px;
+    background: #f8fafc;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.exam-print__subquestion-prompt {
+    min-height: 1.75em;
+    color: #111827;
+    line-height: 1.75;
+}
+.exam-print__subquestion-prompt > strong,
+.exam-print__part-label {
+    color: #0f172a;
+    font-weight: 900;
+}
+.exam-print__subquestion-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 28px;
+    margin-top: 10px;
+    padding-left: 22px;
+}
+.exam-print__subquestion-option {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: 30px;
+    color: #1f2937;
+    line-height: 1.65;
+}
+.exam-print__choice-box {
+    flex: 0 0 auto;
+    color: #111827;
+    font-family: Arial, sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+.exam-print__subquestion-empty,
+.exam-print__generic-answer {
+    margin-top: 11px;
+    color: #334155;
+}
+.exam-print__statement,
+.exam-print__comparison-row,
+.exam-print__practice-row,
+.exam-print__angle-count-row,
+.exam-print__sequence-round,
+.exam-print__answer-part {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-height: 38px;
+    color: #1f2937;
+    line-height: 1.8;
+}
+.exam-print__statement-text,
+.exam-print__comparison-side,
+.exam-print__practice-row > span:first-child,
+.exam-print__sequence-round > span:first-child,
+.exam-print__answer-part > span:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.exam-print__statement-choices {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: #334155;
+    white-space: nowrap;
+}
+.exam-print__comparison-row {
+    gap: 12px;
+}
+.exam-print__comparison-side {
+    flex: 0 1 38%;
+}
+.exam-print__comparison-side:last-child {
+    text-align: left;
+}
+.exam-print__answer-line,
+.exam-print__blank {
+    display: inline-block;
+    height: 1.45em;
+    min-width: 110px;
+    margin: 0 3px;
+    vertical-align: -.27em;
+    border-bottom: 1.5px dotted #334155;
+}
+.exam-print__blank {
+    min-width: 92px;
+    border-bottom-style: solid;
+}
+.exam-print__answer-line--short {
+    min-width: 42px;
+}
+.exam-print__choices-note {
+    margin: 0 0 4px;
+    color: #334155;
+    line-height: 1.65;
+}
+.exam-print__angle-item {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) minmax(110px, auto);
+    align-items: center;
+    gap: 12px;
+    min-height: 122px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.exam-print__angle-item:last-child { border-bottom: 0; }
+.exam-print__angle-figure,
+.exam-print__angle-visual {
+    min-width: 0;
+    text-align: center;
+}
+.exam-print__angle-figure svg,
+.exam-print__angle-visual svg {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+    max-height: 180px;
+}
+.exam-print__angle-visual {
+    margin: 0 0 13px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.exam-print__generic-line {
+    min-height: 34px;
+    line-height: 1.8;
+}
+.exam-print__generic-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 26px;
+    margin-top: 4px;
+    line-height: 1.7;
+}
+.exam-print__generic-options > span {
+    min-width: 0;
+}
+.exam-print__empty {
+    margin: 28px 0;
+    color: #475569;
+    text-align: center;
+}
+
+@media (max-width: 800px) {
+    .exam-detail-toolbar { align-items: flex-start; flex-direction: column; }
+    .exam-detail-toolbar__actions { width: 100%; justify-content: flex-end; }
+    .exam-print { padding: 24px 18px; }
+    .exam-print__subquestion-options,
+    .exam-print__generic-options { grid-template-columns: 1fr; }
+    .exam-print__statement { align-items: flex-start; flex-wrap: wrap; }
+    .exam-print__statement-text { flex-basis: calc(100% - 42px); }
+    .exam-print__statement-choices { margin-left: 42px; }
+    .exam-print__angle-item { grid-template-columns: 30px minmax(0, 1fr); }
+    .exam-print__angle-item .exam-print__answer-line { grid-column: 2; justify-self: start; }
+}
+
+@page {
+    size: A4 portrait;
+    margin: 14mm 16mm;
+}
+@media print {
+    html,
+    body {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #111827 !important;
+    }
+    body > * { display: none !important; }
+    body > #print-document { display: block !important; }
+    #print-document {
+        width: auto !important;
+        margin: 0 !important;
+    }
+    .exam-print {
+        width: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+    .exam-print__question,
+    .exam-print__subquestion,
+    .exam-print__angle-item { break-inside: avoid; page-break-inside: avoid; }
+
+    body.exam-printing > * { visibility: hidden !important; }
+    body.exam-printing #treasure-modal,
+    body.exam-printing #treasure-modal .admin-panel,
+    body.exam-printing #treasure-modal .admin-content,
+    body.exam-printing #treasure-modal #admin-e-subarea {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    body.exam-printing #print-area,
+    body.exam-printing #print-area * { visibility: visible !important; }
+    body.exam-printing #print-area {
+        display: block !important;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+}

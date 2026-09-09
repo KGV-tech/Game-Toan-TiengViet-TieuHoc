@@ -144,3 +144,99 @@ test('xem và chỉnh sửa từ thẻ mở đúng đề, bỏ bản nháp cũ v
   await page.locator('#btn-e-add').click();
   await expect(page.locator('#add-e-name')).toHaveValue('');
 });
+
+test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nội dung A4', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    const parts = ['a', 'b', 'c', 'd'];
+    app.data.exams = [{
+      id: 'exam-print-grade-4', name: 'Toán lớp 4 · Ôn tập cuối kỳ', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1',
+      questions: [
+        {
+          type: 'Trắc nghiệm', q: 'Chọn đáp án đúng cho mỗi ý sau.',
+          subquestions: parts.map((label, index) => ({ label, prompt: `Câu con ${label} về số tự nhiên`, options: ['10', '20', '30', '40'], answer: String((index + 1) * 10) })),
+          ans: '10, 20, 30, 40', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Đúng/Sai', q: 'Đọc các nhận định sau và chọn Đúng hoặc Sai.',
+          statements: parts.map((label, index) => ({ label: label.toUpperCase(), text: `Nhận định ${index + 1}`, answer: index % 2 ? 'Sai' : 'Đúng' })),
+          ans: 'Đúng, Sai, Đúng, Sai', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'So sánh', q: 'Điền dấu thích hợp.',
+          comparisonRows: parts.map((label, index) => ({ label, leftText: `${index + 1} 000`, rightText: `${index + 1} 001`, display: `${index + 1} 000 ___ ${index + 1} 001`, answer: '<' })),
+          ans: '<, <, <, <', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Điền khuyết', q: 'Hoàn thành các phép tính.',
+          practiceRows: parts.map((label, index) => ({ label, display: `${index + 1} + 1 = ___`, answer: String(index + 2) })),
+          ans: '2, 3, 4, 5', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Kéo thả', instruction: 'Phân loại các góc sau.', q: 'Phân loại các góc sau.',
+          angleItems: parts.map(label => ({ label, svg: '<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" /></svg>', type: 'Góc nhọn' })),
+          options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'], ans: 'Góc nhọn, Góc nhọn, Góc nhọn, Góc nhọn', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Điền khuyết', instruction: 'Đếm các loại góc trong hình.', q: 'Đếm các loại góc trong hình.',
+          angleVisual: '<svg viewBox="0 0 10 10"><path d="M1 9 L5 1 L9 9" /></svg>',
+          angleCountRows: parts.map((label, index) => ({ label, text: `góc loại ${index + 1}` })),
+          ans: '1, 2, 3, 4', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Chuỗi Quy luật', instruction: 'Điền số thích hợp vào mỗi dãy.', q: 'Điền số thích hợp vào mỗi dãy.',
+          sequenceRounds: parts.map((label, index) => ({ label, display: `${index + 1}, ___, ${index + 3}`, blankIndexes: [1] })),
+          ans: '2, 3, 4, 5', partAnswerCounts: [1, 1, 1, 1]
+        },
+        {
+          type: 'Điền khuyết', q: 'Hoàn thành từng dòng:<br>a) 10 + ___<br>b) 20 + ___<br>c) 30 + ___<br>d) 40 + ___',
+          ans: '1, 2, 3, 4', partAnswerCounts: [1, 1, 1, 1]
+        },
+        { type: 'Trắc nghiệm', q: 'Chọn một đáp án đúng.', options: ['10', '20', '30', '40'], ans: '10' },
+        { type: 'Đúng/Sai', q: 'Chọn Đúng hoặc Sai cho nhận định sau.', options: [], ans: 'Đúng' }
+      ]
+    }];
+    app.admin.renderESubTab('lib');
+  });
+
+  await page.getByLabel('Tìm trong thư viện đề').fill('ôn tập cuối kỳ');
+  await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Chi tiết đề: Toán lớp 4 · Ôn tập cuối kỳ' })).toBeVisible();
+  await expect(page.locator('#print-area .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
+  await expect(page.locator('#print-area .exam-print__question')).toHaveCount(10);
+  await expect(page.locator('#print-area .exam-print__subquestion')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__subquestion-option')).toHaveCount(16);
+  await expect(page.locator('#print-area .exam-print__statement')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__comparison-row')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__practice-row')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__angle-item')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__angle-count-row')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__sequence-round')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__answer-part')).toHaveCount(4);
+
+  const spacing = await page.locator('#print-area .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
+    const style = getComputedStyle(element);
+    return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
+  }));
+  expect(spacing[0].lineHeight / spacing[0].fontSize).toBeGreaterThan(1.5);
+  expect(spacing[0].paddingTop).toBeGreaterThanOrEqual(20);
+  expect(spacing[1].marginTop).toBeGreaterThanOrEqual(20);
+
+  const popupPromise = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'In PDF / A4', exact: true }).click();
+  const printPage = await popupPromise;
+  await printPage.waitForLoadState('domcontentloaded');
+  await expect(printPage.locator('body > #print-document')).toHaveCount(1);
+  await expect(printPage.locator('#print-document .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
+  await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(10);
+  await expect(printPage.locator('#print-document .exam-print__subquestion')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__angle-item')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__angle-count-row')).toHaveCount(4);
+  await expect(printPage.locator('#print-document .exam-print__sequence-round')).toHaveCount(4);
+  await expect(printPage.locator('.admin-panel, #treasure-modal, .admin-compose-shell')).toHaveCount(0);
+  await printPage.emulateMedia({ media: 'print' });
+  await expect(printPage.locator('body > #print-document')).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  expect(await page.locator('#print-area').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+});

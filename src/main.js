@@ -7897,35 +7897,221 @@ const app = {
                 this.renderESubTab('lib');
             });
         },
+        getExamPrintRawText(value) {
+            return String(value ?? '')
+                .replace(/<br\s*\/?\s*>/gi, '\n')
+                .replace(/<\/(?:p|div|li|tr|h[1-6])\s*>/gi, '\n')
+                .replace(/<[^>]*>/g, '')
+                .replace(/\r\n?/g, '\n')
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        },
+        getExamPrintText(value) {
+            return app.data.sanitizeHTML(app.data.formatMathText(this.getExamPrintRawText(value)))
+                .replace(/\n/g, '<br>');
+        },
+        getExamPrintTextWithBlanks(value) {
+            return this.getExamPrintText(value)
+                .replace(/_{3,}/g, '<span class="exam-print__blank" aria-hidden="true"></span>');
+        },
+        getExamPrintLabel(value, partIndex, uppercase = false) {
+            const fallback = String.fromCharCode((uppercase ? 65 : 97) + partIndex);
+            return app.data.sanitizeHTML(String(value || fallback).trim());
+        },
+        getExamPrintLead(question) {
+            const instruction = String(question?.instruction || '').trim();
+            if (instruction) return this.getExamPrintText(instruction);
+            const lines = this.getExamPrintRawText(question?.q).split('\n').map(line => line.trim()).filter(Boolean);
+            return this.getExamPrintText(lines[0] || 'Nội dung câu hỏi');
+        },
+        getExamPrintSafeSvg(value) {
+            const raw = String(value || '').trim();
+            if (!/^<svg\b/i.test(raw)) return '';
+            return raw
+                .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
+                .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                .replace(/\s(?:href|xlink:href)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                .replace(/url\s*\([^)]*\)/gi, 'none');
+        },
+        getExamPrintRowText(value, label) {
+            const text = this.getExamPrintRawText(value).replace(/^[a-dA-D][.)]\s*/, '').trim();
+            const prefix = `${label}) `;
+            return `${prefix}${text}`.trim();
+        },
+        renderExamPrintSubquestions(question) {
+            const parts = Array.isArray(question?.subquestions) ? question.subquestions : [];
+            const markup = parts.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex);
+                const prompt = this.getExamPrintText(part?.prompt || part?.text || '');
+                const options = Array.isArray(part?.options) ? part.options.filter(option => String(option ?? '').trim()) : [];
+                return `<article class="exam-print__subquestion">
+                    <div class="exam-print__subquestion-prompt"><strong>${label})</strong>${prompt ? ` <span>${prompt}</span>` : ''}</div>
+                    ${options.length ? `<div class="exam-print__subquestion-options">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true">□</span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>` : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>'}
+                </article>`;
+            }).join('');
+            return `<div class="exam-print__parts exam-print__parts--subquestions">${markup}</div>`;
+        },
+        renderExamPrintStatements(question) {
+            const parts = Array.isArray(question?.statements) ? question.statements : [];
+            return `<div class="exam-print__parts exam-print__parts--statements">${parts.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex, true);
+                return `<div class="exam-print__statement"><span class="exam-print__part-label">${label}.</span><span class="exam-print__statement-text">${this.getExamPrintText(part?.text || part?.prompt || '')}</span><span class="exam-print__statement-choices"><span>□ Đúng</span><span>□ Sai</span></span></div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintComparisonRows(question) {
+            const parts = Array.isArray(question?.comparisonRows) ? question.comparisonRows : [];
+            return `<div class="exam-print__parts exam-print__parts--comparison">${parts.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex);
+                const left = this.getExamPrintText(part?.leftText || '');
+                const right = this.getExamPrintText(part?.rightText || '');
+                const fallback = this.getExamPrintTextWithBlanks(part?.display || '');
+                return `<div class="exam-print__comparison-row"><span class="exam-print__part-label">${label})</span>${left || right ? `<span class="exam-print__comparison-side">${left}</span><span class="exam-print__answer-line exam-print__answer-line--short"></span><span class="exam-print__comparison-side">${right}</span>` : `<span class="exam-print__comparison-fallback">${fallback}</span>`}</div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintPracticeRows(question) {
+            const source = Array.isArray(question?.practiceRows)
+                ? question.practiceRows
+                : (Array.isArray(question?.subquestions) ? question.subquestions : []);
+            return `<div class="exam-print__parts exam-print__parts--practice">${source.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex);
+                const raw = part?.display || part?.expression || part?.text || part?.prompt || '';
+                const content = this.getExamPrintRowText(raw, label);
+                const rendered = this.getExamPrintTextWithBlanks(content);
+                return `<div class="exam-print__practice-row"><span>${rendered || `${label})`}</span>${rendered.includes('exam-print__blank') ? '' : '<span class="exam-print__answer-line"></span>'}</div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintAngleItems(question) {
+            const parts = Array.isArray(question?.angleItems) ? question.angleItems : [];
+            const choices = Array.isArray(question?.options) ? question.options.filter(Boolean) : [];
+            return `<div class="exam-print__parts exam-print__parts--angles">
+                ${choices.length ? `<p class="exam-print__choices-note"><strong>Chọn:</strong> ${choices.map(choice => this.getExamPrintText(choice)).join(' · ')}</p>` : ''}
+                ${parts.map((part, partIndex) => {
+                    const label = this.getExamPrintLabel(part?.label, partIndex);
+                    const visual = this.getExamPrintSafeSvg(part?.svg);
+                    return `<div class="exam-print__angle-item"><span class="exam-print__part-label">${label})</span>${visual ? `<span class="exam-print__angle-figure">${visual}</span>` : ''}<span class="exam-print__answer-line"></span></div>`;
+                }).join('')}
+            </div>`;
+        },
+        renderExamPrintAngleCountRows(question) {
+            const parts = Array.isArray(question?.angleCountRows) ? question.angleCountRows : [];
+            const visual = this.getExamPrintSafeSvg(question?.angleVisual);
+            return `<div class="exam-print__parts exam-print__parts--angle-count">${visual ? `<div class="exam-print__angle-visual">${visual}</div>` : ''}${parts.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex);
+                return `<div class="exam-print__angle-count-row"><span class="exam-print__part-label">${label})</span><span>${this.getExamPrintText(part?.text || part?.display || '')}</span><span class="exam-print__answer-line exam-print__answer-line--short"></span></div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintSequenceRounds(question) {
+            const parts = Array.isArray(question?.sequenceRounds) ? question.sequenceRounds : [];
+            return `<div class="exam-print__parts exam-print__parts--sequence">${parts.map((part, partIndex) => {
+                const label = this.getExamPrintLabel(part?.label, partIndex);
+                const content = this.getExamPrintTextWithBlanks(this.getExamPrintRowText(part?.display || part?.sequence || '', label));
+                return `<div class="exam-print__sequence-round"><span>${content || `${label})`}</span>${content.includes('exam-print__blank') ? '' : '<span class="exam-print__answer-line"></span>'}</div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintAnswerParts(question) {
+            const lines = this.getExamPrintRawText(question?.q).split('\n').map(line => line.trim()).filter(Boolean);
+            const labeledLines = lines.filter(line => /^[a-dA-D][.)]\s*/.test(line));
+            const source = (labeledLines.length === 4 ? labeledLines : lines.slice(1)).slice(0, 4);
+            while (source.length < 4) source.push('');
+            return `<div class="exam-print__parts exam-print__parts--answer-parts">${source.map((line, partIndex) => {
+                const label = this.getExamPrintLabel('', partIndex);
+                const content = this.getExamPrintTextWithBlanks(this.getExamPrintRowText(line, label));
+                return `<div class="exam-print__answer-part"><span>${content || `${label})`}</span>${content.includes('exam-print__blank') ? '' : '<span class="exam-print__answer-line"></span>'}</div>`;
+            }).join('')}</div>`;
+        },
+        renderExamPrintQuestionParts(question) {
+            const kind = this.getExamQuestionStructureKind(question);
+            if (kind === 'subquestions') return this.renderExamPrintSubquestions(question);
+            if (kind === 'statements') return this.renderExamPrintStatements(question);
+            if (kind === 'comparisonRows') return this.renderExamPrintComparisonRows(question);
+            if (kind === 'practiceRows') return this.renderExamPrintPracticeRows(question);
+            if (kind === 'angleItems') return this.renderExamPrintAngleItems(question);
+            if (kind === 'angleCountRows') return this.renderExamPrintAngleCountRows(question);
+            if (kind === 'sequenceRounds') return this.renderExamPrintSequenceRounds(question);
+            if (kind === 'answerParts') return this.renderExamPrintAnswerParts(question);
+
+            const options = Array.isArray(question?.options) ? question.options.filter(option => String(option ?? '').trim()) : [];
+            const rawLines = this.getExamPrintRawText(question?.q).split('\n').map(line => line.trim()).filter(Boolean);
+            const extraLines = rawLines.slice(1);
+            return `<div class="exam-print__parts exam-print__parts--generic">
+                ${extraLines.length ? extraLines.map(line => `<div class="exam-print__generic-line">${this.getExamPrintTextWithBlanks(line)}</div>`).join('') : ''}
+                ${options.length ? `<div class="exam-print__generic-options">${options.map((option, optionIndex) => `<span><span class="exam-print__choice-box" aria-hidden="true">□</span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>` : `<div class="exam-print__generic-answer"><span class="exam-print__answer-line"></span></div>`}
+            </div>`;
+        },
+        renderExamPrintQuestion(question, index) {
+            const number = index + 1;
+            const type = app.data.sanitizeHTML(question?.type || 'Câu hỏi');
+            return `<article class="exam-print__question" data-print-question="${number}">
+                <h3 class="exam-print__question-heading"><span>Câu ${number}</span><small>(${type})</small></h3>
+                <p class="exam-print__lead">${this.getExamPrintLead(question)}</p>
+                ${this.renderExamPrintQuestionParts(question)}
+            </article>`;
+        },
+        renderExamPrintContent(exam, rootId = 'print-area') {
+            const esc = value => app.data.sanitizeHTML(value ?? '');
+            const name = String(exam?.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
+            const period = this.normalizeComposerPeriod(exam?.period || 'Học Kỳ 1');
+            const questions = Array.isArray(exam?.questions) ? exam.questions : [];
+            return `<section id="${rootId}" class="exam-print" aria-label="Nội dung đề kiểm tra">
+                <header class="exam-print__header">
+                    <p class="exam-print__kicker">${esc(period).toUpperCase()}</p>
+                    <h2 class="exam-print__title">${esc(name)}</h2>
+                    <p class="exam-print__meta"><strong>Môn:</strong> ${esc(exam?.subject || '')}<span aria-hidden="true"> · </span><strong>Lớp:</strong> ${esc(exam?.classlevel || '')}</p>
+                </header>
+                <div class="exam-print__rule" aria-hidden="true"></div>
+                ${questions.length ? `<main class="exam-print__questions">${questions.map((question, index) => this.renderExamPrintQuestion(question, index)).join('')}</main>` : '<p class="exam-print__empty">Đề kiểm tra này chưa có câu hỏi nào.</p>'}
+            </section>`;
+        },
+        printExamInPlace(idx) {
+            const printArea = document.getElementById('print-area');
+            if (!printArea) return;
+            const cleanup = () => document.body.classList.remove('exam-printing');
+            document.body.classList.add('exam-printing');
+            window.addEventListener('afterprint', cleanup, { once: true });
+            window.print();
+        },
+        printExam(idx) {
+            const exam = app.data.exams[idx];
+            if (!exam) return;
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                this.printExamInPlace(idx);
+                return;
+            }
+            const name = String(exam.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
+            const stylesheetHref = app.data.sanitizeHTML(new URL('src/style.css', document.baseURI).href);
+            let printed = false;
+            const print = () => {
+                if (printed || printWindow.closed) return;
+                printed = true;
+                printWindow.focus();
+                printWindow.print();
+            };
+            printWindow.addEventListener('load', print, { once: true });
+            printWindow.document.open();
+            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title><link rel="stylesheet" href="${stylesheetHref}"></head><body>${this.renderExamPrintContent(exam, 'print-document')}</body></html>`);
+            printWindow.document.close();
+            window.setTimeout(() => {
+                if (printWindow.document.readyState === 'complete') print();
+            }, 0);
+        },
         viewExam(idx) {
             const exam = app.data.exams[idx];
-            let html = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-             <h3>Chi tiết đề: ${exam.name}</h3>
-             <div>
-                ${app.ui.compactAction('In PDF / A4', 'window.print()', 'compact-admin-action--view')}
-                <button class="utility-close-button utility-close-button--inline" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề">×</button>
-             </div>
-          </div>
-          <div id="print-area" style="background:#fff; color:#000; padding:20px; text-align:left; margin-top:20px; min-height:400px;">
-             <h2 style="text-align:center;">BÀI KIỂM TRA ${this.normalizeComposerPeriod(exam.period).toUpperCase()}</h2>
-             <p style="text-align:center;"><strong>Môn:</strong> ${exam.subject} - <strong>Lớp:</strong> ${exam.classlevel}</p>
-             <hr style="margin:20px 0;">
-       `;
-            if (!exam.questions || exam.questions.length === 0) {
-                html += `<p style="text-align:center;">Đề kiểm tra này chưa có câu hỏi nào.</p>`;
-            } else {
-                exam.questions.forEach((q, i) => {
-                    html += `
-                  <div style="margin-bottom: 20px;">
-                     <p><strong>Câu ${i + 1} (${q.type}):</strong> ${app.data.formatMathHTML(q.q)}</p>
-                     ${q.options && q.options.length > 0 ? `<ul style="list-style-type:none; padding-left:20px;">${q.options.map(o => `<li>- [  ] ${app.data.formatMathText(o)}</li>`).join('')}</ul>` : ''}
-                     ${q.type === 'Điền khuyết' ? `<p>....................................................................</p>` : ''}
-                  </div>
-               `;
-                });
-            }
-            html += `</div>`;
+            if (!exam) return;
+            const name = String(exam.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
+            const heading = app.data.sanitizeHTML(`Chi tiết đề: ${name}`);
+            const html = `
+                <div class="exam-detail-toolbar">
+                    <h3>${heading}</h3>
+                    <div class="exam-detail-toolbar__actions">
+                        ${app.ui.compactAction('In PDF / A4', `app.admin.printExam(${Number(idx)})`, 'compact-admin-action--view')}
+                        <button type="button" class="utility-close-button utility-close-button--inline" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề">×</button>
+                    </div>
+                </div>
+                ${this.renderExamPrintContent(exam, 'print-area')}
+            `;
             document.getElementById('admin-e-subarea').innerHTML = html;
         },
         renderPlayers(box) {
