@@ -208,6 +208,67 @@ const app = {
             }
             return allData;
         },
+        loadLocalExams() {
+            const stored = app.safeStorage?.getItem('game_exams');
+            if (!stored) return [];
+            try {
+                const exams = JSON.parse(stored);
+                return Array.isArray(exams) ? exams : [];
+            } catch (error) {
+                console.warn('Không thể đọc Kho Đề đã lưu trên thiết bị:', error);
+                return [];
+            }
+        },
+        saveLocalExams(exams = this.exams) {
+            try {
+                app.safeStorage?.setItem('game_exams', JSON.stringify(Array.isArray(exams) ? exams : []));
+            } catch (error) {
+                console.warn('Không thể lưu Kho Đề trên thiết bị:', error);
+            }
+        },
+        loadPendingExamSnapshot() {
+            const stored = app.safeStorage?.getItem('game_exams_pending_sync');
+            if (!stored) return null;
+            try {
+                const snapshot = JSON.parse(stored);
+                if (Array.isArray(snapshot)) return snapshot;
+                return Array.isArray(snapshot?.exams) ? snapshot.exams : null;
+            } catch (error) {
+                console.warn('Không thể đọc bản đề chờ đồng bộ:', error);
+                return null;
+            }
+        },
+        savePendingExamSnapshot(exams = this.exams) {
+            try {
+                app.safeStorage?.setItem('game_exams_pending_sync', JSON.stringify({
+                    version: 1,
+                    exams: Array.isArray(exams) ? exams : []
+                }));
+            } catch (error) {
+                console.warn('Không thể lưu bản đề chờ đồng bộ:', error);
+            }
+        },
+        clearPendingExamSnapshot() {
+            app.safeStorage?.setItem('game_exams_pending_sync', '');
+        },
+        mergeExamSnapshots(remoteExams, localExams) {
+            const merged = Array.isArray(remoteExams) ? remoteExams.slice() : [];
+            const metadataKey = exam => [exam?.name, exam?.classlevel, exam?.subject, exam?.period]
+                .map(value => this.normalizeQuestionPart(value))
+                .join('|');
+
+            (Array.isArray(localExams) ? localExams : []).forEach(localExam => {
+                if (!localExam || typeof localExam !== 'object') return;
+                if (localExam.id) {
+                    const index = merged.findIndex(remoteExam => String(remoteExam?.id) === String(localExam.id));
+                    if (index === -1) merged.push(localExam);
+                    else merged[index] = localExam;
+                    return;
+                }
+                if (!merged.some(remoteExam => metadataKey(remoteExam) === metadataKey(localExam))) merged.push(localExam);
+            });
+            return merged;
+        },
         normalizeQuestionPart(value) {
             return String(value || '')
                 .trim()
@@ -505,7 +566,9 @@ const app = {
 
                 // Protected game data is loaded after successful login. Loading it here
                 // would delay the login screen and make unauthenticated RLS requests.
-                this.exams = [];
+                // Kho Đề được lưu cục bộ phải được khôi phục ngay khi mở lại ứng dụng.
+                // Khi đăng nhập thật, ảnh chụp từ Supabase sẽ được nạp bổ sung ở auth.login().
+                this.exams = this.loadLocalExams();
                 const localSettings = app.safeStorage.getItem('game_settings');
                 if (localSettings) this.settings = JSON.parse(localSettings);
                 this.ensureLessonMetadata();
@@ -688,33 +751,55 @@ const app = {
             await this.saveLessonMetadata();
         },
         async saveExams() {
+            // Luôn giữ một bản cục bộ để không làm mất đề khi mạng/Supabase lỗi.
+            this.saveLocalExams();
             if (!window.supabase) {
-                localStorage.setItem('game_exams', JSON.stringify(this.exams));
-                return;
+                this.savePendingExamSnapshot();
+                return null;
             }
 
             const toUpdate = [];
             const toInsert = [];
+            let firstError = null;
 
-            for (const e of this.exams) {
-                if (e.id) toUpdate.push(e);
-                else {
-                    const { id, ...rest } = e;
-                    toInsert.push(rest);
+            try {
+                for (const e of this.exams) {
+                    if (e.id) toUpdate.push(e);
+                    else {
+                        const { id, ...rest } = e;
+                        toInsert.push(rest);
+                    }
                 }
-            }
 
-            if (toUpdate.length > 0) {
-                await supabaseClient.from('game_exams').upsert(toUpdate);
-            }
-
-            if (toInsert.length > 0) {
-                const originalBatch = this.exams.filter(e => !e.id);
-                const { data, error } = await supabaseClient.from('game_exams').insert(toInsert).select();
-                if (!error && data && data.length === originalBatch.length) {
-                    for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
+                if (toUpdate.length > 0) {
+                    const { error } = await supabaseClient.from('game_exams').upsert(toUpdate);
+                    if (error) firstError = error;
                 }
+
+                if (toInsert.length > 0) {
+                    const originalBatch = this.exams.filter(e => !e.id);
+                    const { data, error } = await supabaseClient.from('game_exams').insert(toInsert).select();
+                    if (error) {
+                        firstError ||= error;
+                    } else if (data && data.length === originalBatch.length) {
+                        for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
+                    } else {
+                        firstError ||= new Error('Supabase không trả về đầy đủ dữ liệu đề vừa lưu.');
+                    }
+                }
+            } catch (error) {
+                firstError ||= error;
             }
+
+            // Ghi lại sau insert để bản local có luôn id do Supabase cấp.
+            this.saveLocalExams();
+            if (firstError) {
+                this.savePendingExamSnapshot();
+                console.error('Không thể đồng bộ Kho Đề lên Supabase:', firstError);
+                return firstError;
+            }
+            this.clearPendingExamSnapshot();
+            return null;
         },
 
         async updateUserScore() {
@@ -7724,7 +7809,7 @@ const app = {
             };
             this.renderESubTab('add');
         },
-        submitAddExam(editIdx) {
+        async submitAddExam(editIdx) {
             const eObj = {
                 name: document.getElementById('add-e-name').value,
                 subject: document.getElementById('add-e-sub').value,
@@ -7804,21 +7889,31 @@ const app = {
             }
 
             if (newQuestionsCount > 0) {
-                app.data.saveLibrary();
+                try {
+                    await app.data.saveLibrary();
+                } catch (error) {
+                    console.error('Không thể đồng bộ Kho Câu hỏi khi lưu đề:', error);
+                }
             }
 
+            let saveError = null;
             if (editIdx !== null && editIdx !== undefined) {
                 const oldId = app.data.exams[editIdx]?.id;
                 if (oldId) eObj.id = oldId;
                 app.data.exams[editIdx] = eObj;
-                alert('Đã cập nhật đề kiểm tra!');
             } else {
                 app.data.exams.push(eObj);
-                alert('Đã tạo đề kiểm tra mới!');
             }
-            app.data.saveExams();
+            saveError = await app.data.saveExams();
             this.examComposerDraft = null;
             this.renderESubTab('lib');
+            if (saveError) {
+                alert('Đề đã được lưu trên thiết bị này nhưng chưa đồng bộ lên máy chủ. Vui lòng kiểm tra kết nối hoặc quyền quản trị rồi lưu lại.');
+            } else if (editIdx !== null && editIdx !== undefined) {
+                alert('Đã cập nhật đề kiểm tra!');
+            } else {
+                alert('Đã tạo đề kiểm tra mới!');
+            }
         },
         submitInjectQ(qIdx, eIdx) {
             let e = app.data.exams[eIdx];
