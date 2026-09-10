@@ -23,9 +23,29 @@ phù hợp với rủi ro và phạm vi của task, không chạy cả 37 skill 
 | Bảo mật | `security-and-hardening` | Kiểm tra auth, Supabase, input, secret và quyền truy cập |
 | Git | `git-workflow-and-versioning` | Commit nguyên tử, message rõ, staged diff đúng phạm vi |
 
-`frontend-design`, `frontend-ui-engineering`, `code-review-and-quality` và một số
-skill kiểm thử là skill bổ sung của môi trường Codex; chúng được dùng cùng bộ Matt
+`frontend-design`, `frontend-ui-engineering`, `browser-testing-with-devtools`,
+`test-driven-development`, `security-and-hardening`, `performance-optimization`,
+`code-simplification`, `code-review-and-quality`, `documentation-and-adrs` và Git
+workflow là các skill bổ sung của môi trường Codex; chúng được dùng cùng bộ Matt
 Pocock khi task cần, không phải bản sao của nhau.
+
+## Cổng bổ trợ của môi trường Codex
+
+| Rủi ro/phạm vi | Skill bổ trợ | Khi nào bắt buộc | Bằng chứng cần lưu |
+| --- | --- | --- | --- |
+| UI/UX | `frontend-design` | Tạo hoặc đổi visual direction, palette, typography, layout | Token/plan, screenshot và lý do lựa chọn |
+| UI production | `frontend-ui-engineering` | Đổi HTML/CSS/JS tương tác, responsive hoặc accessibility | Keyboard/focus, empty/error/loading và breakpoint check |
+| Runtime browser | `browser-testing-with-devtools` | Mọi thay đổi render trong browser hoặc lỗi UI | DOM, console, network, accessibility tree và screenshot |
+| Hành vi | `test-driven-development` | Thêm logic, sửa bug hoặc đổi behavior | Test hồi quy; bug fix phải có test tái hiện |
+| Bảo mật | `security-and-hardening` | Auth, Admin, Supabase, input, file, external integration hoặc dependency | Threat boundary/abuse case và security checklist |
+| Performance | `performance-optimization` | Có yêu cầu tốc độ, dữ liệu lớn hoặc evidence chậm | Baseline → bottleneck → đo lại; không tối ưu theo phỏng đoán |
+| Đơn giản hóa | `code-simplification` | Refactor hoặc code mới đã chạy nhưng khó đọc | Diff nhỏ, behavior giữ nguyên, test xanh |
+| Quyết định kỹ thuật | `documentation-and-adrs` | Đổi contract, schema, auth, kiến trúc hoặc quyết định khó đảo ngược | ADR/spec giải thích lý do và trade-off |
+
+Các cổng này có điều kiện: task không chạm phạm vi nào thì không gọi skill tương ứng.
+Riêng `frontend-ui-engineering` và `browser-testing-with-devtools` được áp dụng cho
+mọi thay đổi UI; `security-and-hardening` được áp dụng cho mọi thay đổi có trust
+boundary, không chờ đến lúc phát hiện lỗi.
 
 ## Quality gate bắt buộc trước commit
 
@@ -47,6 +67,11 @@ Pocock khi task cần, không phải bản sao của nhau.
 
 ### 3. Kiểm thử theo phạm vi
 
+`test-driven-development` dẫn dắt thay đổi behavior: viết test hồi quy trước, làm
+test đỏ xác nhận, triển khai tối thiểu rồi refactor khi test xanh. Với thay đổi browser,
+kết hợp `browser-testing-with-devtools` để kiểm tra runtime; test tự động không thay
+thế screenshot, console và accessibility check.
+
 Chọn test liên quan trước, sau đó chạy cổng chung khi thay đổi đủ rộng:
 
 ```powershell
@@ -61,18 +86,34 @@ npm test
 ```
 
 Repo hiện chưa có `lint`, `build` hoặc TypeScript script riêng; không báo cáo các
-cổng đó là đã chạy. Với UI phải kiểm tra thêm desktop/tablet, keyboard focus,
-empty/error state, console và `prefers-reduced-motion` theo checklist browser.
+cổng đó là đã chạy. Với UI, `frontend-design` phải được dùng để đối chiếu lại plan
+visual; `frontend-ui-engineering` và browser skill phải kiểm tra desktop/tablet,
+keyboard focus, empty/error/loading state, heading/accessible name, console và
+`prefers-reduced-motion` theo checklist browser.
+
+`browser-testing-with-devtools` ưu tiên Chrome DevTools MCP khi server đã được cấu
+hình. Nếu môi trường chưa có MCP đó, dùng Playwright và
+`docs/PLAYWRIGHT_TESTING.md` cho cùng checklist, đồng thời ghi rõ DevTools MCP chưa
+được chạy thay vì báo cáo quá mức.
+
+Nếu task có dấu hiệu chậm, kích hoạt `performance-optimization`: ghi baseline bằng
+DevTools trước, xác định bottleneck, sửa đúng nguyên nhân rồi đo lại LCP/INP/CLS hoặc
+chỉ số phù hợp. Không đưa một con số performance giả định vào tiêu chí nếu chưa đo.
 
 ### 4. Review diff trước khi stage/commit
 
-Dùng `code-review` và `code-review-and-quality` để xem lần lượt:
+Dùng `code-review`, `code-review-and-quality` và `code-simplification` để xem lần lượt:
 
 - Đúng yêu cầu, edge case, error path và test có bắt được hồi quy không.
 - Code có dễ đọc, đơn giản, đúng module boundary và không phình file không.
 - Không có secret, dữ liệu học sinh, answer key hoặc thay đổi quyền ngoài phạm vi.
-- Với Supabase/auth: kích hoạt thêm `security-and-hardening`.
+- Với Supabase/auth/input/external integration: kích hoạt `security-and-hardening`,
+  lập trust boundary và kiểm tra abuse case/authorization.
+- Với dependency hoặc lockfile: kiểm tra nguồn, audit và thay đổi transitive; không
+  dùng `npm audit fix --force`.
 - Với giao diện: đối chiếu screenshot/DOM ở kích thước được yêu cầu.
+- Với quyết định kiến trúc/schema/contract: cập nhật ADR hoặc spec bằng
+  `documentation-and-adrs` trước khi commit.
 - Finding bắt buộc phải được sửa hoặc ghi rõ là rủi ro được người dùng chấp nhận.
 
 ### 5. Staged diff và commit
@@ -94,6 +135,34 @@ Kiểm tra thủ công staged diff không chứa secret như `password`, `secret
 - Không tự đưa thay đổi lên `main`; push branch ngắn hạn và tạo Pull Request.
 - Chỉ merge khi test, review và trạng thái deploy đạt; Kimi chỉ chạy khi người dùng
   yêu cầu rõ ràng.
+
+## Cổng riêng trước push GitHub
+
+Trước khi push branch hoặc mở Pull Request, chạy lại các kiểm tra sau nếu code đã
+thay đổi kể từ lần verify trước:
+
+```powershell
+git status --short
+git log -1 --oneline
+git diff --check
+git diff origin/main...HEAD --check
+git diff origin/main...HEAD --name-status
+npm run test:contracts
+# chạy spec browser liên quan, rồi npm test khi phạm vi đủ rộng
+```
+
+Sau đó xác nhận:
+
+- Branch không chứa commit lẫn task khác; `git diff origin/main...HEAD --name-status`
+  không đưa theo `mockups`, `test-results-*`, `.env`, token hoặc dữ liệu người dùng
+  ngoài phạm vi.
+- Nếu có thay đổi dependency: lockfile là authoritative, đã review diff và audit
+  native phù hợp; nếu chỉ dùng skill/docs thì không cần audit lại.
+- Nếu có migration/Supabase: đã có xác nhận đúng project/quyền và ghi rõ migration
+  nào chưa apply; quality gate không tự triển khai production.
+- PR mô tả đầy đủ thay đổi, test, screenshot nếu có UI, rủi ro và các file cố ý
+  không chạm. `git-workflow-and-versioning` quyết định commit message/branch; không
+  push trực tiếp `main`.
 
 ## Báo cáo trước khi bàn giao
 
