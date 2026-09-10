@@ -8492,7 +8492,7 @@ const app = {
                 .replace(/^Cấp\s*lớp\s*/i, '')
                 .replace(/^Lớp\s*/i, '')
                 .trim();
-            if (!normalizedClass) return 'Cấp lớp —';
+            if (!normalizedClass) return 'Cấp lớp -';
             if (explicitClass || normalizedClass.includes('/')) return `Lớp: ${normalizedClass}`;
             return `Cấp lớp ${normalizedClass}`;
         },
@@ -8506,6 +8506,18 @@ const app = {
             if (values.length >= 4 && longest <= 14 && totalLength <= 48) return 4;
             if (values.length >= 3 && longest <= 34 && totalLength <= 116) return 2;
             return 1;
+        },
+        getExamPrintPartColumns(parts) {
+            const values = (Array.isArray(parts) ? parts : [])
+                .map(part => {
+                    if (typeof part === 'string') return this.getExamPrintRawText(part);
+                    return this.getExamPrintRawText(part?.display || part?.expression || part?.text || part?.prompt || '');
+                })
+                .filter(Boolean);
+            if (values.length !== 4) return 1;
+            const longest = Math.max(...values.map(value => value.length));
+            const totalLength = values.reduce((sum, value) => sum + value.length, 0);
+            return longest <= 54 && totalLength <= 180 ? 2 : 1;
         },
         getExamPrintFileName(exam, pageNumber = '') {
             const source = String(exam?.name || 'de-kiem-tra')
@@ -8546,7 +8558,7 @@ const app = {
                 const optionColumns = this.getExamPrintOptionColumns(options);
                 return `<article class="exam-print__subquestion">
                     <div class="exam-print__subquestion-prompt"><strong>${label})</strong>${prompt ? ` <span>${prompt}</span>` : ''}</div>
-                    ${options.length ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true">□</span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>` : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>'}
+                    ${options.length ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true"></span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>` : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>'}
                 </article>`;
             }).join('');
             return `<div class="exam-print__parts exam-print__parts--subquestions">${markup}</div>`;
@@ -8555,13 +8567,15 @@ const app = {
             const parts = Array.isArray(question?.statements) ? question.statements : [];
             return `<div class="exam-print__parts exam-print__parts--statements">${parts.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex, true);
-                return `<div class="exam-print__statement"><span class="exam-print__part-label">${label}.</span><span class="exam-print__statement-text">${this.getExamPrintText(part?.text || part?.prompt || '')}</span><span class="exam-print__statement-choices"><span>□ Đúng</span><span>□ Sai</span></span></div>`;
+                return `<div class="exam-print__statement"><span class="exam-print__part-label">${label}.</span><span class="exam-print__statement-text">${this.getExamPrintText(part?.text || part?.prompt || '')}</span><span class="exam-print__statement-choices"><span><span class="exam-print__choice-box" aria-hidden="true"></span> Đúng</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> Sai</span></span></div>`;
             }).join('')}</div>`;
+        },
+        renderExamPrintComparisonChoices() {
+            return `<span class="exam-print__comparison-choices" aria-label="Các dấu có thể chọn"><strong>Chọn một dấu:</strong><span><span class="exam-print__choice-box" aria-hidden="true"></span> &lt;</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> &gt;</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> =</span></span>`;
         },
         renderExamPrintComparisonRows(question) {
             const parts = Array.isArray(question?.comparisonRows) ? question.comparisonRows : [];
             return `<div class="exam-print__parts exam-print__parts--comparison">
-                <p class="exam-print__comparison-choices" aria-label="Các dấu có thể chọn"><strong>Chọn một dấu:</strong><span><span class="exam-print__choice-box" aria-hidden="true">□</span> &lt;</span><span><span class="exam-print__choice-box" aria-hidden="true">□</span> &gt;</span><span><span class="exam-print__choice-box" aria-hidden="true">□</span> =</span></p>
                 ${parts.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex);
                 const left = this.getExamPrintText(part?.leftText || '');
@@ -8574,7 +8588,8 @@ const app = {
             const source = Array.isArray(question?.practiceRows)
                 ? question.practiceRows
                 : (Array.isArray(question?.subquestions) ? question.subquestions : []);
-            return `<div class="exam-print__parts exam-print__parts--practice">${source.map((part, partIndex) => {
+            const layoutClass = this.getExamPrintPartColumns(source) === 2 ? ' exam-print__parts--two-columns' : '';
+            return `<div class="exam-print__parts exam-print__parts--practice${layoutClass}">${source.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex);
                 const raw = part?.display || part?.expression || part?.text || part?.prompt || '';
                 const content = this.getExamPrintRowText(raw, label);
@@ -8615,7 +8630,8 @@ const app = {
             const labeledLines = lines.filter(line => /^[a-dA-D][.)]\s*/.test(line));
             const source = (labeledLines.length === 4 ? labeledLines : lines.slice(1)).slice(0, 4);
             while (source.length < 4) source.push('');
-            return `<div class="exam-print__parts exam-print__parts--answer-parts">${source.map((line, partIndex) => {
+            const layoutClass = this.getExamPrintPartColumns(source) === 2 ? ' exam-print__parts--two-columns' : '';
+            return `<div class="exam-print__parts exam-print__parts--answer-parts${layoutClass}">${source.map((line, partIndex) => {
                 const label = this.getExamPrintLabel('', partIndex);
                 const content = this.getExamPrintTextWithBlanks(this.getExamPrintRowText(line, label));
                 return `<div class="exam-print__answer-part"><span>${content || `${label})`}</span>${content.includes('exam-print__blank') ? '' : '<span class="exam-print__answer-line"></span>'}</div>`;
@@ -8639,32 +8655,31 @@ const app = {
             const extraLines = rawLines.slice(1);
             return `<div class="exam-print__parts exam-print__parts--generic">
                 ${extraLines.length ? extraLines.map(line => `<div class="exam-print__generic-line">${this.getExamPrintTextWithBlanks(line)}</div>`).join('') : ''}
-                ${options.length ? `<div class="exam-print__generic-options exam-print__generic-options--${optionColumns}">${options.map((option, optionIndex) => `<span><span class="exam-print__choice-box" aria-hidden="true">□</span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>` : `<div class="exam-print__generic-answer"><span class="exam-print__answer-line"></span></div>`}
+                ${options.length ? `<div class="exam-print__generic-options exam-print__generic-options--${optionColumns}">${options.map((option, optionIndex) => `<span><span class="exam-print__choice-box" aria-hidden="true"></span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>` : `<div class="exam-print__generic-answer"><span class="exam-print__answer-line"></span></div>`}
             </div>`;
         },
         renderExamPrintQuestion(question, index) {
             const number = index + 1;
+            const printableQuestion = this.normalizeExamQuestionStructure(question);
+            const kind = this.getExamQuestionStructureKind(printableQuestion);
+            const comparisonChoices = kind === 'comparisonRows' ? this.renderExamPrintComparisonChoices() : '';
             return `<article class="exam-print__question" data-print-question="${number}">
-                <h3 class="exam-print__question-heading"><span class="exam-print__question-number" aria-hidden="true">${number}</span><span>Câu ${number}</span></h3>
-                <p class="exam-print__lead">${this.getExamPrintLead(question)}</p>
-                ${this.renderExamPrintQuestionParts(question)}
+                <h3 class="exam-print__question-heading"><span>Câu ${number}:</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span>${comparisonChoices}</h3>
+                ${this.renderExamPrintQuestionParts(printableQuestion)}
             </article>`;
         },
         renderExamPrintContent(exam, rootId = 'print-area') {
             const esc = value => app.data.sanitizeHTML(value ?? '');
             const name = String(exam?.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
-            const period = this.normalizeComposerPeriod(exam?.period || 'Học Kỳ 1');
             const questions = Array.isArray(exam?.questions) ? exam.questions : [];
             const classLabel = this.getExamPrintClassLabel(exam);
             return `<section id="${rootId}" class="exam-print" aria-label="Nội dung đề kiểm tra">
                 <header class="exam-print__header">
-                    <p class="exam-print__kicker">${esc(period).toUpperCase()}</p>
-                    <h1 class="exam-print__exam-heading">ĐỀ KIỂM TRA</h1>
-                    <h2 class="exam-print__title">${esc(name)}</h2>
-                    <p class="exam-print__meta"><span><strong>Môn:</strong> ${esc(exam?.subject || '—')}</span><span aria-hidden="true"> · </span><span class="exam-print__class-label">${esc(classLabel)}</span></p>
+                    <h1 class="exam-print__title">${esc(name)}</h1>
+                    <p class="exam-print__meta"><span><strong>Môn:</strong> ${esc(exam?.subject || '-')}</span><span aria-hidden="true"> · </span><span class="exam-print__class-label">${esc(classLabel)}</span></p>
                     <div class="exam-print__student-fields" aria-label="Thông tin học sinh">
-                        <span class="exam-print__student-field"><strong>Họ và tên:</strong><span class="exam-print__student-line" aria-hidden="true"></span></span>
-                        <span class="exam-print__student-field"><strong>Ngày:</strong><span class="exam-print__student-line" aria-hidden="true"></span></span>
+                        <span class="exam-print__student-field"><strong>Họ và tên học sinh:</strong><span class="exam-print__student-line" aria-hidden="true"></span></span>
+                        <span class="exam-print__student-field"><strong>Ngày làm bài:</strong><span class="exam-print__student-line" aria-hidden="true"></span></span>
                     </div>
                 </header>
                 <div class="exam-print__rule" aria-hidden="true"></div>
@@ -8699,7 +8714,13 @@ const app = {
             }
             const stylesheetHref = app.data.sanitizeHTML(new URL('./src/style.css?v=exam-composer-v1', document.baseURI).href);
             let printed = false;
-            const print = () => {
+            const print = async () => {
+                if (printed || printWindow.closed) return;
+                try {
+                    if (printWindow.document.fonts?.ready) await printWindow.document.fonts.ready;
+                } catch (error) {
+                    console.warn('Không thể chờ font bản in tải xong:', error);
+                }
                 if (printed || printWindow.closed) return;
                 printed = true;
                 printWindow.focus();

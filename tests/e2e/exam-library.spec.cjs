@@ -203,8 +203,11 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Chi tiết đề: Toán lớp 4 · Ôn tập cuối kỳ' })).toBeVisible();
   await expect(page.locator('#print-area .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
-  await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveText('ĐỀ KIỂM TRA');
+  await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__student-field')).toHaveCount(2);
+  await expect(page.locator('#print-area .exam-print__student-field').first()).toContainText('Họ và tên học sinh:');
+  await expect(page.locator('#print-area .exam-print__student-field').nth(1)).toContainText('Ngày làm bài:');
   await expect(page.locator('#print-area .exam-print__meta')).toContainText('Cấp lớp 4');
   await expect(page.locator('#print-area .exam-print__meta')).not.toContainText('Lớp: Lớp 4');
   await expect(page.getByRole('button', { name: 'Xuất PDF / A4', exact: true })).toBeVisible();
@@ -219,9 +222,13 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__angle-count-row')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__sequence-round')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__answer-part')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__question-number')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__question-heading').first()).toContainText('Câu 1:');
+  await expect(page.locator('#print-area .exam-print__question-lead').first()).toHaveText('Chọn đáp án đúng cho mỗi ý sau.');
   await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__subquestion-options--4')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
+  await expect(page.locator('#print-area .exam-print__parts--two-columns')).toHaveCount(2);
   await expect(page.locator('#print-area .exam-print__comparison-slot')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('<');
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('>');
@@ -232,9 +239,14 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
     const style = getComputedStyle(element);
     return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
   }));
-  expect(spacing[0].lineHeight / spacing[0].fontSize).toBeGreaterThanOrEqual(1.4);
-  expect(spacing[0].paddingTop).toBeLessThanOrEqual(18);
-  expect(spacing[1].marginTop).toBeLessThanOrEqual(18);
+  expect(spacing[0].lineHeight / spacing[0].fontSize).toBeLessThanOrEqual(1.35);
+  expect(spacing[0].paddingTop).toBeLessThanOrEqual(10);
+  expect(spacing[1].marginTop).toBeLessThanOrEqual(10);
+
+  const comparisonColumns = await page.locator('#print-area .exam-print__comparison-row').first().evaluate(element => {
+    return element.children[1].getBoundingClientRect().width;
+  });
+  expect(comparisonColumns).toBeLessThanOrEqual(220);
 
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Xuất PDF / A4', exact: true }).click();
@@ -243,6 +255,9 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(printPage.locator('body > #print-document')).toHaveCount(1);
   await expect(printPage.locator('#exam-print-styles')).toHaveCount(1);
   await expect(printPage.locator('#print-document .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
+  await expect(printPage.locator('#print-document .exam-print__exam-heading')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__kicker')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__question-number')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(10);
   await expect(printPage.locator('#print-document .exam-print__subquestion')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
@@ -262,16 +277,23 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   const printLayout = await printPage.locator('#print-document').evaluate(element => ({
     studentDirection: getComputedStyle(element.querySelector('.exam-print__student-fields')).flexDirection,
     shortOptionColumns: getComputedStyle(element.querySelector('.exam-print__subquestion-options--4')).gridTemplateColumns.split(/\s+/).length,
-    questionBreakInside: getComputedStyle(element.querySelector('.exam-print__question')).breakInside
+    twoColumnParts: getComputedStyle(element.querySelector('.exam-print__parts--two-columns')).gridTemplateColumns.split(/\s+/).length,
+    questionBreakInside: getComputedStyle(element.querySelector('.exam-print__question')).breakInside,
+    statementChoicesShareRow: (() => {
+      const statement = element.querySelector('.exam-print__statement');
+      const text = statement.querySelector('.exam-print__statement-text').getBoundingClientRect();
+      const choices = statement.querySelector('.exam-print__statement-choices').getBoundingClientRect();
+      return Math.abs(text.top - choices.top) < 8;
+    })()
   }));
-  expect(printLayout).toEqual({ studentDirection: 'row', shortOptionColumns: 4, questionBreakInside: 'avoid' });
+  expect(printLayout).toEqual({ studentDirection: 'row', shortOptionColumns: 4, twoColumnParts: 2, questionBreakInside: 'avoid', statementChoicesShareRow: true });
   const printSpacing = await printPage.locator('#print-document .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
     const style = getComputedStyle(element);
     return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
   }));
-  expect(printSpacing[0].lineHeight / printSpacing[0].fontSize).toBeLessThanOrEqual(1.6);
-  expect(printSpacing[0].paddingTop).toBeLessThanOrEqual(12);
-  expect(printSpacing[1].marginTop).toBeLessThanOrEqual(14);
+  expect(printSpacing[0].lineHeight / printSpacing[0].fontSize).toBeLessThanOrEqual(1.35);
+  expect(printSpacing[0].paddingTop).toBeLessThanOrEqual(8);
+  expect(printSpacing[1].marginTop).toBeLessThanOrEqual(10);
   const optionColumns = await page.evaluate(() => ({
     four: app.admin.getExamPrintOptionColumns(['10', '20', '30', '40']),
     two: app.admin.getExamPrintOptionColumns(['Phương án một', 'Phương án hai', 'Phương án ba']),
@@ -323,6 +345,10 @@ test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các tr
 
   await expect(page.locator('#print-area .exam-print__meta')).toContainText('Lớp: 4/4');
   await expect(page.locator('#print-area .exam-print__meta')).not.toContainText('Cấp lớp 4');
+  await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__student-field').first()).toContainText('Họ và tên học sinh:');
+  await expect(page.locator('#print-area .exam-print__student-field').nth(1)).toContainText('Ngày làm bài:');
 
   const pngPopupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Xuất PNG / A4', exact: true }).click();
