@@ -9,7 +9,7 @@
 
 ## Công nghệ và tệp chính
 
-- Game chạy bằng HTML, CSS và JavaScript thuần; không có `package.json` ở thư mục gốc.
+- Game chạy bằng HTML, CSS và JavaScript thuần; `package.json` chỉ phục vụ các script kiểm thử Playwright/Node, không có framework build riêng.
 - Điểm vào giao diện: `index.html`; logic chính: `src/main.js`; giao diện: `src/style.css`.
 - Câu hỏi lớp 4: `src/question-templates/grade-4/`.
 - Dữ liệu và xác thực dùng Supabase qua trình duyệt.
@@ -52,6 +52,24 @@ Mọi thay đổi UI ưu tiên laptop và tablet ngang theo `docs/UX_DEVICE_POLI
 3. Sửa một phạm vi nhỏ, chạy các kiểm thử liên quan rồi chạy toàn bộ kiểm thử.
 4. Codex tự review diff và xử lý các lỗi có bằng chứng, sau đó gửi commit lên nhánh riêng.
 5. Chỉ merge vào `main` khi các lỗi bắt buộc đã xử lý, kiểm thử xanh và người dùng đã cho phép.
+
+## Quy trình skill trước commit
+
+Trước khi triển khai, review hoặc commit bất kỳ thay đổi nào, đọc và làm theo
+[`docs/MATT_POCOCK_WORKFLOW.md`](docs/MATT_POCOCK_WORKFLOW.md). Bộ skill Matt Pocock
+được khóa trong `skills-lock.json` và cài tại `.agents/skills/`; chỉ dùng những skill
+phù hợp với phạm vi thay đổi, không gọi toàn bộ bộ skill theo thói quen.
+
+- Đặc tả/khám phá: `to-spec`, `wayfinder`, `codebase-design`, `research` khi cần.
+- Triển khai: `implement` hoặc `implement-spec`, theo lát nhỏ và có test.
+- Lỗi/test: `tdd`, `diagnosing-bugs`, `triage` khi phù hợp.
+- Review trước commit: `code-review`, `code-review-and-quality`, cùng review bảo mật/UI
+  nếu thay đổi chạm Supabase hoặc giao diện.
+- Git: `git-workflow-and-versioning`; chỉ stage đúng tệp thuộc phạm vi và không tự merge
+  `main` nếu chưa có yêu cầu rõ ràng.
+
+Các quy ước GitHub issue tracker, triage label và tài liệu domain nằm trong
+`docs/agents/`.
 
 ## Chính sách Kimi review — cập nhật 09/09/2026
 
