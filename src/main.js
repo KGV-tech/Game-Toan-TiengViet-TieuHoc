@@ -147,7 +147,7 @@ const app = {
             return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         },
         genderLabel(value) {
-            return ({ male: 'Nam', female: 'Nữ', other: 'Khác / không muốn nêu' })[String(value || '')] || '—';
+            return ({ male: 'Nam', female: 'Nữ' })[String(value || '')] || '—';
         },
         normalizeClassLevel(value) {
             return String(value ?? '').trim().replace(/^Lớp\s*/i, '').trim();
@@ -8762,8 +8762,7 @@ const app = {
             const genderOptions = [
                 { value: '', label: 'Tất cả giới tính' },
                 { value: 'female', label: 'Nữ' },
-                { value: 'male', label: 'Nam' },
-                { value: 'other', label: 'Khác / không muốn nêu' }
+                { value: 'male', label: 'Nam' }
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.gender ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const cards = users.map(u => {
                 const rawUsername = String(u.username || '');
@@ -8863,7 +8862,7 @@ const app = {
                             <label class="admin-student-form__field"><span>${u ? 'Mật khẩu mới' : 'Mật khẩu'}</span><input type="password" id="add-password" placeholder="${u ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 8 ký tự'}" class="form-input" value="" aria-describedby="add-password-help"><small id="add-password-help">${u ? 'Không nhập nếu giữ mật khẩu hiện tại.' : 'Dùng ít nhất 8 ký tự.'}</small></label>
                             <label class="admin-student-form__field"><span>Cấp lớp</span><select id="add-class" class="form-input"><option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option><option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option><option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option><option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option><option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option></select></label>
                             <label class="admin-student-form__field"><span>Lớp</span><input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}"></label>
-                            <label class="admin-student-form__field"><span>Giới tính</span><select id="add-gender" class="form-input"><option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option><option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option><option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option><option value="other" ${u?.gender === 'other' ? 'selected' : ''}>Khác / không muốn nêu</option></select></label>
+                            <label class="admin-student-form__field"><span>Giới tính</span><select id="add-gender" class="form-input"><option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option><option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option><option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option></select></label>
                         </div>
                         <footer class="admin-student-form__actions"><button type="button" class="action-btn admin-student-form__cancel" onclick="app.admin.renderPlayersList(false)">Hủy</button>${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? encodeURIComponent(editUsername) : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}</footer>
                     </div>
