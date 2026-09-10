@@ -4487,7 +4487,7 @@ input[type="text"], input[type="password"], select, textarea {
     border-radius: 3px;
     background: #fff;
     color: #263238;
-    font-family: Arial, 'DejaVu Sans', 'Segoe UI', sans-serif;
+    font-family: "Times New Roman", Times, serif;
     font-size: 15px;
     line-height: 1.28;
     text-align: left;
@@ -4496,6 +4496,10 @@ input[type="text"], input[type="password"], select, textarea {
     print-color-adjust: exact;
     box-shadow: 0 8px 20px rgba(33, 76, 65, .1);
 }
+.exam-print,
+.exam-print * {
+    font-family: "Times New Roman", Times, serif;
+}
 .exam-print__header {
     padding-bottom: 9px;
     border-bottom: 1px solid #b7d8cf;
@@ -4503,6 +4507,12 @@ input[type="text"], input[type="password"], select, textarea {
     color: #263238;
 }
 .exam-print__title {
+    display: inline-block;
+    max-width: 100%;
+    padding: 3px 16px 4px;
+    border: 1.5px solid #9bc8bb;
+    border-radius: 12px;
+    background: #f5fbf8;
     margin: 0;
     color: #1d2d33;
     font-size: 1.5rem;
@@ -4815,11 +4825,15 @@ input[type="text"], input[type="password"], select, textarea {
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        font-family: Arial, 'DejaVu Sans', 'Segoe UI', sans-serif;
+        font-family: "Times New Roman", Times, serif;
         font-size: 11pt;
         line-height: 1.24;
     }
-    .exam-print__title { font-size: 15pt; }
+    .exam-print__title {
+        padding: 2px 14px 3px;
+        border-width: 1px;
+        font-size: 15pt;
+    }
     .exam-print__meta { font-size: 10pt; }
     .exam-print__student-fields {
         flex-direction: row;
@@ -4886,6 +4900,44 @@ input[type="text"], input[type="password"], select, textarea {
     .exam-print__parts--practice,
     .exam-print__parts--answer-parts { break-before: avoid; page-break-before: avoid; }
 
+    #print-document,
+    #print-document * {
+        scrollbar-width: none !important;
+    }
+    #print-document::-webkit-scrollbar,
+    #print-document *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    #print-document input,
+    #print-document select,
+    #print-document textarea,
+    #print-document button {
+        display: none !important;
+    }
+    #print-document input::-webkit-inner-spin-button,
+    #print-document input::-webkit-outer-spin-button {
+        -webkit-appearance: none !important;
+        margin: 0 !important;
+    }
+    body.exam-printing #print-area,
+    body.exam-printing #print-area * {
+        scrollbar-width: none !important;
+    }
+    body.exam-printing #print-area::-webkit-scrollbar,
+    body.exam-printing #print-area *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    body.exam-printing #print-area input,
+    body.exam-printing #print-area select,
+    body.exam-printing #print-area textarea,
+    body.exam-printing #print-area button {
+        display: none !important;
+    }
+
     body.exam-printing > * { visibility: hidden !important; }
     body.exam-printing #treasure-modal,
     body.exam-printing #treasure-modal .admin-panel,
@@ -4942,9 +4994,13 @@ input[type="text"], input[type="password"], select, textarea {
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #fff !important;
-    font-family: Arial, 'DejaVu Sans', 'Segoe UI', sans-serif !important;
+    font-family: "Times New Roman", Times, serif !important;
     font-size: 14px !important;
     line-height: 1.24 !important;
+}
+.exam-png-stage .exam-print,
+.exam-png-stage .exam-print * {
+    font-family: "Times New Roman", Times, serif !important;
 }
 .exam-png-stage .exam-print__title { font-size: 23px; }
 .exam-png-stage .exam-print__meta { font-size: 13px; }

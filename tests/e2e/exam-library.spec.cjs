@@ -203,6 +203,12 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Chi tiết đề: Toán lớp 4 · Ôn tập cuối kỳ' })).toBeVisible();
   await expect(page.locator('#print-area .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
+  const previewTitleStyle = await page.locator('#print-area .exam-print__title').evaluate(element => {
+    const style = getComputedStyle(element);
+    return { fontFamily: style.fontFamily, borderRadius: style.borderRadius };
+  });
+  expect(previewTitleStyle.fontFamily).toContain('Times New Roman');
+  expect(previewTitleStyle.borderRadius).toBe('12px');
   await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__student-field')).toHaveCount(2);
@@ -270,6 +276,23 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await printPage.waitForLoadState('load');
   await printPage.emulateMedia({ media: 'print' });
   await expect(printPage.locator('body > #print-document')).toBeVisible();
+  const printChrome = await printPage.locator('#print-document').evaluate(element => {
+    const title = element.querySelector('.exam-print__title');
+    const titleStyle = getComputedStyle(title);
+    const rootStyle = getComputedStyle(element);
+    return {
+      fontFamily: titleStyle.fontFamily,
+      borderRadius: titleStyle.borderRadius,
+      controls: element.querySelectorAll('input,select,textarea,button').length,
+      scrollbarWidth: rootStyle.scrollbarWidth,
+      webkitScrollbarDisplay: getComputedStyle(element, '::-webkit-scrollbar').display
+    };
+  });
+  expect(printChrome.fontFamily).toContain('Times New Roman');
+  expect(printChrome.borderRadius).toBe('12px');
+  expect(printChrome.controls).toBe(0);
+  expect(printChrome.scrollbarWidth).toBe('none');
+  expect(printChrome.webkitScrollbarDisplay).toBe('none');
   const printLayout = await printPage.locator('#print-document').evaluate(element => ({
     studentDirection: getComputedStyle(element.querySelector('.exam-print__student-fields')).flexDirection,
     shortOptionColumns: getComputedStyle(element.querySelector('.exam-print__subquestion-options--4')).gridTemplateColumns.split(/\s+/).length,
