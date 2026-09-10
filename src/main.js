@@ -149,6 +149,50 @@ const app = {
         genderLabel(value) {
             return ({ male: 'Nam', female: 'Nữ', other: 'Khác / không muốn nêu' })[String(value || '')] || '—';
         },
+        normalizeClassLevel(value) {
+            return String(value ?? '').trim().replace(/^Lớp\s*/i, '').trim();
+        },
+        getStudentClassLabel(user) {
+            const className = String(user?.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
+            if (className) return `Lớp ${className}`;
+            const classLevel = this.normalizeClassLevel(user?.classlevel);
+            return `Cấp lớp ${classLevel || '—'}`;
+        },
+        getVietnameseNameParts(user) {
+            return String(user?.fullname || user?.username || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+        },
+        sortUsersByVietnameseName(users) {
+            const list = Array.isArray(users) ? users.slice() : [];
+            const maxMiddlePartCount = list.reduce((maximum, user) => {
+                const partCount = this.getVietnameseNameParts(user).length;
+                return Math.max(maximum, Math.max(0, partCount - 3));
+            }, 0);
+            const sortKey = user => {
+                const parts = this.getVietnameseNameParts(user);
+                if (parts.length < 2) return parts;
+                const middleParts = parts.slice(1, -2).reverse();
+                return [
+                    parts.at(-1),
+                    parts.at(-2),
+                    ...middleParts,
+                    ...Array(Math.max(0, maxMiddlePartCount - middleParts.length)).fill(''),
+                    parts[0]
+                ];
+            };
+            return list.sort((left, right) => {
+                const leftKey = sortKey(left);
+                const rightKey = sortKey(right);
+                const partCount = Math.max(leftKey.length, rightKey.length);
+                for (let index = 0; index < partCount; index += 1) {
+                    const comparison = String(leftKey[index] || '').localeCompare(String(rightKey[index] || ''), 'vi');
+                    if (comparison) return comparison;
+                }
+                return String(left?.username || '').localeCompare(String(right?.username || ''), 'vi');
+            });
+        },
         formatMathNumber(value) {
             const digits = String(value ?? '').replace(/\s/g, '');
             if (!/^\d+$/.test(digits)) return String(value ?? '');
@@ -1260,7 +1304,7 @@ const app = {
                 ${avatarMarkup}
                 <span class="player-info-card__content">
                   <strong>${app.data.sanitizeHTML(user.fullname)}</strong>
-                  <small>${isAdmin ? 'Admin' : `Học sinh · Lớp ${app.data.sanitizeHTML(user.classlevel)}${user.class_name ? ` · ${app.data.sanitizeHTML(user.class_name)}` : ''}`}</small>
+                  <small>${isAdmin ? 'Admin' : `Học sinh · ${app.data.sanitizeHTML(app.data.getStudentClassLabel(user))}`}</small>
                   ${titleLine}
                   ${progressLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
@@ -3676,6 +3720,8 @@ const app = {
         teamCompetitionDraft: null,
         teamCompetitionBoardTimer: null,
         examSavePending: false,
+        studentRosterModePending: false,
+        studentRosterFilters: { search: '', classlevel: '', className: '', gender: '' },
         composerState: {
             module: 'exams',
             classlevel: 'Lớp 4',
@@ -5076,11 +5122,12 @@ const app = {
         getTeamCompetitionStudents(classlevel, className = '') {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
             const section = String(className || '').trim();
-            return (app.data.users || []).filter(user => {
+            const students = (app.data.users || []).filter(user => {
                 if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
                 if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
                 return !section || String(user.class_name || '').trim() === section;
             });
+            return app.data.sortUsersByVietnameseName(students);
         },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
@@ -8469,6 +8516,8 @@ const app = {
             document.getElementById('admin-e-subarea').innerHTML = html;
         },
         renderPlayers(box) {
+            this.studentRosterModePending = false;
+            this.studentRosterFilters = { search: '', classlevel: '', className: '', gender: '' };
             box.innerHTML = `
                 <section class="admin-roster-workspace" aria-label="Quản lý học sinh">
                     <header class="admin-roster-workspace__hero">
@@ -8491,7 +8540,31 @@ const app = {
             `;
             this.renderPlayersList(false);
         },
+        updateStudentRosterFilters() {
+            const activeElement = document.activeElement;
+            const activeId = activeElement?.id || '';
+            const caretPosition = typeof activeElement?.selectionStart === 'number' ? activeElement.selectionStart : null;
+            this.studentRosterFilters = {
+                search: document.getElementById('admin-roster-filter-search')?.value || '',
+                classlevel: document.getElementById('admin-roster-filter-class')?.value || '',
+                className: document.getElementById('admin-roster-filter-section')?.value || '',
+                gender: document.getElementById('admin-roster-filter-gender')?.value || ''
+            };
+            this.renderPlayersList(this.studentRosterModePending);
+            const nextActiveElement = activeId ? document.getElementById(activeId) : null;
+            if (nextActiveElement) {
+                nextActiveElement.focus();
+                if (caretPosition !== null && typeof nextActiveElement.setSelectionRange === 'function') {
+                    nextActiveElement.setSelectionRange(caretPosition, caretPosition);
+                }
+            }
+        },
+        resetStudentRosterFilters() {
+            this.studentRosterFilters = { search: '', classlevel: '', className: '', gender: '' };
+            this.renderPlayersList(this.studentRosterModePending);
+        },
         renderPlayersList(isPending) {
+            this.studentRosterModePending = Boolean(isPending);
             const playersButton = document.getElementById('btn-sub-players');
             const pendingButton = document.getElementById('btn-sub-pending');
             if (playersButton) {
@@ -8508,30 +8581,88 @@ const app = {
             const approvedStudents = allStudents.filter(u => u.approved !== false);
             const pendingStudents = allStudents.filter(u => u.approved === false);
             const classCount = new Set(allStudents.map(u => String(u.class_name || '').trim()).filter(Boolean)).size;
-            let users = allStudents;
-            if (isPending) {
-                users = users.filter(u => u.approved === false);
-            } else {
-                users = users.filter(u => u.approved !== false); // true or undefined (legacy)
-            }
+            const baseUsers = isPending
+                ? pendingStudents
+                : approvedStudents;
+            const filters = {
+                search: String(this.studentRosterFilters?.search || '').trim(),
+                classlevel: String(this.studentRosterFilters?.classlevel || '').trim(),
+                className: String(this.studentRosterFilters?.className || '').trim(),
+                gender: String(this.studentRosterFilters?.gender || '').trim()
+            };
+            const normalizeFilterText = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            const filteredUsers = baseUsers.filter(user => {
+                const userClassLevel = app.data.normalizeClassLevel(user.classlevel);
+                const userClassName = String(user.class_name || '').trim();
+                if (filters.classlevel && userClassLevel !== filters.classlevel) return false;
+                if (filters.className === '__unassigned__' && userClassName) return false;
+                if (filters.className && filters.className !== '__unassigned__' && userClassName !== filters.className) return false;
+                if (filters.gender && String(user.gender || '') !== filters.gender) return false;
+                if (filters.search) {
+                    const searchable = [user.fullname, user.username, userClassLevel, userClassName, app.data.genderLabel(user.gender)]
+                        .map(normalizeFilterText)
+                        .join(' ');
+                    if (!searchable.includes(normalizeFilterText(filters.search))) return false;
+                }
+                return true;
+            });
+            const users = app.data.sortUsersByVietnameseName(filteredUsers);
+            const classLevels = Array.from(new Set(baseUsers.map(user => app.data.normalizeClassLevel(user.classlevel)).filter(Boolean)))
+                .sort((left, right) => Number(left) - Number(right) || left.localeCompare(right, 'vi'));
+            const classNames = Array.from(new Set(baseUsers.map(user => String(user.class_name || '').trim()).filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right, 'vi'));
             const esc = value => app.data.sanitizeHTML(String(value ?? ''));
+            const classLevelOptions = [
+                { value: '', label: 'Tất cả cấp lớp' },
+                ...classLevels.map(value => ({ value, label: `Cấp lớp ${value}` }))
+            ].map(option => `<option value='${esc(option.value)}'${option.value === filters.classlevel ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
+            const classNameOptions = [
+                { value: '', label: 'Tất cả lớp' },
+                ...(baseUsers.some(user => !String(user.class_name || '').trim()) ? [{ value: '__unassigned__', label: 'Chưa khai báo lớp cụ thể' }] : []),
+                ...classNames.map(value => ({ value, label: `Lớp ${value}` }))
+            ].map(option => `<option value='${esc(option.value)}'${option.value === filters.className ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
+            const genderOptions = [
+                { value: '', label: 'Tất cả giới tính' },
+                { value: 'female', label: 'Nữ' },
+                { value: 'male', label: 'Nam' },
+                { value: 'other', label: 'Khác / không muốn nêu' }
+            ].map(option => `<option value='${esc(option.value)}'${option.value === filters.gender ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const cards = users.map(u => {
                 const rawUsername = String(u.username || '');
-                const encodedUsername = encodeURIComponent(rawUsername);
+                const encodedUsername = encodeURIComponent(rawUsername).replace(/'/g, '%27');
                 const rawName = String(u.fullname || rawUsername || 'Học sinh').trim();
-                const initials = rawName.split(/\s+/).filter(Boolean).slice(-2).map(part => part.charAt(0)).join('').toLocaleUpperCase('vi-VN');
+                const classLabel = app.data.getStudentClassLabel(u);
+                const gender = app.data.genderLabel?.(u.gender);
+                const genderText = gender && gender !== '—' ? gender : 'Chưa khai báo';
+                const avatar = app.auth.getAvatar(u.avatar_key);
+                const avatarLabel = esc(avatar.label || 'Avatar học sinh');
+                const avatarMarkup = avatar.image
+                    ? `<img class="admin-student-card__avatar admin-student-card__avatar--image" src="${esc(avatar.image)}" alt="${avatarLabel}">`
+                    : `<span class="admin-student-card__avatar avatar-art avatar-art--${avatar.key}" role="img" aria-label="${avatarLabel}"></span>`;
+                const title = app.auth.getPlayerTitle(u);
+                const progress = app.auth.getPlayerProgress(u);
+                const progressPercent = Math.round(Number(progress.percent) || 0);
+                const starCount = Number(app.auth.getPlayerStars(u) || 0).toLocaleString('vi-VN');
+                const approveOnClick = "app.admin.approveUser(decodeURIComponent('" + encodedUsername + "'))";
+                const editOnClick = "app.admin.showAddPlayerForm(decodeURIComponent('" + encodedUsername + "'))";
+                const deleteOnClick = "app.admin.deleteUser(decodeURIComponent('" + encodedUsername + "'))";
                 const actionBtns = isPending
-                    ? `${app.ui.compactAction('Duyệt', `app.admin.approveUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--approve')}${app.ui.compactAction('Xóa', `app.admin.deleteUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--delete')}`
-                    : `${app.ui.compactAction('Sửa', `app.admin.showAddPlayerForm(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--edit')}${app.ui.compactAction('Xóa', `app.admin.deleteUser(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--delete')}`;
-                return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}">
+                    ? app.ui.compactAction('Duyệt', approveOnClick, 'compact-admin-action--approve') + app.ui.compactAction('Xóa', deleteOnClick, 'compact-admin-action--delete')
+                    : app.ui.compactAction('Sửa', editOnClick, 'compact-admin-action--edit') + app.ui.compactAction('Xóa', deleteOnClick, 'compact-admin-action--delete');
+                return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}" data-student-username="${esc(rawUsername)}">
                     <header class="admin-student-card__header">
-                        <span class="admin-student-card__avatar" aria-hidden="true">${esc(initials || 'HS')}</span>
-                        <div class="admin-student-card__identity"><p>Học sinh · Lớp ${esc(u.classlevel || '—')}</p><h4>${esc(rawName)}</h4><span>@${esc(rawUsername)}</span></div>
+                        <div class="admin-student-card__avatar-shell">${avatarMarkup}</div>
+                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4><span>@${esc(rawUsername)}</span></div>
                         <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
                     </header>
+                    <div class="admin-student-card__achievement">
+                        <span class="admin-student-card__title"><span aria-hidden="true">🏅</span> Danh hiệu: <strong>${esc(title)}</strong></span>
+                        <div class="admin-student-card__progress" role="progressbar" aria-label="Tiến độ danh hiệu ${progressPercent}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressPercent}"><span style="width:${progressPercent}%"></span></div>
+                        <span class="admin-student-card__stars"><i aria-hidden="true">⭐</i> <strong>${esc(starCount)}</strong> Sao</span>
+                    </div>
                     <div class="admin-student-card__meta">
-                        <div><span>Lớp</span><strong>${esc(u.class_name || 'Chưa xếp lớp')}</strong></div>
-                        <div><span>Giới tính</span><strong>${esc(app.data.genderLabel?.(u.gender) || 'Chưa khai báo')}</strong></div>
+                        <div><span>Giới tính</span><strong>${esc(genderText)}</strong></div>
+                        <div><span>Tài khoản</span><strong>@${esc(rawUsername)}</strong></div>
                     </div>
                     <div class="admin-student-card__security"><span aria-hidden="true">▣</span> Mật khẩu được bảo mật · có thể đặt lại</div>
                     <footer class="admin-student-card__actions">${actionBtns}</footer>
@@ -8543,8 +8674,21 @@ const app = {
                     <div class="admin-roster-stat admin-roster-stat--green"><span>Đã duyệt</span><strong>${approvedStudents.length}</strong><small>Có thể tham gia học tập</small></div>
                     <div class="admin-roster-stat admin-roster-stat--amber"><span>Chờ xử lý</span><strong>${pendingStudents.length}</strong><small>${classCount} lớp đang có dữ liệu</small></div>
                 </div>
+                <section class="admin-roster-filter-panel" role="search" aria-label="Bộ lọc học sinh">
+                    <header class="admin-roster-filter-panel__header">
+                        <div><span class="admin-roster-filter-panel__kicker">Bộ lọc danh sách</span><h4>Lọc nhanh hồ sơ</h4><p>Tìm theo tên, lớp hoặc giới tính để thu gọn danh sách đang mở.</p></div>
+                        <button type="button" id="admin-roster-filter-reset" class="admin-roster-filter-panel__reset" onclick="app.admin.resetStudentRosterFilters()">Xóa bộ lọc</button>
+                    </header>
+                    <div class="admin-roster-filter-grid">
+                        <label class="admin-roster-filter-field admin-roster-filter-field--search"><span>Tìm học sinh</span><input type="search" id="admin-roster-filter-search" value="${esc(filters.search)}" placeholder="Nhập họ tên hoặc tên đăng nhập" autocomplete="off" oninput="app.admin.updateStudentRosterFilters()"></label>
+                        <label class="admin-roster-filter-field"><span>Cấp lớp</span><select id="admin-roster-filter-class" onchange="app.admin.updateStudentRosterFilters()">${classLevelOptions}</select></label>
+                        <label class="admin-roster-filter-field"><span>Lớp cụ thể</span><select id="admin-roster-filter-section" onchange="app.admin.updateStudentRosterFilters()">${classNameOptions}</select></label>
+                        <label class="admin-roster-filter-field"><span>Giới tính</span><select id="admin-roster-filter-gender" onchange="app.admin.updateStudentRosterFilters()">${genderOptions}</select></label>
+                    </div>
+                    <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ</div>
+                </section>
                 <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
-                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào'}</h4><p>${isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.'}</p></div></div>`}</div>
+                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
             </div>`;
         },
         async approveUser(username) {

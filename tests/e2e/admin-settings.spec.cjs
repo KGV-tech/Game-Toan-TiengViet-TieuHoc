@@ -114,3 +114,70 @@ test('Workspace học sinh và Điều chỉnh có trạng thái keyboard focus 
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
+
+test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ tự tên tiếng Việt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineAdmin(page);
+
+  await page.evaluate(() => {
+    app.data.users = [
+      { username: 'nguyen-alpha', fullname: 'Nguyễn Minh Alpha', role: 'student', approved: true, classlevel: '4', class_name: '', gender: 'female', stars: 0, avatar_key: 'girl-long' },
+      { username: 'tran-alpha', fullname: 'Trần Quang Alpha', role: 'student', approved: true, classlevel: '4', class_name: '', gender: 'male', stars: 8, avatar_key: 'boy-reader' },
+      { username: 'bui-alpha', fullname: 'Bùi Cát Vy Alpha', role: 'student', approved: true, classlevel: '4', class_name: '4/4', gender: 'female', stars: 18, avatar_key: 'girl-inventor' },
+      { username: 'pham-beta', fullname: 'Phạm Ngọc Minh Beta', role: 'student', approved: true, classlevel: '5', class_name: '5/1', gender: 'female', stars: 33, avatar_key: 'girl-artist' }
+    ];
+    app.admin.renderPlayersList(false);
+  });
+
+  await expect(page.locator('.admin-roster-filter-panel')).toBeVisible();
+  await expect(page.locator('.admin-student-card')).toHaveCount(4);
+  await expect(page.locator('.admin-student-card h4')).toHaveText([
+    'Nguyễn Minh Alpha',
+    'Trần Quang Alpha',
+    'Bùi Cát Vy Alpha',
+    'Phạm Ngọc Minh Beta'
+  ]);
+  await expect(page.locator('.admin-student-card').nth(0).locator('.admin-student-card__class-label')).toHaveText('Cấp lớp 4');
+  await expect(page.locator('.admin-student-card').nth(2).locator('.admin-student-card__class-label')).toHaveText('Lớp 4/4');
+  await expect(page.locator('.admin-student-card').nth(2)).toContainText('Danh hiệu: Học Trò Xuất Sắc');
+  await expect(page.locator('.admin-student-card').nth(2).locator('.admin-student-card__avatar')).toHaveAttribute('role', 'img');
+  await expect(page.locator('.admin-student-card').nth(2).locator('.admin-student-card__actions button')).toHaveText(['Sửa', 'Xóa']);
+
+  await page.locator('#admin-roster-filter-class').selectOption('4');
+  await expect(page.locator('.admin-student-card')).toHaveCount(3);
+  await page.locator('#admin-roster-filter-section').selectOption('4/4');
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await expect(page.locator('.admin-student-card__class-label')).toHaveText('Lớp 4/4');
+  await page.locator('#admin-roster-filter-reset').click();
+  await expect(page.locator('.admin-student-card')).toHaveCount(4);
+  await page.locator('#admin-roster-filter-gender').selectOption('female');
+  await expect(page.locator('.admin-student-card')).toHaveCount(3);
+  await page.locator('#admin-roster-filter-reset').click();
+  await expect(page.locator('.admin-student-card')).toHaveCount(4);
+  await page.locator('#admin-roster-filter-search').fill('Beta');
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await expect(page.locator('.admin-student-card h4')).toHaveText('Phạm Ngọc Minh Beta');
+
+  const teamOrder = await page.evaluate(() => {
+    app.data.users = app.data.users.filter(user => user.classlevel === '4');
+    return app.admin.getTeamCompetitionStudents('4').map(user => user.fullname);
+  });
+  expect(teamOrder).toEqual(['Nguyễn Minh Alpha', 'Trần Quang Alpha', 'Bùi Cát Vy Alpha']);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'student', fullname: 'Học sinh', role: 'student', classlevel: '4', class_name: '4/4' };
+    app.auth.updateHeader();
+  });
+  await expect(page.locator('#player-info')).toContainText('Lớp 4/4');
+  await expect(page.locator('#player-info')).not.toContainText('Cấp lớp 4');
+
+  await page.evaluate(() => {
+    app.data.currentUser.class_name = '';
+    app.auth.updateHeader();
+  });
+  await expect(page.locator('#player-info')).toContainText('Cấp lớp 4');
+  await expect(page.locator('#player-info')).not.toContainText('Lớp 4 ·');
+
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
