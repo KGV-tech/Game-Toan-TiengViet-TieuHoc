@@ -8940,7 +8940,7 @@ const app = {
                 return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}" data-student-username="${esc(rawUsername)}">
                     <header class="admin-student-card__header">
                         <div class="admin-student-card__avatar-shell">${avatarMarkup}</div>
-                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4><span>@${esc(rawUsername)}</span></div>
+                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4></div>
                         <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
                     </header>
                     <div class="admin-student-card__achievement">
@@ -8950,7 +8950,7 @@ const app = {
                     </div>
                     <div class="admin-student-card__meta">
                         <div><span>Giới tính</span><strong>${esc(genderText)}</strong></div>
-                        <div><span>Tài khoản</span><strong>@${esc(rawUsername)}</strong></div>
+                        <div><span>Tên đăng nhập</span><strong>${esc(rawUsername)}</strong></div>
                     </div>
                     <div class="admin-student-card__security"><span aria-hidden="true">▣</span> Mật khẩu được bảo mật · có thể đặt lại</div>
                     <footer class="admin-student-card__actions">${actionBtns}</footer>
