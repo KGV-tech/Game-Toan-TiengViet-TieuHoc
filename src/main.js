@@ -1367,7 +1367,9 @@ const app = {
                 'g4-m-angle-count-in-polygon', 'angle.count_in_polygon',
                 'g4-m-angle-drag-classify', 'angle.drag_classify',
                 'g4-m-angle-clock-classify', 'angle.clock_classify',
-                'g4-m-angle-count-eight-angles', 'angle.count_eight_angles'
+                'g4-m-angle-count-eight-angles', 'angle.count_eight_angles',
+                'g4-m-angle-measure-read', 'angle.measure_read',
+                'g4-m-angle-review', 'angle.review'
             ])
         },
         state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
@@ -2146,11 +2148,13 @@ const app = {
                         : '';
                     const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
                     const partPrompt = String(subquestion.prompt || '').trim();
+                    const rawVisual = String(subquestion.visual || '').trim();
+                    const visualMarkup = /^<svg\b/i.test(rawVisual) ? app.data.formatMathHTML(rawVisual) : '';
                     row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
                     const heading = partPrompt
                         ? `<h3><span>${partLabel})</span> ${app.data.formatMathHTML(partPrompt)}</h3>`
                         : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;
-                    row.innerHTML = `<div class="multi-choice-subquestion__heading">${illustration}${heading}</div><div class="multi-choice-subquestion__options"></div>`;
+                    row.innerHTML = `${visualMarkup ? `<div class="multi-choice-subquestion__visual">${visualMarkup}</div>` : ''}<div class="multi-choice-subquestion__heading">${illustration}${heading}</div><div class="multi-choice-subquestion__options"></div>`;
                     const choices = row.querySelector('.multi-choice-subquestion__options');
                     (subquestion.options || []).forEach((option, optionIndex) => {
                         const button = document.createElement('button');
@@ -6231,6 +6235,7 @@ const app = {
             const safeCondition2Classes = config.condition2Classes || safeClasses.map(([value]) => value);
             const safeCondition1Digits = (config.condition1Digits || [0]).map(String);
             const safeCondition2Digits = (config.condition2Digits || [3]).map(String);
+            const angleDegrees = Array.isArray(config.allowedDegrees) ? config.allowedDegrees.join(', ') : '';
             const presetPrompt = this.templatePresets[existing?.generator_key]?.defaultPrompt;
             const legacySafePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
             const existingPrompt = String(existing?.prompt_template || '').trim();
@@ -6303,7 +6308,9 @@ const app = {
                 ['g4-m-angle-count-in-polygon', 'Đếm các loại góc trong hình'],
                 ['g4-m-angle-drag-classify', 'Kéo thả phân loại góc'],
                 ['g4-m-angle-clock-classify', 'Kéo thả phân loại góc qua đồng hồ'],
-                ['g4-m-angle-count-eight-angles', 'Đếm 8 góc theo loại']
+                ['g4-m-angle-count-eight-angles', 'Đếm 8 góc theo loại'],
+                ['g4-m-angle-measure-read', 'Bài 7 · Đọc số đo góc'],
+                ['g4-m-angle-review', 'Bài 9 · Ôn tập góc']
             ];
             angleTemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
@@ -6337,7 +6344,7 @@ const app = {
             const angleRule = document.createElement('div');
             angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
             angleRule.hidden = true;
-            angleRule.innerHTML = '<h5>Hình và đáp án</h5><p>Game tự bốc hình góc hợp lệ, luôn có đủ bốn ý a–d và kiểm tra theo hình. Nhóm template này không dùng phạm vi số.</p>';
+            angleRule.innerHTML = `<h5>Hình và đáp án</h5><p>Game tự bốc hình góc hợp lệ, luôn có đủ bốn ý a–d và kiểm tra theo hình. Nhóm template này không dùng phạm vi số.</p><div class="template-editor__rule--angle-degree-controls"><label class="template-editor__field template-editor__field--wide"><span>Số đo góc được phép (tùy chọn)</span><input id="template-angle-degrees" class="form-input" inputmode="numeric" value="${app.data.sanitizeHTML(angleDegrees)}" placeholder="30, 45, 60, 90"></label><small>Chỉ áp dụng cho Bài 7 và Bài 9; nhập các số nguyên bội 5 từ 10 đến 170, cách nhau bằng dấu phẩy.</small></div>`;
             box.querySelector('.template-editor__rules')?.appendChild(angleRule);
             const arithmeticTemplateOptions = [
                 ['number.four_operations_fill_blanks', 'Bốn phép tính: điền số còn thiếu'],
@@ -6554,6 +6561,22 @@ const app = {
                     type: 'Điền khuyết',
                     variables: [['{question}', 'toàn bộ bảng 8 góc và bốn ý a–d do game sinh']]
                 },
+                'g4-m-angle-measure-read': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 7 · Đọc số đo góc trên thước đo góc và chọn đúng bốn số đo. Mỗi câu con đúng được 0,25 điểm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn hình thước đo góc, câu hỏi và phương án do game sinh.',
+                    preview: 'live',
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'hướng dẫn và bốn câu con đọc số đo do game sinh'], ['{measurements}', 'bốn số đo góc được sinh trong lượt']]
+                },
+                'g4-m-angle-review': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 9 · Ôn tập góc bằng một lượt kết hợp: đọc số đo trên thước và nhận biết loại góc.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu con ôn tập do game sinh.',
+                    preview: 'live',
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'hướng dẫn và bốn câu con ôn tập do game sinh'], ['{skills}', 'các kỹ năng được ôn: đo góc, phân loại góc']]
+                },
                 'number.even_odd_classify': {
                     defaultPrompt: '{question}',
                     guide: 'Tạo bốn câu trắc nghiệm nhận biết số chẵn hoặc số lẻ; phương án nhiễu dùng tính chất đối lập.',
@@ -6678,6 +6701,10 @@ const app = {
         renderGeneratedTemplatePreview(question) {
             if (!question) return '';
             const plain = value => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            const visual = value => {
+                const raw = String(value ?? '').trim();
+                return /^<svg\b/i.test(raw) ? app.data.formatMathHTML(raw) : '';
+            };
             const text = value => app.data.formatQuestionDetailHTML(plain(value)) || 'Chưa có nội dung';
             const content = value => {
                 const raw = plain(value);
@@ -6706,7 +6733,10 @@ const app = {
                 if (question.type === 'Điền khuyết') {
                     return frame(`<div class="template-preview__rows">${parts.map((part, index) => `<div class="template-preview__line"><b>${label(part, index)})</b><span>${content(part.display || part.expression || part.text || part.prompt || 'Nội dung câu con')}</span></div>`).join('')}</div>`);
                 }
-                return frame(`<div class="template-preview__mc">${parts.map((part, index) => `<div><b>${label(part, index)})</b><span>${text(part.prompt || part.text || 'Câu hỏi con')}</span>${choices(part.options)}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+                return frame(`<div class="template-preview__mc">${parts.map((part, index) => {
+                    const visualMarkup = visual(part.visual);
+                    return `<div><b>${label(part, index)})</b>${visualMarkup ? `<div class="template-preview__subquestion-visual">${visualMarkup}</div>` : ''}<span>${text(part.prompt || part.text || 'Câu hỏi con')}</span>${choices(part.options)}</div>`;
+                }).join('')}</div>`, 'template-preview--multiple-choice');
             }
             if (kind === 'statements') {
                 return frame(`<div class="template-preview__true-false">${parts.map((part, index) => `<div><b>${label(part, index, true)}.</b><span>${text(part.text || part.prompt)}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
@@ -6893,7 +6923,7 @@ const app = {
             if (questionType && preset.type) questionType.value = preset.type;
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
-            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
+            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles', 'g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
             const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
@@ -6920,6 +6950,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--safe-password-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--angle-info').forEach(rule => { rule.hidden = !isAngleTemplate; });
+            document.querySelectorAll('.template-editor__rule--angle-degree-controls').forEach(rule => { rule.hidden = !['g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator); });
             document.querySelectorAll('.template-editor__rule--phase2-controls').forEach(rule => { rule.hidden = !isPhase2B03 && !isPhase2B04; });
             document.querySelectorAll('#template-phase2-minimum, #template-phase2-maximum, #template-phase2-list-length-min, #template-phase2-list-length-max, #template-phase2-digit-count, #template-phase2-sequence-steps').forEach(input => { input.disabled = !isPhase2B03; });
             document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
@@ -6978,22 +7009,26 @@ const app = {
             const phase2Operations = selectedSafeValues('phase2-operations');
             const phase2Parities = selectedSafeValues('phase2-parities');
             const topic5Operation = document.getElementById('template-topic5-operation')?.value.trim() || '';
+            const angleDegreesInput = document.getElementById('template-angle-degrees')?.value.trim() || '';
+            const angleDegrees = angleDegreesInput ? angleDegreesInput.split(',').map(item => Number(item.trim())) : [];
             const minimumDigits = Number(document.getElementById('template-minimum-digits')?.value || 1);
             const maximumDigits = Number(document.getElementById('template-maximum-digits')?.value || 1);
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
             const isSafePassword = generatorKey === 'number.safe_password_by_place_value';
-            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generatorKey);
+            const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles', 'g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generatorKey);
+            const isAngleMeasureTemplate = ['g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generatorKey);
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
             const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
             const topic5Config = (topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {};
+            const angleConfig = isAngleMeasureTemplate && angleDegreesInput ? { allowedDegrees: angleDegrees } : {};
             const phase2Config = isPhase2B03
                 ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
                 : (isPhase2B04
                     ? { variableMinimum: phase2VariableMinimum, variableMaximum: phase2VariableMaximum, constantMinimum: phase2ConstantMinimum, constantMaximum: phase2ConstantMaximum, operations: phase2Operations }
                     : { skills: ['b01', 'b02', 'b03', 'b04'] });
-            const templateConfig = isAngleTemplate ? {} : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig));
+            const templateConfig = isAngleTemplate ? angleConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig));
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
@@ -7003,6 +7038,7 @@ const app = {
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
             if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
+            if (isAngleMeasureTemplate && angleDegreesInput && (angleDegrees.length === 0 || angleDegrees.some(item => !Number.isInteger(item) || item < 10 || item > 170 || item % 5 !== 0))) throw new Error('Số đo góc phải là số nguyên theo bội 5, từ 10 đến 170 độ.');
             if (isPhase2B03) {
                 if (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
                 if (!phase2Parities.length || phase2Parities.some(parity => !['even', 'odd'].includes(parity))) throw new Error('Hãy chọn ít nhất một dạng số chẵn hoặc số lẻ.');
