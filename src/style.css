@@ -4580,7 +4580,7 @@ input[type="text"], input[type="password"], select, textarea {
 .exam-print__question-lead {
     min-width: 0;
     flex: 0 1 auto;
-    font-weight: 500;
+    font-weight: 800;
 }
 .exam-print__parts {
     display: grid;
@@ -4605,6 +4605,14 @@ input[type="text"], input[type="password"], select, textarea {
     color: #263238;
     line-height: 1.24;
 }
+.exam-print__subquestion-prompt--shared {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+}
+.exam-print__subquestion-prompt--shared .exam-print__subquestion-options { margin-top: 0; }
+.exam-print__subquestion--shared { padding-top: 3px; padding-bottom: 3px; }
 .exam-print__subquestion-prompt > strong,
 .exam-print__part-label {
     color: #263238;
@@ -4709,20 +4717,6 @@ input[type="text"], input[type="password"], select, textarea {
     border-bottom-style: solid;
 }
 .exam-print__answer-line--short { min-width: 36px; }
-.exam-print__comparison-choices {
-    display: inline-flex;
-    align-items: baseline;
-    flex: 0 0 auto;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin: 0 0 0 5px;
-    color: #40545a;
-    font-size: .82em;
-    font-weight: 500;
-    line-height: 1.1;
-}
-.exam-print__comparison-choices > strong { color: #263238; }
-.exam-print__comparison-choices > span { white-space: nowrap; }
 .exam-print__choices-note {
     margin: 0 0 3px;
     color: #40545a;

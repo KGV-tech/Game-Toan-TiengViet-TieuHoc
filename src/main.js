@@ -37,6 +37,8 @@ if (window.supabase) {
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
+const EXAM_PNG_SCRIPT_TIMEOUT_MS = 15000;
+const EXAM_PNG_RENDER_TIMEOUT_MS = 30000;
 
 // Bảng danh hiệu 20 bậc (5 nhóm × 4 cấp), sắp xếp GIẢM DẦN theo số Sao cần đạt.
 // Người chơi đạt danh hiệu tương ứng tổng Sao tích lũy (total_stars_earned) vượt qua ngưỡng.
@@ -8587,17 +8589,21 @@ const app = {
         },
         renderExamPrintSubquestions(question) {
             const parts = Array.isArray(question?.subquestions) ? question.subquestions : [];
+            const hasSharedPrompt = question?.sharedPrompt === true || parts.length > 0 && parts.every(part => !String(part?.prompt || part?.text || '').trim());
             const markup = parts.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex);
                 const prompt = this.getExamPrintText(part?.prompt || part?.text || '');
                 const options = Array.isArray(part?.options) ? part.options.filter(option => String(option ?? '').trim()) : [];
                 const optionColumns = this.getExamPrintOptionColumns(options);
-                return `<article class="exam-print__subquestion">
-                    <div class="exam-print__subquestion-prompt"><strong>${label})</strong>${prompt ? ` <span>${prompt}</span>` : ''}</div>
-                    ${options.length ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true"></span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>` : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>'}
+                const optionsMarkup = options.length
+                    ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true"></span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>`
+                    : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>';
+                return `<article class="exam-print__subquestion${hasSharedPrompt ? ' exam-print__subquestion--shared' : ''}">
+                    <div class="exam-print__subquestion-prompt${hasSharedPrompt ? ' exam-print__subquestion-prompt--shared' : ''}"><strong>${label})</strong>${hasSharedPrompt ? optionsMarkup : (prompt ? ` <span>${prompt}</span>` : '')}</div>
+                    ${hasSharedPrompt ? '' : optionsMarkup}
                 </article>`;
             }).join('');
-            return `<div class="exam-print__parts exam-print__parts--subquestions">${markup}</div>`;
+            return `<div class="exam-print__parts exam-print__parts--subquestions${hasSharedPrompt ? ' exam-print__parts--shared-subquestions' : ''}">${markup}</div>`;
         },
         renderExamPrintStatements(question) {
             const parts = Array.isArray(question?.statements) ? question.statements : [];
@@ -8606,19 +8612,23 @@ const app = {
                 return `<div class="exam-print__statement"><span class="exam-print__part-label">${label}.</span><span class="exam-print__statement-text">${this.getExamPrintText(part?.text || part?.prompt || '')}</span><span class="exam-print__statement-choices"><span><span class="exam-print__choice-box" aria-hidden="true"></span> Đúng</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> Sai</span></span></div>`;
             }).join('')}</div>`;
         },
-        renderExamPrintComparisonChoices() {
-            return `<span class="exam-print__comparison-choices" aria-label="Các dấu có thể chọn"><strong>Chọn một dấu:</strong><span><span class="exam-print__choice-box" aria-hidden="true"></span> &lt;</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> &gt;</span><span><span class="exam-print__choice-box" aria-hidden="true"></span> =</span></span>`;
+        getExamPrintComparisonSides(part) {
+            const left = part?.leftText || part?.left || '';
+            const right = part?.rightText || part?.right || '';
+            if (String(left).trim() || String(right).trim()) return { left, right };
+            const display = this.getExamPrintRawText(part?.display || '').replace(/^[a-dA-D][.)]\s*/, '').trim();
+            const separator = display.match(/^(.*?)\s*(?:_{3,}|\.{3,})\s*(.*)$/);
+            return separator ? { left: separator[1].trim(), right: separator[2].trim() } : null;
         },
         renderExamPrintComparisonRows(question) {
             const parts = Array.isArray(question?.comparisonRows) ? question.comparisonRows : [];
             return `<div class="exam-print__parts exam-print__parts--comparison">
                 ${parts.map((part, partIndex) => {
-                const label = this.getExamPrintLabel(part?.label, partIndex);
-                const left = this.getExamPrintText(part?.leftText || '');
-                const right = this.getExamPrintText(part?.rightText || '');
-                const fallback = this.getExamPrintTextWithBlanks(part?.display || '');
-                return `<div class="exam-print__comparison-row"><span class="exam-print__part-label">${label})</span>${left || right ? `<span class="exam-print__comparison-side">${left}</span><span class="exam-print__comparison-slot" role="img" aria-label="Ô điền dấu"></span><span class="exam-print__comparison-side">${right}</span>` : `<span class="exam-print__comparison-side exam-print__comparison-fallback">${fallback}</span><span class="exam-print__comparison-slot" role="img" aria-label="Ô điền dấu"></span><span class="exam-print__comparison-side"></span>`}</div>`;
-            }).join('')}</div>`;
+                    const label = this.getExamPrintLabel(part?.label, partIndex);
+                    const sides = this.getExamPrintComparisonSides(part);
+                    const fallback = this.getExamPrintTextWithBlanks(part?.display || '');
+                    return `<div class="exam-print__comparison-row"><span class="exam-print__part-label">${label})</span>${sides ? `<span class="exam-print__comparison-side">${this.getExamPrintText(sides.left)}</span><span class="exam-print__comparison-slot" role="img" aria-label="Ô điền dấu"></span><span class="exam-print__comparison-side">${this.getExamPrintText(sides.right)}</span>` : `<span class="exam-print__comparison-side exam-print__comparison-fallback">${fallback}</span>`}</div>`;
+                }).join('')}</div>`;
         },
         renderExamPrintPracticeRows(question) {
             const source = Array.isArray(question?.practiceRows)
@@ -8697,10 +8707,8 @@ const app = {
         renderExamPrintQuestion(question, index) {
             const number = index + 1;
             const printableQuestion = this.normalizeExamQuestionStructure(question);
-            const kind = this.getExamQuestionStructureKind(printableQuestion);
-            const comparisonChoices = kind === 'comparisonRows' ? this.renderExamPrintComparisonChoices() : '';
             return `<article class="exam-print__question" data-print-question="${number}">
-                <h3 class="exam-print__question-heading"><span>Câu ${number}:</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span>${comparisonChoices}</h3>
+                <h3 class="exam-print__question-heading"><span>Câu ${number}:</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span></h3>
                 ${this.renderExamPrintQuestionParts(printableQuestion)}
             </article>`;
         },
@@ -8811,8 +8819,8 @@ const app = {
         },
         async renderExamPngPages(exam) {
             if (!window.html2canvas) {
-                const loaded = await app.utils.loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas');
-                if (!loaded || !window.html2canvas) throw new Error('Không thể tải thư viện xuất PNG.');
+                const loaded = await app.utils.loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas', EXAM_PNG_SCRIPT_TIMEOUT_MS);
+                if (!loaded || !window.html2canvas) throw new Error('Không thể tải thư viện xuất PNG trong thời gian cho phép.');
             }
 
             const stage = document.createElement('div');
@@ -8827,14 +8835,25 @@ const app = {
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
                 const cssPageHeight = 1122.52;
                 if (printDocument) this.prepareExamPngPageBreaks(printDocument, cssPageHeight);
-                const sourceCanvas = await window.html2canvas(stage, {
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    scale: 2480 / 794,
-                    useCORS: true,
-                    width: 794,
-                    windowWidth: 794
-                });
+                let renderTimer;
+                let sourceCanvas;
+                try {
+                    sourceCanvas = await Promise.race([
+                        Promise.resolve().then(() => window.html2canvas(stage, {
+                            backgroundColor: '#ffffff',
+                            logging: false,
+                            scale: 2480 / 794,
+                            useCORS: true,
+                            width: 794,
+                            windowWidth: 794
+                        })),
+                        new Promise((_, reject) => {
+                            renderTimer = window.setTimeout(() => reject(new Error('Tạo ảnh PNG quá lâu. Hãy thử lại với đề ngắn hơn hoặc kiểm tra trình duyệt.')), EXAM_PNG_RENDER_TIMEOUT_MS);
+                        })
+                    ]);
+                } finally {
+                    window.clearTimeout(renderTimer);
+                }
                 const sourcePageHeight = Math.max(1, Math.round(sourceCanvas.width * 297 / 210));
                 const pageCount = Math.max(1, Math.ceil(sourceCanvas.height / sourcePageHeight));
                 return Array.from({ length: pageCount }, (_, pageIndex) => {
@@ -8890,7 +8909,8 @@ const app = {
             } catch (error) {
                 console.error('Lỗi xuất PNG đề kiểm tra:', error);
                 if (!previewWindow.closed) {
-                    previewWindow.document.body.innerHTML = '<main style="max-width:760px;margin:15vh auto;padding:32px;text-align:center;font-family:Arial,sans-serif;background:#fff;border:1px solid #efb1b1;color:#7f1d1d"><h1>Không thể tạo PNG</h1><p>Hãy kiểm tra kết nối rồi thử lại.</p></main>';
+                    const message = app.data.sanitizeHTML(error?.message || 'Hãy kiểm tra kết nối rồi thử lại.');
+                    previewWindow.document.body.innerHTML = `<main style="max-width:760px;margin:15vh auto;padding:32px;text-align:center;font-family:Arial,sans-serif;background:#fff;border:1px solid #efb1b1;color:#7f1d1d"><h1>Không thể tạo PNG</h1><p>${message}</p><p>Hãy đóng cửa sổ này và thử lại.</p></main>`;
                 }
             }
         },
