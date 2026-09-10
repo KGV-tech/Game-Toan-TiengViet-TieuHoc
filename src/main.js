@@ -9016,9 +9016,11 @@ const app = {
                     : app.ui.compactAction('Sửa', editOnClick, 'compact-admin-action--edit') + app.ui.compactAction('Xóa', deleteOnClick, 'compact-admin-action--delete');
                 return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}" data-student-username="${esc(rawUsername)}">
                     <header class="admin-student-card__header">
-                        <div class="admin-student-card__avatar-shell">${avatarMarkup}</div>
-                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4></div>
-                        <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
+                        <div class="admin-student-card__topline">
+                            <div class="admin-student-card__avatar-shell">${avatarMarkup}</div>
+                            <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
+                        </div>
+                        <div class="admin-student-card__identity"><h4>${esc(rawName)}</h4><p class="admin-student-card__class-label">${esc(classLabel)}</p></div>
                     </header>
                     <div class="admin-student-card__achievement">
                         <span class="admin-student-card__title"><span aria-hidden="true">🏅</span> Danh hiệu: <strong>${esc(title)}</strong></span>
