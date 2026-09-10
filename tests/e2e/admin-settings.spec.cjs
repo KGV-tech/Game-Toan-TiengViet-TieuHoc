@@ -368,7 +368,11 @@ test('Form sửa hồ sơ cho phép đổi avatar và cập nhật lại thẻ h
   await page.locator('.admin-student-card__actions button').filter({ hasText: 'Sửa' }).click();
   await expect(page.locator('.admin-student-form')).toBeVisible();
   await expect(page.locator('input[name="admin-avatar"][value="girl-long"]')).toBeChecked();
-  await expect(page.locator('input[name="admin-avatar"]')).toHaveCount(30);
+  await expect(page.locator('input[name="admin-avatar"]')).toHaveCount(50);
+  await expect(page.locator('input[name="admin-avatar"][value="boy-hoodie"]')).toHaveCount(1);
+  await expect(page.locator('input[name="admin-avatar"][value="girl-streak"]')).toHaveCount(1);
+  await expect(page.locator('.admin-student-form .avatar-art--boy-hoodie')).toHaveCount(1);
+  await expect(page.locator('.admin-student-form .avatar-art--girl-streak')).toHaveCount(1);
 
   await page.locator('.admin-student-form .avatar-picker__tabs button').filter({ hasText: 'Hoạt hình' }).click();
   await expect(page.locator('.admin-student-form .avatar-picker__choices[data-avatar-group="cartoons"]')).toBeVisible();
