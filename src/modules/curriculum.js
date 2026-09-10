@@ -55,7 +55,9 @@
                 'g4-m-angle-count-in-polygon': 'g4-math-hk1-b08',
                 'g4-m-angle-drag-classify': 'g4-math-hk1-b08',
                 'g4-m-angle-clock-classify': 'g4-math-hk1-b08',
-                'g4-m-angle-count-eight-angles': 'g4-math-hk1-b08'
+                'g4-m-angle-count-eight-angles': 'g4-math-hk1-b08',
+                'g4-m-angle-measure-read': 'g4-math-hk1-b07',
+                'g4-m-angle-review': 'g4-math-hk1-b09'
             }),
             '3. Số có nhiều chữ số': Object.freeze({
                 'number.digit_at_place': 'g4-math-hk1-b11',

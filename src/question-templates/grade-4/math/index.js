@@ -27,7 +27,11 @@
         'g4-m-angle-clock-classify': require('./angle-clock-classify'),
         'angle.clock_classify': require('./angle-clock-classify'),
         'g4-m-angle-count-eight-angles': require('./angle-count-eight-angles'),
-        'angle.count_eight_angles': require('./angle-count-eight-angles')
+        'angle.count_eight_angles': require('./angle-count-eight-angles'),
+        'g4-m-angle-measure-read': require('./angle-measure'),
+        'angle.measure_read': require('./angle-measure'),
+        'g4-m-angle-review': require('./angle-review'),
+        'angle.review': require('./angle-review')
     } : root.Grade4MathTemplateGenerators;
     const api = factory(generators);
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -133,7 +137,7 @@ function generateQuestion(templateId, config = {}, random = Math.random) {
     if (!Array.isArray(question.partAnswerCounts)) {
         const fourParts = [question.subquestions, question.practiceRows, question.comparisonRows, question.statements].some(items => Array.isArray(items) && items.length === 4)
             || (question.type === 'Đối chiếu trùng khớp' && String(question.ans || '').split(', ').filter(Boolean).length === 4)
-            || ['g4-m-angle-count-in-polygon', 'angle.count_in_polygon', 'g4-m-angle-drag-classify', 'angle.drag_classify', 'g4-m-angle-clock-classify', 'angle.clock_classify', 'g4-m-angle-count-eight-angles', 'angle.count_eight_angles'].includes(templateId);
+            || ['g4-m-angle-count-in-polygon', 'angle.count_in_polygon', 'g4-m-angle-drag-classify', 'angle.drag_classify', 'g4-m-angle-clock-classify', 'angle.clock_classify', 'g4-m-angle-count-eight-angles', 'angle.count_eight_angles', 'g4-m-angle-measure-read', 'angle.measure_read', 'g4-m-angle-review', 'angle.review'].includes(templateId);
         if (fourParts) question.partAnswerCounts = [1, 1, 1, 1];
     }
     return filterGeneratedParts(question, config);
