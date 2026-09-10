@@ -230,9 +230,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
   await expect(page.locator('#print-area .exam-print__parts--two-columns')).toHaveCount(2);
   await expect(page.locator('#print-area .exam-print__comparison-slot')).toHaveCount(4);
-  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('<');
-  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('>');
-  await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('=');
+  await expect(page.locator('#print-area .exam-print__comparison-choices')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__comparison-row .exam-print__answer-line')).toHaveCount(0);
 
   const spacing = await page.locator('#print-area .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
@@ -263,9 +261,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__question-heading small')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__comparison-slot')).toHaveCount(4);
-  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('<');
-  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('>');
-  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toContainText('=');
+  await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__comparison-row .exam-print__answer-line')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__angle-item')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__angle-count-row')).toHaveCount(4);
@@ -310,6 +306,43 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   expect(pdfBytes.length).toBeGreaterThan(20_000);
   await page.setViewportSize({ width: 1024, height: 768 });
   expect(await page.locator('#print-area').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+});
+
+test('bản in làm nổi bật câu dẫn, thu gọn câu chung và không thêm ô dư cho so sánh cũ', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    app.data.exams = [{
+      name: 'Bài kiểm tra trình bày', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học kỳ 1',
+      questions: [
+        {
+          type: 'So sánh', q: 'Điền dấu thích hợp:<br>a) 9 897 ___ 10 000<br>b) 45 031 ___ 40 000 + 5 000 + 30',
+          comparisonRows: [
+            { label: 'a', display: 'a) 9 897 ___ 10 000', answer: '<' },
+            { label: 'b', display: 'b) 45 031 ___ 40 000 + 5 000 + 30', answer: '<' }
+          ], ans: '<, <'
+        },
+        {
+          type: 'Trắc nghiệm', q: 'Hãy tìm số bé nhất trong các số sau.', sharedPrompt: true,
+          subquestions: ['a', 'b', 'c', 'd'].map((label, index) => ({
+            label, prompt: '', options: ['13 023', '74 861', '10 613', '67 315'], answer: String(index)
+          })), ans: '0, 1, 2, 3'
+        }
+      ]
+    }];
+    app.admin.renderESubTab('lib');
+  });
+
+  await page.getByLabel('Tìm trong thư viện đề').fill('trình bày');
+  await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
+  const firstHeading = page.locator('#print-area .exam-print__question-heading').first();
+  await expect(firstHeading.locator('.exam-print__question-lead')).toHaveText('Điền dấu thích hợp:');
+  await expect(firstHeading.locator('.exam-print__question-lead')).toHaveCSS('font-weight', /^(7|8|9)/);
+  await expect(page.locator('#print-area .exam-print__comparison-choices')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__comparison-fallback')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__comparison-row').first().locator('.exam-print__comparison-side').nth(1)).toHaveText('10 000');
+  await expect(page.locator('#print-area .exam-print__parts--shared-subquestions')).toHaveCount(1);
+  await expect(page.locator('#print-area .exam-print__subquestion--shared')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__subquestion--shared .exam-print__subquestion-prompt--shared').first().locator('.exam-print__subquestion-options')).toHaveCount(1);
 });
 
 test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các trang A4', async ({ page }) => {
@@ -363,4 +396,21 @@ test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các tr
   const pngStageLayout = await page.evaluate(() => window.__pngStageLayout);
   expect(pngStageLayout).toEqual({ width: 794, studentDirection: 'row', shortOptionColumns: 4 });
   await pngPage.close();
+});
+
+test('loader PNG không chờ vô hạn khi script CDN bị treo', async ({ page }) => {
+  await openLibrary(page);
+  const result = await page.evaluate(async () => {
+    const originalAppendChild = document.head.appendChild;
+    document.head.appendChild = () => undefined;
+    try {
+      return await Promise.race([
+        app.utils.loadScript('https://example.invalid/html2canvas-never-finishes.js', '__missingHtml2CanvasForTest', 150),
+        new Promise(resolve => window.setTimeout(() => resolve('timeout'), 500))
+      ]);
+    } finally {
+      document.head.appendChild = originalAppendChild;
+    }
+  });
+  expect(result).toBe(false);
 });

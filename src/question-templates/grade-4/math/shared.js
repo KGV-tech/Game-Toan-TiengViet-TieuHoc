@@ -58,7 +58,8 @@ function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, 
         ans: normalizedSubquestions.map(item => item.answer).join(', '),
         explanation,
         templateVariables,
-        subquestions: normalizedSubquestions
+        subquestions: normalizedSubquestions,
+        sharedPrompt: normalizedSubquestions.every(item => !String(item.prompt || '').trim())
     };
     return question;
 }

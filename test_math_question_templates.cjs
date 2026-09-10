@@ -74,6 +74,7 @@ assert.equal(measurementWordProblemScenarioIds.size, 20, 'The measurement word-p
 
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
+assert.equal(smallest.sharedPrompt, true, 'The smallest-number template must mark its shared instruction for compact print layout.');
 assert.equal(smallest.subquestions.length, 4, 'The smallest-number template must generate four parts a–d.');
 assert.deepEqual(smallest.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
 smallest.subquestions.forEach(item => {
@@ -85,6 +86,7 @@ smallest.subquestions.forEach(item => {
 assert.deepEqual(smallest.ans.split(', '), smallest.subquestions.map(item => item.answer));
 
 const largest = generateQuestion('number.largest_of_four', {}, seededRandom(2));
+assert.equal(largest.sharedPrompt, true, 'The largest-number template must mark its shared instruction for compact print layout.');
 assert.equal(largest.subquestions.length, 4, 'The largest-number template must generate four parts a–d.');
 largest.subquestions.forEach(item => {
     assert.equal(item.options.length, 4, 'Each largest-number part must have four options.');

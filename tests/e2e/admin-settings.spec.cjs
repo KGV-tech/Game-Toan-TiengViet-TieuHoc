@@ -308,6 +308,50 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
   expect(consoleErrors).toEqual([]);
 });
 
+test('Thẻ học sinh hiển thị họ tên đầy đủ và trạng thái không che tên', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineAdmin(page);
+  const fullName = 'Lê Nguyễn Phương Anh Trần Minh';
+
+  await page.evaluate(name => {
+    app.data.users = [{
+      username: 'phuonganh', fullname: name, role: 'student', approved: true,
+      classlevel: '4', class_name: '4/4', gender: 'female', avatar_key: 'girl-long'
+    }];
+    app.admin.renderPlayersList(false);
+  }, fullName);
+
+  const card = page.locator('.admin-student-card').first();
+  await expect(card.locator('.admin-student-card__identity h4')).toHaveText(fullName);
+  await expect(card.locator('.admin-student-card__identity')).not.toContainText('Học sinh');
+  await expect(card.locator('.admin-student-card__class-label')).toHaveText('Lớp 4/4');
+  await expect(card.locator('.admin-student-card__status')).toHaveText('Đã duyệt');
+
+  const layout = await card.evaluate(element => {
+    const name = element.querySelector('.admin-student-card__identity h4');
+    const status = element.querySelector('.admin-student-card__status');
+    const avatar = element.querySelector('.admin-student-card__avatar-shell');
+    const nameStyle = getComputedStyle(name);
+    const nameRect = name.getBoundingClientRect();
+    const statusRect = status.getBoundingClientRect();
+    return {
+      textOverflow: nameStyle.textOverflow,
+      whiteSpace: nameStyle.whiteSpace,
+      nameFits: name.scrollWidth <= name.clientWidth + 1,
+      nameWidth: nameRect.width,
+      avatarWidth: avatar.getBoundingClientRect().width,
+      statusAboveName: statusRect.bottom <= nameRect.top + 1
+    };
+  });
+  expect(layout.textOverflow).not.toBe('ellipsis');
+  expect(layout.whiteSpace).toBe('normal');
+  expect(layout.nameFits).toBe(true);
+  expect(layout.nameWidth).toBeGreaterThan(layout.avatarWidth * 2);
+  expect(layout.statusAboveName).toBe(true);
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('Bộ lọc roster giữ empty state, chờ duyệt và tương tác accessibility', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
