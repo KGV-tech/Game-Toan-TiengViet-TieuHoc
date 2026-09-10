@@ -37,8 +37,6 @@ if (window.supabase) {
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
-const EXAM_PNG_SCRIPT_TIMEOUT_MS = 15000;
-const EXAM_PNG_RENDER_TIMEOUT_MS = 30000;
 
 // Bảng danh hiệu 20 bậc (5 nhóm × 4 cấp), sắp xếp GIẢM DẦN theo số Sao cần đạt.
 // Người chơi đạt danh hiệu tương ứng tổng Sao tích lũy (total_stars_earned) vượt qua ngưỡng.
@@ -8791,129 +8789,6 @@ const app = {
             };
             printWindow.setTimeout(printWhenReady, 0);
         },
-        prepareExamPngPageBreaks(printDocument, pageHeight) {
-            const questions = [...printDocument.querySelectorAll('.exam-print__question')];
-            questions.forEach(question => {
-                question.dataset.pngBaseMargin = getComputedStyle(question).marginTop;
-            });
-            for (let pass = 0; pass < questions.length + 2; pass += 1) {
-                let changed = false;
-                const documentTop = printDocument.getBoundingClientRect().top;
-                questions.forEach(question => {
-                    const top = question.getBoundingClientRect().top - documentTop;
-                    const height = question.getBoundingClientRect().height;
-                    if (height >= pageHeight - 8) return;
-                    const pageEnd = (Math.floor(top / pageHeight) + 1) * pageHeight;
-                    if (top < pageEnd - 1 && top + height > pageEnd + 1) {
-                        const baseMargin = parseFloat(question.dataset.pngBaseMargin) || 0;
-                        const targetMargin = baseMargin + Math.ceil(pageEnd - top + 8);
-                        const currentMargin = parseFloat(question.style.marginTop) || 0;
-                        if (currentMargin < targetMargin) {
-                            question.style.marginTop = `${targetMargin}px`;
-                            changed = true;
-                        }
-                    }
-                });
-                if (!changed) break;
-            }
-        },
-        async renderExamPngPages(exam) {
-            if (!window.html2canvas) {
-                const loaded = await app.utils.loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas', EXAM_PNG_SCRIPT_TIMEOUT_MS);
-                if (!loaded || !window.html2canvas) throw new Error('Không thể tải thư viện xuất PNG trong thời gian cho phép.');
-            }
-
-            const stage = document.createElement('div');
-            stage.className = 'exam-png-stage';
-            stage.setAttribute('aria-hidden', 'true');
-            stage.innerHTML = this.renderExamPrintContent(exam, 'exam-png-document');
-            document.body.appendChild(stage);
-            const printDocument = stage.querySelector('#exam-png-document');
-            printDocument?.classList.add('exam-print--png');
-
-            try {
-                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-                const cssPageHeight = 1122.52;
-                if (printDocument) this.prepareExamPngPageBreaks(printDocument, cssPageHeight);
-                let renderTimer;
-                let sourceCanvas;
-                try {
-                    sourceCanvas = await Promise.race([
-                        Promise.resolve().then(() => window.html2canvas(stage, {
-                            backgroundColor: '#ffffff',
-                            logging: false,
-                            scale: 2480 / 794,
-                            useCORS: true,
-                            width: 794,
-                            windowWidth: 794
-                        })),
-                        new Promise((_, reject) => {
-                            renderTimer = window.setTimeout(() => reject(new Error('Tạo ảnh PNG quá lâu. Hãy thử lại với đề ngắn hơn hoặc kiểm tra trình duyệt.')), EXAM_PNG_RENDER_TIMEOUT_MS);
-                        })
-                    ]);
-                } finally {
-                    window.clearTimeout(renderTimer);
-                }
-                const sourcePageHeight = Math.max(1, Math.round(sourceCanvas.width * 297 / 210));
-                const pageCount = Math.max(1, Math.ceil(sourceCanvas.height / sourcePageHeight));
-                return Array.from({ length: pageCount }, (_, pageIndex) => {
-                    const pageCanvas = document.createElement('canvas');
-                    pageCanvas.width = 2480;
-                    pageCanvas.height = 3508;
-                    const context = pageCanvas.getContext('2d');
-                    if (!context) throw new Error('Trình duyệt không hỗ trợ canvas 2D.');
-                    context.fillStyle = '#ffffff';
-                    context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-                    const sourceTop = pageIndex * sourcePageHeight;
-                    const sourceHeight = Math.max(0, Math.min(sourcePageHeight, sourceCanvas.height - sourceTop));
-                    if (sourceHeight > 0) {
-                        const targetHeight = Math.min(pageCanvas.height, Math.round(sourceHeight * pageCanvas.width / sourceCanvas.width));
-                        context.drawImage(sourceCanvas, 0, sourceTop, sourceCanvas.width, sourceHeight, 0, 0, pageCanvas.width, targetHeight);
-                    }
-                    return { dataUrl: pageCanvas.toDataURL('image/png') };
-                });
-            } finally {
-                stage.remove();
-            }
-        },
-        getExamPngPreviewStyles() {
-            return `body{margin:0;background:#eef3f1;color:#263238;font-family:Arial,'Segoe UI',sans-serif}.exam-png-preview{min-height:100vh;box-sizing:border-box;padding:24px}.exam-png-preview__header{display:flex;max-width:1100px;margin:0 auto 20px;align-items:flex-end;justify-content:space-between;gap:20px}.exam-png-preview__header p{margin:0;color:#527068}.exam-png-preview__header h1{margin:4px 0;font-size:1.45rem}.exam-png-preview__header span{color:#52666b}.exam-png-preview__pages{display:grid;justify-items:center;gap:24px}.exam-png-preview__sheet{width:min(794px,calc(100vw - 48px));overflow:hidden;background:#fff;border:1px solid #d6e5df;box-shadow:0 8px 24px rgba(33,76,65,.14)}.exam-png-preview__sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:#f3faf7;color:#31564c;font-size:.85rem}.exam-png-preview__sheet-heading a{color:#087f6b;font-weight:700}.exam-png-preview__sheet img{display:block;width:100%;height:auto}@media(max-width:700px){.exam-png-preview{padding:12px}.exam-png-preview__header{align-items:flex-start;flex-direction:column;gap:8px}.exam-png-preview__sheet{width:calc(100vw - 24px)}}`;
-        },
-        renderExamPngPreview(previewWindow, exam, pages) {
-            if (!previewWindow || previewWindow.closed) return;
-            const esc = value => app.data.sanitizeHTML(value ?? '');
-            const name = String(exam?.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
-            const filePages = pages.map((page, index) => {
-                const fileName = `${this.getExamPrintFileName(exam, index + 1)}.png`;
-                return `<article class="exam-png-preview__sheet">
-                    <div class="exam-png-preview__sheet-heading"><strong>Trang ${index + 1}/${pages.length}</strong><a href="${page.dataUrl}" download="${esc(fileName)}">Tải PNG trang ${index + 1}</a></div>
-                    <img src="${page.dataUrl}" alt="${esc(name)} - trang ${index + 1} khổ A4" width="2480" height="3508">
-                </article>`;
-            }).join('');
-            previewWindow.document.title = `${name} — PNG A4`;
-            previewWindow.document.body.innerHTML = `<main class="exam-png-preview"><header class="exam-png-preview__header"><div><p>Đã tạo ${pages.length} trang ảnh A4</p><h1>Xuất PNG A4</h1><span>${esc(name)}</span></div><p>Ảnh đã cố định tỷ lệ 2480 × 3508 px. In ở 100%.</p></header><section class="exam-png-preview__pages" aria-label="Các trang PNG A4">${filePages}</section></main>`;
-        },
-        async exportExamPng(idx) {
-            const exam = app.data.exams[idx];
-            if (!exam) return;
-            const previewWindow = window.open('', '_blank');
-            if (!previewWindow) {
-                alert('Trình duyệt đang chặn cửa sổ PNG. Hãy cho phép popup rồi thử lại.');
-                return;
-            }
-            previewWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đang chuẩn bị PNG A4</title><style>${this.getExamPngPreviewStyles()}main{max-width:760px;margin:15vh auto;padding:32px;text-align:center;background:#fff;border:1px solid #d6e5df}main h1{margin:0 0 8px;font-size:24px}main p{margin:0;color:#4b635c}</style></head><body><main><h1>Đang chuẩn bị PNG A4…</h1><p>Vui lòng chờ trong giây lát.</p></main></body></html>`);
-            previewWindow.document.close();
-            try {
-                const pages = await this.renderExamPngPages(exam);
-                this.renderExamPngPreview(previewWindow, exam, pages);
-            } catch (error) {
-                console.error('Lỗi xuất PNG đề kiểm tra:', error);
-                if (!previewWindow.closed) {
-                    const message = app.data.sanitizeHTML(error?.message || 'Hãy kiểm tra kết nối rồi thử lại.');
-                    previewWindow.document.body.innerHTML = `<main style="max-width:760px;margin:15vh auto;padding:32px;text-align:center;font-family:Arial,sans-serif;background:#fff;border:1px solid #efb1b1;color:#7f1d1d"><h1>Không thể tạo PNG</h1><p>${message}</p><p>Hãy đóng cửa sổ này và thử lại.</p></main>`;
-                }
-            }
-        },
         viewExam(idx) {
             const exam = app.data.exams[idx];
             if (!exam) return;
@@ -8924,7 +8799,6 @@ const app = {
                     <h3>${heading}</h3>
                     <div class="exam-detail-toolbar__actions">
                         ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)})`, 'compact-admin-action--view')}
-                        ${app.ui.compactAction('Xuất PNG / A4', `app.admin.exportExamPng(${Number(idx)})`, 'compact-admin-action--save')}
                         <button type="button" class="utility-close-button utility-close-button--inline" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề">×</button>
                     </div>
                 </div>

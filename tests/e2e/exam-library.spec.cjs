@@ -217,7 +217,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__meta')).toContainText('Cấp lớp 4');
   await expect(page.locator('#print-area .exam-print__meta')).not.toContainText('Lớp: Lớp 4');
   await expect(page.getByRole('button', { name: 'Xuất PDF / A4', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Xuất PNG / A4', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xuất PNG / A4', exact: true })).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__question')).toHaveCount(10);
   await expect(page.locator('#print-area .exam-print__subquestion')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__subquestion-option')).toHaveCount(16);
@@ -368,11 +368,11 @@ test('bản in làm nổi bật câu dẫn, thu gọn câu chung và không thê
   await expect(page.locator('#print-area .exam-print__subquestion--shared .exam-print__subquestion-prompt--shared').first().locator('.exam-print__subquestion-options')).toHaveCount(1);
 });
 
-test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các trang A4', async ({ page }) => {
+test('bản in dùng nhãn lớp cụ thể và không hiển thị tùy chọn PNG', async ({ page }) => {
   await openLibrary(page);
   await page.evaluate(() => {
     app.data.exams = [{
-      id: 'exam-png-a4',
+      id: 'exam-pdf-a4',
       name: 'Ôn tập phép tính',
       classlevel: 'Lớp 4',
       class_name: '4/4',
@@ -386,17 +386,6 @@ test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các tr
       }]
     }];
     app.admin.viewExam(0);
-    window.html2canvas = async stage => {
-      window.__pngStageLayout = {
-        width: stage.getBoundingClientRect().width,
-        studentDirection: getComputedStyle(stage.querySelector('.exam-print__student-fields')).flexDirection,
-        shortOptionColumns: getComputedStyle(stage.querySelector('.exam-print__generic-options--4')).gridTemplateColumns.split(/\s+/).length
-      };
-      const canvas = document.createElement('canvas');
-      canvas.width = 794;
-      canvas.height = 2246;
-      return canvas;
-    };
   });
 
   await expect(page.locator('#print-area .exam-print__meta')).toContainText('Lớp: 4/4');
@@ -405,35 +394,6 @@ test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các tr
   await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__student-field').first()).toContainText('Họ và tên học sinh:');
   await expect(page.locator('#print-area .exam-print__student-field').nth(1)).toContainText('Ngày làm bài:');
-
-  const pngPopupPromise = page.waitForEvent('popup');
-  await page.getByRole('button', { name: 'Xuất PNG / A4', exact: true }).click();
-  const pngPage = await pngPopupPromise;
-  await pngPage.waitForLoadState('domcontentloaded');
-  await expect(pngPage.locator('body')).toContainText('Xuất PNG A4');
-  await expect(pngPage.locator('.exam-png-preview__sheet')).toHaveCount(2);
-  await expect(pngPage.locator('a[download]')).toHaveCount(2);
-  await expect(pngPage.locator('img')).toHaveCount(2);
-  await expect(pngPage.locator('img').first()).toHaveAttribute('width', '2480');
-  await expect(pngPage.locator('img').first()).toHaveAttribute('height', '3508');
-  const pngStageLayout = await page.evaluate(() => window.__pngStageLayout);
-  expect(pngStageLayout).toEqual({ width: 794, studentDirection: 'row', shortOptionColumns: 4 });
-  await pngPage.close();
-});
-
-test('loader PNG không chờ vô hạn khi script CDN bị treo', async ({ page }) => {
-  await openLibrary(page);
-  const result = await page.evaluate(async () => {
-    const originalAppendChild = document.head.appendChild;
-    document.head.appendChild = () => undefined;
-    try {
-      return await Promise.race([
-        app.utils.loadScript('https://example.invalid/html2canvas-never-finishes.js', '__missingHtml2CanvasForTest', 150),
-        new Promise(resolve => window.setTimeout(() => resolve('timeout'), 500))
-      ]);
-    } finally {
-      document.head.appendChild = originalAppendChild;
-    }
-  });
-  expect(result).toBe(false);
+  await expect(page.getByRole('button', { name: 'Xuất PDF / A4', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xuất PNG / A4', exact: true })).toHaveCount(0);
 });
