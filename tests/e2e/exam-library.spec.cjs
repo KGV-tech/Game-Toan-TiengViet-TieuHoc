@@ -145,7 +145,7 @@ test('xem và chỉnh sửa từ thẻ mở đúng đề, bỏ bản nháp cũ v
   await expect(page.locator('#add-e-name')).toHaveValue('');
 });
 
-test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nội dung A4', async ({ page }) => {
+test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nội dung A4', async ({ page }, testInfo) => {
   await openLibrary(page);
   await page.evaluate(() => {
     const parts = ['a', 'b', 'c', 'd'];
@@ -203,6 +203,12 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Chi tiết đề: Toán lớp 4 · Ôn tập cuối kỳ' })).toBeVisible();
   await expect(page.locator('#print-area .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
+  await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveText('ĐỀ KIỂM TRA');
+  await expect(page.locator('#print-area .exam-print__student-field')).toHaveCount(2);
+  await expect(page.locator('#print-area .exam-print__meta')).toContainText('Cấp lớp 4');
+  await expect(page.locator('#print-area .exam-print__meta')).not.toContainText('Lớp: Lớp 4');
+  await expect(page.getByRole('button', { name: 'Xuất PDF / A4', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xuất PNG / A4', exact: true })).toBeVisible();
   await expect(page.locator('#print-area .exam-print__question')).toHaveCount(10);
   await expect(page.locator('#print-area .exam-print__subquestion')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__subquestion-option')).toHaveCount(16);
@@ -214,6 +220,8 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__sequence-round')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__answer-part')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__subquestion-options--4')).toHaveCount(4);
+  await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
   await expect(page.locator('#print-area .exam-print__comparison-slot')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('<');
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toContainText('>');
@@ -229,7 +237,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   expect(spacing[1].marginTop).toBeLessThanOrEqual(18);
 
   const popupPromise = page.waitForEvent('popup');
-  await page.getByRole('button', { name: 'In PDF / A4', exact: true }).click();
+  await page.getByRole('button', { name: 'Xuất PDF / A4', exact: true }).click();
   const printPage = await popupPromise;
   await printPage.waitForLoadState('domcontentloaded');
   await expect(printPage.locator('body > #print-document')).toHaveCount(1);
@@ -251,6 +259,12 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await printPage.waitForLoadState('load');
   await printPage.emulateMedia({ media: 'print' });
   await expect(printPage.locator('body > #print-document')).toBeVisible();
+  const printLayout = await printPage.locator('#print-document').evaluate(element => ({
+    studentDirection: getComputedStyle(element.querySelector('.exam-print__student-fields')).flexDirection,
+    shortOptionColumns: getComputedStyle(element.querySelector('.exam-print__subquestion-options--4')).gridTemplateColumns.split(/\s+/).length,
+    questionBreakInside: getComputedStyle(element.querySelector('.exam-print__question')).breakInside
+  }));
+  expect(printLayout).toEqual({ studentDirection: 'row', shortOptionColumns: 4, questionBreakInside: 'avoid' });
   const printSpacing = await printPage.locator('#print-document .exam-print__question').evaluateAll(elements => elements.slice(0, 2).map(element => {
     const style = getComputedStyle(element);
     return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize), marginTop: parseFloat(style.marginTop), paddingTop: parseFloat(style.paddingTop) };
@@ -258,6 +272,69 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   expect(printSpacing[0].lineHeight / printSpacing[0].fontSize).toBeLessThanOrEqual(1.6);
   expect(printSpacing[0].paddingTop).toBeLessThanOrEqual(12);
   expect(printSpacing[1].marginTop).toBeLessThanOrEqual(14);
+  const optionColumns = await page.evaluate(() => ({
+    four: app.admin.getExamPrintOptionColumns(['10', '20', '30', '40']),
+    two: app.admin.getExamPrintOptionColumns(['Phương án một', 'Phương án hai', 'Phương án ba']),
+    one: app.admin.getExamPrintOptionColumns(['Một đáp án rất dài cần giữ riêng một cột để không bị chật', 'Đáp án thứ hai cũng có nội dung dài hơn bình thường', 'Đáp án thứ ba có nhiều chữ cần đủ rộng', 'Đáp án thứ tư cũng cần giữ nguyên một cột'])
+  }));
+  expect(optionColumns).toEqual({ four: 4, two: 2, one: 1 });
+  const pdfBytes = await printPage.pdf({
+    path: testInfo.outputPath('exam-print-a4.pdf'),
+    format: 'A4',
+    printBackground: true,
+    preferCSSPageSize: true
+  });
+  expect(pdfBytes.subarray(0, 5).toString()).toBe('%PDF-');
+  expect(pdfBytes.length).toBeGreaterThan(20_000);
   await page.setViewportSize({ width: 1024, height: 768 });
   expect(await page.locator('#print-area').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+});
+
+test('bản in dùng nhãn lớp cụ thể và PNG được chia thành các trang A4', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    app.data.exams = [{
+      id: 'exam-png-a4',
+      name: 'Ôn tập phép tính',
+      classlevel: 'Lớp 4',
+      class_name: '4/4',
+      subject: 'Toán',
+      period: 'Học Kỳ 1',
+      questions: [{
+        type: 'Trắc nghiệm',
+        q: 'Chọn câu trả lời đúng.',
+        options: ['12', '24', '36', '48'],
+        ans: '12'
+      }]
+    }];
+    app.admin.viewExam(0);
+    window.html2canvas = async stage => {
+      window.__pngStageLayout = {
+        width: stage.getBoundingClientRect().width,
+        studentDirection: getComputedStyle(stage.querySelector('.exam-print__student-fields')).flexDirection,
+        shortOptionColumns: getComputedStyle(stage.querySelector('.exam-print__generic-options--4')).gridTemplateColumns.split(/\s+/).length
+      };
+      const canvas = document.createElement('canvas');
+      canvas.width = 794;
+      canvas.height = 2246;
+      return canvas;
+    };
+  });
+
+  await expect(page.locator('#print-area .exam-print__meta')).toContainText('Lớp: 4/4');
+  await expect(page.locator('#print-area .exam-print__meta')).not.toContainText('Cấp lớp 4');
+
+  const pngPopupPromise = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Xuất PNG / A4', exact: true }).click();
+  const pngPage = await pngPopupPromise;
+  await pngPage.waitForLoadState('domcontentloaded');
+  await expect(pngPage.locator('body')).toContainText('Xuất PNG A4');
+  await expect(pngPage.locator('.exam-png-preview__sheet')).toHaveCount(2);
+  await expect(pngPage.locator('a[download]')).toHaveCount(2);
+  await expect(pngPage.locator('img')).toHaveCount(2);
+  await expect(pngPage.locator('img').first()).toHaveAttribute('width', '2480');
+  await expect(pngPage.locator('img').first()).toHaveAttribute('height', '3508');
+  const pngStageLayout = await page.evaluate(() => window.__pngStageLayout);
+  expect(pngStageLayout).toEqual({ width: 794, studentDirection: 'row', shortOptionColumns: 4 });
+  await pngPage.close();
 });

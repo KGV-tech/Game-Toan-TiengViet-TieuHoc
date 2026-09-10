@@ -8,7 +8,7 @@ ALTER TABLE public.game_users
 
 ALTER TABLE public.game_users
   ADD CONSTRAINT game_users_gender_check
-  CHECK (gender IS NULL OR gender IN ('male', 'female', 'other'));
+  CHECK (gender IS NULL OR gender IN ('male', 'female'));
 
 COMMENT ON COLUMN public.game_users.gender IS
-  'Giới tính học sinh tự chọn khi đăng ký: male, female, other hoặc null';
+  'Giới tính học sinh tự chọn khi đăng ký: male, female hoặc null';

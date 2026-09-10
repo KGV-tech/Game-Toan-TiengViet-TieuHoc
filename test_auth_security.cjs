@@ -8,6 +8,7 @@ const adminFunction = fs.readFileSync('supabase/functions/admin-users/index.ts',
 const css = fs.readFileSync('src/style.css', 'utf8') + fs.readFileSync('src/login-layout.css', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const classMigration = fs.readFileSync('supabase/migrations/20260906_game_users_class_name.sql', 'utf8');
+const genderMigration = fs.readFileSync('supabase/migrations/20260907_game_users_gender.sql', 'utf8');
 
 assert.match(source, /auth\.signInWithPassword/, 'Login must use Supabase Auth.');
 assert.match(source, /auth_user_id/, 'Profiles must be linked to an Auth identity.');
@@ -69,5 +70,10 @@ assert.match(html, /register_frame_wide\.png/, 'Registration must use the approv
 assert.match(html, /register-form-grid/, 'Registration fields must be arranged in a two-column grid.');
 assert.match(html, /id="reg-gender"/, 'Registration must allow pupils to optionally declare gender.');
 assert.match(css, /#register-screen \.register-panel\s*\{[\s\S]*?aspect-ratio:\s*3\s*\/\s*2\.45/, 'The registration panel must keep the approved 3:2.45 landscape ratio.');
+assert.match(genderMigration, /gender\s+IS\s+NULL\s+OR\s+gender\s+IN\s*\(\s*'male'\s*,\s*'female'\s*\)/i, 'The gender constraint must allow only male/female or null.');
+assert.doesNotMatch(genderMigration, /['"]other['"]|Khác \/ không muốn nêu/i, 'The gender migration must not retain the removed other value.');
+assert.doesNotMatch(adminFunction, /['"]other['"]|Khác \/ không muốn nêu/i, 'The admin account function must reject the removed other value.');
+assert.doesNotMatch(html, /value="other"|Khác \/ không muốn nêu/i, 'Registration must not offer the removed other value.');
+assert.doesNotMatch(source, /other:\s*['"]Khác \/ không muốn nêu|option\.value === 'other'/i, 'The client gender labels and filters must not render the removed other value.');
 
 console.log('Supabase Auth and RLS security contract verified.');

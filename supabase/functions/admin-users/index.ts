@@ -16,7 +16,7 @@ const normalizeUsername = (username: unknown) => typeof username === 'string' ? 
 const validUsername = (username: string) => /^[a-z0-9._-]{3,32}$/.test(username)
 const normalizeClassName = (className: unknown) => typeof className === 'string' ? className.trim() : ''
 const validClassName = (className: unknown) => className === undefined || className === null || (typeof className === 'string' && className.trim().length <= 64)
-const validGender = (gender: unknown) => gender === undefined || gender === null || gender === '' || ['male', 'female', 'other'].includes(String(gender))
+const validGender = (gender: unknown) => gender === undefined || gender === null || gender === '' || ['male', 'female'].includes(String(gender))
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
