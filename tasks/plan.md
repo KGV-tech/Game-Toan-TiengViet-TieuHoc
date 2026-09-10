@@ -176,9 +176,13 @@ thay trong remediation riêng sau dependency check.
 
 ### Phase 3 — Bài 7–9
 
-- [ ] Bổ sung đo góc/đơn vị độ cho B07.
-- [ ] Tách phân loại góc cho B08 và review B09.
-- [ ] Kiểm thử SVG, keyboard fallback, focus và reduced motion.
+- [x] Bổ sung đo góc/đơn vị độ cho B07.
+- [x] Tách phân loại góc cho B08 và review B09.
+- [x] Kiểm thử SVG, keyboard fallback, focus và reduced motion.
+
+**Checkpoint:** code và migration seed B07/B09 đã có trong branch Phase 3;
+B08 tiếp tục dùng bốn generator góc hiện hữu đã mapping đúng lesson. Chưa apply
+seed Phase 3 vào Supabase live.
 
 ### Phase 4 — Bài 10–16
 

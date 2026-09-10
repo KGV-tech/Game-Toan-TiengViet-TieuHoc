@@ -597,16 +597,20 @@ Checkpoint seed đã đạt: bảy record Phase 2 active đúng lesson và B05 k
 record. Nhóm deferred 17 record đã được xử lý ở migration remediation riêng;
 các phase sau chỉ bổ sung family mới còn thiếu.
 
-### Phase 3 — Rebuild Bài 7–9
+### Phase 3 — Rebuild Bài 7–9 (đã hoàn tất code, chờ seed live)
 
 Phụ thuộc: Phase 1 và duyệt family nội dung B.
 
-Thực hiện:
+Đã thực hiện:
 
 - bổ sung đo góc/đơn vị độ cho B07;
-- tách phân loại góc cho B08;
+- giữ bốn generator phân loại góc của B08 và xác nhận mapping lesson;
 - tạo review góc B09;
-- kiểm tra SVG, keyboard fallback, drag/focus và reduced motion.
+- kiểm tra SVG, keyboard fallback, focus và reduced motion.
+
+Chi tiết generator, cấu hình và migration xem
+`docs/templates/PHASE_3_B07_B08_B09.md`. Seed Phase 3 chưa được apply vào
+Supabase live.
 
 ### Phase 4 — Rebuild Bài 10–16
 
