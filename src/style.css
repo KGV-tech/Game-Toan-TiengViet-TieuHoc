@@ -66,6 +66,28 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; 
 .avatar-art--girl-reader { background-position: 50% 100%; }
 .avatar-art--girl-athlete { background-position: 75% 100%; }
 .avatar-art--girl-inventor { background-position: 100% 100%; }
+.avatar-art--boy-hoodie, .avatar-art--boy-cap, .avatar-art--boy-vest, .avatar-art--boy-redhair, .avatar-art--boy-goggles, .avatar-art--girl-ponytail, .avatar-art--girl-curly, .avatar-art--girl-pink-glasses, .avatar-art--girl-buns, .avatar-art--girl-sunhat { background-image: url('../public/avatars-students-sprite-v3.webp'); }
+.avatar-art--boy-hoodie { background-position: 0% 0%; }
+.avatar-art--boy-cap { background-position: 25% 0%; }
+.avatar-art--boy-vest { background-position: 50% 0%; }
+.avatar-art--boy-redhair { background-position: 75% 0%; }
+.avatar-art--boy-goggles { background-position: 100% 0%; }
+.avatar-art--girl-ponytail { background-position: 0% 100%; }
+.avatar-art--girl-curly { background-position: 25% 100%; }
+.avatar-art--girl-pink-glasses { background-position: 50% 100%; }
+.avatar-art--girl-buns { background-position: 75% 100%; }
+.avatar-art--girl-sunhat { background-position: 100% 100%; }
+.avatar-art--boy-wavy, .avatar-art--boy-fade, .avatar-art--boy-dino, .avatar-art--boy-headphones, .avatar-art--boy-wink, .avatar-art--girl-flower, .avatar-art--girl-bow, .avatar-art--girl-star, .avatar-art--girl-bunny, .avatar-art--girl-streak { background-image: url('../public/avatars-students-sprite-v4.webp'); }
+.avatar-art--boy-wavy { background-position: 0% 0%; }
+.avatar-art--boy-fade { background-position: 25% 0%; }
+.avatar-art--boy-dino { background-position: 50% 0%; }
+.avatar-art--boy-headphones { background-position: 75% 0%; }
+.avatar-art--boy-wink { background-position: 100% 0%; }
+.avatar-art--girl-flower { background-position: 0% 100%; }
+.avatar-art--girl-bow { background-position: 25% 100%; }
+.avatar-art--girl-star { background-position: 50% 100%; }
+.avatar-art--girl-bunny { background-position: 75% 100%; }
+.avatar-art--girl-streak { background-position: 100% 100%; }
 .avatar-art--cartoon-robot-cat, .avatar-art--cartoon-lightning-squirrel, .avatar-art--cartoon-rescue-pup, .avatar-art--cartoon-dragon, .avatar-art--cartoon-garden-alien, .avatar-art--cartoon-mini-robot, .avatar-art--cartoon-cloud-fox, .avatar-art--cartoon-otter, .avatar-art--cartoon-red-panda, .avatar-art--cartoon-pilot-bird { background-image: url('../public/avatars-cartoons-sprite-v1.webp'); }
 .avatar-art--cartoon-robot-cat { background-position: 0% 0%; }
 .avatar-art--cartoon-lightning-squirrel { background-position: 25% 0%; }

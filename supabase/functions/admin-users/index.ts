@@ -24,6 +24,10 @@ const studentAvatarKeys = new Set([
   'girl-long', 'girl-bob', 'girl-twins', 'girl-braid', 'girl-doll',
   'boy-reader', 'boy-athlete', 'boy-artist', 'boy-explorer', 'boy-visor',
   'girl-captain', 'girl-artist', 'girl-reader', 'girl-athlete', 'girl-inventor',
+  'boy-hoodie', 'boy-cap', 'boy-vest', 'boy-redhair', 'boy-goggles',
+  'girl-ponytail', 'girl-curly', 'girl-pink-glasses', 'girl-buns', 'girl-sunhat',
+  'boy-wavy', 'boy-fade', 'boy-dino', 'boy-headphones', 'boy-wink',
+  'girl-flower', 'girl-bow', 'girl-star', 'girl-bunny', 'girl-streak',
   'cartoon-robot-cat', 'cartoon-lightning-squirrel', 'cartoon-rescue-pup', 'cartoon-dragon', 'cartoon-garden-alien',
   'cartoon-mini-robot', 'cartoon-cloud-fox', 'cartoon-otter', 'cartoon-red-panda', 'cartoon-pilot-bird',
 ])
