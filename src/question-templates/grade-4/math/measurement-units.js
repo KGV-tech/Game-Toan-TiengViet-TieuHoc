@@ -36,14 +36,19 @@ function areaRows(random) {
     ];
     return labels.map(() => choose(kinds, random)());
 }
-function timeRows(random) {
-    const kinds = [
-        () => { const n = randomInt(2, 9, random); return { display: `${n} phút = ___ giây`, answer: n * 60 }; },
-        () => { const h = randomInt(2, 6, random); return { display: `${h} giờ = ___ phút`, answer: h * 60 }; },
-        () => { const m = randomInt(1, 4, random), s = randomInt(5, 50, random); return { display: `${m} phút ${s} giây = ___ giây`, answer: m * 60 + s }; },
-        () => { const w = randomInt(1, 3, random), d = randomInt(1, 6, random); return { display: `${w} tuần ${d} ngày = ___ ngày`, answer: w * 7 + d }; }
-    ];
-    return labels.map(() => choose(kinds, random)());
+function timeRows(config = {}, random) {
+    const rowFactories = {
+        minuteToSeconds: () => { const n = randomInt(2, 9, random); return { kind: 'minuteToSeconds', display: `${n} phút = ___ giây`, answer: n * 60 }; },
+        hourToMinutes: () => { const h = randomInt(2, 6, random); return { kind: 'hourToMinutes', display: `${h} giờ = ___ phút`, answer: h * 60 }; },
+        minutesAndSecondsToSeconds: () => { const m = randomInt(1, 4, random), s = randomInt(5, 50, random); return { kind: 'minutesAndSecondsToSeconds', display: `${m} phút ${s} giây = ___ giây`, answer: m * 60 + s }; },
+        weekAndDaysToDays: () => { const w = randomInt(1, 3, random), d = randomInt(1, 6, random); return { kind: 'weekAndDaysToDays', display: `${w} tuần ${d} ngày = ___ ngày`, answer: w * 7 + d }; }
+    };
+    const allowedKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.length
+        ? [...new Set(config.allowedKinds)]
+        : Object.keys(rowFactories);
+    const kinds = allowedKinds.filter(kind => rowFactories[kind]);
+    if (!kinds.length || kinds.length !== allowedKinds.length) throw new Error('Dạng đổi đơn vị thời gian không hợp lệ.');
+    return labels.map(() => rowFactories[choose(kinds, random)]());
 }
 function comparisons(random) {
     const rows = [
@@ -121,7 +126,7 @@ function wordProblems(random) {
 const generators = {
     'measurement.mass_unit_convert': (config, random) => fillQuestion('measurement.mass_unit_convert', 'Điền số thích hợp.', massRows(random), 'Dùng 1 yến = 10 kg, 1 tạ = 100 kg, 1 tấn = 1 000 kg.'),
     'measurement.area_unit_convert': (config, random) => fillQuestion('measurement.area_unit_convert', 'Điền số thích hợp.', areaRows(random), 'Dùng các quan hệ giữa m², dm², cm² và mm².'),
-    'measurement.time_unit_convert': (config, random) => fillQuestion('measurement.time_unit_convert', 'Điền số thích hợp.', timeRows(random), 'Dùng các quan hệ giữa tuần, ngày, giờ, phút và giây.'),
+    'measurement.time_unit_convert': (config, random) => fillQuestion('measurement.time_unit_convert', 'Điền số thích hợp.', timeRows(config, random), 'Dùng các quan hệ giữa phút và giây.'),
     'measurement.compare_units': (config, random) => comparisons(random),
     'measurement.match_equivalences': (config, random) => matching(random),
     'measurement.unit_true_false': (config, random) => trueFalse(random),

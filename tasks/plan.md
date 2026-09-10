@@ -123,14 +123,14 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 - **Catalog:** đúng 13 Chủ đề và 73 Bài học, quan hệ kỳ/chủ đề không lệch.
 - **Authoring:** Admin lưu/lọc được Bài học, dữ liệu cũ không có Bài học vẫn dùng được.
 - **Gameplay:** không có selector hoặc điều hướng Bài học ở màn hình học sinh.
-- **Bàn giao:** test contract + `npm test` xanh; chưa apply migration hay thay đổi Supabase production.
+- **Bàn giao:** test contract đã xanh; migration lesson/Phase 1 và seed Phase 2 đã audit live trong project Supabase đúng.
 
 ---
 
 # Kế hoạch tái xây dựng hệ thống Template — Toán lớp 4
 
 > Hồ sơ chi tiết: [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLATE_SYSTEM.md).
-> Quy trình: tài liệu/kiểm kê → từng phase nội dung → test/preview → người dùng duyệt → phase kế tiếp. Chưa tạo mới hoặc rebuild hàng loạt Template trong lượt lập kế hoạch này.
+> Quy trình: tài liệu/kiểm kê → từng phase nội dung → test/preview → người dùng duyệt → phase kế tiếp. Không rebuild hàng loạt; Phase 2 chỉ seed các record đã duyệt.
 
 ## Mục tiêu
 
@@ -151,15 +151,17 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 
 **Checkpoint:** người dùng duyệt kiến trúc và chọn bắt đầu Phase 1.
 
-### Phase 1 — Kiểm kê dữ liệu và manifest (đã duyệt, đang bàn giao SQL)
+### Phase 1 — Kiểm kê dữ liệu và manifest (đã apply và audit live)
 
 - [x] Dùng phiên Admin/export được phép để lấy toàn bộ `question_templates` hiện có.
 - [x] Đối chiếu `classlevel/subject/semester/topic/lesson/generator_key/config` với `lessonCatalog`.
 - [x] Phân loại từng record: giữ/gắn lesson, tạo record hẹp, sửa generator, archive.
-- [ ] Apply các migration `20260909_question_templates_lesson.sql` và `20260909_question_templates_phase1_lesson_mapping.sql` vào đúng project sau khi xác nhận quyền/project.
+- [x] Apply các migration `20260909_question_templates_lesson.sql` và `20260909_question_templates_phase1_lesson_mapping.sql` vào đúng project; audit live ngày 10/09/2026 xác nhận 28 mapping Phase 1.
 - [x] Tạo manifest + validator + contract test; chưa seed Template nội dung mới.
 
-**Checkpoint:** người dùng đã duyệt mapping Phase 1; gói SQL chỉ cập nhật 28 record gắn trực tiếp. Không tạo B05; 18 record còn lại chờ harden/tách/thay.
+**Checkpoint:** người dùng đã duyệt mapping Phase 1; migration đã apply và audit
+live. Migration remediation đã xử lý nhóm 17 HARDEN/TÁCH/THAY; audit sau chạy
+xác nhận 57 active, 0 active thiếu `lesson`, không tạo B05.
 
 ### Phase 2 — Bài 1–6
 
@@ -168,7 +170,9 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 - [x] Tạo blueprint review B06 chỉ bao phủ B01–B04.
 - [x] Thêm migration seed idempotent, preview Admin và test nhiều seed; kiểm tra không vượt phạm vi bài.
 
-**Checkpoint:** người dùng duyệt danh sách Template và preview trước khi apply migration seed; việc archive/tách record B01/B02 để phase dữ liệu sau.
+**Checkpoint:** migration seed đã apply; audit live xác nhận đủ 7 record active
+cho B03/B04/B06 và không có B05. Nhóm deferred 17 record đã được harden/tách/
+thay trong remediation riêng sau dependency check.
 
 ### Phase 3 — Bài 7–9
 
@@ -208,8 +212,8 @@ Trong **Soạn đề**, giáo viên chọn kỳ kiểm tra, tích nhiều chủ 
 
 ### Phase 10 — Seed, archive và bàn giao
 
-- [ ] Seed idempotent các record đã duyệt.
-- [ ] Archive record cũ quá rộng sau khi kiểm tra dependency.
+- [x] Seed idempotent các record đã duyệt cho Phase 2: 7 record B03/B04/B06; không tạo B05.
+- [x] Archive/tách các record cũ thuộc remediation 17 template sau dependency check; không xoá vật lý.
 - [ ] Chạy contract Node + `npm test` + visual/accessibility review.
 - [ ] Tự review diff, commit/push nhánh riêng.
 - [ ] Chỉ merge `main` sau khi người dùng yêu cầu và các checkpoint bắt buộc đạt.

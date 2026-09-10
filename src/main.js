@@ -6214,6 +6214,7 @@ const app = {
             const phase2ConstantMinimum = Number(config.constantMinimum ?? 2);
             const phase2ConstantMaximum = Number(config.constantMaximum ?? 9);
             const phase2Operations = config.operations || ['add', 'subtract', 'multiply', 'divide'];
+            const topic5Operation = config.operation === '−' ? '-' : (['+', '-'].includes(config.operation) ? config.operation : '');
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
@@ -6363,6 +6364,10 @@ const app = {
             if (generatorControl && phase2TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
+            const topic5OperationRule = '<div class="template-editor__rule template-editor__rule--topic5-operation"><div class="template-editor__rule-heading"><h5>Phép tính theo Bài học</h5></div><p>Chọn cộng hoặc trừ nếu template chỉ dùng cho một Bài học; để mặc định để cho phép cả hai.</p><label class="template-editor__field template-editor__field--wide"><span>Phạm vi phép tính</span><select id="template-topic5-operation" class="form-input"><option value="">Cộng và trừ (mặc định)</option><option value="+">Chỉ phép cộng (+)</option><option value="-">Chỉ phép trừ (−)</option></select></label></div>';
+            box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
+            const topic5OperationControl = document.getElementById('template-topic5-operation');
+            if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
@@ -6890,6 +6895,7 @@ const app = {
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
             const isPhase2Template = phase2TemplateKeys.includes(generator);
@@ -6898,6 +6904,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || (isTopic5Template && !topic5DigitRange); });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
+            document.querySelectorAll('.template-editor__rule--topic5-operation').forEach(rule => { rule.hidden = !topic5OperationKeys.includes(generator); });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
             document.querySelectorAll('.template-editor__rule--natural-sequence-controls').forEach(rule => { rule.hidden = generator !== 'number.natural_sequence'; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-controls').forEach(rule => { rule.hidden = !isFourArithmetic; });
@@ -6934,6 +6941,7 @@ const app = {
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
@@ -6969,6 +6977,7 @@ const app = {
             const phase2ConstantMaximum = Number(value('template-phase2-constant-maximum'));
             const phase2Operations = selectedSafeValues('phase2-operations');
             const phase2Parities = selectedSafeValues('phase2-parities');
+            const topic5Operation = document.getElementById('template-topic5-operation')?.value.trim() || '';
             const minimumDigits = Number(document.getElementById('template-minimum-digits')?.value || 1);
             const maximumDigits = Number(document.getElementById('template-maximum-digits')?.value || 1);
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
@@ -6978,7 +6987,7 @@ const app = {
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
             const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
-            const topic5Config = topic5DigitRange ? { minimumDigits, maximumDigits } : {};
+            const topic5Config = (topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {};
             const phase2Config = isPhase2B03
                 ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
                 : (isPhase2B04
@@ -6993,6 +7002,7 @@ const app = {
             if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
+            if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
             if (isPhase2B03) {
                 if (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
                 if (!phase2Parities.length || phase2Parities.some(parity => !['even', 'odd'].includes(parity))) throw new Error('Hãy chọn ít nhất một dạng số chẵn hoặc số lẻ.');

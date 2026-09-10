@@ -1,8 +1,8 @@
 # Phase 1 — Mapping Template hiện có theo Bài học
 
-> Trạng thái: **APPROVED / đã triển khai gói mapping trực tiếp**
+> Trạng thái: **APPROVED / đã apply và audit live trong project Supabase**
 > Nguồn kiểm kê: `C:\Users\htleh\Downloads\question_templates_rows.csv`
-> Ngày kiểm kê: 09/09/2026
+> Ngày kiểm kê: 09/09/2026; ngày audit live: 10/09/2026
 
 > Quyết định bổ sung ngày 09/09/2026: chưa tạo hoặc gắn Template cho **Bài 5 — bài toán lời văn ba bước**. Family này được tạm hoãn để người dùng xem lại sau.
 
@@ -167,9 +167,10 @@ Không đổi `generator_key`, không đổi config và không xoá record trong
 ### 5.1. Phạm vi đã thực thi trong repo
 
 - `src/modules/template-manifest.js` chứa manifest 28 UUID → lesson và validator metadata.
-- `supabase/migrations/20260909_question_templates_phase1_lesson_mapping.sql` là migration idempotent để người dùng chạy trong SQL Editor.
-- 18 record còn lại vẫn giữ trạng thái chờ harden/tách/thay; không bị gắn lesson suy đoán.
-- Migration không seed Template mới, không tạo family B05, không archive/xoá record và không đổi RLS/quyền.
+- `supabase/migrations/20260909_question_templates_phase1_lesson_mapping.sql` đã map nhóm trực tiếp.
+- `supabase/migrations/20260910_question_templates_harden_split_replace.sql` đã xử lý nốt 17 record active: harden B11/B12/B14/B15/B16/B19, archive mềm challenge không học thuật, và seed/tách B22/B23.
+- Live audit sau migration: 57 active, 0 active thiếu `lesson`, 0 B05; 10 variant Topic 5 active chia đúng 5 cộng và 5 trừ.
+- Migration không xoá vật lý Template, không tạo family B05 và không đổi RLS/quyền.
 
 ### Nhóm B — Sửa generator/config rồi mới gắn
 
@@ -193,8 +194,21 @@ Các record **TÁCH** hoặc **THAY** không được gắn lesson giả để l
 
 Đã chốt cho Phase 1:
 
-1. Mapping **GẮN** trong các bảng trên được duyệt và đã được đưa vào manifest/migration.
-2. Các record **GẮN + HARDEN**, **TÁCH** hoặc **THAY** chưa được cập nhật dữ liệu.
-3. `Bài 5 — bài toán lời văn` chưa tạo; family mới sẽ quay lại sau khi người dùng duyệt riêng.
+1. Mapping **GẮN** trong các bảng trên được duyệt, đưa vào manifest/migration và
+   đã audit live: đủ 28 record thuộc nhóm lesson Phase 1.
+2. Audit trước remediation ghi nhận 17 record active thiếu `lesson`; chúng đã
+   được xử lý theo mapping HARDEN/TÁCH/THAY, không gán đoán.
+3. Dependency check trước archive trả về 0 bản ghi tham chiếu trực tiếp;
+   5 record Topic 5 cũ và 1 challenge mật khẩu được archive mềm sau khi có
+   variant/đường thay thế.
+4. `Bài 5 — bài toán lời văn` chưa tạo; family mới sẽ quay lại sau khi người dùng duyệt riêng.
+5. Audit sau remediation xác nhận `active_missing_lesson = 0`; Phase 1 cleanup
+   đã hoàn tất.
 
-Sau khi được duyệt, phase tiếp theo nên làm **Nhóm A trước**, gửi lại kết quả audit, rồi mới triển khai các generator mới của Bài 1–6.
+Chi tiết số liệu và truy vấn đối soát nằm trong
+[`PHASE_1_2_LIVE_AUDIT.md`](./PHASE_1_2_LIVE_AUDIT.md).
+
+Phase 2 đã triển khai các family B03/B04/B06 và đã được audit live. Nhóm
+HARDEN/TÁCH/THAY của 17 record đã hoàn tất trong migration remediation; các
+phase tiếp theo chỉ tập trung bổ sung family mới còn thiếu, trong đó B05 vẫn
+được giữ ngoài phạm vi cho tới khi có duyệt riêng.
