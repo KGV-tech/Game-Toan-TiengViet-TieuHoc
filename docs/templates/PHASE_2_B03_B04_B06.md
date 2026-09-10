@@ -1,7 +1,7 @@
 # Phase 2 — Bài 3, Bài 4 và ôn tập Bài 6
 
-> Trạng thái: **Đã triển khai trong repo; chờ người dùng preview và apply migration vào đúng Supabase project**.
-> Cập nhật: 09/09/2026
+> Trạng thái: **Đã triển khai, seed và audit live trong đúng Supabase project**.
+> Cập nhật: 10/09/2026
 
 ## Phạm vi đã duyệt
 
@@ -85,4 +85,7 @@ Chạy file trong SQL Editor của đúng project Supabase sau khi kiểm tra pr
 - `test_phase2_ui_contract.cjs`: script load, preset, editor config và rào chắn Bài 5.
 - `tests/e2e/phase2-templates.spec.cjs`: Admin editor ở 1440×900, lesson, preview và đổi Bài 3 → Bài 4.
 
-Checkpoint còn lại của Phase 2 là người dùng xem preview/cấu hình, chạy migration vào đúng project và xác nhận bảy record hiển thị đúng trong Kho Template. Sau checkpoint đó mới archive/tách các record B01/B02 quá rộng; không archive tự động trong migration này.
+Checkpoint Phase 2 đã đạt: preview/contract trong repo đạt và audit live xác nhận
+đủ bảy record active với đúng `lesson`. B05 vẫn có 0 record. Các record cũ
+deferred vẫn chưa archive/tách tự động; chỉ xử lý cùng variant thay thế và
+dependency check của phase tương ứng.

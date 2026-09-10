@@ -136,6 +136,61 @@
         });
     }
 
+    function cloneTeams(teams) {
+        return (Array.isArray(teams) ? teams : []).map(team => ({
+            ...team,
+            memberUsernames: Array.isArray(team?.memberUsernames) ? team.memberUsernames.map(studentKey).filter(Boolean) : []
+        }));
+    }
+
+    function syncSavedTeamSnapshot(team) {
+        if (team?.memberSelectionState !== 'saved') return team;
+        team.memberSelectionSnapshot = {
+            memberUsernames: [...team.memberUsernames],
+            leaderUsername: studentKey(team.leaderUsername)
+        };
+        return team;
+    }
+
+    function swapTeamMembers(teams, sourceTeamIndex, sourceMemberIndex, nextUsername, previousUsernameOverride) {
+        const output = cloneTeams(teams);
+        const source = output[Number(sourceTeamIndex)];
+        const nextKey = studentKey(nextUsername);
+        const previousKey = previousUsernameOverride === undefined
+            ? studentKey(source?.memberUsernames?.[Number(sourceMemberIndex)])
+            : studentKey(previousUsernameOverride);
+        if (!source || !nextKey || previousKey === nextKey) return output;
+
+        const otherIndex = output.findIndex((team, index) => index !== Number(sourceTeamIndex) && team.memberUsernames.includes(nextKey));
+        if (otherIndex === -1) {
+            source.memberUsernames[Number(sourceMemberIndex)] = nextKey;
+            if (studentKey(source.leaderUsername) === previousKey) source.leaderUsername = nextKey;
+            syncSavedTeamSnapshot(source);
+            return output;
+        }
+
+        const other = output[otherIndex];
+        const otherMemberIndex = other.memberUsernames.indexOf(nextKey);
+        source.memberUsernames[Number(sourceMemberIndex)] = nextKey;
+        if (previousKey) other.memberUsernames[otherMemberIndex] = previousKey;
+        else other.memberUsernames.splice(otherMemberIndex, 1);
+        if (studentKey(source.leaderUsername) === previousKey) source.leaderUsername = nextKey;
+        if (studentKey(other.leaderUsername) === nextKey) other.leaderUsername = previousKey || '';
+        syncSavedTeamSnapshot(source);
+        syncSavedTeamSnapshot(other);
+        return output;
+    }
+
+    function removeExcludedStudentsFromTeams(teams, excludedUsernames = []) {
+        const excluded = new Set((Array.isArray(excludedUsernames) ? excludedUsernames : []).map(studentKey).filter(Boolean));
+        return cloneTeams(teams).map(team => {
+            team.memberUsernames = team.memberUsernames.filter(username => !excluded.has(username));
+            if (!team.memberUsernames.includes(studentKey(team.leaderUsername))) team.leaderUsername = team.memberUsernames[0] || '';
+            syncSavedTeamSnapshot(team);
+            return team;
+        });
+    }
+
     function error(code, message, path = '') {
         return { code, message, ...(path ? { path } : {}) };
     }
@@ -174,6 +229,10 @@
             const key = studentKey(student);
             if (key) rosterByKey.set(key, student);
         });
+        const excludedValues = Array.isArray(config.excludedStudentUsernames)
+            ? config.excludedStudentUsernames
+            : (Array.isArray(config.nonParticipantUsernames) ? config.nonParticipantUsernames : []);
+        const excluded = new Set(excludedValues.map(studentKey).filter(Boolean));
         const assigned = new Set();
         teams.forEach((team, index) => {
             const members = Array.isArray(team?.memberUsernames)
@@ -195,6 +254,7 @@
                 }
                 uniqueMembers.add(username);
                 assigned.add(username);
+                if (excluded.has(username)) errors.push(error('student_excluded', `Học sinh ${username} được đánh dấu không tham gia.`, `teams.${index}`));
                 const student = rosterByKey.get(username);
                 if (!student) errors.push(error('student_not_found', `Không tìm thấy học sinh ${username}.`, `teams.${index}`));
                 else {
@@ -280,6 +340,9 @@
             className: String(input.className || input.class_name || '').trim(),
             participantMode: input.participantMode || input.mode || 'manual',
             selectedStudentUsernames: Array.from(new Set((input.selectedStudentUsernames || input.studentUsernames || teams.flatMap(team => team.memberUsernames) || []).map(studentKey).filter(Boolean))),
+            excludedStudentUsernames: Array.from(new Set((Array.isArray(input.excludedStudentUsernames)
+                ? input.excludedStudentUsernames
+                : (Array.isArray(input.nonParticipantUsernames) ? input.nonParticipantUsernames : [])).map(studentKey).filter(Boolean))),
             teamCount,
             teams,
             questionMode,
@@ -906,6 +969,8 @@
         studentKey,
         distributeStudents,
         buildTeams,
+        swapTeamMembers,
+        removeExcludedStudentsFromTeams,
         validateConfig,
         normalizeCompetition,
         transitionStatus,

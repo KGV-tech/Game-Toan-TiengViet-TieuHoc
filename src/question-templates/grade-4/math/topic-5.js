@@ -11,6 +11,30 @@ const TOPIC = '5. Phép cộng và phép trừ';
 const labels = ['a', 'b', 'c', 'd'];
 const choose = (items, random) => items[randomInt(0, items.length - 1, random)];
 const symbolFor = operation => operation === '+' ? '+' : '−';
+const ADD_SUB_OPERATIONS = ['+', '-'];
+
+function configuredOperations(config = {}, fallback = ADD_SUB_OPERATIONS) {
+    const hasSingleOperation = Object.prototype.hasOwnProperty.call(config, 'operation');
+    const raw = hasSingleOperation
+        ? [config.operation]
+        : (Array.isArray(config.operations) && config.operations.length ? config.operations : fallback);
+    const operations = [...new Set(raw)];
+    if (!operations.length || operations.some(operation => !ADD_SUB_OPERATIONS.includes(operation))) {
+        throw new Error('Phép tính phải là phép cộng (+) hoặc phép trừ (−).');
+    }
+    return operations;
+}
+
+function fourRowOperations(config, random, fallback = ['+', '+', '-', '-']) {
+    const hasOperationConfig = Object.prototype.hasOwnProperty.call(config, 'operation') || Array.isArray(config.operations);
+    const operations = hasOperationConfig
+        ? configuredOperations(config)
+        : fallback;
+    const rows = hasOperationConfig
+        ? Array.from({ length: 4 }, (_, index) => operations[index % operations.length])
+        : [...operations];
+    return shuffle(rows, random);
+}
 
 function numberRange(config = {}, defaultMinimumDigits = 5, defaultMaximumDigits = 6) {
     const minimumDigits = Number(config.minimumDigits ?? defaultMinimumDigits);
@@ -66,7 +90,7 @@ function displayArithmetic(values, operation, blankIndex = -1) {
 
 function generateAddSubMultiDigit(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 5, 6);
-    const operations = shuffle(['+', '+', '-', '-'], random);
+    const operations = fourRowOperations(config, random);
     const rows = operations.map((operation, index) => {
         const values = arithmeticValues(operation, minimum, maximum, random);
         return {
@@ -84,8 +108,9 @@ function generateAddSubMultiDigit(config = {}, random = Math.random) {
 
 function generateMissingTerm(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 5, 6);
+    const operations = configuredOperations(config);
     const rows = labels.map((label, index) => {
-        const operation = choose(['+', '-'], random);
+        const operation = choose(operations, random);
         const values = arithmeticValues(operation, minimum, maximum, random);
         const blankIndex = randomInt(0, 2, random);
         return {
@@ -108,8 +133,9 @@ function maskFormattedDigit(value, digitIndex) {
 
 function generateMissingDigit(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 5, 6);
+    const operations = configuredOperations(config);
     const rows = labels.map((label, index) => {
-        const operation = choose(['+', '-'], random);
+        const operation = choose(operations, random);
         const values = arithmeticValues(operation, minimum, maximum, random);
         const targetIndex = randomInt(0, 2, random);
         const digitCount = String(values[targetIndex]).length;
@@ -240,7 +266,7 @@ function arithmeticStatement(operation, random) {
 }
 
 function generateAddSubTrueFalse(config = {}, random = Math.random) {
-    const rows = shuffle(['+', '-', '+', '-'], random).map((operation, index) => ({
+    const rows = fourRowOperations(config, random).map((operation, index) => ({
         label: labels[index], ...arithmeticStatement(operation, random)
     }));
     return question(
@@ -268,18 +294,19 @@ function subtractPair(random, totalMinimum, totalMaximum, partMinimum, partMaxim
 }
 
 function makeWordContext(id, title, operation, createValues, statement, answerPrefix, answerSuffix) {
+    const normalizedOperation = operation === '−' ? '-' : operation;
     return {
         id,
         title,
-        operation,
+        operation: normalizedOperation,
         create(random) {
             const values = createValues(random);
-            const answer = operation === '+' ? values.first + values.second : values.first - values.second;
+            const answer = normalizedOperation === '+' ? values.first + values.second : values.first - values.second;
             const render = value => typeof value === 'function' ? value(values) : value;
             if (!Number.isSafeInteger(answer) || answer <= 0) throw new Error(`Ngữ cảnh ${id} tạo đáp án không hợp lệ.`);
             return {
                 contextId: id,
-                operation,
+                operation: normalizedOperation,
                 values: { ...values, result: answer },
                 answer,
                 statement: render(statement),
@@ -458,14 +485,20 @@ const sumDifferenceContexts = [
         values => `Hai quầy hàng có tất cả ${formatNumber(values.sum)} kg trái cây. Quầy A có nhiều hơn quầy B ${formatNumber(values.difference)} kg.`, 200, 4999)
 ];
 
-function contextFrom(bank, contextId, random) {
-    const context = contextId ? bank.find(item => item.id === contextId) : choose(bank, random);
-    if (!context) throw new Error(`Không tìm thấy ngữ cảnh: ${contextId}`);
+function contextFrom(bank, contextId, random, allowedOperations = null) {
+    const candidates = Array.isArray(allowedOperations) && allowedOperations.length
+        ? bank.filter(item => allowedOperations.includes(item.operation))
+        : bank;
+    const context = contextId ? candidates.find(item => item.id === contextId) : choose(candidates, random);
+    if (!context) throw new Error(`Không tìm thấy ngữ cảnh phù hợp: ${contextId || 'ngẫu nhiên'}`);
     return context;
 }
 
 function generateAddSubWordProblem(config = {}, random = Math.random) {
-    const context = contextFrom(wordProblemContexts, config.contextId, random);
+    const allowedOperations = Object.prototype.hasOwnProperty.call(config, 'operation') || Array.isArray(config.operations)
+        ? configuredOperations(config)
+        : null;
+    const context = contextFrom(wordProblemContexts, config.contextId, random, allowedOperations);
     const row = context.create(random);
     const prompt = `${row.statement}<br>${row.answerPrefix} ___ ${row.answerSuffix}`;
     return question(

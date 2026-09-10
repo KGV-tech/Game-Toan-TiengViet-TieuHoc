@@ -5148,6 +5148,10 @@ const app = {
             });
             return app.data.sortUsersByVietnameseName(students);
         },
+        getTeamCompetitionParticipants(classlevel, className = '', excludedUsernames = []) {
+            const excluded = new Set((Array.isArray(excludedUsernames) ? excludedUsernames : []).map(username => String(username)));
+            return this.getTeamCompetitionStudents(classlevel, className).filter(student => !excluded.has(String(student.username)));
+        },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
                 .map(user => String(user.class_name || '').trim()).filter(Boolean)))
@@ -5165,7 +5169,7 @@ const app = {
             const draft = this.teamCompetitionDraft || {};
             const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
             const count = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
-            const students = this.getTeamCompetitionStudents(document.getElementById('team-comp-class')?.value || draft.classlevel || '5', document.getElementById('team-comp-class-name')?.value || draft.className || '');
+            const students = this.getTeamCompetitionParticipants(document.getElementById('team-comp-class')?.value || draft.classlevel || '5', document.getElementById('team-comp-class-name')?.value || draft.className || '', draft.excludedStudentUsernames);
             draft.participantMode = mode;
             draft.teamCount = Number.isInteger(count) && count > 1 ? count : 2;
             if (mode === 'random') {
@@ -5190,7 +5194,7 @@ const app = {
         randomizeTeamCompetition() {
             this.syncTeamCompetitionDraftFromDom();
             const draft = this.teamCompetitionDraft || {};
-            const students = this.getTeamCompetitionStudents(draft.classlevel || '5', draft.className || '');
+            const students = this.getTeamCompetitionParticipants(draft.classlevel || '5', draft.className || '', draft.excludedStudentUsernames);
             try {
                 draft.participantMode = 'random';
                 const teamCount = Number(draft.teamCount || 2);
@@ -5232,11 +5236,44 @@ const app = {
             this.teamCompetitionDraft = draft;
             this.renderTeamCompetitionForm();
         },
-        changeTeamMemberSlot(index) {
+        changeTeamMemberSlot(index, slotIndex = 0, selectedUsername = '') {
+            const previousDraft = this.teamCompetitionDraft || {};
+            const previousUsername = String(previousDraft.teams?.[index]?.memberUsernames?.[slotIndex] || '');
             const draft = this.collectTeamCompetitionForm();
             const team = draft.teams[index];
             if (!team) return;
-            if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = '';
+            const nextUsername = String(selectedUsername || team.memberUsernames[slotIndex] || '');
+            if (nextUsername && nextUsername !== previousUsername) {
+                draft.teams = app.teamCompetition.swapTeamMembers(draft.teams, index, slotIndex, nextUsername, previousUsername);
+            } else if (!nextUsername && previousUsername) {
+                team.memberUsernames = team.memberUsernames.filter(username => String(username) !== previousUsername);
+                team.targetMemberCount = team.memberUsernames.length || null;
+                if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = team.memberUsernames[0] || '';
+            }
+            draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        changeTeamCompetitionExcludedStudents() {
+            const draft = this.collectTeamCompetitionForm();
+            const previousTeams = draft.teams || [];
+            const filteredTeams = app.teamCompetition.removeExcludedStudentsFromTeams(previousTeams, draft.excludedStudentUsernames);
+            draft.teams = filteredTeams.map((team, index) => {
+                const previous = previousTeams[index];
+                const changed = JSON.stringify(previous?.memberUsernames || []) !== JSON.stringify(team.memberUsernames || []);
+                if (!changed) return team;
+                const memberSelectionSnapshot = {
+                    memberUsernames: [...team.memberUsernames],
+                    leaderUsername: team.leaderUsername || ''
+                };
+                return {
+                    ...team,
+                    targetMemberCount: team.memberUsernames.length || null,
+                    memberSelectionState: team.memberSelectionState === 'saved' ? 'editing' : team.memberSelectionState,
+                    memberSelectionSnapshot
+                };
+            });
+            draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
             this.teamCompetitionDraft = draft;
             this.renderTeamCompetitionForm();
         },
@@ -5308,6 +5345,10 @@ const app = {
             const hasTimer = Boolean(document.getElementById('team-comp-has-timer')?.checked);
             const minutes = Number(document.getElementById('team-comp-time')?.value || 0);
             const questionMode = document.getElementById('team-comp-question-mode')?.value || draft.questionMode || 'same';
+            const excludedControl = document.getElementById('team-comp-excluded-students');
+            const excludedStudentUsernames = excludedControl
+                ? Array.from(excludedControl.selectedOptions || []).map(option => option.value).filter(Boolean)
+                : (draft.excludedStudentUsernames || []);
             return app.teamCompetition.normalizeCompetition({
                 ...draft,
                 name: document.getElementById('team-comp-name')?.value.trim() || '',
@@ -5317,6 +5358,7 @@ const app = {
                 teamCount: Number.isInteger(teamCount) ? teamCount : 2,
                 teams,
                 selectedStudentUsernames: teams.flatMap(team => team.memberUsernames),
+                excludedStudentUsernames,
                 questionMode,
                 commonExamId: document.getElementById('team-comp-common-exam')?.value || draft.commonExamId || null,
                 timeLimitMinutes: hasTimer && Number.isInteger(minutes) && minutes > 0 ? minutes : null,
@@ -5341,7 +5383,10 @@ const app = {
             const classlevel = draft.classlevel || '5';
             const classNames = this.getTeamCompetitionClassNames(classlevel);
             const className = draft.className || '';
-            const students = this.getTeamCompetitionStudents(classlevel, className);
+            const allStudents = this.getTeamCompetitionStudents(classlevel, className);
+            const excludedStudentUsernames = Array.from(new Set((draft.excludedStudentUsernames || []).map(username => String(username))));
+            const excludedSet = new Set(excludedStudentUsernames);
+            const students = allStudents.filter(student => !excludedSet.has(String(student.username)));
             const exams = this.getTeamCompetitionExams(classlevel);
             const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
             const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
@@ -5351,6 +5396,8 @@ const app = {
             const classOptions = [1, 2, 3, 4, 5].map(level => `<option value="${level}" ${String(level) === String(classlevel) ? 'selected' : ''}>Lớp ${level}</option>`).join('');
             const classNameOptions = [`<option value="">Tất cả học sinh Lớp ${esc(classlevel)}</option>`, ...classNames.map(name => `<option value="${esc(name)}" ${name === className ? 'selected' : ''}>Lớp ${esc(name)}</option>`)].join('');
             const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
+            const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
+            const excludedOptions = allStudents.map(student => `<option value="${esc(student.username)}" ${excludedSet.has(String(student.username)) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
             const teamCards = teams.map((team, index) => {
                 const targetCount = Number.isInteger(Number(team.targetMemberCount)) && Number(team.targetMemberCount) > 0
                     ? Number(team.targetMemberCount)
@@ -5358,17 +5405,15 @@ const app = {
                 const selectedMembers = (team.memberUsernames || []).slice(0, targetCount || 0);
                 const selectionState = team.memberSelectionState === 'saved' ? 'saved' : 'editing';
                 const isSaved = selectionState === 'saved';
-                const reservedMembers = this.getReservedTeamMemberUsernames(teams, index);
-                const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
                 const memberSlots = targetCount
                     ? Array.from({ length: targetCount }, (_, slotIndex) => {
                         const selectedUsername = String(selectedMembers[slotIndex] || '');
                         const selectedInOtherSlots = new Set(selectedMembers.filter((username, selectedIndex) => selectedIndex !== slotIndex).map(String));
                         const options = students.filter(student => {
                             const username = String(student.username);
-                            return username === selectedUsername || (!reservedMembers.has(username) && !selectedInOtherSlots.has(username));
+                            return username === selectedUsername || !selectedInOtherSlots.has(username);
                         }).map(student => `<option value="${esc(student.username)}" ${selectedUsername === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
-                        return `<label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved || draft.participantMode === 'random' ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index})"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
+                        return `<label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index}, ${slotIndex}, this.value)"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
                     }).join('')
                     : '<p class="team-member-selection-hint">Nhập số thành viên trong nhóm để hiện các ô chọn học sinh.</p>';
                 const leaderOptions = students.filter(student => selectedMembers.includes(String(student.username))).map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
@@ -5399,14 +5444,15 @@ const app = {
                 <div class="team-form-toolbar"><button type="button" class="btn-opt team-form-back" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><div class="team-form-toolbar__status"><span class="team-form-status">${statusLabel}</span><span class="team-form-toolbar__hint">Bản soạn chỉ mình cô nhìn thấy</span></div></div>
                 <header class="team-form-hero"><div class="team-form-hero__copy"><span class="team-dashboard-kicker">Soạn nhiệm vụ nhóm</span><h3>Tạo trận thi đua nhóm</h3><p>Mỗi nhóm dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Cô có thể chia nhóm đều hoặc linh hoạt theo lớp.</p></div><div class="team-form-hero__metrics"><div><strong>${teamCount}</strong><span>nhóm</span></div><div><strong>${students.length}</strong><span>học sinh phù hợp</span></div><div><strong>${draft.questionMode === 'different' ? 'Riêng' : 'Chung'}</strong><span>cách giao bài</span></div></div></header>
                 <nav class="team-form-steps" aria-label="Các bước soạn trận"><div class="team-form-step team-form-step--active"><span>01</span><div><strong>Khung trận</strong><small>Đặt tên và chọn lớp</small></div></div><div class="team-form-step"><span>02</span><div><strong>Chia nhóm</strong><small>Gắn học sinh và trưởng nhóm</small></div></div><div class="team-form-step"><span>03</span><div><strong>Giao bài</strong><small>Chọn đề và thời gian</small></div></div></nav>
-                <section class="team-form-section team-form-section--identity"><div class="team-section-heading"><div><span class="team-section-kicker">01 · Thông tin trận</span><h4>Khung trận</h4><p>Đặt ngữ cảnh để cô nhận ra trận ngay khi vào lớp.</p></div><span class="team-section-icon" aria-hidden="true">✦</span></div><div class="team-form-grid">
+                <section class="team-form-section team-form-section--identity"><div class="team-section-heading"><div><span class="team-section-kicker">01 · Thông tin trận</span><h4>Khung trận</h4><p>Đặt ngữ cảnh để cô nhận ra trận ngay khi vào lớp; có thể loại học sinh vắng mặt trước khi chia nhóm.</p></div><span class="team-section-icon" aria-hidden="true">✦</span></div><div class="team-form-grid">
                   <label class="team-field-label team-field-label--wide"><span>Tên trận</span><input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
                   <label class="team-field-label"><span>Cấp lớp</span><select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
                   <label class="team-field-label"><span>Lớp</span><select id="team-comp-class-name" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classNameOptions}</select></label>
                   <label class="team-field-label"><span>Số lượng nhóm</span><input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
                   <label class="team-field-label"><span>Cách chọn học sinh</span><select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chọn ngẫu nhiên</option></select></label>
+                  <label class="team-field-label team-field-label--wide team-field-label--multiselect"><span>Danh sách học sinh không tham gia</span><select id="team-comp-excluded-students" class="form-input" multiple size="${Math.min(6, Math.max(3, allStudents.length))}" aria-label="Danh sách học sinh không tham gia" onchange="app.admin.changeTeamCompetitionExcludedStudents()">${excludedOptions}</select><small>Giữ Ctrl/Cmd để chọn nhiều học sinh vắng mặt hoặc không thể tham gia.</small></label>
                 </div></section>
-                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
+                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm; khi chưa lưu hoặc đang sửa, chọn bạn ở nhóm khác để hoán đổi.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
                 <section class="team-membership-summary" aria-live="polite"><div class="team-section-heading"><div><span class="team-section-kicker">Đã lưu</span><h4>Sơ đồ thành viên</h4><p>Kiểm tra nhanh trước khi chuyển sang bước giao bài.</p></div><span class="team-summary-mark" aria-hidden="true">✓</span></div><div class="team-membership-summary__grid">${memberSummary}</div></section>
                 <section class="team-form-section team-form-section--delivery"><div class="team-section-heading"><div><span class="team-section-kicker">03 · Nội dung</span><h4>Giao bài cho nhóm</h4><p>Dùng một đề chung để thi đua công bằng hoặc giao đề riêng cho từng nhóm.</p></div><span class="team-section-icon" aria-hidden="true">◈</span></div><div class="team-form-grid team-form-grid--compact">
                   <label class="team-field-label"><span>Cách giao bài</span><select id="team-comp-question-mode" class="form-input" onchange="app.admin.syncTeamCompetitionDraftFromDom(); app.admin.renderTeamCompetitionForm()"><option value="same" ${draft.questionMode !== 'different' ? 'selected' : ''}>Một bài giống nhau cho các nhóm</option><option value="different" ${draft.questionMode === 'different' ? 'selected' : ''}>Mỗi nhóm một bài khác nhau</option></select></label>
@@ -6168,6 +6214,7 @@ const app = {
             const phase2ConstantMinimum = Number(config.constantMinimum ?? 2);
             const phase2ConstantMaximum = Number(config.constantMaximum ?? 9);
             const phase2Operations = config.operations || ['add', 'subtract', 'multiply', 'divide'];
+            const topic5Operation = config.operation === '−' ? '-' : (['+', '-'].includes(config.operation) ? config.operation : '');
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
@@ -6317,6 +6364,10 @@ const app = {
             if (generatorControl && phase2TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
+            const topic5OperationRule = '<div class="template-editor__rule template-editor__rule--topic5-operation"><div class="template-editor__rule-heading"><h5>Phép tính theo Bài học</h5></div><p>Chọn cộng hoặc trừ nếu template chỉ dùng cho một Bài học; để mặc định để cho phép cả hai.</p><label class="template-editor__field template-editor__field--wide"><span>Phạm vi phép tính</span><select id="template-topic5-operation" class="form-input"><option value="">Cộng và trừ (mặc định)</option><option value="+">Chỉ phép cộng (+)</option><option value="-">Chỉ phép trừ (−)</option></select></label></div>';
+            box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
+            const topic5OperationControl = document.getElementById('template-topic5-operation');
+            if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
@@ -6844,6 +6895,7 @@ const app = {
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
             const isPhase2Template = phase2TemplateKeys.includes(generator);
@@ -6852,6 +6904,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || (isTopic5Template && !topic5DigitRange); });
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
+            document.querySelectorAll('.template-editor__rule--topic5-operation').forEach(rule => { rule.hidden = !topic5OperationKeys.includes(generator); });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
             document.querySelectorAll('.template-editor__rule--natural-sequence-controls').forEach(rule => { rule.hidden = generator !== 'number.natural_sequence'; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-controls').forEach(rule => { rule.hidden = !isFourArithmetic; });
@@ -6888,6 +6941,7 @@ const app = {
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
             const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
@@ -6923,6 +6977,7 @@ const app = {
             const phase2ConstantMaximum = Number(value('template-phase2-constant-maximum'));
             const phase2Operations = selectedSafeValues('phase2-operations');
             const phase2Parities = selectedSafeValues('phase2-parities');
+            const topic5Operation = document.getElementById('template-topic5-operation')?.value.trim() || '';
             const minimumDigits = Number(document.getElementById('template-minimum-digits')?.value || 1);
             const maximumDigits = Number(document.getElementById('template-maximum-digits')?.value || 1);
             if (generatorKey === 'number.safe_password_by_place_value' && safePasswordMinLength > safePasswordMaxLength) throw new Error('Số chữ số ít nhất không được lớn hơn số chữ số nhiều nhất.');
@@ -6932,7 +6987,7 @@ const app = {
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
             const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
-            const topic5Config = topic5DigitRange ? { minimumDigits, maximumDigits } : {};
+            const topic5Config = (topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {};
             const phase2Config = isPhase2B03
                 ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
                 : (isPhase2B04
@@ -6947,6 +7002,7 @@ const app = {
             if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
+            if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
             if (isPhase2B03) {
                 if (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
                 if (!phase2Parities.length || phase2Parities.some(parity => !['even', 'odd'].includes(parity))) throw new Error('Hãy chọn ít nhất một dạng số chẵn hoặc số lẻ.');
@@ -8940,7 +8996,7 @@ const app = {
                 return `<article class="admin-student-card ${isPending ? 'admin-student-card--pending' : ''}" data-student-username="${esc(rawUsername)}">
                     <header class="admin-student-card__header">
                         <div class="admin-student-card__avatar-shell">${avatarMarkup}</div>
-                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4><span>@${esc(rawUsername)}</span></div>
+                        <div class="admin-student-card__identity"><p>Học sinh · <span class="admin-student-card__class-label">${esc(classLabel)}</span></p><h4>${esc(rawName)}</h4></div>
                         <span class="admin-student-card__status ${isPending ? 'admin-student-card__status--pending' : ''}">${isPending ? 'Chờ duyệt' : 'Đã duyệt'}</span>
                     </header>
                     <div class="admin-student-card__achievement">
@@ -8950,7 +9006,7 @@ const app = {
                     </div>
                     <div class="admin-student-card__meta">
                         <div><span>Giới tính</span><strong>${esc(genderText)}</strong></div>
-                        <div><span>Tài khoản</span><strong>@${esc(rawUsername)}</strong></div>
+                        <div><span>Tên đăng nhập</span><strong>${esc(rawUsername)}</strong></div>
                     </div>
                     <div class="admin-student-card__security"><span aria-hidden="true">▣</span> Mật khẩu được bảo mật · có thể đặt lại</div>
                     <footer class="admin-student-card__actions">${actionBtns}</footer>

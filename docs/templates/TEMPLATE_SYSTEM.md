@@ -1,19 +1,19 @@
 # Hệ thống Template câu hỏi — Toán lớp 4
 
-> Trạng thái: **Phase 2 đã triển khai trong repo / chờ preview và apply migration**
-> Cập nhật: 09/09/2026
+> Trạng thái: **Phase 1 mapping + remediation và Phase 2 seed đã apply/audit live; B05 vẫn tạm hoãn**
+> Cập nhật: 10/09/2026
 > Phạm vi tài liệu: kiến trúc, dữ liệu, generator, Supabase, lộ trình nội dung và kế hoạch thay mới toàn bộ Template.
 
 ## 1. Mục đích và cổng duyệt
 
 Template là một phần lõi của game: nó vừa cung cấp câu hỏi cho học sinh, vừa là nguồn để Admin tự động dựng Đề Kiểm tra. Vì vậy việc thay Template phải được làm theo từng lát nhỏ, có dữ liệu kiểm chứng và có thể quay lại bản cũ.
 
-Tài liệu này là hồ sơ thiết kế trước khi triển khai. Trong lượt tạo tài liệu này:
+Tài liệu này là hồ sơ thiết kế và vận hành theo phase. Trạng thái hiện tại:
 
 - Đã lập kiến trúc và lộ trình đề xuất.
 - Không xoá hoặc sửa hàng loạt Template cũ trong Supabase.
-- Phase 2 đã thêm các generator mới cho B03, B04 và blueprint review B06 trong repo; migration seed vẫn chờ người dùng apply.
-- Migration thêm trường `lesson` đã có trong repo từ công việc trước, nhưng chưa được apply vào Supabase production.
+- Phase 2 đã thêm các generator mới cho B03, B04 và blueprint review B06 trong repo; audit live xác nhận đủ bảy record active.
+- Migration thêm trường `lesson` và mapping 28 record Phase 1 đã được apply; remediation tiếp theo đã xử lý 17 record HARDEN/TÁCH/THAY, audit còn 0 active thiếu `lesson`.
 - Không tạo B05: family bài toán ba bước vẫn bị hoãn theo yêu cầu người dùng.
 
 Nguyên tắc duyệt:
@@ -443,12 +443,13 @@ Nó chỉ:
 - sao chép `config.lesson` rõ ràng lên cột mới;
 - không thay RLS/quyền.
 
-Trước khi apply cần có xác nhận đúng project và quyền Admin. Repo hiện không có Supabase CLI/authenticated production session; lần kiểm tra unauthenticated trước đó không đủ quyền đọc dữ liệu. Vì vậy Phase 1 cần một trong hai đầu vào:
+Trước khi apply cần có xác nhận đúng project và quyền Admin. Audit live ngày
+10/09/2026 đã được thực hiện trong project `bjgbbrufnryrtimtzvhn` bằng phiên
+Supabase đã đăng nhập; không đưa access token, service key hoặc cookie vào
+repo/chat. Các migration vẫn phải giữ idempotent để có thể kiểm tra lại.
 
-- người dùng chạy migration trong đúng project rồi gửi kết quả/schema;
-- hoặc một phiên Admin đã đăng nhập để ứng dụng kiểm tra bằng query được phép.
-
-Không đưa access token, service key hoặc cookie vào repo/chat.
+- người dùng chạy migration trong đúng project rồi gửi kết quả/schema; hoặc
+- một phiên Admin đã đăng nhập để ứng dụng kiểm tra bằng query được phép.
 
 ### 12.2. Seed và migration record
 
@@ -563,17 +564,21 @@ Tiêu chí đạt: tài liệu có thể dùng làm checklist cho generator, see
 
 Phụ thuộc: duyệt Phase 0; có quyền/schema đúng project.
 
-Kết quả kiểm kê CSV và mapping đã duyệt cho nhóm gắn trực tiếp: [`PHASE_1_TEMPLATE_MAPPING.md`](./PHASE_1_TEMPLATE_MAPPING.md). SQL migration chỉ là gói triển khai để người dùng tự chạy trong đúng project Supabase; repo không tự nhận đã cập nhật production.
+Kết quả kiểm kê CSV và mapping đã duyệt cho nhóm gắn trực tiếp: [`PHASE_1_TEMPLATE_MAPPING.md`](./PHASE_1_TEMPLATE_MAPPING.md). Audit live được ghi tại [`PHASE_1_2_LIVE_AUDIT.md`](./PHASE_1_2_LIVE_AUDIT.md).
 
 Thực hiện:
 
 1. Kiểm kê toàn bộ record `question_templates` hiện có bằng phiên Admin/export được phép.
 2. Đối chiếu từng record với `lessonCatalog`, phân loại giữ/gắn lesson/tách/sửa/archive.
-3. Apply migration `lesson` trong đúng project sau khi người dùng xác nhận.
+3. Apply migration `lesson` trong đúng project sau khi người dùng xác nhận; đã
+   xác minh 28 record Phase 1 trong audit live.
 4. Tạo manifest kiểm kê/validator trong repo, không tạo record nội dung mới.
 5. Bổ sung contract test cho lesson/topic/semester/generator.
 
-Kết quả: 28 record **GẮN** đã có manifest/migration; 18 record cần harden/tách/thay vẫn chờ phase nội dung tương ứng.
+Kết quả: 28 record **GẮN** đã có manifest/migration; migration remediation
+`20260910_question_templates_harden_split_replace.sql` đã xử lý 17 record
+HARDEN/TÁCH/THAY. Audit live sau chạy: 57 active, 0 active thiếu `lesson`,
+0 B05; 5 record Topic 5 cũ và 1 challenge mật khẩu được archive mềm.
 
 ### Phase 2 — Rebuild Bài 1–6
 
@@ -588,7 +593,9 @@ Phụ thuộc: Phase 1 và duyệt family nội dung A.
 - tạo migration seed idempotent, không chứa B05;
 - kiểm thử contract nhiều seed và browser editor ở desktop.
 
-Checkpoint còn lại: duyệt card/preview và dữ liệu mẫu, sau đó người dùng apply migration vào đúng project trước khi archive/tách record cũ B01/B02.
+Checkpoint seed đã đạt: bảy record Phase 2 active đúng lesson và B05 không có
+record. Nhóm deferred 17 record đã được xử lý ở migration remediation riêng;
+các phase sau chỉ bổ sung family mới còn thiếu.
 
 ### Phase 3 — Rebuild Bài 7–9
 

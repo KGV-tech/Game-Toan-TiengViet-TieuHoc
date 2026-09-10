@@ -249,6 +249,14 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
 
   await expect(page.locator('.admin-roster-filter-panel')).toBeVisible();
   await expect(page.locator('.admin-student-card')).toHaveCount(4);
+  const firstStudentCard = page.locator('.admin-student-card').first();
+  await expect(firstStudentCard.locator('.admin-student-card__identity > span')).toHaveCount(0);
+  await expect(firstStudentCard.locator('.admin-student-card__meta span')).toHaveText(['Giới tính', 'Tên đăng nhập']);
+  await expect(firstStudentCard.locator('.admin-student-card__meta strong')).toHaveText(['Nữ', 'nguyen-alpha']);
+  const desktopColumnCount = await page.locator('.admin-student-grid').evaluate(grid =>
+    getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
+  );
+  expect(desktopColumnCount).toBe(5);
   await expect(page.locator('.admin-student-card h4')).toHaveText([
     'Nguyễn Minh Alpha',
     'Trần Quang Alpha',

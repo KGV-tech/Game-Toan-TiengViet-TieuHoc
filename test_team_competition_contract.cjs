@@ -35,6 +35,19 @@ assert.deepEqual(targetTeams.map(group => group.memberUsernames.length), [3, 2])
 assert.deepEqual(targetTeams.map(group => group.targetMemberCount), [3, 2]);
 assert.deepEqual(targetTeams.map(group => group.name), ['Nhóm 1', 'Nhóm 2']);
 
+const swappedTeams = team.swapTeamMembers([
+  { id: 'team-a', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+  { id: 'team-b', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+], 0, 0, 'hs3');
+assert.deepEqual(swappedTeams.map(group => group.memberUsernames), [['hs3', 'hs2'], ['hs1', 'hs4']]);
+assert.deepEqual(swappedTeams.map(group => group.leaderUsername), ['hs3', 'hs1']);
+const swappedFromChangedDom = team.swapTeamMembers([
+  { memberUsernames: ['hs3', 'hs2'], leaderUsername: 'hs3' },
+  { memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+], 0, 0, 'hs3', 'hs1');
+assert.deepEqual(swappedFromChangedDom.map(group => group.memberUsernames), [['hs3', 'hs2'], ['hs1', 'hs4']]);
+assert.deepEqual(team.removeExcludedStudentsFromTeams(swappedTeams, ['hs2']).map(group => group.memberUsernames), [['hs3'], ['hs1', 'hs4']]);
+
 const validConfig = {
   name: 'Trận khởi động',
   classlevel: '5',
@@ -48,6 +61,10 @@ const validConfig = {
   ]
 };
 assert.deepEqual(team.validateConfig(validConfig, { students, exams }), { valid: true, errors: [] });
+const excludedConfig = team.normalizeCompetition({ ...validConfig, excludedStudentUsernames: ['hs5'] });
+assert.deepEqual(excludedConfig.excludedStudentUsernames, ['hs5']);
+const assignedExcluded = team.validateConfig({ ...validConfig, excludedStudentUsernames: ['hs2'] }, { students, exams });
+assert.ok(assignedExcluded.errors.some(error => error.code === 'student_excluded'));
 const targetMismatch = team.validateConfig({ ...validConfig, teams: validConfig.teams.map(item => ({ ...item, targetMemberCount: item.id === 'team-1' ? 3 : 1 })) }, { students, exams });
 assert.ok(targetMismatch.errors.some(error => error.code === 'target_member_count_mismatch'));
 

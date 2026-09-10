@@ -112,7 +112,7 @@
         const left = shuffle(values.slice(0, leftCount), random);
         const right = shuffle(values.slice(0, rightCount), random);
         return {
-            classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '1. Số tự nhiên',
+            classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
             type: 'Đối chiếu trùng khớp', templateId: 'number.match_number_words',
             q: config.prompt || 'Hãy nối mỗi số với cách đọc đúng.',
             options: [left.map(formatNumber).join(', '), right.map(readNumber).join(', ')],

@@ -156,11 +156,27 @@ test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên
     app.admin.showAddTeamCompetitionForm();
   }, { users: demoUsers(), exam: demoExam() });
 
+  await expect(page.getByLabel('Danh sách học sinh không tham gia')).toBeVisible();
   await page.locator('#team-comp-mode').selectOption('random');
-  await expect(page.locator('.team-member-slot-select').nth(0)).toBeDisabled();
+  await expect(page.locator('.team-member-slot-select').nth(0)).not.toBeDisabled();
   await expect.poll(() => page.locator('.team-member-slot-select').evaluateAll(selects => selects.map(select => select.value).filter(Boolean).length)).toEqual(4);
   await expect.poll(() => page.locator('.team-target-count').evaluateAll(inputs => inputs.map(input => input.value))).toEqual(['2', '2']);
   await expect(page.locator('.team-leader-select').nth(0)).not.toHaveValue('');
+
+  const beforeSwap = await page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames.slice()));
+  const firstTeamStudent = beforeSwap[0][0];
+  const secondTeamStudent = beforeSwap[1][0];
+  await page.locator('.team-member-slot-select').nth(0).selectOption(secondTeamStudent);
+  const expectedAfterSwap = [
+    [secondTeamStudent, beforeSwap[0][1]],
+    [firstTeamStudent, beforeSwap[1][1]]
+  ];
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual(expectedAfterSwap);
+
+  await page.locator('#team-comp-excluded-students').selectOption('hs4');
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.excludedStudentUsernames)).toEqual(['hs4']);
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.flatMap(team => team.memberUsernames))).not.toContain('hs4');
+  await expect(page.locator('.team-member-slot-select option[value="hs4"]')).toHaveCount(0);
 });
 
 test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trưởng nhóm từ thành viên đã chọn', async ({ page }) => {
@@ -191,12 +207,19 @@ test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trư�
 
   await expect(firstGroup.getByRole('button', { name: 'Sửa' })).toBeVisible();
   await expect(page.locator('.team-membership-summary')).toContainText('Học sinh 1');
-  await page.locator('.team-config-card').nth(1).locator('.team-target-count').fill('1');
-  await page.locator('.team-config-card').nth(1).locator('.team-target-count').press('Tab');
-  await expect(page.locator('.team-config-card').nth(1).locator('.team-member-slot-select').first()).not.toContainText('Học sinh 1');
-  await expect(page.locator('.team-config-card').nth(1).locator('.team-member-slot-select').first()).not.toContainText('Học sinh 2');
+  const secondGroup = page.locator('.team-config-card').nth(1);
+  await secondGroup.locator('.team-target-count').fill('1');
+  await secondGroup.locator('.team-target-count').press('Tab');
+  await expect(secondGroup.locator('.team-member-slot-select').first()).toContainText('Học sinh 1');
+  await expect(secondGroup.locator('.team-member-slot-select').first()).toContainText('Học sinh 2');
+  await secondGroup.locator('.team-member-slot-select').first().selectOption('hs3');
+  await secondGroup.locator('.team-leader-select').selectOption('hs3');
+  await secondGroup.getByRole('button', { name: 'Lưu' }).click();
 
   await firstGroup.getByRole('button', { name: 'Sửa' }).click();
   await expect(firstGroup.getByRole('button', { name: 'Cập nhật' })).toBeVisible();
   await expect(firstGroup.getByRole('button', { name: 'Hủy' })).toBeVisible();
+  await expect(firstGroup.locator('.team-member-slot-select').first()).not.toBeDisabled();
+  await firstGroup.locator('.team-member-slot-select').first().selectOption('hs3');
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([['hs3', 'hs2'], ['hs1']]);
 });

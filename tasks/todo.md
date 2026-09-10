@@ -74,13 +74,14 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [x] Lấy danh sách Template thật bằng phiên Admin/export được phép.
 - [x] Đối chiếu từng record với `lessonCatalog` và generator registry.
 - [x] Phân loại giữ/gắn lesson/tách/sửa/archive.
-- [ ] Xác nhận/apply migration cột `question_templates.lesson` và mapping Phase 1 ở đúng project.
+- [x] Xác nhận/apply migration cột `question_templates.lesson` và mapping Phase 1 ở đúng project; audit live xác nhận 28 mapping ngày 10/09/2026.
 - [x] Tạo manifest/validator và contract test lesson mapping.
 - [x] Gửi mapping; người dùng đã duyệt nhóm gắn trực tiếp, không tạo B05.
+- [x] Xử lý 17 template active còn thiếu lesson: harden B11/B12/B14/B15/B16/B19, tách B22/B23, archive mềm challenge không học thuật và audit `active_missing_lesson = 0`.
 
 ### Các phase nội dung
 
-- [x] Phase 2: Rebuild Bài 1–6 trong repo, gồm bốn family số chẵn/lẻ B03, hai family biểu thức chứa chữ B04 và review B06 B01–B04; bài toán ba bước B05 tạm hoãn. Chờ preview/apply migration.
+- [x] Phase 2: Rebuild Bài 1–6 trong repo, gồm bốn family số chẵn/lẻ B03, hai family biểu thức chứa chữ B04 và review B06 B01–B04; bài toán ba bước B05 tạm hoãn. Seed đã apply và audit 7 record active.
 - [ ] Phase 3: Rebuild Bài 7–9, gồm đo góc, phân loại góc và review góc.
 - [ ] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review.
 - [ ] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
@@ -88,7 +89,7 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [ ] Phase 7: Rebuild Bài 27–32, gồm vuông góc, song song, hình bình hành/hình thoi và review.
 - [ ] Phase 8: Rebuild Bài 33–37, gồm các bộ ôn tập HK1 có blueprint kỹ năng.
 - [ ] Phase 9: Kiểm kê/rebuild HK2 sau khi có nguồn Tập 2 được xác nhận.
-- [ ] Phase 10: Seed idempotent, archive có rollback, test đầy đủ và bàn giao.
+- [ ] Phase 10: Test đầy đủ và bàn giao; remediation 17 template đã archive có rollback, seed idempotent Phase 2 đã hoàn tất.
 
 ### Rào chắn an toàn
 
