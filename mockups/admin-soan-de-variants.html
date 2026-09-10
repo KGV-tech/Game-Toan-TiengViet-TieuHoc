@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mockup Admin · Soạn Đề · 4 hướng</title>
+  <style>
+    :root {
+      --ink: #e9f5fb;
+      --muted: #9bb8ca;
+      --night: #071421;
+      --line: rgba(186, 224, 241, .18);
+      --cyan: #55d8ef;
+      --yellow: #f7c85d;
+      --green: #6cdda0;
+      --violet: #bf9aff;
+      --orange: #ff9969;
+      --space-1: .5rem;
+      --space-2: .75rem;
+      --space-3: 1rem;
+      --space-4: 1.25rem;
+      --space-5: 1.5rem;
+      --radius-sm: 9px;
+      --radius-md: 15px;
+      --radius-lg: 22px;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { min-width: 960px; min-height: 100vh; margin: 0; color: var(--ink); background: #020a12; }
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+
+    .gallery-page {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 1rem auto 2rem;
+    }
+
+    .gallery-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: .9rem;
+    }
+
+    .gallery-kicker { margin: 0 0 5px; color: var(--cyan); font-size: .7rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+    .gallery-header h1 { margin: 0 0 6px; color: #f8fdff; font-size: clamp(1.7rem, 3vw, 2.45rem); letter-spacing: -.04em; }
+    .gallery-header p { max-width: 760px; margin: 0; color: #a6c1cf; font-size: .84rem; line-height: 1.5; }
+    .gallery-badge { flex: 0 0 auto; padding: 7px 11px; border: 1px solid rgba(104, 221, 160, .38); border-radius: 999px; color: #adf7c9; background: rgba(30, 102, 61, .28); font-size: .68rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+
+    .variant-switcher {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: .8rem;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(10, 28, 42, .84);
+    }
+
+    .variant-tab {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      padding: 9px 11px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: #91aebd;
+      background: transparent;
+      text-align: left;
+    }
+
+    .variant-tab:hover, .variant-tab[aria-selected="true"] { border-color: rgba(85, 216, 239, .34); color: #f4fdff; background: rgba(23, 77, 94, .46); }
+    .variant-tab__letter { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid currentColor; border-radius: 8px; font-size: .75rem; font-weight: 950; }
+    .variant-tab strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+    .variant-tab span:last-child { display: block; margin-top: 2px; overflow: hidden; color: #7896a8; text-overflow: ellipsis; white-space: nowrap; font-size: .65rem; }
+
+    .variant-view { display: none; }
+    .variant-view.is-active { display: block; }
+
+    .view-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 0 2px 8px;
+      color: #8faaba;
+      font-size: .72rem;
+    }
+
+    .view-caption strong { color: #eaf8fc; font-size: .78rem; }
+    .view-caption span:last-child { text-align: right; }
+
+    .prototype-note {
+      margin-top: 9px;
+      padding: 9px 12px;
+      border: 1px solid rgba(85, 216, 239, .18);
+      border-radius: 10px;
+      color: #9bb8c8;
+      background: rgba(10, 31, 46, .72);
+      font-size: .7rem;
+      line-height: 1.45;
+    }
+
+    .prototype-note strong { color: #d9f8ff; }
+
+    .prototype-toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: 330px;
+      padding: 11px 14px;
+      border: 1px solid rgba(104, 221, 160, .45);
+      border-radius: 10px;
+      color: #d9ffe8;
+      background: rgba(9, 55, 35, .96);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+      font-size: .75rem;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .prototype-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+    /* A — Bảng điều khiển sáng */
+    .variant-a-screen {
+      --a-ink: #173244;
+      --a-muted: #6c8794;
+      --a-teal: #0b91ad;
+      --a-yellow: #dc951b;
+      --a-violet: #7861c4;
+      min-height: 585px;
+      padding: 15px;
+      border: 1px solid #bfdbe3;
+      border-radius: var(--radius-lg);
+      color: var(--a-ink);
+      background: #e8f3f5 url("../public/map_scifi_adventure_v2.webp") center / cover;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .23);
+    }
+
+    .a-layout { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: 555px; overflow: hidden; border: 1px solid rgba(160, 197, 206, .82); border-radius: 17px; background: rgba(248, 253, 254, .94); }
+    .a-rail { display: flex; flex-direction: column; gap: 20px; padding: 18px 14px; border-right: 1px solid #d8e8eb; background: rgba(246, 251, 252, .96); }
+    .a-brand { display: flex; align-items: center; gap: 8px; color: var(--a-ink); }
+    .a-brand-mark { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 10px; color: #fff; background: var(--a-teal); font-weight: 950; }
+    .a-brand strong { display: block; font-size: .78rem; letter-spacing: .12em; }
+    .a-brand span { display: block; margin-top: 2px; color: var(--a-muted); font-size: .62rem; }
+    .a-back { width: fit-content; padding: 0; border: 0; color: var(--a-muted); background: transparent; font-size: .7rem; font-weight: 800; }
+    .a-back:hover { color: var(--a-teal); }
+    .a-nav { display: grid; gap: 6px; }
+    .a-nav__heading { margin: 0 4px 2px; color: #89a4ad; font-size: .62rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .a-nav__item { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 8px; border: 1px solid transparent; border-radius: 9px; color: #7b949f; background: transparent; text-align: left; font-size: .7rem; font-weight: 800; }
+    .a-nav__item--active { border-color: #bde4eb; color: #0b7188; background: #e4f7fa; }
+    .a-nav__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .a-rail-spacer { flex: 1; }
+    .a-rail-note { padding: 10px; border: 1px solid #f1d795; border-radius: 10px; color: #765416; background: #fff8df; font-size: .65rem; line-height: 1.45; }
+    .a-rail-note strong { display: block; margin-bottom: 3px; color: #a26c0a; }
+
+    .a-main { min-width: 0; padding: 17px 20px 18px; overflow: auto; }
+    .a-main-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+    .a-breadcrumb { margin: 0 0 4px; color: #8ca6ae; font-size: .65rem; font-weight: 800; }
+    .a-main h2 { margin: 0 0 4px; font-size: 1.55rem; letter-spacing: -.04em; }
+    .a-main-head p { max-width: 650px; margin: 0; color: var(--a-muted); font-size: .73rem; line-height: 1.45; }
+    .a-profile { display: flex; align-items: center; gap: 7px; padding: 5px 8px 5px 5px; border: 1px solid #d3e6ea; border-radius: 999px; background: #f7fcfd; }
+    .a-profile img { width: 27px; height: 27px; object-fit: contain; border-radius: 50%; background: #d8f1f6; }
+    .a-profile strong { display: block; font-size: .65rem; }
+    .a-profile span { display: block; margin-top: 1px; color: var(--a-muted); font-size: .56rem; }
+    .a-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(160px, 1.3fr); gap: 7px; margin-bottom: 14px; padding: 8px; border: 1px solid #d4e7ea; border-radius: 11px; background: #f4fafb; }
+    .a-context label { display: grid; gap: 3px; color: #8aa1a9; font-size: .59rem; font-weight: 900; }
+    .a-context select, .a-context input { width: 100%; min-height: 30px; padding: 0 8px; border: 1px solid #c9e0e5; border-radius: 7px; color: var(--a-ink); background: #fff; font-size: .68rem; }
+    .a-section-head { display: flex; align-items: end; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .a-section-head h3 { margin: 0 0 2px; font-size: .98rem; }
+    .a-section-head p { margin: 0; color: var(--a-muted); font-size: .66rem; }
+    .a-section-count { color: var(--a-teal); font-size: .64rem; font-weight: 900; white-space: nowrap; }
+    .a-module-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 11px; }
+    .a-module { display: grid; align-content: start; min-width: 0; min-height: 205px; padding: 12px; border: 1px solid var(--module-line, #cfe2e6); border-top: 4px solid var(--module-accent, var(--a-teal)); border-radius: 13px; color: var(--a-ink); background: #fff; text-align: left; box-shadow: 0 5px 12px rgba(43, 92, 106, .08); transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .a-module:hover, .a-module[aria-pressed="true"] { border-color: var(--module-accent, var(--a-teal)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--module-accent, var(--a-teal)) 20%, transparent), 0 9px 18px rgba(43, 92, 106, .14); transform: translateY(-3px); }
+    .a-module--template { --module-accent: var(--a-yellow); --module-line: #eedda8; }
+    .a-module--question { --module-accent: var(--a-teal); --module-line: #b7e2e7; }
+    .a-module--exam { --module-accent: var(--a-violet); --module-line: #d7cef4; }
+    .a-module__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+    .a-module__number { color: var(--module-accent); font-size: .6rem; font-weight: 950; letter-spacing: .12em; }
+    .a-module__icon { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 10px; color: #fff; background: var(--module-accent); font-size: .95rem; font-weight: 950; }
+    .a-module h4 { margin: 0 0 5px; font-size: 1rem; }
+    .a-module p { min-height: 34px; margin: 0 0 9px; color: var(--a-muted); font-size: .65rem; line-height: 1.4; }
+    .a-module__preview { display: grid; gap: 4px; margin-top: auto; padding: 7px; border-radius: 8px; background: #f5fafb; }
+    .a-module__row { display: flex; justify-content: space-between; gap: 7px; color: #6a8490; font-size: .61rem; }
+    .a-module__row strong { color: var(--module-accent); }
+    .a-module__footer { display: flex; align-items: end; justify-content: space-between; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e4eef0; }
+    .a-module__stat strong { display: block; color: var(--a-ink); font-size: .92rem; }
+    .a-module__stat span { color: var(--a-muted); font-size: .58rem; }
+    .a-module__cta { color: var(--module-accent); font-size: .62rem; font-weight: 950; white-space: nowrap; }
+    .a-detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr); gap: 12px; padding: 11px 12px; border: 1px solid #cfe3e7; border-radius: 11px; background: #f2f9fa; }
+    .a-detail__eyebrow { margin: 0 0 3px; color: var(--a-teal); font-size: .6rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+    .a-detail h3 { margin: 0 0 3px; font-size: .86rem; }
+    .a-detail p { margin: 0; color: var(--a-muted); font-size: .64rem; line-height: 1.4; }
+    .a-detail__actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; align-self: center; flex-wrap: wrap; }
+    .a-detail__actions button { min-height: 31px; padding: 0 9px; border-radius: 7px; font-size: .61rem; font-weight: 900; }
+    .a-primary { border: 1px solid var(--a-teal); color: #fff; background: var(--a-teal); }
+    .a-secondary { border: 1px solid #c6dce1; color: #607f8b; background: #fff; }
+
+    /* B — Bản đồ hành trình */
+    .variant-b-screen { position: relative; min-height: 585px; overflow: hidden; padding: 18px 22px 16px; border: 1px solid rgba(125, 199, 231, .35); border-radius: var(--radius-lg); background: linear-gradient(140deg, rgba(5, 20, 37, .91), rgba(9, 46, 63, .75)), url("../public/map_scifi_adventure_v2.webp") center / cover; box-shadow: 0 20px 50px rgba(0, 0, 0, .3); }
+    .variant-b-screen::before, .variant-b-screen::after { position: absolute; border: 1px solid rgba(85, 216, 239, .22); border-radius: 50%; content: ""; pointer-events: none; }
+    .variant-b-screen::before { top: -115px; right: 7%; width: 290px; height: 290px; }
+    .variant-b-screen::after { bottom: -155px; left: 14%; width: 360px; height: 360px; }
+    .b-top, .b-journey, .b-console { position: relative; z-index: 1; }
+    .b-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+    .b-top__left { display: flex; align-items: center; gap: 11px; }
+    .b-mascot { width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, .35)); }
+    .b-kicker { margin: 0 0 4px; color: #6cdbef; font-size: .63rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+    .b-top h2 { margin: 0 0 3px; color: #f5fbff; font-size: 1.45rem; letter-spacing: -.03em; }
+    .b-top p { margin: 0; color: #a5c8d7; font-size: .68rem; line-height: 1.4; }
+    .b-status { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid rgba(149, 220, 238, .28); border-radius: 999px; color: #d8f6ff; background: rgba(7, 35, 52, .62); font-size: .63rem; font-weight: 900; white-space: nowrap; }
+    .b-status__dot { width: 7px; height: 7px; border-radius: 50%; background: #68dda0; box-shadow: 0 0 9px rgba(104, 221, 160, .9); }
+    .b-journey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; max-width: 1090px; margin: 23px auto 19px; }
+    .b-journey::before { position: absolute; top: 98px; right: 13%; left: 13%; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #f7c85d, #55d8ef, #bf9aff); box-shadow: 0 0 14px rgba(85, 216, 239, .4); content: ""; opacity: .8; }
+    .b-stop { position: relative; z-index: 1; display: grid; align-content: start; min-height: 285px; padding: 13px; border: 2px solid var(--b-line, rgba(85, 216, 239, .36)); border-bottom: 6px solid var(--b-deep, #17637b); border-radius: 20px; color: #eefbff; background: var(--b-bg, rgba(9, 56, 77, .92)); text-align: left; box-shadow: 0 13px 24px rgba(0, 0, 0, .22); transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .b-stop:hover, .b-stop[aria-pressed="true"] { border-color: var(--b-accent, var(--cyan)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--b-accent, var(--cyan)) 35%, transparent), 0 17px 28px rgba(0, 0, 0, .3); transform: translateY(-7px); }
+    .b-stop--template { --b-accent: #f7c85d; --b-line: rgba(247, 200, 93, .6); --b-deep: #8f6317; --b-bg: linear-gradient(145deg, rgba(113, 72, 18, .94), rgba(28, 53, 58, .94)); }
+    .b-stop--question { --b-accent: #55d8ef; --b-line: rgba(85, 216, 239, .6); --b-deep: #147488; --b-bg: linear-gradient(145deg, rgba(11, 80, 91, .96), rgba(18, 54, 71, .94)); }
+    .b-stop--exam { --b-accent: #bf9aff; --b-line: rgba(191, 154, 255, .62); --b-deep: #674895; --b-bg: linear-gradient(145deg, rgba(79, 52, 123, .96), rgba(27, 46, 75, .94)); }
+    .b-stop__orbit { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 11px; color: var(--b-accent); font-size: .61rem; font-weight: 950; letter-spacing: .12em; }
+    .b-stop__orbit::after { width: 29px; height: 29px; border: 1px solid var(--b-accent); border-radius: 50%; content: "✦"; display: grid; place-items: center; font-size: .85rem; }
+    .b-stop__icon { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: 10px; border: 1px solid var(--b-accent); border-radius: 15px; color: #071421; background: var(--b-accent); font-size: 1.2rem; font-weight: 950; box-shadow: 0 5px 12px rgba(0, 0, 0, .2); }
+    .b-stop h3 { margin: 0 0 6px; font-size: 1.15rem; }
+    .b-stop p { min-height: 38px; margin: 0 0 10px; color: #c9e1e9; font-size: .67rem; line-height: 1.45; }
+    .b-stop__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+    .b-stop__chips span { padding: 4px 6px; border: 1px solid rgba(255, 255, 255, .19); border-radius: 999px; color: #e4f5fa; background: rgba(1, 13, 22, .27); font-size: .58rem; }
+    .b-stop__footer { display: flex; align-items: end; justify-content: space-between; gap: 8px; margin-top: 11px; padding-top: 9px; border-top: 1px solid rgba(255, 255, 255, .16); }
+    .b-stop__footer strong { display: block; color: #fff; font-size: .92rem; }
+    .b-stop__footer span { color: #b8d5df; font-size: .58rem; }
+    .b-stop__cta { color: var(--b-accent); font-size: .61rem; font-weight: 950; white-space: nowrap; }
+    .b-console { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; max-width: 1090px; margin: 0 auto; padding: 12px 14px; border: 1px solid rgba(129, 208, 229, .28); border-radius: 14px; background: rgba(5, 29, 45, .82); }
+    .b-console__kicker { margin: 0 0 3px; color: var(--b-detail-accent, #bf9aff); font-size: .59rem; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+    .b-console h3 { margin: 0 0 3px; color: #f6fdff; font-size: .9rem; }
+    .b-console p { margin: 0; color: #a9c6d2; font-size: .65rem; line-height: 1.4; }
+    .b-console__actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .b-console__actions button { min-height: 32px; padding: 0 10px; border-radius: 8px; font-size: .62rem; font-weight: 900; }
+    .b-primary { border: 1px solid var(--b-detail-accent, var(--cyan)); color: #071421; background: var(--b-detail-accent, var(--cyan)); }
+    .b-secondary { border: 1px solid rgba(170, 221, 235, .3); color: #c5e6f0; background: rgba(4, 19, 31, .64); }
+
+    /* C — Sổ tay giáo viên */
+    .variant-c-screen { min-height: 585px; padding: 15px 20px 18px; border: 1px solid #dfcda9; border-radius: var(--radius-lg); color: #40352e; background: #e8dcc3 radial-gradient(circle at 15% 10%, rgba(255, 255, 255, .8), transparent 25%), #e8dcc3; box-shadow: 0 20px 50px rgba(0, 0, 0, .24); }
+    .c-notebook { position: relative; min-height: 552px; overflow: hidden; border: 1px solid #d3bb90; border-radius: 12px; background: #fffdf6; box-shadow: 0 8px 20px rgba(105, 77, 35, .19); }
+    .c-notebook::before { position: absolute; top: 0; bottom: 0; left: 28px; width: 1px; background: #efb4a0; content: ""; opacity: .65; }
+    .c-cover { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 18px 22px 13px 50px; border-bottom: 1px solid #e6d7bb; background: linear-gradient(180deg, #fffef9, #fbf2df); }
+    .c-cover__title { display: flex; align-items: center; gap: 10px; }
+    .c-pencil { display: grid; width: 39px; height: 39px; place-items: center; border: 1px solid #d6a845; border-radius: 10px; color: #fff; background: #dda42a; font-size: 1.15rem; }
+    .c-cover__kicker { margin: 0 0 3px; color: #ba7a18; font-size: .59rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+    .c-cover h2 { margin: 0 0 3px; font-family: Georgia, serif; font-size: 1.48rem; letter-spacing: -.03em; }
+    .c-cover p { margin: 0; color: #826f5b; font-size: .67rem; }
+    .c-student-note { padding: 7px 9px; border: 1px dashed #d2bd95; border-radius: 8px; color: #846c4c; background: #fff9e8; font-size: .62rem; font-weight: 800; line-height: 1.35; }
+    .c-tabs { display: flex; gap: 7px; padding: 11px 22px 0 50px; border-bottom: 1px solid #eadfc9; background: #fffdf6; }
+    .c-tab { position: relative; bottom: -1px; padding: 9px 13px; border: 1px solid transparent; border-bottom: 0; border-radius: 9px 9px 0 0; color: #8d7860; background: transparent; font-size: .68rem; font-weight: 900; }
+    .c-tab:hover, .c-tab[aria-selected="true"] { border-color: #dfcda9; color: #4d3a2c; background: #fffaf0; }
+    .c-tab[aria-selected="true"]::after { position: absolute; right: 9px; bottom: -2px; left: 9px; height: 3px; border-radius: 999px; background: var(--c-accent, #dc951b); content: ""; }
+    .c-content { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 405px; }
+    .c-index { padding: 14px 13px 18px 50px; border-right: 1px solid #eee2ca; background: #fbf4e5; }
+    .c-index__heading { margin: 0 0 9px; color: #9d8060; font-size: .6rem; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+    .c-index__item { display: flex; align-items: center; gap: 7px; width: 100%; margin-bottom: 6px; padding: 7px; border: 1px solid transparent; border-radius: 7px; color: #826d58; background: transparent; text-align: left; font-size: .64rem; font-weight: 800; }
+    .c-index__item:hover { border-color: #ead6a8; background: #fff9e8; }
+    .c-index__item--active { border-color: #eccd80; color: #8d5b0f; background: #fff5d7; }
+    .c-index__number { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; color: #fff; background: #d9a32b; font-size: .58rem; }
+    .c-side-sticker { margin-top: 19px; padding: 10px; border: 1px solid #edc3b5; border-radius: 5px; color: #925b4b; background: #fff0e8; font-size: .62rem; line-height: 1.4; transform: rotate(-1deg); }
+    .c-editor { min-width: 0; padding: 15px 20px 17px 18px; background: #fffdf7; }
+    .c-editor__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+    .c-editor__kicker { margin: 0 0 3px; color: var(--c-accent, #dc951b); font-size: .6rem; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+    .c-editor h3 { margin: 0 0 3px; font-family: Georgia, serif; font-size: 1.2rem; }
+    .c-editor__head p { margin: 0; color: #8f7b65; font-size: .65rem; }
+    .c-edit-count { padding: 5px 7px; border: 1px solid #ead9b9; border-radius: 7px; color: #a37735; background: #fff8e5; font-size: .58rem; font-weight: 900; white-space: nowrap; }
+    .c-sticky-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 11px; }
+    .c-sticky { min-width: 0; min-height: 115px; padding: 10px; border: 1px solid var(--c-sticky-line, #e3c779); border-radius: 5px; color: #554638; background: var(--c-sticky-bg, #fff4be); box-shadow: 2px 4px 8px rgba(107, 80, 37, .12); text-align: left; transform: rotate(var(--c-tilt, -1deg)); transition: transform .18s, box-shadow .18s; }
+    .c-sticky:hover, .c-sticky[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--c-accent, #dc951b), 3px 7px 12px rgba(107, 80, 37, .16); transform: rotate(0) translateY(-3px); }
+    .c-sticky--yellow { --c-sticky-bg: #fff1af; --c-sticky-line: #e6cb71; --c-tilt: -1.2deg; }
+    .c-sticky--blue { --c-sticky-bg: #d9f2f5; --c-sticky-line: #9ed9de; --c-accent: #0b91ad; --c-tilt: 1deg; }
+    .c-sticky--pink { --c-sticky-bg: #ffe2d6; --c-sticky-line: #efb9a8; --c-accent: #d87558; --c-tilt: -.4deg; }
+    .c-sticky__top { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin-bottom: 8px; }
+    .c-sticky__top span { color: #9b7b46; font-size: .57rem; font-weight: 950; letter-spacing: .08em; }
+    .c-sticky__icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 7px; color: #fff; background: var(--c-accent, #d9a32b); font-size: .7rem; font-weight: 950; }
+    .c-sticky h4 { margin: 0 0 4px; font-family: Georgia, serif; font-size: .85rem; }
+    .c-sticky p { margin: 0; color: #7e6a55; font-size: .6rem; line-height: 1.4; }
+    .c-lines { display: grid; gap: 6px; padding: 10px; border: 1px solid #ebdfc8; border-radius: 8px; background: repeating-linear-gradient(180deg, #fffdf7 0, #fffdf7 21px, #f0e6d5 22px, #fffdf7 23px); }
+    .c-line { display: flex; align-items: center; justify-content: space-between; gap: 7px; color: #7d6956; font-size: .62rem; }
+    .c-line strong { color: var(--c-accent, #9b6b1c); }
+    .c-editor__actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 12px; }
+    .c-editor__actions button { min-height: 31px; padding: 0 10px; border-radius: 6px; font-size: .62rem; font-weight: 900; }
+    .c-primary { border: 1px solid #c88919; color: #fff; background: #d99b20; }
+    .c-secondary { border: 1px solid #ddc9a2; color: #856e53; background: #fffaf0; }
+
+    /* D — Phòng điều khiển Bento */
+    .variant-d-screen { min-height: 585px; padding: 15px; border: 1px solid rgba(139, 183, 213, .28); border-radius: var(--radius-lg); color: #ebf7ff; background: radial-gradient(circle at 85% 5%, rgba(46, 113, 151, .35), transparent 32%), #071421; box-shadow: 0 20px 50px rgba(0, 0, 0, .32); }
+    .d-shell { min-height: 552px; padding: 15px 17px 17px; border: 1px solid rgba(166, 215, 237, .2); border-radius: 16px; background: rgba(10, 28, 43, .88); }
+    .d-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .d-top__title { display: flex; align-items: center; gap: 10px; }
+    .d-logo { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid rgba(85, 216, 239, .65); border-radius: 10px; color: #071421; background: var(--cyan); font-weight: 950; }
+    .d-kicker { margin: 0 0 3px; color: #73c9de; font-size: .59rem; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
+    .d-top h2 { margin: 0 0 2px; font-size: 1.35rem; letter-spacing: -.03em; }
+    .d-top p { margin: 0; color: #8faebf; font-size: .64rem; }
+    .d-top__right { display: flex; align-items: center; gap: 7px; }
+    .d-filter { min-height: 30px; padding: 0 8px; border: 1px solid rgba(165, 214, 234, .2); border-radius: 7px; color: #c5e2ec; background: #071d2d; font-size: .63rem; }
+    .d-profile { display: flex; align-items: center; gap: 7px; padding: 4px 8px 4px 4px; border: 1px solid rgba(165, 214, 234, .2); border-radius: 999px; background: rgba(24, 61, 81, .45); }
+    .d-profile img { width: 25px; height: 25px; object-fit: contain; border-radius: 50%; background: #d8f1f6; }
+    .d-profile strong { display: block; font-size: .61rem; }
+    .d-profile span { display: block; margin-top: 1px; color: #8aa8b8; font-size: .53rem; }
+    .d-bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: minmax(36px, auto); gap: 9px; }
+    .d-card { min-width: 0; padding: 11px; border: 1px solid var(--d-line, rgba(150, 206, 228, .2)); border-radius: 13px; background: var(--d-bg, rgba(16, 45, 62, .75)); }
+    .d-card__label { margin: 0 0 6px; color: #83aebe; font-size: .57rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+    .d-card h3 { margin: 0 0 4px; font-size: .9rem; }
+    .d-card p { margin: 0; color: #9db8c5; font-size: .63rem; line-height: 1.4; }
+    .d-welcome { grid-column: span 7; min-height: 154px; border-color: rgba(85, 216, 239, .34); background: linear-gradient(140deg, rgba(15, 77, 94, .85), rgba(14, 44, 65, .8)); }
+    .d-welcome__main { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; align-items: center; }
+    .d-welcome h3 { margin-bottom: 6px; font-size: 1.16rem; }
+    .d-welcome p { max-width: 430px; margin-bottom: 10px; }
+    .d-welcome__button { min-height: 31px; padding: 0 10px; border: 1px solid var(--cyan); border-radius: 7px; color: #071421; background: var(--cyan); font-size: .62rem; font-weight: 950; }
+    .d-welcome__art { width: 112px; height: 112px; object-fit: contain; filter: drop-shadow(0 8px 13px rgba(0, 0, 0, .3)); }
+    .d-overview { grid-column: span 5; min-height: 154px; border-color: rgba(247, 200, 93, .3); background: rgba(79, 57, 17, .34); }
+    .d-metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 9px; }
+    .d-metric { padding: 8px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 8px; background: rgba(3, 16, 26, .28); }
+    .d-metric strong { display: block; color: #fff; font-size: 1.05rem; }
+    .d-metric span { display: block; margin-top: 2px; color: #b5c8d1; font-size: .55rem; }
+    .d-modules { grid-column: span 8; min-height: 255px; }
+    .d-module-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 9px; }
+    .d-module { display: grid; align-content: start; min-width: 0; min-height: 184px; padding: 9px; border: 1px solid var(--d-module-line, rgba(153, 211, 233, .2)); border-radius: 10px; color: #e6f7fc; background: var(--d-module-bg, rgba(10, 42, 58, .72)); text-align: left; transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .d-module:hover, .d-module[aria-pressed="true"] { border-color: var(--d-module-accent, var(--cyan)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--d-module-accent, var(--cyan)) 24%, transparent); transform: translateY(-3px); }
+    .d-module--template { --d-module-accent: #f7c85d; --d-module-line: rgba(247, 200, 93, .38); --d-module-bg: rgba(91, 65, 17, .36); }
+    .d-module--question { --d-module-accent: #55d8ef; --d-module-line: rgba(85, 216, 239, .38); --d-module-bg: rgba(11, 77, 89, .42); }
+    .d-module--exam { --d-module-accent: #bf9aff; --d-module-line: rgba(191, 154, 255, .38); --d-module-bg: rgba(67, 48, 103, .42); }
+    .d-module__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .d-module__icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: #071421; background: var(--d-module-accent); font-size: .75rem; font-weight: 950; }
+    .d-module__number { color: var(--d-module-accent); font-size: .57rem; font-weight: 950; }
+    .d-module h4 { margin: 0 0 4px; font-size: .79rem; }
+    .d-module p { min-height: 35px; margin: 0 0 8px; color: #a6c2ce; font-size: .58rem; line-height: 1.4; }
+    .d-module__list { display: grid; gap: 4px; margin-top: auto; padding-top: 7px; border-top: 1px solid rgba(255, 255, 255, .12); }
+    .d-module__row { display: flex; justify-content: space-between; gap: 5px; color: #aac4cf; font-size: .55rem; }
+    .d-module__row strong { color: var(--d-module-accent); }
+    .d-recent { grid-column: span 4; min-height: 255px; border-color: rgba(104, 221, 160, .3); background: rgba(23, 75, 52, .3); }
+    .d-recent-list { display: grid; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .d-recent-list li { display: grid; grid-template-columns: 25px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 6px; border: 1px solid rgba(255, 255, 255, .11); border-radius: 8px; background: rgba(2, 15, 24, .24); }
+    .d-recent-list__icon { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 7px; color: #062018; background: #6cdda0; font-size: .65rem; font-weight: 950; }
+    .d-recent-list strong { display: block; overflow: hidden; color: #e1f7eb; text-overflow: ellipsis; white-space: nowrap; font-size: .58rem; }
+    .d-recent-list span { display: block; margin-top: 2px; color: #9ec0ad; font-size: .52rem; }
+    .d-recent-list__status { color: #82e5a8 !important; font-weight: 950; white-space: nowrap; }
+    .d-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; border: 1px solid rgba(166, 215, 237, .16); border-radius: 10px; background: rgba(7, 25, 39, .7); }
+    .d-footer p { margin: 0; color: #99b5c3; font-size: .6rem; }
+    .d-footer strong { color: #dff8ff; }
+    .d-footer__actions { display: flex; gap: 6px; }
+    .d-footer button { min-height: 29px; padding: 0 9px; border-radius: 7px; font-size: .59rem; font-weight: 900; }
+    .d-primary { border: 1px solid var(--violet); color: #071421; background: var(--violet); }
+    .d-secondary { border: 1px solid rgba(166, 215, 237, .25); color: #c3e1eb; background: rgba(3, 16, 26, .6); }
+
+    @media (max-width: 1120px) {
+      .gallery-page { width: calc(100% - 1rem); }
+      .a-layout { grid-template-columns: 190px minmax(0, 1fr); }
+      .a-main { padding-inline: 14px; }
+      .a-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .a-module-grid { gap: 7px; }
+      .b-journey { gap: 12px; }
+      .b-stop { padding: 11px; }
+      .c-content { grid-template-columns: 190px minmax(0, 1fr); }
+      .c-index { padding-left: 36px; }
+      .d-shell { padding-inline: 12px; }
+    }
+
+    @media (max-width: 820px) {
+      body { min-width: 0; }
+      .gallery-header { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .variant-switcher { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .a-layout { grid-template-columns: 1fr; }
+      .a-rail { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-right: 0; border-bottom: 1px solid #d8e8eb; }
+      .a-back, .a-nav, .a-rail-spacer, .a-rail-note { display: none; }
+      .a-module-grid, .b-journey, .c-sticky-grid, .d-module-grid { grid-template-columns: 1fr; }
+      .b-journey::before { display: none; }
+      .b-journey { margin-top: 12px; }
+      .b-stop { min-height: 190px; }
+      .c-content, .a-detail, .b-console { grid-template-columns: 1fr; }
+      .c-index { display: none; }
+      .c-cover { padding-left: 25px; }
+      .c-tabs { padding-left: 25px; }
+      .c-notebook::before { display: none; }
+      .d-welcome, .d-overview, .d-modules, .d-recent { grid-column: 1 / -1; }
+      .d-bento { display: grid; grid-template-columns: 1fr; }
+      .d-footer { grid-column: 1 / -1; align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="gallery-page">
+    <header class="gallery-header">
+      <div>
+        <p class="gallery-kicker">Mockup review · Admin only</p>
+        <h1>Soạn Đề — 4 hướng giao diện</h1>
+        <p>Bốn cách tổ chức cùng một ý tưởng: ba khu vực Template, Câu Hỏi và Đề Kiểm Tra được trình bày bằng các ô trực quan. Học sinh vẫn giữ trạm <strong>Luyện Đề</strong> riêng.</p>
+      </div>
+      <span class="gallery-badge">Chưa nối production</span>
+    </header>
+
+    <div class="variant-switcher" role="tablist" aria-label="Chọn hướng giao diện để xem">
+      <button class="variant-tab" type="button" role="tab" aria-selected="true" aria-controls="variant-a" data-variant-tab="a">
+        <span class="variant-tab__letter">A</span><span><strong>Bảng điều khiển sáng</strong><span>Rõ ràng · thực dụng</span></span>
+      </button>
+      <button class="variant-tab" type="button" role="tab" aria-selected="false" aria-controls="variant-b" data-variant-tab="b">
+        <span class="variant-tab__letter">B</span><span><strong>Bản đồ hành trình</strong><span>Game hóa · giàu cảm xúc</span></span>
+      </button>
+      <button class="variant-tab" type="button" role="tab" aria-selected="false" aria-controls="variant-c" data-variant-tab="c">
+        <span class="variant-tab__letter">C</span><span><strong>Sổ tay giáo viên</strong><span>Ấm áp · dễ biên tập</span></span>
+      </button>
+      <button class="variant-tab" type="button" role="tab" aria-selected="false" aria-controls="variant-d" data-variant-tab="d">
+        <span class="variant-tab__letter">D</span><span><strong>Phòng điều khiển</strong><span>Dữ liệu · kho lớn</span></span>
+      </button>
+    </div>
+
+    <section class="variant-view is-active" id="variant-a" role="tabpanel" aria-label="Hướng A · Bảng điều khiển sáng" data-variant-view="a">
+      <div class="view-caption"><strong>A — Bảng điều khiển sáng</strong><span>Ưu tiên tốc độ quét và thao tác hằng ngày của giáo viên.</span></div>
+      <div class="variant-a-screen">
+        <div class="a-layout">
+          <aside class="a-rail" aria-label="Thanh điều hướng hướng A">
+            <div class="a-brand"><span class="a-brand-mark" aria-hidden="true">✦</span><span><strong>SOẠN ĐỀ</strong><span>Khu vực Admin</span></span></div>
+            <button class="a-back" type="button" data-toast="Prototype: nút Về bản đồ sẽ nối với router ở bước triển khai.">← Về bản đồ</button>
+            <nav class="a-nav" aria-label="Luồng soạn đề hướng A">
+              <p class="a-nav__heading">Luồng soạn đề</p>
+              <button class="a-nav__item a-nav__item--active" type="button"><span class="a-nav__dot" aria-hidden="true"></span>Chọn khu vực</button>
+              <button class="a-nav__item" type="button" data-toast="Prototype: bước Biên tập nội dung sẽ mở sau khi chọn khu vực."><span class="a-nav__dot" aria-hidden="true"></span>Biên tập nội dung</button>
+              <button class="a-nav__item" type="button" data-toast="Prototype: bước Rà soát & lưu sẽ mở ở màn hình tiếp theo."><span class="a-nav__dot" aria-hidden="true"></span>Rà soát & lưu</button>
+            </nav>
+            <div class="a-rail-spacer"></div>
+            <div class="a-rail-note"><strong>Phân quyền rõ ràng</strong>Chỉ Admin thấy màn hình này. Học sinh tiếp tục dùng Luyện Đề.</div>
+          </aside>
+
+          <div class="a-main">
+            <div class="a-main-head">
+              <div><p class="a-breadcrumb">Bản đồ / Không gian Admin</p><h2>Soạn Đề</h2><p>Chọn khu vực muốn làm việc. Không cần làm thử đề — chỉ tập trung tạo nội dung cho học sinh.</p></div>
+              <div class="a-profile"><img src="../public/avatar-teacher-female.png" alt=""><span><strong>Cô giáo Minh</strong><span>Quản trị viên</span></span></div>
+            </div>
+            <div class="a-context" aria-label="Ngữ cảnh soạn đề hướng A">
+              <label for="a-grade">Cấp lớp<select id="a-grade"><option>Lớp 5</option><option>Lớp 4</option></select></label>
+              <label for="a-subject">Môn học<select id="a-subject"><option>Toán</option><option>Tiếng Việt</option></select></label>
+              <label for="a-period">Kỳ kiểm tra<select id="a-period"><option>Giữa kỳ 1</option><option>Cuối kỳ 1</option></select></label>
+              <label for="a-search">Tìm nhanh<input id="a-search" type="search" placeholder="Tên template, câu hỏi, đề…"></label>
+            </div>
+            <div class="a-section-head"><div><h3>Bạn muốn soạn phần nào?</h3><p>Chạm vào một ô để xem các thao tác chính.</p></div><span class="a-section-count">03 khu vực độc lập</span></div>
+            <div class="a-module-grid" data-module-group="a" data-detail-title="a-detail-title" data-detail-copy="a-detail-copy" data-detail-kicker="a-detail-kicker" data-detail-action="a-detail-action">
+              <button class="a-module a-module--template" type="button" aria-pressed="false" data-module-title="Template" data-module-kicker="Đang chọn · Mẫu sinh câu" data-module-copy="Lọc và chỉnh các bộ khung sinh câu theo khối, môn, chủ đề và bài học." data-module-action="Thêm template">
+                <span class="a-module__top"><span class="a-module__number">01 · MẪU SINH CÂU</span><span class="a-module__icon" aria-hidden="true">T</span></span><h4>Template</h4><p>Quản lý cấu trúc để hệ thống sinh câu hỏi đúng ý cô.</p>
+                <span class="a-module__preview" aria-hidden="true"><span class="a-module__row"><span>Trắc nghiệm</span><strong>12 mẫu</strong></span><span class="a-module__row"><span>Điền khuyết</span><strong>08 mẫu</strong></span><span class="a-module__row"><span>Kéo thả</span><strong>06 mẫu</strong></span></span>
+                <span class="a-module__footer"><span class="a-module__stat"><strong>36</strong><span>mẫu đang dùng</span></span><span class="a-module__cta">Mở kho →</span></span>
+              </button>
+              <button class="a-module a-module--question" type="button" aria-pressed="false" data-module-title="Câu Hỏi" data-module-kicker="Đang chọn · Ngân hàng nội dung" data-module-copy="Tạo, tìm, lọc và đưa câu hỏi vào đề bằng các thẻ nội dung dễ quét." data-module-action="Tạo câu hỏi">
+                <span class="a-module__top"><span class="a-module__number">02 · NGÂN HÀNG NỘI DUNG</span><span class="a-module__icon" aria-hidden="true">Q</span></span><h4>Câu Hỏi</h4><p>Kho câu hỏi có thể lọc theo chủ đề, loại câu và trạng thái lời giải.</p>
+                <span class="a-module__preview" aria-hidden="true"><span class="a-module__row"><span>Chủ đề đã chọn</span><strong>06</strong></span><span class="a-module__row"><span>Câu có lời giải</span><strong>84%</strong></span><span class="a-module__row"><span>Câu cần rà soát</span><strong>09</strong></span></span>
+                <span class="a-module__footer"><span class="a-module__stat"><strong>142</strong><span>câu trong kho</span></span><span class="a-module__cta">Mở kho →</span></span>
+              </button>
+              <button class="a-module a-module--exam" type="button" aria-pressed="true" data-module-title="Đề Kiểm Tra" data-module-kicker="Đang chọn · Bộ đề hoàn chỉnh" data-module-copy="Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh làm bài." data-module-action="Tạo đề mới">
+                <span class="a-module__top"><span class="a-module__number">03 · BỘ ĐỀ HOÀN CHỈNH</span><span class="a-module__icon" aria-hidden="true">Đ</span></span><h4>Đề Kiểm Tra</h4><p>Đi từ đề trống, đề có sẵn hoặc tạo tự động theo ngữ cảnh.</p>
+                <span class="a-module__preview" aria-hidden="true"><span class="a-module__row"><span>Đề đang soạn</span><strong>03</strong></span><span class="a-module__row"><span>Đủ 10 câu</span><strong>15</strong></span><span class="a-module__row"><span>Đã sẵn sàng</span><strong>10</strong></span></span>
+                <span class="a-module__footer"><span class="a-module__stat"><strong>18</strong><span>đề đã soạn</span></span><span class="a-module__cta">Mở kho →</span></span>
+              </button>
+            </div>
+            <div class="a-detail"><div><p class="a-detail__eyebrow" id="a-detail-kicker">Đang chọn · Bộ đề hoàn chỉnh</p><h3 id="a-detail-title">Đề Kiểm Tra</h3><p id="a-detail-copy">Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh làm bài.</p></div><div class="a-detail__actions"><button class="a-primary" id="a-detail-action" type="button" data-toast="Prototype: sẽ mở màn hình biên tập Đề Kiểm Tra.">Tạo đề mới</button><button class="a-secondary" type="button" data-toast="Prototype: sẽ mở toàn bộ kho Đề Kiểm Tra.">Xem kho</button></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="prototype-note"><strong>Điểm mạnh:</strong> dễ hiểu ngay lần đầu, ít “trang trí” gây nhiễu, hợp với Admin thao tác thường xuyên. <strong>Lưu ý:</strong> cảm xúc game nhẹ hơn các hướng còn lại.</p>
+    </section>
+
+    <section class="variant-view" id="variant-b" role="tabpanel" aria-label="Hướng B · Bản đồ hành trình" data-variant-view="b" hidden>
+      <div class="view-caption"><strong>B — Bản đồ hành trình</strong><span>Giữ chất game rõ nhất: mỗi khu vực là một trạm để bước vào.</span></div>
+      <div class="variant-b-screen">
+        <header class="b-top">
+          <div class="b-top__left"><img class="b-mascot" src="../public/robot_cat_normal.webp" alt="Robot mèo thám hiểm"><div><p class="b-kicker">Bản đồ Admin · Chọn trạm</p><h2>Soạn Đề</h2><p>Ba trạm nội dung, một hành trình gọn gàng để chuẩn bị đề cho học sinh.</p></div></div>
+          <div class="b-status"><span class="b-status__dot" aria-hidden="true"></span>Admin · Lớp 5 · Toán</div>
+        </header>
+        <div class="b-journey" data-module-group="b" data-detail-title="b-detail-title" data-detail-copy="b-detail-copy" data-detail-kicker="b-detail-kicker" data-detail-action="b-detail-action">
+          <button class="b-stop b-stop--template" type="button" aria-pressed="false" data-module-title="Template" data-module-kicker="Trạm 01 · Mẫu sinh câu" data-module-copy="Chọn khung câu hỏi phù hợp rồi tinh chỉnh nhanh theo chủ đề và bài học." data-module-action="Vào trạm Template">
+            <span class="b-stop__orbit">TRẠM 01</span><span class="b-stop__icon" aria-hidden="true">T</span><h3>Template</h3><p>Những bộ khung giúp tạo câu hỏi đồng đều và nhanh hơn.</p><span class="b-stop__chips"><span>36 mẫu</span><span>6 dạng câu</span></span><span class="b-stop__footer"><span><strong>12</strong><span>mẫu nổi bật</span></span><span class="b-stop__cta">Khám phá →</span></span>
+          </button>
+          <button class="b-stop b-stop--question" type="button" aria-pressed="false" data-module-title="Câu Hỏi" data-module-kicker="Trạm 02 · Ngân hàng nội dung" data-module-copy="Mở kho câu hỏi, lọc theo chủ đề và đưa thẳng các câu phù hợp vào đề." data-module-action="Vào trạm Câu Hỏi">
+            <span class="b-stop__orbit">TRẠM 02</span><span class="b-stop__icon" aria-hidden="true">Q</span><h3>Câu Hỏi</h3><p>Tìm đúng nội dung cần dùng qua các thẻ màu và trạng thái rõ ràng.</p><span class="b-stop__chips"><span>142 câu</span><span>84% có lời giải</span></span><span class="b-stop__footer"><span><strong>06</strong><span>chủ đề đang chọn</span></span><span class="b-stop__cta">Khám phá →</span></span>
+          </button>
+          <button class="b-stop b-stop--exam" type="button" aria-pressed="true" data-module-title="Đề Kiểm Tra" data-module-kicker="Trạm 03 · Bộ đề hoàn chỉnh" data-module-copy="Bắt đầu từ đề trống hoặc để hệ thống ghép đủ 10 câu theo ngữ cảnh đã chọn." data-module-action="Vào trạm Đề Kiểm Tra">
+            <span class="b-stop__orbit">TRẠM 03</span><span class="b-stop__icon" aria-hidden="true">Đ</span><h3>Đề Kiểm Tra</h3><p>Hoàn thiện đề, xem trước và chuẩn bị sẵn sàng giao bài.</p><span class="b-stop__chips"><span>18 đề</span><span>10 câu / đề</span></span><span class="b-stop__footer"><span><strong>03</strong><span>đề đang soạn</span></span><span class="b-stop__cta">Khám phá →</span></span>
+          </button>
+        </div>
+        <div class="b-console" style="--b-detail-accent: var(--violet);"><div><p class="b-console__kicker" id="b-detail-kicker">Trạm 03 · Bộ đề hoàn chỉnh</p><h3 id="b-detail-title">Đề Kiểm Tra</h3><p id="b-detail-copy">Bắt đầu từ đề trống hoặc để hệ thống ghép đủ 10 câu theo ngữ cảnh đã chọn.</p></div><div class="b-console__actions"><button class="b-primary" id="b-detail-action" type="button" data-toast="Prototype: sẽ mở trạm Đề Kiểm Tra.">Vào trạm</button><button class="b-secondary" type="button" data-toast="Prototype: sẽ mở bảng hướng dẫn cho Admin.">Xem hướng dẫn</button></div></div>
+      </div>
+      <p class="prototype-note"><strong>Điểm mạnh:</strong> gần tinh thần bản đồ/chủ đề đang có, dễ tạo cảm giác “đi vào một khu vực”. <strong>Lưu ý:</strong> nếu kho dữ liệu lớn, cần giữ bộ lọc và tìm kiếm thật nổi bật ở bước sau.</p>
+    </section>
+
+    <section class="variant-view" id="variant-c" role="tabpanel" aria-label="Hướng C · Sổ tay giáo viên" data-variant-view="c" hidden>
+      <div class="view-caption"><strong>C — Sổ tay giáo viên</strong><span>Ấm áp và thân thiện, nhấn vào cảm giác đang mở một cuốn sổ soạn bài.</span></div>
+      <div class="variant-c-screen">
+        <div class="c-notebook">
+          <header class="c-cover"><div class="c-cover__title"><span class="c-pencil" aria-hidden="true">✎</span><div><p class="c-cover__kicker">Sổ tay quản trị nội dung</p><h2>Soạn Đề</h2><p>Lớp 5 · Toán · Giữa kỳ 1</p></div></div><div class="c-student-note">Admin soạn nội dung<br><strong>Học sinh vẫn dùng Luyện Đề</strong></div></header>
+          <div class="c-tabs" role="tablist" aria-label="Ba khu vực trong sổ tay" data-module-group="c" data-detail-title="c-detail-title" data-detail-copy="c-detail-copy" data-detail-kicker="c-detail-kicker" data-detail-action="c-detail-action">
+            <button class="c-tab" type="button" role="tab" aria-selected="true" data-module-title="Template" data-module-kicker="Mục đang mở · Template" data-module-copy="Lọc, xem trước và nhân bản cấu hình mẫu sinh câu theo ngữ cảnh." data-module-action="Thêm template">Template</button>
+            <button class="c-tab" type="button" role="tab" aria-selected="false" data-module-title="Câu Hỏi" data-module-kicker="Mục đang mở · Câu Hỏi" data-module-copy="Tạo và gom câu hỏi vào kho, sau đó chọn câu phù hợp để đưa vào đề." data-module-action="Tạo câu hỏi">Câu Hỏi</button>
+            <button class="c-tab" type="button" role="tab" aria-selected="false" data-module-title="Đề Kiểm Tra" data-module-kicker="Mục đang mở · Đề Kiểm Tra" data-module-copy="Soạn đề hoàn chỉnh, xem trước và chuẩn bị giao bài cho học sinh." data-module-action="Tạo đề mới">Đề Kiểm Tra</button>
+          </div>
+          <div class="c-content">
+            <aside class="c-index" aria-label="Mục lục sổ tay"><p class="c-index__heading">Mục lục nhanh</p><button class="c-index__item c-index__item--active" type="button"><span class="c-index__number">1</span>Thông tin chung</button><button class="c-index__item" type="button"><span class="c-index__number">2</span>Chủ đề & bài học</button><button class="c-index__item" type="button"><span class="c-index__number">3</span>Nội dung câu hỏi</button><button class="c-index__item" type="button"><span class="c-index__number">4</span>Rà soát & lưu</button><div class="c-side-sticker">Gợi ý nhỏ<br>Chọn đúng ngữ cảnh trước, các kho sẽ tự lọc nội dung phù hợp.</div></aside>
+            <section class="c-editor" style="--c-accent: #dc951b;" aria-label="Nội dung đang mở"><div class="c-editor__head"><div><p class="c-editor__kicker" id="c-detail-kicker">Mục đang mở · Template</p><h3 id="c-detail-title">Template</h3><p id="c-detail-copy">Lọc, xem trước và nhân bản cấu hình mẫu sinh câu theo ngữ cảnh.</p></div><span class="c-edit-count">36 mẫu</span></div><div class="c-sticky-grid"><button class="c-sticky c-sticky--yellow" type="button" aria-pressed="true"><span class="c-sticky__top"><span>GỢI Ý 01</span><span class="c-sticky__icon" aria-hidden="true">T</span></span><h4>Khung câu cơ bản</h4><p>Trắc nghiệm · 12 mẫu đang dùng</p></button><button class="c-sticky c-sticky--blue" type="button" aria-pressed="false"><span class="c-sticky__top"><span>GỢI Ý 02</span><span class="c-sticky__icon" aria-hidden="true">Q</span></span><h4>Câu hỏi theo bài</h4><p>Gắn với chủ đề và bài học lớp 5</p></button><button class="c-sticky c-sticky--pink" type="button" aria-pressed="false"><span class="c-sticky__top"><span>GỢI Ý 03</span><span class="c-sticky__icon" aria-hidden="true">✦</span></span><h4>Mẫu cần rà soát</h4><p>09 mẫu đang chờ kiểm tra</p></button></div><div class="c-lines" aria-label="Tóm tắt dữ liệu"><div class="c-line"><span>Chủ đề hiện tại</span><strong>Phân số</strong></div><div class="c-line"><span>Loại câu hỏi</span><strong>Trắc nghiệm</strong></div><div class="c-line"><span>Chỉnh sửa gần nhất</span><strong>Hôm nay, 09:30</strong></div></div><div class="c-editor__actions"><button class="c-secondary" type="button" data-toast="Prototype: sẽ mở danh sách trong mục đang chọn.">Xem danh sách</button><button class="c-primary" id="c-detail-action" type="button" data-toast="Prototype: sẽ mở màn hình biên tập mục đang chọn.">Thêm template</button></div></section>
+          </div>
+        </div>
+      </div>
+      <p class="prototype-note"><strong>Điểm mạnh:</strong> hợp với vai trò giáo viên, chữ dễ đọc và cảm giác biên tập rõ. <strong>Lưu ý:</strong> cần cân màu để vẫn hòa với chất sci-fi của game hiện tại.</p>
+    </section>
+
+    <section class="variant-view" id="variant-d" role="tabpanel" aria-label="Hướng D · Phòng điều khiển Bento" data-variant-view="d" hidden>
+      <div class="view-caption"><strong>D — Phòng điều khiển Bento</strong><span>Hiển thị nhiều trạng thái hơn, phù hợp Admin quản lý kho nội dung lớn.</span></div>
+      <div class="variant-d-screen">
+        <div class="d-shell">
+          <header class="d-top"><div class="d-top__title"><span class="d-logo" aria-hidden="true">✦</span><div><p class="d-kicker">Admin workspace · Soạn Đề</p><h2>Phòng điều khiển</h2><p>Chọn một vùng để tạo, kiểm tra hoặc chuẩn bị nội dung.</p></div></div><div class="d-top__right"><select class="d-filter" aria-label="Lọc cấp lớp"><option>Lớp 5</option><option>Lớp 4</option></select><div class="d-profile"><img src="../public/avatar-teacher-female.png" alt=""><span><strong>Cô giáo Minh</strong><span>Quản trị viên</span></span></div></div></header>
+          <div class="d-bento">
+            <section class="d-card d-welcome"><p class="d-card__label">Bắt đầu nhanh</p><div class="d-welcome__main"><div><h3>Hôm nay cô muốn làm gì?</h3><p>Chọn khu vực bên dưới để mở kho nội dung. Mọi thao tác đều dành cho việc soạn — học sinh vẫn làm bài ở trạm Luyện Đề.</p><button class="d-welcome__button" type="button" data-toast="Prototype: sẽ mở luồng soạn theo lựa chọn gần nhất.">Tiếp tục lần trước →</button></div><img class="d-welcome__art" src="../public/robot_cat_normal.webp" alt=""></div></section>
+            <section class="d-card d-overview"><p class="d-card__label">Tổng quan kho</p><h3>Toàn bộ nội dung</h3><div class="d-metric-grid"><div class="d-metric"><strong>36</strong><span>Template</span></div><div class="d-metric"><strong>142</strong><span>Câu hỏi</span></div><div class="d-metric"><strong>18</strong><span>Đề kiểm tra</span></div></div></section>
+            <section class="d-card d-modules"><p class="d-card__label">Ba khu vực soạn đề</p><h3>Chọn không gian làm việc</h3><div class="d-module-grid" data-module-group="d" data-detail-title="d-detail-title" data-detail-copy="d-detail-copy" data-detail-kicker="d-detail-kicker" data-detail-action="d-detail-action"><button class="d-module d-module--template" type="button" aria-pressed="false" data-module-title="Template" data-module-kicker="Không gian · Template" data-module-copy="Lọc, xem trước và nhân bản các bộ khung sinh câu." data-module-action="Mở Template"><span class="d-module__top"><span class="d-module__icon" aria-hidden="true">T</span><span class="d-module__number">01</span></span><h4>Template</h4><p>Khung sinh câu theo lớp, môn, chủ đề và bài học.</p><span class="d-module__list"><span class="d-module__row"><span>Đang dùng</span><strong>36</strong></span><span class="d-module__row"><span>Cần rà soát</span><strong>04</strong></span></span></button><button class="d-module d-module--question" type="button" aria-pressed="false" data-module-title="Câu Hỏi" data-module-kicker="Không gian · Câu Hỏi" data-module-copy="Tạo, tìm và đưa câu hỏi vào đề từ một kho nội dung có cấu trúc." data-module-action="Mở Câu Hỏi"><span class="d-module__top"><span class="d-module__icon" aria-hidden="true">Q</span><span class="d-module__number">02</span></span><h4>Câu Hỏi</h4><p>Thẻ câu hỏi với chủ đề, loại câu và trạng thái lời giải.</p><span class="d-module__list"><span class="d-module__row"><span>Có lời giải</span><strong>84%</strong></span><span class="d-module__row"><span>Đang chọn</span><strong>06</strong></span></span></button><button class="d-module d-module--exam" type="button" aria-pressed="true" data-module-title="Đề Kiểm Tra" data-module-kicker="Không gian · Đề Kiểm Tra" data-module-copy="Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh." data-module-action="Mở Đề Kiểm Tra"><span class="d-module__top"><span class="d-module__icon" aria-hidden="true">Đ</span><span class="d-module__number">03</span></span><h4>Đề Kiểm Tra</h4><p>Đề mới, đề đang soạn và đề đã sẵn sàng giao bài.</p><span class="d-module__list"><span class="d-module__row"><span>Đang soạn</span><strong>03</strong></span><span class="d-module__row"><span>Đã sẵn sàng</span><strong>10</strong></span></span></button></div></section>
+            <section class="d-card d-recent"><p class="d-card__label">Hoạt động gần đây</p><h3>Tiếp tục công việc</h3><ul class="d-recent-list"><li><span class="d-recent-list__icon" aria-hidden="true">Đ</span><span><strong>Đề giữa kỳ 1 · Toán</strong><span>03/10 câu đã hoàn thiện</span></span><span class="d-recent-list__status">Mở</span></li><li><span class="d-recent-list__icon" aria-hidden="true">Q</span><span><strong>Phân số · Câu hỏi</strong><span>Đã cập nhật hôm nay</span></span><span class="d-recent-list__status">Mở</span></li><li><span class="d-recent-list__icon" aria-hidden="true">T</span><span><strong>Mẫu điền khuyết</strong><span>Chờ rà soát</span></span><span class="d-recent-list__status">Xem</span></li></ul></section>
+            <footer class="d-footer"><p id="d-detail-kicker"><strong>Đang chọn:</strong> Không gian · Đề Kiểm Tra</p><p id="d-detail-title" hidden>Đề Kiểm Tra</p><p id="d-detail-copy" hidden>Soạn, chỉnh sửa, xem trước và chuẩn bị đề để giao cho học sinh.</p><div class="d-footer__actions"><button class="d-secondary" type="button" data-toast="Prototype: sẽ mở bảng xem trước.">Xem nhanh</button><button class="d-primary" id="d-detail-action" type="button" data-toast="Prototype: sẽ mở không gian đang chọn.">Mở Đề Kiểm Tra</button></div></footer>
+          </div>
+        </div>
+      </div>
+      <p class="prototype-note"><strong>Điểm mạnh:</strong> Admin nhìn được tổng quan kho và việc đang dở dang ngay một màn hình. <strong>Lưu ý:</strong> mật độ thông tin cao hơn, nên cần dữ liệu thật để cân ưu tiên.</p>
+    </section>
+
+    <div class="prototype-toast" id="prototype-toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const variantTabs = [...document.querySelectorAll("[data-variant-tab]")];
+    const variantViews = [...document.querySelectorAll("[data-variant-view]")];
+    const toast = document.getElementById("prototype-toast");
+    let toastTimer;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+    }
+
+    function activateVariant(key, focusTab = false) {
+      variantTabs.forEach(tab => {
+        const active = tab.dataset.variantTab === key;
+        tab.setAttribute("aria-selected", String(active));
+        if (active && focusTab) tab.focus();
+      });
+      variantViews.forEach(view => {
+        const active = view.dataset.variantView === key;
+        view.classList.toggle("is-active", active);
+        view.hidden = !active;
+      });
+    }
+
+    variantTabs.forEach(tab => {
+      tab.addEventListener("click", () => activateVariant(tab.dataset.variantTab));
+      tab.addEventListener("keydown", event => {
+        if (!["ArrowRight", "ArrowLeft"].includes(event.key)) return;
+        event.preventDefault();
+        const offset = event.key === "ArrowRight" ? 1 : -1;
+        const next = variantTabs[(variantTabs.indexOf(tab) + offset + variantTabs.length) % variantTabs.length];
+        activateVariant(next.dataset.variantTab, true);
+      });
+    });
+
+    document.querySelectorAll("[data-module-group]").forEach(group => {
+      const cards = [...group.querySelectorAll("[data-module-title]")];
+      const detailTitle = document.getElementById(group.dataset.detailTitle);
+      const detailCopy = document.getElementById(group.dataset.detailCopy);
+      const detailKicker = document.getElementById(group.dataset.detailKicker);
+      const detailAction = document.getElementById(group.dataset.detailAction);
+      cards.forEach(card => {
+        card.addEventListener("click", () => {
+          cards.forEach(item => {
+            const selected = item === card;
+            item.setAttribute("aria-pressed", String(selected));
+            if (item.getAttribute("role") === "tab") {
+              item.setAttribute("aria-selected", String(selected));
+              item.removeAttribute("aria-pressed");
+            } else {
+              item.setAttribute("aria-pressed", String(selected));
+            }
+          });
+          if (detailTitle) detailTitle.textContent = card.dataset.moduleTitle;
+          if (detailCopy) detailCopy.textContent = card.dataset.moduleCopy;
+          if (detailKicker) detailKicker.textContent = card.dataset.moduleKicker;
+          if (detailAction) detailAction.textContent = card.dataset.moduleAction;
+        });
+      });
+    });
+
+    document.querySelectorAll("[data-toast]").forEach(button => {
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        showToast(button.dataset.toast);
+      });
+    });
+  </script>
+</body>
+</html>

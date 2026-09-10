@@ -99,3 +99,29 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [ ] Không xoá vật lý Template cũ trong rebuild đầu.
 - [ ] Không đổi RLS/API key hoặc mở quyền `anon`.
 - [ ] Không merge `main` trước khi người dùng yêu cầu và test/checkpoint đạt.
+
+---
+
+## Lộ trình hoàn thiện game — chỉ gọi “bước N”
+
+> Mapping chi tiết ở cuối `tasks/plan.md`. Các mục dưới đây là checklist điều
+> phối; mỗi bước chỉ được đánh dấu x sau khi acceptance criteria và verification
+> tương ứng đã đạt.
+
+- [x] **Bước 1:** Hardening RLS hồ sơ; test student không tự sửa field đặc quyền (đã apply và hậu kiểm trên Supabase production project `bjgbbrufnryrtimtzvhn`).
+- [x] **Bước 2:** Tách đường ghi điểm/hồ sơ; client không gửi nguyên profile (event RPC có khóa hàng, idempotency, validation và rollback transaction; đã apply migration và hậu kiểm 6/6 trên Supabase production project `bjgbbrufnryrtimtzvhn`).
+- [ ] **Bước 3:** Accessibility auth/modal; label, keyboard, focus trap, inert nền.
+- [ ] **Bước 4:** Chuẩn hóa select/combobox dữ liệu chính xác và fixture audit.
+- [ ] **Bước 5:** Tối ưu asset/query; projection, pagination, lazy-load và số đo.
+- [ ] **Bước 6:** Cleanup listener/timer/realtime lifecycle.
+- [ ] **Bước 7:** Đồng nhất UI cũ theo design token và state chuẩn.
+- [ ] **Bước 8:** Content QA, full regression, review và release gate trước merge.
+
+### Quy ước gọi bước
+
+- “**Bước 1**” = chỉ làm hardening RLS + test của Bước 1.
+- “**Bước 5**” = chỉ làm performance/query/asset của Bước 5.
+- Nếu bước phụ thuộc bước trước, Codex sẽ báo rõ phần dependency còn thiếu và
+  không tự đánh dấu bước hoàn tất.
+- Không có push/merge hoặc thay đổi production ngoài phạm vi bước nếu người dùng
+  chưa yêu cầu/cho phép rõ ràng.

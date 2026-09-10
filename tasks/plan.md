@@ -228,3 +228,151 @@ seed Phase 3 vào Supabase live.
 - Không apply migration/seed vào Supabase production nếu chưa xác nhận đúng project và quyền.
 - Không xoá vật lý record cũ trong rebuild đầu.
 - Không suy diễn nội dung HK2 từ HK1 hoặc chỉ từ tên bài trong `constants.js`.
+
+---
+
+# Lộ trình hoàn thiện game — mã bước cố định
+
+Đây là lộ trình tiếp nối audit UI/code ngày 10/09/2026. Khi người dùng nói
+**“bước N”**, thực hiện đúng bước N dưới đây, không tự mở rộng sang bước khác.
+Mỗi bước phải giữ hồi quy xanh trước khi chuyển bước tiếp theo. Kimi mặc định
+bỏ qua theo `docs/AI_WORKFLOW.md` và chỉ dùng khi người dùng yêu cầu rõ ràng.
+
+## Ưu tiên tổng quát
+
+1. An toàn quyền và toàn vẹn điểm/hồ sơ.
+2. Form chính xác, accessibility và modal keyboard.
+3. Tải nhanh hơn, query có giới hạn và cleanup lifecycle.
+4. Đồng nhất các màn cũ với design system mới.
+5. QA nội dung/template và release gate.
+
+## Bước 1 — Hardening RLS hồ sơ
+
+**Mục tiêu:** chặn học sinh tự sửa field đặc quyền qua Supabase API.
+
+**Phạm vi:** policy `game_users`, quyền cột/RPC cần thiết, test adversarial cho
+`role`, `approved`, `stars`, `totalscore`, `history`, `auth_user_id`.
+
+**Hoàn tất khi:** student chỉ đọc/sửa được field được allowlist; admin vẫn sửa
+được hồ sơ; test từ chối mọi trường đặc quyền; không có migration destructive.
+
+**Kiểm thử:** contract/RLS test, review migration, `npm test`. Apply vào
+Supabase thật chỉ sau khi xác minh đúng project và quyền triển khai.
+
+**Phụ thuộc:** không có. **Scope:** M, ưu tiên cao nhất.
+
+## Bước 2 — Tách đường ghi điểm và hồ sơ
+
+**Mục tiêu:** client không gửi nguyên object `currentUser` hoặc tự quyết định
+điểm, sao, tiến độ.
+
+**Phạm vi:** payload update tối thiểu, RPC/Edge Function hoặc server rule,
+validation input và test concurrency/idempotency phù hợp.
+
+**Hoàn tất khi:** update điểm chỉ nhận dữ liệu hợp lệ từ server-authoritative
+flow; sửa tên/lớp/giới tính không làm thay đổi field đặc quyền; lỗi mạng không
+tạo bản ghi nửa chừng.
+
+**Kiểm thử:** contract test update profile/score, retry/error path, `npm test`.
+
+**Phụ thuộc:** Bước 1. **Scope:** M.
+
+## Bước 3 — Accessibility auth và modal
+
+**Mục tiêu:** login/register/đổi mật khẩu dùng được hoàn toàn bằng keyboard và
+screen reader.
+
+**Phạm vi:** accessible name cho field, validation/error association, button
+semantics cho subject/reward, focus trap, Escape, restore focus và inert nền.
+
+**Hoàn tất khi:** mọi field có name/label ổn định; Tab không thoát khỏi dialog;
+Enter/Space hoạt động; focus quay về nút mở modal; reduced-motion vẫn đúng.
+
+**Kiểm thử:** Playwright role/name + keyboard, CUA accessibility smoke test,
+desktop 1440×900 và tablet ngang 1024×768.
+
+**Phụ thuộc:** không có. **Scope:** M.
+
+## Bước 4 — Chuẩn hóa dữ liệu nhập và fixture
+
+**Mục tiêu:** các khai báo chính xác không còn ô tự nhập gây sai dữ liệu.
+
+**Phạm vi:** select/combobox cấp lớp, lớp cụ thể, học sinh, giới tính, thời gian
+và task target; giữ sort tên tiếng Việt; thay fixture audit cũ bằng schema factory.
+
+**Hoàn tất khi:** không lưu được giá trị ngoài danh sách; học sinh/lớp hiển thị
+đúng label; không còn `undefined` trong Admin screenshot; dữ liệu cũ vẫn mở được.
+
+**Kiểm thử:** contract + browser cho create/edit/filter/sort/task; screenshot
+desktop/tablet.
+
+**Phụ thuộc:** Bước 1 nếu có thay đổi API/profile. **Scope:** M.
+
+## Bước 5 — Tối ưu tải và truy vấn
+
+**Mục tiêu:** giảm initial transfer và tránh tải toàn bộ kho dữ liệu.
+
+**Phạm vi:** query projection thay `select('*')`, pagination/search server-side,
+lazy-load theo màn, derivative WebP/AVIF, preload có chủ đích.
+
+**Hoàn tất khi:** list không tải payload detail thừa; kho lớn vẫn phản hồi ổn;
+initial asset transfer giảm so với baseline ~10 MB; số đo trước/sau được lưu.
+
+**Kiểm thử:** Playwright performance smoke ở 1440×900/1024×768, đo payload và
+Core Web Vitals nếu môi trường cho phép; không kết luận theo cảm tính.
+
+**Phụ thuộc:** Bước 4 giúp chốt field/list model. **Scope:** L, sẽ tách thành
+nhánh nhỏ khi bắt đầu triển khai.
+
+## Bước 6 — Cleanup lifecycle game/realtime
+
+**Mục tiêu:** không tích lũy listener, timer hoặc subscription sau nhiều lượt.
+
+**Phạm vi:** matching `resize`, timer gameplay/team/exam, realtime channel,
+logout/login, mở/đóng Admin và chuyển route.
+
+**Hoàn tất khi:** đổi nhiều câu không tăng callback; channel được cleanup đúng
+lifecycle; timer cũ không cập nhật DOM mới; không có console error.
+
+**Kiểm thử:** regression đổi câu/logout-login nhiều lần, listener/channel smoke
+test, console capture và `npm test`.
+
+**Phụ thuộc:** không có. **Scope:** S–M.
+
+## Bước 7 — Đồng nhất UI và design system
+
+**Mục tiêu:** các màn cũ đạt cùng độ rõ ràng với Soạn Đề/Roster mới.
+
+**Phạm vi:** token màu/spacing/radius/focus, Settings, History, Treasure,
+Game Config, Result, empty/loading/error/disabled state; giữ bản sắc Map/Shop.
+
+**Hoàn tất khi:** mỗi màn có hierarchy và action rõ; không có vùng trống vô
+ích/clipping ở viewport mục tiêu; màu không phải tín hiệu duy nhất; mockup được
+đối chiếu trước khi sửa diện rộng.
+
+**Kiểm thử:** visual review 1440×900 và 1024×768, reduced-motion, keyboard smoke.
+
+**Phụ thuộc:** Bước 3 và 5. **Scope:** L, chia theo từng màn.
+
+## Bước 8 — Content QA và release gate
+
+**Mục tiêu:** xác nhận toàn game trước commit/merge main.
+
+**Phạm vi:** template Toán lớp 4, SVG/matching/ảnh, đề A4, nhiệm vụ cá nhân/
+nhóm, auth, Supabase integration, production checklist.
+
+**Hoàn tất khi:** không có lỗi `undefined`, console error hoặc broken image;
+flows chính pass trên laptop/tablet; security/accessibility/performance gate
+đạt; Codex review diff rồi mới commit/push/merge theo yêu cầu người dùng.
+
+**Kiểm thử:** toàn bộ contract test, `npm test`, performance baseline, manual
+keyboard/screen-reader smoke và kiểm tra production có kiểm soát.
+
+**Phụ thuộc:** Bước 1–7. **Scope:** M.
+
+## Checkpoint
+
+- Sau Bước 1–2: security/data integrity không còn blocker.
+- Sau Bước 3–4: auth và các form chính xác, accessible, không false-positive.
+- Sau Bước 5–6: baseline tải/lifecycle được đo và không có leak đã biết.
+- Sau Bước 7–8: toàn bộ UI/code/content đạt release gate; khi đó mới merge main.

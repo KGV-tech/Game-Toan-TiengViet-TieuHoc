@@ -16,6 +16,13 @@
             } catch (e) {
                 console.warn('localStorage is blocked:', e);
             }
+        },
+        removeItem(key) {
+            try {
+                localStorage.removeItem(key);
+            } catch (e) {
+                console.warn('localStorage is blocked:', e);
+            }
         }
     };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

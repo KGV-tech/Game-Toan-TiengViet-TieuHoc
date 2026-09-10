@@ -43,6 +43,8 @@ assert.match(source, /setButtonLoading\('change-password-submit', true, 'Đang c
 assert.match(source, /Promise\.all\(\[/, 'Independent post-login data loads must run in parallel.');
 assert.match(source, /avatar_key/, 'New student profiles must save their selected avatar.');
 assert.match(migration, /avatar_key TEXT/, 'The user profile migration must persist an avatar key.');
+assert.match(adminFunction, /validAvatarKey/, 'Admin profile edits must validate avatar keys on the server.');
+assert.match(adminFunction, /avatar_key/, 'Admin profile edits must persist the selected avatar.');
 
 assert.match(html, /name="reg-avatar"/, 'Registration must offer an avatar selection.');
 assert.match(html, /id="player-info" class="player-info-card"/, 'The map must retain a dedicated player information card.');

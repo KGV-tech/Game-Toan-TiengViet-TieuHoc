@@ -33,15 +33,21 @@
             el.innerHTML = `<span class="energy-label">Năng lượng</span> ${hearts}`;
             el.style.display = 'flex';
         },
-        spendEnergy(user) {
+        async spendEnergy(user) {
             const current = this.getEnergy(user);
             if (current <= 0) return false;
-            user.energy = current - 1;
-            user.energy_date = this.todayKey();
             if (window.supabase && user.id) {
-                supabaseClient.from('game_users').update({ energy: user.energy, energy_date: user.energy_date }).eq('id', user.id).then(() => {});
+                const result = await app.data.consumeStudentEnergy();
+                if (result.error) {
+                    console.error('Không thể lưu năng lượng học sinh:', result.error);
+                    return false;
+                }
+            } else {
+                user.energy = current - 1;
+                user.energy_date = this.todayKey();
             }
             this.renderEnergy();
+            if (app.auth?.updateHeader) app.auth.updateHeader();
             return true;
         },
         giftClaimedToday(user) {
@@ -82,28 +88,32 @@
                 streakDays = 5;
                 user.practice_streak = 0; // bắt đầu chuỗi mới
             }
-            if (window.supabase && user.id) {
-                supabaseClient.from('game_users').update({
-                    stars: user.stars,
-                    total_stars_earned: user.total_stars_earned || 0,
-                    last_practice_date: user.last_practice_date,
-                    practice_streak: user.practice_streak
-                }).eq('id', user.id).then(() => {});
-            }
             return { daily: true, streak: streakDays, bonus, stars: 1 + bonus };
         },
         async claimDailyGift() {
             const user = app.data.currentUser;
             if (!user || this.giftClaimedToday(user)) return;
+            if (window.supabase && user.id) {
+                const result = await app.data.claimDailyGift();
+                if (result.error) {
+                    console.error('Không thể nhận quà hằng ngày:', result.error);
+                    alert('Không thể nhận quà hôm nay. Vui lòng thử lại.');
+                    return;
+                }
+                if (!result.data?.claimed) return;
+                const stars = Number(result.data.stars_awarded || 0);
+                const gift = { stars, label: `${stars} Sao ⭐` };
+                return this.finishGiftClaim(gift);
+            }
             const gift = this.rollGift();
             app.daily.addStars(user, gift.stars);
             user.daily_gift_date = this.todayKey();
             user.daily_gift_streak = (user.daily_gift_streak || 0) + 1;
-            if (window.supabase && user.id) {
-                await supabaseClient.from('game_users').update({
-                    stars: user.stars, total_stars_earned: user.total_stars_earned || 0, daily_gift_date: user.daily_gift_date, daily_gift_streak: user.daily_gift_streak
-                }).eq('id', user.id);
-            }
+            await app.data.saveUsers();
+            return this.finishGiftClaim(gift);
+        },
+        finishGiftClaim(gift) {
+            if (!gift) return;
             this.renderGiftNotice();
             app.auth.updateHeader();
             if (app.quest && typeof app.quest.render === 'function') app.quest.render();

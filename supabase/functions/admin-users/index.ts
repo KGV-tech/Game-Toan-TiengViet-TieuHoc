@@ -14,9 +14,21 @@ const json = (body: unknown, status = 200, origin: string | null = null) => new 
 const internalEmail = (username: string) => `${username.toLowerCase()}@game.local`
 const normalizeUsername = (username: unknown) => typeof username === 'string' ? username.trim().toLowerCase() : ''
 const validUsername = (username: string) => /^[a-z0-9._-]{3,32}$/.test(username)
+const validFullname = (fullname: unknown) => typeof fullname === 'string' && fullname.trim().length >= 1 && fullname.trim().length <= 120
+const validClasslevel = (classlevel: unknown) => ['1', '2', '3', '4', '5'].includes(String(classlevel))
 const normalizeClassName = (className: unknown) => typeof className === 'string' ? className.trim() : ''
 const validClassName = (className: unknown) => className === undefined || className === null || (typeof className === 'string' && className.trim().length <= 64)
 const validGender = (gender: unknown) => gender === undefined || gender === null || gender === '' || ['male', 'female'].includes(String(gender))
+const studentAvatarKeys = new Set([
+  'boy-short', 'boy-side', 'boy-curly', 'boy-bowl', 'boy-spiky',
+  'girl-long', 'girl-bob', 'girl-twins', 'girl-braid', 'girl-doll',
+  'boy-reader', 'boy-athlete', 'boy-artist', 'boy-explorer', 'boy-visor',
+  'girl-captain', 'girl-artist', 'girl-reader', 'girl-athlete', 'girl-inventor',
+  'cartoon-robot-cat', 'cartoon-lightning-squirrel', 'cartoon-rescue-pup', 'cartoon-dragon', 'cartoon-garden-alien',
+  'cartoon-mini-robot', 'cartoon-cloud-fox', 'cartoon-otter', 'cartoon-red-panda', 'cartoon-pilot-bird',
+])
+const normalizeAvatarKey = (avatarKey: unknown) => typeof avatarKey === 'string' ? avatarKey.trim() : ''
+const validAvatarKey = (avatarKey: unknown) => avatarKey === undefined || avatarKey === null || (typeof avatarKey === 'string' && studentAvatarKeys.has(normalizeAvatarKey(avatarKey)))
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
@@ -42,14 +54,15 @@ Deno.serve(async (request) => {
   if (caller?.role?.toLowerCase() !== 'admin') return json({ error: 'forbidden' }, 403, origin)
 
   const body = await request.json().catch(() => null)
-  const { action, fullname, classlevel, password, class_name: rawClassName, gender: rawGender } = body || {}
+  const { action, fullname, classlevel, password, class_name: rawClassName, gender: rawGender, avatar_key: rawAvatarKey } = body || {}
   const className = normalizeClassName(rawClassName)
   const gender = rawGender || null
+  const avatarKey = normalizeAvatarKey(rawAvatarKey) || 'boy-short'
   const username = normalizeUsername(body?.username)
   if (!validUsername(username)) return json({ error: 'invalid_username' }, 422, origin)
 
   if (action === 'create') {
-    if (typeof fullname !== 'string' || !fullname.trim() || !['1', '2', '3', '4', '5'].includes(String(classlevel)) || typeof password !== 'string' || password.length < 8 || !validClassName(rawClassName) || !validGender(rawGender)) {
+    if (!validFullname(fullname) || !validClasslevel(classlevel) || typeof password !== 'string' || password.length < 8 || !validClassName(rawClassName) || !validGender(rawGender) || !validAvatarKey(rawAvatarKey)) {
       return json({ error: 'invalid_student_data' }, 422, origin)
     }
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -58,13 +71,39 @@ Deno.serve(async (request) => {
     if (createError || !created.user) return json({ error: 'auth_account_exists' }, 409, origin)
     const { data: profile, error: profileError } = await admin.from('game_users').insert({
       auth_user_id: created.user.id, username, fullname: fullname.trim(), password: null,
-      classlevel: String(classlevel), class_name: className || null, gender, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
+      classlevel: String(classlevel), class_name: className || null, gender, avatar_key: avatarKey, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
     }).select().single()
     if (profileError) {
       await admin.auth.admin.deleteUser(created.user.id)
       return json({ error: 'profile_failed' }, 500, origin)
     }
     return json({ profile }, 200, origin)
+  }
+
+  if (action === 'update_profile' || action === 'approve') {
+    const { data: profile, error: profileLookupError } = await admin.from('game_users')
+      .select('id, auth_user_id, username, role').eq('username', username).maybeSingle()
+    if (profileLookupError || !profile) return json({ error: 'student_not_found' }, 404, origin)
+    if (String(profile.role || '').toLowerCase() === 'admin') return json({ error: 'invalid_student_data' }, 422, origin)
+
+    if (action === 'approve') {
+      const { data: approvedProfile, error: approveError } = await admin.from('game_users')
+        .update({ approved: true, history: [], totalscore: 0, stars: 0 })
+        .eq('id', profile.id).select().single()
+      return approveError ? json({ error: 'profile_update_failed' }, 500, origin) : json({ profile: approvedProfile }, 200, origin)
+    }
+
+    if (!validFullname(fullname) || !validClasslevel(classlevel) || !validClassName(rawClassName) || !validGender(rawGender) || !validAvatarKey(rawAvatarKey)) {
+      return json({ error: 'invalid_student_data' }, 422, origin)
+    }
+    const profileUpdate: Record<string, string | null> = {
+      fullname: fullname.trim(), classlevel: String(classlevel), class_name: className || null, gender,
+    }
+    if (rawAvatarKey !== undefined) profileUpdate.avatar_key = avatarKey
+    const { data: updatedProfile, error: updateError } = await admin.from('game_users')
+      .update(profileUpdate)
+      .eq('id', profile.id).select().single()
+    return updateError ? json({ error: 'profile_update_failed' }, 500, origin) : json({ profile: updatedProfile }, 200, origin)
   }
 
   if (action === 'reset_password') {
