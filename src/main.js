@@ -802,12 +802,193 @@ const app = {
         // Instead of bulk saving everything, we now upsert the whole array (or in real-world we'd do precise updates). 
         // To keep it simple and compatible with existing logic:
         async saveUsers() {
+            // Never use the legacy whole-profile fallback when Supabase is active;
+            // game_users writes must go through an allowlisted RPC/Edge Function.
+            if (window.supabase) return { skipped: true };
             // Only save the changes, but since the old code mutated the array directly, we upsert the entire array.
             // Upsert requires primary key matching. If objects have `id`, it updates. Otherwise inserts.
             for (const u of this.users) {
                 const { error } = await supabaseClient.from('game_users').upsert([u], { onConflict: 'username' });
                 if (error) console.error("Error saving user:", error);
             }
+        },
+        progressEventId(prefix = 'progress') {
+            const safePrefix = String(prefix || 'progress')
+                .replace(/[^A-Za-z0-9._:-]/g, '-')
+                .slice(0, 32) || 'progress';
+            const uuid = globalThis.crypto?.randomUUID
+                ? globalThis.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+            return `${safePrefix}:${uuid}`;
+        },
+        getPendingStudentEvent(key, type, fields = {}) {
+            if (!this.pendingStudentEvents) this.pendingStudentEvents = {};
+            const scope = this.currentUser?.id || this.currentUser?.username || 'guest';
+            const scopedKey = `${scope}:${key}`;
+            if (!this.pendingStudentEvents[scopedKey]) {
+                this.pendingStudentEvents[scopedKey] = {
+                    type,
+                    event_id: this.progressEventId(type),
+                    ...fields
+                };
+            }
+            return this.pendingStudentEvents[scopedKey];
+        },
+        clearPendingStudentEvent(key) {
+            if (!this.pendingStudentEvents) return;
+            const scope = this.currentUser?.id || this.currentUser?.username || 'guest';
+            delete this.pendingStudentEvents[`${scope}:${key}`];
+        },
+        mergeStudentProgressResult(result) {
+            const incoming = result?.user;
+            const current = this.currentUser;
+            if (!incoming || !current || (incoming.id && current.id && incoming.id !== current.id)) return result;
+
+            const progressionFields = [
+                'history', 'totalscore', 'stars', 'total_stars_earned',
+                'energy', 'energy_date', 'last_practice_date', 'practice_streak',
+                'daily_gift_date', 'daily_gift_streak', 'lucky_spin_date', 'lucky_spin_count'
+            ];
+            const progression = Object.fromEntries(progressionFields
+                .filter(field => Object.prototype.hasOwnProperty.call(incoming, field))
+                .map(field => [field, incoming[field]]));
+            this.currentUser = { ...current, ...progression };
+            if (!Array.isArray(this.userQuests)) this.userQuests = [];
+            if (!Array.isArray(this.userPets)) this.userPets = [];
+
+            const userIndex = (this.users || []).findIndex(user =>
+                (incoming.id && user.id === incoming.id) || user.username === current.username
+            );
+            if (userIndex > -1) this.users[userIndex] = { ...this.users[userIndex], ...progression };
+
+            (Array.isArray(result.quest_updates) ? result.quest_updates : []).forEach(update => {
+                const questIndex = (this.userQuests || []).findIndex(item =>
+                    (update.id && item.id === update.id) || item.quest_id === update.quest_id
+                );
+                if (questIndex > -1) {
+                    this.userQuests[questIndex] = {
+                        ...this.userQuests[questIndex],
+                        progress: update.progress,
+                        is_completed: update.is_completed
+                    };
+                } else if (update.quest_id) {
+                    this.userQuests.push({
+                        ...update,
+                        user_username: this.currentUser.username
+                    });
+                }
+            });
+
+            const pet = result.pet;
+            if (pet?.pet_image && !(this.userPets || []).some(item =>
+                (pet.id && item.id === pet.id) || item.pet_image === pet.pet_image
+            )) {
+                this.userPets.push({ ...pet, user_username: this.currentUser.username });
+            }
+            if (result.event_type === 'lucky_spin') {
+                const storageKey = `free_spin_available_${this.currentUser.username}`;
+                if (result.free_spin_available) app.safeStorage.setItem(storageKey, 'true');
+                else app.safeStorage.removeItem(storageKey);
+            }
+            if (app.auth?.updateHeader) app.auth.updateHeader();
+            return result;
+        },
+        async applyStudentProgressEvent(event = {}) {
+            const user = this.currentUser;
+            if (!window.supabase || !user?.id) return { data: null, error: null, skipped: true };
+            try {
+                const { data, error } = await supabaseClient.rpc('apply_student_progress_event', { p_event: event });
+                if (!error && data) this.mergeStudentProgressResult(data);
+                return { data, error };
+            } catch (error) {
+                return { data: null, error };
+            }
+        },
+        async recordStudentRound({ entry, isExam = false, consumeEnergy = false, examId = null, questId = null, topics = [], lessons = [] } = {}) {
+            const user = this.currentUser;
+            if (!user || user.role?.toLowerCase() === 'admin' || !entry) return { data: null, error: null, skipped: true };
+
+            const eventId = String(entry.attempt_id || this.progressEventId('round'));
+            const round = {
+                title: String(entry.title || 'Luyện tập').slice(0, 200),
+                topic: String(entry.topic || 'Tất cả').slice(0, 500),
+                subject: String(entry.subject || ''),
+                difficulty: String(entry.difficulty || 'Dễ').slice(0, 40),
+                question_count: Number(entry.questionCount),
+                score: Number(entry.score),
+                details: Array.isArray(entry.details) ? entry.details : [],
+                topics: Array.isArray(topics) ? topics.filter(Boolean).slice(0, 20) : [],
+                lessons: Array.isArray(lessons) ? lessons.filter(Boolean).slice(0, 20) : []
+            };
+            if (examId) round.exam_id = examId;
+            if (questId) round.quest_id = questId;
+
+            if (window.supabase && user.id) {
+                return this.applyStudentProgressEvent({
+                    type: 'practice_round',
+                    event_id: eventId,
+                    is_exam: Boolean(isExam),
+                    consume_energy: Boolean(consumeEnergy),
+                    round
+                });
+            }
+
+            const history = Array.isArray(user.history) ? user.history : [];
+            const replayed = history.some(item => item.attempt_id === eventId);
+            if (!replayed) {
+                user.history = [...history, { ...entry, attempt_id: eventId }];
+                user.totalscore = Math.round(user.history.reduce((total, item) => total + Number(item.score || 0), 0) * 10) / 10;
+                const userIndex = (this.users || []).findIndex(item => item.username === user.username);
+                if (userIndex > -1) this.users[userIndex] = user;
+                await this.saveUsers();
+            }
+            return {
+                data: {
+                    event_id: eventId,
+                    event_type: 'practice_round',
+                    replayed,
+                    daily_reward: 0,
+                    quest_updates: [],
+                    user
+                },
+                error: null
+            };
+        },
+        async consumeStudentEnergy() {
+            const user = this.currentUser;
+            if (!user || user.role?.toLowerCase() === 'admin') return { data: null, error: null, skipped: true };
+            if (window.supabase && user.id) {
+                const event = this.getPendingStudentEvent('energy', 'spend_energy');
+                const result = await this.applyStudentProgressEvent(event);
+                if (!result.error) this.clearPendingStudentEvent('energy');
+                return result;
+            }
+            const today = app.daily.todayKey();
+            const energy = app.daily.getEnergy(user);
+            if (energy <= 0) return { data: null, error: new Error('energy_depleted') };
+            user.energy = energy - 1;
+            user.energy_date = today;
+            return { data: { user }, error: null };
+        },
+        async claimDailyGift() {
+            const key = `daily-gift:${app.daily.todayKey()}`;
+            const event = this.getPendingStudentEvent(key, 'daily_gift');
+            const result = await this.applyStudentProgressEvent(event);
+            if (!result.error) this.clearPendingStudentEvent(key);
+            return result;
+        },
+        async claimQuestReward(questId) {
+            const key = `quest-reward:${questId}`;
+            const event = this.getPendingStudentEvent(key, 'quest_reward', { quest_id: questId });
+            const result = await this.applyStudentProgressEvent(event);
+            if (!result.error) this.clearPendingStudentEvent(key);
+            return result;
+        },
+        async spinLuckyWheel({ freeSpin = false } = {}) {
+            const event = this.getPendingStudentEvent('lucky-spin', 'lucky_spin', { free_spin: Boolean(freeSpin) });
+            const result = await this.applyStudentProgressEvent(event);
+            if (!result.error) this.clearPendingStudentEvent('lucky-spin');
+            return result;
         },
         async saveSettings() {
             this.ensureLessonMetadata();
@@ -938,17 +1119,16 @@ const app = {
             (Array.isArray(this.currentUser.history) ? this.currentUser.history : []).forEach(h => total += parseFloat(h.score || 0));
             this.currentUser.totalscore = Math.round(total * 10) / 10;
 
+            // Online score/history changes are committed by the event RPC. This
+            // method remains only for the local/offline fallback.
+            if (window.supabase) return { skipped: true, serverAuthoritative: true };
+
             const idx = this.users.findIndex(u => u.username === this.currentUser.username);
             if (idx > -1) {
                 this.users[idx] = this.currentUser;
-                // Direct DB update for this user to avoid concurrency issues
-                if (this.currentUser.id) {
-                    const { error } = await supabaseClient.from('game_users').update(this.currentUser).eq('id', this.currentUser.id);
-                    if (error) console.error("Error updating score:", error);
-                } else {
-                    await this.saveUsers(); // fallback
-                }
+                await this.saveUsers(); // offline fallback
             }
+            return { skipped: false, serverAuthoritative: false };
         }
     },
 
@@ -1372,7 +1552,7 @@ const app = {
                 'g4-m-angle-review', 'angle.review'
             ])
         },
-        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [] },
+        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [], attemptId: null },
         isTemplateAllowedForTopic(generatorKey, topic) {
             const allowedGenerators = this.templateGeneratorsByTopic[topic];
             return !generatorKey || !allowedGenerators || allowedGenerators.has(generatorKey);
@@ -1815,7 +1995,7 @@ const app = {
             btn.parentElement.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         },
-        startPlay() {
+        async startPlay() {
             if (this.state.selectedTopics.length === 0) {
                 alert('Vui lòng chọn ít nhất 1 chủ đề!');
                 return;
@@ -2001,7 +2181,15 @@ const app = {
                 }
             }
 
-            if (!isAdmin) app.daily.spendEnergy(app.data.currentUser);
+            this.state.attemptId = app.data.progressEventId('round');
+            if (!isAdmin && !window.supabase) {
+                const energySpent = await app.daily.spendEnergy(app.data.currentUser);
+                if (!energySpent) {
+                    this.state.questions = [];
+                    alert('Không thể trừ năng lượng. Vui lòng thử lại.');
+                    return;
+                }
+            }
             app.router.openGameView('game-play-view');
             this.loadQuestion();
         },
@@ -3332,9 +3520,9 @@ const app = {
                 msg = 'Cố gắng thêm nữa bạn nhé!';
             }
 
-            // Thưởng hằng ngày: 1 sao/ngày khi làm ≥1 lượt luyện tập + 5 sao chuỗi 5 ngày.
-            // Chỉ áp dụng lượt luyện tập (không áp dụng đề kiểm tra).
-            if (!this.state.examName && app.data.currentUser) {
+            // Offline vẫn dùng reducer cục bộ. Khi online, RPC ghi kết quả sẽ
+            // tính thưởng ngày cùng transaction với history.
+            if (!this.state.examName && app.data.currentUser && !window.supabase) {
                 const daily = app.daily.registerPracticeDay(app.data.currentUser);
                 if (daily.daily) {
                     starsEarned += daily.stars;
@@ -3344,17 +3532,25 @@ const app = {
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            const newlyUnlockedTopic = await this.recordHistory(title, finalScore, 0);
-            if (newlyUnlockedTopic) {
-                msg += ` Bạn đã mở khóa chủ đề mới: ${newlyUnlockedTopic}!`;
+            const persistence = await this.recordHistory(title, finalScore, 0);
+            if (persistence.error) {
+                msg += ' Kết quả chưa được lưu; hãy kiểm tra kết nối rồi thử lại.';
+            } else {
+                if (persistence.dailyReward > 0) {
+                    starsEarned += persistence.dailyReward;
+                    msg += ` Bạn nhận ${persistence.dailyReward} Sao hôm nay!`;
+                }
+                if (persistence.newlyUnlockedTopic) {
+                    msg += ` Bạn đã mở khóa chủ đề mới: ${persistence.newlyUnlockedTopic}!`;
+                }
             }
 
-            // Update quests progress
-            if (app.quest && typeof app.quest.updateProgress === 'function') {
+            // Online quest progress is updated by the same RPC as the round.
+            if (!window.supabase && app.quest && typeof app.quest.updateProgress === 'function') {
                 const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
                 const fallbackTopics = this.state.examName ? [] : (this.state.selectedTopics || []);
                 const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
-                app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId, {
+                await app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId, {
                     topics: playedTopics.length ? playedTopics : fallbackTopics,
                     lessons: playedLessons
                 });
@@ -3422,7 +3618,9 @@ const app = {
             document.getElementById('result-modal').classList.add('active');
         },
         async recordHistory(title, score, starsEarned) {
-            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') return null;
+            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') {
+                return { newlyUnlockedTopic: null, dailyReward: 0, error: null };
+            }
 
             let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
             let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Dễ');
@@ -3445,7 +3643,8 @@ const app = {
                 ? nextTopic
                 : null;
 
-            if (!Array.isArray(app.data.currentUser.history)) app.data.currentUser.history = []; app.data.currentUser.history.push({
+            const entry = {
+                attempt_id: this.state.attemptId || app.data.progressEventId(this.state.examName ? 'exam' : 'round'),
                 date: dStr,
                 title: title,
                 topic: top,
@@ -3455,11 +3654,28 @@ const app = {
                 questionCount: qCount,
                 score: score,
                 details: this.state.historyDetails
+            };
+            const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
+            const fallbackTopics = this.state.examName ? [] : (this.state.selectedTopics || []);
+            const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
+            const result = await app.data.recordStudentRound({
+                entry,
+                isExam: Boolean(this.state.examName),
+                consumeEnergy: Boolean(window.supabase && !this.state.examName),
+                examId: this.state.examId,
+                questId: this.state.questId,
+                topics: playedTopics.length ? playedTopics : fallbackTopics,
+                lessons: playedLessons
             });
-            if (starsEarned > 0) app.daily.addStars(app.data.currentUser, starsEarned);
-            await app.data.updateUserScore();
-            app.auth.updateHeader();
-            return newlyUnlockedTopic;
+            if (result.error) {
+                return { newlyUnlockedTopic: null, dailyReward: 0, error: result.error };
+            }
+            return {
+                newlyUnlockedTopic,
+                dailyReward: Number(result.data?.daily_reward || 0),
+                questUpdates: result.data?.quest_updates || [],
+                error: null
+            };
         },
         claimBonus() {
             const chest = document.getElementById('bonus-chest-img');
@@ -3476,7 +3692,7 @@ const app = {
 
     exam: {
         filters: { subject: '', period: '' },
-        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5', examId: null, questId: null },
+        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5', examId: null, questId: null, attemptId: null },
 
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -3640,6 +3856,7 @@ const app = {
             this.state.name = exam.name;
             this.state.examId = exam.id || null;
             this.state.questId = questId;
+            this.state.attemptId = app.data.progressEventId('exam');
             this.state.historyDetails = [];
             this.state.score = 0;
 
@@ -3726,6 +3943,7 @@ const app = {
             app.game.state.examName = this.state.name;
             app.game.state.examId = this.state.examId;
             app.game.state.questId = this.state.questId;
+            app.game.state.attemptId = this.state.attemptId;
 
             app.game.finishPlay();
         }
@@ -8991,15 +9209,20 @@ const app = {
         async approveUser(username) {
             let user = app.data.users.find(u => u.username === username);
             if (user) {
+                if (user.id && window.supabase) {
+                    try {
+                        await app.auth.manageStudentAccount({ action: 'approve', username: user.username });
+                    } catch (error) {
+                        return alert(error.message === 'student_not_found'
+                            ? 'Không tìm thấy hồ sơ học sinh.'
+                            : 'Không thể duyệt hồ sơ học sinh. Vui lòng thử lại.');
+                    }
+                }
                 user.approved = true;
                 user.history = [];
                 user.totalscore = 0;
                 user.stars = 0;
-                if (user.id) {
-                    await supabaseClient.from('game_users').update({ approved: true, history: [], totalscore: 0, stars: 0 }).eq('id', user.id);
-                } else {
-                    await app.data.saveUsers();
-                }
+                if (!window.supabase) await app.data.saveUsers();
                 this.renderPlayersList(true);
             }
         },
@@ -9045,12 +9268,25 @@ const app = {
                 let user = app.data.users.find(x => x.username === editUsername);
                 if (user) {
                     if (un !== editUsername) return alert('Vì bảo mật, không đổi tên đăng nhập sau khi tạo. Hãy tạo tài khoản mới nếu cần.');
+                    if (window.supabase && user.id) {
+                        try {
+                            await app.auth.manageStudentAccount({
+                                action: 'update_profile', username: editUsername, fullname: fn,
+                                classlevel: cl, class_name: className || null, gender
+                            });
+                        } catch (error) {
+                            const messages = {
+                                invalid_student_data: 'Hãy nhập họ tên, cấp lớp, lớp cụ thể và giới tính hợp lệ.',
+                                student_not_found: 'Không tìm thấy hồ sơ học sinh.',
+                                profile_update_failed: 'Không thể cập nhật thông tin học sinh.'
+                            };
+                            return alert(messages[error.message] || 'Không thể cập nhật thông tin học sinh.');
+                        }
+                    }
                     user.fullname = fn;
                     user.classlevel = cl;
                     user.class_name = className || null;
                     user.gender = gender;
-                    const { error } = await supabaseClient.from('game_users').update({ fullname: fn, classlevel: cl, class_name: className || null, gender }).eq('id', user.id);
-                    if (error) return alert('Không thể cập nhật thông tin học sinh.');
                     if (pw) {
                         try {
                             await app.auth.manageStudentAccount({ action: 'reset_password', username: un, password: pw });
@@ -9862,9 +10098,22 @@ const app = {
             let uq = app.data.userQuests.find(x => x.quest_id === questId);
             if (!uq || uq.is_completed || uq.progress < q.target_count) return;
 
-            // Cập nhật local
-            uq.is_completed = true;
-            app.daily.addStars(user, q.reward_stars);
+            if (window.supabase && user.id) {
+                const result = await app.data.claimQuestReward(questId);
+                if (result.error) {
+                    console.error('Không thể nhận thưởng nhiệm vụ:', result.error);
+                    alert('Không thể nhận thưởng nhiệm vụ. Vui lòng thử lại.');
+                    return;
+                }
+                if (!result.data?.claimed) {
+                    this.render();
+                    return;
+                }
+                uq.is_completed = true;
+            } else {
+                uq.is_completed = true;
+                app.daily.addStars(user, q.reward_stars);
+            }
             app.auth.updateHeader();
 
             // Hiệu ứng pháo hoa
@@ -9877,21 +10126,14 @@ const app = {
             }
 
             this.render();
-
-            // Cập nhật server
-            if (window.supabase) {
-                // D5: chạy song song 2 lệnh cập nhật độc lập để giảm round-trip.
-                await Promise.all([
-                    supabaseClient.from('user_quests').update({ is_completed: true }).eq('id', uq.id),
-                    supabaseClient.from('game_users').update({ stars: user.stars, total_stars_earned: user.total_stars_earned || 0 }).eq('id', user.id)
-                ]);
-            } else {
-                app.data.saveUsers();
-            }
+            if (!window.supabase) await app.data.saveUsers();
         },
         async updateProgress(subject, score, examId = null, questId = null, context = {}) {
             const user = app.data.currentUser;
             if (!user || user.role === 'admin') return;
+            // A completed online round updates quest progress in the same
+            // transaction as history/stars. Keep this method for offline mode.
+            if (window.supabase) return;
 
             const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
             const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
@@ -9917,20 +10159,13 @@ const app = {
 
                 if (uq) {
                     uq.progress += 1;
-                    if (window.supabase) {
-                        await supabaseClient.from('user_quests').update({ progress: uq.progress }).eq('id', uq.id);
-                    }
                 } else {
                     uq = { user_username: user.username, quest_id: q.id, progress: 1, is_completed: false };
-                    if (window.supabase) {
-                        const { data } = await supabaseClient.from('user_quests').insert([uq]).select();
-                        if (data && data.length > 0) uq = data[0];
-                    } else {
-                        uq.id = 'temp_' + new Date().getTime();
-                    }
+                    uq.id = 'temp_' + new Date().getTime();
                     app.data.userQuests.push(uq);
                 }
             }
+            await app.data.saveUsers();
         }
     },
 
@@ -9970,6 +10205,7 @@ const app = {
             return user.lucky_spin_date === this.getLuckySpinDay() ? Number(user.lucky_spin_count || 0) : 0;
         },
         renderLuckyStation(box, user) {
+            if (app.safeStorage.getItem(`free_spin_available_${user.username}`) === 'true') this.freeSpin = true;
             let isSpinning = this.isSpinning || false;
             const spinsToday = this.getLuckySpinsToday(user);
             const remainingSpins = Math.max(0, 3 - spinsToday);
@@ -10034,26 +10270,80 @@ const app = {
             box.innerHTML = html;
         },
 
+        async spinWheelOnline(user) {
+            const wasFreeSpin = Boolean(this.freeSpin);
+            this.isSpinning = true;
+            this.freeSpin = false;
+            const spinBtn = document.getElementById('btn-spin-lucky');
+            const starSpan = document.getElementById('lucky-star-balance');
+            if (spinBtn) {
+                spinBtn.disabled = true;
+                spinBtn.style.opacity = '0.5';
+                spinBtn.style.cursor = 'not-allowed';
+            }
+
+            const result = await app.data.spinLuckyWheel({ freeSpin: wasFreeSpin });
+            if (result.error || !result.data) {
+                this.isSpinning = false;
+                this.freeSpin = wasFreeSpin;
+                if (spinBtn) {
+                    spinBtn.disabled = false;
+                    spinBtn.style.opacity = '1';
+                    spinBtn.style.cursor = 'pointer';
+                }
+                alert('Không thể lưu kết quả vòng quay. Vui lòng thử lại.');
+                return;
+            }
+
+            const data = result.data;
+            const segment = Number.isInteger(Number(data.segment)) ? Number(data.segment) : 3;
+            const segmentTextAngle = segment * 36 + 35;
+            const currentTotalRotation = this.currentRotation || 0;
+            const currentBase = currentTotalRotation % 360;
+            const extraDegreesToTarget = (90 - segmentTextAngle) - currentBase;
+            const targetRotation = currentTotalRotation + (360 * 6) + extraDegreesToTarget;
+            this.currentRotation = targetRotation;
+
+            const wheelEl = document.getElementById('lucky-wheel-circle');
+            if (wheelEl) {
+                wheelEl.style.transition = 'transform 5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                wheelEl.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
+            }
+
+            const rewardText = data.reward_code === 'pet'
+                ? `Tuyệt vời! Bạn nhận được Thú cưng: ${data.pet?.pet_name || 'một bé mới'}!`
+                : ({
+                    star_1: 'Hoan hô! Bạn nhận được 1 sao ⭐.',
+                    star_2: 'Chúc mừng! Bạn nhận được 2 sao ⭐.',
+                    star_5: 'Chúc mừng! Bạn nhận được 5 sao ⭐.',
+                    free_spin: 'Hay quá! Bạn được thưởng 1 lượt Quay lại Miễn phí.',
+                    none: 'Rất tiếc! May mắn lần sau nhé.'
+                }[data.reward_code] || 'Vòng quay đã hoàn tất.');
+
+            setTimeout(() => {
+                this.freeSpin = Boolean(data.free_spin_awarded);
+                this.isSpinning = false;
+                app.auth.updateHeader();
+                if (starSpan) starSpan.innerText = user.stars || 0;
+                alert(rewardText);
+                if (spinBtn) {
+                    spinBtn.disabled = false;
+                    spinBtn.style.opacity = '1';
+                    spinBtn.style.cursor = 'pointer';
+                }
+                const box = document.getElementById('shop-content-area');
+                if (box) this.renderLuckyStation(box, user);
+            }, 5100);
+        },
         async spinWheel() {
             if (this.isSpinning) return;
 
             const user = app.data.currentUser;
             if (!user) return;
-            let starsBeforeSpin = user.stars || 0;
-            let totalStarsBeforeSpin = user.total_stars_earned || 0;
+            if (window.supabase && user.id) return this.spinWheelOnline(user);
 
             const today = this.getLuckySpinDay();
-            let spinsToday = this.getLuckySpinsToday(user);
-            if (window.supabase && user.id) {
-                const { data, error } = await supabaseClient.from('game_users')
-                    .select('stars,lucky_spin_date,lucky_spin_count').eq('id', user.id).single();
-                if (error || !data) return alert('Không thể kiểm tra lượt quay hôm nay. Vui lòng thử lại.');
-                user.stars = data.stars || 0;
-                user.lucky_spin_date = data.lucky_spin_date;
-                user.lucky_spin_count = data.lucky_spin_count || 0;
-                starsBeforeSpin = user.stars;
-                spinsToday = this.getLuckySpinsToday(user);
-            }
+            const spinsToday = this.getLuckySpinsToday(user);
             if (spinsToday >= 3) {
                 return alert('Bạn đã dùng hết 3 lượt quay hôm nay. Hãy quay lại vào ngày mai nhé!');
             }
@@ -10084,7 +10374,6 @@ const app = {
             let segment = 0;
             let rewardText = "";
             let wonPet = null;
-            let wonPetId = null;
 
             // Thú cưng chỉ có xác suất 0,001 = 0,1% (1/1000 lượt quay).
             // Rồng chỉ đổi trong cửa hàng bằng sao, không nằm trong phần thưởng vòng quay.
@@ -10106,7 +10395,6 @@ const app = {
                         const randomPet = eligiblePets[Math.floor(Math.random() * eligiblePets.length)];
                         const reserved = await app.data.changePetStock(randomPet.id, -1, 8);
                         if (reserved) {
-                            wonPetId = randomPet.id;
                             wonPet = {
                                 user_username: user.username,
                                 pet_name: randomPet.name,
@@ -10178,37 +10466,12 @@ const app = {
             }
 
             setTimeout(async () => {
-                if (window.supabase) {
-                    const { error: starError } = await supabaseClient.from('game_users').update({
-                        stars: user.stars || 0, total_stars_earned: user.total_stars_earned || 0, lucky_spin_date: today, lucky_spin_count: nextSpinCount
-                    }).eq('id', user.id);
-                    if (starError) {
-                        if (wonPetId) await app.data.changePetStock(wonPetId, 1, 8);
-                        user.stars = starsBeforeSpin;
-                        user.total_stars_earned = totalStarsBeforeSpin;
-                        rewardText = 'Không thể lưu kết quả vòng quay. Vui lòng thử lại.';
-                    } else if (wonPet) {
-                        user.lucky_spin_date = today;
-                        user.lucky_spin_count = nextSpinCount;
-                        const { data, error: petError } = await supabaseClient.from('user_pets').insert([wonPet]).select();
-                        if (petError || !data?.length) {
-                            await app.data.changePetStock(wonPetId, 1, 8);
-                            rewardText = 'Không thể nhận thú cưng. Kho đã được hoàn lại, vui lòng thử lại.';
-                        } else {
-                            app.data.userPets.push(data[0]);
-                        }
-                    } else {
-                        user.lucky_spin_date = today;
-                        user.lucky_spin_count = nextSpinCount;
-                    }
-                } else {
-                    user.lucky_spin_date = today;
-                    user.lucky_spin_count = nextSpinCount;
-                    app.data.saveUsers();
-                    if (wonPet) {
-                        wonPet.id = 'temp_' + new Date().getTime();
-                        app.data.userPets.push(wonPet);
-                    }
+                user.lucky_spin_date = today;
+                user.lucky_spin_count = nextSpinCount;
+                await app.data.saveUsers();
+                if (wonPet) {
+                    wonPet.id = 'temp_' + new Date().getTime();
+                    app.data.userPets.push(wonPet);
                 }
                 app.auth.updateHeader();
                 if (starSpan) starSpan.innerText = user.stars || 0;

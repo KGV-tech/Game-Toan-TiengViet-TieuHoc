@@ -1,95 +1,38 @@
--- SECURITY MIGRATION: Supabase Auth + RLS. Run only after the new frontend is deployed.
--- Before running, replace :admin_auth_user_id below with the UUID of the teacher's Auth user.
+-- Bước 1: harden quyền ghi hồ sơ game_users.
+-- Chạy sau supabase_auth_security.sql và sau khi frontend đã dùng RPC/Edge Function.
+-- Không cho authenticated UPDATE trực tiếp game_users; service_role vẫn dùng cho
+-- Edge Function quản trị, còn học sinh chỉ đi qua RPC allowlist bên dưới.
 
-ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
-ALTER TABLE public.game_users ALTER COLUMN password DROP NOT NULL;
-ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS lucky_spin_date DATE;
-ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS lucky_spin_count INT NOT NULL DEFAULT 0;
-ALTER TABLE public.game_users ADD COLUMN IF NOT EXISTS avatar_key TEXT NOT NULL DEFAULT 'rocket';
-CREATE UNIQUE INDEX IF NOT EXISTS game_users_auth_user_id_key ON public.game_users(auth_user_id) WHERE auth_user_id IS NOT NULL;
-
--- Remove legacy browser-managed passwords. Supabase Auth is the sole password authority.
-UPDATE public.game_users SET password = NULL;
-
-CREATE SCHEMA IF NOT EXISTS private;
-
-CREATE OR REPLACE FUNCTION private.is_admin()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.game_users
-    WHERE auth_user_id = (SELECT auth.uid()) AND lower(coalesce(role, 'student')) = 'admin'
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION private.current_username()
-RETURNS TEXT
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT username FROM public.game_users WHERE auth_user_id = (SELECT auth.uid()) LIMIT 1;
-$$;
-
-REVOKE ALL ON FUNCTION private.is_admin() FROM PUBLIC;
-REVOKE ALL ON FUNCTION private.current_username() FROM PUBLIC;
-GRANT USAGE ON SCHEMA private TO authenticated;
-GRANT EXECUTE ON FUNCTION private.is_admin() TO authenticated;
-GRANT EXECUTE ON FUNCTION private.current_username() TO authenticated;
-
--- Remove every old permissive policy on the game tables.
 DO $$
-DECLARE policy_row RECORD;
 BEGIN
-  FOR policy_row IN
-    SELECT tablename, policyname FROM pg_policies
-    WHERE schemaname = 'public' AND tablename IN (
-      'game_users', 'game_questions', 'game_exams', 'game_settings', 'game_quests',
-      'user_quests', 'user_pets', 'pet_inventory', 'user_question_history'
-    )
-  LOOP
-    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', policy_row.policyname, policy_row.tablename);
-  END LOOP;
+  IF to_regclass('public.game_users') IS NULL THEN
+    RAISE EXCEPTION 'game_users table is required before applying game_users RLS hardening';
+  END IF;
+  IF to_regprocedure('private.is_admin()') IS NULL THEN
+    RAISE EXCEPTION 'private.is_admin() is required before applying game_users RLS hardening';
+  END IF;
 END $$;
 
 ALTER TABLE public.game_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_questions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_exams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_quests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_quests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_pets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pet_inventory ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_question_history ENABLE ROW LEVEL SECURITY;
 
--- No anonymous browser may access data after this point.
-REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
--- game_users writes must use the RPC/Edge Function boundaries below.
-REVOKE UPDATE ON public.game_users FROM authenticated;
+DROP POLICY IF EXISTS "profiles_update_own_or_teacher" ON public.game_users;
+DROP POLICY IF EXISTS "profiles_update_admin_only" ON public.game_users;
+CREATE POLICY "profiles_update_admin_only" ON public.game_users FOR UPDATE TO authenticated
+  USING ((SELECT private.is_admin()))
+  WITH CHECK ((SELECT private.is_admin()));
 
--- Profiles: own profile or teacher. A new registration can only create its own student profile.
-CREATE POLICY "profiles_select_own_or_teacher" ON public.game_users FOR SELECT TO authenticated
-  USING (auth_user_id = (SELECT auth.uid()) OR (SELECT private.is_admin()));
+DROP POLICY IF EXISTS "profiles_insert_own_student" ON public.game_users;
 CREATE POLICY "profiles_insert_own_student" ON public.game_users FOR INSERT TO authenticated
   WITH CHECK (
     auth_user_id = (SELECT auth.uid())
     AND lower(coalesce(role, 'student')) = 'student'
     AND approved IS FALSE
   );
-CREATE POLICY "profiles_update_admin_only" ON public.game_users FOR UPDATE TO authenticated
-  USING ((SELECT private.is_admin()))
-  WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "profiles_delete_teacher" ON public.game_users FOR DELETE TO authenticated
-  USING ((SELECT private.is_admin()));
 
--- A policy is row-level only. This trigger protects the initial profile values
--- so a browser registration cannot self-create an approved/high-score account.
+-- A policy is row-level only. Remove the table UPDATE grant as a second,
+-- independent guard; admin provisioning is performed by service_role.
+REVOKE UPDATE ON public.game_users FROM authenticated;
+
 CREATE OR REPLACE FUNCTION private.guard_game_users_insert()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -97,6 +40,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- The Edge Function uses service_role and is already authorized server-side.
   IF coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role'
      OR (SELECT private.is_admin()) THEN
     RETURN NEW;
@@ -115,6 +59,7 @@ BEGIN
     RAISE EXCEPTION 'student_profile_initial_values_invalid' USING ERRCODE = '42501';
   END IF;
 
+  -- Legacy password is never accepted from a browser insert.
   NEW.password := NULL;
   RETURN NEW;
 END;
@@ -183,12 +128,12 @@ BEGIN
     INTO v_history_total
   FROM jsonb_array_elements(v_history) AS item;
 
-  IF p_patch ? 'totalscore' AND (
-    jsonb_typeof(p_patch->'totalscore') <> 'number'
-    OR (p_patch->>'totalscore')::numeric < 0
-    OR abs((p_patch->>'totalscore')::numeric - v_history_total) > 0.01
-  ) THEN
-    RAISE EXCEPTION 'invalid_total_score' USING ERRCODE = '22023';
+  IF p_patch ? 'totalscore' THEN
+    IF jsonb_typeof(p_patch->'totalscore') <> 'number'
+       OR (p_patch->>'totalscore')::numeric < 0
+       OR abs((p_patch->>'totalscore')::numeric - v_history_total) > 0.01 THEN
+      RAISE EXCEPTION 'invalid_total_score' USING ERRCODE = '22023';
+    END IF;
   END IF;
   IF p_patch ? 'stars' AND (
     jsonb_typeof(p_patch->'stars') <> 'number'
@@ -277,8 +222,8 @@ BEGIN
     lucky_spin_date = CASE WHEN p_patch ? 'lucky_spin_date' THEN (p_patch->>'lucky_spin_date')::date ELSE lucky_spin_date END,
     lucky_spin_count = CASE WHEN p_patch ? 'lucky_spin_count' THEN (p_patch->>'lucky_spin_count')::integer ELSE lucky_spin_count END
   WHERE id = v_user.id;
-
   SELECT * INTO v_user FROM public.game_users WHERE id = v_user.id;
+
   RETURN jsonb_build_object(
     'id', v_user.id,
     'totalscore', v_user.totalscore,
@@ -301,34 +246,3 @@ GRANT EXECUTE ON FUNCTION public.save_student_progress(jsonb) TO authenticated;
 
 COMMENT ON FUNCTION public.save_student_progress(jsonb) IS
   'Allowlisted student progress write. Score/reward calculation remains a follow-up server-authoritative hardening step.';
-
--- Learning content is readable only after login; teacher alone may modify it.
-CREATE POLICY "questions_read_signed_in" ON public.game_questions FOR SELECT TO authenticated USING (true);
-CREATE POLICY "questions_write_teacher" ON public.game_questions FOR ALL TO authenticated
-  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "exams_read_signed_in" ON public.game_exams FOR SELECT TO authenticated USING (true);
-CREATE POLICY "exams_write_teacher" ON public.game_exams FOR ALL TO authenticated
-  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "settings_read_signed_in" ON public.game_settings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "settings_write_teacher" ON public.game_settings FOR ALL TO authenticated
-  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "quests_read_signed_in" ON public.game_quests FOR SELECT TO authenticated USING (true);
-CREATE POLICY "quests_write_teacher" ON public.game_quests FOR ALL TO authenticated
-  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "inventory_read_signed_in" ON public.pet_inventory FOR SELECT TO authenticated USING (true);
-CREATE POLICY "inventory_write_teacher" ON public.pet_inventory FOR ALL TO authenticated
-  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-
--- Personal learning records are isolated by the authenticated account; teacher may review all.
-CREATE POLICY "seen_questions_own_or_teacher" ON public.user_question_history FOR ALL TO authenticated
-  USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
-  WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
-CREATE POLICY "quests_progress_own_or_teacher" ON public.user_quests FOR ALL TO authenticated
-  USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
-  WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
-CREATE POLICY "pets_own_or_teacher" ON public.user_pets FOR ALL TO authenticated
-  USING (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()))
-  WITH CHECK (user_username = (SELECT private.current_username()) OR (SELECT private.is_admin()));
-
--- Bootstrap exactly one teacher identity. Replace the parameter with the Auth UUID before execution.
--- UPDATE public.game_users SET auth_user_id = :admin_auth_user_id WHERE username = 'admin';
