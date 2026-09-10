@@ -181,3 +181,50 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
+
+test('Bộ lọc roster giữ empty state, chờ duyệt và tương tác accessibility', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const { consoleErrors, supabaseRequests } = await openOfflineAdmin(page);
+
+  await page.evaluate(() => {
+    app.data.users = [
+      { username: 'echo-student', fullname: 'Lê Ngọc Echo', role: 'student', approved: true, classlevel: '4', class_name: '', gender: 'female' },
+      { username: 'delta-student', fullname: 'Võ Quang Delta', role: 'student', approved: true, classlevel: '4', class_name: '4/2', gender: 'male' },
+      { username: 'pending-student', fullname: 'Trần Minh Pending', role: 'student', approved: false, classlevel: '5', class_name: '', gender: 'male' }
+    ];
+    app.admin.renderPlayersList(false);
+  });
+
+  const search = page.locator('#admin-roster-filter-search');
+  await search.fill('LE NGOC');
+  await expect(search).toBeFocused();
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await expect(page.locator('.admin-student-card h4')).toHaveText('Lê Ngọc Echo');
+
+  await search.fill('khong-co-ho-so');
+  await expect(page.locator('.admin-student-card')).toHaveCount(0);
+  await expect(page.locator('.admin-roster-empty')).toContainText('Không có hồ sơ khớp bộ lọc');
+  await page.locator('#admin-roster-filter-reset').click();
+  await expect(page.locator('.admin-student-card')).toHaveCount(2);
+
+  await page.locator('#admin-roster-filter-section').selectOption('__unassigned__');
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await expect(page.locator('.admin-student-card__class-label')).toHaveText('Cấp lớp 4');
+
+  await page.locator('#btn-sub-pending').click();
+  await page.locator('#admin-roster-filter-reset').click();
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await page.locator('#admin-roster-filter-gender').selectOption('male');
+  await expect(page.locator('.admin-student-card')).toHaveCount(1);
+  await expect(page.locator('.admin-student-card__actions button')).toHaveText(['Duyệt', 'Xóa']);
+
+  const reducedMotion = await page.locator('.admin-student-card').evaluate(card => ({
+    transitionDuration: getComputedStyle(card).transitionDuration,
+    animationName: getComputedStyle(card).animationName
+  }));
+  expect(reducedMotion.transitionDuration).toBe('0s');
+  expect(reducedMotion.animationName).toBe('none');
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});

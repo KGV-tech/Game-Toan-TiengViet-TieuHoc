@@ -8590,7 +8590,12 @@ const app = {
                 className: String(this.studentRosterFilters?.className || '').trim(),
                 gender: String(this.studentRosterFilters?.gender || '').trim()
             };
-            const normalizeFilterText = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            const normalizeFilterText = value => String(value || '')
+                .trim()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd')
+                .toLocaleLowerCase('vi-VN');
             const filteredUsers = baseUsers.filter(user => {
                 const userClassLevel = app.data.normalizeClassLevel(user.classlevel);
                 const userClassName = String(user.class_name || '').trim();
