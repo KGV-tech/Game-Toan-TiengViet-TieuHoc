@@ -1198,8 +1198,9 @@ const app = {
             });
         },
         setAvatarGroup(group, button) {
-            document.querySelectorAll('[data-avatar-group]').forEach(element => { element.hidden = element.dataset.avatarGroup !== group; });
-            document.querySelectorAll('.avatar-picker__tabs [role="tab"]').forEach(tab => {
+            const picker = button?.closest('.avatar-picker') || document;
+            picker.querySelectorAll('[data-avatar-group]').forEach(element => { element.hidden = element.dataset.avatarGroup !== group; });
+            picker.querySelectorAll('.avatar-picker__tabs [role="tab"]').forEach(tab => {
                 const active = tab === button;
                 tab.classList.toggle('active', active);
                 tab.setAttribute('aria-selected', String(active));
@@ -9230,6 +9231,26 @@ const app = {
             const subBox = document.getElementById('admin-subcontent-area');
             if (!subBox) return;
             let u = (editUsername && typeof editUsername === 'string') ? app.data.users.find(x => x.username === editUsername) : null;
+            const avatarGroups = [
+                { key: 'boys', label: 'Bé trai', prefix: 'boy-' },
+                { key: 'girls', label: 'Bé gái', prefix: 'girl-' },
+                { key: 'cartoons', label: 'Hoạt hình', prefix: 'cartoon-' }
+            ];
+            const selectedAvatarKey = app.auth.getAvatar(u?.avatar_key || 'boy-short').key;
+            const selectedAvatarGroup = avatarGroups.find(group => selectedAvatarKey.startsWith(group.prefix))?.key || 'boys';
+            const avatarChoices = Object.entries(app.auth.avatarChoices)
+                .filter(([key]) => avatarGroups.some(group => key.startsWith(group.prefix)));
+            const avatarPicker = `
+                <fieldset class="avatar-picker admin-student-form__avatar-picker">
+                    <legend>Avatar học sinh</legend>
+                    <div class="avatar-picker__tabs" role="tablist" aria-label="Nhóm avatar học sinh">
+                        ${avatarGroups.map(group => `<button type="button" class="${selectedAvatarGroup === group.key ? 'active' : ''}" role="tab" aria-selected="${selectedAvatarGroup === group.key}" onclick="app.auth.setAvatarGroup('${group.key}', this)">${group.label}</button>`).join('')}
+                    </div>
+                    ${avatarGroups.map(group => `
+                        <div class="avatar-picker__choices" data-avatar-group="${group.key}" ${selectedAvatarGroup === group.key ? '' : 'hidden'} role="tabpanel" aria-label="${group.label}">
+                            ${avatarChoices.filter(([key]) => key.startsWith(group.prefix)).map(([key, avatar]) => `<label title="${app.data.sanitizeHTML(avatar.label)}"><input type="radio" name="admin-avatar" value="${key}" aria-label="${app.data.sanitizeHTML(avatar.label)}" ${selectedAvatarKey === key ? 'checked' : ''}><span class="avatar-art avatar-art--${key}" role="img" aria-label="${app.data.sanitizeHTML(avatar.label)}"></span></label>`).join('')}
+                        </div>`).join('')}
+                </fieldset>`;
             subBox.innerHTML = `
                 <section class="admin-student-form" aria-label="${u ? 'Sửa thông tin học sinh' : 'Thêm học sinh mới'}">
                     <header class="admin-student-form__header">
@@ -9246,6 +9267,7 @@ const app = {
                             <label class="admin-student-form__field"><span>Cấp lớp</span><select id="add-class" class="form-input"><option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option><option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option><option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option><option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option><option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option></select></label>
                             <label class="admin-student-form__field"><span>Lớp</span><input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}"></label>
                             <label class="admin-student-form__field"><span>Giới tính</span><select id="add-gender" class="form-input"><option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option><option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option><option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option></select></label>
+                            ${avatarPicker}
                         </div>
                         <footer class="admin-student-form__actions"><button type="button" class="action-btn admin-student-form__cancel" onclick="app.admin.renderPlayersList(false)">Hủy</button>${app.ui.compactAction(u ? 'Lưu chỉnh sửa' : 'Tạo tài khoản', `app.admin.addPlayerSubmit('${typeof editUsername === 'string' ? encodeURIComponent(editUsername) : ''}')`, u ? 'compact-admin-action--save' : 'compact-admin-action--create')}</footer>
                     </div>
@@ -9262,6 +9284,10 @@ const app = {
             const cl = document.getElementById('add-class').value;
             const className = document.getElementById('add-class-name')?.value.trim() || '';
             const gender = document.getElementById('add-gender')?.value || null;
+            const requestedAvatar = document.querySelector('input[name="admin-avatar"]:checked')?.value || 'boy-short';
+            const avatarKey = /^(boy|girl|cartoon)-/.test(requestedAvatar) && Object.prototype.hasOwnProperty.call(app.auth.avatarChoices, requestedAvatar)
+                ? requestedAvatar
+                : 'boy-short';
             if (!fn || !un || (!editUsername && !pw)) return alert('Điền đủ thông tin!');
 
             if (editUsername) {
@@ -9272,7 +9298,7 @@ const app = {
                         try {
                             await app.auth.manageStudentAccount({
                                 action: 'update_profile', username: editUsername, fullname: fn,
-                                classlevel: cl, class_name: className || null, gender
+                                classlevel: cl, class_name: className || null, gender, avatar_key: avatarKey
                             });
                         } catch (error) {
                             const messages = {
@@ -9287,6 +9313,7 @@ const app = {
                     user.classlevel = cl;
                     user.class_name = className || null;
                     user.gender = gender;
+                    user.avatar_key = avatarKey;
                     if (pw) {
                         try {
                             await app.auth.manageStudentAccount({ action: 'reset_password', username: un, password: pw });
@@ -9306,7 +9333,7 @@ const app = {
             } else {
                 if (app.data.users.find(x => x.username === un)) return alert('Tên đăng nhập đã tồn tại!');
                 try {
-                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, class_name: className || null, gender, password: pw });
+                    const data = await app.auth.manageStudentAccount({ action: 'create', username: un, fullname: fn, classlevel: cl, class_name: className || null, gender, avatar_key: avatarKey, password: pw });
                     // Realtime can insert this profile before the function response arrives.
                     if (!app.data.users.find(x => x.id === data.profile.id)) app.data.users.push(data.profile);
                 } catch (error) {

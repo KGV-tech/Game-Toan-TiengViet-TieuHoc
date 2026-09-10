@@ -352,6 +352,44 @@ test('Thẻ học sinh hiển thị họ tên đầy đủ và trạng thái kh�
   expect(consoleErrors).toEqual([]);
 });
 
+test('Form sửa hồ sơ cho phép đổi avatar và cập nhật lại thẻ học sinh', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineAdmin(page);
+
+  await page.evaluate(() => {
+    window.alert = () => {};
+    app.data.users = [{
+      id: 'student-avatar-1', username: 'an', fullname: 'Nguyễn Minh An', role: 'student', approved: true,
+      classlevel: '4', class_name: '4/1', gender: 'female', avatar_key: 'girl-long'
+    }];
+    app.admin.renderPlayersList(false);
+  });
+
+  await page.locator('.admin-student-card__actions button').filter({ hasText: 'Sửa' }).click();
+  await expect(page.locator('.admin-student-form')).toBeVisible();
+  await expect(page.locator('input[name="admin-avatar"][value="girl-long"]')).toBeChecked();
+  await expect(page.locator('input[name="admin-avatar"]')).toHaveCount(30);
+
+  await page.locator('.admin-student-form .avatar-picker__tabs button').filter({ hasText: 'Hoạt hình' }).click();
+  await expect(page.locator('.admin-student-form .avatar-picker__choices[data-avatar-group="cartoons"]')).toBeVisible();
+  await page.locator('.admin-student-form .avatar-picker__choices[data-avatar-group="cartoons"] label[title="Rồng phép thuật"]').click();
+  await page.evaluate(() => {
+    window.supabase = {};
+    window.__avatarPayloads = [];
+    app.auth.manageStudentAccount = async payload => {
+      window.__avatarPayloads.push(payload);
+      return { profile: app.data.users.find(user => user.username === 'an') };
+    };
+  });
+  await page.evaluate(() => app.admin.addPlayerSubmit(encodeURIComponent('an')));
+
+  await expect(page.locator('.admin-student-card__avatar.avatar-art--cartoon-dragon')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => app.data.users.find(user => user.username === 'an')?.avatar_key)).toBe('cartoon-dragon');
+  await expect.poll(() => page.evaluate(() => window.__avatarPayloads[0])).toMatchObject({ action: 'update_profile', username: 'an', avatar_key: 'cartoon-dragon' });
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('Bộ lọc roster giữ empty state, chờ duyệt và tương tác accessibility', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
