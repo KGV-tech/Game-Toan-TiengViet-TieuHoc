@@ -408,9 +408,15 @@ const app = {
         hydrateQuestCurriculum(quests) {
             const metadata = this.ensureLessonMetadata().quests;
             (quests || []).forEach(quest => {
-                if (!quest || quest.curriculum) return;
+                if (!quest) return;
                 const stored = metadata[this.getQuestLessonMetadataKey(quest)];
-                if (stored?.curriculum) quest.curriculum = stored.curriculum;
+                if (!stored) return;
+                if (!quest.curriculum && stored.curriculum) quest.curriculum = stored.curriculum;
+                ['target_classlevel', 'start_at', 'end_at'].forEach(field => {
+                    if ((quest[field] === undefined || quest[field] === null || quest[field] === '') && stored[field]) {
+                        quest[field] = stored[field];
+                    }
+                });
             });
             return quests;
         },
@@ -420,7 +426,13 @@ const app = {
                 if (!quest) return;
                 const curriculum = quest.curriculum && typeof quest.curriculum === 'object' ? quest.curriculum : null;
                 const key = this.getQuestLessonMetadataKey(quest);
-                if (curriculum && Object.values(curriculum).some(Boolean)) metadata[key] = { curriculum };
+                const entry = {};
+                if (curriculum && Object.values(curriculum).some(Boolean)) entry.curriculum = curriculum;
+                ['target_classlevel', 'start_at', 'end_at'].forEach(field => {
+                    const value = String(quest[field] ?? '').trim();
+                    if (value) entry[field] = value;
+                });
+                if (Object.keys(entry).length) metadata[key] = entry;
                 else if (metadata[key]) delete metadata[key];
             });
             return metadata;
@@ -5053,6 +5065,9 @@ const app = {
             const pausedCount = quests.length - activeCount;
             const scopedCount = quests.filter(quest => this.getQuestCurriculumLabel(quest)).length;
             const subjectLabel = value => value === 'math' ? 'Toán' : (value === 'vietnamese' ? 'Tiếng Việt' : 'Bất kỳ');
+            const targetClassLabel = quest => quest?.target_classlevel
+                ? `Cấp lớp ${app.data.normalizeClassLevel(quest.target_classlevel)}`
+                : 'Tất cả cấp lớp';
             const assignLabel = quest => {
                 if (quest.assign_type === 'class') return `Lớp ${esc(quest.assign_target || '—')}`;
                 if (quest.assign_type === 'user') return `HS: ${esc(quest.assign_target || '—')}`;
@@ -5085,6 +5100,10 @@ const app = {
                     <div class="personal-quest-card__scope">
                         <span>Phạm vi chương trình</span>
                         <strong>${scope}</strong>
+                    </div>
+                    <div class="personal-quest-card__schedule">
+                        <span>Phạm vi nhiệm vụ · Thời gian</span>
+                        <strong>${esc(targetClassLabel(q))} · ${esc(this.getQuestScheduleLabel(q))}</strong>
                     </div>
                     <footer class="personal-quest-card__footer">
                         <span class="personal-quest-card__audience"><span aria-hidden="true">◎</span> ${assignLabel(q)}</span>
@@ -5581,6 +5600,94 @@ const app = {
             if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể kết thúc trận trên Supabase. Vui lòng kiểm tra kết nối.');
             this.openTeamCompetitionBoard(ended.id);
         },
+        getQuestAssignableStudents(classlevel = document.getElementById('quest-target-classlevel')?.value || '') {
+            const targetLevel = app.data.normalizeClassLevel(classlevel);
+            const students = (app.data.users || []).filter(user => {
+                if (!user || String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
+                if (!String(user.username || '').trim()) return false;
+                return !targetLevel || app.data.normalizeClassLevel(user.classlevel) === targetLevel;
+            });
+            return app.data.sortUsersByVietnameseName(students);
+        },
+        getQuestAssignableClasses(classlevel = document.getElementById('quest-target-classlevel')?.value || '') {
+            return Array.from(new Set(this.getQuestAssignableStudents(classlevel)
+                .map(user => String(user.class_name || '').trim().replace(/^Lớp\s*/i, '').trim())
+                .filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
+        },
+        updateQuestAssignmentTarget() {
+            const type = document.getElementById('quest-assign-type')?.value || 'all';
+            const field = document.getElementById('quest-assign-target-field');
+            const target = document.getElementById('quest-assign-target');
+            const help = document.getElementById('quest-assign-target-help');
+            if (!field || !target) return;
+
+            const currentValue = target.value;
+            const needsTarget = type !== 'all';
+            field.hidden = !needsTarget;
+            target.disabled = !needsTarget;
+            target.required = needsTarget;
+
+            if (!needsTarget) {
+                target.innerHTML = '<option value="">Không áp dụng</option>';
+                target.value = '';
+                if (help) help.textContent = 'Nhiệm vụ sẽ áp dụng cho tất cả học sinh đã được duyệt.';
+                return;
+            }
+
+            const classlevel = document.getElementById('quest-target-classlevel')?.value || '';
+            if (type === 'class') {
+                const students = this.getQuestAssignableStudents(classlevel);
+                const classes = this.getQuestAssignableClasses(classlevel);
+                const counts = students.reduce((result, student) => {
+                    const className = String(student.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
+                    if (className) result.set(className, (result.get(className) || 0) + 1);
+                    return result;
+                }, new Map());
+                target.innerHTML = classes.length
+                    ? `<option value="">Chọn lớp cụ thể</option>${classes.map(className => `<option value="${app.data.sanitizeHTML(className)}">Lớp ${app.data.sanitizeHTML(className)} · ${counts.get(className)} học sinh</option>`).join('')}`
+                    : '<option value="">Chưa có lớp cụ thể để chọn</option>';
+                target.disabled = classes.length === 0;
+                if (help) help.textContent = classes.length
+                    ? 'Danh sách lấy từ học sinh đã được duyệt; chỉ chọn được lớp đang có dữ liệu.'
+                    : 'Chưa có học sinh đã duyệt nào khai báo lớp cụ thể ở cấp lớp này.';
+            } else {
+                const students = this.getQuestAssignableStudents(classlevel);
+                target.innerHTML = students.length
+                    ? `<option value="">Chọn học sinh</option>${students.map(student => {
+                        const username = String(student.username || '').trim();
+                        const fullname = String(student.fullname || username).trim();
+                        return `<option value="${app.data.sanitizeHTML(username)}">${app.data.sanitizeHTML(`${fullname} · @${username} · ${app.data.getStudentClassLabel(student)}`)}</option>`;
+                    }).join('')}`
+                    : '<option value="">Chưa có học sinh đã duyệt để chọn</option>';
+                target.disabled = students.length === 0;
+                if (help) help.textContent = students.length
+                    ? 'Danh sách đã sắp theo tên tiếng Việt và chỉ gồm học sinh đã được duyệt.'
+                    : 'Chưa có học sinh đã duyệt ở cấp lớp này.';
+            }
+
+            const availableValues = Array.from(target.options, option => option.value);
+            target.value = availableValues.includes(currentValue) ? currentValue : '';
+        },
+        normalizeQuestDateTime(value) {
+            const text = String(value || '').trim();
+            if (!text) return null;
+            const timestamp = Date.parse(text);
+            return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+        },
+        formatQuestDateTime(value) {
+            const timestamp = Date.parse(String(value || ''));
+            if (!Number.isFinite(timestamp)) return '';
+            return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp));
+        },
+        getQuestScheduleLabel(quest) {
+            const start = this.formatQuestDateTime(quest?.start_at);
+            const end = this.formatQuestDateTime(quest?.end_at);
+            if (start && end) return `${start} → ${end}`;
+            if (start) return `Từ ${start}`;
+            if (end) return `Đến ${end}`;
+            return 'Không giới hạn thời gian';
+        },
         getQuestCurriculumLabel(quest) {
             const curriculum = quest?.curriculum || {};
             const parts = [];
@@ -5648,7 +5755,10 @@ const app = {
                         <header class="quest-form-section__header"><span class="quest-form-section__number">01</span><div><h4 id="quest-form-basic-title">Mục tiêu nhiệm vụ</h4><p>Đặt tên và chỉ số hoàn thành để cô dễ theo dõi tiến độ.</p></div></header>
                         <div class="quest-form-grid">
                             <label class="quest-form-field quest-form-field--wide"><span>Tên nhiệm vụ</span><input type="text" id="quest-title" class="form-input" placeholder="Ví dụ: Hoàn thành 3 bài Toán xuất sắc"><small>Viết ngắn gọn, bắt đầu bằng một động từ rõ ràng.</small></label>
+                            <label class="quest-form-field"><span>Cấp lớp</span><select id="quest-target-classlevel" class="form-input" onchange="app.admin.updateQuestAssignmentTarget()"><option value="">Tất cả cấp lớp</option><option value="1">Cấp lớp 1</option><option value="2">Cấp lớp 2</option><option value="3">Cấp lớp 3</option><option value="4">Cấp lớp 4</option><option value="5">Cấp lớp 5</option></select><small>Chỉ học sinh thuộc cấp lớp này mới thấy nhiệm vụ.</small></label>
                             <label class="quest-form-field"><span>Môn học</span><select id="quest-subject" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="any">Bất kỳ</option><option value="math">Toán</option><option value="vietnamese">Tiếng Việt</option></select></label>
+                            <label class="quest-form-field"><span>Thời gian bắt đầu <small>(tùy chọn)</small></span><input type="datetime-local" id="quest-start-at" class="form-input" step="60"><small>Để trống nếu nhiệm vụ có thể bắt đầu ngay.</small></label>
+                            <label class="quest-form-field"><span>Thời gian kết thúc <small>(tùy chọn)</small></span><input type="datetime-local" id="quest-end-at" class="form-input" step="60"><small>Để trống nếu nhiệm vụ không có hạn kết thúc.</small></label>
                             <label class="quest-form-field"><span>Điểm tối thiểu</span><div class="quest-form-input-with-unit"><input type="number" id="quest-score" class="form-input" value="80" min="0" max="100"><span>điểm</span></div></label>
                             <label class="quest-form-field"><span>Số lượt yêu cầu</span><div class="quest-form-input-with-unit"><input type="number" id="quest-count" class="form-input" value="3" min="1"><span>lượt</span></div></label>
                             <label class="quest-form-field"><span>Phần thưởng</span><div class="quest-form-input-with-unit"><input type="number" id="quest-reward" class="form-input" value="20" min="1"><span>⭐</span></div></label>
@@ -5657,7 +5767,7 @@ const app = {
                     <section id="quest-curriculum-fields" class="admin-curriculum-panel quest-form-section quest-form-curriculum" hidden aria-label="Phạm vi chương trình Toán">
                         <header class="quest-form-section__header"><span class="quest-form-section__number quest-form-section__number--amber">02</span><div><h4>Phạm vi chương trình</h4><p>Chỉ hiện khi nhiệm vụ dành cho Toán; có thể đi sâu đến đúng Bài học.</p></div></header>
                         <div class="quest-form-grid quest-form-grid--curriculum">
-                            <label class="quest-form-field"><span>Cấp lớp</span><select id="quest-classlevel" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Tất cả cấp lớp</option><option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option><option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option></select></label>
+                            <label class="quest-form-field"><span>Cấp lớp nội dung</span><select id="quest-classlevel" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Tất cả cấp lớp</option><option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option><option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option></select></label>
                             <label class="quest-form-field"><span>Học kỳ</span><select id="quest-semester" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="Học kỳ 1">Học kỳ 1</option><option value="Học kỳ 2">Học kỳ 2</option></select></label>
                             <label class="quest-form-field quest-form-field--wide"><span>Chủ đề</span><select id="quest-topic" class="form-input" onchange="app.admin.updateQuestCurriculumFields()"><option value="">Không giới hạn Chủ đề</option></select></label>
                             <label id="quest-lesson-field" class="quest-form-field quest-form-field--wide" hidden><span>Bài học</span><select id="quest-lesson" class="form-input" data-selected=""></select><small>Không chọn để giao theo toàn bộ Chủ đề.</small></label>
@@ -5667,14 +5777,15 @@ const app = {
                         <header class="quest-form-section__header"><span class="quest-form-section__number quest-form-section__number--violet">03</span><div><h4 id="quest-form-delivery-title">Cách giao nhiệm vụ</h4><p>Có thể gắn đề kiểm tra và giới hạn đúng nhóm học sinh cần nhận.</p></div></header>
                         <div class="quest-form-grid">
                             <label class="quest-form-field quest-form-field--wide"><span>Đề kiểm tra giao kèm <small>(tùy chọn)</small></span><select id="quest-exam" class="form-input"><option value="">Không gắn đề — nhiệm vụ luyện tập thông thường</option>${examOptions}</select><small>Nếu chọn đề, học sinh chỉ được tính tiến độ khi làm đúng đề này từ nút “Làm đề”.</small></label>
-                            <label class="quest-form-field"><span>Chỉ định cho</span><select id="quest-assign-type" class="form-input" onchange="const showTarget = this.value !== 'all'; document.getElementById('quest-assign-target').style.display = showTarget ? 'block' : 'none'; document.getElementById('quest-assign-target-field').hidden = !showTarget"><option value="all">Toàn trường</option><option value="class">Theo Lớp</option><option value="user">Đích danh Học sinh (Username)</option></select></label>
-                            <label id="quest-assign-target-field" class="quest-form-field quest-form-field--wide" hidden><span>Đích danh <small>(chỉ dùng khi chọn theo lớp/học sinh)</small></span><input type="text" id="quest-assign-target" class="form-input" placeholder="Nhập tên lớp (VD: 5) hoặc Username"></label>
+                            <label class="quest-form-field"><span>Chỉ định cho</span><select id="quest-assign-type" class="form-input" onchange="app.admin.updateQuestAssignmentTarget()"><option value="all">Toàn trường</option><option value="class">Theo lớp cụ thể</option><option value="user">Đích danh học sinh</option></select><small>Chọn đúng phạm vi từ dữ liệu đã có trong danh sách.</small></label>
+                            <label id="quest-assign-target-field" class="quest-form-field quest-form-field--wide" hidden><span>Danh sách mục tiêu <small>(không nhập tự do)</small></span><select id="quest-assign-target" class="form-input" aria-describedby="quest-assign-target-help" disabled><option value="">Chọn cách giao để tải danh sách</option></select><small id="quest-assign-target-help">Chọn cách giao để tải danh sách chính xác.</small></label>
                         </div>
                     </section>
                     <footer class="quest-form-actions"><p><span aria-hidden="true">✦</span> Cô có thể kiểm tra lại phạm vi trước khi lưu.</p><div>${app.ui.compactAction('Hủy', "app.admin.switchTab('quests')", 'compact-admin-action--cancel')}${app.ui.compactAction('Lưu nhiệm vụ', 'app.admin.submitQuest()', 'compact-admin-action--save')}</div></footer>
                 </section>
       `;
             this.updateQuestCurriculumFields();
+            this.updateQuestAssignmentTarget();
         },
         async submitQuest() {
             const title = document.getElementById('quest-title').value.trim();
@@ -5684,11 +5795,27 @@ const app = {
             const reward = parseInt(document.getElementById('quest-reward').value) || 10;
             const assignType = document.getElementById('quest-assign-type').value;
             const assignTarget = document.getElementById('quest-assign-target').value.trim();
+            const targetClasslevel = document.getElementById('quest-target-classlevel')?.value || '';
+            const startAtInput = document.getElementById('quest-start-at')?.value || '';
+            const endAtInput = document.getElementById('quest-end-at')?.value || '';
+            const startAt = this.normalizeQuestDateTime(startAtInput);
+            const endAt = this.normalizeQuestDateTime(endAtInput);
             const examId = document.getElementById('quest-exam').value || null;
             const curriculum = this.getQuestCurriculumSelection();
 
             if (!title) return alert("Vui lòng nhập tên nhiệm vụ!");
-            if (assignType !== 'all' && !assignTarget) return alert("Vui lòng nhập đích danh (Lớp/Username)!");
+            if (!['all', 'class', 'user'].includes(assignType)) return alert('Cách giao nhiệm vụ không hợp lệ.');
+            if (!['', '1', '2', '3', '4', '5'].includes(targetClasslevel)) return alert('Cấp lớp mục tiêu không hợp lệ.');
+            if (startAtInput && !startAt) return alert('Thời gian bắt đầu không hợp lệ.');
+            if (endAtInput && !endAt) return alert('Thời gian kết thúc không hợp lệ.');
+            if (startAt && endAt && Date.parse(endAt) <= Date.parse(startAt)) return alert('Thời gian kết thúc phải sau thời gian bắt đầu.');
+            if (assignType !== 'all' && !assignTarget) return alert('Vui lòng chọn một mục tiêu từ danh sách.');
+            if (assignType === 'class' && !this.getQuestAssignableClasses(targetClasslevel).includes(assignTarget)) {
+                return alert('Lớp được chọn không còn trong danh sách học sinh đã duyệt.');
+            }
+            if (assignType === 'user' && !this.getQuestAssignableStudents(targetClasslevel).some(student => String(student.username || '').trim() === assignTarget)) {
+                return alert('Học sinh được chọn không còn trong danh sách đã duyệt.');
+            }
 
             const selectedExam = examId ? app.data.exams.find(exam => exam.id === examId) : null;
             if (examId && !selectedExam) return alert('Không tìm thấy đề kiểm tra đã chọn.');
@@ -5704,7 +5831,8 @@ const app = {
             }
             const newQuest = {
                 title, target_subject: subject, target_score: score, target_count: count,
-                reward_stars: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId, is_active: true,
+                reward_stars: reward, assign_type: assignType, assign_target: assignTarget, exam_id: examId,
+                target_classlevel: targetClasslevel, start_at: startAt, end_at: endAt, is_active: true,
                 ...(Object.keys(curriculum).length ? { curriculum } : {})
             };
             if (selectedExam) {
@@ -5713,13 +5841,18 @@ const app = {
             }
 
             if (window.supabase) {
-                const { curriculum: _, ...serverQuest } = newQuest;
+                // game_quests cũ chưa có cột phạm vi cấp lớp/thời gian; giữ các trường mới trong metadata đã đồng bộ của game_settings.
+                const serverQuest = { ...newQuest };
+                delete serverQuest.curriculum;
+                delete serverQuest.target_classlevel;
+                delete serverQuest.start_at;
+                delete serverQuest.end_at;
                 const { data, error } = await supabaseClient.from('game_quests').insert([serverQuest]).select();
                 if (error) {
                     console.error("Lỗi tạo nhiệm vụ:", error);
                     alert("Có lỗi khi tạo nhiệm vụ trên server!");
                 } else if (data && data.length > 0) {
-                    const savedQuest = { ...data[0], ...(Object.keys(curriculum).length ? { curriculum } : {}) };
+                    const savedQuest = { ...data[0], target_classlevel: targetClasslevel, start_at: startAt, end_at: endAt, ...(Object.keys(curriculum).length ? { curriculum } : {}) };
                     app.data.quests.push(savedQuest);
                     app.data.syncQuestCurriculumMetadata();
                     await app.data.saveLessonMetadata();
@@ -8590,7 +8723,12 @@ const app = {
                 className: String(this.studentRosterFilters?.className || '').trim(),
                 gender: String(this.studentRosterFilters?.gender || '').trim()
             };
-            const normalizeFilterText = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
+            const normalizeFilterText = value => String(value || '')
+                .trim()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd')
+                .toLocaleLowerCase('vi-VN');
             const filteredUsers = baseUsers.filter(user => {
                 const userClassLevel = app.data.normalizeClassLevel(user.classlevel);
                 const userClassName = String(user.class_name || '').trim();
@@ -9436,6 +9574,31 @@ const app = {
 
     quest: {
         init() { },
+        matchesAssignment(quest, user) {
+            if (!quest || !user) return false;
+            const classlevel = app.data.normalizeClassLevel(user.classlevel);
+            const targetClasslevel = app.data.normalizeClassLevel(quest.target_classlevel);
+            if (targetClasslevel && targetClasslevel !== classlevel) return false;
+
+            if (quest.assign_type === 'all') return true;
+            if (quest.assign_type === 'user') return String(quest.assign_target || '').trim() === String(user.username || '').trim();
+            if (quest.assign_type === 'class') {
+                const className = String(user.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
+                const target = String(quest.assign_target || '').trim().replace(/^Lớp\s*/i, '').trim();
+                return Boolean(target) && (target === className || target === classlevel);
+            }
+            return false;
+        },
+        isWithinSchedule(quest, now = Date.now()) {
+            const start = Date.parse(String(quest?.start_at || ''));
+            const end = Date.parse(String(quest?.end_at || ''));
+            if (Number.isFinite(start) && now < start) return false;
+            if (Number.isFinite(end) && now >= end) return false;
+            return true;
+        },
+        isQuestAvailableForUser(quest, user, now = Date.now()) {
+            return Boolean(quest) && quest.is_active !== false && this.isWithinSchedule(quest, now) && this.matchesAssignment(quest, user);
+        },
         open() {
             const modal = document.getElementById('quest-modal');
             modal.style.display = 'flex';
@@ -9447,14 +9610,7 @@ const app = {
             const user = app.data.currentUser;
             if (!user || user.role === 'admin') return;
 
-            const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
-            const activeQuests = (app.data.quests || []).filter(q => {
-                if (!q.is_active) return false;
-                if (q.assign_type === 'all') return true;
-                if (q.assign_type === 'class' && q.assign_target === clLvl) return true;
-                if (q.assign_type === 'user' && q.assign_target === user.username) return true;
-                return false;
-            });
+            const activeQuests = (app.data.quests || []).filter(q => this.isQuestAvailableForUser(q, user));
 
             const activeTeamMatches = app.teamCompetition?.getActiveForUser?.(user.username) || [];
             let teamCompetitionHtml = '';
@@ -9542,6 +9698,7 @@ const app = {
 
             const q = app.data.quests.find(x => x.id === questId);
             if (!q) return;
+            if (!this.isQuestAvailableForUser(q, user)) return;
 
             let uq = app.data.userQuests.find(x => x.quest_id === questId);
             if (!uq || uq.is_completed || uq.progress < q.target_count) return;
@@ -9582,17 +9739,15 @@ const app = {
             const playedTopics = Array.isArray(context.topics) ? context.topics : [];
             const playedLessons = Array.isArray(context.lessons) ? context.lessons : [];
             const activeQuests = (app.data.quests || []).filter(q => {
-                if (!q.is_active) return false;
-                if (q.assign_type === 'all' || (q.assign_type === 'class' && q.assign_target === clLvl) || (q.assign_type === 'user' && q.assign_target === user.username)) {
-                    if (q.exam_id && (q.id !== questId || q.exam_id !== examId)) return false;
-                    if (!q.exam_id && questId) return false;
-                    if (q.target_subject === 'any' || q.target_subject === subject) {
-                        const curriculum = q.curriculum || {};
-                        if (curriculum.classlevel && app.curriculum?.normalizeClassNumber(curriculum.classlevel) !== clLvl) return false;
-                        if (curriculum.topic && !playedTopics.some(topic => same(topic, curriculum.topic))) return false;
-                        if (curriculum.lesson && !playedLessons.some(lesson => same(lesson, curriculum.lesson))) return false;
-                        if (score >= q.target_score) return true;
-                    }
+                if (!this.isQuestAvailableForUser(q, user)) return false;
+                if (q.exam_id && (q.id !== questId || q.exam_id !== examId)) return false;
+                if (!q.exam_id && questId) return false;
+                if (q.target_subject === 'any' || q.target_subject === subject) {
+                    const curriculum = q.curriculum || {};
+                    if (curriculum.classlevel && app.curriculum?.normalizeClassNumber(curriculum.classlevel) !== clLvl) return false;
+                    if (curriculum.topic && !playedTopics.some(topic => same(topic, curriculum.topic))) return false;
+                    if (curriculum.lesson && !playedLessons.some(lesson => same(lesson, curriculum.lesson))) return false;
+                    if (score >= q.target_score) return true;
                 }
                 return false;
             });

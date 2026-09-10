@@ -3917,6 +3917,9 @@ input[type="text"], input[type="password"], select, textarea {
 .personal-quest-card__facts strong { overflow: hidden; color: #e9e2ff; font-size: .7rem; line-height: 1.35; text-overflow: ellipsis; }
 .personal-quest-card__scope { display: grid; gap: 4px; padding: 9px 10px; border: 1px dashed rgba(189, 163, 249, .3); border-radius: 10px; background: rgba(22, 16, 48, .24); }
 .personal-quest-card__scope strong { color: #c8b5ed; font-size: .68rem; line-height: 1.4; }
+.personal-quest-card__schedule { display: grid; gap: 4px; padding: 9px 10px; border: 1px solid rgba(105, 174, 200, .2); border-radius: 10px; background: rgba(8, 32, 48, .3); }
+.personal-quest-card__schedule span { color: #8293aa; font-size: .6rem; font-weight: 900; text-transform: uppercase; }
+.personal-quest-card__schedule strong { color: #b8e5ee; font-size: .68rem; line-height: 1.4; }
 .personal-quest-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 3px; border-top: 1px solid rgba(162, 140, 215, .18); }
 .personal-quest-card__audience { min-width: 0; overflow: hidden; color: #9ba3c0; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
 .personal-quest-card__audience span { color: #c4a6ff; }
