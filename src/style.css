@@ -4299,6 +4299,9 @@ input[type="text"], input[type="password"], select, textarea {
 .team-form-grid--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .team-field-label { gap: 6px; color: #bad7e4; font-size: .72rem; font-weight: 800; }
 .team-field-label > span { color: #9fc5d3; font-size: .68rem; font-weight: 800; }
+.team-field-label--multiselect { align-content: start; }
+.team-field-label--multiselect select { min-height: 104px !important; padding: 6px 8px !important; }
+.team-field-label--multiselect small { color: #7294a3; font-size: .64rem; font-weight: 600; line-height: 1.4; }
 .team-competition-form--new .form-input { width: 100%; min-width: 0; min-height: 42px; margin: 0; padding: 9px 11px; border: 1px solid rgba(108, 165, 193, .42); border-radius: 10px; background: linear-gradient(180deg, rgba(14, 39, 58, .98), rgba(7, 23, 39, .98)); color: #ebf8ff; font-size: .78rem; color-scheme: dark; box-shadow: inset 0 2px 7px rgba(0, 0, 0, .18); }
 .team-competition-form--new .form-input::placeholder { color: #6e91a3; }
 .team-competition-form--new .form-input option { background: #0b253b; color: #ecf8ff; }

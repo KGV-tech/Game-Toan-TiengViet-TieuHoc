@@ -176,11 +176,21 @@
             });
             const attempts = {};
             teams.forEach(team => { if (team.attempt) attempts[team.id] = team.attempt; });
+            const classlevel = String(row.classlevel || '').replace(/^Lớp\s*/i, '').trim();
+            const className = String(row.class_name || '').trim();
+            const roster = Array.isArray(app.data?.users) ? app.data.users : [];
+            const eligibleStudentUsernames = new Set(roster
+                .filter(user => String(user.role || '').toLowerCase() !== 'admin' && user.approved !== false)
+                .filter(user => !classlevel || String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() === classlevel)
+                .filter(user => !className || String(user.class_name || '').trim() === className)
+                .map(user => String(user.username || '').trim())
+                .filter(Boolean));
+            const assignedStudentUsernames = new Set(teams.flatMap(team => team.memberUsernames));
             return api.normalizeCompetition({
                 id: String(row.id),
                 name: row.name,
                 classlevel: row.classlevel,
-                className: row.class_name || '',
+                className,
                 participantMode: row.participant_mode,
                 questionMode: row.question_mode,
                 commonExamId: row.common_exam_id || null,
@@ -194,6 +204,7 @@
                 teams,
                 teamCount: teams.length,
                 selectedStudentUsernames: teams.flatMap(team => team.memberUsernames),
+                excludedStudentUsernames: Array.from(eligibleStudentUsernames).filter(username => !assignedStudentUsernames.has(username)),
                 attempts,
                 results: resultsByCompetition.get(String(row.id)) || []
             });

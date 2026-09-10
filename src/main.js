@@ -5148,6 +5148,10 @@ const app = {
             });
             return app.data.sortUsersByVietnameseName(students);
         },
+        getTeamCompetitionParticipants(classlevel, className = '', excludedUsernames = []) {
+            const excluded = new Set((Array.isArray(excludedUsernames) ? excludedUsernames : []).map(username => String(username)));
+            return this.getTeamCompetitionStudents(classlevel, className).filter(student => !excluded.has(String(student.username)));
+        },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
                 .map(user => String(user.class_name || '').trim()).filter(Boolean)))
@@ -5165,7 +5169,7 @@ const app = {
             const draft = this.teamCompetitionDraft || {};
             const mode = document.getElementById('team-comp-mode')?.value || draft.participantMode || 'manual';
             const count = Number(document.getElementById('team-comp-team-count')?.value || draft.teamCount || 2);
-            const students = this.getTeamCompetitionStudents(document.getElementById('team-comp-class')?.value || draft.classlevel || '5', document.getElementById('team-comp-class-name')?.value || draft.className || '');
+            const students = this.getTeamCompetitionParticipants(document.getElementById('team-comp-class')?.value || draft.classlevel || '5', document.getElementById('team-comp-class-name')?.value || draft.className || '', draft.excludedStudentUsernames);
             draft.participantMode = mode;
             draft.teamCount = Number.isInteger(count) && count > 1 ? count : 2;
             if (mode === 'random') {
@@ -5190,7 +5194,7 @@ const app = {
         randomizeTeamCompetition() {
             this.syncTeamCompetitionDraftFromDom();
             const draft = this.teamCompetitionDraft || {};
-            const students = this.getTeamCompetitionStudents(draft.classlevel || '5', draft.className || '');
+            const students = this.getTeamCompetitionParticipants(draft.classlevel || '5', draft.className || '', draft.excludedStudentUsernames);
             try {
                 draft.participantMode = 'random';
                 const teamCount = Number(draft.teamCount || 2);
@@ -5232,11 +5236,44 @@ const app = {
             this.teamCompetitionDraft = draft;
             this.renderTeamCompetitionForm();
         },
-        changeTeamMemberSlot(index) {
+        changeTeamMemberSlot(index, slotIndex = 0, selectedUsername = '') {
+            const previousDraft = this.teamCompetitionDraft || {};
+            const previousUsername = String(previousDraft.teams?.[index]?.memberUsernames?.[slotIndex] || '');
             const draft = this.collectTeamCompetitionForm();
             const team = draft.teams[index];
             if (!team) return;
-            if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = '';
+            const nextUsername = String(selectedUsername || team.memberUsernames[slotIndex] || '');
+            if (nextUsername && nextUsername !== previousUsername) {
+                draft.teams = app.teamCompetition.swapTeamMembers(draft.teams, index, slotIndex, nextUsername, previousUsername);
+            } else if (!nextUsername && previousUsername) {
+                team.memberUsernames = team.memberUsernames.filter(username => String(username) !== previousUsername);
+                team.targetMemberCount = team.memberUsernames.length || null;
+                if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = team.memberUsernames[0] || '';
+            }
+            draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        changeTeamCompetitionExcludedStudents() {
+            const draft = this.collectTeamCompetitionForm();
+            const previousTeams = draft.teams || [];
+            const filteredTeams = app.teamCompetition.removeExcludedStudentsFromTeams(previousTeams, draft.excludedStudentUsernames);
+            draft.teams = filteredTeams.map((team, index) => {
+                const previous = previousTeams[index];
+                const changed = JSON.stringify(previous?.memberUsernames || []) !== JSON.stringify(team.memberUsernames || []);
+                if (!changed) return team;
+                const memberSelectionSnapshot = {
+                    memberUsernames: [...team.memberUsernames],
+                    leaderUsername: team.leaderUsername || ''
+                };
+                return {
+                    ...team,
+                    targetMemberCount: team.memberUsernames.length || null,
+                    memberSelectionState: team.memberSelectionState === 'saved' ? 'editing' : team.memberSelectionState,
+                    memberSelectionSnapshot
+                };
+            });
+            draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
             this.teamCompetitionDraft = draft;
             this.renderTeamCompetitionForm();
         },
@@ -5308,6 +5345,10 @@ const app = {
             const hasTimer = Boolean(document.getElementById('team-comp-has-timer')?.checked);
             const minutes = Number(document.getElementById('team-comp-time')?.value || 0);
             const questionMode = document.getElementById('team-comp-question-mode')?.value || draft.questionMode || 'same';
+            const excludedControl = document.getElementById('team-comp-excluded-students');
+            const excludedStudentUsernames = excludedControl
+                ? Array.from(excludedControl.selectedOptions || []).map(option => option.value).filter(Boolean)
+                : (draft.excludedStudentUsernames || []);
             return app.teamCompetition.normalizeCompetition({
                 ...draft,
                 name: document.getElementById('team-comp-name')?.value.trim() || '',
@@ -5317,6 +5358,7 @@ const app = {
                 teamCount: Number.isInteger(teamCount) ? teamCount : 2,
                 teams,
                 selectedStudentUsernames: teams.flatMap(team => team.memberUsernames),
+                excludedStudentUsernames,
                 questionMode,
                 commonExamId: document.getElementById('team-comp-common-exam')?.value || draft.commonExamId || null,
                 timeLimitMinutes: hasTimer && Number.isInteger(minutes) && minutes > 0 ? minutes : null,
@@ -5341,7 +5383,10 @@ const app = {
             const classlevel = draft.classlevel || '5';
             const classNames = this.getTeamCompetitionClassNames(classlevel);
             const className = draft.className || '';
-            const students = this.getTeamCompetitionStudents(classlevel, className);
+            const allStudents = this.getTeamCompetitionStudents(classlevel, className);
+            const excludedStudentUsernames = Array.from(new Set((draft.excludedStudentUsernames || []).map(username => String(username))));
+            const excludedSet = new Set(excludedStudentUsernames);
+            const students = allStudents.filter(student => !excludedSet.has(String(student.username)));
             const exams = this.getTeamCompetitionExams(classlevel);
             const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
             const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
@@ -5351,6 +5396,8 @@ const app = {
             const classOptions = [1, 2, 3, 4, 5].map(level => `<option value="${level}" ${String(level) === String(classlevel) ? 'selected' : ''}>Lớp ${level}</option>`).join('');
             const classNameOptions = [`<option value="">Tất cả học sinh Lớp ${esc(classlevel)}</option>`, ...classNames.map(name => `<option value="${esc(name)}" ${name === className ? 'selected' : ''}>Lớp ${esc(name)}</option>`)].join('');
             const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
+            const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
+            const excludedOptions = allStudents.map(student => `<option value="${esc(student.username)}" ${excludedSet.has(String(student.username)) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
             const teamCards = teams.map((team, index) => {
                 const targetCount = Number.isInteger(Number(team.targetMemberCount)) && Number(team.targetMemberCount) > 0
                     ? Number(team.targetMemberCount)
@@ -5358,17 +5405,15 @@ const app = {
                 const selectedMembers = (team.memberUsernames || []).slice(0, targetCount || 0);
                 const selectionState = team.memberSelectionState === 'saved' ? 'saved' : 'editing';
                 const isSaved = selectionState === 'saved';
-                const reservedMembers = this.getReservedTeamMemberUsernames(teams, index);
-                const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
                 const memberSlots = targetCount
                     ? Array.from({ length: targetCount }, (_, slotIndex) => {
                         const selectedUsername = String(selectedMembers[slotIndex] || '');
                         const selectedInOtherSlots = new Set(selectedMembers.filter((username, selectedIndex) => selectedIndex !== slotIndex).map(String));
                         const options = students.filter(student => {
                             const username = String(student.username);
-                            return username === selectedUsername || (!reservedMembers.has(username) && !selectedInOtherSlots.has(username));
+                            return username === selectedUsername || !selectedInOtherSlots.has(username);
                         }).map(student => `<option value="${esc(student.username)}" ${selectedUsername === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
-                        return `<label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved || draft.participantMode === 'random' ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index})"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
+                        return `<label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index}, ${slotIndex}, this.value)"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
                     }).join('')
                     : '<p class="team-member-selection-hint">Nhập số thành viên trong nhóm để hiện các ô chọn học sinh.</p>';
                 const leaderOptions = students.filter(student => selectedMembers.includes(String(student.username))).map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
@@ -5399,14 +5444,15 @@ const app = {
                 <div class="team-form-toolbar"><button type="button" class="btn-opt team-form-back" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><div class="team-form-toolbar__status"><span class="team-form-status">${statusLabel}</span><span class="team-form-toolbar__hint">Bản soạn chỉ mình cô nhìn thấy</span></div></div>
                 <header class="team-form-hero"><div class="team-form-hero__copy"><span class="team-dashboard-kicker">Soạn nhiệm vụ nhóm</span><h3>Tạo trận thi đua nhóm</h3><p>Mỗi nhóm dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Cô có thể chia nhóm đều hoặc linh hoạt theo lớp.</p></div><div class="team-form-hero__metrics"><div><strong>${teamCount}</strong><span>nhóm</span></div><div><strong>${students.length}</strong><span>học sinh phù hợp</span></div><div><strong>${draft.questionMode === 'different' ? 'Riêng' : 'Chung'}</strong><span>cách giao bài</span></div></div></header>
                 <nav class="team-form-steps" aria-label="Các bước soạn trận"><div class="team-form-step team-form-step--active"><span>01</span><div><strong>Khung trận</strong><small>Đặt tên và chọn lớp</small></div></div><div class="team-form-step"><span>02</span><div><strong>Chia nhóm</strong><small>Gắn học sinh và trưởng nhóm</small></div></div><div class="team-form-step"><span>03</span><div><strong>Giao bài</strong><small>Chọn đề và thời gian</small></div></div></nav>
-                <section class="team-form-section team-form-section--identity"><div class="team-section-heading"><div><span class="team-section-kicker">01 · Thông tin trận</span><h4>Khung trận</h4><p>Đặt ngữ cảnh để cô nhận ra trận ngay khi vào lớp.</p></div><span class="team-section-icon" aria-hidden="true">✦</span></div><div class="team-form-grid">
+                <section class="team-form-section team-form-section--identity"><div class="team-section-heading"><div><span class="team-section-kicker">01 · Thông tin trận</span><h4>Khung trận</h4><p>Đặt ngữ cảnh để cô nhận ra trận ngay khi vào lớp; có thể loại học sinh vắng mặt trước khi chia nhóm.</p></div><span class="team-section-icon" aria-hidden="true">✦</span></div><div class="team-form-grid">
                   <label class="team-field-label team-field-label--wide"><span>Tên trận</span><input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
                   <label class="team-field-label"><span>Cấp lớp</span><select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
                   <label class="team-field-label"><span>Lớp</span><select id="team-comp-class-name" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classNameOptions}</select></label>
                   <label class="team-field-label"><span>Số lượng nhóm</span><input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
                   <label class="team-field-label"><span>Cách chọn học sinh</span><select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chọn ngẫu nhiên</option></select></label>
+                  <label class="team-field-label team-field-label--wide team-field-label--multiselect"><span>Danh sách học sinh không tham gia</span><select id="team-comp-excluded-students" class="form-input" multiple size="${Math.min(6, Math.max(3, allStudents.length))}" aria-label="Danh sách học sinh không tham gia" onchange="app.admin.changeTeamCompetitionExcludedStudents()">${excludedOptions}</select><small>Giữ Ctrl/Cmd để chọn nhiều học sinh vắng mặt hoặc không thể tham gia.</small></label>
                 </div></section>
-                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
+                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm; khi chưa lưu hoặc đang sửa, chọn bạn ở nhóm khác để hoán đổi.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
                 <section class="team-membership-summary" aria-live="polite"><div class="team-section-heading"><div><span class="team-section-kicker">Đã lưu</span><h4>Sơ đồ thành viên</h4><p>Kiểm tra nhanh trước khi chuyển sang bước giao bài.</p></div><span class="team-summary-mark" aria-hidden="true">✓</span></div><div class="team-membership-summary__grid">${memberSummary}</div></section>
                 <section class="team-form-section team-form-section--delivery"><div class="team-section-heading"><div><span class="team-section-kicker">03 · Nội dung</span><h4>Giao bài cho nhóm</h4><p>Dùng một đề chung để thi đua công bằng hoặc giao đề riêng cho từng nhóm.</p></div><span class="team-section-icon" aria-hidden="true">◈</span></div><div class="team-form-grid team-form-grid--compact">
                   <label class="team-field-label"><span>Cách giao bài</span><select id="team-comp-question-mode" class="form-input" onchange="app.admin.syncTeamCompetitionDraftFromDom(); app.admin.renderTeamCompetitionForm()"><option value="same" ${draft.questionMode !== 'different' ? 'selected' : ''}>Một bài giống nhau cho các nhóm</option><option value="different" ${draft.questionMode === 'different' ? 'selected' : ''}>Mỗi nhóm một bài khác nhau</option></select></label>

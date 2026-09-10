@@ -5,7 +5,12 @@ global.supabase = {};
 global.app = {
   data: {
     currentUser: { username: 'teacher', role: 'admin' },
-    exams: []
+    exams: [],
+    users: [
+      { username: 'hs1', fullname: 'Học sinh 1', role: 'student', approved: true, classlevel: '5', class_name: '5A' },
+      { username: 'hs2', fullname: 'Học sinh 2', role: 'student', approved: true, classlevel: '5', class_name: '5A' },
+      { username: 'hs3', fullname: 'Học sinh 3', role: 'student', approved: true, classlevel: '5', class_name: '5A' }
+    ]
   }
 };
 
@@ -78,6 +83,7 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.equal(competition.name, 'Trận server');
   assert.equal(competition.className, '5A');
   assert.deepEqual(competition.teams[0].memberUsernames, ['hs1', 'hs2']);
+  assert.deepEqual(competition.excludedStudentUsernames, ['hs3']);
   assert.equal(competition.teams[0].score, 5);
   assert.equal(api.getQuestionsForTeam(competition, competition.teams[0])[0].q, '1 + 1 = ?');
   console.log('team competition Supabase adapter contract tests passed');
