@@ -12,10 +12,14 @@ dist
 dist-ssr
 playwright-report/
 test-results/
+test-results-*/
 coverage/
 scratch/
 tasks/
 tmp/
+output/
+.worktrees/
+supabase/.temp/
 *.tmp
 *.bak
 *.orig
