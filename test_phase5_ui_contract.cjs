@@ -35,5 +35,8 @@ assert.doesNotMatch(migration, /\bDELETE\s+FROM\b/i, 'Seed Phase 5 không đư�
 assert.doesNotMatch(migration, /g4-math-hk1-b05/i, 'Phase 5 không được mở lại B05 đang deferred.');
 assert.match(migration, /measurement\.practice_cards/, 'Seed phải có Bài 20 thực hành.');
 assert.match(migration, /measurement\.hk1_review_b17_b20/, 'Seed phải có Bài 21 review.');
+assert.match(migration, /UPDATE\s+public\.question_templates/i, 'Seed Phase 5 phải chuẩn hóa record Topic 4 cũ.');
+assert.match(migration, /existing\.topic\s*=\s*seed\.topic/i, 'Seed Phase 5 phải chống trùng theo topic + lesson + generator.');
+assert.match(migration, /AND\s+existing\.is_active/i, 'Seed Phase 5 không được chiếm lại record đã archive.');
 
 console.log('Phase 5 Admin/editor/migration contracts verified.');
