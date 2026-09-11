@@ -7,6 +7,15 @@
     if (!app || !api) return;
 
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const TEAM_COMPETITION_PROJECTIONS = Object.freeze({
+        team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,status,created_at,updated_at,started_at,ended_at,version',
+        team_competition_teams: 'id,competition_id,name,position,target_member_count,leader_username,exam_id,status,score,submitted_count,correct_count,started_at,completed_at,locked_at,duration_seconds',
+        team_competition_members: 'id,competition_id,team_id,username,position',
+        team_competition_questions: 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts',
+        team_competition_attempts: 'id,competition_id,team_id,leader_username,session_id,status,lock_reason,question_count,current_index,submitted_count,correct_count,score,started_at,completed_at,locked_at,duration_seconds,updated_at',
+        team_competition_answers: 'id,attempt_id,question_index,selected_answer,points,is_correct,submitted_at',
+        team_competition_results: 'id,competition_id,team_id,username,individual_score,team_rank,created_at'
+    });
     const state = {
         client: null,
         enabled: false,
@@ -227,8 +236,10 @@
         return response?.data;
     }
 
-    async function fetchRows(table, columns = '*') {
-        return requireResult(state.client.from(table).select(columns));
+    async function fetchRows(table, columns = '') {
+        const projection = String(columns || '').trim() || TEAM_COMPETITION_PROJECTIONS[table];
+        if (!projection) throw new Error(`Thiếu projection cho bảng thi đua: ${table}`);
+        return requireResult(state.client.from(table).select(projection));
     }
 
     async function invoke(name, args) {
