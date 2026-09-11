@@ -75,7 +75,7 @@ Deno.serve(async (request) => {
     if (createError || !created.user) return json({ error: 'auth_account_exists' }, 409, origin)
     const { data: profile, error: profileError } = await admin.from('game_users').insert({
       auth_user_id: created.user.id, username, fullname: fullname.trim(), password: null,
-      classlevel: String(classlevel), class_name: className || null, gender, avatar_key: avatarKey, role: 'student', approved: true, history: [], totalscore: 0, lollipops: 0,
+      classlevel: String(classlevel), class_name: className || null, gender, avatar_key: avatarKey, role: 'student', approved: true, history: [], totalscore: 0, stars: 0, total_stars_earned: 0,
     }).select().single()
     if (profileError) {
       await admin.auth.admin.deleteUser(created.user.id)

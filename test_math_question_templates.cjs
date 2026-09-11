@@ -99,12 +99,14 @@ assert.deepEqual(largest.ans.split(', '), largest.subquestions.map(item => item.
 const digitAtPlace = generateQuestion('number.digit_at_place', {
     maximum: 100000,
     allowedPlaces: ['tens'],
-    allowedDigits: [2]
+    allowedDigits: [2, 3, 4, 5]
 }, seededRandom(3));
 assert.equal(digitAtPlace.subquestions.length, 4, 'The digit-at-place template must generate four parts a–d.');
+assert.equal(new Set(digitAtPlace.subquestions.map(item => item.prompt)).size, 4, 'The digit-at-place template must not repeat a place-and-digit condition.');
 digitAtPlace.subquestions.forEach(item => {
-    assert.equal(Math.floor(numericValue(item.answer) / 10) % 10, 2, 'Each answer must have 2 in the tens place.');
-    assert.equal(item.options.filter(option => Math.floor(numericValue(option) / 10) % 10 === 2).length, 1, 'Each part must have only one correct option.');
+    const digit = Number(item.digit);
+    assert.equal(Math.floor(numericValue(item.answer) / 10) % 10, digit, 'Each answer must match its generated tens digit.');
+    assert.equal(item.options.filter(option => Math.floor(numericValue(option) / 10) % 10 === digit).length, 1, 'Each part must have only one correct option.');
 });
 
 const randomizedPlaceAndDigit = generateQuestion('number.digit_at_place', {
@@ -119,9 +121,9 @@ const hundredBillions = generateQuestion('number.digit_at_place', {
     minimum: 100000000000,
     maximum: 999999999999,
     allowedPlaces: ['hundredBillions'],
-    allowedDigits: [2]
+    allowedDigits: [2, 3, 4, 5]
 }, seededRandom(5));
-hundredBillions.subquestions.forEach(item => assert.equal(Math.floor(numericValue(item.answer) / 100000000000) % 10, 2));
+hundredBillions.subquestions.forEach(item => assert.equal(Math.floor(numericValue(item.answer) / 100000000000) % 10, Number(item.digit)));
 
 const composeNumber = generateQuestion('number.compose_from_places', { minimum: 10000, maximum: 99999 }, seededRandom(6));
 assert.equal(composeNumber.type, 'Điền khuyết');
