@@ -186,8 +186,9 @@ seed Phase 3 vào Supabase live.
 
 ### Phase 4 — Bài 10–16
 
-- [ ] Bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn.
-- [ ] Tách so sánh, dãy số và review theo lesson.
+- [x] Bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn.
+- [x] Tách so sánh, dãy số và review theo lesson.
+- [x] Thêm generator/preset/Preview, seed idempotent và contract/browser test; chưa apply seed live.
 
 ### Phase 5 — Bài 17–21
 
