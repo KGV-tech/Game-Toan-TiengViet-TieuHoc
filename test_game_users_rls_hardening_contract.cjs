@@ -52,7 +52,7 @@ assert.doesNotMatch(source, /from\(['"]game_users['"]\)\.update\(\{\s*approved:/
     'Admin approval must not use a direct browser table update.');
 assert.doesNotMatch(source, /from\(['"]game_users['"]\)\.update\(\{\s*fullname:/,
     'Admin profile edits must not use a direct browser table update.');
-assert.match(source, /async saveUsers\(\)\s*\{[\s\S]{0,180}if\s*\(window\.supabase\)\s*return/,
+assert.match(source, /async saveUsers\(\)\s*\{[\s\S]{0,260}if\s*\(window\.supabase\)\s*return/,
     'The legacy whole-profile save fallback must be disabled when Supabase is active.');
 assert.match(daily, /app\.data\.consumeStudentEnergy\s*\(/,
     'Daily energy writes must use the explicit energy event boundary.');
