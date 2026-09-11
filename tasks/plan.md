@@ -195,10 +195,27 @@ seed Phase 3 vào Supabase live.
 - [x] Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
 - [x] Rà lại bài toán lời văn/đơn vị và config biên.
 
-### Phase 6 — Bài 22–26
+### Phase 6 — Bài 22–26 (đã hoàn tất trong branch Phase 6)
 
-- [ ] Tách cộng, trừ, tính chất, tổng-hiệu và review.
-- [ ] Không dùng một generator cộng/trừ tổng quát đại diện cho toàn Chủ đề.
+- [x] Tách cộng, trừ, tính chất, tổng-hiệu và review.
+- [x] Không dùng một generator cộng/trừ tổng quát đại diện cho toàn Chủ đề.
+
+#### Phase 6 execution plan — current task
+
+1. Hoàn thiện generator review B26 với đúng bốn kỹ năng được chọn trong B22–B25;
+   mỗi câu con giữ `skill` và `lesson` để truy vết.
+2. Nối registry, curriculum fallback, preset và editor config; B22/B23 giữ
+   phạm vi phép tính riêng, B24 chỉ nhận tính chất cộng, B26 nhận đúng bốn kỹ năng.
+3. Tạo migration seed idempotent cho B22–B26, không xóa vật lý, không đổi RLS;
+   chưa apply vào Supabase live trong lượt này.
+4. Bổ sung contract Node, contract editor/migration và browser test ở laptop/tablet.
+
+**Acceptance:** generator, editor, preview và gameplay đều nhận diện đúng lesson;
+review không rơi về generator cộng/trừ tổng quát; contract và `npm test` xanh;
+hai thay đổi ngoài phạm vi đang có trong worktree không được stage.
+
+**Checkpoint:** code, migration seed idempotent, contract và browser test Phase 6
+đã hoàn tất; migration chưa apply vào Supabase live.
 
 ### Phase 7 — Bài 27–32
 

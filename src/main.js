@@ -7041,6 +7041,8 @@ const app = {
             const phase4ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b10', 'b11', 'b12', 'b13'];
             const phase5PracticeKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.length ? config.allowedKinds : ['mass', 'area', 'time', 'century'];
             const phase5ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b17', 'b18', 'b19', 'b20'];
+            const phase6Properties = Array.isArray(config.properties) && config.properties.length ? config.properties : ['commutative', 'associative'];
+            const phase6ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b22', 'b23', 'b24', 'b25'];
             const measurementMassKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.some(kind => ['yenToKg', 'taToKg', 'tonToKg', 'yenAndKgToKg', 'tonAndYenToKg'].includes(kind)) ? config.allowedKinds : ['yenToKg', 'taToKg', 'tonToKg', 'yenAndKgToKg', 'tonAndYenToKg'];
             const measurementAreaKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.some(kind => ['m2ToDm2', 'dm2ToCm2', 'dm2ToMm2', 'cm2ToDm2'].includes(kind)) ? config.allowedKinds : ['m2ToDm2', 'dm2ToCm2', 'dm2ToMm2', 'cm2ToDm2'];
             const measurementTimeKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.some(kind => ['minuteToSeconds', 'hourToMinutes', 'minutesAndSecondsToSeconds', 'weekAndDaysToDays'].includes(kind)) ? config.allowedKinds : ['minuteToSeconds', 'hourToMinutes', 'minutesAndSecondsToSeconds', 'weekAndDaysToDays'];
@@ -7109,6 +7111,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--phase2-controls" hidden><h5>Phạm vi Bài 3 và Bài 4</h5><p>Chỉ các trường phù hợp với generator đang chọn mới được dùng khi lưu. Bài 6 dùng blueprint ôn tập cố định Bài 1–4.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất (Bài 3)</span><input id="template-phase2-minimum" class="form-input" type="number" min="0" value="${phase2NumberMinimum}"></label><label class="template-editor__field"><span>Số lớn nhất (Bài 3)</span><input id="template-phase2-maximum" class="form-input" type="number" min="1" value="${phase2NumberMaximum}"></label><label class="template-editor__field"><span>Thẻ số (Bài 3)</span><select id="template-phase2-digit-count" class="form-input">${[3,4].map(value => `<option value="${value}" ${phase2DigitCount === value ? 'selected' : ''}>${value} thẻ</option>`).join('')}</select></label><label class="template-editor__field"><span>Số phần tử ít nhất</span><input id="template-phase2-list-length-min" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMin}"></label><label class="template-editor__field"><span>Số phần tử nhiều nhất</span><input id="template-phase2-list-length-max" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMax}"></label></div><div class="template-editor__fields"><label class="template-editor__field"><span>Số a nhỏ nhất (Bài 4)</span><input id="template-phase2-variable-minimum" class="form-input" type="number" min="1" value="${phase2VariableMinimum}"></label><label class="template-editor__field"><span>Số a lớn nhất (Bài 4)</span><input id="template-phase2-variable-maximum" class="form-input" type="number" min="1" value="${phase2VariableMaximum}"></label><label class="template-editor__field"><span>Hằng số nhỏ nhất</span><input id="template-phase2-constant-minimum" class="form-input" type="number" min="2" value="${phase2ConstantMinimum}"></label><label class="template-editor__field"><span>Hằng số lớn nhất</span><input id="template-phase2-constant-maximum" class="form-input" type="number" min="2" value="${phase2ConstantMaximum}"></label></div><div class="template-editor__fields"><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy dãy chẵn/lẻ</span><input id="template-phase2-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(phase2SequenceSteps)}" placeholder="2, 4, 6"></label></div><fieldset><legend>Phép tính Bài 4</legend><div id="template-phase2-operations" class="template-editor__checks">${checkbox('add', 'Cộng', phase2Operations, 'phase2-operations')}${checkbox('subtract', 'Trừ', phase2Operations, 'phase2-operations')}${checkbox('multiply', 'Nhân', phase2Operations, 'phase2-operations')}${checkbox('divide', 'Chia hết', phase2Operations, 'phase2-operations')}</div></fieldset><fieldset><legend>Dạng chẵn/lẻ Bài 3</legend><div id="template-phase2-parities" class="template-editor__checks">${checkbox('even', 'Số chẵn', phase2Parities, 'phase2-parities')}${checkbox('odd', 'Số lẻ', phase2Parities, 'phase2-parities')}</div></fieldset></div>
                 <div class="template-editor__rule template-editor__rule--phase4-controls" hidden><h5>Kỹ năng ôn tập Bài 10–15</h5><p>Chọn đúng bốn kỹ năng cho một lượt review. Mỗi câu con giữ nhãn Bài học để giáo viên kiểm tra tỷ trọng trước khi đưa vào đề.</p><div id="template-phase4-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 4">${[['b10', 'Bài 10 · Lập và đọc số sáu chữ số'], ['b11', 'Bài 11 · Hàng và lớp'], ['b12', 'Bài 12 · Lớp triệu'], ['b13', 'Bài 13 · Làm tròn'], ['b14', 'Bài 14 · So sánh'], ['b15', 'Bài 15 · Dãy số tự nhiên']].map(([value, label]) => checkbox(value, label, phase4ReviewSkills, 'phase4-skills')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--phase5-controls" hidden><h5>Phạm vi Phase 5</h5><p>Bài 20 dùng phiếu đo có dữ liệu cụ thể; Bài 21 giữ nhãn kỹ năng. Không dùng câu hỏi mơ hồ về “đơn vị thích hợp nhất”.</p><fieldset><legend>Nhóm đơn vị thực hành Bài 20</legend><div id="template-phase5-practice-kinds" class="template-editor__checks" aria-label="Nhóm đơn vị thực hành Bài 20">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian'], ['century', 'Thế kỉ']].map(([value, label]) => checkbox(value, label, phase5PracticeKinds, 'phase5-practice-kinds')).join('')}</div></fieldset><fieldset><legend>Kỹ năng review Bài 21</legend><div id="template-phase5-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 5">${[['b17', 'Bài 17 · Khối lượng'], ['b18', 'Bài 18 · Diện tích'], ['b19', 'Bài 19 · Giây và thế kỉ'], ['b20', 'Bài 20 · Thực hành']].map(([value, label]) => checkbox(value, label, phase5ReviewSkills, 'phase5-review-skills')).join('')}</div></fieldset></div>
+                <div class="template-editor__rule template-editor__rule--phase6-controls" hidden><h5>Phạm vi Phase 6</h5><p>Bài 24 dùng tính chất phép cộng; Bài 26 giữ đúng bốn kỹ năng Bài 22–25.</p><fieldset class="template-phase6-properties-fieldset"><legend>Tính chất phép cộng Bài 24</legend><div id="template-phase6-properties" class="template-editor__checks" aria-label="Tính chất phép cộng Bài 24">${[['commutative', 'Giao hoán'], ['associative', 'Kết hợp']].map(([value, label]) => checkbox(value, label, phase6Properties, 'phase6-properties')).join('')}</div></fieldset><fieldset class="template-phase6-review-skills-fieldset"><legend>Kỹ năng review Bài 26</legend><div id="template-phase6-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 6">${[['b22', 'Bài 22 · Phép cộng'], ['b23', 'Bài 23 · Phép trừ'], ['b24', 'Bài 24 · Tính chất phép cộng'], ['b25', 'Bài 25 · Tổng và hiệu']].map(([value, label]) => checkbox(value, label, phase6ReviewSkills, 'phase6-review-skills')).join('')}</div></fieldset></div>
                 <div class="template-editor__rule template-editor__rule--measurement-controls" hidden><h5>Cấu hình đơn vị đo</h5><p>Chỉ trường phù hợp với generator đang chọn được áp dụng khi lưu; danh sách rỗng hoặc giá trị ngoài allowlist sẽ bị chặn.</p><fieldset class="template-measurement-config--mass" hidden><legend>Dạng đổi khối lượng</legend><div id="template-measurement-mass-kinds" class="template-editor__checks">${[['yenToKg', 'Yến → kg'], ['taToKg', 'Tạ → kg'], ['tonToKg', 'Tấn → kg'], ['yenAndKgToKg', 'Yến và kg → kg'], ['tonAndYenToKg', 'Tấn và yến → kg']].map(([value, label]) => checkbox(value, label, measurementMassKinds, 'measurement-mass-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--area" hidden><legend>Dạng đổi diện tích</legend><div id="template-measurement-area-kinds" class="template-editor__checks">${[['m2ToDm2', 'm² → dm²'], ['dm2ToCm2', 'dm² → cm²'], ['dm2ToMm2', 'dm² → mm²'], ['cm2ToDm2', 'cm² → dm²']].map(([value, label]) => checkbox(value, label, measurementAreaKinds, 'measurement-area-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--time" hidden><legend>Dạng đổi thời gian</legend><div id="template-measurement-time-kinds" class="template-editor__checks">${[['minuteToSeconds', 'Phút → giây'], ['hourToMinutes', 'Giờ → phút'], ['minutesAndSecondsToSeconds', 'Phút và giây → giây'], ['weekAndDaysToDays', 'Tuần và ngày → ngày']].map(([value, label]) => checkbox(value, label, measurementTimeKinds, 'measurement-time-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--century" hidden><legend>Khoảng thế kỉ</legend><div class="template-editor__fields"><label class="template-editor__field"><span>Thế kỉ bắt đầu</span><input id="template-measurement-century-start" class="form-input" type="number" min="1" max="99" value="${measurementCenturyStart}"></label><label class="template-editor__field"><span>Thế kỉ kết thúc</span><input id="template-measurement-century-end" class="form-input" type="number" min="1" max="99" value="${measurementCenturyEnd}"></label></div></fieldset><fieldset class="template-measurement-config--word-problem" hidden><legend>Nhóm tình huống lời văn</legend><div id="template-measurement-scenario-kinds" class="template-editor__checks">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian']].map(([value, label]) => checkbox(value, label, measurementScenarioKinds, 'measurement-scenario-kinds')).join('')}</div></fieldset></div>
               </div></div>
               <footer class="template-editor__actions"><button type="button" class="btn-opt" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="btn-primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
@@ -7189,6 +7192,12 @@ const app = {
             phase5TemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const phase6TemplateOptions = [
+                ['number.hk1_review_b22_b25', 'Bài 26 · Ôn tập cộng và trừ']
+            ];
+            phase6TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             const angleRule = document.createElement('div');
             angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
             angleRule.hidden = true;
@@ -7219,16 +7228,17 @@ const app = {
             if (generatorControl && phase2TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && phase4TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && phase5TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && phase6TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
             const topic5OperationRule = '<div class="template-editor__rule template-editor__rule--topic5-operation"><div class="template-editor__rule-heading"><h5>Phép tính theo Bài học</h5></div><p>Chọn cộng hoặc trừ nếu template chỉ dùng cho một Bài học; để mặc định để cho phép cả hai.</p><label class="template-editor__field template-editor__field--wide"><span>Phạm vi phép tính</span><select id="template-topic5-operation" class="form-input"><option value="">Cộng và trừ (mặc định)</option><option value="+">Chỉ phép cộng (+)</option><option value="-">Chỉ phép trừ (−)</option></select></label></div>';
             box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
             const topic5OperationControl = document.getElementById('template-topic5-operation');
             if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
-            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions, ...phase6TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
-            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
+            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -7378,6 +7388,10 @@ const app = {
                 'g4-m-add-sub-true-false': {
                     defaultPrompt: '{question}', guide: 'Tạo 4 nhận định Đúng/Sai về phép cộng và phép trừ.', hint: 'Dùng <code>{question}</code> để giữ nguyên 4 nhận định.', preview: 'live', type: 'Đúng/Sai',
                     variables: [['{question}', 'toàn bộ 4 nhận định do game sinh']]
+                },
+                'number.hk1_review_b22_b25': {
+                    defaultPrompt: '{question}', guide: 'Tạo một lượt ôn tập Bài 26 gồm đúng bốn kỹ năng Bài 22–Bài 25; mỗi câu con giữ nhãn Bài học để truy vết.', hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu review có nhãn kỹ năng.', preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu review cộng/trừ do game sinh'], ['{skills}', 'bốn kỹ năng Bài 22–Bài 25 được chọn']]
                 },
                 'g4-m-angle-count-in-polygon': {
                     defaultPrompt: '{question}',
@@ -7644,6 +7658,12 @@ const app = {
                 ['Bài 19 · 3 phút 20 giây = ? giây', ['180', '190', '200', '220']],
                 ['Bài 20 · Năm 2025 thuộc thế kỉ nào?', ['XIX', 'XX', 'XXI', 'XXII']]
             ].map(([prompt, values], index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(values)}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.hk1_review_b22_b25') return preview('Luyện tập chung Bài 22 đến Bài 25:', `<div class="template-preview__mc">${[
+                ['Bài 22 · Tính: 24 580 + 13 420 = ?', ['37 000', '38 000', '39 000', '40 000']],
+                ['Bài 23 · Tính: 80 000 − 27 658 = ?', ['52 342', '53 342', '54 342', '55 342']],
+                ['Bài 24 · Điền số: 37 + 58 = 58 + ?', ['37', '48', '58', '95']],
+                ['Bài 25 · Tổng 84, hiệu 18. Số lớn là ?', ['33', '42', '51', '66']]
+            ].map(([prompt, values], index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(values)}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.match_number_words') return preview('Hãy nối mỗi số với cách đọc đúng.', `<div class="template-preview__matching"><div><span>12 405</span><span>87 160</span><span>305 908</span><span>61 024</span></div><div><span>Mười hai nghìn bốn trăm linh năm</span><span>Tám mươi bảy nghìn một trăm sáu mươi</span><span>Ba trăm linh năm nghìn chín trăm linh tám</span><span>Sáu mươi mốt nghìn không trăm hai mươi tư</span></div></div>`, 'template-preview--matching');
             if (generator === 'number.safe_password_by_place_value') return preview('Hãy chọn đáp án đúng cho mỗi yêu cầu.', `<div class="template-preview__safe"><div><p>a) Chữ số hàng chục khác 0 và hàng trăm khác 3.</p>${choices(['123 097', '181 675', '627 091', '154 634'])}</div></div>`, 'template-preview--safe');
             if (generator === 'number.natural_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['12 000, ___, 16 000, ___, 20 000', '84 000, 78 000, ___, ___, 60 000', '1 250, ___, 1 650, ___, 2 050', '7 000 000, ___, ___, 6 979 000, 6 972 000'].map(row => row.replaceAll('___', blank))), 'template-preview--fill');
@@ -7861,8 +7881,8 @@ const app = {
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles', 'g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
-            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
-            const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'].includes(generator);
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression', 'g4-m-add-sub-true-false'];
+            const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'].includes(generator);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
             const isPhase2Template = phase2TemplateKeys.includes(generator);
             const isPhase2B03 = generator.startsWith('number.even_odd_');
@@ -7874,6 +7894,8 @@ const app = {
             const isPhase5Practice = generator === 'measurement.practice_cards';
             const isPhase5Review = generator === 'measurement.hk1_review_b17_b20';
             const isPhase5Template = phase5TemplateKeys.includes(generator);
+            const isPhase6Review = generator === 'number.hk1_review_b22_b25';
+            const isPhase6Template = isPhase6Review || generator === 'g4-m-addition-property-fill';
             document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || isPhase4Review || isMeasurementTemplate || isPhase5Template || (isTopic5Template && !topic5DigitRange); });
             const phase4DigitDefaults = {
                 'number.six_digit_numbers': [6, 6],
@@ -7908,6 +7930,9 @@ const app = {
             document.querySelectorAll('.template-editor__rule--phase2-controls').forEach(rule => { rule.hidden = !isPhase2B03 && !isPhase2B04; });
             document.querySelectorAll('.template-editor__rule--phase4-controls').forEach(rule => { rule.hidden = !isPhase4Review; });
             document.querySelectorAll('.template-editor__rule--phase5-controls').forEach(rule => { rule.hidden = !isPhase5Practice && !isPhase5Review; });
+            document.querySelectorAll('.template-editor__rule--phase6-controls').forEach(rule => { rule.hidden = !isPhase6Template; });
+            document.querySelectorAll('.template-phase6-properties-fieldset').forEach(rule => { rule.hidden = generator !== 'g4-m-addition-property-fill'; });
+            document.querySelectorAll('.template-phase6-review-skills-fieldset').forEach(rule => { rule.hidden = !isPhase6Review; });
             document.querySelectorAll('.template-editor__rule--measurement-controls').forEach(rule => { rule.hidden = !isMeasurementTemplate || isPhase5Template; });
             document.querySelectorAll('.template-measurement-config--mass').forEach(rule => { rule.hidden = generator !== 'measurement.mass_unit_convert'; });
             document.querySelectorAll('.template-measurement-config--area').forEach(rule => { rule.hidden = generator !== 'measurement.area_unit_convert'; });
@@ -7933,8 +7958,8 @@ const app = {
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
-            const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
-            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false'];
+            const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'];
+            const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression', 'g4-m-add-sub-true-false'];
             const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
@@ -7947,6 +7972,7 @@ const app = {
             const isPhase5Practice = generatorKey === 'measurement.practice_cards';
             const isPhase5Review = generatorKey === 'measurement.hk1_review_b17_b20';
             const isPhase5Template = isPhase5Practice || isPhase5Review;
+            const isPhase6Review = generatorKey === 'number.hk1_review_b22_b25';
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
             const safePasswordMaxLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
             const selectedSafeValues = group => [...document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`)].filter(input => input.checked).map(input => input.value);
@@ -7979,6 +8005,8 @@ const app = {
             const phase4Skills = selectedSafeValues('phase4-skills');
             const phase5PracticeKinds = selectedSafeValues('phase5-practice-kinds');
             const phase5ReviewSkills = selectedSafeValues('phase5-review-skills');
+            const phase6Properties = selectedSafeValues('phase6-properties');
+            const phase6ReviewSkills = selectedSafeValues('phase6-review-skills');
             const measurementMassKinds = selectedSafeValues('measurement-mass-kinds');
             const measurementAreaKinds = selectedSafeValues('measurement-area-kinds');
             const measurementTimeKinds = selectedSafeValues('measurement-time-kinds');
@@ -7998,7 +8026,9 @@ const app = {
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
             const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && !isPhase5Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
-            const topic5Config = (topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {};
+            const topic5Config = generatorKey === 'g4-m-addition-property-fill'
+                ? { properties: phase6Properties }
+                : ((topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {});
             const angleConfig = isAngleMeasureTemplate && angleDegreesInput ? { allowedDegrees: angleDegrees } : {};
             const phase2Config = isPhase2B03
                 ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
@@ -8007,6 +8037,7 @@ const app = {
                     : { skills: ['b01', 'b02', 'b03', 'b04'] });
             const phase4Config = { skills: phase4Skills };
             const phase5Config = isPhase5Practice ? { allowedKinds: phase5PracticeKinds } : { skills: phase5ReviewSkills };
+            const phase6Config = { skills: phase6ReviewSkills };
             const measurementConfig = generatorKey === 'measurement.mass_unit_convert'
                 ? { allowedKinds: measurementMassKinds }
                 : generatorKey === 'measurement.area_unit_convert'
@@ -8018,7 +8049,7 @@ const app = {
                             : generatorKey === 'measurement.word_problem_units'
                                 ? { scenarioKinds: measurementScenarioKinds }
                                 : genericConfig;
-            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig)))));
+            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig))))));
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
@@ -8054,6 +8085,12 @@ const app = {
             }
             if (isPhase5Review && (phase5ReviewSkills.length !== 4 || new Set(phase5ReviewSkills).size !== 4 || phase5ReviewSkills.some(skill => !['b17', 'b18', 'b19', 'b20'].includes(skill)))) {
                 throw new Error('Bộ ôn tập Bài 17 đến Bài 20 cần chọn đúng bốn kỹ năng khác nhau.');
+            }
+            if (generatorKey === 'g4-m-addition-property-fill' && (phase6Properties.length === 0 || new Set(phase6Properties).size !== phase6Properties.length || phase6Properties.some(property => !['commutative', 'associative'].includes(property)))) {
+                throw new Error('Bài 24 cần chọn ít nhất một tính chất phép cộng hợp lệ.');
+            }
+            if (isPhase6Review && (phase6ReviewSkills.length !== 4 || new Set(phase6ReviewSkills).size !== 4 || phase6ReviewSkills.some(skill => !['b22', 'b23', 'b24', 'b25'].includes(skill)))) {
+                throw new Error('Bộ ôn tập Bài 22 đến Bài 25 cần chọn đúng bốn kỹ năng khác nhau.');
             }
             if (generatorKey === 'measurement.mass_unit_convert' && (!measurementMassKinds.length || new Set(measurementMassKinds).size !== measurementMassKinds.length || measurementMassKinds.some(kind => !['yenToKg', 'taToKg', 'tonToKg', 'yenAndKgToKg', 'tonAndYenToKg'].includes(kind)))) {
                 throw new Error('Bài 17 cần chọn ít nhất một dạng đổi khối lượng hợp lệ.');

@@ -98,7 +98,8 @@
                 'g4-m-add-sub-missing-term': 'g4-math-hk1-b26',
                 'g4-m-add-sub-missing-digit': 'g4-math-hk1-b26',
                 'g4-m-add-sub-expression': 'g4-math-hk1-b26',
-                'g4-m-add-sub-true-false': 'g4-math-hk1-b26'
+                'g4-m-add-sub-true-false': 'g4-math-hk1-b26',
+                'number.hk1_review_b22_b25': 'g4-math-hk1-b26'
             })
         }),
         hk2: Object.freeze({})
