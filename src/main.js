@@ -159,8 +159,22 @@ const app = {
         normalizeClassLevel(value) {
             return String(value ?? '').trim().replace(/^Lớp\s*/i, '').trim();
         },
+        normalizeClassName(value) {
+            return String(value ?? '').trim().replace(/^Lớp\s*/i, '').trim();
+        },
+        getKnownStudentClassNames(classlevel = '', currentClassName = '') {
+            const targetLevel = this.normalizeClassLevel(classlevel);
+            const classNames = (this.users || [])
+                .filter(user => user && String(user.role || '').toLowerCase() !== 'admin')
+                .filter(user => !targetLevel || this.normalizeClassLevel(user.classlevel) === targetLevel)
+                .map(user => this.normalizeClassName(user.class_name))
+                .filter(Boolean);
+            const current = this.normalizeClassName(currentClassName);
+            if (current) classNames.push(current);
+            return Array.from(new Set(classNames)).sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
+        },
         getStudentClassLabel(user) {
-            const className = String(user?.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
+            const className = this.normalizeClassName(user?.class_name);
             if (className) return `Lớp ${className}`;
             const classLevel = this.normalizeClassLevel(user?.classlevel);
             return `Cấp lớp ${classLevel || '—'}`;
@@ -1597,7 +1611,7 @@ const app = {
             const un = document.getElementById('reg-username').value.trim();
             const pw = document.getElementById('reg-password').value.trim();
             const cl = document.getElementById('reg-class').value;
-            const className = document.getElementById('reg-class-name')?.value.trim() || '';
+            const className = app.data.normalizeClassName(document.getElementById('reg-class-name')?.value || '');
             const gender = document.getElementById('reg-gender')?.value || null;
             const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'boy-short';
 
@@ -1607,6 +1621,10 @@ const app = {
             if (!pw) missing.push('reg-password');
             if (!cl) missing.push('reg-class');
             if (missing.length) return this.showAuthFeedback('register-error', 'Vui lòng điền đầy đủ thông tin bắt buộc.', missing);
+
+            if (!['1', '2', '3', '4', '5'].includes(cl)) return this.showAuthFeedback('register-error', 'Cấp lớp không hợp lệ.', ['reg-class']);
+            if (className) return this.showAuthFeedback('register-error', 'Lớp cụ thể sẽ do giáo viên phân từ danh sách lớp có sẵn.', ['reg-class-name']);
+            if (!['', 'male', 'female'].includes(gender || '')) return this.showAuthFeedback('register-error', 'Giới tính không hợp lệ.', ['reg-gender']);
 
             const email = this.toAuthEmail(un);
             if (!email) return this.showAuthFeedback('register-error', 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang (3–32 ký tự).', ['reg-username']);
@@ -5875,7 +5893,7 @@ const app = {
                 ? `Cấp lớp ${app.data.normalizeClassLevel(quest.target_classlevel)}`
                 : 'Tất cả cấp lớp';
             const assignLabel = quest => {
-                if (quest.assign_type === 'class') return `Lớp ${esc(quest.assign_target || '—')}`;
+                if (quest.assign_type === 'class') return `Lớp ${esc(app.data.normalizeClassName(quest.assign_target) || '—')}`;
                 if (quest.assign_type === 'user') return `HS: ${esc(quest.assign_target || '—')}`;
                 return 'Toàn trường';
             };
@@ -5945,12 +5963,12 @@ const app = {
             </section>`;
         },
         getTeamCompetitionStudents(classlevel, className = '') {
-            const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
-            const section = String(className || '').trim();
+            const cls = app.data.normalizeClassLevel(classlevel);
+            const section = app.data.normalizeClassName(className);
             const students = (app.data.users || []).filter(user => {
                 if (String(user.role || '').toLowerCase() === 'admin' || user.approved === false) return false;
-                if (cls && String(user.classlevel || '').replace(/^Lớp\s*/i, '').trim() !== cls) return false;
-                return !section || String(user.class_name || '').trim() === section;
+                if (cls && app.data.normalizeClassLevel(user.classlevel) !== cls) return false;
+                return !section || app.data.normalizeClassName(user.class_name) === section;
             });
             return app.data.sortUsersByVietnameseName(students);
         },
@@ -5960,8 +5978,8 @@ const app = {
         },
         getTeamCompetitionClassNames(classlevel) {
             return Array.from(new Set(this.getTeamCompetitionStudents(classlevel)
-                .map(user => String(user.class_name || '').trim()).filter(Boolean)))
-                .sort((left, right) => left.localeCompare(right, 'vi'));
+                .map(user => app.data.normalizeClassName(user.class_name)).filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
         },
         getTeamCompetitionExams(classlevel) {
             const cls = String(classlevel || '').replace(/^Lớp\s*/i, '').trim();
@@ -6188,7 +6206,7 @@ const app = {
             if (!box) return;
             const classlevel = draft.classlevel || '5';
             const classNames = this.getTeamCompetitionClassNames(classlevel);
-            const className = draft.className || '';
+            const className = app.data.normalizeClassName(draft.className);
             const allStudents = this.getTeamCompetitionStudents(classlevel, className);
             const excludedStudentUsernames = Array.from(new Set((draft.excludedStudentUsernames || []).map(username => String(username))));
             const excludedSet = new Set(excludedStudentUsernames);
@@ -6202,7 +6220,7 @@ const app = {
             const classOptions = [1, 2, 3, 4, 5].map(level => `<option value="${level}" ${String(level) === String(classlevel) ? 'selected' : ''}>Lớp ${level}</option>`).join('');
             const classNameOptions = [`<option value="">Tất cả học sinh Lớp ${esc(classlevel)}</option>`, ...classNames.map(name => `<option value="${esc(name)}" ${name === className ? 'selected' : ''}>Lớp ${esc(name)}</option>`)].join('');
             const examOptions = exams.map(exam => `<option value="${app.data.sanitizeHTML(exam.id)}">${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('');
-            const studentLabel = student => `${student.fullname || student.username}${student.class_name ? ` · ${student.class_name}` : ''} (${student.username})`;
+            const studentLabel = student => `${student.fullname || student.username}${app.data.normalizeClassName(student.class_name) ? ` · ${app.data.normalizeClassName(student.class_name)}` : ''} (${student.username})`;
             const excludedOptions = allStudents.map(student => `<option value="${esc(student.username)}" ${excludedSet.has(String(student.username)) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
             const teamCards = teams.map((team, index) => {
                 const targetCount = Number.isInteger(Number(team.targetMemberCount)) && Number(team.targetMemberCount) > 0
@@ -6463,7 +6481,7 @@ const app = {
         },
         getQuestAssignableClasses(classlevel = document.getElementById('quest-target-classlevel')?.value || '') {
             return Array.from(new Set(this.getQuestAssignableStudents(classlevel)
-                .map(user => String(user.class_name || '').trim().replace(/^Lớp\s*/i, '').trim())
+                .map(user => app.data.normalizeClassName(user.class_name))
                 .filter(Boolean)))
                 .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
         },
@@ -6492,7 +6510,7 @@ const app = {
                 const students = this.getQuestAssignableStudents(classlevel);
                 const classes = this.getQuestAssignableClasses(classlevel);
                 const counts = students.reduce((result, student) => {
-                    const className = String(student.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
+                    const className = app.data.normalizeClassName(student.class_name);
                     if (className) result.set(className, (result.get(className) || 0) + 1);
                     return result;
                 }, new Map());
@@ -9708,14 +9726,14 @@ const app = {
             const allStudents = (app.data.users || []).filter(u => u.role?.toLowerCase() !== 'admin');
             const approvedStudents = allStudents.filter(u => u.approved !== false);
             const pendingStudents = allStudents.filter(u => u.approved === false);
-            const classCount = new Set(allStudents.map(u => String(u.class_name || '').trim()).filter(Boolean)).size;
+            const classCount = new Set(allStudents.map(u => app.data.normalizeClassName(u.class_name)).filter(Boolean)).size;
             const baseUsers = isPending
                 ? pendingStudents
                 : approvedStudents;
             const filters = {
                 search: String(this.studentRosterFilters?.search || '').trim(),
                 classlevel: String(this.studentRosterFilters?.classlevel || '').trim(),
-                className: String(this.studentRosterFilters?.className || '').trim(),
+                className: this.studentRosterFilters?.className === '__unassigned__' ? '__unassigned__' : app.data.normalizeClassName(this.studentRosterFilters?.className),
                 gender: String(this.studentRosterFilters?.gender || '').trim()
             };
             const normalizeFilterText = value => String(value || '')
@@ -9726,7 +9744,7 @@ const app = {
                 .toLocaleLowerCase('vi-VN');
             const filteredUsers = baseUsers.filter(user => {
                 const userClassLevel = app.data.normalizeClassLevel(user.classlevel);
-                const userClassName = String(user.class_name || '').trim();
+                const userClassName = app.data.normalizeClassName(user.class_name);
                 if (filters.classlevel && userClassLevel !== filters.classlevel) return false;
                 if (filters.className === '__unassigned__' && userClassName) return false;
                 if (filters.className && filters.className !== '__unassigned__' && userClassName !== filters.className) return false;
@@ -9742,8 +9760,8 @@ const app = {
             const users = app.data.sortUsersByVietnameseName(filteredUsers);
             const classLevels = Array.from(new Set(baseUsers.map(user => app.data.normalizeClassLevel(user.classlevel)).filter(Boolean)))
                 .sort((left, right) => Number(left) - Number(right) || left.localeCompare(right, 'vi'));
-            const classNames = Array.from(new Set(baseUsers.map(user => String(user.class_name || '').trim()).filter(Boolean)))
-                .sort((left, right) => left.localeCompare(right, 'vi'));
+            const classNames = Array.from(new Set(baseUsers.map(user => app.data.normalizeClassName(user.class_name)).filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
             const esc = value => app.data.sanitizeHTML(String(value ?? ''));
             const classLevelOptions = [
                 { value: '', label: 'Tất cả cấp lớp' },
@@ -9751,7 +9769,7 @@ const app = {
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.classlevel ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const classNameOptions = [
                 { value: '', label: 'Tất cả lớp' },
-                ...(baseUsers.some(user => !String(user.class_name || '').trim()) ? [{ value: '__unassigned__', label: 'Chưa khai báo lớp cụ thể' }] : []),
+                ...(baseUsers.some(user => !app.data.normalizeClassName(user.class_name)) ? [{ value: '__unassigned__', label: 'Chưa khai báo lớp cụ thể' }] : []),
                 ...classNames.map(value => ({ value, label: `Lớp ${value}` }))
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.className ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const genderOptions = [
@@ -9819,7 +9837,7 @@ const app = {
                         <label class="admin-roster-filter-field"><span>Lớp cụ thể</span><select id="admin-roster-filter-section" onchange="app.admin.updateStudentRosterFilters()">${classNameOptions}</select></label>
                         <label class="admin-roster-filter-field"><span>Giới tính</span><select id="admin-roster-filter-gender" onchange="app.admin.updateStudentRosterFilters()">${genderOptions}</select></label>
                     </div>
-                    <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ</div>
+                    <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
                 </section>
                 <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
                 <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
@@ -9855,6 +9873,13 @@ const app = {
                 { key: 'cartoons', label: 'Hoạt hình', prefix: 'cartoon-' }
             ];
             const selectedAvatarKey = app.auth.getAvatar(u?.avatar_key || 'boy-short').key;
+            const selectedClassLevel = app.data.normalizeClassLevel(u?.classlevel) || (u ? '' : '5');
+            const selectedClassName = app.data.normalizeClassName(u?.class_name);
+            const classNameOptions = [
+                '<option value="">Không khai báo lớp cụ thể</option>',
+                ...app.data.getKnownStudentClassNames(selectedClassLevel, selectedClassName)
+                    .map(className => `<option value="${app.data.sanitizeHTML(className)}"${className === selectedClassName ? ' selected' : ''}>Lớp ${app.data.sanitizeHTML(className)}</option>`)
+            ].join('');
             const selectedAvatarGroup = avatarGroups.find(group => selectedAvatarKey.startsWith(group.prefix))?.key || 'boys';
             const avatarChoices = Object.entries(app.auth.avatarChoices)
                 .filter(([key]) => avatarGroups.some(group => key.startsWith(group.prefix)));
@@ -9882,8 +9907,8 @@ const app = {
                             <label class="admin-student-form__field admin-student-form__field--wide"><span>Họ và tên</span><input type="text" id="add-fullname" placeholder="Ví dụ: Nguyễn Minh An" class="form-input" value="${u ? app.data.sanitizeHTML(u.fullname) : ''}"></label>
                             <label class="admin-student-form__field"><span>Tên đăng nhập</span><input type="text" id="add-username" placeholder="Tên đăng nhập" class="form-input" value="${u ? app.data.sanitizeHTML(u.username) : ''}"></label>
                             <label class="admin-student-form__field"><span>${u ? 'Mật khẩu mới' : 'Mật khẩu'}</span><input type="password" id="add-password" placeholder="${u ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 8 ký tự'}" class="form-input" value="" aria-describedby="add-password-help"><small id="add-password-help">${u ? 'Không nhập nếu giữ mật khẩu hiện tại.' : 'Dùng ít nhất 8 ký tự.'}</small></label>
-                            <label class="admin-student-form__field"><span>Cấp lớp</span><select id="add-class" class="form-input"><option value="1" ${u && u.classlevel === '1' ? 'selected' : ''}>Lớp 1</option><option value="2" ${u && u.classlevel === '2' ? 'selected' : ''}>Lớp 2</option><option value="3" ${u && u.classlevel === '3' ? 'selected' : ''}>Lớp 3</option><option value="4" ${u && u.classlevel === '4' ? 'selected' : ''}>Lớp 4</option><option value="5" ${u && u.classlevel === '5' ? 'selected' : (!u ? 'selected' : '')}>Lớp 5</option></select></label>
-                            <label class="admin-student-form__field"><span>Lớp</span><input type="text" id="add-class-name" placeholder="Ví dụ: 4/4" maxlength="64" class="form-input" value="${u ? app.data.sanitizeHTML(u.class_name || '') : ''}"></label>
+                            <label class="admin-student-form__field"><span>Cấp lớp</span><select id="add-class" class="form-input" onchange="app.admin.updateStudentClassNameOptions()"><option value="1" ${selectedClassLevel === '1' ? 'selected' : ''}>Lớp 1</option><option value="2" ${selectedClassLevel === '2' ? 'selected' : ''}>Lớp 2</option><option value="3" ${selectedClassLevel === '3' ? 'selected' : ''}>Lớp 3</option><option value="4" ${selectedClassLevel === '4' ? 'selected' : ''}>Lớp 4</option><option value="5" ${selectedClassLevel === '5' ? 'selected' : ''}>Lớp 5</option></select></label>
+                            <label class="admin-student-form__field"><span>Lớp cụ thể</span><select id="add-class-name" class="form-input">${classNameOptions}</select><small>Chỉ chọn lớp đã có trong roster; để trống nếu chưa phân lớp.</small></label>
                             <label class="admin-student-form__field"><span>Giới tính</span><select id="add-gender" class="form-input"><option value="" ${!u?.gender ? 'selected' : ''}>Không khai báo</option><option value="male" ${u?.gender === 'male' ? 'selected' : ''}>Nam</option><option value="female" ${u?.gender === 'female' ? 'selected' : ''}>Nữ</option></select></label>
                             ${avatarPicker}
                         </div>
@@ -9892,6 +9917,18 @@ const app = {
                 </section>
         `;
         },
+        updateStudentClassNameOptions() {
+            const classLevelSelect = document.getElementById('add-class');
+            const classNameSelect = document.getElementById('add-class-name');
+            if (!classLevelSelect || !classNameSelect) return;
+            const currentClassName = app.data.normalizeClassName(classNameSelect.value);
+            const classNames = app.data.getKnownStudentClassNames(classLevelSelect.value);
+            classNameSelect.innerHTML = [
+                '<option value="">Không khai báo lớp cụ thể</option>',
+                ...classNames.map(className => `<option value="${app.data.sanitizeHTML(className)}">Lớp ${app.data.sanitizeHTML(className)}</option>`)
+            ].join('');
+            classNameSelect.value = classNames.includes(currentClassName) ? currentClassName : '';
+        },
         async addPlayerSubmit(editUsername) {
             if (typeof editUsername === 'string' && editUsername) {
                 try { editUsername = decodeURIComponent(editUsername); } catch (_) { /* giữ giá trị gốc nếu username cũ không mã hóa */ }
@@ -9899,14 +9936,17 @@ const app = {
             const fn = document.getElementById('add-fullname').value.trim();
             const un = document.getElementById('add-username').value.trim();
             const pw = document.getElementById('add-password').value.trim();
-            const cl = document.getElementById('add-class').value;
-            const className = document.getElementById('add-class-name')?.value.trim() || '';
+            const cl = app.data.normalizeClassLevel(document.getElementById('add-class').value);
+            const className = app.data.normalizeClassName(document.getElementById('add-class-name')?.value || '');
             const gender = document.getElementById('add-gender')?.value || null;
             const requestedAvatar = document.querySelector('input[name="admin-avatar"]:checked')?.value || 'boy-short';
             const avatarKey = /^(boy|girl|cartoon)-/.test(requestedAvatar) && Object.prototype.hasOwnProperty.call(app.auth.avatarChoices, requestedAvatar)
                 ? requestedAvatar
                 : 'boy-short';
             if (!fn || !un || (!editUsername && !pw)) return alert('Điền đủ thông tin!');
+            if (!['1', '2', '3', '4', '5'].includes(cl)) return alert('Cấp lớp không hợp lệ.');
+            if (!['', 'male', 'female'].includes(gender || '')) return alert('Giới tính không hợp lệ.');
+            if (className && !app.data.getKnownStudentClassNames(cl).includes(className)) return alert('Hãy chọn lớp cụ thể từ danh sách có sẵn.');
 
             if (editUsername) {
                 let user = app.data.users.find(x => x.username === editUsername);
@@ -9921,6 +9961,7 @@ const app = {
                         } catch (error) {
                             const messages = {
                                 invalid_student_data: 'Hãy nhập họ tên, cấp lớp, lớp cụ thể và giới tính hợp lệ.',
+                                class_lookup_failed: 'Chưa tải được danh sách lớp. Vui lòng thử lại sau.',
                                 student_not_found: 'Không tìm thấy hồ sơ học sinh.',
                                 profile_update_failed: 'Không thể cập nhật thông tin học sinh.'
                             };
@@ -9958,6 +9999,7 @@ const app = {
                     const messages = {
                         invalid_username: 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang; dài 3–32 ký tự.',
                         invalid_student_data: 'Hãy nhập đầy đủ họ tên, lớp và mật khẩu từ 8 ký tự.',
+                        class_lookup_failed: 'Chưa tải được danh sách lớp. Vui lòng thử lại sau.',
                         auth_account_exists: 'Tên đăng nhập này đã được dùng cho một tài khoản đăng nhập khác.',
                         profile_failed: 'Đã tạo tài khoản đăng nhập nhưng chưa lưu được hồ sơ học sinh. Vui lòng thử lại.',
                     };
@@ -10338,10 +10380,8 @@ const app = {
             if (container) container.innerHTML = tableHtml;
         },
         renderStudentProfile(box) {
-            const students = app.data.users
-                .filter(user => user.role?.toLowerCase() !== 'admin')
-                .sort((left, right) => String(left.fullname || '').localeCompare(String(right.fullname || ''), 'vi'));
-            const options = students.map(user => `<option value="${app.data.sanitizeHTML(user.username)}">${app.data.sanitizeHTML(`${user.fullname} — Lớp ${user.classlevel || ''}${user.class_name ? ` · ${user.class_name}` : ''} (${user.username})`)}</option>`).join('');
+            const students = app.data.sortUsersByVietnameseName(app.data.users.filter(user => user.role?.toLowerCase() !== 'admin'));
+            const options = students.map(user => `<option value="${app.data.sanitizeHTML(user.username)}">${app.data.sanitizeHTML(`${user.fullname} — ${app.data.getStudentClassLabel(user)} (${user.username})`)}</option>`).join('');
             box.innerHTML = `
                 <div class="admin-control-panel" style="align-items:center;">
                     <div class="acp-center" style="max-width:620px; width:100%;">
@@ -10422,7 +10462,7 @@ const app = {
                     ${app.ui.compactAction('Xuất Excel hồ sơ này', `app.treasure.exportStudentProfile(decodeURIComponent('${encodedUsername}'))`, 'compact-admin-action--save')}
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
-                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Cấp lớp: <b>${app.data.sanitizeHTML(student.classlevel || '')}</b><br>Lớp: <b>${app.data.sanitizeHTML(student.class_name || '—')}</b><br>Giới tính: <b>${app.data.sanitizeHTML(app.data.genderLabel(student.gender))}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
+                    <div class="glass-container" style="padding:14px;"><h4>Thông tin tài khoản</h4><p>Username: <b>${app.data.sanitizeHTML(student.username)}</b><br>Mật khẩu: <b>Không hiển thị (có thể đặt lại)</b><br>Phân lớp: <b>${app.data.sanitizeHTML(app.data.getStudentClassLabel(student))}</b><br>Giới tính: <b>${app.data.sanitizeHTML(app.data.genderLabel(student.gender))}</b><br>Trạng thái: <b>${student.approved ? 'Đã duyệt' : 'Chờ duyệt'}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Học tập</h4><p>Số bài: <b>${summary.attempts}</b><br>Điểm trung bình: <b>${summary.average}/10</b><br>Lần gần nhất: <b>${app.data.sanitizeHTML(summary.lastAttempt)}</b><br>Câu đã gặp: <b>${seenQuestions.length}</b></p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Phần thưởng</h4><p>Sao hiện có: <b>${student.stars || 0}</b><br>Thú cưng: ${petRows}</p></div>
                     <div class="glass-container" style="padding:14px;"><h4>Nội dung cần bồi dưỡng</h4><p>${summary.weakTopics.length ? summary.weakTopics.map(([topic, count]) => `${app.data.sanitizeHTML(topic)} (${count} lượt dưới 8 điểm)`).join('<br>') : 'Chưa có dữ liệu cần bồi dưỡng.'}</p></div>
@@ -10651,8 +10691,8 @@ const app = {
             if (quest.assign_type === 'all') return true;
             if (quest.assign_type === 'user') return String(quest.assign_target || '').trim() === String(user.username || '').trim();
             if (quest.assign_type === 'class') {
-                const className = String(user.class_name || '').trim().replace(/^Lớp\s*/i, '').trim();
-                const target = String(quest.assign_target || '').trim().replace(/^Lớp\s*/i, '').trim();
+                const className = app.data.normalizeClassName(user.class_name);
+                const target = app.data.normalizeClassName(quest.assign_target);
                 return Boolean(target) && (target === className || target === classlevel);
             }
             return false;
