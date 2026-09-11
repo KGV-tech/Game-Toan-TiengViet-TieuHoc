@@ -321,6 +321,7 @@ const app = {
                 this.fetchAllFromSupabase('question_templates'),
                 this.fetchAllFromSupabase('game_quests')
             ]).then(([questions, templates, quests]) => {
+                if (this.currentUser?.role?.toLowerCase() !== 'admin') return false;
                 this.libraryQuestions = questions;
                 this.hydrateQuestionLessons(this.libraryQuestions);
                 this.questionTemplates = templates;
@@ -850,6 +851,18 @@ const app = {
             this.petInventory[petId] = Number(data[0].remaining);
             return true;
         },
+        shutdownRealtime() {
+            const channel = this.realtimeChannel;
+            this.realtimeChannel = null;
+            if (!channel) return false;
+            try {
+                if (typeof channel.unsubscribe === 'function') channel.unsubscribe();
+                else if (typeof supabaseClient.removeChannel === 'function') supabaseClient.removeChannel(channel);
+            } catch (error) {
+                console.warn('Không thể dọn realtime dữ liệu game:', error);
+            }
+            return true;
+        },
 
         async init() {
             try {
@@ -872,7 +885,8 @@ const app = {
                 this.ensureLessonMetadata();
 
                 // Realtime subscription
-                supabaseClient.channel('custom-all-channel')
+                this.shutdownRealtime();
+                let realtimeChannel = supabaseClient.channel('custom-all-channel')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
                         console.log('Realtime DB Change received!', payload);
                         // Only process realtime updates if admin is logged in or for currentUser
@@ -958,7 +972,8 @@ const app = {
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'pet_inventory' }, async () => {
                         await this.refreshPetInventory();
                     })
-                    .subscribe();
+                    ;
+                this.realtimeChannel = realtimeChannel.subscribe();
 
             } catch (err) {
                 console.error("Critical DB error during init:", err);
@@ -1576,6 +1591,7 @@ const app = {
                     return this.showAuthFeedback('login-error', 'Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!', ['username']);
                 }
                 app.data.currentUser = user;
+                app.teamCompetition?.configureSupabase?.(supabaseClient);
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
                 const localExams = app.data.loadLocalExams();
@@ -1743,8 +1759,19 @@ const app = {
                 if (!confirmed) return;
                 if (app.router) app.router.open('map-screen');
             }
+            await app.teamCompetition?.remote?.flush?.();
+            app.teamCompetition?.remote?.shutdown?.();
             await supabaseClient.auth.signOut();
             app.data.currentUser = null;
+            app.data.adminDataLoaded = false;
+            app.data.adminDataLoadPromise = null;
+            app.data.users = [];
+            app.data.libraryQuestions = [];
+            app.data.questionTemplates = [];
+            app.data.quests = [];
+            app.data.userQuests = [];
+            app.data.userPets = [];
+            app.data.seenQuestionKeys = new Set();
             app.admin?.syncRoleAwareLabels();
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
@@ -1837,6 +1864,24 @@ const app = {
             ])
         },
         state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, answerSubmitted: false, finished: false, historyDetails: [], attemptId: null },
+        matchingResizeHandler: null,
+        matchingLineTimer: null,
+        cleanupMatching() {
+            if (this.matchingResizeHandler) {
+                window.removeEventListener('resize', this.matchingResizeHandler);
+                this.matchingResizeHandler = null;
+            }
+            if (this.matchingLineTimer !== null) {
+                clearTimeout(this.matchingLineTimer);
+                this.matchingLineTimer = null;
+            }
+            app.lifecycle?.cleanup('game-question');
+        },
+        stopTimers() {
+            this.cleanupMatching();
+            if (this.hardTimer) clearInterval(this.hardTimer);
+            this.hardTimer = null;
+        },
         getPersistenceIdentity(user = app.data.currentUser) {
             const raw = String(user?.username || user?.id || 'guest').trim().toLocaleLowerCase('vi-VN');
             return raw.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80) || 'guest';
@@ -2749,6 +2794,7 @@ const app = {
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
         loadQuestion() {
+            this.cleanupMatching();
             if (this.skills) this.skills.state.shieldActive = false;
             
             const q = this.state.questions[this.state.currentIdx];
@@ -3440,7 +3486,11 @@ const app = {
                     });
                 };
                 
-                window.addEventListener('resize', updateLines);
+                if (app.lifecycle?.listen) app.lifecycle.listen('game-question', window, 'resize', updateLines);
+                else {
+                    this.matchingResizeHandler = updateLines;
+                    window.addEventListener('resize', this.matchingResizeHandler);
+                }
                 
                 const handleSelection = () => {
                     if (selectedLeft && selectedRight) {
@@ -3527,7 +3577,11 @@ const app = {
                 colsWrapper.appendChild(rightCol);
                 optContainer.appendChild(colsWrapper);
 
-                setTimeout(updateLines, 50);
+                if (app.lifecycle?.timeout) app.lifecycle.timeout('game-question', updateLines, 50);
+                else this.matchingLineTimer = setTimeout(() => {
+                    this.matchingLineTimer = null;
+                    updateLines();
+                }, 50);
             }
 
 
@@ -3550,17 +3604,20 @@ const app = {
 
                     if (remaining <= 0) {
                         clearInterval(this.hardTimer);
+                        this.hardTimer = null;
                         this.submitAnswer(true);
                     }
                 }, 250);
             } else {
                 timerDisplay.style.display = 'none';
                 if (this.hardTimer) clearInterval(this.hardTimer);
+                this.hardTimer = null;
             }
             this.saveAttemptDraft();
         },
         submitAnswer(isTimeout = false) {
             if (this.hardTimer) clearInterval(this.hardTimer);
+            this.hardTimer = null;
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
             let scoreResult = null;
@@ -4474,12 +4531,13 @@ const app = {
                 const s = seconds % 60;
                 return `(${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')})`;
             };
-            if (this.examTimer) clearInterval(this.examTimer);
+            this.stopTimer();
             const updateTimer = () => {
                 const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
                 timerDisplay.textContent = formatTime(remaining);
                 if (remaining <= 0) {
                     clearInterval(this.examTimer);
+                    this.examTimer = null;
                     alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
                     this.submit(true);
                 }
@@ -4490,6 +4548,10 @@ const app = {
                 this.saveAttemptDraft();
             }, 1000);
             this.saveAttemptDraft();
+        },
+        stopTimer() {
+            if (this.examTimer) clearInterval(this.examTimer);
+            this.examTimer = null;
         },
         restoreAttemptDraft(user = app.data.currentUser) {
             if (!app.game.isPersistableStudent(user)) return false;
@@ -4569,14 +4631,14 @@ const app = {
         confirmExit() {
             if (confirm('Bạn chưa nộp bài. Tiến độ hiện tại sẽ được lưu để có thể tiếp tục sau. Bạn vẫn muốn thoát?')) {
                 this.saveAttemptDraft();
-                if (this.examTimer) clearInterval(this.examTimer);
+                this.stopTimer();
                 app.router.open('map-screen');
             }
         },
 
         submit(isTimeout = false) {
             if (!isTimeout && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
-            if (this.examTimer) clearInterval(this.examTimer);
+            this.stopTimer();
             if (this.state.finished) return;
             this.state.finished = true;
 
@@ -4617,6 +4679,10 @@ const app = {
             classlevel: 'Lớp 4',
             subject: 'Toán',
             period: 'Học Kỳ 1'
+        },
+        stopTeamCompetitionBoardTimer() {
+            if (this.teamCompetitionBoardTimer) clearInterval(this.teamCompetitionBoardTimer);
+            this.teamCompetitionBoardTimer = null;
         },
         isAdminUser() {
             return app.data.currentUser?.role?.toLowerCase() === 'admin';
@@ -6465,7 +6531,7 @@ const app = {
         },
         openTeamCompetitionBoard(id) {
             this.questMode = 'team';
-            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            this.stopTeamCompetitionBoardTimer();
             const box = document.getElementById('treasure-content-area');
             const match = app.teamCompetition?.store.get(id);
             if (!box || !match) return;
@@ -6473,7 +6539,7 @@ const app = {
             this.renderTeamCompetitionBoard(box, match.id);
         },
         renderTeamCompetitionBoard(box, id) {
-            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            this.stopTeamCompetitionBoardTimer();
             const match = app.teamCompetition?.store.get(id);
             if (!box || !match) return;
             const status = app.teamCompetition.STATUS_LABELS[match.status] || 'Nháp';
@@ -6505,7 +6571,7 @@ const app = {
             box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button><span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><header class="team-board-hero"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} nhóm · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo nhóm' : 'Một bài giống nhau'}</p></div><div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>nhóm</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div></header><div class="team-board-actions">${globalAction}</div><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
-                if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; return; }
+                if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { this.stopTeamCompetitionBoardTimer(); return; }
                 if (current.timeLimitMinutes !== null && current.startedAt && Date.now() >= Number(current.startedAt) + Number(current.timeLimitMinutes) * 60 * 1000) {
                     this.endTeamCompetition(current.id, true);
                     return;
@@ -11720,13 +11786,20 @@ window.onload = async () => {
             }
         }
     };
-    window.addEventListener('offline', handleNetworkChange);
-    window.addEventListener('online', handleNetworkChange);
-    window.addEventListener('beforeunload', () => {
+    const listenForAppLifecycle = (target, type, handler) => {
+        if (app.lifecycle?.listen) return app.lifecycle.listen('app-shell', target, type, handler);
+        target.addEventListener(type, handler);
+        return () => target.removeEventListener(type, handler);
+    };
+    listenForAppLifecycle(window, 'offline', handleNetworkChange);
+    listenForAppLifecycle(window, 'online', handleNetworkChange);
+    listenForAppLifecycle(window, 'beforeunload', () => {
         app.game?.saveAttemptDraft?.();
         app.exam?.saveAttemptDraft?.();
+        app.data?.shutdownRealtime?.();
+        app.teamCompetition?.remote?.shutdown?.();
     });
-    document.addEventListener('visibilitychange', () => {
+    listenForAppLifecycle(document, 'visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             app.game?.saveAttemptDraft?.();
             app.exam?.saveAttemptDraft?.();

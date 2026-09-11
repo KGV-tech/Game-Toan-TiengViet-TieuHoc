@@ -330,7 +330,11 @@
         getStatus() { return state.status; },
         getError() { return state.error; },
         configure(client) {
-            if (state.client === client && state.enabled) return this;
+            if (state.client === client && state.enabled) {
+                if (!state.channel) installRealtime();
+                return this;
+            }
+            if (state.channel) this.shutdown();
             state.client = client;
             state.enabled = isClient(client) && Boolean(root.supabase);
             state.status = state.enabled ? 'pending' : 'offline';
@@ -340,6 +344,28 @@
             this.status = state.status;
             if (state.enabled) installRealtime();
             return this;
+        },
+        shutdown() {
+            if (state.syncTimer) clearTimeout(state.syncTimer);
+            state.syncTimer = null;
+            const channel = state.channel;
+            state.channel = null;
+            if (channel) {
+                try {
+                    if (typeof state.client?.removeChannel === 'function') state.client.removeChannel(channel);
+                    else if (typeof channel.unsubscribe === 'function') channel.unsubscribe();
+                } catch (error) {
+                    console.warn('Không thể dọn realtime thi đua nhóm:', error);
+                }
+            }
+            state.enabled = false;
+            state.status = 'offline';
+            state.realtime = 'disconnected';
+            state.error = null;
+            this.enabled = false;
+            this.status = state.status;
+            this.realtime = state.realtime;
+            return true;
         },
         async syncRemote(options = {}) {
             if (!state.enabled || !app.data?.currentUser) return [];
