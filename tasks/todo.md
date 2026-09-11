@@ -111,7 +111,7 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [x] **Bước 1:** Hardening RLS hồ sơ; test student không tự sửa field đặc quyền (đã apply và hậu kiểm trên Supabase production project `bjgbbrufnryrtimtzvhn`).
 - [x] **Bước 2:** Tách đường ghi điểm/hồ sơ; client không gửi nguyên profile (event RPC có khóa hàng, idempotency, validation và rollback transaction; đã apply migration và hậu kiểm 6/6 trên Supabase production project `bjgbbrufnryrtimtzvhn`).
 - [x] **Bước 3:** Accessibility auth/modal; label, keyboard, focus trap, inert nền.
-- [ ] **Bước 4:** Chuẩn hóa select/combobox dữ liệu chính xác và fixture audit.
+- [x] **Bước 4:** Chuẩn hóa select/combobox dữ liệu chính xác và fixture audit (danh sách lớp/học sinh/giới tính có kiểm soát, tương thích dữ liệu cũ, fixture audit không chứa `undefined`).
 - [ ] **Bước 5:** Tối ưu asset/query; projection, pagination, lazy-load và số đo.
 - [ ] **Bước 6:** Cleanup listener/timer/realtime lifecycle.
 - [ ] **Bước 7:** Đồng nhất UI cũ theo design token và state chuẩn.

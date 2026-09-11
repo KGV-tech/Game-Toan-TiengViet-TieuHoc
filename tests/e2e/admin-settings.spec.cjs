@@ -248,6 +248,7 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
   });
 
   await expect(page.locator('.admin-roster-filter-panel')).toBeVisible();
+  await expect(page.locator('.admin-roster-filter-panel__sort-note')).toHaveText('Thứ tự tên: Tên → chữ lót → họ');
   await expect(page.locator('.admin-student-card')).toHaveCount(4);
   const firstStudentCard = page.locator('.admin-student-card').first();
   await expect(firstStudentCard.locator('.admin-student-card__identity > span')).toHaveCount(0);
@@ -289,6 +290,12 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
     return app.admin.getTeamCompetitionStudents('4').map(user => user.fullname);
   });
   expect(teamOrder).toEqual(['Nguyễn Minh Alpha', 'Trần Quang Alpha', 'Bùi Cát Vy Alpha']);
+
+  await page.evaluate(() => app.treasure.switchTab('student-profile'));
+  const profileOptions = await page.locator('#student-profile-select option').allTextContents();
+  expect(profileOptions).toContain('Nguyễn Minh Alpha — Cấp lớp 4 (nguyen-alpha)');
+  expect(profileOptions).toContain('Bùi Cát Vy Alpha — Lớp 4/4 (bui-alpha)');
+  expect(profileOptions.some(option => option.includes('Lớp 4 · 4/4'))).toBe(false);
 
   await page.evaluate(() => {
     app.data.currentUser = { username: 'student', fullname: 'Học sinh', role: 'student', classlevel: '4', class_name: '4/4' };
@@ -390,6 +397,65 @@ test('Form sửa hồ sơ cho phép đổi avatar và cập nhật lại thẻ h
   await expect(page.locator('.admin-student-card__avatar.avatar-art--cartoon-dragon')).toBeVisible();
   await expect.poll(() => page.evaluate(() => app.data.users.find(user => user.username === 'an')?.avatar_key)).toBe('cartoon-dragon');
   await expect.poll(() => page.evaluate(() => window.__avatarPayloads[0])).toMatchObject({ action: 'update_profile', username: 'an', avatar_key: 'cartoon-dragon' });
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
+test('Form hồ sơ chỉ cho chọn lớp cụ thể đúng cấp lớp và giữ dữ liệu cũ', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineAdmin(page);
+
+  await page.evaluate(() => {
+    window.alert = message => { window.__studentFormAlerts = [...(window.__studentFormAlerts || []), message]; };
+    window.__studentFormPayloads = [];
+    app.data.users = [
+      { id: 'student-class-1', username: 'an', fullname: 'Nguyễn Minh An', role: 'student', approved: true, classlevel: '4', class_name: '4/1', gender: 'female' },
+      { id: 'student-class-2', username: 'binh', fullname: 'Trần Gia Bình', role: 'student', approved: true, classlevel: '4', class_name: '4/2', gender: 'male' },
+      { id: 'student-class-3', username: 'legacy', fullname: 'Lê Minh Cũ', role: 'student', approved: true, classlevel: 'Lớp 4', class_name: 'Lớp 4/3', gender: 'male' },
+      { id: 'student-class-4', username: 'nam5', fullname: 'Phạm Minh Năm', role: 'student', approved: true, classlevel: '5', class_name: '5/1', gender: 'male' }
+    ];
+    app.admin.renderPlayersList(false);
+    app.admin.showAddPlayerForm('an');
+  });
+
+  await expect(page.locator('#add-class')).toHaveValue('4');
+  await expect(page.locator('#add-class-name')).toHaveJSProperty('tagName', 'SELECT');
+  await expect(page.locator('#add-class-name option')).toHaveText(['Không khai báo lớp cụ thể', 'Lớp 4/1', 'Lớp 4/2', 'Lớp 4/3']);
+  await expect(page.locator('#add-class-name')).toHaveValue('4/1');
+
+  await page.locator('#add-class').selectOption('5');
+  await expect(page.locator('#add-class-name option')).toHaveText(['Không khai báo lớp cụ thể', 'Lớp 5/1']);
+  await expect(page.locator('#add-class-name')).toHaveValue('');
+
+  await page.locator('#add-class').selectOption('4');
+  await expect(page.locator('#add-class-name option')).toHaveText(['Không khai báo lớp cụ thể', 'Lớp 4/1', 'Lớp 4/2', 'Lớp 4/3']);
+  await page.locator('#add-class-name').selectOption('4/2');
+  await page.evaluate(() => {
+    const className = document.getElementById('add-class-name');
+    className.insertAdjacentHTML('beforeend', '<option value="9/9">Lớp 9/9</option>');
+    className.value = '9/9';
+    window.supabase = {};
+    app.auth.manageStudentAccount = async payload => {
+      window.__studentFormPayloads.push(payload);
+      return { profile: app.data.users.find(user => user.username === 'an') };
+    };
+  });
+  await page.evaluate(() => app.admin.addPlayerSubmit(encodeURIComponent('an')));
+  await expect.poll(() => page.evaluate(() => window.__studentFormAlerts)).toContain('Hãy chọn lớp cụ thể từ danh sách có sẵn.');
+  expect(await page.evaluate(() => window.__studentFormPayloads)).toEqual([]);
+
+  await page.evaluate(() => app.admin.showAddPlayerForm('an'));
+  await page.locator('#add-class-name').selectOption('4/2');
+  await page.evaluate(() => app.admin.addPlayerSubmit(encodeURIComponent('an')));
+  await expect.poll(() => page.evaluate(() => window.__studentFormPayloads[0])).toMatchObject({
+    action: 'update_profile', username: 'an', classlevel: '4', class_name: '4/2'
+  });
+
+  await page.evaluate(() => app.admin.showAddPlayerForm('legacy'));
+  await expect(page.locator('#add-class')).toHaveValue('4');
+  await expect(page.locator('#add-class-name')).toHaveValue('4/3');
+  await expect(page.locator('#add-class-name option').filter({ hasText: 'Lớp 4/3' })).toHaveCount(1);
+
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

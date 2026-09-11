@@ -16,7 +16,8 @@ const normalizeUsername = (username: unknown) => typeof username === 'string' ? 
 const validUsername = (username: string) => /^[a-z0-9._-]{3,32}$/.test(username)
 const validFullname = (fullname: unknown) => typeof fullname === 'string' && fullname.trim().length >= 1 && fullname.trim().length <= 120
 const validClasslevel = (classlevel: unknown) => ['1', '2', '3', '4', '5'].includes(String(classlevel))
-const normalizeClassName = (className: unknown) => typeof className === 'string' ? className.trim() : ''
+const normalizeClassLevel = (classlevel: unknown) => String(classlevel ?? '').trim().replace(/^Lớp\s*/i, '').trim()
+const normalizeClassName = (className: unknown) => typeof className === 'string' ? className.trim().replace(/^Lớp\s*/i, '').trim() : ''
 const validClassName = (className: unknown) => className === undefined || className === null || (typeof className === 'string' && className.trim().length <= 64)
 const validGender = (gender: unknown) => gender === undefined || gender === null || gender === '' || ['male', 'female'].includes(String(gender))
 const studentAvatarKeys = new Set([
@@ -33,6 +34,16 @@ const studentAvatarKeys = new Set([
 ])
 const normalizeAvatarKey = (avatarKey: unknown) => typeof avatarKey === 'string' ? avatarKey.trim() : ''
 const validAvatarKey = (avatarKey: unknown) => avatarKey === undefined || avatarKey === null || (typeof avatarKey === 'string' && studentAvatarKeys.has(normalizeAvatarKey(avatarKey)))
+
+const classNameForLevelExists = async (admin: ReturnType<typeof createClient>, classlevel: unknown, className: string) => {
+  if (!className) return true
+  const { data, error } = await admin.from('game_users').select('role,classlevel,class_name')
+  if (error) return null
+  const targetLevel = normalizeClassLevel(classlevel)
+  return (data || []).some((profile) => String(profile.role || '').toLowerCase() !== 'admin'
+    && normalizeClassLevel(profile.classlevel) === targetLevel
+    && normalizeClassName(profile.class_name) === className)
+}
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
@@ -69,6 +80,9 @@ Deno.serve(async (request) => {
     if (!validFullname(fullname) || !validClasslevel(classlevel) || typeof password !== 'string' || password.length < 8 || !validClassName(rawClassName) || !validGender(rawGender) || !validAvatarKey(rawAvatarKey)) {
       return json({ error: 'invalid_student_data' }, 422, origin)
     }
+    const knownClassName = await classNameForLevelExists(admin, classlevel, className)
+    if (knownClassName === null) return json({ error: 'class_lookup_failed' }, 500, origin)
+    if (!knownClassName) return json({ error: 'invalid_student_data' }, 422, origin)
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: internalEmail(username), password, email_confirm: true,
     })
@@ -100,6 +114,9 @@ Deno.serve(async (request) => {
     if (!validFullname(fullname) || !validClasslevel(classlevel) || !validClassName(rawClassName) || !validGender(rawGender) || !validAvatarKey(rawAvatarKey)) {
       return json({ error: 'invalid_student_data' }, 422, origin)
     }
+    const knownClassName = await classNameForLevelExists(admin, classlevel, className)
+    if (knownClassName === null) return json({ error: 'class_lookup_failed' }, 500, origin)
+    if (!knownClassName) return json({ error: 'invalid_student_data' }, 422, origin)
     const profileUpdate: Record<string, string | null> = {
       fullname: fullname.trim(), classlevel: String(classlevel), class_name: className || null, gender,
     }

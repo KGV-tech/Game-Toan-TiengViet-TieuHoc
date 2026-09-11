@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { mkdirSync } = require('node:fs');
 const { join } = require('node:path');
+const { createAuditAdminDataset, createStudentFixture } = require('./audit-fixtures.cjs');
 
 const reviewDirectory = join('test-results', 'ui-review');
 
@@ -80,7 +81,7 @@ test('tablet ngang: học sinh có thể mở và đóng cửa sổ đổi mật
   expect(consoleErrors).toEqual([]);
 });
 
-test('đăng ký dùng khung ngang hai cột và lưu lớp con, giới tính', async ({ page }, testInfo) => {
+test('đăng ký dùng khung ngang hai cột và không nhận lớp cụ thể tự nhập', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -91,7 +92,9 @@ test('đăng ký dùng khung ngang hai cột và lưu lớp con, giới tính', 
   await expect(page.locator('.register-form-grid #reg-fullname')).toBeVisible();
   await expect(page.locator('.register-form-grid #reg-username')).toBeVisible();
   await expect(page.locator('#reg-gender')).toHaveValue('');
-  await expect(page.locator('#reg-class-name')).toHaveAttribute('placeholder', 'Lớp (ví dụ: 4/4, không bắt buộc)');
+  await expect(page.locator('#reg-class-name')).toHaveJSProperty('tagName', 'SELECT');
+  await expect(page.locator('#reg-class-name option')).toHaveText('Không khai báo lớp cụ thể');
+  await expect(page.locator('#reg-class-name')).toHaveValue('');
   await expect(page.locator('.register-panel-frame')).toHaveAttribute('src', /register_frame_wide\.png$/);
   const fieldLayout = await page.locator('.register-form-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns);
   expect(fieldLayout.split(' ').length).toBe(2);
@@ -1269,7 +1272,9 @@ const auditStates = [
 ];
 
 async function showAuditState(page, state) {
-  await page.evaluate(({ screenId, gameViewId, modalId, adminTab, studentTreasureTab, questBoard, shopTab }) => {
+  const studentFixture = createStudentFixture({ class_name: '' });
+  const adminDataset = createAuditAdminDataset();
+  await page.evaluate(({ screenId, gameViewId, modalId, adminTab, studentTreasureTab, questBoard, shopTab, studentFixture, adminDataset }) => {
     document.querySelectorAll('.screen').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.game-view').forEach(element => element.classList.remove('active'));
     document.querySelectorAll('.modal, .modal-overlay').forEach(element => element.classList.remove('active'));
@@ -1303,16 +1308,11 @@ async function showAuditState(page, state) {
     document.getElementById('quest-list-container').innerHTML = '<article class="quest-card">Hoàn thành 5 câu Toán hôm nay</article>';
     document.getElementById('shop-content-area').textContent = 'Cửa hàng minh họa cho phiên review UI.';
 
-    const demoStudent = {
-      id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', classlevel: '5',
-      totalscore: 1250, stars: 7,
-      history: [{ title: 'Luyện tập Phân số', topic: 'Phân số', difficulty: 'Vừa', questionCount: 10, score: 9, date: '2026-08-08' }],
-    };
     Object.assign(app.data, {
-      currentUser: demoStudent,
+      currentUser: studentFixture,
       userPets: [{ id: 'pet-1', user_username: 'minh-hoa', pet_image: 'pet_1.png', pet_name: 'Thỏ Hồng Không Gian' }],
       userQuests: [{ id: 'progress-1', quest_id: 'quest-1', progress: 3, is_completed: false }],
-      quests: [{ id: 'quest-1', title: 'Hoàn thành 5 câu Toán', target_count: 5, target_subject: 'math', target_score: 7, reward_stars: 2, assign_type: 'all', is_active: true }],
+      quests: adminDataset.quests,
     });
 
     if (studentTreasureTab) {
@@ -1327,21 +1327,11 @@ async function showAuditState(page, state) {
 
     if (adminTab) {
       // Dữ liệu minh họa cục bộ: chỉ để nhìn đủ giao diện quản trị, không gọi mạng.
-      Object.assign(app.data, {
-        currentUser: { id: 'demo-admin', name: 'Giáo viên Demo', role: 'admin', classlevel: '5' },
-        users: [
-          { id: 'student-1', name: 'Học sinh Minh họa', classlevel: '5', totalscore: 1250, stars: 7, approved: true },
-          { id: 'student-2', name: 'Hồ sơ chờ duyệt', classlevel: '4', totalscore: 0, stars: 0, approved: false },
-        ],
-        questions: [{ id: 'question-1', classlevel: 'Lớp 5', subject: 'Toán', topic: 'Phân số', type: 'Trắc nghiệm', q: 'Phân số nào lớn hơn?', options: ['1/2', '1/3'], ans: '1/2' }],
-        exams: [{ id: 'exam-1', name: 'Kiểm tra Toán tuần 1', classlevel: 'Lớp 5', subject: 'Toán', questions: ['question-1'] }],
-        quests: [{ id: 'quest-1', name: 'Hoàn thành 5 câu Toán', subject: 'Toán', target: 5, is_active: true }],
-        questionTemplates: [{ id: 'template-1', classlevel: 'Lớp 5', subject: 'Toán', semester: 'Học kỳ 1', topic: 'Số tự nhiên', question_type: 'Trắc nghiệm', generator_key: 'number.largest_of_four' }],
-      });
+      Object.assign(app.data, adminDataset);
       app.admin.openAdmin();
       app.admin.switchTab(adminTab);
     }
-  }, state);
+  }, { ...state, studentFixture, adminDataset });
 }
 
 function isAdminComposerState(state) {
@@ -1748,6 +1738,7 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }
+    await expect(page.locator(`#${visibleId}`)).not.toContainText('undefined');
     if (isAdminComposerState(state)) {
       await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
       await expect(page.locator('#treasure-modal')).toBeHidden();
@@ -1780,6 +1771,7 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }
+    await expect(page.locator(`#${visibleId}`)).not.toContainText('undefined');
     if (isAdminComposerState(state)) {
       await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
       await expect(page.locator('#treasure-modal')).toBeHidden();
