@@ -20,6 +20,68 @@ function formatNumber(value) {
     return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
 }
 
+const numberWords = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+
+function readTriplet(value, forceHundreds = false) {
+    const hundreds = Math.floor(value / 100);
+    const tens = Math.floor(value / 10) % 10;
+    const units = value % 10;
+    const words = [];
+    if (hundreds) words.push(numberWords[hundreds], 'trăm');
+    else if (forceHundreds && value) words.push('không', 'trăm');
+    if (tens >= 2) {
+        words.push(numberWords[tens], 'mươi');
+        if (units === 1) words.push('mốt');
+        else if (units === 4) words.push('tư');
+        else if (units === 5) words.push('lăm');
+        else if (units) words.push(numberWords[units]);
+    } else if (tens === 1) {
+        words.push('mười');
+        if (units === 5) words.push('lăm');
+        else if (units) words.push(numberWords[units]);
+    } else if (units) {
+        if (words.length) words.push('linh');
+        words.push(numberWords[units]);
+    }
+    return words.join(' ') || 'không';
+}
+
+function readNumber(value) {
+    if (!Number.isInteger(value) || value < 0 || value >= 1000000000) throw new Error('Số phải thuộc khoảng từ 0 đến 999 999 999.');
+    if (value < 1000) return readTriplet(value).replace(/^./, char => char.toUpperCase());
+    const millions = Math.floor(value / 1000000);
+    const thousands = Math.floor(value / 1000) % 1000;
+    const units = value % 1000;
+    const parts = [];
+    if (millions) parts.push(readTriplet(millions), 'triệu');
+    if (thousands) parts.push(readTriplet(thousands, Boolean(millions)), 'nghìn');
+    if (units) parts.push(readTriplet(units, Boolean(millions || thousands)));
+    return parts.join(' ').replace(/^./, char => char.toUpperCase());
+}
+
+function numericOptions(correct, minimum, maximum, random, candidateSteps = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000]) {
+    const values = [correct];
+    const candidates = shuffle(candidateSteps.flatMap(step => [correct - step, correct + step]), random);
+    for (const candidate of candidates) {
+        if (candidate >= minimum && candidate <= maximum && !values.includes(candidate)) values.push(candidate);
+        if (values.length === 4) break;
+    }
+    for (let candidate = minimum; values.length < 4 && candidate <= maximum; candidate += 1) {
+        if (!values.includes(candidate)) values.push(candidate);
+    }
+    if (values.length < 4) throw new Error('Cần ít nhất bốn số khác nhau trong phạm vi đã chọn.');
+    return shuffle(values, random).map(formatNumber);
+}
+
+function digitOptions(correct, random) {
+    const candidates = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(digit => digit !== correct), random).slice(0, 3);
+    return shuffle([correct, ...candidates], random).map(String);
+}
+
+function expandedForm(value) {
+    return expandedTerms(value).map(formatNumber).join(' + ');
+}
+
 function createQuestion(templateId, prompt, values, correctValue, explanation, templateVariables = {}) {
     return {
         classlevel: 'Lớp 4',
@@ -39,6 +101,7 @@ function createQuestion(templateId, prompt, values, correctValue, explanation, t
 function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, explanation, templateVariables = {}) {
     if (!Array.isArray(subquestions) || subquestions.length !== 4) throw new Error('Bài trắc nghiệm bốn phần cần đúng bốn câu con.');
     const normalizedSubquestions = subquestions.map((item, index) => ({
+        ...item,
         label: item.label || String.fromCharCode(97 + index),
         prompt: item.prompt || '',
         options: [...item.options],
@@ -116,5 +179,5 @@ function expandedTerms(value) {
     }, []);
 }
 
-return { randomInt, shuffle, formatNumber, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
+return { randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
 }));

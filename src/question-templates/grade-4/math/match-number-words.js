@@ -4,8 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.match_number_words'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber }) {
-    const ones = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber }) {
 
     function seededRandom(seed) {
         let value = seed >>> 0;
@@ -13,43 +12,6 @@
             value = (value * 1664525 + 1013904223) >>> 0;
             return value / 0x100000000;
         };
-    }
-
-    function readTriplet(value, forceHundreds = false) {
-        const hundreds = Math.floor(value / 100);
-        const tens = Math.floor(value / 10) % 10;
-        const units = value % 10;
-        const words = [];
-        if (hundreds) words.push(ones[hundreds], 'trăm');
-        else if (forceHundreds && value) words.push('không', 'trăm');
-        if (tens >= 2) {
-            words.push(ones[tens], 'mươi');
-            if (units === 1) words.push('mốt');
-            else if (units === 4) words.push('tư');
-            else if (units === 5) words.push('lăm');
-            else if (units) words.push(ones[units]);
-        } else if (tens === 1) {
-            words.push('mười');
-            if (units === 5) words.push('lăm');
-            else if (units) words.push(ones[units]);
-        } else if (units) {
-            if (words.length) words.push('linh');
-            words.push(ones[units]);
-        }
-        return words.join(' ') || 'không';
-    }
-
-    function readNumber(value) {
-        if (!Number.isInteger(value) || value < 0 || value >= 1000000000) throw new Error('Số phải thuộc khoảng từ 0 đến 999 999 999.');
-        if (value < 1000) return readTriplet(value).replace(/^./, char => char.toUpperCase());
-        const millions = Math.floor(value / 1000000);
-        const thousands = Math.floor(value / 1000) % 1000;
-        const units = value % 1000;
-        const parts = [];
-        if (millions) parts.push(readTriplet(millions), 'triệu');
-        if (thousands) parts.push(readTriplet(thousands, Boolean(millions)), 'nghìn');
-        if (units) parts.push(readTriplet(units, Boolean(millions || thousands)));
-        return parts.join(' ').replace(/^./, char => char.toUpperCase());
     }
 
     function parseShapes(raw) {

@@ -60,15 +60,19 @@
                 'g4-m-angle-review': 'g4-math-hk1-b09'
             }),
             '3. Số có nhiều chữ số': Object.freeze({
+                'number.six_digit_numbers': 'g4-math-hk1-b10',
                 'number.digit_at_place': 'g4-math-hk1-b11',
                 'number.safe_password_by_place_value': 'g4-math-hk1-b11',
                 'number.compose_from_places': 'g4-math-hk1-b11',
                 'number.missing_expanded_addend': 'g4-math-hk1-b11',
+                'number.million_class': 'g4-math-hk1-b12',
+                'number.round_hundred_thousands': 'g4-math-hk1-b13',
                 'number.smallest_of_four': 'g4-math-hk1-b14',
                 'number.largest_of_four': 'g4-math-hk1-b14',
                 'number.compare_number_forms': 'g4-math-hk1-b14',
                 'number.neighbor_numbers': 'g4-math-hk1-b15',
                 'number.natural_sequence': 'g4-math-hk1-b15',
+                'number.hk1_review_b10_b15': 'g4-math-hk1-b16',
                 'number.place_value_true_false': 'g4-math-hk1-b11',
                 'number.four_arithmetic_blanks': 'g4-math-hk1-b16',
                 'number.four_arithmetic_comparisons': 'g4-math-hk1-b16'

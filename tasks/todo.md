@@ -85,7 +85,7 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [x] Phase 3: Rebuild Bài 7–9, gồm đo góc, phân loại góc và review góc. Code,
   contract/browser test và migration seed đã hoàn tất trong branch Phase 3;
   chưa apply seed live.
-- [ ] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review.
+- [x] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review; code, seed idempotent, contract và browser test đã hoàn tất trong branch riêng, chưa apply seed live.
 - [ ] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
 - [ ] Phase 6: Rebuild Bài 22–26, gồm cộng, trừ, tính chất, tổng-hiệu và review.
 - [ ] Phase 7: Rebuild Bài 27–32, gồm vuông góc, song song, hình bình hành/hình thoi và review.

@@ -6457,6 +6457,7 @@ const app = {
             const phase2ConstantMinimum = Number(config.constantMinimum ?? 2);
             const phase2ConstantMaximum = Number(config.constantMaximum ?? 9);
             const phase2Operations = config.operations || ['add', 'subtract', 'multiply', 'divide'];
+            const phase4ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b10', 'b11', 'b12', 'b13'];
             const topic5Operation = config.operation === '−' ? '-' : (['+', '-'].includes(config.operation) ? config.operation : '');
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
@@ -6517,6 +6518,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--safe-password-controls"><h5>Độ dài mật khẩu</h5><p>Game nêu số chữ số ngay trong câu hỏi; két sắt chỉ là ảnh minh họa. Mỗi lượt, độ dài được bốc trong khoảng khai báo.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số chữ số ít nhất</span><input id="template-safe-password-min-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMinLength}"></label><label class="template-editor__field"><span>Số chữ số nhiều nhất</span><input id="template-safe-password-max-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMaxLength}"></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Điều kiện 1</legend><p>Chữ số ở một hàng được chọn phải khác một chữ số được chọn.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-places')">Tất cả</button></div><div id="template-safe-password-condition1-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition1Places, 'safe-condition1-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-digits')">Tất cả</button></div><div id="template-safe-password-condition1-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition1Digits, 'safe-condition1-digits')).join('')}</div></fieldset><fieldset><legend>Điều kiện 2</legend><p>Game tự bốc một hàng khác nếu còn hàng phù hợp với độ dài mật khẩu.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-places')">Tất cả</button></div><div id="template-safe-password-condition2-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition2Places, 'safe-condition2-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-digits')">Tất cả</button></div><div id="template-safe-password-condition2-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition2Digits, 'safe-condition2-digits')).join('')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-class-controls"><h5>Phân biệt “lớp” và “hàng”</h5><p><b>Lớp</b> luôn gồm ba hàng; <b>hàng</b> chỉ là một vị trí. Ở mỗi điều kiện, chọn một kiểu rồi cấu hình danh sách tương ứng bên dưới.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Điều kiện 1 áp dụng theo</span><select id="template-safe-password-condition1-scope" class="form-input"><option value="place" ${safeCondition1Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition1Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label><label class="template-editor__field"><span>Điều kiện 2 áp dụng theo</span><select id="template-safe-password-condition2-scope" class="form-input"><option value="place" ${safeCondition2Scope === 'place' ? 'selected' : ''}>Một hàng</option><option value="class" ${safeCondition2Scope === 'class' ? 'selected' : ''}>Một lớp (3 hàng)</option></select></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Lớp có thể bốc cho Điều kiện 1</legend><div id="template-safe-password-condition1-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition1Classes, 'safe-condition1-classes')).join('')}</div></fieldset><fieldset><legend>Lớp có thể bốc cho Điều kiện 2</legend><div id="template-safe-password-condition2-classes" class="template-editor__checks">${safeClasses.map(([value,label]) => checkbox(value, label, safeCondition2Classes, 'safe-condition2-classes')).join('')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--phase2-controls" hidden><h5>Phạm vi Bài 3 và Bài 4</h5><p>Chỉ các trường phù hợp với generator đang chọn mới được dùng khi lưu. Bài 6 dùng blueprint ôn tập cố định Bài 1–4.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất (Bài 3)</span><input id="template-phase2-minimum" class="form-input" type="number" min="0" value="${phase2NumberMinimum}"></label><label class="template-editor__field"><span>Số lớn nhất (Bài 3)</span><input id="template-phase2-maximum" class="form-input" type="number" min="1" value="${phase2NumberMaximum}"></label><label class="template-editor__field"><span>Thẻ số (Bài 3)</span><select id="template-phase2-digit-count" class="form-input">${[3,4].map(value => `<option value="${value}" ${phase2DigitCount === value ? 'selected' : ''}>${value} thẻ</option>`).join('')}</select></label><label class="template-editor__field"><span>Số phần tử ít nhất</span><input id="template-phase2-list-length-min" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMin}"></label><label class="template-editor__field"><span>Số phần tử nhiều nhất</span><input id="template-phase2-list-length-max" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMax}"></label></div><div class="template-editor__fields"><label class="template-editor__field"><span>Số a nhỏ nhất (Bài 4)</span><input id="template-phase2-variable-minimum" class="form-input" type="number" min="1" value="${phase2VariableMinimum}"></label><label class="template-editor__field"><span>Số a lớn nhất (Bài 4)</span><input id="template-phase2-variable-maximum" class="form-input" type="number" min="1" value="${phase2VariableMaximum}"></label><label class="template-editor__field"><span>Hằng số nhỏ nhất</span><input id="template-phase2-constant-minimum" class="form-input" type="number" min="2" value="${phase2ConstantMinimum}"></label><label class="template-editor__field"><span>Hằng số lớn nhất</span><input id="template-phase2-constant-maximum" class="form-input" type="number" min="2" value="${phase2ConstantMaximum}"></label></div><div class="template-editor__fields"><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy dãy chẵn/lẻ</span><input id="template-phase2-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(phase2SequenceSteps)}" placeholder="2, 4, 6"></label></div><fieldset><legend>Phép tính Bài 4</legend><div id="template-phase2-operations" class="template-editor__checks">${checkbox('add', 'Cộng', phase2Operations, 'phase2-operations')}${checkbox('subtract', 'Trừ', phase2Operations, 'phase2-operations')}${checkbox('multiply', 'Nhân', phase2Operations, 'phase2-operations')}${checkbox('divide', 'Chia hết', phase2Operations, 'phase2-operations')}</div></fieldset><fieldset><legend>Dạng chẵn/lẻ Bài 3</legend><div id="template-phase2-parities" class="template-editor__checks">${checkbox('even', 'Số chẵn', phase2Parities, 'phase2-parities')}${checkbox('odd', 'Số lẻ', phase2Parities, 'phase2-parities')}</div></fieldset></div>
+                <div class="template-editor__rule template-editor__rule--phase4-controls" hidden><h5>Kỹ năng ôn tập Bài 10–15</h5><p>Chọn đúng bốn kỹ năng cho một lượt review. Mỗi câu con giữ nhãn Bài học để giáo viên kiểm tra tỷ trọng trước khi đưa vào đề.</p><div id="template-phase4-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 4">${[['b10', 'Bài 10 · Lập và đọc số sáu chữ số'], ['b11', 'Bài 11 · Hàng và lớp'], ['b12', 'Bài 12 · Lớp triệu'], ['b13', 'Bài 13 · Làm tròn'], ['b14', 'Bài 14 · So sánh'], ['b15', 'Bài 15 · Dãy số tự nhiên']].map(([value, label]) => checkbox(value, label, phase4ReviewSkills, 'phase4-skills')).join('')}</div></div>
               </div></div>
               <footer class="template-editor__actions"><button type="button" class="btn-opt" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="btn-primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
               <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
@@ -6580,6 +6582,15 @@ const app = {
             phase2TemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const phase4TemplateOptions = [
+                ['number.six_digit_numbers', 'Bài 10 · Lập và đọc số sáu chữ số'],
+                ['number.million_class', 'Bài 12 · Các số trong phạm vi lớp triệu'],
+                ['number.round_hundred_thousands', 'Bài 13 · Làm tròn đến hàng trăm nghìn'],
+                ['number.hk1_review_b10_b15', 'Bài 16 · Ôn tập số có nhiều chữ số']
+            ];
+            phase4TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             const angleRule = document.createElement('div');
             angleRule.className = 'template-editor__rule template-editor__rule--angle-info';
             angleRule.hidden = true;
@@ -6608,16 +6619,17 @@ const app = {
             if (generatorControl && measurementTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && topic5TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && phase2TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && phase4TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Đổi phạm vi và bước nhảy để dùng lại template cho cấp lớp hoặc chủ đề khác.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
             const topic5OperationRule = '<div class="template-editor__rule template-editor__rule--topic5-operation"><div class="template-editor__rule-heading"><h5>Phép tính theo Bài học</h5></div><p>Chọn cộng hoặc trừ nếu template chỉ dùng cho một Bài học; để mặc định để cho phép cả hai.</p><label class="template-editor__field template-editor__field--wide"><span>Phạm vi phép tính</span><select id="template-topic5-operation" class="form-input"><option value="">Cộng và trừ (mặc định)</option><option value="+">Chỉ phép cộng (+)</option><option value="-">Chỉ phép trừ (−)</option></select></label></div>';
             box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
             const topic5OperationControl = document.getElementById('template-topic5-operation');
             if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
-            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
-            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys].includes(existing?.generator_key);
+            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -6864,6 +6876,34 @@ const app = {
                     hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu ôn tập có nhãn kỹ năng.',
                     preview: 'live', type: 'Trắc nghiệm',
                     variables: [['{question}', 'toàn bộ bộ ôn tập Bài 1–4 do game sinh'], ['{skills}', 'danh sách kỹ năng của bộ ôn tập']]
+                },
+                'number.six_digit_numbers': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 10 · Luyện lập và đọc số sáu chữ số, số 1 000 000 và giá trị chữ số qua bốn câu con trắc nghiệm.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu con Bài 10 do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu lập/đọc số sáu chữ số do game sinh'], ['{modes}', 'các dạng kỹ năng của bốn câu con']]
+                },
+                'number.million_class': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 12 · Đọc, viết và phân tích số trong phạm vi lớp triệu; số 0 giữa các lớp được giữ rõ ràng.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu con lớp triệu do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu đọc/viết/phân tích số lớp triệu do game sinh'], ['{modes}', 'các dạng kỹ năng của bốn câu con']]
+                },
+                'number.round_hundred_thousands': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 13 · Làm tròn số đến hàng trăm nghìn và chọn đúng quy tắc dựa trên chữ số hàng chục nghìn.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn câu làm tròn do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu làm tròn và quy tắc do game sinh'], ['{modes}', 'các dạng kỹ năng của bốn câu con']]
+                },
+                'number.hk1_review_b10_b15': {
+                    defaultPrompt: '{question}',
+                    guide: 'Bài 16 · Ôn tập Bài 10–15 theo bốn kỹ năng được chọn; từng câu con giữ nhãn Bài học để kiểm tra tỷ trọng.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bộ ôn tập do game sinh.',
+                    preview: 'live', type: 'Trắc nghiệm',
+                    variables: [['{question}', 'toàn bộ bốn câu review Bài 10–15 do game sinh'], ['{skills}', 'bốn kỹ năng được chọn cho template']]
                 },
                 'number.match_number_words': {
                     defaultPrompt: 'Hãy nối mỗi số với cách đọc đúng.',
@@ -7170,7 +7210,19 @@ const app = {
             const isPhase2Template = phase2TemplateKeys.includes(generator);
             const isPhase2B03 = generator.startsWith('number.even_odd_');
             const isPhase2B04 = generator.startsWith('number.variable_expression_');
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || (isTopic5Template && !topic5DigitRange); });
+            const isPhase4Review = generator === 'number.hk1_review_b10_b15';
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || isPhase4Review || (isTopic5Template && !topic5DigitRange); });
+            const phase4DigitDefaults = {
+                'number.six_digit_numbers': [6, 6],
+                'number.million_class': [7, 9],
+                'number.round_hundred_thousands': [6, 9]
+            }[generator];
+            if (phase4DigitDefaults) {
+                const minimumDigitsControl = document.getElementById('template-minimum-digits');
+                const maximumDigitsControl = document.getElementById('template-maximum-digits');
+                if (minimumDigitsControl) minimumDigitsControl.value = phase4DigitDefaults[0];
+                if (maximumDigitsControl) maximumDigitsControl.value = phase4DigitDefaults[1];
+            }
             document.querySelectorAll('.template-editor__rule--safe-password-range-controls').forEach(rule => { rule.hidden = generator !== 'number.safe_password_by_place_value'; });
             document.querySelectorAll('.template-editor__rule--matching-controls').forEach(rule => { rule.hidden = generator !== 'number.match_number_words'; });
             document.querySelectorAll('.template-editor__rule--topic5-operation').forEach(rule => { rule.hidden = !topic5OperationKeys.includes(generator); });
@@ -7191,6 +7243,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--angle-info').forEach(rule => { rule.hidden = !isAngleTemplate; });
             document.querySelectorAll('.template-editor__rule--angle-degree-controls').forEach(rule => { rule.hidden = !['g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator); });
             document.querySelectorAll('.template-editor__rule--phase2-controls').forEach(rule => { rule.hidden = !isPhase2B03 && !isPhase2B04; });
+            document.querySelectorAll('.template-editor__rule--phase4-controls').forEach(rule => { rule.hidden = !isPhase4Review; });
             document.querySelectorAll('#template-phase2-minimum, #template-phase2-maximum, #template-phase2-list-length-min, #template-phase2-list-length-max, #template-phase2-digit-count, #template-phase2-sequence-steps').forEach(input => { input.disabled = !isPhase2B03; });
             document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-operations input').forEach(input => { input.disabled = !isPhase2B04; });
@@ -7218,6 +7271,7 @@ const app = {
             const isPhase2Template = phase2TemplateKeys.includes(generatorKey);
             const isPhase2B03 = generatorKey.startsWith('number.even_odd_');
             const isPhase2B04 = generatorKey.startsWith('number.variable_expression_');
+            const isPhase4Review = generatorKey === 'number.hk1_review_b10_b15';
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-min-length')?.value || 9)));
             const safePasswordMaxLength = Math.max(2, Math.min(12, Number(document.getElementById('template-safe-password-max-length')?.value || 9)));
             const selectedSafeValues = group => [...document.querySelectorAll(`.template-checkbox[data-template-group="${group}"]`)].filter(input => input.checked).map(input => input.value);
@@ -7247,6 +7301,7 @@ const app = {
             const phase2ConstantMaximum = Number(value('template-phase2-constant-maximum'));
             const phase2Operations = selectedSafeValues('phase2-operations');
             const phase2Parities = selectedSafeValues('phase2-parities');
+            const phase4Skills = selectedSafeValues('phase4-skills');
             const topic5Operation = document.getElementById('template-topic5-operation')?.value.trim() || '';
             const angleDegreesInput = document.getElementById('template-angle-degrees')?.value.trim() || '';
             const angleDegrees = angleDegreesInput ? angleDegreesInput.split(',').map(item => Number(item.trim())) : [];
@@ -7267,7 +7322,8 @@ const app = {
                 : (isPhase2B04
                     ? { variableMinimum: phase2VariableMinimum, variableMaximum: phase2VariableMaximum, constantMinimum: phase2ConstantMinimum, constantMaximum: phase2ConstantMaximum, operations: phase2Operations }
                     : { skills: ['b01', 'b02', 'b03', 'b04'] });
-            const templateConfig = isAngleTemplate ? angleConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig));
+            const phase4Config = { skills: phase4Skills };
+            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig)));
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
             if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
@@ -7294,6 +7350,9 @@ const app = {
                 if (!Number.isSafeInteger(phase2VariableMinimum) || !Number.isSafeInteger(phase2VariableMaximum) || phase2VariableMinimum < 1 || phase2VariableMinimum > phase2VariableMaximum) throw new Error('Phạm vi giá trị của chữ a không hợp lệ.');
                 if (!Number.isSafeInteger(phase2ConstantMinimum) || !Number.isSafeInteger(phase2ConstantMaximum) || phase2ConstantMinimum < 2 || phase2ConstantMinimum > phase2ConstantMaximum) throw new Error('Phạm vi hằng số Bài 4 không hợp lệ.');
                 if (!phase2Operations.length || phase2Operations.some(operation => !['add', 'subtract', 'multiply', 'divide'].includes(operation))) throw new Error('Hãy chọn ít nhất một phép tính cho Bài 4.');
+            }
+            if (isPhase4Review && (phase4Skills.length !== 4 || new Set(phase4Skills).size !== 4 || phase4Skills.some(skill => !['b10', 'b11', 'b12', 'b13', 'b14', 'b15'].includes(skill)))) {
+                throw new Error('Bộ ôn tập Bài 10 đến Bài 15 cần chọn đúng bốn kỹ năng khác nhau.');
             }
             if (template.generator_key === 'number.natural_sequence') {
                 const sequenceMinimum = Number(value('template-natural-sequence-minimum'));
@@ -7349,7 +7408,7 @@ const app = {
             if (selectedLesson) template.config.lesson = selectedLesson;
             else delete template.config.lesson;
             if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
-            if (!isAngleTemplate && !isPhase2Template && !isTopic5Template && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (!isAngleTemplate && !isPhase2Template && !isTopic5Template && !isPhase4Review && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;

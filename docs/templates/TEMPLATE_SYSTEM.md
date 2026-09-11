@@ -296,7 +296,7 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | B10 `g4-math-hk1-b10` | Lập/đọc số sáu chữ số; số 1 000 000; giá trị chữ số. |
 | B11 `g4-math-hk1-b11` | Hàng và lớp; xác định chữ số theo hàng/lớp; dạng khai triển theo lớp. |
 | B12 `g4-math-hk1-b12` | Đọc, viết, phân tích số trong phạm vi lớp triệu; số 0 ở giữa các lớp. |
-| B13 `g4-math-hk1-b13` | Làm tròn đến hàng trăm nghìn; chọn số gần nhất; Đúng/Sai quy tắc làm tròn. |
+| B13 `g4-math-hk1-b13` | Làm tròn đến hàng trăm nghìn; chọn số gần nhất; chọn đúng quy tắc làm tròn. |
 | B14 `g4-math-hk1-b14` | So sánh số nhiều chữ số; lập số lớn/nhỏ; so sánh dạng số và dạng khai triển. |
 | B15 `g4-math-hk1-b15` | Số tự nhiên; số liền trước/sau; dãy tăng/giảm đều; điền số còn thiếu. |
 | B16 `g4-math-hk1-b16` | Review B10–B15, mỗi câu ghi rõ kỹ năng để sinh đề có cân đối. |
@@ -365,7 +365,7 @@ Tên hiển thị nên nói đủ phạm vi, ví dụ:
 
 ```text
 [Bài 11] Nhận biết chữ số theo hàng — Trắc nghiệm
-[Bài 13] Làm tròn đến hàng trăm nghìn — Đúng/Sai
+[Bài 13] Làm tròn đến hàng trăm nghìn — Trắc nghiệm
 [Bài 25] Tìm hai số biết tổng và hiệu — Bài toán
 ```
 
@@ -618,9 +618,14 @@ Phụ thuộc: Phase 1 và duyệt family nội dung C.
 
 Thực hiện:
 
-- bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn;
-- tách so sánh, dãy số và review;
-- bỏ mapping heuristic khi record đã có lesson rõ.
+- [x] bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn;
+- [x] tách so sánh, dãy số và review;
+- [x] thêm generator B10/B12/B13/B16, preset/Preview Admin, contract Node và browser test laptop/tablet ngang;
+- [x] tạo seed idempotent riêng cho B10–B16; record mới có `lesson` tường minh và không xoá vật lý;
+- [ ] apply seed Phase 4 vào Supabase live và audit pool sau khi người dùng xác nhận đúng project/quyền.
+
+Chi tiết implementation và bounds xem
+`docs/templates/PHASE_4_B10_B11_B12_B13_B14_B15_B16.md`.
 
 ### Phase 5 — Rebuild Bài 17–21
 
