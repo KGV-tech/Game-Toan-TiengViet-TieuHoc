@@ -1,7 +1,7 @@
 # Hệ thống Template câu hỏi — Toán lớp 4
 
-> Trạng thái: **Phase 1 mapping + remediation và Phase 2 seed đã apply/audit live; B05 vẫn tạm hoãn**
-> Cập nhật: 10/09/2026
+> Trạng thái: **Phase 1 mapping + remediation, Phase 2 seed và Phase 3–8 HK1 seed đã apply/audit live; B05 và HK2 vẫn tạm hoãn**
+> Cập nhật: 11/09/2026
 > Phạm vi tài liệu: kiến trúc, dữ liệu, generator, Supabase, lộ trình nội dung và kế hoạch thay mới toàn bộ Template.
 
 ## 1. Mục đích và cổng duyệt
@@ -14,6 +14,7 @@ Tài liệu này là hồ sơ thiết kế và vận hành theo phase. Trạng t
 - Không xoá hoặc sửa hàng loạt Template cũ trong Supabase.
 - Phase 2 đã thêm các generator mới cho B03, B04 và blueprint review B06 trong repo; audit live xác nhận đủ bảy record active.
 - Migration thêm trường `lesson` và mapping 28 record Phase 1 đã được apply; remediation tiếp theo đã xử lý 17 record HARDEN/TÁCH/THAY, audit còn 0 active thiếu `lesson`.
+- Phase 3–8 đã có generator, registry, editor, migration và test tương ứng; audit live tại project Supabase production xác nhận 31/31 lesson B07–B37 có blueprint active, 0 lesson thiếu và 65 blueprint active sau khi giữ các record legacy hợp lệ.
 - Không tạo B05: family bài toán ba bước vẫn bị hoãn theo yêu cầu người dùng.
 
 Nguyên tắc duyệt:
@@ -262,8 +263,8 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | Bài 14–16 | Có generator phù hợp nhưng một số record đang rộng hoặc tên chưa nói rõ Bài học. | Tạo record hẹp theo so sánh, dạng số, dãy và review. |
 | Bài 17–21 | Có phần đổi đơn vị nhưng thiếu thực hành/trải nghiệm và review được phân định rõ. | Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành, review. |
 | Bài 22–26 | Nhiều generator cộng/trừ tổng quát đang dồn vào Bài 26. | Tách cộng, trừ, tính chất, tổng-hiệu và luyện tập chung. |
-| Bài 27–32 | Chưa có generator cho vuông góc, song song, hình bình hành/hình thoi. | Xây family hình học có SVG/keyboard fallback và bài thực hành. |
-| Bài 33–37 | Chưa có bộ ôn tập HK1 theo mảng kiến thức. | Tạo các pool review có trọng số và nhãn kỹ năng. |
+| Bài 27–32 | Đã có family hình học vuông góc, song song, hình bình hành/hình thoi và review; migration đã apply/audit live. | Tiếp tục theo dõi preview và dữ liệu Admin thật. |
+| Bài 33–37 | Đã có các pool review HK1 theo mảng kiến thức, nhãn kỹ năng và tỷ trọng; migration đã apply/audit live. | Tiếp tục theo dõi khả năng sinh Đề và dữ liệu Admin thật. |
 | HK2 | `templateLessonRules` hiện chưa có mapping HK2; tài liệu Tập 2 chưa được cung cấp trong lượt này. | Kiểm kê riêng, chỉ tạo sau khi đối chiếu SGK/VBT Tập 2. |
 
 ## 9. Ma trận phủ nội dung HK1 đề xuất
@@ -597,7 +598,7 @@ Checkpoint seed đã đạt: bảy record Phase 2 active đúng lesson và B05 k
 record. Nhóm deferred 17 record đã được xử lý ở migration remediation riêng;
 các phase sau chỉ bổ sung family mới còn thiếu.
 
-### Phase 3 — Rebuild Bài 7–9 (đã hoàn tất code, chờ seed live)
+### Phase 3 — Rebuild Bài 7–9 (đã hoàn tất code, seed và audit live)
 
 Phụ thuộc: Phase 1 và duyệt family nội dung B.
 
@@ -609,8 +610,8 @@ Phụ thuộc: Phase 1 và duyệt family nội dung B.
 - kiểm tra SVG, keyboard fallback, focus và reduced motion.
 
 Chi tiết generator, cấu hình và migration xem
-`docs/templates/PHASE_3_B07_B08_B09.md`. Seed Phase 3 chưa được apply vào
-Supabase live.
+`docs/templates/PHASE_3_B07_B08_B09.md`. Seed Phase 3 đã được apply vào
+Supabase live cùng audit lesson B07–B09.
 
 ### Phase 4 — Rebuild Bài 10–16
 
@@ -622,7 +623,7 @@ Thực hiện:
 - [x] tách so sánh, dãy số và review;
 - [x] thêm generator B10/B12/B13/B16, preset/Preview Admin, contract Node và browser test laptop/tablet ngang;
 - [x] tạo seed idempotent riêng cho B10–B16; record mới có `lesson` tường minh và không xoá vật lý;
-- [ ] apply seed Phase 4 vào Supabase live và audit pool sau khi người dùng xác nhận đúng project/quyền.
+- [x] apply seed Phase 4 vào Supabase live và audit pool tại đúng project/quyền.
 
 Chi tiết implementation và bounds xem
 `docs/templates/PHASE_4_B10_B11_B12_B13_B14_B15_B16.md`.
@@ -636,7 +637,8 @@ Thực hiện:
 - tách khối lượng, diện tích, thời gian/thế kỉ;
 - thêm thực hành lựa chọn đơn vị;
 - tạo review đo lường có nhãn kỹ năng;
-- rà lại bài toán lời văn và đơn vị.
+- rà lại bài toán lời văn và đơn vị;
+- migration Phase 5 đã apply/audit live; record legacy hợp lệ được giữ lại, không xoá vật lý.
 
 ### Phase 6 — Rebuild Bài 22–26
 
@@ -646,7 +648,8 @@ Thực hiện:
 
 - tách cộng, trừ, tính chất, tổng-hiệu;
 - không dùng các generator cộng/trừ tổng quát làm đại diện cho B26 nếu không có blueprint;
-- tạo review B26.
+- tạo review B26;
+- migration Phase 6 đã apply/audit live cho B22–B26.
 
 ### Phase 7 — Rebuild Bài 27–32
 
@@ -658,7 +661,8 @@ Thực hiện:
 - thêm bài thực hành trên lưới/SVG;
 - thêm hình bình hành/hình thoi;
 - tạo review B32;
-- test hình học bằng dữ liệu hình học, không snapshot pixel đơn thuần.
+- test hình học bằng dữ liệu hình học, không snapshot pixel đơn thuần;
+- migration B27–B32 đã apply/audit live.
 
 ### Phase 8 — Rebuild Bài 33–37
 
@@ -668,7 +672,8 @@ Thực hiện:
 
 - tạo blueprint ôn số, cộng/trừ, hình học, đo lường;
 - tạo review toàn HK1;
-- kiểm tra tỷ trọng kỹ năng và khả năng sinh Đề.
+- kiểm tra tỷ trọng kỹ năng và khả năng sinh Đề;
+- migration B33–B37 đã apply/audit live.
 
 ### Phase 9 — HK2 sau khi có nguồn xác minh
 
@@ -717,4 +722,4 @@ Thực hiện:
 - [ ] RLS/quyền/API key không bị nới ngoài yêu cầu.
 - [ ] Migration/seed idempotent, có log và có kế hoạch rollback.
 - [ ] Contract Node, Playwright và visual/accessibility review đều đạt.
-- [ ] Người dùng duyệt trước push/merge main.
+- [x] Người dùng đã duyệt push/merge main sau khi các checkpoint bắt buộc đạt.

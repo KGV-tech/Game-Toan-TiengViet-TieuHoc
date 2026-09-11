@@ -177,10 +177,11 @@ function propertyRow(property, random) {
 }
 
 function generateAdditionPropertyFill(config = {}, random = Math.random) {
-    const allowed = Array.isArray(config.properties) && config.properties.length
-        ? config.properties.filter(item => item === 'commutative' || item === 'associative')
-        : ['commutative', 'associative'];
-    if (!allowed.length) throw new Error('Hãy chọn ít nhất một tính chất của phép cộng.');
+    const hasProperties = Object.prototype.hasOwnProperty.call(config, 'properties');
+    const allowed = hasProperties ? config.properties : ['commutative', 'associative'];
+    if (!Array.isArray(allowed) || !allowed.length || new Set(allowed).size !== allowed.length || allowed.some(item => !['commutative', 'associative'].includes(item))) {
+        throw new Error('Hãy chọn ít nhất một tính chất hợp lệ của phép cộng.');
+    }
     const rows = labels.map(label => ({ label, ...propertyRow(choose(allowed, random), random) }));
     return fourPartFill(
         'g4-m-addition-property-fill',
