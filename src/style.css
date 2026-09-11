@@ -3863,6 +3863,7 @@ input[type="text"], input[type="password"], select, textarea {
 .admin-roster-filter-field :is(input, select):focus-visible { outline: 3px solid rgba(113, 228, 244, .72); outline-offset: 2px; border-color: #67e8f9; }
 .admin-roster-filter-panel__summary { color: #7fa8b7; font-size: .68rem; }
 .admin-roster-filter-panel__summary strong { color: #bfefff; }
+.admin-roster-filter-panel__sort-note { display: inline-block; margin-left: 8px; color: #9ad6e3; }
 .admin-roster-list-heading,
 .personal-quest-list-heading {
     display: flex;
