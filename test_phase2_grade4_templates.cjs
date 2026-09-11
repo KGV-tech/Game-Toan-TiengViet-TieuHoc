@@ -86,11 +86,26 @@ count.subquestions.forEach(part => {
 
 const sequence = templates.generateQuestion('number.even_odd_sequence', {}, seededRandom(13));
 assertFourPartQuestion(sequence, 'number.even_odd_sequence');
+assert.equal(sequence.q, 'Tìm số thích hợp điền vào dãy:',
+  'The sequence family must describe the actual task instead of labelling it as a generic even/odd question.');
+assert.equal(sequence.sharedPrompt, 'Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?',
+  'Repeated sequence instructions must be promoted to one shared prompt.');
 sequence.subquestions.forEach(part => {
   assert.equal(numberValue(part.answer) % 2 === 0 ? 'even' : 'odd', part.targetParity,
     'Sequence answer must preserve parity.');
   assert.equal(part.step % 2, 0, 'Even/odd sequence step must preserve parity.');
 });
+
+assert.throws(
+  () => templates.generateQuestion('number.digit_at_place', {
+    minimum: 10000,
+    maximum: 99999,
+    allowedPlaces: ['thousands'],
+    allowedDigits: [9]
+  }, seededRandom(1313)),
+  /ít nhất 4|không trùng|trùng/i,
+  'A digit-at-place template must reject a configuration that can only repeat one subquestion condition.'
+);
 
 const form = templates.generateQuestion('number.even_odd_form', {}, seededRandom(14));
 assertFourPartQuestion(form, 'number.even_odd_form');
