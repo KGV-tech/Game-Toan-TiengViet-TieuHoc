@@ -97,7 +97,7 @@ test('Phase 4 B13 và B16 giữ cấu hình review, Preview và bố cục table
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
   await expect(page.locator('#template-preview-dialog')).toContainText('Quy tắc nào đúng');
-  await expect(page.locator('#template-preview-dialog .template-preview__choices').nth(3).locator('button')).toHaveCount(4);
+  await expect(page.locator('#template-preview-dialog .template-preview__choices').nth(3).locator('span')).toHaveCount(4);
   await page.locator('#template-preview-back').click();
 
   const reviewTemplate = phase4Template(
