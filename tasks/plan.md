@@ -192,8 +192,8 @@ seed Phase 3 vào Supabase live.
 
 ### Phase 5 — Bài 17–21
 
-- [ ] Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
-- [ ] Rà lại bài toán lời văn/đơn vị và config biên.
+- [x] Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
+- [x] Rà lại bài toán lời văn/đơn vị và config biên.
 
 ### Phase 6 — Bài 22–26
 

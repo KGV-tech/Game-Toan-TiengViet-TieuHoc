@@ -23,6 +23,7 @@
         ...require('./variable-expressions'),
         ...require('./review-b01-b04'),
         ...require('./measurement-units'),
+        ...require('./measurement-phase5'),
         ...require('./topic-5'),
         'g4-m-angle-count-in-polygon': require('./angle-count-in-polygon'),
         'angle.count_in_polygon': require('./angle-count-in-polygon'),
