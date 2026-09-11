@@ -43,11 +43,14 @@
         <div class="glass-container login-panel" style="margin-top: 20vh;">
         <img src="./public/login_frame.webp" class="login-panel-frame" alt="">
         <h2 class="login-heading">Đăng nhập để bắt đầu</h2>
-        <label class="login-field" for="username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="username" placeholder="Tên đăng nhập: không dấu, viết liền, không khoảng trắng" autocomplete="username" class="input-glass"></label>
-        <label class="login-field" for="password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="password" placeholder="Mật khẩu" class="input-glass"><button type="button" id="toggle-password" class="login-eye" aria-label="Hiện mật khẩu" aria-pressed="false">◉</button></label>
-        <button id="login-btn" class="login-action asset-button asset-button--auth" aria-label="Bắt đầu">
-          <img src="./public/ui/buttons/group1/login-start.png" alt="" aria-hidden="true">
-        </button>
+        <form id="login-form" class="auth-form" novalidate aria-describedby="login-error">
+          <label class="login-field" for="username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><span class="sr-only">Tên đăng nhập</span><input type="text" id="username" name="username" placeholder="Tên đăng nhập: không dấu, viết liền, không khoảng trắng" autocomplete="username" class="input-glass" required aria-required="true" aria-describedby="login-error"></label>
+          <label class="login-field" for="password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><span class="sr-only">Mật khẩu</span><input type="password" id="password" name="password" placeholder="Mật khẩu" autocomplete="current-password" class="input-glass" required aria-required="true" aria-describedby="login-error"><button type="button" id="toggle-password" class="login-eye" aria-label="Hiện mật khẩu" aria-pressed="false">◉</button></label>
+          <button id="login-btn" type="submit" class="login-action asset-button asset-button--auth" aria-label="Bắt đầu">
+            <img src="./public/ui/buttons/group1/login-start.png" alt="" aria-hidden="true">
+          </button>
+          <p id="login-error" class="auth-feedback" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
+        </form>
           <div class="login-account-links">
             <button type="button" id="link-to-change-password" class="link-glass login-password-link">Đổi mật khẩu</button>
             <a href="#" id="link-to-register" class="link-glass login-register-link">Đăng ký tài khoản mới</a>
@@ -61,20 +64,21 @@
     </div>
 
     <div id="change-password-modal" class="modal auth-password-modal" aria-hidden="true">
-      <section class="modal-content auth-password-card" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+      <section class="modal-content auth-password-card" role="dialog" aria-modal="true" aria-labelledby="change-password-title" aria-describedby="change-password-intro change-password-note change-password-error">
         <button type="button" id="change-password-cancel" class="auth-password-close" aria-label="Đóng cửa sổ đổi mật khẩu">×</button>
         <h2 id="change-password-title">Đổi mật khẩu</h2>
-        <p class="auth-password-intro">Nhập đúng mật khẩu cũ để đặt mật khẩu mới<br>cho tài khoản của bạn.</p>
-        <form id="change-password-form" novalidate>
+        <p id="change-password-intro" class="auth-password-intro">Nhập đúng mật khẩu cũ để đặt mật khẩu mới<br>cho tài khoản của bạn.</p>
+        <form id="change-password-form" novalidate aria-describedby="change-password-error">
           <label for="change-password-username">Tên đăng nhập</label>
-          <input type="text" id="change-password-username" class="input-glass" placeholder="Ví dụ: quanganh" autocomplete="username" required>
+          <input type="text" id="change-password-username" name="username" class="input-glass" placeholder="Ví dụ: quanganh" autocomplete="username" required aria-required="true" aria-describedby="change-password-error">
           <label for="change-password-old">Mật khẩu cũ</label>
-          <input type="password" id="change-password-old" class="input-glass" autocomplete="current-password" required>
+          <input type="password" id="change-password-old" name="old_password" class="input-glass" autocomplete="current-password" required aria-required="true" aria-describedby="change-password-error">
           <label for="change-password-new">Mật khẩu mới</label>
-          <input type="password" id="change-password-new" class="input-glass" autocomplete="new-password" minlength="8" required>
+          <input type="password" id="change-password-new" name="new_password" class="input-glass" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="change-password-note change-password-error">
           <label for="change-password-confirm">Nhập lại mật khẩu mới</label>
-          <input type="password" id="change-password-confirm" class="input-glass" autocomplete="new-password" minlength="8" required>
-          <p class="auth-password-note">Mật khẩu mới cần có ít nhất 8 ký tự.</p>
+          <input type="password" id="change-password-confirm" name="new_password_confirmation" class="input-glass" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="change-password-note change-password-error">
+          <p id="change-password-note" class="auth-password-note">Mật khẩu mới cần có ít nhất 8 ký tự.</p>
+          <p id="change-password-error" class="auth-feedback" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
           <button type="submit" id="change-password-submit" class="auth-password-submit">Lưu mật khẩu mới</button>
         </form>
       </section>
@@ -88,13 +92,14 @@
         <div class="glass-container register-panel register-panel--wide">
           <img src="./public/register_frame_wide.png" class="register-panel-frame" alt="">
           <h2 class="register-heading">Đăng ký tài khoản</h2>
+          <form id="register-form" class="auth-form" novalidate aria-describedby="register-error">
           <div class="register-form-grid">
-            <label class="register-field" for="reg-fullname"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-fullname" placeholder="Họ và tên học sinh" class="input-glass"></label>
-            <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><input type="text" id="reg-username" placeholder="Tên đăng nhập" autocomplete="username" class="input-glass"></label>
-            <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><select id="reg-class" class="input-glass"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
-            <label class="register-field" for="reg-password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><input type="password" id="reg-password" placeholder="Mật khẩu" class="input-glass"></label>
-            <label class="register-field" for="reg-class-name"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><input type="text" id="reg-class-name" placeholder="Lớp (ví dụ: 4/4, không bắt buộc)" autocomplete="organization" class="input-glass" maxlength="64"></label>
-            <label class="register-field" for="reg-gender"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><select id="reg-gender" class="input-glass"><option value="">Giới tính</option><option value="male">Nam</option><option value="female">Nữ</option></select></label>
+            <label class="register-field" for="reg-fullname"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><span class="sr-only">Họ và tên học sinh</span><input type="text" id="reg-fullname" name="fullname" placeholder="Họ và tên học sinh" class="input-glass" required aria-required="true" aria-describedby="register-error"></label>
+            <label class="register-field" for="reg-username"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><span class="sr-only">Tên đăng nhập</span><input type="text" id="reg-username" name="username" placeholder="Tên đăng nhập" autocomplete="username" class="input-glass" required aria-required="true" aria-describedby="register-error"></label>
+            <label class="register-field" for="reg-class"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><span class="sr-only">Cấp lớp</span><select id="reg-class" name="classlevel" class="input-glass" required aria-required="true" aria-describedby="register-error"><option value="">Chọn cấp lớp</option><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option></select></label>
+            <label class="register-field" for="reg-password"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path></svg><span class="sr-only">Mật khẩu</span><input type="password" id="reg-password" name="password" placeholder="Mật khẩu" autocomplete="new-password" class="input-glass" required aria-required="true" aria-describedby="register-error"></label>
+            <label class="register-field" for="reg-class-name"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M8 3v6M16 3v6M6 11h12v9H6z"></path></svg><span class="sr-only">Lớp cụ thể</span><input type="text" id="reg-class-name" name="class_name" placeholder="Lớp (ví dụ: 4/4, không bắt buộc)" autocomplete="organization" class="input-glass" maxlength="64" aria-describedby="register-error"></label>
+            <label class="register-field" for="reg-gender"><svg class="login-field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.1 3.3-6.2 8-6.2s7.3 2.1 8 6.2"></path></svg><span class="sr-only">Giới tính</span><select id="reg-gender" name="gender" class="input-glass" aria-describedby="register-error"><option value="">Chọn giới tính</option><option value="male">Nam</option><option value="female">Nữ</option></select></label>
           </div>
           <fieldset class="avatar-picker">
             <legend>Chọn Avatar</legend>
@@ -156,9 +161,11 @@
               <label title="Chim phi công"><input type="radio" name="reg-avatar" value="cartoon-pilot-bird"><span class="avatar-art avatar-art--cartoon-pilot-bird" aria-hidden="true"></span></label>
             </div>
           </fieldset>
-          <button id="register-btn" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">
+          <button id="register-btn" type="submit" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">
             <img src="./public/ui/buttons/group1/register.png" alt="" aria-hidden="true">
           </button>
+          <p id="register-error" class="auth-feedback" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
+          </form>
           <a href="#" id="link-to-login" class="link-glass register-back-link">← Quay lại đăng nhập</a>
         </div>
       </div>
@@ -364,14 +371,14 @@
     </div>
 
     <!-- Hướng dẫn sử dụng (Modal) -->
-    <div id="guide-modal" class="modal-overlay"
+    <div id="guide-modal" class="modal-overlay" aria-hidden="true"
       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
-      <div class="sci-fi-panel"
+      <div class="sci-fi-panel" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-intro"
         style="width: 90%; max-width: 650px; background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8; border-radius: 20px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.2); padding: 30px; position: relative; backdrop-filter: blur(10px);">
-        <button onclick="app.hideGuide()" aria-label="Đóng Hướng dẫn"
+        <button type="button" id="guide-close" onclick="app.hideGuide()" aria-label="Đóng Hướng dẫn"
           style="position:absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); z-index: 10; font-weight: bold;">✖</button>
-        <h2 class="guide-title">Hướng Dẫn Hành Trình</h2>
-        <p class="guide-intro"><span>Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!</span><span>Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.</span></p>
+        <h2 id="guide-title" class="guide-title">Hướng Dẫn Hành Trình</h2>
+        <p id="guide-intro" class="guide-intro"><span>Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!</span><span>Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.</span></p>
 
         <nav class="guide-toc" aria-label="Mục lục hướng dẫn">
           <span class="guide-toc__label">Mục lục</span>
@@ -652,16 +659,16 @@
         </div>
 
         <div class="exam-select-layout">
-          <div class="subject-box" onclick="app.exam.setFilter('subject', 'math', this)">
+          <button type="button" class="subject-box" aria-pressed="false" onclick="app.exam.setFilter('subject', 'math', this)">
             <img src="./public/subject_math_explorer.webp" alt="Toán">
             <h3>Toán Học</h3>
-          </div>
+          </button>
           <img src="./public/robot_cat_subject_select.png" alt="Robot mèo thám hiểm giới thiệu môn học"
             class="exam-guide-mascot">
-          <div class="subject-box" onclick="app.exam.setFilter('subject', 'vietnamese', this)">
+          <button type="button" class="subject-box" aria-pressed="false" onclick="app.exam.setFilter('subject', 'vietnamese', this)">
             <img src="./public/subject_vietnamese_explorer.webp" alt="Tiếng Việt">
             <h3>Tiếng Việt</h3>
-          </div>
+          </button>
         </div>
 
         <div class="period-select" style="display: flex; gap: 15px;">
@@ -730,7 +737,7 @@
     </div>
 
     <!-- Modal Kết Quả Chung -->
-    <div id="result-modal" class="modal">
+    <div id="result-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-msg" aria-hidden="true">
       <div class="modal-content glass-container-xl result-layout">
         <div class="result-left">
           <h2 id="result-title" class="title-glow">Kết Quả</h2>
@@ -738,9 +745,9 @@
             <span id="result-score">0</span><span class="max-score">/10</span>
           </div>
           <p id="result-msg" class="msg-text"></p>
-          <div id="bonus-candies-container" style="display:none; cursor:pointer; margin: 15px auto; flex-wrap: wrap;" onclick="app.game.claimBonus()"></div>
+          <button id="bonus-candies-container" type="button" class="bonus-reward-button" aria-label="Nhận sao thưởng" style="display:none; margin: 15px auto; flex-wrap: wrap;" onclick="app.game.claimBonus()"></button>
           <br>
-          <button class="btn-exit-gray asset-button asset-button--exit" onclick="app.game.closeResult()" aria-label="Thoát">
+          <button type="button" class="btn-exit-gray asset-button asset-button--exit" onclick="app.game.closeResult()" aria-label="Thoát">
             <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
           </button>
         </div>
@@ -752,11 +759,10 @@
     </div>
 
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
-    <div id="treasure-modal" class="modal">
+    <div id="treasure-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="treasure-title" aria-hidden="true">
       <div class="modal-content admin-panel glass-container-xl" style="position:relative;">
-        <button class="utility-close-button"
-          style="position:absolute; top: 15px; right: 15px; z-index: 100;"
-          onclick="document.getElementById('treasure-modal').style.display='none'" aria-label="Đóng Kho báu">
+        <button id="treasure-close-button" class="utility-close-button"
+          onclick="app.treasure.close()" aria-label="Đóng Kho báu">
           <span aria-hidden="true">×</span>
         </button>
 
@@ -774,16 +780,14 @@
   </div>
 
   <!-- Modal Nhiệm vụ -->
-    <div id="quest-modal" class="modal">
-    <div class="modal-content glass-container-xl"
-      style="position:relative; background: rgba(255, 235, 205, 0.95); max-width: 800px;">
+    <div id="quest-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="quest-modal-title" aria-hidden="true">
+    <div class="modal-content glass-container-xl station-shell quest-shell">
       <button class="utility-close-button"
-        style="position:absolute; top: 15px; right: 15px; z-index: 100;"
-        onclick="document.getElementById('quest-modal').style.display='none'" aria-label="Đóng Nhiệm vụ">
+        onclick="app.quest.close()" aria-label="Đóng Nhiệm vụ">
         <span aria-hidden="true">×</span>
       </button>
-      <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
-        <h2 class="title-glow" style="margin:0; color: #b45309; text-shadow: 2px 2px 0px #fef3c7;">Bảng Nhiệm Vụ</h2>
+      <div class="station-shell__title-row">
+        <h2 id="quest-modal-title" class="title-glow">Bảng Nhiệm Vụ</h2>
       </div>
       <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
         <!-- Quests rendered here by JS -->
@@ -794,7 +798,7 @@
 
   <!-- Xác nhận rời lượt trưởng nhóm: chỉ có đúng hai lựa chọn OK/Hủy -->
   <div id="team-leave-confirm-modal" class="modal team-leave-confirm-modal" role="dialog" aria-modal="true"
-    aria-labelledby="team-leave-confirm-title" aria-describedby="team-leave-confirm-message">
+    aria-labelledby="team-leave-confirm-title" aria-describedby="team-leave-confirm-message" aria-hidden="true">
     <div class="modal-content team-leave-confirm-card">
       <h2 id="team-leave-confirm-title">Xác nhận rời lượt đội</h2>
       <p id="team-leave-confirm-message">Nếu rời bây giờ, lượt của đội sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.</p>
@@ -806,9 +810,11 @@
   </div>
 
   <!-- Modal Cửa hàng & Gacha (Notebook Layout) -->
-  <div id="shop-modal" class="modal">
+    <div id="shop-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="shop-title" aria-hidden="true">
     <div class="modal-content glass-container-xl"
       style="position:relative; width: 95%; max-width: 1540px; padding: 0; display:flex; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 88vh; max-height: 96vh; background: transparent;">
+
+      <h2 id="shop-title" class="sr-only">Cửa hàng</h2>
 
       <!-- Blurred Background -->
       <div
@@ -817,9 +823,8 @@
       <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.4); z-index: 0;">
       </div> <!-- Overlay -->
 
-      <button class="utility-close-button"
-        style="position:absolute; top: 15px; right: 15px; z-index: 100;"
-        onclick="document.getElementById('shop-modal').style.display='none'" aria-label="Đóng Cửa hàng">
+      <button id="shop-close-button" class="utility-close-button"
+        onclick="app.shop.close()" aria-label="Đóng Cửa hàng">
         <span aria-hidden="true">×</span>
       </button>
 
@@ -846,9 +851,9 @@
   </div>
 
   <!-- Modal In Ấn -->
-  <div id="print-modal" class="modal" style="z-index:9999;">
+  <div id="print-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="print-title" aria-hidden="true" style="z-index:9999;">
     <div class="modal-content glass-container-xl" style="text-align:center; max-width:500px;">
-      <h2 class="title-glow">Tùy Chọn In</h2>
+      <h2 id="print-title" class="title-glow">Tùy Chọn In</h2>
 
       <div style="text-align: left; margin: 20px auto; display: inline-block; font-size: 1.2rem;">
         <label style="display: block; margin-bottom: 15px; cursor: pointer;">
@@ -863,10 +868,10 @@
       </div>
 
       <div style="display:flex; justify-content:center; gap:15px; margin-top: 10px;">
-        <button class="btn-primary" style="padding:10px 30px; font-size:1.2rem; background:var(--accent-color);"
+        <button type="button" class="btn-primary" style="padding:10px 30px; font-size:1.2rem; background:var(--accent-color);"
           onclick="app.treasure.executePrint()">🖨️ In</button>
-        <button class="btn-danger" style="padding:10px 30px; font-size:1.2rem;"
-          onclick="document.getElementById('print-modal').style.display='none'">Hủy</button>
+        <button type="button" class="btn-danger" style="padding:10px 30px; font-size:1.2rem;"
+          onclick="app.treasure.closePrintModal()">Hủy</button>
       </div>
     </div>
   </div>
@@ -896,12 +901,12 @@
   <canvas id="confetti-canvas"></canvas>
 
   <!-- Hộp Quà Hằng Ngày -->
-  <div id="daily-gift-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.72); z-index:1001; justify-content:center; align-items:center;">
+  <div id="daily-gift-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="daily-gift-title" aria-describedby="daily-gift-text" aria-hidden="true" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.72); z-index:1001; justify-content:center; align-items:center;">
     <div class="daily-gift-card">
       <img src="./public/star-gold-3d.svg" alt="Sao vàng" class="daily-gift-star">
-      <h2 class="daily-gift-title">Hộp Quà Hằng Ngày 🎁</h2>
-      <p class="daily-gift-text">Chào mừng bạn quay lại! Nhận ngay phần quà hôm nay nhé!</p>
-      <button class="daily-gift-claim" onclick="app.daily.claimDailyGift()" aria-label="Nhận quà hôm nay">Nhận Quà 🎁</button>
+      <h2 id="daily-gift-title" class="daily-gift-title">Hộp Quà Hằng Ngày 🎁</h2>
+      <p id="daily-gift-text" class="daily-gift-text">Chào mừng bạn quay lại! Nhận ngay phần quà hôm nay nhé!</p>
+      <button type="button" class="daily-gift-claim" onclick="app.daily.claimDailyGift()" aria-label="Nhận quà hôm nay">Nhận Quà 🎁</button>
     </div>
   </div>
 
@@ -942,6 +947,7 @@
   <script defer src="./src/modules/curriculum.js"></script>
   <script defer src="./src/modules/template-manifest.js"></script>
   <script defer src="./src/modules/router.js"></script>
+  <script defer src="./src/modules/modal.js"></script>
   <script defer src="./src/modules/daily.js"></script>
   <script defer src="./src/modules/ui.js"></script>
   <script defer src="./src/modules/team-competition.js"></script>

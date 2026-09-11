@@ -488,7 +488,11 @@
                 markSession(attempt, true);
                 api.installBeforeUnload();
                 const questModal = document.getElementById('quest-modal');
-                if (questModal) { questModal.style.display = 'none'; questModal.classList.remove('active'); }
+                if (questModal) {
+                    app.modal?.close(questModal, { restoreFocus: false });
+                    questModal.style.display = 'none';
+                    questModal.classList.remove('active');
+                }
                 app.router?.open('team-competition-play-screen');
                 if (attempt.status === api.ATTEMPT_STATUS.ACTIVE) api.renderLeaderQuestion();
                 else api.renderLeaderLocked('Lượt của đội đã được khóa trước đó.');
