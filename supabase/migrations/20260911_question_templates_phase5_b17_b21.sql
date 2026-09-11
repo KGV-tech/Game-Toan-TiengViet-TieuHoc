@@ -6,9 +6,9 @@
 
 BEGIN;
 
--- Normalize the legacy Topic 4 rows already seeded by
--- supabase_topic4_measurement_templates.sql. Keep their UUIDs and history,
--- but bring the authoring label/configuration to the Phase 5 contract.
+-- Normalize the legacy Topic 4 rows already present in the database. Keep
+-- their UUIDs and history, but bring the authoring label/configuration to the
+-- Phase 5 contract.
 UPDATE public.question_templates
 SET
     name = CASE generator_key
