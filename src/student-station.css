@@ -1,0 +1,1387 @@
+/* Unified station shell — dùng chung cho các màn hình học sinh và modal vận hành. */
+@media screen {
+    :root {
+        --station-ink-950: #050f1a;
+        --station-ink-900: #071421;
+        --station-panel: rgba(10, 27, 43, .94);
+        --station-panel-soft: rgba(16, 39, 58, .82);
+        --station-line: rgba(111, 214, 240, .42);
+        --station-line-soft: rgba(153, 192, 211, .22);
+        --station-cyan: #54d7ef;
+        --station-gold: #f7c85d;
+        --station-green: #6cdda0;
+        --station-violet: #bf9aff;
+        --station-danger: #f87171;
+        --station-text: #e9f5fb;
+        --station-muted: #9bb8ca;
+    }
+
+    .station-screen,
+    #treasure-modal,
+    #quest-modal,
+    #shop-modal {
+        color: var(--station-text);
+    }
+
+    .station-screen .station-shell,
+    #game-config-view .station-shell,
+    #treasure-modal .station-shell,
+    #quest-modal .station-shell,
+    #shop-modal .station-shell {
+        position: relative;
+        isolation: isolate;
+        border: 1px solid var(--station-line) !important;
+        border-radius: 22px !important;
+        background:
+            linear-gradient(145deg, rgba(20, 54, 73, .32), rgba(8, 20, 34, .2) 58%, rgba(48, 35, 81, .2)),
+            var(--station-panel) !important;
+        color: var(--station-text);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 255, 255, .08);
+    }
+
+    .station-screen .station-shell::before,
+    #game-config-view .station-shell::before,
+    #treasure-modal .station-shell::before,
+    #quest-modal .station-shell::before,
+    #shop-modal .station-shell::before {
+        position: absolute;
+        inset: 10px;
+        z-index: -1;
+        border: 1px solid rgba(126, 224, 244, .1);
+        border-radius: 16px;
+        content: '';
+        pointer-events: none;
+    }
+
+    #game-screen .game-bg-layer {
+        filter: saturate(.82) brightness(.68);
+    }
+
+    #game-screen .game-bg-layer::after {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 40%, transparent 16%, rgba(2, 10, 18, .28) 86%), linear-gradient(180deg, rgba(2, 12, 22, .16), rgba(2, 10, 18, .48));
+        content: '';
+        pointer-events: none;
+    }
+
+    #exam-select-screen::before {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: radial-gradient(circle at 50% 32%, rgba(84, 215, 239, .08), transparent 38%), rgba(2, 10, 18, .42);
+        content: '';
+        pointer-events: none;
+    }
+
+    #game-config-view,
+    #exam-select-screen {
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    #game-config-view {
+        padding: 24px;
+    }
+
+    #game-config-view .station-shell {
+        display: block;
+        width: min(100%, 1440px) !important;
+        max-width: none !important;
+        height: calc(100vh - 48px);
+        max-height: calc(100vh - 48px);
+        padding: clamp(22px, 2.4vw, 34px) clamp(22px, 2.8vw, 42px) !important;
+        overflow: auto;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+    }
+
+    #game-config-view .config-layout {
+        display: block !important;
+        width: 100%;
+        height: 100%;
+    }
+
+    #game-config-view .config-top {
+        display: grid !important;
+        grid-template-columns: minmax(178px, .28fr) minmax(0, 1fr);
+        align-items: center !important;
+        gap: clamp(18px, 2.4vw, 34px) !important;
+        width: 100% !important;
+        min-height: 100%;
+    }
+
+    #game-config-view .config-left {
+        display: flex !important;
+        flex: none !important;
+        align-self: stretch;
+        align-items: center;
+        justify-content: center;
+        width: auto !important;
+        gap: 18px;
+        transform: none !important;
+    }
+
+    #game-config-view .config-left .cat-avatar {
+        width: clamp(132px, 15vw, 205px) !important;
+        height: auto;
+        filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .5));
+    }
+
+    #game-config-view .config-left #game-start-btn {
+        width: min(100%, 242px) !important;
+    }
+
+    #game-config-view .config-center {
+        display: flex;
+        flex: none !important;
+        align-self: stretch;
+        justify-content: center;
+        min-width: 0;
+        gap: 14px;
+    }
+
+    #game-config-view .screen-title-row,
+    #exam-select-screen .screen-title-row,
+    #treasure-modal .station-shell__title-row,
+    #quest-modal .station-shell__title-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0 auto 16px;
+        padding: 9px clamp(18px, 2.5vw, 32px);
+        border: 1px solid rgba(126, 224, 244, .46);
+        border-radius: 14px;
+        background: rgba(5, 20, 33, .78);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 9px 22px rgba(0, 0, 0, .24);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    #game-config-view .screen-title-row::after,
+    #exam-select-screen .screen-title-row::after,
+    #treasure-modal .station-shell__title-row::after,
+    #quest-modal .station-shell__title-row::after {
+        position: absolute;
+        right: 18px;
+        bottom: -5px;
+        left: 18px;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, transparent, var(--station-cyan), transparent);
+        content: '';
+    }
+
+    #game-config-view .screen-title-row .title-glow,
+    #exam-select-screen .screen-title-row .title-glow,
+    #treasure-modal .station-shell__title-row .title-glow,
+    #quest-modal .station-shell__title-row .title-glow {
+        margin: 0 !important;
+        color: var(--station-text) !important;
+        font-size: clamp(1.38rem, 2.35vw, 2.35rem) !important;
+        font-weight: 900;
+        letter-spacing: .04em;
+        line-height: 1.12;
+        text-align: center;
+        text-shadow: 0 0 18px rgba(84, 215, 239, .26);
+        -webkit-text-stroke: 0 transparent !important;
+    }
+
+    #treasure-modal[data-ui-context="admin"] .station-shell__title-row .title-glow,
+    #quest-modal .station-shell__title-row .title-glow {
+        color: var(--station-gold) !important;
+        text-shadow: 0 0 18px rgba(247, 200, 93, .24);
+    }
+
+    #game-config-view .config-section {
+        min-width: 0;
+        padding: clamp(15px, 1.8vw, 22px);
+        border: 1px solid var(--station-line-soft);
+        border-radius: 16px;
+        background: rgba(7, 20, 33, .66);
+        box-shadow: inset 0 0 24px rgba(84, 215, 239, .035);
+    }
+
+    #game-config-view .topic-header {
+        align-items: flex-end;
+        gap: 12px;
+        margin-bottom: 15px !important;
+        padding-bottom: 13px;
+        border-bottom: 1px solid rgba(111, 214, 240, .2);
+    }
+
+    #game-config-view .topic-header h3 {
+        color: var(--station-text);
+        font-size: 1rem;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    #game-config-view .topic-header__primary {
+        min-width: 0;
+        gap: 10px;
+    }
+
+    #game-config-view .topic-mode-toggle {
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid rgba(111, 214, 240, .2);
+        border-radius: 10px;
+        background: rgba(2, 12, 22, .58);
+    }
+
+    #game-config-view .topic-mode-option span {
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: var(--station-muted);
+        font-size: .78rem;
+        font-weight: 900;
+    }
+
+    #game-config-view .topic-mode-option input:checked + span {
+        border-color: rgba(84, 215, 239, .7);
+        background: rgba(22, 137, 165, .5);
+        color: #f2fdff;
+        box-shadow: 0 0 14px rgba(84, 215, 239, .16);
+    }
+
+    #game-config-view .config-difficulty-options {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 7px;
+        min-width: 150px;
+    }
+
+    #game-config-view .admin-class-selector,
+    #game-config-view .admin-topic-mode-controls {
+        color: var(--station-muted);
+    }
+
+    #game-config-view .admin-class-selector {
+        padding: 8px 10px;
+        border: 1px solid rgba(111, 214, 240, .22);
+        border-radius: 10px;
+        background: rgba(2, 12, 22, .38);
+    }
+
+    #game-config-view .admin-class-selector .btn-opt,
+    #game-config-view .admin-topic-mode-controls .btn-opt {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: .78rem;
+    }
+
+    #game-config-view .admin-topic-mode-controls {
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    #game-config-view #topics-list {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start !important;
+        gap: 16px !important;
+        width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #game-config-view #topics-list > div {
+        min-width: 0;
+    }
+
+    #game-config-view #topics-list > div > h3 {
+        margin: 0 0 9px !important;
+        padding-bottom: 7px;
+        border-bottom: 1px solid rgba(111, 214, 240, .18);
+        color: var(--station-muted) !important;
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-align: left !important;
+        text-transform: uppercase;
+    }
+
+    #game-config-view #topics-list .topics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 9px;
+        max-height: none;
+        overflow: visible;
+        padding: 0;
+        margin: 0;
+    }
+
+    #game-config-view .topic-card {
+        min-height: 58px;
+        padding: 10px 9px;
+        overflow: hidden;
+        border: 1px solid rgba(131, 173, 194, .35);
+        border-bottom: 3px solid rgba(57, 104, 124, .72);
+        border-radius: 11px;
+        background: linear-gradient(145deg, rgba(20, 52, 70, .88), rgba(8, 25, 41, .94));
+        color: #dbeef5;
+        font-size: .76rem;
+        font-weight: 800;
+        line-height: 1.25;
+        text-align: center;
+        text-transform: none;
+        text-decoration: none !important;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, .2);
+    }
+
+    #game-config-view .topic-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(84, 215, 239, .72);
+        background: linear-gradient(145deg, rgba(24, 83, 104, .95), rgba(9, 34, 52, .98));
+        color: #f4fdff;
+        box-shadow: 0 9px 18px rgba(0, 0, 0, .28), 0 0 16px rgba(84, 215, 239, .12);
+    }
+
+    #game-config-view .topic-card:has(input:checked) {
+        border-color: var(--station-cyan);
+        border-bottom-color: #178aa5;
+        background: linear-gradient(145deg, rgba(27, 145, 169, .9), rgba(13, 70, 101, .96));
+        color: #fff;
+        box-shadow: 0 0 0 1px rgba(84, 215, 239, .22), 0 0 18px rgba(84, 215, 239, .18);
+        text-shadow: 0 0 8px rgba(255, 255, 255, .24);
+    }
+
+    #game-config-view .topic-card--locked {
+        opacity: .8;
+        filter: none;
+        border-color: rgba(247, 200, 93, .35);
+        border-bottom-color: rgba(139, 102, 31, .8);
+        background: linear-gradient(145deg, rgba(62, 54, 35, .8), rgba(29, 31, 31, .92));
+        color: #c9c1aa;
+        cursor: not-allowed;
+        text-decoration: none !important;
+    }
+
+    #game-config-view .topic-card--locked::after {
+        display: none;
+    }
+
+    #game-config-view .topic-lock-status {
+        margin-top: 5px;
+        padding: 2px 6px;
+        border: 1px solid rgba(247, 200, 93, .34);
+        background: rgba(71, 53, 19, .64);
+        color: #f7d985;
+        font-size: .62rem;
+    }
+
+    #game-config-view .topic-lock-status::before {
+        content: '🔒 ';
+    }
+
+    #game-config-view .topic-card:focus-visible,
+    #game-config-view .topic-mode-option input:focus-visible + span {
+        outline: 3px solid var(--station-gold);
+        outline-offset: 3px;
+    }
+
+    #game-config-view .btn-opt,
+    #exam-select-screen .btn-opt {
+        min-height: 40px;
+        padding: 9px 13px;
+        border: 1px solid rgba(132, 173, 193, .42);
+        border-radius: 10px;
+        background: rgba(11, 35, 52, .78);
+        color: #cfe7ef;
+        font-size: .8rem;
+        font-weight: 900;
+        letter-spacing: .01em;
+        text-transform: none;
+        text-shadow: none;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, .2);
+    }
+
+    #game-config-view .btn-opt:hover,
+    #exam-select-screen .btn-opt:hover {
+        border-color: var(--station-cyan);
+        background: rgba(21, 81, 104, .9);
+        color: #fff;
+        transform: translateY(-2px);
+        filter: none;
+    }
+
+    #game-config-view .btn-opt.active,
+    #exam-select-screen .btn-opt.active {
+        border-color: var(--station-cyan);
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%);
+        color: #fff;
+        box-shadow: 0 0 0 1px rgba(84, 215, 239, .2), 0 0 16px rgba(84, 215, 239, .18);
+    }
+
+    #game-config-view .config-difficulty-options .btn-opt.active {
+        border-color: #f7d36a;
+        background: linear-gradient(145deg, #a8751b, #744510);
+        color: #fff4c9;
+        box-shadow: 0 0 0 1px rgba(247, 200, 93, .18), 0 0 16px rgba(247, 200, 93, .14);
+    }
+
+    #game-config-view .topic-lock-actions__open,
+    #game-config-view .topic-lock-actions__lock {
+        border-color: currentColor !important;
+        background: rgba(11, 35, 52, .86) !important;
+        box-shadow: none;
+    }
+
+    #game-config-view .topic-lock-actions__open { color: var(--station-green) !important; }
+    #game-config-view .topic-lock-actions__lock { color: var(--station-danger) !important; }
+
+    #exam-select-screen {
+        justify-content: center;
+        padding: 24px;
+    }
+
+    #exam-select-screen .station-shell {
+        z-index: 10;
+        display: block;
+        width: min(100%, 1280px) !important;
+        max-width: none !important;
+        height: calc(100vh - 48px);
+        max-height: calc(100vh - 48px);
+        padding: clamp(22px, 2.6vw, 36px) clamp(24px, 3.8vw, 56px) !important;
+        overflow: auto;
+        text-align: center;
+    }
+
+    #exam-select-screen .screen-title-row {
+        margin-bottom: 21px;
+    }
+
+    #exam-select-screen .screen-title-row .title-glow {
+        font-size: clamp(1.5rem, 2.65vw, 2.55rem) !important;
+    }
+
+    #exam-select-screen .exam-select-layout {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) clamp(132px, 15vw, 205px) minmax(0, 1fr);
+        align-items: center;
+        gap: clamp(18px, 3vw, 42px);
+        width: 100%;
+        margin: 8px auto 22px;
+        padding: 0;
+    }
+
+    #exam-select-screen .subject-box {
+        justify-self: center;
+        width: min(100%, 300px) !important;
+        min-height: 214px;
+        padding: 20px 16px;
+        border: 1px solid rgba(84, 215, 239, .4);
+        border-bottom: 4px solid rgba(30, 104, 136, .84);
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(28, 65, 96, .94), rgba(12, 31, 53, .98));
+        color: var(--station-text);
+        font-size: clamp(1.05rem, 1.5vw, 1.5rem);
+        text-shadow: none;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .08);
+    }
+
+    #exam-select-screen .subject-box img {
+        width: clamp(82px, 9vw, 128px);
+        margin-bottom: 15px;
+        filter: drop-shadow(0 10px 15px rgba(0, 0, 0, .52));
+    }
+
+    #exam-select-screen .subject-box:hover,
+    #exam-select-screen .subject-box.active,
+    #exam-select-screen .subject-box[aria-pressed="true"] {
+        border-color: var(--station-cyan);
+        background: linear-gradient(145deg, rgba(25, 126, 155, .96), rgba(19, 55, 99, .98));
+        transform: translateY(-4px);
+        box-shadow: 0 0 0 2px rgba(84, 215, 239, .22), 0 18px 34px rgba(0, 0, 0, .38), 0 0 24px rgba(84, 215, 239, .16);
+    }
+
+    #exam-select-screen .subject-box:focus-visible {
+        outline: 3px solid var(--station-gold);
+        outline-offset: 4px;
+    }
+
+    #exam-select-screen .exam-guide-mascot {
+        width: 100%;
+        height: auto;
+        max-height: 250px;
+        object-fit: contain;
+        filter: drop-shadow(0 12px 16px rgba(0, 0, 0, .54));
+    }
+
+    #exam-select-screen .period-select {
+        display: grid !important;
+        grid-template-columns: auto repeat(4, minmax(0, 1fr));
+        align-items: center;
+        gap: 8px;
+        margin: 0 auto 18px;
+        padding: 12px;
+        border: 1px solid var(--station-line-soft);
+        border-radius: 14px;
+        background: rgba(5, 20, 33, .78);
+        box-shadow: inset 0 0 22px rgba(84, 215, 239, .03);
+    }
+
+    #exam-select-screen .period-select label {
+        padding: 0 8px 0 3px;
+        color: var(--station-muted);
+        font-size: .78rem !important;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    #exam-select-screen .period-select .btn-opt {
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    #exam-select-screen .btn-start-massive {
+        width: min(100%, 360px) !important;
+        margin: 4px auto 0 !important;
+    }
+
+    #treasure-modal,
+    #quest-modal,
+    #shop-modal {
+        background: rgba(2, 10, 18, .82);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    #treasure-modal .station-shell {
+        align-items: stretch;
+        width: min(calc(100vw - 48px), 1440px) !important;
+        max-width: none !important;
+        height: min(calc(100vh - 48px), 1040px) !important;
+        max-height: min(calc(100vh - 48px), 1040px) !important;
+        padding: clamp(22px, 2.6vw, 36px) clamp(22px, 3vw, 44px) !important;
+        text-align: left;
+    }
+
+    #treasure-modal .station-shell__title-row,
+    #quest-modal .station-shell__title-row {
+        flex: 0 0 auto;
+        align-self: center;
+        margin-bottom: 19px;
+    }
+
+    #treasure-modal #admin-tabs {
+        display: flex;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 8px;
+        margin: 0 0 18px;
+        padding: 0 0 11px;
+        border-bottom: 1px solid rgba(111, 214, 240, .24);
+    }
+
+    #treasure-modal #admin-tabs .tab-btn {
+        min-width: 150px;
+        min-height: 42px;
+        padding: 10px 15px;
+        border: 1px solid rgba(132, 173, 193, .42);
+        border-bottom-width: 3px;
+        border-radius: 10px;
+        background: rgba(11, 35, 52, .78);
+        color: #cfe7ef;
+        font-size: .78rem;
+        letter-spacing: .01em;
+        text-transform: none;
+        text-shadow: none;
+        box-shadow: none;
+    }
+
+    #treasure-modal #admin-tabs .tab-btn:hover {
+        border-color: var(--station-cyan);
+        background: rgba(21, 81, 104, .9);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+
+    #treasure-modal #admin-tabs .tab-btn.active {
+        border-color: var(--station-cyan);
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%);
+        color: #fff;
+        box-shadow: 0 0 0 1px rgba(84, 215, 239, .2), 0 0 16px rgba(84, 215, 239, .16);
+    }
+
+    #treasure-modal .admin-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 4px 0 0;
+        color: var(--station-text);
+        scrollbar-color: rgba(84, 215, 239, .75) rgba(3, 17, 29, .5);
+    }
+
+    #treasure-modal .admin-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #treasure-modal .admin-content::-webkit-scrollbar-thumb {
+        border-radius: 8px;
+        background: linear-gradient(var(--station-cyan), var(--station-violet));
+    }
+
+    #treasure-modal[data-ui-context="student"] .admin-content {
+        padding: 18px;
+        border: 1px solid rgba(111, 214, 240, .2);
+        border-radius: 16px;
+        background: rgba(5, 20, 33, .56);
+    }
+
+    .station-kicker,
+    .student-treasure-overview__heading .station-kicker {
+        display: block;
+        color: var(--station-cyan);
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .student-treasure-overview {
+        display: grid;
+        grid-template-columns: minmax(230px, .7fr) minmax(0, 1.3fr);
+        align-items: center;
+        gap: 24px;
+        min-height: 240px;
+    }
+
+    .student-treasure-overview__heading {
+        padding: 22px;
+        border: 1px solid rgba(191, 154, 255, .34);
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(66, 48, 112, .52), rgba(21, 27, 56, .74));
+    }
+
+    .student-treasure-overview__heading h3 {
+        margin: 8px 0;
+        color: #f1eaff;
+        font-size: clamp(1.2rem, 2vw, 1.7rem);
+        line-height: 1.2;
+    }
+
+    .student-treasure-overview__heading p {
+        margin: 0;
+        color: var(--station-muted);
+    }
+
+    .student-treasure-overview__heading strong {
+        color: var(--station-gold);
+        font-size: 1.3rem;
+    }
+
+    .student-treasure-stars {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 190px;
+        padding: 24px;
+        border: 1px dashed rgba(247, 200, 93, .42);
+        border-radius: 16px;
+        background: radial-gradient(circle at 50% 35%, rgba(247, 200, 93, .13), transparent 62%), rgba(11, 35, 52, .56);
+    }
+
+    .student-treasure-stars img {
+        width: clamp(38px, 5vw, 58px) !important;
+        margin: 0 !important;
+        filter: drop-shadow(0 0 10px rgba(247, 200, 93, .5));
+    }
+
+    .student-treasure-stars__empty {
+        max-width: 360px;
+        color: var(--station-muted);
+        font-size: .9rem;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    #treasure-modal[data-ui-context="student"] .data-table,
+    #treasure-modal[data-ui-context="admin"] .data-table {
+        overflow: hidden;
+        border: 1px solid rgba(111, 214, 240, .24);
+        border-radius: 12px;
+        background: rgba(4, 17, 29, .74);
+    }
+
+    #treasure-modal .data-table th {
+        background: rgba(21, 81, 104, .7);
+        color: #e6fbff;
+    }
+
+    #treasure-modal .data-table th,
+    #treasure-modal .data-table td {
+        border-color: rgba(132, 173, 193, .2);
+    }
+
+    #treasure-modal .station-shell > .utility-close-button,
+    #quest-modal .station-shell > .utility-close-button,
+    #shop-modal .shop-shell > .utility-close-button {
+        position: absolute !important;
+        top: 18px !important;
+        right: 18px !important;
+        bottom: auto !important;
+        left: auto !important;
+        z-index: 20;
+    }
+
+    #quest-modal .station-shell {
+        align-items: stretch;
+        width: min(calc(100vw - 48px), 1120px) !important;
+        max-width: none !important;
+        height: min(calc(100vh - 48px), 850px) !important;
+        max-height: min(calc(100vh - 48px), 850px) !important;
+        padding: clamp(22px, 2.8vw, 38px) clamp(22px, 3vw, 44px) !important;
+        text-align: left;
+    }
+
+    #quest-modal .quest-list-container {
+        display: grid !important;
+        align-content: start;
+        flex: 1 1 auto;
+        grid-auto-rows: max-content;
+        gap: 12px !important;
+        min-height: 0;
+        max-height: none !important;
+        margin: 0;
+        padding: 0 5px 2px 0;
+        overflow-y: auto;
+    }
+
+    #quest-modal .quest-gift-box {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        margin: 0;
+        padding: 15px 16px;
+        border: 1px solid rgba(247, 200, 93, .6);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(93, 69, 23, .82), rgba(35, 35, 28, .92));
+        box-shadow: 0 10px 22px rgba(0, 0, 0, .24);
+    }
+
+    #quest-modal .quest-gift-star {
+        width: 54px;
+    }
+
+    #quest-modal .quest-gift-info h4 {
+        margin: 0 0 4px;
+        color: var(--station-gold);
+        font-size: 1rem;
+    }
+
+    #quest-modal .quest-gift-info p {
+        color: #dbcfae;
+        font-size: .8rem;
+        line-height: 1.4;
+    }
+
+    #quest-modal .btn-claim-star {
+        min-height: 40px;
+        padding: 9px 13px;
+        border: 1px solid rgba(247, 200, 93, .7);
+        border-radius: 10px;
+        background: linear-gradient(145deg, #a8751b, #744510);
+        color: #fff4c9;
+        font-size: .76rem;
+        text-transform: none;
+        text-shadow: none;
+    }
+
+    #quest-modal .quest-item-card,
+    #quest-modal .student-team-competition-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        min-width: 0;
+        padding: 16px 17px;
+        border: 1px solid rgba(111, 214, 240, .3);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(16, 48, 65, .92), rgba(8, 24, 40, .96));
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .2);
+    }
+
+    #quest-modal .quest-item-card__copy {
+        min-width: 0;
+    }
+
+    #quest-modal .quest-item-card__title {
+        margin: 0 0 6px;
+        color: var(--station-text);
+        font-size: 1rem;
+        line-height: 1.25;
+    }
+
+    #quest-modal .quest-item-card__requirement {
+        margin: 0;
+        color: var(--station-muted);
+        font-size: .78rem;
+        line-height: 1.4;
+    }
+
+    #quest-modal .quest-item-card__actions {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    #quest-modal .quest-list-container > p {
+        display: grid;
+        min-height: 180px;
+        place-items: center;
+        margin: 0;
+        padding: 24px;
+        border: 1px dashed rgba(111, 214, 240, .36);
+        border-radius: 14px;
+        background: rgba(7, 25, 41, .48);
+        color: var(--station-muted) !important;
+        font-size: .9rem !important;
+    }
+
+    #quest-modal .student-team-competition-card {
+        border-color: rgba(191, 154, 255, .4);
+        background: linear-gradient(145deg, rgba(58, 46, 95, .75), rgba(15, 26, 52, .95));
+    }
+
+    #quest-modal .student-team-competition-card h4,
+    #quest-modal .student-team-competition-card p,
+    #quest-modal .student-team-competition-score,
+    #quest-modal .student-team-competition-kicker {
+        color: var(--station-text) !important;
+    }
+
+    #quest-modal .quest-item-card button,
+    #quest-modal .student-team-competition-card button {
+        min-height: 40px;
+        padding: 9px 13px;
+        border-radius: 10px;
+        font-size: .76rem;
+        text-transform: none;
+        text-shadow: none;
+    }
+
+    #shop-modal .shop-shell {
+        display: grid !important;
+        grid-template-columns: clamp(190px, 18vw, 260px) minmax(0, 1fr);
+        width: min(calc(100vw - 48px), 1440px) !important;
+        max-width: none !important;
+        height: min(calc(100vh - 48px), 920px) !important;
+        max-height: min(calc(100vh - 48px), 920px) !important;
+        min-height: 0;
+        padding: 0 !important;
+        overflow: hidden;
+    }
+
+    /* The accessible heading is visually hidden; keep it out of the shell's
+       placement flow so the navigation and content stay in their named columns. */
+    #shop-modal #shop-title {
+        position: absolute;
+    }
+
+    #shop-modal .shop-tabs {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #shop-modal .shop-content-area {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    #shop-modal .shop-shell__backdrop,
+    #shop-modal .shop-shell__scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    #shop-modal .shop-shell__backdrop {
+        background: url('../public/shop_adventure_bg.webp') center / cover no-repeat;
+        filter: blur(14px) saturate(.7);
+        opacity: .2;
+        transform: scale(1.08);
+    }
+
+    #shop-modal .shop-shell__scrim {
+        background: linear-gradient(90deg, rgba(5, 18, 30, .9), rgba(5, 20, 33, .82) 28%, rgba(5, 20, 33, .94));
+    }
+
+    #shop-modal .shop-tabs {
+        z-index: 1;
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        gap: 12px;
+        width: auto !important;
+        padding: 28px 15px 24px !important;
+        margin: 0;
+        border: 0;
+    }
+
+    #shop-modal .notebook-tab,
+    #shop-modal .notebook-tab.active {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 8px !important;
+        border: 1px solid rgba(132, 173, 193, .34) !important;
+        border-radius: 13px;
+        background: rgba(11, 35, 52, .7) !important;
+        box-shadow: none !important;
+        transform: none !important;
+        filter: none;
+    }
+
+    #shop-modal .notebook-tab:hover {
+        border-color: var(--station-cyan) !important;
+        background: rgba(21, 81, 104, .9) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    #shop-modal .notebook-tab.active {
+        border-color: var(--station-gold) !important;
+        background: linear-gradient(145deg, rgba(108, 78, 25, .82), rgba(36, 39, 31, .9)) !important;
+        outline: 3px solid rgba(247, 200, 93, .7) !important;
+        outline-offset: 3px;
+        filter: drop-shadow(0 0 12px rgba(247, 200, 93, .24));
+    }
+
+    #shop-modal .notebook-tab.active::after {
+        top: 50%;
+        right: 7px;
+        width: 25px;
+        height: 25px;
+        border: 1px solid #fff;
+        background: #23845f;
+        font-size: .92rem;
+        box-shadow: 0 0 10px rgba(108, 221, 160, .45);
+    }
+
+    #shop-modal .asset-button--shop-tab > img {
+        width: min(100%, 240px);
+    }
+
+    #shop-modal .shop-content-area {
+        z-index: 1;
+        min-width: 0;
+        height: auto;
+        max-height: none;
+        margin: 0;
+        padding: clamp(18px, 2.4vw, 30px) !important;
+        overflow: auto;
+        border-left: 1px solid rgba(111, 214, 240, .24);
+        border-radius: 0 21px 21px 0;
+        background: rgba(8, 25, 41, .78) !important;
+        box-shadow: inset 10px 0 24px rgba(0, 0, 0, .12);
+        color: var(--station-text);
+    }
+
+    #shop-modal .shop-content-area.shop-content--lucky {
+        overflow-y: auto;
+    }
+
+    #shop-modal .lucky-station-layout {
+        height: auto;
+        min-height: 100%;
+        grid-template-columns: minmax(260px, 1.1fr) minmax(250px, .9fr);
+        gap: clamp(14px, 2.2vw, 28px);
+    }
+
+    #shop-modal .lucky-info-card,
+    #shop-modal .pet-details-card {
+        border: 1px solid rgba(111, 214, 240, .34);
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(18, 52, 70, .92), rgba(7, 25, 42, .97)) !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .24);
+        color: var(--station-text);
+    }
+
+    #shop-modal .lucky-info-card {
+        padding: clamp(16px, 2vw, 24px);
+    }
+
+    #shop-modal .lucky-station-title,
+    #shop-modal .pet-station-title {
+        margin-bottom: 12px;
+        color: var(--station-gold) !important;
+        font-size: clamp(1.25rem, 2.1vw, 1.85rem);
+        letter-spacing: .04em;
+        text-shadow: 0 0 14px rgba(247, 200, 93, .22) !important;
+    }
+
+    #shop-modal .lucky-star-count {
+        border: 1px solid rgba(247, 200, 93, .42);
+        border-radius: 10px;
+        background: rgba(93, 69, 23, .52);
+        color: #f4dda2;
+    }
+
+    #shop-modal .lucky-star-count #lucky-star-balance {
+        color: var(--station-gold) !important;
+    }
+
+    #shop-modal .lucky-spin-count {
+        color: var(--station-muted) !important;
+    }
+
+    #shop-modal .lucky-rules {
+        border: 1px solid rgba(111, 214, 240, .18);
+        border-radius: 11px;
+        background: rgba(5, 20, 33, .5);
+        color: var(--station-muted);
+    }
+
+    #shop-modal .lucky-rules h3 {
+        color: var(--station-text) !important;
+    }
+
+    #shop-modal .lucky-rules li,
+    #shop-modal .lucky-rules li b {
+        color: inherit !important;
+    }
+
+    #shop-modal .pet-station-layout {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr);
+        align-items: center;
+        gap: clamp(12px, 2vw, 24px);
+        height: auto !important;
+        min-height: 100%;
+        max-height: none !important;
+    }
+
+    #shop-modal .pet-station-machine,
+    #shop-modal .pet-station-details {
+        min-width: 0;
+        height: auto !important;
+        padding: 0 !important;
+    }
+
+    #shop-modal .pet-details-card {
+        padding: clamp(16px, 2vw, 25px) !important;
+    }
+
+    #shop-modal .pet-details-description {
+        color: #c4d8e1 !important;
+        line-height: 1.55 !important;
+        border-bottom-color: rgba(111, 214, 240, .2) !important;
+    }
+
+    #shop-modal .pet-details-description strong {
+        color: var(--station-cyan) !important;
+    }
+
+    #shop-modal .my-pets-layout {
+        height: auto !important;
+        min-height: 100%;
+        max-height: none !important;
+        justify-content: flex-start !important;
+    }
+
+    #shop-modal .my-pets-slots {
+        justify-content: center !important;
+        align-items: center;
+        flex-wrap: wrap !important;
+        min-height: 100%;
+        padding: 5px !important;
+        overflow-x: hidden !important;
+    }
+
+    #shop-modal .admin-pet-preview {
+        width: 100%;
+        border: 1px solid rgba(191, 154, 255, .34);
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(66, 48, 112, .52), rgba(21, 27, 56, .74));
+        color: var(--station-text);
+    }
+
+    #shop-modal .admin-pet-preview h3 {
+        color: #f1eaff;
+    }
+
+    #shop-modal .admin-pet-preview p {
+        color: var(--station-muted);
+    }
+
+    #shop-modal .shop-carousel-button {
+        width: 48px !important;
+        height: 48px !important;
+        border: 1px solid rgba(84, 215, 239, .62) !important;
+        background: #1554a3 !important;
+        box-shadow: 0 7px 15px rgba(0, 0, 0, .32) !important;
+        font-size: 1.35rem !important;
+        text-shadow: none;
+    }
+
+    #shop-modal button:focus-visible,
+    #treasure-modal button:focus-visible,
+    #quest-modal button:focus-visible,
+    #exam-select-screen button:focus-visible,
+    #game-config-view button:focus-visible {
+        outline: 3px solid var(--station-gold);
+        outline-offset: 3px;
+    }
+
+    @media (max-width: 1100px) {
+        #game-config-view .station-shell,
+        #exam-select-screen .station-shell {
+            width: 100% !important;
+        }
+
+        #game-config-view .config-top {
+            grid-template-columns: minmax(150px, .25fr) minmax(0, 1fr);
+            gap: 18px !important;
+        }
+
+        #game-config-view .config-left .cat-avatar {
+            width: 130px !important;
+        }
+
+        #game-config-view .config-left #game-start-btn {
+            width: 180px !important;
+        }
+
+        #exam-select-screen .exam-select-layout {
+            gap: 16px;
+        }
+
+        #exam-select-screen .subject-box {
+            min-height: 190px;
+        }
+
+        #treasure-modal .station-shell,
+        #quest-modal .station-shell,
+        #shop-modal .shop-shell {
+            width: calc(100vw - 32px) !important;
+        }
+
+        #shop-modal .shop-shell {
+            grid-template-columns: 190px minmax(0, 1fr);
+        }
+    }
+
+    @media (max-width: 900px) {
+        #game-config-view,
+        #exam-select-screen {
+            padding: 14px;
+        }
+
+        #game-config-view .station-shell,
+        #exam-select-screen .station-shell {
+            height: calc(100vh - 28px);
+            max-height: calc(100vh - 28px);
+            padding: 18px !important;
+        }
+
+        #game-config-view .config-top {
+            grid-template-columns: 142px minmax(0, 1fr);
+            align-items: start !important;
+        }
+
+        #game-config-view .config-left .cat-avatar {
+            width: 112px !important;
+        }
+
+        #game-config-view .config-left #game-start-btn {
+            width: 142px !important;
+        }
+
+        #game-config-view .topic-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        #game-config-view .config-difficulty-options {
+            width: 100%;
+        }
+
+        #game-config-view #topics-list {
+            grid-template-columns: 1fr;
+        }
+
+        #exam-select-screen .exam-select-layout {
+            grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
+        }
+
+        #exam-select-screen .exam-guide-mascot {
+            max-height: 170px;
+        }
+
+        #exam-select-screen .subject-box {
+            min-height: 160px;
+            padding: 14px 10px;
+            font-size: 1rem;
+        }
+
+        #exam-select-screen .subject-box img {
+            width: 72px;
+            margin-bottom: 9px;
+        }
+
+        #exam-select-screen .period-select {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #exam-select-screen .period-select label {
+            grid-column: 1 / -1;
+            padding: 0 0 4px;
+            text-align: left;
+        }
+
+        #treasure-modal .station-shell,
+        #quest-modal .station-shell,
+        #shop-modal .shop-shell {
+            width: calc(100vw - 28px) !important;
+            height: calc(100vh - 28px) !important;
+            max-height: calc(100vh - 28px) !important;
+        }
+
+        .student-treasure-overview {
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        #shop-modal .shop-shell {
+            grid-template-columns: 154px minmax(0, 1fr);
+        }
+
+        #shop-modal .shop-tabs {
+            padding: 20px 10px !important;
+        }
+
+        #shop-modal .pet-station-layout,
+        #shop-modal .lucky-station-layout {
+            grid-template-columns: 1fr;
+        }
+
+        #shop-modal .lucky-wheel-stage {
+            width: min(100%, 340px);
+        }
+    }
+
+    @media (max-width: 700px) {
+        #game-config-view .config-top {
+            grid-template-columns: 1fr;
+            gap: 16px !important;
+        }
+
+        #game-config-view .config-left {
+            align-self: auto;
+            flex-direction: row !important;
+        }
+
+        #game-config-view .config-left .cat-avatar {
+            width: 100px !important;
+        }
+
+        #game-config-view .config-left #game-start-btn {
+            width: min(52%, 220px) !important;
+        }
+
+        #game-config-view .screen-title-row,
+        #exam-select-screen .screen-title-row,
+        #treasure-modal .station-shell__title-row,
+        #quest-modal .station-shell__title-row {
+            width: 100%;
+        }
+
+        #exam-select-screen .exam-select-layout {
+            grid-template-columns: 1fr;
+        }
+
+        #exam-select-screen .exam-guide-mascot {
+            order: -1;
+            width: 110px;
+            margin: 0 auto;
+        }
+
+        #exam-select-screen .subject-box {
+            width: 100% !important;
+            min-height: 120px;
+        }
+
+        #exam-select-screen .period-select {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        #quest-modal .quest-gift-box,
+        #quest-modal .quest-item-card,
+        #quest-modal .student-team-competition-card {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        #quest-modal .quest-gift-box {
+            grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        #quest-modal .quest-gift-box .btn-claim-star {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        #quest-modal .quest-item-card__actions {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        #quest-modal .quest-item-card__actions button {
+            width: 100%;
+        }
+
+        #shop-modal .shop-shell {
+            display: flex !important;
+            flex-direction: column;
+            overflow: auto;
+        }
+
+        #shop-modal .shop-tabs {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 14px 12px !important;
+        }
+
+        #shop-modal .notebook-tab {
+            width: min(30%, 160px);
+        }
+
+        #shop-modal .shop-content-area {
+            min-height: 0;
+            border-top: 1px solid rgba(111, 214, 240, .24);
+            border-left: 0;
+            border-radius: 0 0 21px 21px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #game-config-view *,
+        #exam-select-screen *,
+        #treasure-modal *,
+        #quest-modal *,
+        #shop-modal * {
+            animation-duration: 0s !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0s !important;
+        }
+    }
+}

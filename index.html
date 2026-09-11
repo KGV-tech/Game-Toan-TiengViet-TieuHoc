@@ -9,9 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./src/style.css?v=exam-composer-v1">
+  <link rel="stylesheet" href="./src/style.css?v=unified-station-shell-v1">
   <link rel="stylesheet" href="./src/login-layout.css">
   <link rel="stylesheet" href="./src/map-layout.css">
+  <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
   <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
@@ -531,16 +532,16 @@
     </div>
 
     <!-- Màn hình chơi chung (Luyện Tập) -->
-    <div id="game-screen" class="screen">
+    <div id="game-screen" class="screen station-screen" data-ui-context="student">
       <div class="game-bg-layer"></div>
 
       <!-- Cấu hình -->
-      <div id="game-config-view" class="game-view active">
+      <div id="game-config-view" class="game-view station-view station-view--config active">
         <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
-        <div class="glass-container-xl">
+        <div class="glass-container-xl station-shell">
           <div class="config-layout">
-            <div class="config-top" style="display: flex; width: 100%; gap: 20px; align-items: stretch;">
-              <div class="config-left" style="flex: 1; display: flex; justify-content: center; align-items: center;">
+            <div class="config-top">
+              <div class="config-left">
                 <img src="./public/robot_cat_normal.webp" alt="Robot mèo thám hiểm" class="cat-avatar heartbeat" style="width: 170px;">
                 <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
                   onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
@@ -548,7 +549,7 @@
                 </button>
               </div>
 
-              <div class="config-center" style="flex: 3; display: flex; flex-direction: column; gap: 8px;">
+              <div class="config-center">
                 <div class="screen-title-row">
                   <h1 id="game-config-title" class="title-glow" style="margin: 0; font-size: 2rem;"></h1>
                 </div>
@@ -641,8 +642,8 @@
     </div>
 
     <!-- Màn hình Chọn Đề Kiểm tra -->
-    <div id="exam-select-screen" class="screen exam-bg">
-      <div class="glass-container-xl" style="max-width: 900px; text-align: center;">
+    <div id="exam-select-screen" class="screen station-screen exam-bg" data-ui-context="student">
+      <div class="glass-container-xl station-shell">
         <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
         <div class="screen-title-row">
           <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
@@ -671,7 +672,7 @@
           </button>
         </div>
 
-        <div class="period-select" style="display: flex; gap: 15px;">
+        <div class="period-select">
           <label style="white-space: nowrap; font-weight: bold; font-size: 1.1rem;">Thời gian:</label>
           <button class="btn-opt" style="white-space: nowrap; flex: 1; text-align: center;"
             onclick="app.exam.setFilter('period', 'Giữa kỳ 1', this)">Giữa kỳ 1</button>
@@ -760,14 +761,14 @@
 
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
     <div id="treasure-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="treasure-title" aria-hidden="true">
-      <div class="modal-content admin-panel glass-container-xl" style="position:relative;">
+      <div class="modal-content admin-panel glass-container-xl station-shell">
         <button id="treasure-close-button" class="utility-close-button"
           onclick="app.treasure.close()" aria-label="Đóng Kho báu">
           <span aria-hidden="true">×</span>
         </button>
 
-        <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 20px;">
-          <h2 id="treasure-title" class="title-glow" style="margin:0;">Kho Báu</h2>
+        <div class="station-shell__title-row">
+          <h2 id="treasure-title" class="title-glow">Kho Báu</h2>
         </div>
 
         <div id="admin-tabs" class="admin-tabs" style="display:none;">
@@ -789,7 +790,7 @@
       <div class="station-shell__title-row">
         <h2 id="quest-modal-title" class="title-glow">Bảng Nhiệm Vụ</h2>
       </div>
-      <div id="quest-list-container" class="scroll-box" style="display: flex; flex-direction: column; gap: 15px;">
+      <div id="quest-list-container" class="scroll-box quest-list-container">
         <!-- Quests rendered here by JS -->
       </div>
     </div>
@@ -811,16 +812,14 @@
 
   <!-- Modal Cửa hàng & Gacha (Notebook Layout) -->
     <div id="shop-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="shop-title" aria-hidden="true">
-    <div class="modal-content glass-container-xl"
-      style="position:relative; width: 95%; max-width: 1540px; padding: 0; display:flex; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 88vh; max-height: 96vh; background: transparent;">
+    <div class="modal-content glass-container-xl station-shell shop-shell">
 
       <h2 id="shop-title" class="sr-only">Cửa hàng</h2>
 
       <!-- Blurred Background -->
-      <div
-        style="position:absolute; top:0; left:0; right:0; bottom:0; background: url('./public/shop_adventure_bg.webp') center/cover no-repeat; filter: blur(15px); opacity: 0.5; z-index: 0; transform: scale(1.1);">
+      <div class="shop-shell__backdrop">
       </div>
-      <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.4); z-index: 0;">
+      <div class="shop-shell__scrim">
       </div> <!-- Overlay -->
 
       <button id="shop-close-button" class="utility-close-button"
@@ -829,8 +828,7 @@
       </button>
 
       <!-- Notebook Tabs (Left) -->
-      <div class="admin-tabs"
-        style="display:flex; flex-direction:column; gap: 10px; width: 330px; z-index: 1; padding: 30px 12px 20px; border:none;">
+      <div class="admin-tabs shop-tabs">
         <button class="notebook-tab active asset-button asset-button--shop-tab" data-shop-tab="pets" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
           <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true">
         </button>
@@ -843,8 +841,7 @@
       </div>
 
       <!-- Content (Right) -->
-      <div id="shop-content-area" class="scroll-box"
-        style="flex: 1; height: 100%; max-height: none; z-index: 1; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 20px 0 0 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); margin: 0;">
+      <div id="shop-content-area" class="scroll-box shop-content-area">
         <!-- Shop content rendered by JS -->
       </div>
     </div>

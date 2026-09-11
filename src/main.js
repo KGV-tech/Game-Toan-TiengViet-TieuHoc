@@ -2052,6 +2052,12 @@ const app = {
             container.style.alignItems = 'flex-start';
             container.style.width = '100%';
 
+            const syncTopicSelectionAria = () => {
+                container.querySelectorAll('input[name="topic-selection"]').forEach(input => {
+                    input.closest('label')?.setAttribute('aria-checked', String(input.checked));
+                });
+            };
+
             const createColumn = (title, topicList) => {
                 const col = document.createElement('div');
                 col.style.flex = '1';
@@ -2074,10 +2080,13 @@ const app = {
                     const isLocked = isTeacherLocked || isProgressionLocked;
                     const showLockedStatus = isLocked && (isManaging || !isAdmin);
                     lbl.className = `topic-card${showLockedStatus ? ' topic-card--locked' : ''}`;
+                    lbl.tabIndex = 0;
                     const inp = document.createElement('input');
                     inp.type = isManaging || this.state.topicMode === 'multi' ? 'checkbox' : 'radio';
                     inp.name = 'topic-selection';
                     inp.value = t;
+                    lbl.setAttribute('role', inp.type);
+                    lbl.setAttribute('aria-checked', 'false');
                     inp.disabled = !isAdmin && isLocked;
                     if (inp.disabled) lbl.setAttribute('aria-disabled', 'true');
                     inp.onchange = (e) => {
@@ -2087,6 +2096,13 @@ const app = {
                             if (e.target.checked) this.state.selectedTopics.push(t);
                             else this.state.selectedTopics = this.state.selectedTopics.filter(x => x !== t);
                         }
+                        syncTopicSelectionAria();
+                    };
+                    lbl.onkeydown = (event) => {
+                        if (!['Enter', ' '].includes(event.key) || inp.disabled) return;
+                        event.preventDefault();
+                        inp.checked = inp.type === 'radio' ? true : !inp.checked;
+                        inp.dispatchEvent(new Event('change', { bubbles: true }));
                     };
                     lbl.appendChild(inp);
                     lbl.appendChild(document.createTextNode(' ' + t));
@@ -9953,14 +9969,17 @@ const app = {
             await app.ui.exportToExcel(rows, `Ho_so_${safeName}.xlsx`);
         },
         renderStudentTreasure(box, u) {
-            let html = `<div style="text-align:center; padding: 30px 0;">
-         <h3 style="font-size: 1.5rem;">Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
-         <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore || 0}</span></p>
-         <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
             const stars = u.stars || 0;
-            if (stars === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có sao nào. Hãy hoàn thành bài để nhận sao nhé!</p>`;
+            let html = `<section class="student-treasure-overview">
+         <div class="student-treasure-overview__heading">
+           <span class="station-kicker">Kho báu cá nhân</span>
+           <h3>Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
+           <p>Tổng điểm: <strong>${u.totalscore || 0}</strong></p>
+         </div>
+         <div class="student-treasure-stars" aria-label="${stars} sao đã tích lũy">`;
+            if (stars === 0) html += `<p class="student-treasure-stars__empty">Bạn chưa có sao nào. Hãy hoàn thành bài để nhận sao nhé!</p>`;
             for (let i = 0; i < stars; i++) html += '<img src="./public/star-gold-3d.svg" style="width:50px; margin:2px;" class="bounce">';
-            html += '</div></div>';
+            html += '</div></section>';
             box.innerHTML = html;
         },
         renderStudentHistory(box, u) {
@@ -10243,15 +10262,15 @@ const app = {
                     ? `Làm đề: ${app.data.sanitizeHTML(questExam?.name || 'Đề đã bị xóa')} đạt >= ${q.target_score} điểm`
                     : `Yêu cầu: ${q.target_subject === 'any' ? 'Môn bất kỳ' : (q.target_subject === 'math' ? 'Môn Toán' : 'Môn Tiếng Việt')} đạt >= ${q.target_score} điểm`;
 
-                html += `<div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h4 style="margin:0 0 5px 0; color:#b45309; font-size: 1.2rem;">${app.data.sanitizeHTML(q.title)}</h4>
-                    <p style="margin:0; font-size:0.9rem; color:#666;">${requirement}</p>
+                html += `<article class="quest-item-card">
+                <div class="quest-item-card__copy">
+                    <h4 class="quest-item-card__title">${app.data.sanitizeHTML(q.title)}</h4>
+                    <p class="quest-item-card__requirement">${requirement}</p>
                 </div>
-                <div>
+                <div class="quest-item-card__actions">
                     ${btnHtml}
                 </div>
-            </div>`;
+            </article>`;
             });
             container.innerHTML = giftBoxHtml + teamCompetitionHtml + html;
         },
@@ -10712,9 +10731,9 @@ const app = {
             const description = currentPet.description || "Chưa có dữ liệu.";
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
+        <div class="pet-station-layout" style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Machine (60%) -->
-            <div style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+            <div class="pet-station-machine" style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 ${isAdmin ? `
                 <div style="position:absolute; top: 0; left: 50%; transform: translateX(-50%); z-index:10;">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 10px 20px; border-radius: 20px;">
@@ -10730,7 +10749,7 @@ const app = {
                             100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; transform: translate(-50%, -50%); }
                         }
                     </style>
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
+                    <button class="btn-primary shop-carousel-button shop-carousel-button--prev" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
                     
                     <!-- Vùng chứa tỉ lệ chuẩn khóa cứng máy biến hình và pet -->
                     <div style="position:relative; width: 100%; max-width: 550px; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
@@ -10747,16 +10766,16 @@ const app = {
                         </div>
                     </div>
                     
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
+                    <button class="btn-primary shop-carousel-button shop-carousel-button--next" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
                 </div>
             </div>
 
             <!-- Right Side: Details (40%) -->
-            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
-                <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
+            <div class="pet-station-details" style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+                <div class="pet-details-card" style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
                     <h2 class="pet-station-title" title="${currentPet.name}">${currentPet.name}</h2>
                     
-                    <div style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
+                    <div class="pet-details-description" style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
                         <strong style="color: #64748b; font-size: 1.1rem;">Mô tả:</strong><br/>
                         ${description}
                     </div>
@@ -10787,10 +10806,10 @@ const app = {
             let equippedPet = app.getEquippedPet(user);
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
+        <div class="my-pets-layout" style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
             
 
-            <div style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
+            <div class="my-pets-slots" style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
         `;
 
             if (isAdmin) {

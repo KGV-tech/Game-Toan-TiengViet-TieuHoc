@@ -356,7 +356,7 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
-test('luyện tập tận dụng chiều cao, nền trong suốt và điều khiển không bị cắt', async ({ page }) => {
+test('luyện tập dùng station shell thống nhất và điều khiển không bị cắt', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -367,14 +367,14 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
   const configPanel = await page.locator('#game-config-view .glass-container-xl').boundingBox();
   const mascotColumn = await page.locator('#game-config-view .config-left').boundingBox();
   const topicPanel = await page.locator('#game-config-view .config-section').boundingBox();
-  expect(configPanel.height).toBeGreaterThanOrEqual(860);
+  expect(configPanel.height).toBeGreaterThanOrEqual(840);
   const mascotCenter = mascotColumn.y + mascotColumn.height / 2;
   const topicCenter = topicPanel.y + topicPanel.height / 2;
   expect(mascotCenter).toBeGreaterThanOrEqual(topicCenter - 36);
   expect(mascotCenter).toBeLessThanOrEqual(topicCenter + 115);
   await expect(page.locator('#game-config-view .screen-title-row')).toHaveCSS('backdrop-filter', 'blur(8px)');
-  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(255, 234, 167)');
-  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(233, 245, 251)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '0px');
 
   await page.evaluate(() => {
     document.getElementById('game-config-view').classList.remove('active');
@@ -400,15 +400,15 @@ test('luyện tập tận dụng chiều cao, nền trong suốt và điều khi
     document.getElementById('game-screen').className = 'screen active theme-vietnamese';
     document.getElementById('game-config-view').classList.add('active');
   });
-  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(167, 243, 208)');
-  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '2px');
+  await expect(page.locator('#game-config-title')).toHaveCSS('color', 'rgb(233, 245, 251)');
+  await expect(page.locator('#game-config-title')).toHaveCSS('-webkit-text-stroke-width', '0px');
 
   await page.evaluate(() => {
     document.getElementById('game-screen').classList.remove('active');
     document.getElementById('exam-select-screen').classList.add('active');
   });
-  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('color', 'rgb(186, 230, 253)');
-  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('-webkit-text-stroke-width', '2px');
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('color', 'rgb(233, 245, 251)');
+  await expect(page.locator('#exam-select-screen .title-glow')).toHaveCSS('-webkit-text-stroke-width', '0px');
   await expect(page.locator('#exam-select-screen .glass-container-xl')).toHaveCSS('backdrop-filter', 'blur(2px)');
   await expect(page.locator('#exam-select-screen .screen-title-row')).toHaveCSS('backdrop-filter', 'blur(8px)');
 });
@@ -1036,7 +1036,7 @@ test('bản đồ thu hút chú ý và chế độ chọn chủ đề có trạn
     multi.checked = true;
     multi.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await expect(page.locator('.topic-mode-option:has(input[value="multi"]) span')).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+  await expect(page.locator('.topic-mode-option:has(input[value="multi"]) span')).toHaveCSS('background-color', 'rgba(22, 137, 165, 0.5)');
 });
 
 test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thưởng nội bộ', async ({ page }) => {
@@ -1133,7 +1133,7 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
   });
 
   const examPanel = await page.locator('#exam-select-screen .glass-container-xl').boundingBox();
-  expect(examPanel.width).toBeLessThanOrEqual(1040);
+  expect(examPanel.width).toBeLessThanOrEqual(1280);
 });
 
 test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấy chủ đề đã khóa', async ({ page }) => {
