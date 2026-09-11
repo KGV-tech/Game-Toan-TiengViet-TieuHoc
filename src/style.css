@@ -1114,6 +1114,10 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
     transform: translateY(-8px);
     box-shadow: 0 25px 40px rgba(79, 70, 229, 0.6);
 }
+.subject-box:focus-visible {
+    outline: 4px solid #fef08a;
+    outline-offset: 4px;
+}
 .subject-box:hover img { transform: scale(1.1); }
 .subject-box:active {
     transform: translateY(5px);
@@ -3672,7 +3676,37 @@ input[type="text"], input[type="password"], select, textarea {
     .template-preview__true-false > div, .template-preview__angle-list > div { grid-template-columns: auto minmax(0, 1fr); }
     .template-preview__true-false em, .template-preview__true-false i, .template-preview__drop { grid-column: 2; justify-self: start; }
 }
+.bonus-reward-button {
+    appearance: none;
+    border: 0;
+    border-bottom: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: none;
+}
+.bonus-reward-button:hover {
+    border-bottom: 0;
+    box-shadow: 0 0 0 3px rgba(254, 240, 138, .42), 0 0 20px rgba(250, 204, 21, .45);
+    filter: none;
+    transform: translateY(-2px);
+}
+.bonus-reward-button:focus-visible {
+    outline: 4px solid #fef08a;
+    outline-offset: 4px;
+}
+.bonus-reward-button:disabled {
+    cursor: default;
+    opacity: .72;
+}
+.bonus-reward-button img { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
+    .subject-box,
+    .subject-box img,
+    .bonus-reward-button {
+        transition: none !important;
+    }
     .admin-compose-quickstart-card,
     .template-library-card,
     .template-library__create,

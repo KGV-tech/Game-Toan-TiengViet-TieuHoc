@@ -108,6 +108,10 @@ const app = {
         const modal = document.getElementById('guide-modal');
         if (modal) {
             modal.style.display = 'flex';
+            app.modal?.open(modal, {
+                initialFocus: '#guide-close',
+                onEscape: () => this.hideGuide()
+            });
             const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
             modal.querySelectorAll('.guide-admin-only').forEach(element => {
                 element.hidden = !isAdmin;
@@ -123,7 +127,10 @@ const app = {
     },
     hideGuide() {
         const modal = document.getElementById('guide-modal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            app.modal?.close(modal);
+            modal.style.display = 'none';
+        }
     },
     goToGuide(sectionId) {
         const content = document.getElementById('guide-content');
@@ -1189,8 +1196,80 @@ const app = {
         getAvatar(avatarKey) {
             return { key: this.avatarChoices[avatarKey] ? avatarKey : 'boy-short', ...(this.avatarChoices[avatarKey] || this.avatarChoices['boy-short']) };
         },
+        feedbackFieldMap: {
+            'login-error': ['username', 'password'],
+            'register-error': ['reg-fullname', 'reg-username', 'reg-class', 'reg-password', 'reg-class-name', 'reg-gender'],
+            'change-password-error': ['change-password-username', 'change-password-old', 'change-password-new', 'change-password-confirm']
+        },
+        setAuthFeedback(id, message, { fieldIds = null, tone = 'error' } = {}) {
+            const feedback = document.getElementById(id);
+            if (!feedback) return;
+            const fields = fieldIds || this.feedbackFieldMap[id] || [];
+            feedback.textContent = message || '';
+            feedback.hidden = !message;
+            feedback.dataset.tone = tone;
+            feedback.setAttribute('role', tone === 'success' ? 'status' : 'alert');
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field) return;
+                if (tone !== 'success' && Boolean(message)) field.setAttribute('aria-invalid', 'true');
+                else field.removeAttribute('aria-invalid');
+            });
+            if (!message) delete feedback.dataset.tone;
+        },
+        clearAuthFeedback(id) {
+            const feedback = document.getElementById(id);
+            if (!feedback) return;
+            feedback.textContent = '';
+            feedback.hidden = true;
+            feedback.removeAttribute('data-tone');
+            (this.feedbackFieldMap[id] || []).forEach(fieldId => {
+                document.getElementById(fieldId)?.removeAttribute('aria-invalid');
+            });
+        },
+        showAuthFeedback(id, message, fieldIds = [], tone = 'error') {
+            this.setAuthFeedback(id, message, { fieldIds, tone });
+            const firstField = fieldIds.map(fieldId => document.getElementById(fieldId)).find(Boolean);
+            if (tone !== 'success') firstField?.focus({ preventScroll: true });
+        },
+        bindAuthFeedback(fields, feedbackId) {
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field?.addEventListener('input', () => this.clearAuthFeedback(feedbackId));
+                field?.addEventListener('change', () => this.clearAuthFeedback(feedbackId));
+            });
+        },
+        initializeAvatarAccessibility() {
+            document.querySelectorAll('.avatar-picker').forEach(picker => {
+                const groups = [...picker.querySelectorAll('[data-avatar-group]')];
+                groups.forEach(group => {
+                    const groupName = group.dataset.avatarGroup;
+                    group.id = group.id || `avatar-group-${groupName}`;
+                    group.setAttribute('role', 'tabpanel');
+                    group.setAttribute('aria-label', `Avatar ${groupName}`);
+                    group.querySelectorAll('label').forEach(label => {
+                        const input = label.querySelector('input[type="radio"]');
+                        if (!input) return;
+                        const choice = this.avatarChoices[input.value];
+                        input.setAttribute('aria-label', choice?.label || label.getAttribute('title') || 'Avatar');
+                    });
+                });
+                picker.querySelectorAll('.avatar-picker__tabs [role="tab"]').forEach(tab => {
+                    const group = tab.textContent.trim() === 'Bé gái' ? 'girls'
+                        : (tab.textContent.trim() === 'Hoạt hình' ? 'cartoons' : 'boys');
+                    tab.setAttribute('aria-controls', `avatar-group-${group}`);
+                });
+            });
+        },
         init() {
-            document.getElementById('login-btn').onclick = () => this.login();
+            this.initializeAvatarAccessibility();
+            this.bindAuthFeedback(['username', 'password'], 'login-error');
+            this.bindAuthFeedback(['reg-fullname', 'reg-username', 'reg-class', 'reg-password', 'reg-class-name', 'reg-gender'], 'register-error');
+            this.bindAuthFeedback(['change-password-username', 'change-password-old', 'change-password-new', 'change-password-confirm'], 'change-password-error');
+            document.getElementById('login-form').onsubmit = (event) => {
+                event.preventDefault();
+                this.login();
+            };
             document.getElementById('toggle-password').onclick = () => {
                 const password = document.getElementById('password');
                 const visible = password.type === 'text';
@@ -1199,7 +1278,10 @@ const app = {
                 toggle.setAttribute('aria-pressed', String(!visible));
                 toggle.setAttribute('aria-label', visible ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
             };
-            document.getElementById('register-btn').onclick = () => this.register();
+            document.getElementById('register-form').onsubmit = (event) => {
+                event.preventDefault();
+                this.register();
+            };
             document.getElementById('link-to-register').onclick = (event) => { event.preventDefault(); app.router.open('register-screen'); };
             document.getElementById('link-to-login').onclick = (event) => { event.preventDefault(); app.router.open('login-screen'); };
             document.getElementById('link-to-change-password').onclick = () => this.openChangePasswordDialog();
@@ -1211,11 +1293,6 @@ const app = {
             document.getElementById('change-password-modal').onclick = (event) => {
                 if (event.target.id === 'change-password-modal') this.closeChangePasswordDialog();
             };
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && document.getElementById('change-password-modal').classList.contains('active')) {
-                    this.closeChangePasswordDialog();
-                }
-            });
         },
         setAvatarGroup(group, button) {
             const picker = button?.closest('.avatar-picker') || document;
@@ -1240,16 +1317,20 @@ const app = {
             const loginUsername = document.getElementById('username').value.trim();
             if (loginUsername) usernameInput.value = loginUsername;
             modal.classList.add('active');
-            modal.setAttribute('aria-hidden', 'false');
-            setTimeout(() => (usernameInput.value ? document.getElementById('change-password-old') : usernameInput).focus(), 0);
+            app.modal?.open(modal, {
+                initialFocus: () => usernameInput.value ? document.getElementById('change-password-old') : usernameInput,
+                onEscape: () => this.closeChangePasswordDialog()
+            });
         },
         closeChangePasswordDialog(force = false) {
             const modal = document.getElementById('change-password-modal');
             if (this.changePasswordPending && !force) return;
             document.getElementById('change-password-form').reset();
+            this.clearAuthFeedback('change-password-error');
+            const managed = app.modal?.isOpen(modal);
+            if (managed) app.modal.close(modal);
             modal.classList.remove('active');
-            modal.setAttribute('aria-hidden', 'true');
-            document.getElementById('link-to-change-password').focus();
+            if (!managed) document.getElementById('link-to-change-password').focus();
         },
         async changePassword() {
             const username = document.getElementById('change-password-username').value.trim();
@@ -1258,12 +1339,17 @@ const app = {
             const confirmation = document.getElementById('change-password-confirm').value;
             const email = this.toAuthEmail(username);
 
-            if (!email || !oldPassword || !newPassword || !confirmation) {
-                return alert('Vui lòng nhập đầy đủ tên đăng nhập và các mật khẩu.');
+            if (!email) return this.showAuthFeedback('change-password-error', 'Tên đăng nhập không hợp lệ.', ['change-password-username']);
+            if (!oldPassword || !newPassword || !confirmation) {
+                const missing = [];
+                if (!oldPassword) missing.push('change-password-old');
+                if (!newPassword) missing.push('change-password-new');
+                if (!confirmation) missing.push('change-password-confirm');
+                return this.showAuthFeedback('change-password-error', 'Vui lòng nhập đầy đủ các mật khẩu.', missing);
             }
-            if (newPassword.length < 8) return alert('Mật khẩu mới cần có ít nhất 8 ký tự.');
-            if (newPassword !== confirmation) return alert('Hai lần nhập mật khẩu mới chưa giống nhau.');
-            if (newPassword === oldPassword) return alert('Mật khẩu mới cần khác mật khẩu cũ.');
+            if (newPassword.length < 8) return this.showAuthFeedback('change-password-error', 'Mật khẩu mới cần có ít nhất 8 ký tự.', ['change-password-new']);
+            if (newPassword !== confirmation) return this.showAuthFeedback('change-password-error', 'Hai lần nhập mật khẩu mới chưa giống nhau.', ['change-password-confirm']);
+            if (newPassword === oldPassword) return this.showAuthFeedback('change-password-error', 'Mật khẩu mới cần khác mật khẩu cũ.', ['change-password-new']);
             if (this.changePasswordPending) return;
 
             this.changePasswordPending = true;
@@ -1271,18 +1357,18 @@ const app = {
             try {
                 const { data: authData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password: oldPassword });
                 if (signInError || !authData?.user) {
-                    return alert('Tên đăng nhập/email hoặc mật khẩu cũ không đúng.');
+                    return this.showAuthFeedback('change-password-error', 'Tên đăng nhập/email hoặc mật khẩu cũ không đúng.', ['change-password-username', 'change-password-old']);
                 }
 
                 const { error: updateError } = await supabaseClient.auth.updateUser({ password: newPassword });
-                if (updateError) return alert('Chưa thể đổi mật khẩu. Vui lòng thử lại sau.');
+                if (updateError) return this.showAuthFeedback('change-password-error', 'Chưa thể đổi mật khẩu. Vui lòng thử lại sau.', ['change-password-new']);
 
                 document.getElementById('username').value = username;
                 document.getElementById('password').value = '';
                 this.closeChangePasswordDialog(true);
-                alert('Đổi mật khẩu thành công. Hãy đăng nhập lại bằng mật khẩu mới.');
+                this.showAuthFeedback('login-error', 'Đổi mật khẩu thành công. Hãy đăng nhập lại bằng mật khẩu mới.', [], 'success');
             } catch (_) {
-                alert('Chưa thể đổi mật khẩu. Vui lòng thử lại sau.');
+                this.showAuthFeedback('change-password-error', 'Chưa thể đổi mật khẩu. Vui lòng thử lại sau.');
             } finally {
                 await supabaseClient.auth.signOut();
                 this.changePasswordPending = false;
@@ -1297,7 +1383,12 @@ const app = {
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
             const email = this.toAuthEmail(u);
-            if (!email || !p) return alert('Vui lòng nhập tên đăng nhập/email và mật khẩu.');
+            if (!email || !p) {
+                const missing = [];
+                if (!email) missing.push('username');
+                if (!p) missing.push('password');
+                return this.showAuthFeedback('login-error', 'Vui lòng nhập tên đăng nhập/email và mật khẩu.', missing);
+            }
             if (this.loginPending) return;
 
             this.loginPending = true;
@@ -1305,19 +1396,19 @@ const app = {
             try {
 
             const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
-            if (authError || !authData?.user) return alert('Sai tên đăng nhập hoặc mật khẩu!');
+            if (authError || !authData?.user) return this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
 
             const { data: user, error: profileError } = await supabaseClient.from('game_users')
                 .select('*').eq('auth_user_id', authData.user.id).single();
             if (profileError || !user) {
                 await supabaseClient.auth.signOut();
-                return alert('Tài khoản chưa được Giáo viên cấp quyền sử dụng game.');
+                return this.showAuthFeedback('login-error', 'Tài khoản chưa được Giáo viên cấp quyền sử dụng game.', ['username']);
             }
 
             if (user) {
                 if (user.role?.toLowerCase() !== 'admin' && user.approved === false) {
-                    alert('Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!');
-                    return;
+                    await supabaseClient.auth.signOut();
+                    return this.showAuthFeedback('login-error', 'Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!', ['username']);
                 }
                 app.data.currentUser = user;
 
@@ -1403,8 +1494,10 @@ const app = {
                     }
                 }, 500);
             } else {
-                alert('Sai tên đăng nhập hoặc mật khẩu!');
+                this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
             }
+            } catch (_) {
+                this.showAuthFeedback('login-error', 'Không thể đăng nhập lúc này. Vui lòng thử lại sau.', ['username']);
             } finally {
                 this.loginPending = false;
                 app.ui.setButtonLoading('login-btn', false);
@@ -1419,13 +1512,15 @@ const app = {
             const gender = document.getElementById('reg-gender')?.value || null;
             const selectedAvatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || 'boy-short';
 
-            if (!fn || !un || !pw || !cl) {
-                alert('Vui lòng điền đầy đủ thông tin!');
-                return;
-            }
+            const missing = [];
+            if (!fn) missing.push('reg-fullname');
+            if (!un) missing.push('reg-username');
+            if (!pw) missing.push('reg-password');
+            if (!cl) missing.push('reg-class');
+            if (missing.length) return this.showAuthFeedback('register-error', 'Vui lòng điền đầy đủ thông tin bắt buộc.', missing);
 
             const email = this.toAuthEmail(un);
-            if (!email) return alert('Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang (3–32 ký tự).');
+            if (!email) return this.showAuthFeedback('register-error', 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang (3–32 ký tự).', ['reg-username']);
             if (this.registerPending) return;
             this.registerPending = true;
             app.ui.setButtonLoading('register-btn', true, 'Vui lòng chờ…');
@@ -1434,7 +1529,7 @@ const app = {
                 email, password: pw, options: { data: { username: un } }
             });
             if (authError || !authData?.user) {
-                return alert('Không thể đăng ký. Tên đăng nhập có thể đã tồn tại.');
+                return this.showAuthFeedback('register-error', 'Không thể đăng ký. Tên đăng nhập có thể đã tồn tại.', ['reg-username']);
             }
 
             const newUser = {
@@ -1456,9 +1551,7 @@ const app = {
             const { data, error } = await supabaseClient.from('game_users').insert([newUser]).select();
             if (error) {
                 await supabaseClient.auth.signOut();
-                alert('Có lỗi xảy ra khi kết nối máy chủ!');
-                console.error(error);
-                return;
+                return this.showAuthFeedback('register-error', 'Có lỗi xảy ra khi kết nối máy chủ!', ['reg-username']);
             }
 
             if (data && data[0]) {
@@ -1467,8 +1560,10 @@ const app = {
 
             app.data.users.push(newUser);
             await supabaseClient.auth.signOut();
-            alert('Đăng ký thành công! Hãy chờ Giáo viên phê duyệt.');
             app.router.open('login-screen');
+            this.showAuthFeedback('login-error', 'Đăng ký thành công! Hãy chờ Giáo viên phê duyệt.', [], 'success');
+            } catch (_) {
+                this.showAuthFeedback('register-error', 'Không thể đăng ký lúc này. Vui lòng thử lại sau.', ['reg-username']);
             } finally {
                 this.registerPending = false;
                 app.ui.setButtonLoading('register-btn', false);
@@ -1957,6 +2052,12 @@ const app = {
             container.style.alignItems = 'flex-start';
             container.style.width = '100%';
 
+            const syncTopicSelectionAria = () => {
+                container.querySelectorAll('input[name="topic-selection"]').forEach(input => {
+                    input.closest('label')?.setAttribute('aria-checked', String(input.checked));
+                });
+            };
+
             const createColumn = (title, topicList) => {
                 const col = document.createElement('div');
                 col.style.flex = '1';
@@ -1979,10 +2080,13 @@ const app = {
                     const isLocked = isTeacherLocked || isProgressionLocked;
                     const showLockedStatus = isLocked && (isManaging || !isAdmin);
                     lbl.className = `topic-card${showLockedStatus ? ' topic-card--locked' : ''}`;
+                    lbl.tabIndex = 0;
                     const inp = document.createElement('input');
                     inp.type = isManaging || this.state.topicMode === 'multi' ? 'checkbox' : 'radio';
                     inp.name = 'topic-selection';
                     inp.value = t;
+                    lbl.setAttribute('role', inp.type);
+                    lbl.setAttribute('aria-checked', 'false');
                     inp.disabled = !isAdmin && isLocked;
                     if (inp.disabled) lbl.setAttribute('aria-disabled', 'true');
                     inp.onchange = (e) => {
@@ -1992,6 +2096,13 @@ const app = {
                             if (e.target.checked) this.state.selectedTopics.push(t);
                             else this.state.selectedTopics = this.state.selectedTopics.filter(x => x !== t);
                         }
+                        syncTopicSelectionAria();
+                    };
+                    lbl.onkeydown = (event) => {
+                        if (!['Enter', ' '].includes(event.key) || inp.disabled) return;
+                        event.preventDefault();
+                        inp.checked = inp.type === 'radio' ? true : !inp.checked;
+                        inp.dispatchEvent(new Event('change', { bubbles: true }));
                     };
                     lbl.appendChild(inp);
                     lbl.appendChild(document.createTextNode(' ' + t));
@@ -3602,12 +3713,17 @@ const app = {
             const chestContainer = document.getElementById('bonus-candies-container');
             if (starsEarned > 0) {
                 chestContainer.style.display = 'flex';
+                chestContainer.disabled = false;
+                chestContainer.setAttribute('aria-hidden', 'false');
+                chestContainer.setAttribute('aria-label', `Nhận ${starsEarned} sao thưởng`);
                 chestContainer.style.justifyContent = 'center';
                 chestContainer.style.gap = '10px';
                 chestContainer.innerHTML = Array(starsEarned).fill('<img src="./public/star-gold-3d.svg" style="width:60px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s;" onmouseover="this.style.transform=\\\'scale(1.1)\\\'" onmouseout="this.style.transform=\\\'scale(1)\\\'">').join('');
                 chestContainer.onclick = () => this.claimBonus();
             } else {
                 chestContainer.style.display = 'none';
+                chestContainer.disabled = true;
+                chestContainer.setAttribute('aria-hidden', 'true');
                 chestContainer.innerHTML = '';
             }
 
@@ -3636,7 +3752,12 @@ const app = {
             detailsBox.innerHTML = htmlString || '<p class="result-empty-details" role="status">Chưa có chi tiết bài làm để hiển thị.</p>';
             document.querySelector('#result-modal .result-layout')?.classList.toggle('result-layout--single-column', historyDetails.length === 0);
 
-            document.getElementById('result-modal').classList.add('active');
+            const resultModal = document.getElementById('result-modal');
+            resultModal.classList.add('active');
+            app.modal?.open(resultModal, {
+                initialFocus: () => starsEarned > 0 ? chestContainer : resultModal.querySelector('.btn-exit-gray'),
+                onEscape: () => this.closeResult()
+            });
         },
         async recordHistory(title, score, starsEarned) {
             if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') {
@@ -3699,14 +3820,17 @@ const app = {
             };
         },
         claimBonus() {
-            const chest = document.getElementById('bonus-chest-img');
-            chest.src = './public/star-gold-3d.svg';
-            chest.style.width = '100px';
+            const chest = document.getElementById('bonus-candies-container');
+            if (!chest || chest.disabled) return;
+            chest.disabled = true;
+            chest.setAttribute('aria-label', 'Đã nhận sao thưởng');
             chest.onclick = null;
             alert('Nhận Sao Thành Công! Sao đã được lưu vào Kho Báu.');
         },
         closeResult() {
-            document.getElementById('result-modal').classList.remove('active');
+            const modal = document.getElementById('result-modal');
+            app.modal?.close(modal);
+            modal.classList.remove('active');
             app.router.open('map-screen');
         }
     },
@@ -3728,8 +3852,10 @@ const app = {
             if (group) {
                 group.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
                 group.querySelectorAll('.subject-box').forEach(b => b.classList.remove('active'));
+                group.querySelectorAll('.btn-opt[aria-pressed], .subject-box').forEach(b => b.setAttribute('aria-pressed', 'false'));
             }
             el.classList.add('active');
+            el.setAttribute('aria-pressed', 'true');
         },
         periodMatches(examPeriod, selectedPeriod) {
             const normalize = value => String(value || '').trim().normalize('NFC').toLocaleLowerCase('vi-VN');
@@ -4189,6 +4315,7 @@ const app = {
             this.composerState.module = allowed.includes(module) ? module : 'exams';
             const treasureModal = document.getElementById('treasure-modal');
             if (treasureModal) {
+                app.modal?.close(treasureModal, { restoreFocus: false });
                 treasureModal.style.display = 'none';
                 treasureModal.classList.remove('active');
             }
@@ -5244,9 +5371,15 @@ const app = {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
             document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
+            modal.dataset.uiContext = 'admin';
             modal.style.display = 'flex';
             modal.classList.add('active');
+            app.modal?.open(modal, {
+                initialFocus: '.utility-close-button',
+                onEscape: () => app.treasure.close()
+            });
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
+            document.getElementById('treasure-close-button')?.setAttribute('aria-label', 'Đóng Cài đặt');
             this.switchTab('players');
         },
         switchTab(tab) {
@@ -6519,7 +6652,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--phase2-controls" hidden><h5>Phạm vi Bài 3 và Bài 4</h5><p>Chỉ các trường phù hợp với generator đang chọn mới được dùng khi lưu. Bài 6 dùng blueprint ôn tập cố định Bài 1–4.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất (Bài 3)</span><input id="template-phase2-minimum" class="form-input" type="number" min="0" value="${phase2NumberMinimum}"></label><label class="template-editor__field"><span>Số lớn nhất (Bài 3)</span><input id="template-phase2-maximum" class="form-input" type="number" min="1" value="${phase2NumberMaximum}"></label><label class="template-editor__field"><span>Thẻ số (Bài 3)</span><select id="template-phase2-digit-count" class="form-input">${[3,4].map(value => `<option value="${value}" ${phase2DigitCount === value ? 'selected' : ''}>${value} thẻ</option>`).join('')}</select></label><label class="template-editor__field"><span>Số phần tử ít nhất</span><input id="template-phase2-list-length-min" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMin}"></label><label class="template-editor__field"><span>Số phần tử nhiều nhất</span><input id="template-phase2-list-length-max" class="form-input" type="number" min="5" max="12" value="${phase2ListLengthMax}"></label></div><div class="template-editor__fields"><label class="template-editor__field"><span>Số a nhỏ nhất (Bài 4)</span><input id="template-phase2-variable-minimum" class="form-input" type="number" min="1" value="${phase2VariableMinimum}"></label><label class="template-editor__field"><span>Số a lớn nhất (Bài 4)</span><input id="template-phase2-variable-maximum" class="form-input" type="number" min="1" value="${phase2VariableMaximum}"></label><label class="template-editor__field"><span>Hằng số nhỏ nhất</span><input id="template-phase2-constant-minimum" class="form-input" type="number" min="2" value="${phase2ConstantMinimum}"></label><label class="template-editor__field"><span>Hằng số lớn nhất</span><input id="template-phase2-constant-maximum" class="form-input" type="number" min="2" value="${phase2ConstantMaximum}"></label></div><div class="template-editor__fields"><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy dãy chẵn/lẻ</span><input id="template-phase2-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(phase2SequenceSteps)}" placeholder="2, 4, 6"></label></div><fieldset><legend>Phép tính Bài 4</legend><div id="template-phase2-operations" class="template-editor__checks">${checkbox('add', 'Cộng', phase2Operations, 'phase2-operations')}${checkbox('subtract', 'Trừ', phase2Operations, 'phase2-operations')}${checkbox('multiply', 'Nhân', phase2Operations, 'phase2-operations')}${checkbox('divide', 'Chia hết', phase2Operations, 'phase2-operations')}</div></fieldset><fieldset><legend>Dạng chẵn/lẻ Bài 3</legend><div id="template-phase2-parities" class="template-editor__checks">${checkbox('even', 'Số chẵn', phase2Parities, 'phase2-parities')}${checkbox('odd', 'Số lẻ', phase2Parities, 'phase2-parities')}</div></fieldset></div>
               </div></div>
               <footer class="template-editor__actions"><button type="button" class="btn-opt" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="btn-primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
-              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
+              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
             </section>`;
             if (existing?.generator_key === 'number.safe_password_by_place_value') {
                 document.getElementById('template-minimum').value = app.data.formatMathNumber(config.minimum ?? 0);
@@ -7057,43 +7190,19 @@ const app = {
             content.innerHTML = record?.question
                 ? this.renderGeneratedTemplatePreview(record.question)
                 : this.renderTemplatePreview(generator);
-            this.templatePreviewReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-            if (!this.templatePreviewKeyHandler) {
-                this.templatePreviewKeyHandler = event => {
-                    const currentDialog = document.getElementById('template-preview-dialog');
-                    if (!currentDialog || currentDialog.hidden) return;
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        this.closeTemplatePreview();
-                        return;
-                    }
-                    if (event.key !== 'Tab') return;
-                    const focusables = [...currentDialog.querySelectorAll('button:not([disabled])')];
-                    if (!focusables.length) return;
-                    const first = focusables[0];
-                    const last = focusables[focusables.length - 1];
-                    if (event.shiftKey && document.activeElement === first) {
-                        event.preventDefault();
-                        last.focus();
-                    } else if (!event.shiftKey && document.activeElement === last) {
-                        event.preventDefault();
-                        first.focus();
-                    }
-                };
-            }
-            document.addEventListener('keydown', this.templatePreviewKeyHandler);
             dialog.hidden = false;
             dialog.classList.add('is-open');
-            requestAnimationFrame(() => dialog.querySelector('.template-preview-dialog__close')?.focus());
+            app.modal?.open(dialog, {
+                initialFocus: '.template-preview-dialog__close',
+                onEscape: () => this.closeTemplatePreview()
+            });
         },
         closeTemplatePreview() {
             const dialog = document.getElementById('template-preview-dialog');
             if (!dialog || dialog.hidden) return;
+            app.modal?.close(dialog);
             dialog.hidden = true;
             dialog.classList.remove('is-open');
-            if (this.templatePreviewKeyHandler) document.removeEventListener('keydown', this.templatePreviewKeyHandler);
-            if (this.templatePreviewReturnFocus && document.contains(this.templatePreviewReturnFocus)) this.templatePreviewReturnFocus.focus();
-            this.templatePreviewReturnFocus = null;
         },
         getTemplatePreviewRecord() {
             let template;
@@ -9478,9 +9587,15 @@ const app = {
         studentProfileDetails: {},
         open() {
             const modal = document.getElementById('treasure-modal');
+            modal.dataset.uiContext = 'student';
             modal.style.display = 'flex';
             modal.classList.add('active');
+            app.modal?.open(modal, {
+                initialFocus: '.utility-close-button',
+                onEscape: () => this.close()
+            });
             document.getElementById('treasure-title').textContent = 'Kho Báu';
+            document.getElementById('treasure-close-button')?.setAttribute('aria-label', 'Đóng Kho báu');
 
             const u = app.data.currentUser;
             if (!u) return;
@@ -9490,6 +9605,14 @@ const app = {
             } else {
                 this.switchTab('my_treasure');
             }
+        },
+        close() {
+            const modal = document.getElementById('treasure-modal');
+            if (!modal) return;
+            app.modal?.close(modal);
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+            modal.classList.remove('team-board-fullscreen');
         },
         switchTab(tab) {
             const u = app.data.currentUser;
@@ -9538,6 +9661,17 @@ const app = {
             const modal = document.getElementById('print-modal');
             modal.style.display = 'flex';
             modal.classList.add('active');
+            app.modal?.open(modal, {
+                initialFocus: 'input[name="print_mode"]:checked',
+                onEscape: () => this.closePrintModal()
+            });
+        },
+        closePrintModal() {
+            const modal = document.getElementById('print-modal');
+            if (!modal) return;
+            app.modal?.close(modal);
+            modal.style.display = 'none';
+            modal.classList.remove('active');
         },
         async executePrint() {
             const mode = document.querySelector('input[name="print_mode"]:checked').value;
@@ -9835,14 +9969,17 @@ const app = {
             await app.ui.exportToExcel(rows, `Ho_so_${safeName}.xlsx`);
         },
         renderStudentTreasure(box, u) {
-            let html = `<div style="text-align:center; padding: 30px 0;">
-         <h3 style="font-size: 1.5rem;">Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
-         <p style="color: #ccc; margin-top: 10px;">Tổng điểm: <span style="color:#fde047; font-weight:bold; font-size:1.2rem;">${u.totalscore || 0}</span></p>
-         <div style="font-size:2rem; margin:20px 0; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">`;
             const stars = u.stars || 0;
-            if (stars === 0) html += `<p style="font-size: 1rem; color: #888;">Bạn chưa có sao nào. Hãy hoàn thành bài để nhận sao nhé!</p>`;
+            let html = `<section class="student-treasure-overview">
+         <div class="student-treasure-overview__heading">
+           <span class="station-kicker">Kho báu cá nhân</span>
+           <h3>Kho báu của ${app.data.sanitizeHTML(u.fullname)}</h3>
+           <p>Tổng điểm: <strong>${u.totalscore || 0}</strong></p>
+         </div>
+         <div class="student-treasure-stars" aria-label="${stars} sao đã tích lũy">`;
+            if (stars === 0) html += `<p class="student-treasure-stars__empty">Bạn chưa có sao nào. Hãy hoàn thành bài để nhận sao nhé!</p>`;
             for (let i = 0; i < stars; i++) html += '<img src="./public/star-gold-3d.svg" style="width:50px; margin:2px;" class="bounce">';
-            html += '</div></div>';
+            html += '</div></section>';
             box.innerHTML = html;
         },
         renderStudentHistory(box, u) {
@@ -9873,7 +10010,7 @@ const app = {
             }, "Chưa có dữ liệu lịch sử");
         },
         async exportToImage(mode) {
-            document.getElementById('print-modal').style.display = 'none';
+            this.closePrintModal();
             const type = window.printContext; // 'leaderboard' or 'history'
 
             let fromDate = '', toDate = '', classFilter = 'Tất cả';
@@ -10043,9 +10180,21 @@ const app = {
         },
         open() {
             const modal = document.getElementById('quest-modal');
+            modal.dataset.uiContext = 'student';
             modal.style.display = 'flex';
             modal.classList.add('active');
+            app.modal?.open(modal, {
+                initialFocus: '.utility-close-button',
+                onEscape: () => this.close()
+            });
             this.render();
+        },
+        close() {
+            const modal = document.getElementById('quest-modal');
+            if (!modal) return;
+            app.modal?.close(modal);
+            modal.style.display = 'none';
+            modal.classList.remove('active');
         },
         render() {
             const container = document.getElementById('quest-list-container');
@@ -10113,15 +10262,15 @@ const app = {
                     ? `Làm đề: ${app.data.sanitizeHTML(questExam?.name || 'Đề đã bị xóa')} đạt >= ${q.target_score} điểm`
                     : `Yêu cầu: ${q.target_subject === 'any' ? 'Môn bất kỳ' : (q.target_subject === 'math' ? 'Môn Toán' : 'Môn Tiếng Việt')} đạt >= ${q.target_score} điểm`;
 
-                html += `<div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h4 style="margin:0 0 5px 0; color:#b45309; font-size: 1.2rem;">${app.data.sanitizeHTML(q.title)}</h4>
-                    <p style="margin:0; font-size:0.9rem; color:#666;">${requirement}</p>
+                html += `<article class="quest-item-card">
+                <div class="quest-item-card__copy">
+                    <h4 class="quest-item-card__title">${app.data.sanitizeHTML(q.title)}</h4>
+                    <p class="quest-item-card__requirement">${requirement}</p>
                 </div>
-                <div>
+                <div class="quest-item-card__actions">
                     ${btnHtml}
                 </div>
-            </div>`;
+            </article>`;
             });
             container.innerHTML = giftBoxHtml + teamCompetitionHtml + html;
         },
@@ -10129,7 +10278,7 @@ const app = {
             const quest = app.data.quests.find(item => item.id === questId);
             const exam = quest?.exam_id && app.data.exams.find(item => item.id === quest.exam_id);
             if (!quest || !exam) return alert('Không tìm thấy đề kiểm tra của nhiệm vụ này.');
-            document.getElementById('quest-modal').style.display = 'none';
+            this.close();
             app.exam.filters.subject = exam.subject === 'Toán' ? 'math' : 'vietnamese';
             app.exam.filters.period = exam.period;
             app.exam.start(exam.id, quest.id);
@@ -10220,9 +10369,21 @@ const app = {
         init() { },
         open() {
             const modal = document.getElementById('shop-modal');
+            modal.dataset.uiContext = 'student';
             modal.style.display = 'flex';
             modal.classList.add('active');
+            app.modal?.open(modal, {
+                initialFocus: '.utility-close-button',
+                onEscape: () => this.close()
+            });
             this.switchTab('pets', document.querySelector('#shop-modal .notebook-tab.active') || document.querySelector('#shop-modal .notebook-tab'));
+        },
+        close() {
+            const modal = document.getElementById('shop-modal');
+            if (!modal) return;
+            app.modal?.close(modal);
+            modal.style.display = 'none';
+            modal.classList.remove('active');
         },
         switchTab(tab, btnEl) {
             const activeButton = btnEl || document.querySelector(`#shop-modal .notebook-tab[data-shop-tab="${tab}"]`);
@@ -10570,9 +10731,9 @@ const app = {
             const description = currentPet.description || "Chưa có dữ liệu.";
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
+        <div class="pet-station-layout" style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:row; gap: 20px;">
             <!-- Left Side: Machine (60%) -->
-            <div style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+            <div class="pet-station-machine" style="flex: 1.5; min-width: 0; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
                 ${isAdmin ? `
                 <div style="position:absolute; top: 0; left: 50%; transform: translateX(-50%); z-index:10;">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 10px 20px; border-radius: 20px;">
@@ -10588,7 +10749,7 @@ const app = {
                             100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; transform: translate(-50%, -50%); }
                         }
                     </style>
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
+                    <button class="btn-primary shop-carousel-button shop-carousel-button--prev" onclick="app.shop.nextTrainCar(-1)" style="position:absolute; left:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">◀</button>
                     
                     <!-- Vùng chứa tỉ lệ chuẩn khóa cứng máy biến hình và pet -->
                     <div style="position:relative; width: 100%; max-width: 550px; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
@@ -10605,16 +10766,16 @@ const app = {
                         </div>
                     </div>
                     
-                    <button class="btn-primary" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
+                    <button class="btn-primary shop-carousel-button shop-carousel-button--next" onclick="app.shop.nextTrainCar(1)" style="position:absolute; right:0; z-index:10; border-radius:50%; width:70px; height:70px; font-size:2rem; display:flex; justify-content:center; align-items:center; padding:0; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;">▶</button>
                 </div>
             </div>
 
             <!-- Right Side: Details (40%) -->
-            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
-                <div style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
+            <div class="pet-station-details" style="flex: 1; min-width: 0; display:flex; flex-direction:column; justify-content:center; padding: 20px;">
+                <div class="pet-details-card" style="background: rgba(255,255,255,0.85); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 2px solid rgba(147, 51, 234, 0.3); backdrop-filter: blur(10px);">
                     <h2 class="pet-station-title" title="${currentPet.name}">${currentPet.name}</h2>
                     
-                    <div style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
+                    <div class="pet-details-description" style="font-size: 1rem; color: #1e293b; font-weight: bold; line-height: 1.6; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1;">
                         <strong style="color: #64748b; font-size: 1.1rem;">Mô tả:</strong><br/>
                         ${description}
                     </div>
@@ -10645,10 +10806,10 @@ const app = {
             let equippedPet = app.getEquippedPet(user);
 
             let html = `
-        <div style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
+        <div class="my-pets-layout" style="height: 75vh; min-height: 500px; max-height: 800px; display:flex; flex-direction:column; justify-content:center;">
             
 
-            <div style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
+            <div class="my-pets-slots" style="display:flex; justify-content:space-around; align-items:center; gap: 15px; padding: 20px; flex-wrap: nowrap; overflow-x: auto;">
         `;
 
             if (isAdmin) {

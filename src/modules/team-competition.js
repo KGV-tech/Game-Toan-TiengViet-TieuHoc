@@ -838,7 +838,11 @@
             installBeforeUnload();
             if (typeof document !== 'undefined') {
                 const questModal = document.getElementById('quest-modal');
-                if (questModal) { questModal.style.display = 'none'; questModal.classList.remove('active'); }
+                if (questModal) {
+                    app.modal?.close(questModal, { restoreFocus: false });
+                    questModal.style.display = 'none';
+                    questModal.classList.remove('active');
+                }
             }
             if (app.router) app.router.open('team-competition-play-screen');
             if (attempt.status === ATTEMPT_STATUS.ACTIVE) renderLeaderQuestion();
@@ -879,9 +883,14 @@
             : 'Nếu rời bây giờ, lượt của nhóm sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.';
         modal.style.display = 'flex';
         modal.classList.add('active');
+        app.modal?.open(modal, {
+            initialFocus: '#team-leave-confirm-ok',
+            onEscape: () => cancel?.click()
+        });
         api.state.leaveConfirmationOpen = true;
         return new Promise(resolve => {
             const close = () => {
+                app.modal?.close(modal);
                 modal.style.display = 'none';
                 modal.classList.remove('active');
                 api.state.leaveConfirmationOpen = false;

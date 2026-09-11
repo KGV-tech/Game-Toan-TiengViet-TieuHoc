@@ -41,6 +41,58 @@
   margin-left: auto !important;
 }
 
+.auth-form {
+  min-width: 0;
+}
+
+.auth-feedback {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 8px auto 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 139, 154, .72);
+  border-radius: 8px;
+  background: rgba(102, 19, 39, .68);
+  color: #ffe8ec;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.auth-feedback[data-tone="success"] {
+  border-color: rgba(113, 230, 177, .72);
+  background: rgba(13, 76, 61, .68);
+  color: #d9ffec;
+}
+
+#login-screen .login-feedback,
+#login-screen .auth-feedback {
+  width: 68%;
+}
+
+.login-field:focus-within,
+.register-field:focus-within {
+  border-color: #72e8ff;
+  box-shadow: 0 0 0 3px rgba(70, 216, 255, .2), inset 0 0 14px rgba(0, 20, 45, .5), 0 0 8px rgba(15, 107, 196, .35);
+}
+
+.login-field:has(input[aria-invalid="true"]),
+.register-field:has(input[aria-invalid="true"]),
+.register-field:has(select[aria-invalid="true"]),
+.auth-password-card input[aria-invalid="true"] {
+  border-color: #ff8b9a;
+  box-shadow: 0 0 0 3px rgba(255, 91, 117, .2), inset 0 0 14px rgba(58, 0, 18, .42);
+}
+
+.auth-form button:focus-visible,
+.auth-form a:focus-visible,
+.auth-form input:focus-visible,
+.auth-form select:focus-visible {
+  outline: 3px solid #fff29b;
+  outline-offset: 3px;
+}
+
 /* Registration uses a compact landscape frame so the pyramid and robot remain visible. */
 #register-screen .register-artwork-anchor {
   position: relative;
@@ -299,6 +351,11 @@
   box-shadow: 0 0 0 3px rgba(73, 210, 255, 0.25);
 }
 
+.auth-password-card .input-glass:focus-visible {
+  outline: 3px solid #fff29b;
+  outline-offset: 2px;
+}
+
 .auth-password-submit {
   min-height: 42px;
   margin-top: 2px;
@@ -350,4 +407,14 @@
   .auth-password-card .input-glass { min-height: 32px; padding-block: 4px; }
   .auth-password-note { margin-block: 5px 6px; font-size: .72rem; }
   .auth-password-submit { min-height: 35px; font-size: .78rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-form *,
+  .auth-password-card *,
+  .login-field,
+  .register-field {
+    transition: none !important;
+    animation: none !important;
+  }
 }
