@@ -82,6 +82,8 @@
                 'measurement.area_unit_convert': 'g4-math-hk1-b18',
                 'measurement.time_unit_convert': 'g4-math-hk1-b19',
                 'measurement.century_identification': 'g4-math-hk1-b19',
+                'measurement.practice_cards': 'g4-math-hk1-b20',
+                'measurement.hk1_review_b17_b20': 'g4-math-hk1-b21',
                 'measurement.compare_units': 'g4-math-hk1-b21',
                 'measurement.match_equivalences': 'g4-math-hk1-b21',
                 'measurement.unit_true_false': 'g4-math-hk1-b21',
