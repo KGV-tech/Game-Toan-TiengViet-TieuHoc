@@ -98,7 +98,23 @@
                 'g4-m-add-sub-missing-term': 'g4-math-hk1-b26',
                 'g4-m-add-sub-missing-digit': 'g4-math-hk1-b26',
                 'g4-m-add-sub-expression': 'g4-math-hk1-b26',
-                'g4-m-add-sub-true-false': 'g4-math-hk1-b26'
+                'g4-m-add-sub-true-false': 'g4-math-hk1-b26',
+                'number.hk1_review_b22_b25': 'g4-math-hk1-b26'
+            }),
+            '6. Đường thẳng vuông góc. Đường thẳng song song': Object.freeze({
+                'g4-m-perpendicular-identify': 'g4-math-hk1-b27',
+                'g4-m-perpendicular-grid-practice': 'g4-math-hk1-b28',
+                'g4-m-parallel-identify': 'g4-math-hk1-b29',
+                'g4-m-parallel-grid-practice': 'g4-math-hk1-b30',
+                'g4-m-quad-classify': 'g4-math-hk1-b31',
+                'geometry.hk1_review_b27_b31': 'g4-math-hk1-b32'
+            }),
+            '7. Ôn tập Học kì 1': Object.freeze({
+                'number.hk1_review_b33_numbers': 'g4-math-hk1-b33',
+                'number.hk1_review_b34_add_sub': 'g4-math-hk1-b34',
+                'geometry.hk1_review_b35': 'g4-math-hk1-b35',
+                'measurement.hk1_review_b36': 'g4-math-hk1-b36',
+                'number.hk1_review_b37_full': 'g4-math-hk1-b37'
             })
         }),
         hk2: Object.freeze({})

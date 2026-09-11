@@ -83,15 +83,15 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 
 - [x] Phase 2: Rebuild Bài 1–6 trong repo, gồm bốn family số chẵn/lẻ B03, hai family biểu thức chứa chữ B04 và review B06 B01–B04; bài toán ba bước B05 tạm hoãn. Seed đã apply và audit 7 record active.
 - [x] Phase 3: Rebuild Bài 7–9, gồm đo góc, phân loại góc và review góc. Code,
-  contract/browser test và migration seed đã hoàn tất trong branch Phase 3;
-  chưa apply seed live.
-- [x] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review; code, seed idempotent, contract và browser test đã hoàn tất trong branch riêng, chưa apply seed live.
-- [x] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review; đã có config biên, migration idempotent và contract/browser test.
-- [ ] Phase 6: Rebuild Bài 22–26, gồm cộng, trừ, tính chất, tổng-hiệu và review.
-- [ ] Phase 7: Rebuild Bài 27–32, gồm vuông góc, song song, hình bình hành/hình thoi và review.
-- [ ] Phase 8: Rebuild Bài 33–37, gồm các bộ ôn tập HK1 có blueprint kỹ năng.
+  contract/browser test và migration seed đã hoàn tất; seed đã apply/audit live.
+- [x] Phase 4: Rebuild Bài 10–16, gồm số nhiều chữ số, làm tròn, so sánh, dãy số và review; code, seed idempotent, contract/browser test và audit live đã hoàn tất.
+- [x] Phase 5: Rebuild Bài 17–21, gồm khối lượng, diện tích, thời gian/thế kỉ, thực hành và review; config biên, migration idempotent, contract/browser test và audit live đã hoàn tất.
+- [x] Phase 6: Rebuild Bài 22–26, gồm cộng, trừ, tính chất, tổng-hiệu và review;
+  generator riêng cho B26, seed/editor/contract/browser test và audit live đã hoàn tất.
+- [x] Phase 7: Rebuild Bài 27–32, gồm vuông góc, song song, hình bình hành/hình thoi và review; có SVG metadata, editor config, migration và test.
+- [x] Phase 8: Rebuild Bài 33–37, gồm các bộ ôn tập HK1 có blueprint kỹ năng và kiểm tra tỷ trọng; migration đã apply/audit live.
 - [ ] Phase 9: Kiểm kê/rebuild HK2 sau khi có nguồn Tập 2 được xác nhận.
-- [ ] Phase 10: Test đầy đủ và bàn giao; remediation 17 template đã archive có rollback, seed idempotent Phase 2 đã hoàn tất.
+- [x] Phase 10: Test đầy đủ và bàn giao; remediation 17 template đã archive có rollback, seed idempotent Phase 2–8 đã hoàn tất và `main` đã được merge/push.
 
 ### Rào chắn an toàn
 

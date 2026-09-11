@@ -174,41 +174,71 @@ xác nhận 57 active, 0 active thiếu `lesson`, không tạo B05.
 cho B03/B04/B06 và không có B05. Nhóm deferred 17 record đã được harden/tách/
 thay trong remediation riêng sau dependency check.
 
-### Phase 3 — Bài 7–9
+### Phase 3 — Bài 7–9 (đã hoàn tất code, seed và audit live)
 
 - [x] Bổ sung đo góc/đơn vị độ cho B07.
 - [x] Tách phân loại góc cho B08 và review B09.
 - [x] Kiểm thử SVG, keyboard fallback, focus và reduced motion.
 
-**Checkpoint:** code và migration seed B07/B09 đã có trong branch Phase 3;
-B08 tiếp tục dùng bốn generator góc hiện hữu đã mapping đúng lesson. Chưa apply
-seed Phase 3 vào Supabase live.
+**Checkpoint:** code và migration seed B07/B09 đã hoàn tất; B08 tiếp tục dùng
+bốn generator góc hiện hữu đã mapping đúng lesson. Seed Phase 3 đã apply và
+audit live tại đúng project Supabase.
 
 ### Phase 4 — Bài 10–16
 
 - [x] Bổ sung số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn.
 - [x] Tách so sánh, dãy số và review theo lesson.
-- [x] Thêm generator/preset/Preview, seed idempotent và contract/browser test; chưa apply seed live.
+- [x] Thêm generator/preset/Preview, seed idempotent và contract/browser test.
+- [x] Apply seed Phase 4 vào Supabase live và audit pool tại đúng project/quyền.
 
 ### Phase 5 — Bài 17–21
 
 - [x] Tách khối lượng, diện tích, thời gian/thế kỉ, thực hành và review.
 - [x] Rà lại bài toán lời văn/đơn vị và config biên.
+- [x] Apply migration Phase 5 và audit B17–B21 trên Supabase live; giữ record legacy hợp lệ.
 
-### Phase 6 — Bài 22–26
+### Phase 6 — Bài 22–26 (đã hoàn tất trong branch Phase 6)
 
-- [ ] Tách cộng, trừ, tính chất, tổng-hiệu và review.
-- [ ] Không dùng một generator cộng/trừ tổng quát đại diện cho toàn Chủ đề.
+- [x] Tách cộng, trừ, tính chất, tổng-hiệu và review.
+- [x] Không dùng một generator cộng/trừ tổng quát đại diện cho toàn Chủ đề.
+- [x] Apply migration Phase 6 và audit đủ B22–B26 trên Supabase live.
 
-### Phase 7 — Bài 27–32
+#### Phase 6 execution plan — current task
 
-- [ ] Xây family vuông góc, song song, thực hành và hình bình hành/hình thoi.
-- [ ] Tạo review B32 và test geometry theo dữ liệu, không chỉ snapshot pixel.
+1. Hoàn thiện generator review B26 với đúng bốn kỹ năng được chọn trong B22–B25;
+   mỗi câu con giữ `skill` và `lesson` để truy vết.
+2. Nối registry, curriculum fallback, preset và editor config; B22/B23 giữ
+   phạm vi phép tính riêng, B24 chỉ nhận tính chất cộng, B26 nhận đúng bốn kỹ năng.
+3. Tạo migration seed idempotent cho B22–B26, không xóa vật lý, không đổi RLS;
+   đã apply vào Supabase live và audit đủ lesson.
+4. Bổ sung contract Node, contract editor/migration và browser test ở laptop/tablet.
 
-### Phase 8 — Bài 33–37
+**Acceptance:** generator, editor, preview và gameplay đều nhận diện đúng lesson;
+review không rơi về generator cộng/trừ tổng quát; contract và `npm test` xanh;
+hai thay đổi ngoài phạm vi đang có trong worktree không được stage.
 
-- [ ] Tạo blueprint ôn số, cộng/trừ, hình học, đo lường và toàn HK1.
-- [ ] Kiểm tra tỷ trọng kỹ năng khi tạo Đề tự động.
+**Checkpoint:** code, migration seed idempotent, contract và browser test Phase 6
+đã hoàn tất; migration đã apply vào Supabase live và audit đủ B22–B26.
+
+### Phase 7 — Bài 27–32 (đã hoàn tất)
+
+- [x] Xây family vuông góc, song song, thực hành và hình bình hành/hình thoi.
+- [x] Tạo review B32 và test geometry theo dữ liệu, không chỉ snapshot pixel.
+
+**Checkpoint:** B27–B31 sinh hình SVG có metadata quan hệ/hình; B32 yêu cầu
+đúng bốn skill khác nhau và giữ lesson trên từng câu con. Editor, Preview,
+gameplay, contract Node và Playwright laptop/tablet đều xanh; migration đã
+apply/audit live.
+
+### Phase 8 — Bài 33–37 (đã hoàn tất)
+
+- [x] Tạo blueprint ôn số, cộng/trừ, hình học, đo lường và toàn HK1.
+- [x] Kiểm tra tỷ trọng kỹ năng khi tạo Đề tự động.
+
+**Checkpoint:** B33–B36 giữ bốn skill nguồn; B37 giữ đúng một câu cho mỗi
+nhóm `numbers`, `addSub`, `geometry`, `measurement`, kèm `sourceLesson` để
+kiểm tra tỷ trọng. Editor, Preview, gameplay, contract Node và Playwright đều
+đạt; migration đã apply/audit live.
 
 ### Phase 9 — HK2
 
@@ -217,11 +247,11 @@ seed Phase 3 vào Supabase live.
 
 ### Phase 10 — Seed, archive và bàn giao
 
-- [x] Seed idempotent các record đã duyệt cho Phase 2: 7 record B03/B04/B06; không tạo B05.
+- [x] Seed idempotent các record đã duyệt cho Phase 2–8: không tạo B05; audit live xác nhận đủ 31 lesson B07–B37.
 - [x] Archive/tách các record cũ thuộc remediation 17 template sau dependency check; không xoá vật lý.
-- [ ] Chạy contract Node + `npm test` + visual/accessibility review.
-- [ ] Tự review diff, commit/push nhánh riêng.
-- [ ] Chỉ merge `main` sau khi người dùng yêu cầu và các checkpoint bắt buộc đạt.
+- [x] Chạy contract Node + `npm test` + visual/accessibility review.
+- [x] Tự review diff, commit/push nhánh riêng.
+- [x] Chỉ merge `main` sau khi người dùng yêu cầu và các checkpoint bắt buộc đạt.
 
 ## Điều kiện không được tự quyết
 
