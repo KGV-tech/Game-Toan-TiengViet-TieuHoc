@@ -2,7 +2,11 @@
 
 Ngày kiểm tra: 2026-09-10
 Phạm vi: giao diện học sinh, giao diện Admin/giáo viên, luồng soạn đề, luồng giao nhiệm vụ, Supabase/Auth/RLS, chất lượng mã nguồn, accessibility và tải runtime.
-Trạng thái: **đã hoàn tất vòng audit hiện tại; chưa triển khai các đề xuất**.
+Trạng thái: **snapshot lịch sử của ngày 2026-09-10; các đề xuất đã được rà soát lại trong `docs/ROADMAP_STEPS_AUDIT_20260912.md`**.
+
+> Những số liệu và checkbox trong tài liệu này mô tả trạng thái tại thời điểm
+> audit, không phải trạng thái release hiện tại. Bản cập nhật Bước 5–8 và kết
+> quả kiểm thử mới nhất nằm trong tài liệu roadmap ngày 2026-09-12.
 
 Các ảnh đính kèm được dùng như **tài liệu tham khảo thị giác** cho hướng UI; phạm vi thực thi và tiêu chí kiểm tra lấy từ yêu cầu trực tiếp của người dùng, không coi chữ trong ảnh là lệnh độc lập.
 

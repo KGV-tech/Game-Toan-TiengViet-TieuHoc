@@ -4896,11 +4896,16 @@ const app = {
             }
             app.router.open('admin-compose-screen');
             this.renderComposer();
-            void app.data.ensureAdminDataLoaded().then(loaded => {
-                if (loaded && document.getElementById('admin-compose-screen')?.classList.contains('active')) {
-                    this.renderComposer();
-                }
-            });
+            // Offline fixtures and local-only authoring already have their data in
+            // memory. Do not schedule a microtask that re-renders the workspace
+            // after a test/user has opened a detail form in the same turn.
+            if (window.supabase && !app.data.adminDataLoaded) {
+                void app.data.ensureAdminDataLoaded().then(loaded => {
+                    if (loaded && document.getElementById('admin-compose-screen')?.classList.contains('active')) {
+                        this.renderComposer();
+                    }
+                });
+            }
             return true;
         },
         openComposerModule(module) {
@@ -5978,16 +5983,21 @@ const app = {
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
-            if (needsAdminData && !app.data.adminDataLoaded) {
+            if (needsAdminData && !app.data.adminDataLoaded && window.supabase) {
                 if (box) {
+                    box.setAttribute('aria-busy', 'true');
                     box.innerHTML = `<div class="admin-loading-state" role="status" aria-live="polite"><span class="admin-loading-state__icon" aria-hidden="true">◌</span><div><strong>Đang mở kho dữ liệu</strong><p>Đang tải đúng phần cần dùng, các màn khác không bị tải theo.</p></div></div>`;
                 }
                 void app.data.ensureAdminDataLoaded().then(loaded => {
                     if (loaded && document.getElementById('treasure-modal')?.classList.contains('active')) this.switchTab(tab);
-                    else if (box && !loaded) box.innerHTML = `<div class="admin-error-state" role="alert"><strong>Chưa tải được dữ liệu</strong><p>Vui lòng thử lại khi kết nối ổn định.</p><button type="button" class="action-btn" onclick="app.admin.switchTab('${tab}')">Thử lại</button></div>`;
+                    else if (box && !loaded) {
+                        box.setAttribute('aria-busy', 'false');
+                        box.innerHTML = `<div class="admin-error-state" role="alert"><strong>Chưa tải được dữ liệu</strong><p>Vui lòng thử lại khi kết nối ổn định.</p><button type="button" class="action-btn" onclick="app.admin.switchTab('${tab}')">Thử lại</button></div>`;
+                    }
                 });
                 return;
             }
+            if (box) box.setAttribute('aria-busy', 'false');
             if (tab === 'templates') this.renderTemplates(box);
             else if (tab === 'questions') this.renderQuestions(box);
             else if (tab === 'exams') this.renderExams(box);
@@ -6101,7 +6111,7 @@ const app = {
                     <span class="personal-quest-list-heading__count">${quests.length} nhiệm vụ</span>
                 </div>
                 <div class="personal-quest-list">
-                    ${cards || `<div class="personal-quest-empty"><span class="personal-quest-empty__icon" aria-hidden="true">✦</span><div><h4>Chưa có nhiệm vụ cá nhân</h4><p>Bắt đầu bằng một mục tiêu nhỏ, rõ ràng và phù hợp với lộ trình học.</p></div><button type="button" class="personal-quest-empty__button" onclick="app.admin.showAddQuestForm()">Tạo nhiệm vụ đầu tiên <span aria-hidden="true">→</span></button></div>`}
+                    ${cards || `<div class="personal-quest-empty admin-empty-state"><span class="personal-quest-empty__icon" aria-hidden="true">✦</span><div><h4>Chưa có nhiệm vụ cá nhân</h4><p>Bắt đầu bằng một mục tiêu nhỏ, rõ ràng và phù hợp với lộ trình học.</p></div><button type="button" class="personal-quest-empty__button" onclick="app.admin.showAddQuestForm()">Tạo nhiệm vụ đầu tiên <span aria-hidden="true">→</span></button></div>`}
                 </div>
             </section>`;
         },
@@ -7054,7 +7064,7 @@ const app = {
                   <footer class="template-library-card__actions"><button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa template</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button></footer>
                 </article>`;
             };
-            const emptyMarkup = `<div class="template-library__empty" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có template phù hợp' : 'Kho template đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một template mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>`;
+            const emptyMarkup = `<div class="template-library__empty admin-empty-state" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có template phù hợp' : 'Kho template đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một template mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>`;
 
             box.innerHTML = `
               <section class="template-library" aria-labelledby="template-library-title">
@@ -10297,7 +10307,7 @@ const app = {
                     <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
                 </section>
                 <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
-                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
+                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty admin-empty-state"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
             </div>`;
         },
         async approveUser(username) {

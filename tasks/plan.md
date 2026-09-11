@@ -355,6 +355,10 @@ Core Web Vitals nếu môi trường cho phép; không kết luận theo cảm t
 **Phụ thuộc:** Bước 4 giúp chốt field/list model. **Scope:** L, sẽ tách thành
 nhánh nhỏ khi bắt đầu triển khai.
 
+**Trạng thái 2026-09-12:** Đã hoàn tất trong đợt rà soát roadmap; projection,
+phân trang helper, lazy-load kho Admin, preload có chủ đích và contract Bước 5
+đã được kiểm tra.
+
 ## Bước 6 — Cleanup lifecycle game/realtime
 
 **Mục tiêu:** không tích lũy listener, timer hoặc subscription sau nhiều lượt.
@@ -370,6 +374,10 @@ test, console capture và `npm test`.
 
 **Phụ thuộc:** không có. **Scope:** S–M.
 
+**Trạng thái 2026-09-12:** Đã hoàn tất trong đợt rà soát roadmap; registry
+lifecycle, cleanup timer/realtime và epoch guard chống stale sync sau
+logout/login đã được kiểm tra.
+
 ## Bước 7 — Đồng nhất UI và design system
 
 **Mục tiêu:** các màn cũ đạt cùng độ rõ ràng với Soạn Đề/Roster mới.
@@ -384,6 +392,10 @@ Game Config, Result, empty/loading/error/disabled state; giữ bản sắc Map/S
 **Kiểm thử:** visual review 1440×900 và 1024×768, reduced-motion, keyboard smoke.
 
 **Phụ thuộc:** Bước 3 và 5. **Scope:** L, chia theo từng màn.
+
+**Trạng thái 2026-09-12:** Đã hoàn tất trong đợt rà soát roadmap; Admin surface,
+design token, focus/disabled, reduced-motion và loading/error/empty state đã
+được chuẩn hóa trong phạm vi an toàn.
 
 ## Bước 8 — Content QA và release gate
 
@@ -401,9 +413,17 @@ keyboard/screen-reader smoke và kiểm tra production có kiểm soát.
 
 **Phụ thuộc:** Bước 1–7. **Scope:** M.
 
+**Trạng thái 2026-09-12:** Đã hoàn tất trong đợt rà soát roadmap; contract
+release gate, asset scan, full contract/browser regression và self-review diff
+đã đạt. Chưa push/merge `main` trong lượt này.
+
 ## Checkpoint
 
 - Sau Bước 1–2: security/data integrity không còn blocker.
 - Sau Bước 3–4: auth và các form chính xác, accessible, không false-positive.
 - Sau Bước 5–6: baseline tải/lifecycle được đo và không có leak đã biết.
 - Sau Bước 7–8: toàn bộ UI/code/content đạt release gate; khi đó mới merge main.
+
+**Kết quả rà soát 2026-09-12:** Bước 1–8 đều đã được đánh dấu hoàn tất trong
+`tasks/todo.md`. Chi tiết bằng chứng và giới hạn an toàn nằm trong
+`docs/ROADMAP_STEPS_AUDIT_20260912.md`.

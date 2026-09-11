@@ -27,7 +27,8 @@
         idMap: new Map(),
         channel: null,
         syncTimer: null,
-        submitPending: false
+        submitPending: false,
+        lifecycleEpoch: 0
     };
 
     const originalStore = {
@@ -294,8 +295,9 @@
         }
     }
 
-    async function loadRemoteQuestions() {
+    async function loadRemoteQuestions(epoch = state.lifecycleEpoch) {
         const rows = await fetchRows('team_competition_questions', 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts');
+        if (epoch !== state.lifecycleEpoch || !state.enabled) return [];
         api.clearRemoteQuestions();
         rows.forEach(row => {
             const key = `${row.competition_id}:${row.team_id}`;
@@ -346,8 +348,11 @@
             return this;
         },
         shutdown() {
+            state.lifecycleEpoch += 1;
             if (state.syncTimer) clearTimeout(state.syncTimer);
             state.syncTimer = null;
+            state.syncPromise = null;
+            state.syncing = false;
             const channel = state.channel;
             state.channel = null;
             if (channel) {
@@ -362,6 +367,7 @@
             state.status = 'offline';
             state.realtime = 'disconnected';
             state.error = null;
+            api.clearRemoteQuestions?.();
             this.enabled = false;
             this.status = state.status;
             this.realtime = state.realtime;
@@ -370,7 +376,9 @@
         async syncRemote(options = {}) {
             if (!state.enabled || !app.data?.currentUser) return [];
             if (state.syncPromise) return state.syncPromise;
-            state.syncPromise = (async () => {
+            const syncEpoch = state.lifecycleEpoch;
+            let syncPromise;
+            syncPromise = (async () => {
                 try {
                     const [compRows, teamRows, memberRows, attemptRows, answerRows, resultRows] = await Promise.all([
                         fetchRows('team_competitions'),
@@ -380,7 +388,9 @@
                         fetchRows('team_competition_answers'),
                         fetchRows('team_competition_results')
                     ]);
-                    await loadRemoteQuestions();
+                    if (syncEpoch !== state.lifecycleEpoch || !state.enabled || !app.data?.currentUser) return [];
+                    await loadRemoteQuestions(syncEpoch);
+                    if (syncEpoch !== state.lifecycleEpoch || !state.enabled || !app.data?.currentUser) return [];
                     const competitions = mapCompetitionRows(compRows || [], teamRows || [], memberRows || [], attemptRows || [], answerRows || [], resultRows || []);
                     state.syncing = true;
                     originalStore.clear();
@@ -406,10 +416,11 @@
                     console.warn('Chưa đồng bộ được thi đua nhóm từ Supabase:', error.message || error);
                     return originalStore.list();
                 } finally {
-                    state.syncPromise = null;
+                    if (state.syncPromise === syncPromise) state.syncPromise = null;
                 }
             })();
-            return state.syncPromise;
+            state.syncPromise = syncPromise;
+            return syncPromise;
         },
         flush() { return state.pendingWrite; },
         async persistCompetition(input) {

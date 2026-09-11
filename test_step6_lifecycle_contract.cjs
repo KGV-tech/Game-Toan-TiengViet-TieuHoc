@@ -21,5 +21,8 @@ assert.match(router, /stopTimers/);
 assert.match(router, /stopTeamCompetitionBoardTimer/);
 assert.match(remote, /shutdown\s*\(/);
 assert.match(remote, /removeChannel|removeChannel\?/);
+assert.match(remote, /lifecycleEpoch/);
+assert.match(remote, /syncEpoch/);
+assert.match(remote, /clearRemoteQuestions/);
 
 console.log('Bước 6 lifecycle contract passed.');
