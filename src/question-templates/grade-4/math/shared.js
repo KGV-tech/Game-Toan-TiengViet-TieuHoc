@@ -109,6 +109,15 @@ function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, 
         imageUrl: item.imageUrl || '',
         openedImageUrl: item.openedImageUrl || ''
     }));
+    const normalizePrompt = value => String(value || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLocaleLowerCase('vi-VN');
+    const promptLines = normalizedSubquestions.map(item => String(item.prompt || '').split(/<br\s*\/?\s*>/i)[0].trim());
+    const commonPrompt = promptLines.length && promptLines.every(line => normalizePrompt(line) === normalizePrompt(promptLines[0]))
+        ? promptLines[0]
+        : '';
     const question = {
         classlevel: 'Lớp 4',
         subject: 'Toán',
@@ -122,7 +131,7 @@ function createFourPartMultipleChoiceQuestion(templateId, prompt, subquestions, 
         explanation,
         templateVariables,
         subquestions: normalizedSubquestions,
-        sharedPrompt: normalizedSubquestions.every(item => !String(item.prompt || '').trim())
+        sharedPrompt: promptLines.every(line => !line) ? true : commonPrompt
     };
     return question;
 }

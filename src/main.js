@@ -494,6 +494,91 @@ const app = {
             ];
             return JSON.stringify(canonicalize(serializedParts)) || normalize(question?.q);
         },
+        getSubquestionContentKey(subquestion) {
+            const normalize = value => String(value ?? '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('vi-VN');
+            const canonicalize = value => {
+                if (Array.isArray(value)) return value.map(canonicalize);
+                if (value && typeof value === 'object') {
+                    return Object.keys(value).sort().reduce((result, key) => {
+                        result[key] = canonicalize(value[key]);
+                        return result;
+                    }, {});
+                }
+                return typeof value === 'string' ? normalize(value) : value;
+            };
+            if (!subquestion || typeof subquestion !== 'object') return '';
+            const semantic = Object.keys(subquestion).sort().reduce((result, key) => {
+                if (['label', 'options', 'answer', 'explanation', 'imageUrl', 'openedImageUrl'].includes(key)) return result;
+                result[key] = canonicalize(subquestion[key]);
+                return result;
+            }, {});
+            const hasMeaningfulValue = value => {
+                if (typeof value === 'string') return value.trim().length > 0;
+                if (Array.isArray(value)) return value.length > 0;
+                if (value && typeof value === 'object') return Object.values(value).some(hasMeaningfulValue);
+                return value !== null && value !== undefined;
+            };
+            if (!Object.values(semantic).some(hasMeaningfulValue)) return '';
+            return JSON.stringify(semantic);
+        },
+        getQuestionSemanticKey(question) {
+            const normalize = value => String(value ?? '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('vi-VN');
+            const structuredKeys = ['subquestions', 'practiceRows', 'comparisonRows', 'statements', 'sequenceRounds'];
+            const structured = structuredKeys.reduce((result, key) => {
+                if (Array.isArray(question?.[key])) {
+                    result[key] = question[key].map(item => {
+                        const semanticKey = this.getSubquestionContentKey(item);
+                        if (semanticKey) return semanticKey;
+                        const options = Array.isArray(item?.options)
+                            ? item.options.map(option => normalize(option)).sort()
+                            : [];
+                        return options.length ? JSON.stringify({ options }) : '';
+                    });
+                }
+                return result;
+            }, {});
+            return JSON.stringify([
+                normalize(question?.templateId || question?.generator_key),
+                normalize(question?.q),
+                structured,
+                normalize(question?.lesson)
+            ]);
+        },
+        getDuplicateSubquestionIndexes(question) {
+            const parts = Array.isArray(question?.subquestions) ? question.subquestions : [];
+            const seen = new Map();
+            const duplicates = [];
+            const normalize = value => String(value ?? '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('vi-VN');
+            parts.forEach((part, index) => {
+                const semanticKey = this.getSubquestionContentKey(part);
+                const optionKey = Array.isArray(part?.options) && part.options.length
+                    ? JSON.stringify({ options: part.options.map(normalize).sort() })
+                    : '';
+                const key = semanticKey || optionKey;
+                if (!key) return;
+                if (seen.has(key)) duplicates.push([seen.get(key), index]);
+                else seen.set(key, index);
+            });
+            return duplicates;
+        },
+        validateQuestionSubquestions(question) {
+            const duplicates = this.getDuplicateSubquestionIndexes(question);
+            return duplicates.length
+                ? `Câu con bị trùng nội dung (ý ${duplicates[0][0] + 1} và ${duplicates[0][1] + 1}); hãy tạo lại dữ kiện khác.`
+                : '';
+        },
         getExamContentKey(exam) {
             const normalize = value => this.normalizeQuestionPart(value);
             const topics = Array.isArray(exam?.topics)
@@ -596,6 +681,8 @@ const app = {
             return isValid ? partAnswerCounts : null;
         },
         validateQuestionScoring(question) {
+            const duplicateError = this.validateQuestionSubquestions(question);
+            if (duplicateError) return duplicateError;
             const count = this.getQuestionAnswerCount(question);
             if (this.getValidPartAnswerCounts(question, count)) return '';
             if (![1, 2, 4].includes(count)) {
@@ -1480,7 +1567,9 @@ const app = {
                 await app.data.updateUserScore();
                 this.updateHeader();
 
-                app.router.open('map-screen');
+                await app.game.flushPendingResults();
+                const resumedAttempt = app.game.resumeSavedAttempt();
+                if (!resumedAttempt) app.router.open('map-screen');
                 app.daily.onMapEnter();
 
                 // Hiển thị mũi tên hướng dẫn nếu là lần đầu login
@@ -1668,7 +1757,164 @@ const app = {
                 'g4-m-angle-review', 'angle.review'
             ])
         },
-        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, historyDetails: [], attemptId: null },
+        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, answerSubmitted: false, finished: false, historyDetails: [], attemptId: null },
+        getPersistenceIdentity(user = app.data.currentUser) {
+            const raw = String(user?.username || user?.id || 'guest').trim().toLocaleLowerCase('vi-VN');
+            return raw.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80) || 'guest';
+        },
+        getAttemptStorageKey(kind = this.state.examName ? 'exam' : 'practice', user = app.data.currentUser) {
+            return `game_lop5:attempt:${kind}:${this.getPersistenceIdentity(user)}`;
+        },
+        getPendingResultsStorageKey(user = app.data.currentUser) {
+            return `game_lop5:pending-results:${this.getPersistenceIdentity(user)}`;
+        },
+        readStoredJson(key, fallback) {
+            try {
+                const raw = app.safeStorage?.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (_) {
+                return fallback;
+            }
+        },
+        isPersistableStudent(user = app.data.currentUser) {
+            return Boolean(user && user.role?.toLowerCase() !== 'admin' && (user.username || user.id));
+        },
+        saveAttemptDraft() {
+            const user = app.data.currentUser;
+            const questions = Array.isArray(this.state.questions) ? this.state.questions : [];
+            if (!this.isPersistableStudent(user) || !questions.length || this.state.finished) return false;
+            const kind = this.state.examName ? 'exam' : 'practice';
+            const rawCurrentIdx = Number(this.state.currentIdx) || 0;
+            const resumeIdx = this.state.answerSubmitted ? rawCurrentIdx + 1 : rawCurrentIdx;
+            const payload = {
+                version: 1,
+                kind,
+                savedAt: new Date().toISOString(),
+                subject: this.state.subject,
+                topicMode: this.state.topicMode,
+                selectedTopics: Array.isArray(this.state.selectedTopics) ? this.state.selectedTopics : [],
+                difficulty: this.state.difficulty,
+                questions,
+                currentIdx: Math.max(0, Math.min(resumeIdx, questions.length - 1)),
+                score: Number(this.state.score) || 0,
+                selectedAns: this.state.selectedAns ?? null,
+                multipleChoiceSelections: Array.isArray(this.state.multipleChoiceSelections) ? this.state.multipleChoiceSelections : null,
+                trueFalseSelections: Array.isArray(this.state.trueFalseSelections) ? this.state.trueFalseSelections : null,
+                historyDetails: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : [],
+                attemptId: this.state.attemptId || app.data.progressEventId(kind)
+            };
+            this.state.attemptId = payload.attemptId;
+            try {
+                app.safeStorage?.setItem(this.getAttemptStorageKey(kind, user), JSON.stringify(payload));
+                return Boolean(app.safeStorage?.getItem(this.getAttemptStorageKey(kind, user)));
+            } catch (_) {
+                return false;
+            }
+        },
+        restoreAttemptDraft(user = app.data.currentUser) {
+            if (!this.isPersistableStudent(user)) return false;
+            this.restoredAttemptKind = null;
+            for (const kind of ['practice', 'exam']) {
+                const payload = this.readStoredJson(this.getAttemptStorageKey(kind, user), null);
+                if (!payload || payload.version !== 1 || payload.kind !== kind || !Array.isArray(payload.questions) || !payload.questions.length) continue;
+                if (kind === 'exam' && payload.kind === 'exam') {
+                    this.restoredAttemptKind = kind;
+                    return true;
+                }
+                const currentIdx = Number(payload.currentIdx);
+                if (!Number.isInteger(currentIdx) || currentIdx < 0 || currentIdx >= payload.questions.length) {
+                    app.safeStorage?.removeItem(this.getAttemptStorageKey(kind, user));
+                    continue;
+                }
+                this.state = {
+                    ...this.state,
+                    subject: payload.subject || this.state.subject,
+                    topicMode: payload.topicMode || this.state.topicMode,
+                    selectedTopics: Array.isArray(payload.selectedTopics) ? payload.selectedTopics : [],
+                    difficulty: payload.difficulty || this.state.difficulty,
+                    questions: payload.questions,
+                    currentIdx,
+                    answerSubmitted: false,
+                    finished: false,
+                    score: Number(payload.score) || 0,
+                    selectedAns: payload.selectedAns ?? null,
+                    multipleChoiceSelections: Array.isArray(payload.multipleChoiceSelections) ? payload.multipleChoiceSelections : null,
+                    trueFalseSelections: Array.isArray(payload.trueFalseSelections) ? payload.trueFalseSelections : null,
+                    historyDetails: Array.isArray(payload.historyDetails) ? payload.historyDetails : [],
+                    attemptId: payload.attemptId || app.data.progressEventId(kind),
+                    examName: kind === 'exam' ? (payload.examName || '') : ''
+                };
+                this.restoredAttemptKind = kind;
+                return true;
+            }
+            return false;
+        },
+        resumeSavedAttempt(user = app.data.currentUser) {
+            if (!this.restoreAttemptDraft(user)) return false;
+            const kind = this.restoredAttemptKind;
+            if (kind === 'exam' && app.exam?.restoreAttemptDraft) return app.exam.restoreAttemptDraft(user);
+            app.router.openGameView('game-play-view');
+            this.loadQuestion();
+            return true;
+        },
+        clearAttemptDraft(kind = this.state.examName ? 'exam' : 'practice', user = app.data.currentUser) {
+            app.safeStorage?.removeItem(this.getAttemptStorageKey(kind, user));
+        },
+        savePendingResult({ entry, isExam = false, examId = null, questId = null, topics = [], lessons = [] } = {}) {
+            const user = app.data.currentUser;
+            if (!this.isPersistableStudent(user) || !entry) return false;
+            const key = this.getPendingResultsStorageKey(user);
+            const pending = this.readStoredJson(key, []);
+            const list = Array.isArray(pending) ? pending.filter(item => item?.entry?.attempt_id !== entry.attempt_id) : [];
+            list.push({
+                version: 1,
+                savedAt: new Date().toISOString(),
+                isExam: Boolean(isExam),
+                examId,
+                questId,
+                topics: Array.isArray(topics) ? topics : [],
+                lessons: Array.isArray(lessons) ? lessons : [],
+                entry
+            });
+            app.safeStorage?.setItem(key, JSON.stringify(list.slice(-20)));
+            return true;
+        },
+        removePendingResult(attemptId, user = app.data.currentUser) {
+            const key = this.getPendingResultsStorageKey(user);
+            const pending = this.readStoredJson(key, []);
+            if (!Array.isArray(pending)) return;
+            const remaining = pending.filter(item => item?.entry?.attempt_id !== attemptId);
+            if (remaining.length) app.safeStorage?.setItem(key, JSON.stringify(remaining));
+            else app.safeStorage?.removeItem(key);
+        },
+        async flushPendingResults(user = app.data.currentUser) {
+            if (!this.isPersistableStudent(user)) return { synced: 0, remaining: 0 };
+            const key = this.getPendingResultsStorageKey(user);
+            const pending = this.readStoredJson(key, []);
+            if (!Array.isArray(pending) || !pending.length) return { synced: 0, remaining: 0 };
+            let synced = 0;
+            const remaining = [];
+            for (const item of pending) {
+                try {
+                    const result = await app.data.recordStudentRound({
+                        entry: item.entry,
+                        isExam: Boolean(item.isExam),
+                        consumeEnergy: false,
+                        examId: item.examId,
+                        questId: item.questId,
+                        topics: item.topics,
+                        lessons: item.lessons
+                    });
+                    if (result?.error) remaining.push(item);
+                    else synced++;
+                } catch (_) {
+                    remaining.push(item);
+                }
+            }
+            if (remaining.length) app.safeStorage?.setItem(key, JSON.stringify(remaining));
+            else app.safeStorage?.removeItem(key);
+            return { synced, remaining: remaining.length };
+        },
         isTemplateAllowedForTopic(generatorKey, topic) {
             const allowedGenerators = this.templateGeneratorsByTopic[topic];
             return !generatorKey || !allowedGenerators || allowedGenerators.has(generatorKey);
@@ -2236,7 +2482,7 @@ const app = {
 
             const usedQuestionContentKeys = new Set();
             const uniqueQuestions = questions => questions.filter(question => {
-                const contentKey = app.data.getQuestionContentKey(question);
+                const contentKey = app.data.getQuestionSemanticKey(question);
                 if (usedQuestionContentKeys.has(contentKey)) return false;
                 usedQuestionContentKeys.add(contentKey);
                 return true;
@@ -2257,7 +2503,7 @@ const app = {
                 const template = shuffledTemplates[attempts % shuffledTemplates.length];
                 const generated = app.data.generateTemplateQuestion(template);
                 if (generated && !app.data.validateQuestionScoring(generated)) {
-                    const contentKey = app.data.getQuestionContentKey(generated);
+                    const contentKey = app.data.getQuestionSemanticKey(generated);
                     if (!usedQuestionContentKeys.has(contentKey)) {
                         usedQuestionContentKeys.add(contentKey);
                         templateQuestions.push(generated);
@@ -2287,6 +2533,8 @@ const app = {
             this.state.questions = pool;
             this.state.currentIdx = 0;
             this.state.score = 0;
+            this.state.answerSubmitted = false;
+            this.state.finished = false;
             this.state.historyDetails = [];
             this.state.historyDetails = [];
 
@@ -2368,8 +2616,32 @@ const app = {
             const points = isSupported ? correctCount / answerCount : 0;
             return { answerCount, correctCount, points, isCorrect: isSupported && correctCount === answerCount };
         },
+        normalizePromptText(value) {
+            return String(value || '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('vi-VN');
+        },
+        getSharedSubquestionPrompt(question) {
+            if (question?.sharedPrompt === true) return '';
+            const shared = String(question?.sharedPrompt || '').trim();
+            if (!shared || this.normalizePromptText(shared) === this.normalizePromptText(question?.q)) return '';
+            return shared;
+        },
+        getSubquestionPrompt(question, subquestion) {
+            const prompt = String(subquestion?.prompt || '').trim();
+            const shared = this.getSharedSubquestionPrompt(question);
+            if (!prompt || !shared) return prompt;
+            const parts = prompt.split(/<br\s*\/?\s*>/i);
+            if (this.normalizePromptText(parts[0]) === this.normalizePromptText(shared)) {
+                return parts.slice(1).join('<br>').trim();
+            }
+            return prompt;
+        },
         createHistoryDetail(q, selected, isCorrect, extra = {}) {
             const detail = { q: q.q, selected, correct: q.ans, isCorrect, type: q.type, ...extra };
+            if (q.sharedPrompt) detail.sharedPrompt = q.sharedPrompt;
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
             }
@@ -2384,7 +2656,11 @@ const app = {
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
             }
             if (detail.type === 'Trắc nghiệm' && Array.isArray(detail.subquestions)) {
-                lines.push(...detail.subquestions.map(item => `${item.label}) ${item.prompt}<br>${(item.options || []).map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join(' · ')}`));
+                if (typeof detail.sharedPrompt === 'string' && detail.sharedPrompt.trim()) lines.push(detail.sharedPrompt);
+                lines.push(...detail.subquestions.map(item => {
+                    const prompt = this.getSubquestionPrompt(detail, item);
+                    return `${item.label}) ${prompt ? `${prompt}<br>` : ''}${(item.options || []).map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join(' · ')}`;
+                }));
             }
             return app.data.formatQuestionDetailHTML(lines.join('<br>'));
         },
@@ -2409,22 +2685,27 @@ const app = {
             document.getElementById('play-cat-img').src = './public/' + equipped;
 
             let qHtml = app.data.formatMathHTML(q.q);
+            const sharedPrompt = this.getSharedSubquestionPrompt(q);
+            const sharedPromptMarkup = sharedPrompt
+                ? `<div class="question-shared-prompt">${app.data.formatMathHTML(sharedPrompt)}</div>`
+                : '';
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
             playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
             questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
-                questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>`;
+                questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>${sharedPromptMarkup}`;
             } else {
                 if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                questionContainer.innerHTML = qHtml;
+                questionContainer.innerHTML = `${qHtml}${sharedPromptMarkup}`;
             }
 
             const optContainer = document.getElementById('game-options-container');
             optContainer.innerHTML = '';
             this.state.selectedAns = null;
             this.state.multipleChoiceSelections = null;
+            this.state.answerSubmitted = false;
 
             const btnCheck = document.getElementById('submit-ans-btn');
             btnCheck.disabled = true;
@@ -2467,7 +2748,7 @@ const app = {
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
                         : '';
                     const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
-                    const partPrompt = String(subquestion.prompt || '').trim();
+                    const partPrompt = this.getSubquestionPrompt(q, subquestion);
                     const rawVisual = String(subquestion.visual || '').trim();
                     const visualMarkup = /^<svg\b/i.test(rawVisual) ? app.data.formatMathHTML(rawVisual) : '';
                     row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
@@ -3197,6 +3478,7 @@ const app = {
                 timerDisplay.style.display = 'none';
                 if (this.hardTimer) clearInterval(this.hardTimer);
             }
+            this.saveAttemptDraft();
         },
         submitAnswer(isTimeout = false) {
             if (this.hardTimer) clearInterval(this.hardTimer);
@@ -3606,6 +3888,9 @@ const app = {
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect, scoreResult));
             }
 
+            this.state.answerSubmitted = true;
+            this.saveAttemptDraft();
+
             document.getElementById('game-score').textContent = this.state.score;
 
             const btnCheck = document.getElementById('submit-ans-btn');
@@ -3636,6 +3921,8 @@ const app = {
             setTimeout(() => float.remove(), 950);
         },
         async finishPlay() {
+            if (this.state.finished) return;
+            this.state.finished = true;
             if (this.skills && app.data.currentUser) {
                 this.skills.decreaseCooldowns(app.data.currentUser.username);
             }
@@ -3664,10 +3951,44 @@ const app = {
             }
 
             let title = this.state.examName || (this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt');
-            const persistence = await this.recordHistory(title, finalScore, 0);
-            if (persistence.error) {
-                msg += ' Kết quả chưa được lưu; hãy kiểm tra kết nối rồi thử lại.';
+            const isPersistableStudent = app.data.currentUser && app.data.currentUser.role?.toLowerCase() !== 'admin';
+            const localRecord = isPersistableStudent ? this.buildHistoryEntry(title, finalScore) : null;
+            if (localRecord) {
+                this.savePendingResult({
+                    entry: localRecord.entry,
+                    isExam: Boolean(this.state.examName),
+                    examId: this.state.examId,
+                    questId: this.state.questId,
+                    topics: localRecord.playedTopics.length ? localRecord.playedTopics : localRecord.fallbackTopics,
+                    lessons: localRecord.playedLessons
+                });
+            }
+            let persistence;
+            const offlineNow = typeof navigator !== 'undefined' && navigator.onLine === false;
+            if (localRecord && offlineNow) {
+                persistence = { ...localRecord, error: new Error('Mất kết nối mạng.') };
             } else {
+                try {
+                    persistence = await this.recordHistory(title, finalScore, 0);
+                } catch (error) {
+                    persistence = { ...(localRecord || {}), error };
+                }
+            }
+            persistence = persistence || { ...(localRecord || {}), error: new Error('Không nhận được trạng thái lưu kết quả.') };
+            if (persistence.error) {
+                this.savePendingResult({
+                    entry: persistence.entry || localRecord?.entry,
+                    isExam: Boolean(this.state.examName),
+                    examId: this.state.examId,
+                    questId: this.state.questId,
+                    topics: localRecord?.playedTopics?.length ? localRecord.playedTopics : (localRecord?.fallbackTopics || []),
+                    lessons: localRecord?.playedLessons || []
+                });
+                this.clearAttemptDraft();
+                msg += ' Kết quả đã lưu trên thiết bị; hệ thống sẽ tự đồng bộ khi có mạng.';
+            } else {
+                this.removePendingResult(persistence.entry?.attempt_id);
+                this.clearAttemptDraft();
                 if (persistence.dailyReward > 0) {
                     starsEarned += persistence.dailyReward;
                     msg += ` Bạn nhận ${persistence.dailyReward} Sao hôm nay!`;
@@ -3682,10 +4003,14 @@ const app = {
                 const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
                 const fallbackTopics = this.state.examName ? [] : (this.state.selectedTopics || []);
                 const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
-                await app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId, {
-                    topics: playedTopics.length ? playedTopics : fallbackTopics,
-                    lessons: playedLessons
-                });
+                try {
+                    await app.quest.updateProgress(this.state.subject, finalScore, this.state.examId, this.state.questId, {
+                        topics: playedTopics.length ? playedTopics : fallbackTopics,
+                        lessons: playedLessons
+                    });
+                } catch (error) {
+                    console.warn('Không thể cập nhật tiến độ nhiệm vụ; kết quả vẫn được giữ lại.', error);
+                }
             }
 
             const scoreEl = document.getElementById('result-score');
@@ -3759,21 +4084,19 @@ const app = {
                 onEscape: () => this.closeResult()
             });
         },
-        async recordHistory(title, score, starsEarned) {
-            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') {
-                return { newlyUnlockedTopic: null, dailyReward: 0, error: null };
-            }
-
-            let diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
-            let diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Dễ');
-            let top = this.state.examName ? 'Tổng hợp' : ((this.state.selectedTopics && this.state.selectedTopics.length) ? this.state.selectedTopics.join(', ') : 'Tất cả');
-            let qCount = this.state.questions ? this.state.questions.length : (this.state.historyDetails ? this.state.historyDetails.length : 10);
-
-            let d = new Date();
-            let dStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ' ' + d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
-
-            const classlevel = String(app.data.currentUser.classlevel || '5').replace(/^Lớp\s*/i, '');
-            const completedTopic = this.state.selectedTopics.length === 1 ? this.state.selectedTopics[0] : null;
+        buildHistoryEntry(title, score) {
+            const diffMap = { 'easy': 'Dễ', 'hard': 'Khó' };
+            const diff = this.state.examName ? 'Đề thi' : (diffMap[this.state.difficulty] || 'Dễ');
+            const selectedTopics = Array.isArray(this.state.selectedTopics) ? this.state.selectedTopics : [];
+            const top = this.state.examName ? 'Tổng hợp' : (selectedTopics.length ? selectedTopics.join(', ') : 'Tất cả');
+            const qCount = Array.isArray(this.state.questions)
+                ? this.state.questions.length
+                : (Array.isArray(this.state.historyDetails) ? this.state.historyDetails.length : 10);
+            const date = new Date();
+            const dStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' '
+                + date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0') + '/' + date.getFullYear();
+            const classlevel = String(app.data.currentUser?.classlevel || '5').replace(/^Lớp\s*/i, '');
+            const completedTopic = selectedTopics.length === 1 ? selectedTopics[0] : null;
             const perfectPracticeRound = !this.state.examName
                 && completedTopic
                 && score === 10
@@ -3784,22 +4107,28 @@ const app = {
             const newlyUnlockedTopic = nextTopic && this.isStudentProgressionLocked(classlevel, this.state.subject, nextTopic)
                 ? nextTopic
                 : null;
-
+            const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
+            const fallbackTopics = this.state.examName ? [] : selectedTopics;
+            const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
             const entry = {
                 attempt_id: this.state.attemptId || app.data.progressEventId(this.state.examName ? 'exam' : 'round'),
                 date: dStr,
-                title: title,
+                title,
                 topic: top,
                 subject: this.state.subject,
                 classlevel,
                 difficulty: diff,
                 questionCount: qCount,
-                score: score,
-                details: this.state.historyDetails
+                score,
+                details: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : []
             };
-            const playedTopics = [...new Set((this.state.questions || []).map(question => question.topic).filter(Boolean))];
-            const fallbackTopics = this.state.examName ? [] : (this.state.selectedTopics || []);
-            const playedLessons = [...new Set((this.state.questions || []).map(question => question.lesson).filter(Boolean))];
+            return { entry, newlyUnlockedTopic, playedTopics, fallbackTopics, playedLessons };
+        },
+        async recordHistory(title, score, starsEarned) {
+            if (!app.data.currentUser || app.data.currentUser.role?.toLowerCase() === 'admin') {
+                return { newlyUnlockedTopic: null, dailyReward: 0, error: null };
+            }
+            const { entry, newlyUnlockedTopic, playedTopics, fallbackTopics, playedLessons } = this.buildHistoryEntry(title, score);
             const result = await app.data.recordStudentRound({
                 entry,
                 isExam: Boolean(this.state.examName),
@@ -3810,12 +4139,13 @@ const app = {
                 lessons: playedLessons
             });
             if (result.error) {
-                return { newlyUnlockedTopic: null, dailyReward: 0, error: result.error };
+                return { newlyUnlockedTopic: null, dailyReward: 0, error: result.error, entry };
             }
             return {
                 newlyUnlockedTopic,
                 dailyReward: Number(result.data?.daily_reward || 0),
                 questUpdates: result.data?.quest_updates || [],
+                entry,
                 error: null
             };
         },
@@ -3837,7 +4167,7 @@ const app = {
 
     exam: {
         filters: { subject: '', period: '' },
-        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5', examId: null, questId: null, attemptId: null },
+        state: { questions: [], name: '', historyDetails: [], score: 0, adminclasslevel: '5', examId: null, questId: null, attemptId: null, finished: false },
 
         setAdminClass(level, btn) {
             this.state.adminclasslevel = level;
@@ -3892,7 +4222,7 @@ const app = {
             if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
                 return question.subquestions.map((subquestion, part) => `
                     <fieldset class="exam-true-false-row">
-                        <legend>${app.data.sanitizeHTML(`${subquestion.label || String.fromCharCode(97 + part)}) ${subquestion.prompt || ''}`)}</legend>
+                        <legend>${app.data.sanitizeHTML(`${subquestion.label || String.fromCharCode(97 + part)}) ${app.game.getSubquestionPrompt(question, subquestion)}`)}</legend>
                         ${this.renderSimpleChoices(`mc_${index}_${part}`, subquestion.options || [])}
                     </fieldset>
                 `).join('');
@@ -3965,6 +4295,151 @@ const app = {
             }
             return this.normalizeAnswer(selected) === this.normalizeAnswer(question.ans);
         },
+        applySavedAnswers(answers = []) {
+            this.state.questions.forEach((question, index) => {
+                const selected = String(answers[index] || '');
+                if (!selected) return;
+                const type = this.getQuestionType(question);
+                const values = selected.split(',').map(value => value.trim());
+                if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
+                    values.forEach((value, part) => {
+                        const input = [...document.querySelectorAll(`input[name="exam_q_tf_${index}_${part}"]`)].find(item => item.value === value);
+                        if (input) input.checked = true;
+                    });
+                } else if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
+                    values.forEach((value, part) => {
+                        const input = [...document.querySelectorAll(`input[name="exam_q_mc_${index}_${part}"]`)].find(item => item.value === value);
+                        if (input) input.checked = true;
+                    });
+                } else if (['Trắc nghiệm', 'Đúng/Sai', 'So sánh'].includes(type)) {
+                    const input = [...document.querySelectorAll(`input[name="exam_q_${index}"]`)].find(item => item.value === selected);
+                    if (input) input.checked = true;
+                } else if (type === 'Đối chiếu trùng khớp') {
+                    values.forEach(pair => {
+                        const separator = pair.indexOf(':');
+                        if (separator < 0) return;
+                        const left = pair.slice(0, separator);
+                        const value = pair.slice(separator + 1);
+                        const select = [...document.querySelectorAll(`[data-exam-match="${index}"]`)].find(item => item.dataset.left === left);
+                        if (select) select.value = value;
+                    });
+                } else {
+                    values.forEach((value, part) => {
+                        const input = document.querySelector(`[data-exam-part="${index}"][data-part="${part}"]`);
+                        if (input) input.value = value;
+                    });
+                }
+            });
+        },
+        saveAttemptDraft() {
+            const user = app.data.currentUser;
+            if (!app.game.isPersistableStudent(user) || this.state.finished || !Array.isArray(this.state.questions) || !this.state.questions.length) return false;
+            const deadlineAt = Number(this.state.deadlineAt) || (Date.now() + (Number(this.state.timeLimitSeconds) || ((app.data.settings.examTimeLimit || 30) * 60)) * 1000);
+            const payload = {
+                version: 1,
+                kind: 'exam',
+                savedAt: new Date().toISOString(),
+                subject: this.filters.subject,
+                period: this.filters.period,
+                examId: this.state.examId,
+                questId: this.state.questId,
+                name: this.state.name,
+                questions: this.state.questions,
+                historyDetails: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : [],
+                score: Number(this.state.score) || 0,
+                attemptId: this.state.attemptId || app.data.progressEventId('exam'),
+                answers: this.state.questions.map((question, index) => this.readQuestionAnswer(question, index)),
+                deadlineAt
+            };
+            this.state.attemptId = payload.attemptId;
+            this.state.deadlineAt = deadlineAt;
+            this.state.timeLimitSeconds = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+            try {
+                app.safeStorage?.setItem(app.game.getAttemptStorageKey('exam', user), JSON.stringify(payload));
+                return Boolean(app.safeStorage?.getItem(app.game.getAttemptStorageKey('exam', user)));
+            } catch (_) {
+                return false;
+            }
+        },
+        renderAttempt(remainingSeconds, answers = []) {
+            document.getElementById('exam-title').textContent = this.state.name;
+            document.getElementById('exam-student-name').textContent = app.data.currentUser ? app.data.currentUser.fullname : 'Khách';
+
+            const container = document.getElementById('exam-questions-container');
+            container.innerHTML = '';
+            this.state.questions.forEach((q, idx) => {
+                const qBlock = document.createElement('div');
+                qBlock.className = 'exam-q-block';
+                const sharedPrompt = app.game.getSharedSubquestionPrompt(q);
+                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathHTML(q.q)}${sharedPrompt ? `<div class="exam-shared-prompt">${app.data.formatMathHTML(sharedPrompt)}</div>` : ''}</div>`;
+                if (q.imageUrl) qBlock.innerHTML += `<img src="${app.data.sanitizeHTML(q.imageUrl)}" style="max-height:150px; margin-bottom:10px;"><br>`;
+
+                const optsContainer = document.createElement('div');
+                optsContainer.className = 'exam-options';
+                optsContainer.innerHTML = this.renderQuestionInput(q, idx);
+                qBlock.appendChild(optsContainer);
+                container.appendChild(qBlock);
+            });
+            this.applySavedAnswers(answers);
+            app.router.open('exam-play-screen');
+
+            const btnBackExam = document.getElementById('exam-btn-back');
+            if (btnBackExam) btnBackExam.style.display = 'none';
+            const timerDisplay = document.getElementById('exam-timer-display');
+            timerDisplay.style.display = 'inline';
+            const existingDeadline = Number(this.state.deadlineAt);
+            const deadlineAt = existingDeadline || (Date.now() + Math.max(0, Number(remainingSeconds) || 0) * 1000);
+            this.state.deadlineAt = deadlineAt;
+            const formatTime = seconds => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `(${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')})`;
+            };
+            if (this.examTimer) clearInterval(this.examTimer);
+            const updateTimer = () => {
+                const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+                timerDisplay.textContent = formatTime(remaining);
+                if (remaining <= 0) {
+                    clearInterval(this.examTimer);
+                    alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
+                    this.submit(true);
+                }
+            };
+            updateTimer();
+            this.examTimer = setInterval(() => {
+                updateTimer();
+                this.saveAttemptDraft();
+            }, 1000);
+            this.saveAttemptDraft();
+        },
+        restoreAttemptDraft(user = app.data.currentUser) {
+            if (!app.game.isPersistableStudent(user)) return false;
+            const key = app.game.getAttemptStorageKey('exam', user);
+            const payload = app.game.readStoredJson(key, null);
+            if (!payload || payload.version !== 1 || payload.kind !== 'exam' || !Array.isArray(payload.questions) || !payload.questions.length) return false;
+            const deadlineAt = Number(payload.deadlineAt);
+            if (!Number.isFinite(deadlineAt) || deadlineAt <= Date.now()) {
+                app.safeStorage?.removeItem(key);
+                return false;
+            }
+            this.filters.subject = payload.subject || '';
+            this.filters.period = payload.period || '';
+            this.state = {
+                ...this.state,
+                questions: payload.questions,
+                name: payload.name || 'Đề kiểm tra',
+                historyDetails: Array.isArray(payload.historyDetails) ? payload.historyDetails : [],
+                score: Number(payload.score) || 0,
+                examId: payload.examId || null,
+                questId: payload.questId || null,
+                attemptId: payload.attemptId || app.data.progressEventId('exam'),
+                deadlineAt,
+                timeLimitSeconds: Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000)),
+                finished: false
+            };
+            this.renderAttempt(this.state.timeLimitSeconds, Array.isArray(payload.answers) ? payload.answers : []);
+            return true;
+        },
         start(forcedExamId = null, questId = null) {
             if (!this.filters.subject || !this.filters.period) {
                 return alert('Vui lòng chọn môn học và thời gian!');
@@ -4006,62 +4481,15 @@ const app = {
             this.state.attemptId = app.data.progressEventId('exam');
             this.state.historyDetails = [];
             this.state.score = 0;
-
-            document.getElementById('exam-title').textContent = exam.name;
-            document.getElementById('exam-student-name').textContent = app.data.currentUser ? app.data.currentUser.fullname : 'Khách';
-
-            const container = document.getElementById('exam-questions-container');
-            container.innerHTML = '';
-
-            this.state.questions.forEach((q, idx) => {
-                const qBlock = document.createElement('div');
-                qBlock.className = 'exam-q-block';
-                qBlock.innerHTML = `<div class="exam-q-text">Câu ${idx + 1} (${q.type || 'Trắc nghiệm'}): ${app.data.formatMathHTML(q.q)}</div>`;
-                if (q.imageUrl) qBlock.innerHTML += `<img src="${q.imageUrl}" style="max-height:150px; margin-bottom:10px;"><br>`;
-
-                const optsContainer = document.createElement('div');
-                optsContainer.className = 'exam-options';
-
-                optsContainer.innerHTML = this.renderQuestionInput(q, idx);
-
-                qBlock.appendChild(optsContainer);
-                container.appendChild(qBlock);
-            });
-
-            app.router.open('exam-play-screen');
-            
-            // Ẩn nút Trở về
-            const btnBackExam = document.getElementById('exam-btn-back');
-            if (btnBackExam) btnBackExam.style.display = 'none';
-
-            const timerDisplay = document.getElementById('exam-timer-display');
-            timerDisplay.style.display = 'inline';
-            let timeLeft = timeLimitMinutes * 60;
-
-            const formatTime = (seconds) => {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `(${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')})`;
-            };
-
-            timerDisplay.textContent = formatTime(timeLeft);
-            if (this.examTimer) clearInterval(this.examTimer);
-
-            // D6: dùng deadline theo Date.now() để đồng hồ không lệch khi tab bị ẩn/throttle.
-            const examDeadline = Date.now() + timeLeft * 1000;
-            this.examTimer = setInterval(() => {
-                const remaining = Math.max(0, Math.ceil((examDeadline - Date.now()) / 1000));
-                timerDisplay.textContent = formatTime(remaining);
-                if (remaining <= 0) {
-                    clearInterval(this.examTimer);
-                    alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
-                    this.submit(true);
-                }
-            }, 250);
+            this.state.finished = false;
+            this.state.deadlineAt = null;
+            this.state.timeLimitSeconds = timeLimitMinutes * 60;
+            this.renderAttempt(this.state.timeLimitSeconds);
         },
 
         confirmExit() {
-            if (confirm('Bạn chưa nộp bài, thoát giữa chừng sẽ mất kết quả!')) {
+            if (confirm('Bạn chưa nộp bài. Tiến độ hiện tại sẽ được lưu để có thể tiếp tục sau. Bạn vẫn muốn thoát?')) {
+                this.saveAttemptDraft();
                 if (this.examTimer) clearInterval(this.examTimer);
                 app.router.open('map-screen');
             }
@@ -4070,6 +4498,8 @@ const app = {
         submit(isTimeout = false) {
             if (!isTimeout && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
             if (this.examTimer) clearInterval(this.examTimer);
+            if (this.state.finished) return;
+            this.state.finished = true;
 
             let totalPts = 0;
 
@@ -11005,16 +11435,27 @@ window.onload = async () => {
         if (noti) {
             if (!isOnline) {
                 noti.style.display = 'block';
-                noti.textContent = '⚠ Mất kết nối mạng! Trò chơi tạm ngưng để bảo toàn dữ liệu.';
+                noti.textContent = '⚠ Mất kết nối mạng! Tiến độ và kết quả vẫn được lưu trên thiết bị.';
                 document.querySelectorAll('.station').forEach(el => el.style.pointerEvents = 'none');
             } else {
                 noti.style.display = 'none';
                 document.querySelectorAll('.station').forEach(el => el.style.pointerEvents = 'auto');
+                app.game?.flushPendingResults?.();
             }
         }
     };
     window.addEventListener('offline', handleNetworkChange);
     window.addEventListener('online', handleNetworkChange);
+    window.addEventListener('beforeunload', () => {
+        app.game?.saveAttemptDraft?.();
+        app.exam?.saveAttemptDraft?.();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            app.game?.saveAttemptDraft?.();
+            app.exam?.saveAttemptDraft?.();
+        }
+    });
     handleNetworkChange();
 };
 

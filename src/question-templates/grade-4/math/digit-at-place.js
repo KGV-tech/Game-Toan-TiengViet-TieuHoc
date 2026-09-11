@@ -38,14 +38,31 @@ function generateDigitAtPlace(config = {}, random = Math.random) {
     const minimum = config.minimum ?? 10000;
     const allowedPlaces = config.allowedPlaces ?? Object.keys(places);
     const allowedDigits = config.allowedDigits ?? [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const validPlaces = allowedPlaces.filter(place => places[place] && places[place].divisor <= maximum);
-    if (!validPlaces.length || !allowedDigits.every(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9)) {
+    const validPlaces = [...new Set(allowedPlaces.filter(place => places[place] && places[place].divisor <= maximum))];
+    const validDigits = [...new Set(allowedDigits)];
+    if (!validPlaces.length || !validDigits.every(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9)) {
         throw new Error('Invalid digit-at-place template configuration.');
     }
+    if (validPlaces.length * validDigits.length < 4) {
+        throw new Error('Template chữ số theo hàng cần ít nhất 4 tổ hợp hàng và chữ số để không lặp câu con.');
+    }
 
+    const usedConditions = new Set();
     const subquestions = ['a', 'b', 'c', 'd'].map(label => {
-        const place = validPlaces[randomInt(0, validPlaces.length - 1, random)];
-        const targetDigit = allowedDigits[randomInt(0, allowedDigits.length - 1, random)];
+        let place;
+        let targetDigit;
+        for (let attempt = 0; attempt < 100; attempt++) {
+            const candidatePlace = validPlaces[randomInt(0, validPlaces.length - 1, random)];
+            const candidateDigit = validDigits[randomInt(0, validDigits.length - 1, random)];
+            const conditionKey = `${candidatePlace}|${candidateDigit}`;
+            if (!usedConditions.has(conditionKey)) {
+                place = candidatePlace;
+                targetDigit = candidateDigit;
+                usedConditions.add(conditionKey);
+                break;
+            }
+        }
+        if (!place) throw new Error('Không thể tạo bốn câu con chữ số theo hàng không trùng điều kiện.');
         const answer = randomNumberMatching(minimum, maximum, value => digitAt(value, place) === targetDigit, random);
         const distractors = new Set();
         while (distractors.size < 3) {

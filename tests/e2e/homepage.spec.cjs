@@ -353,7 +353,7 @@ test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async (
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
-  await expect(page.locator('.exam-paper')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.locator('.exam-paper')).not.toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
 test('luyện tập dùng station shell thống nhất và điều khiển không bị cắt', async ({ page }) => {

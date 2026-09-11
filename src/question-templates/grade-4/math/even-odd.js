@@ -56,12 +56,22 @@ function chooseParity(parities, random) {
 
 function multipleChoice(templateId, title, subquestions, explanation, templateVariables = {}) {
     if (subquestions.length !== 4) throw new Error('Bài 3 cần đúng bốn câu con.');
+    const normalizePrompt = value => String(value || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLocaleLowerCase('vi-VN');
+    const promptLines = subquestions.map(item => String(item.prompt || '').split(/<br\s*\/?\s*>/i)[0].trim());
+    const sharedPrompt = promptLines.length && promptLines.every(line => normalizePrompt(line) === normalizePrompt(promptLines[0]))
+        ? promptLines[0]
+        : '';
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
         type: 'Trắc nghiệm', templateId, q: title, options: [],
         ans: subquestions.map(item => item.answer).join(', '), explanation,
         subquestions, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: title, ...templateVariables }
+        templateVariables: { question: title, ...templateVariables },
+        sharedPrompt
     };
 }
 
@@ -177,7 +187,7 @@ function generateEvenOddSequence(config = {}, random = Math.random) {
     });
     return multipleChoice(
         'number.even_odd_sequence',
-        'Tìm số trong dãy chẵn, lẻ:',
+        'Tìm số thích hợp điền vào dãy:',
         rows,
         'Dãy số chẵn hoặc dãy số lẻ có thể tăng đều theo một bước nhảy chẵn; vì vậy tính số tiếp theo bằng cách cộng bước nhảy.'
     );
