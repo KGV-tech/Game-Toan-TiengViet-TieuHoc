@@ -4,10 +4,26 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, { 'number.hk1_review_b10_b15': generate });
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '3. Số có nhiều chữ số';
 const SKILLS = ['b10', 'b11', 'b12', 'b13', 'b14', 'b15'];
+const SKILL_LABELS = {
+    b10: 'Bài 10 · Lập số sáu chữ số',
+    b11: 'Bài 11 · Hàng và lớp',
+    b12: 'Bài 12 · Lớp triệu',
+    b13: 'Bài 13 · Làm tròn số',
+    b14: 'Bài 14 · So sánh số',
+    b15: 'Bài 15 · Dãy số'
+};
+const LESSONS = {
+    b10: 'g4-math-hk1-b10',
+    b11: 'g4-math-hk1-b11',
+    b12: 'g4-math-hk1-b12',
+    b13: 'g4-math-hk1-b13',
+    b14: 'g4-math-hk1-b14',
+    b15: 'g4-math-hk1-b15'
+};
 const SIX_DIGIT_MINIMUM = 100000;
 const SIX_DIGIT_MAXIMUM = 999999;
 
@@ -25,7 +41,7 @@ function millionNumber(random) {
 }
 
 function row(skill, prompt, answer, options, explanation, extra = {}) {
-    return { skill, prompt, answer, options, explanation, ...extra };
+    return { skill, skillLabel: SKILL_LABELS[skill], lesson: LESSONS[skill], prompt, answer, options, explanation, ...extra };
 }
 
 function makeB10(random) {
@@ -75,19 +91,33 @@ function makeB15(random) {
 }
 
 function generateReview(config = {}, random = Math.random) {
-    const skills = Array.isArray(config.skills) && config.skills.length ? [...config.skills] : ['b10', 'b11', 'b12', 'b13'];
-    if (skills.length !== 4 || new Set(skills).size !== 4 || skills.some(skill => !SKILLS.includes(skill))) {
-        throw new Error('Bộ ôn tập Bài 10 đến Bài 15 cần đúng bốn kỹ năng hợp lệ.');
-    }
+    const skills = configuredValues(
+        config,
+        'skills',
+        ['b10', 'b11', 'b12', 'b13'],
+        SKILLS,
+        'Bộ ôn tập Bài 10 đến Bài 15 cần ít nhất một kỹ năng hợp lệ.'
+    );
+    const selectedSkill = chooseConfiguredValue(
+        config,
+        'skills',
+        ['b10', 'b11', 'b12', 'b13'],
+        SKILLS,
+        random,
+        'Bộ ôn tập Bài 10 đến Bài 15 cần ít nhất một kỹ năng hợp lệ.'
+    );
     const builders = { b10: makeB10, b11: makeB11, b12: makeB12, b13: makeB13, b14: makeB14, b15: makeB15 };
-    const subquestions = skills.map((skill, index) => ({ label: String.fromCharCode(97 + index), ...builders[skill](random) }));
-    const prompt = 'Luyện tập chung Bài 10 đến Bài 15:';
+    const subquestions = Array.from({ length: 4 }, (_, index) => ({
+        label: String.fromCharCode(97 + index),
+        ...builders[selectedSkill](random)
+    }));
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'number.hk1_review_b10_b15',
         prompt,
         subquestions,
-        'Ôn lần lượt lập/đọc số, hàng và lớp, lớp triệu, làm tròn, so sánh và dãy số theo kỹ năng đã ghi ở từng câu.',
-        { question: prompt, skills: skills.join(', ') }
+        `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
+        { question: prompt, skills: skills.join(', '), selectedSkill }
     );
     question.topic = TOPIC;
     return question;

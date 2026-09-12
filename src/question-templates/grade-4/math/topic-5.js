@@ -15,9 +15,12 @@ const ADD_SUB_OPERATIONS = ['+', '-'];
 
 function configuredOperations(config = {}, fallback = ADD_SUB_OPERATIONS) {
     const hasSingleOperation = Object.prototype.hasOwnProperty.call(config, 'operation');
+    const hasOperationList = Object.prototype.hasOwnProperty.call(config, 'operations');
     const raw = hasSingleOperation
         ? [config.operation]
-        : (Array.isArray(config.operations) && config.operations.length ? config.operations : fallback);
+        : hasOperationList
+            ? (Array.isArray(config.operations) ? config.operations : [])
+            : fallback;
     const operations = [...new Set(raw)];
     if (!operations.length || operations.some(operation => !ADD_SUB_OPERATIONS.includes(operation))) {
         throw new Error('Phép tính phải là phép cộng (+) hoặc phép trừ (−).');
@@ -25,15 +28,10 @@ function configuredOperations(config = {}, fallback = ADD_SUB_OPERATIONS) {
     return operations;
 }
 
-function fourRowOperations(config, random, fallback = ['+', '+', '-', '-']) {
-    const hasOperationConfig = Object.prototype.hasOwnProperty.call(config, 'operation') || Array.isArray(config.operations);
-    const operations = hasOperationConfig
-        ? configuredOperations(config)
-        : fallback;
-    const rows = hasOperationConfig
-        ? Array.from({ length: 4 }, (_, index) => operations[index % operations.length])
-        : [...operations];
-    return shuffle(rows, random);
+function fourRowOperations(config, random) {
+    const operations = configuredOperations(config);
+    const selectedOperation = choose(operations, random);
+    return Array.from({ length: 4 }, () => selectedOperation);
 }
 
 function numberRange(config = {}, defaultMinimumDigits = 5, defaultMaximumDigits = 6) {
@@ -102,15 +100,17 @@ function generateAddSubMultiDigit(config = {}, random = Math.random) {
         'g4-m-add-sub-multi-digit',
         'Đặt tính rồi tính:',
         rows,
-        'Mỗi lượt gồm đúng hai phép cộng và hai phép trừ với các số có nhiều chữ số.'
+        `Bốn ý cùng luyện phép ${operations[0] === '+' ? 'cộng' : 'trừ'} với các số có nhiều chữ số.`,
+        { templateVariables: { operations: configuredOperations(config).join(', '), selectedOperation: operations[0] } }
     );
 }
 
 function generateMissingTerm(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 5, 6);
     const operations = configuredOperations(config);
+    const selectedOperation = choose(operations, random);
     const rows = labels.map((label, index) => {
-        const operation = choose(operations, random);
+        const operation = selectedOperation;
         const values = arithmeticValues(operation, minimum, maximum, random);
         const blankIndex = randomInt(0, 2, random);
         return {
@@ -122,7 +122,8 @@ function generateMissingTerm(config = {}, random = Math.random) {
         'g4-m-add-sub-missing-term',
         'Điền số thích hợp vào chỗ trống:',
         rows,
-        'Dùng mối quan hệ giữa số hạng và tổng, hoặc giữa số bị trừ, số trừ và hiệu.'
+        `Dùng mối quan hệ của phép ${selectedOperation === '+' ? 'cộng' : 'trừ'} để tìm số còn thiếu.`,
+        { templateVariables: { operations: operations.join(', '), selectedOperation } }
     );
 }
 
@@ -134,8 +135,9 @@ function maskFormattedDigit(value, digitIndex) {
 function generateMissingDigit(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 5, 6);
     const operations = configuredOperations(config);
+    const selectedOperation = choose(operations, random);
     const rows = labels.map((label, index) => {
-        const operation = choose(operations, random);
+        const operation = selectedOperation;
         const values = arithmeticValues(operation, minimum, maximum, random);
         const targetIndex = randomInt(0, 2, random);
         const digitCount = String(values[targetIndex]).length;
@@ -154,7 +156,8 @@ function generateMissingDigit(config = {}, random = Math.random) {
         'g4-m-add-sub-missing-digit',
         'Tìm chữ số thích hợp:',
         rows,
-        'Khôi phục chữ số còn thiếu trong phép cộng hoặc phép trừ rồi kiểm tra lại kết quả.'
+        `Khôi phục chữ số còn thiếu trong phép ${selectedOperation === '+' ? 'cộng' : 'trừ'} rồi kiểm tra lại kết quả.`,
+        { templateVariables: { operations: operations.join(', '), selectedOperation } }
     );
 }
 
@@ -182,14 +185,18 @@ function generateAdditionPropertyFill(config = {}, random = Math.random) {
     if (!Array.isArray(allowed) || !allowed.length || new Set(allowed).size !== allowed.length || allowed.some(item => !['commutative', 'associative'].includes(item))) {
         throw new Error('Hãy chọn ít nhất một tính chất hợp lệ của phép cộng.');
     }
-    const rows = labels.map(label => ({ label, ...propertyRow(choose(allowed, random), random) }));
+    const selectedProperty = choose(allowed, random);
+    const rows = labels.map(label => ({ label, ...propertyRow(selectedProperty, random) }));
     return fourPartFill(
         'g4-m-addition-property-fill',
         'Viết số thích hợp vào chỗ chấm:',
         rows,
-        'Đổi chỗ các số hạng hoặc nhóm các số hạng mà không làm thay đổi tổng.'
+        `Bốn ý cùng luyện tính chất ${selectedProperty === 'commutative' ? 'giao hoán' : 'kết hợp'} của phép cộng.`,
+        { templateVariables: { properties: allowed.join(', '), selectedProperty } }
     );
 }
+
+const EXPRESSION_KINDS = ['add-difference', 'subtract-difference', 'subtract-add', 'add-subtract'];
 
 function expressionRow(kind, minimum, maximum, random) {
     const n = () => randomInt(minimum, maximum, random);
@@ -219,8 +226,15 @@ function expressionRow(kind, minimum, maximum, random) {
 
 function generateAddSubExpression(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config, 3, 6);
-    const kinds = shuffle(['add-difference', 'subtract-difference', 'subtract-add', 'add-subtract'], random);
-    const rows = kinds.map((kind, index) => {
+    const configuredKinds = Object.prototype.hasOwnProperty.call(config, 'kinds')
+        ? (Array.isArray(config.kinds) ? [...new Set(config.kinds)] : [])
+        : EXPRESSION_KINDS;
+    if (!configuredKinds.length || configuredKinds.some(kind => !EXPRESSION_KINDS.includes(kind))) {
+        throw new Error('Dạng biểu thức phải thuộc danh sách cộng/trừ hợp lệ.');
+    }
+    const selectedKind = choose(configuredKinds, random);
+    const rows = labels.map((label, index) => {
+        const kind = selectedKind;
         const row = expressionRow(kind, minimum, maximum, random);
         return { label: labels[index], ...row, display: row.expression };
     });
@@ -228,7 +242,8 @@ function generateAddSubExpression(config = {}, random = Math.random) {
         'g4-m-add-sub-expression',
         'Tính giá trị của biểu thức:',
         rows,
-        'Thực hiện phép tính trong ngoặc trước, sau đó cộng hoặc trừ theo thứ tự từ trái sang phải.'
+        'Thực hiện phép tính trong ngoặc trước, sau đó cộng hoặc trừ theo thứ tự từ trái sang phải.',
+        { templateVariables: { kinds: configuredKinds.join(', '), selectedKind } }
     );
 }
 
@@ -267,7 +282,8 @@ function arithmeticStatement(operation, random) {
 }
 
 function generateAddSubTrueFalse(config = {}, random = Math.random) {
-    const rows = fourRowOperations(config, random).map((operation, index) => ({
+    const operations = fourRowOperations(config, random);
+    const rows = operations.map((operation, index) => ({
         label: labels[index], ...arithmeticStatement(operation, random)
     }));
     return question(
@@ -276,7 +292,7 @@ function generateAddSubTrueFalse(config = {}, random = Math.random) {
         'Chọn Đúng/Sai?',
         rows.map(row => row.answer),
         'Tính lại từng phép cộng hoặc phép trừ rồi đối chiếu với kết quả đã cho.',
-        { statements: rows, partAnswerCounts: [1, 1, 1, 1] }
+        { statements: rows, partAnswerCounts: [1, 1, 1, 1], templateVariables: { operations: configuredOperations(config).join(', '), selectedOperation: operations[0] } }
     );
 }
 

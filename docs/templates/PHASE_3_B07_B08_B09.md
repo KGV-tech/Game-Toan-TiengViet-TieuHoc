@@ -6,7 +6,7 @@ Phase 3 bổ sung phần còn thiếu của lộ trình Toán 4 Tập 1 cho Ch�
 
 - B07 — `g4-math-hk1-b07`: đọc số đo góc trên thước đo góc và dùng đơn vị độ;
 - B08 — `g4-math-hk1-b08`: giữ và chuẩn hóa các family phân loại góc đã có;
-- B09 — `g4-math-hk1-b09`: ôn tập kết hợp đọc số đo và nhận biết loại góc.
+- B09 — `g4-math-hk1-b09`: ôn tập một dạng góc thống nhất trong mỗi lượt sinh.
 
 Mỗi generator mới sinh bốn câu con. Điểm mặc định là `0,25` cho mỗi câu con;
 editor vẫn cho phép chọn 1, 2 hoặc 4 câu con để tổng điểm một template luôn
@@ -57,17 +57,17 @@ Phase 3 không tạo bản ghi trùng cho B08 trong migration vì các template 
 
 ### B09 — Ôn tập góc
 
-Generator `g4-m-angle-review` sinh cố định bốn mode theo thứ tự:
+Generator `g4-m-angle-review` nhận `config.modes` (hoặc `config.mode`) như một
+pool lựa chọn. Mỗi lượt sinh chọn đúng một mode và lặp mode đó cho cả bốn ý:
 
 ```text
-a · measure
-b · classify
-c · measure
-d · classify
+mode: measure → cả a, b, c, d đọc số đo góc
+mode: classify → cả a, b, c, d phân loại góc
 ```
 
-Hai câu `measure` dùng thước đo góc; hai câu `classify` dùng hình góc đơn.
-Các phương án phân loại luôn chứa đủ bốn nhãn: góc nhọn, vuông, tù, bẹt.
+Các phương án phân loại luôn chứa đủ bốn nhãn: góc nhọn, vuông, tù, bẹt. Cấu
+hình cũ có cả hai mode vẫn tương thích, nhưng không còn được hiểu là trộn
+`measure` và `classify` trong một câu.
 
 ## Tích hợp code
 
@@ -75,7 +75,7 @@ Các phương án phân loại luôn chứa đủ bốn nhãn: góc nhọn, vuô
 | --- | --- | --- |
 | SVG và luật chung | `src/question-templates/grade-4/math/angle-shared.js` | Pool, validate, option, renderer |
 | B07 | `src/question-templates/grade-4/math/angle-measure.js` | Sinh 4 câu đọc số đo |
-| B09 | `src/question-templates/grade-4/math/angle-review.js` | Sinh 2 đo + 2 phân loại |
+| B09 | `src/question-templates/grade-4/math/angle-review.js` | Chọn một mode rồi sinh 4 ý cùng mode |
 | Registry | `src/question-templates/grade-4/math/index.js` | Node/browser generator IDs |
 | Browser loading | `index.html` | Nạp helper trước generator |
 | Catalog | `src/modules/curriculum.js` | Resolve generator → lesson |

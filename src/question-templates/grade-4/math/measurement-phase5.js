@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, numericOptions, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, numericOptions, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '4. Một số đơn vị đo Đại lượng';
 const labels = ['a', 'b', 'c', 'd'];
@@ -12,16 +12,7 @@ const PRACTICE_KINDS = ['mass', 'area', 'time', 'century'];
 const REVIEW_SKILLS = ['b17', 'b18', 'b19', 'b20'];
 const LESSONS = { b17: 'g4-math-hk1-b17', b18: 'g4-math-hk1-b18', b19: 'g4-math-hk1-b19', b20: 'g4-math-hk1-b20' };
 const SKILL_LABELS = { b17: 'Bài 17 · Khối lượng', b18: 'Bài 18 · Diện tích', b19: 'Bài 19 · Giây và thế kỉ', b20: 'Bài 20 · Thực hành' };
-
-const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
-const choose = (items, random) => items[randomInt(0, items.length - 1, random)];
-const configuredList = (config, key, defaults, allowed, message) => {
-    const source = hasOwn(config, key) ? config[key] : defaults;
-    if (!Array.isArray(source) || !source.length || new Set(source).size !== source.length || source.some(value => !allowed.includes(value))) {
-        throw new Error(message);
-    }
-    return [...source];
-};
+const PRACTICE_KIND_LABELS = { mass: 'đổi đơn vị khối lượng', area: 'đổi đơn vị diện tích', time: 'đổi thời gian', century: 'xác định thế kỉ' };
 const row = (kind, prompt, answer, options, explanation, extra = {}) => ({
     kind, prompt, answer, options, explanation, ...extra
 });
@@ -95,30 +86,30 @@ function makeCentury(random) {
 const practiceBuilders = { mass: makeMass, area: makeArea, time: makeTime, century: makeCentury };
 
 function makePracticeQuestion(config = {}, random) {
-    const kinds = configuredList(config, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, 'Phạm vi thực hành cần có ít nhất một nhóm đơn vị hợp lệ.');
-    const order = shuffle(kinds, random);
-    const subquestions = labels.map((label, index) => ({ label, ...practiceBuilders[order[index % order.length]](random) }));
-    const prompt = 'Thực hành đọc phiếu đo và đổi đơn vị:';
+    const kinds = configuredValues(config, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, 'Phạm vi thực hành cần có ít nhất một nhóm đơn vị hợp lệ.');
+    const selectedKind = chooseConfiguredValue(config, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, random, 'Phạm vi thực hành cần có ít nhất một nhóm đơn vị hợp lệ.');
+    const subquestions = labels.map(label => ({ label, ...practiceBuilders[selectedKind](random) }));
+    const prompt = `Thực hành ${PRACTICE_KIND_LABELS[selectedKind]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'measurement.practice_cards',
         prompt,
         subquestions,
-        'Đọc đúng dữ liệu trên phiếu, đổi về đơn vị được hỏi rồi chọn đáp án tương ứng.',
-        { question: prompt, kinds: kinds.join(', ') }
+        `Bốn ý cùng luyện ${PRACTICE_KIND_LABELS[selectedKind]}.`,
+        { question: prompt, kinds: kinds.join(', '), selectedKind }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];
     return question;
 }
 
-function makeReviewPart(skill, random) {
+function makeReviewPart(skill, random, selectedKind) {
     const source = skill === 'b17'
         ? makeMass(random)
         : skill === 'b18'
             ? makeArea(random)
             : skill === 'b19'
-                ? (randomInt(0, 1, random) === 0 ? makeTime(random) : makeCentury(random))
-                : choose(Object.values(practiceBuilders), random)(random);
+                ? (selectedKind === 'century' ? makeCentury(random) : makeTime(random))
+                : practiceBuilders[selectedKind](random);
     return {
         ...source,
         skill,
@@ -129,16 +120,23 @@ function makeReviewPart(skill, random) {
 }
 
 function makeReviewQuestion(config = {}, random) {
-    const skills = configuredList(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, 'Bộ ôn tập Bài 17 đến Bài 20 cần đúng bốn kỹ năng hợp lệ.');
-    if (skills.length !== 4) throw new Error('Bộ ôn tập Bài 17 đến Bài 20 cần đúng bốn kỹ năng hợp lệ.');
-    const subquestions = skills.map((skill, index) => ({ label: labels[index], ...makeReviewPart(skill, random) }));
-    const prompt = 'Luyện tập chung Bài 17 đến Bài 20:';
+    const skills = configuredValues(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, 'Bộ ôn tập Bài 17 đến Bài 20 cần ít nhất một kỹ năng hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, random, 'Bộ ôn tập Bài 17 đến Bài 20 cần ít nhất một kỹ năng hợp lệ.');
+    const selectedKind = selectedSkill === 'b17'
+        ? 'mass'
+        : selectedSkill === 'b18'
+            ? 'area'
+            : selectedSkill === 'b19'
+                ? (randomInt(0, 1, random) === 0 ? 'time' : 'century')
+                : chooseConfiguredValue({}, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, random, 'Bài 20 cần một nhóm thực hành hợp lệ.');
+    const subquestions = labels.map(label => ({ label, ...makeReviewPart(selectedSkill, random, selectedKind) }));
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]} · ${PRACTICE_KIND_LABELS[selectedKind]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'measurement.hk1_review_b17_b20',
         prompt,
         subquestions,
-        'Ôn lại khối lượng, diện tích, thời gian/thế kỉ và thực hành đọc dữ liệu đo theo nhãn Bài học.',
-        { question: prompt, skills: skills.join(', ') }
+        `Bốn ý cùng luyện ${PRACTICE_KIND_LABELS[selectedKind]}.`,
+        { question: prompt, skills: skills.join(', '), selectedSkill, selectedKind }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];

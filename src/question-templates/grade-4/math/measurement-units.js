@@ -7,6 +7,7 @@
 }(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createFourPartMultipleChoiceQuestion }) {
 const TOPIC = '4. Một số đơn vị đo Đại lượng';
 const labels = ['a', 'b', 'c', 'd'];
+const KIND_LABELS = { mass: 'khối lượng', area: 'diện tích', time: 'thời gian', century: 'thế kỉ' };
 const sign = (left, right) => left === right ? '=' : (left > right ? '>' : '<');
 const choose = (items, random) => items[randomInt(0, items.length - 1, random)];
 const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
@@ -34,7 +35,8 @@ function massRows(config = {}, random) {
         tonAndYenToKg: () => { const t = randomInt(1, 4, random), y = randomInt(1, 9, random); return { kind: 'tonAndYenToKg', display: `${t} tấn ${y} yến = ___ kg`, answer: t * 1000 + y * 10 }; }
     };
     const kinds = configuredKinds(config, 'allowedKinds', Object.keys(rowFactories), Object.keys(rowFactories), 'Dạng đổi đơn vị khối lượng không hợp lệ.');
-    return labels.map(() => rowFactories[choose(kinds, random)]());
+    const selectedKind = choose(kinds, random);
+    return labels.map(() => rowFactories[selectedKind]());
 }
 function areaRows(config = {}, random) {
     const rowFactories = {
@@ -44,7 +46,8 @@ function areaRows(config = {}, random) {
         cm2ToDm2: () => { const n = randomInt(2, 9, random); return { kind: 'cm2ToDm2', display: `${n * 100} cm² = ___ dm²`, answer: n }; }
     };
     const kinds = configuredKinds(config, 'allowedKinds', Object.keys(rowFactories), Object.keys(rowFactories), 'Dạng đổi đơn vị diện tích không hợp lệ.');
-    return labels.map(() => rowFactories[choose(kinds, random)]());
+    const selectedKind = choose(kinds, random);
+    return labels.map(() => rowFactories[selectedKind]());
 }
 function timeRows(config = {}, random) {
     const rowFactories = {
@@ -54,29 +57,96 @@ function timeRows(config = {}, random) {
         weekAndDaysToDays: () => { const w = randomInt(1, 3, random), d = randomInt(1, 6, random); return { kind: 'weekAndDaysToDays', display: `${w} tuần ${d} ngày = ___ ngày`, answer: w * 7 + d }; }
     };
     const kinds = configuredKinds(config, 'allowedKinds', Object.keys(rowFactories), Object.keys(rowFactories), 'Dạng đổi đơn vị thời gian không hợp lệ.');
-    return labels.map(() => rowFactories[choose(kinds, random)]());
+    const selectedKind = choose(kinds, random);
+    return labels.map(() => rowFactories[selectedKind]());
 }
-function comparisons(random) {
-    const rows = [
+const comparisonBanks = {
+    mass: [
         { left: '7 yến', lv: 70, right: '68 kg', rv: 68 },
         { left: '3 tạ 5 kg', lv: 305, right: '305 kg', rv: 305 },
+        { left: '4 tấn', lv: 4000, right: '39 tạ', rv: 3900 },
+        { left: '2 yến 5 kg', lv: 25, right: '250 hg', rv: 25 }
+    ],
+    area: [
         { left: '2 m²', lv: 200, right: '199 dm²', rv: 199 },
-        { left: '3 phút 20 giây', lv: 200, right: '200 giây', rv: 200 }
-    ];
-    const chosen = shuffle(rows, random).map((row, index) => ({ label: labels[index], leftText: row.left, rightText: row.right, display: `${row.left} ___ ${row.right}`, answer: sign(row.lv, row.rv) }));
-    return question('measurement.compare_units', 'Kéo thả', `Điền dấu thích hợp:<br>${chosen.map(row => `${row.label}) ${row.display}`).join('<br>')}`, { ans: chosen.map(row => row.answer).join(', '), comparisonRows: chosen, explanation: 'Đổi các số đo về cùng đơn vị rồi so sánh.' });
+        { left: '3 m²', lv: 300, right: '300 dm²', rv: 300 },
+        { left: '4 dm²', lv: 400, right: '399 cm²', rv: 399 },
+        { left: '5 m²', lv: 50000, right: '50 000 cm²', rv: 50000 }
+    ],
+    time: [
+        { left: '3 phút 20 giây', lv: 200, right: '200 giây', rv: 200 },
+        { left: '2 giờ', lv: 120, right: '119 phút', rv: 119 },
+        { left: '1 tuần', lv: 7, right: '6 ngày', rv: 6 },
+        { left: '5 phút', lv: 300, right: '299 giây', rv: 299 }
+    ]
+};
+const comparisonKinds = ['mass', 'area', 'time'];
+
+function comparisons(config, random) {
+    const kinds = configuredKinds(config, 'comparisonKinds', comparisonKinds, comparisonKinds, 'Nhóm so sánh đơn vị đo không hợp lệ.');
+    const selectedKind = choose(kinds, random);
+    const chosen = shuffle(comparisonBanks[selectedKind], random).map((row, index) => ({
+        label: labels[index], kind: selectedKind, leftText: row.left, rightText: row.right,
+        display: `${row.left} ___ ${row.right}`, answer: sign(row.lv, row.rv)
+    }));
+    const prompt = `Điền dấu thích hợp (${KIND_LABELS[selectedKind]}):<br>${chosen.map(row => `${row.label}) ${row.display}`).join('<br>')}`;
+    return question('measurement.compare_units', 'Kéo thả', prompt, {
+        ans: chosen.map(row => row.answer).join(', '), comparisonRows: chosen,
+        explanation: 'Đổi các số đo về cùng đơn vị rồi so sánh.',
+        templateVariables: { question: prompt, comparisonKinds: kinds.join(', '), selectedKind }
+    });
 }
-function matching(random) {
-    const pairs = shuffle([['4 yến', '40 kg'], ['15 tạ', '1 500 kg'], ['4 m²', '400 dm²'], ['2 phút 30 giây', '150 giây']], random);
-    const distractor = shuffle(['7 yến', '9 tạ', '6 m²', '3 phút 20 giây'], random)[0];
-    const leftOptions = shuffle([...pairs.map(pair => pair[0]), distractor], random);
-    return question('measurement.match_equivalences', 'Đối chiếu trùng khớp', 'Nối mỗi số đo với giá trị tương đương.', { options: [leftOptions.join(', '), shuffle(pairs.map(pair => pair[1]), random).join(', ')], ans: pairs.map(pair => `${pair[0]}:${pair[1]}`).join(', '), explanation: 'Có một số đo không có cặp tương đương. Đổi đơn vị để tìm các cặp bằng nhau.' });
+
+const matchingBanks = {
+    mass: [['4 yến', '40 kg'], ['15 tạ', '1 500 kg'], ['2 tấn', '2 000 kg'], ['8 yến 5 kg', '85 kg']],
+    area: [['4 m²', '400 dm²'], ['3 dm²', '300 cm²'], ['2 m²', '20 000 cm²'], ['5 dm²', '50 000 mm²']],
+    time: [['2 phút 30 giây', '150 giây'], ['2 giờ', '120 phút'], ['1 tuần', '7 ngày'], ['3 phút', '180 giây']]
+};
+
+function matching(config, random) {
+    const kinds = configuredKinds(config, 'matchingKinds', comparisonKinds, comparisonKinds, 'Nhóm nối tương đương đơn vị đo không hợp lệ.');
+    const selectedKind = choose(kinds, random);
+    const pairs = shuffle(matchingBanks[selectedKind], random);
+    const distractors = {
+        mass: '7 yến',
+        area: '6 m²',
+        time: '4 phút 10 giây'
+    };
+    const leftOptions = shuffle([...pairs.map(pair => pair[0]), distractors[selectedKind]], random);
+    const matchingRows = pairs.map(pair => ({ kind: selectedKind, left: pair[0], right: pair[1] }));
+    const prompt = `Nối các số đo ${KIND_LABELS[selectedKind]} với giá trị tương đương.`;
+    return question('measurement.match_equivalences', 'Đối chiếu trùng khớp', prompt, {
+        options: [leftOptions.join(', '), shuffle(pairs.map(pair => pair[1]), random).join(', ')],
+        ans: pairs.map(pair => `${pair[0]}:${pair[1]}`).join(', '), explanation: 'Đổi đơn vị để tìm các cặp bằng nhau.', matchingRows,
+        templateVariables: { question: prompt, matchingKinds: kinds.join(', '), selectedKind }
+    });
 }
-function trueFalse(random) {
-    const statements = shuffle([
-        ['6 tạ = 600 kg.', 'Đúng'], ['9 m² = 900 cm².', 'Sai'], ['1 phút 40 giây = 100 giây.', 'Đúng'], ['5 thế kỉ = 50 năm.', 'Sai']
-    ], random).map((item, index) => ({ label: labels[index], text: item[0], answer: item[1] }));
-    return question('measurement.unit_true_false', 'Đúng/Sai', 'Chọn Đúng/Sai?', { ans: statements.map(item => item.answer).join(', '), statements, explanation: 'Kiểm tra từng phép đổi đơn vị.' });
+
+const trueFalseBanks = {
+    mass: [
+        ['6 tạ = 600 kg.', 'Đúng'], ['3 tấn = 300 kg.', 'Sai'], ['8 yến = 80 kg.', 'Đúng'], ['5 tạ 2 kg = 502 kg.', 'Đúng']
+    ],
+    area: [
+        ['9 m² = 900 cm².', 'Sai'], ['4 m² = 400 dm².', 'Đúng'], ['7 dm² = 700 cm².', 'Đúng'], ['3 m² = 3000 dm².', 'Sai']
+    ],
+    time: [
+        ['1 phút 40 giây = 100 giây.', 'Đúng'], ['2 giờ = 120 phút.', 'Đúng'], ['3 tuần = 21 ngày.', 'Đúng'], ['5 phút = 500 giây.', 'Sai']
+    ],
+    century: [
+        ['1 thế kỉ = 100 năm.', 'Đúng'], ['Năm 1900 thuộc thế kỉ XX.', 'Sai'], ['Năm 2001 thuộc thế kỉ XXI.', 'Đúng'], ['5 thế kỉ = 50 năm.', 'Sai']
+    ]
+};
+
+function trueFalse(config, random) {
+    const statementKinds = ['mass', 'area', 'time', 'century'];
+    const kinds = configuredKinds(config, 'statementKinds', statementKinds, statementKinds, 'Nhóm nhận định đơn vị đo không hợp lệ.');
+    const selectedKind = choose(kinds, random);
+    const statements = shuffle(trueFalseBanks[selectedKind], random).map((item, index) => ({ label: labels[index], text: item[0], answer: item[1], kind: selectedKind }));
+    const prompt = `Chọn Đúng/Sai (${KIND_LABELS[selectedKind]}):`;
+    return question('measurement.unit_true_false', 'Đúng/Sai', prompt, {
+        ans: statements.map(item => item.answer).join(', '), statements, explanation: 'Kiểm tra từng phép đổi đơn vị.',
+        templateVariables: { question: prompt, statementKinds: kinds.join(', '), selectedKind }
+    });
 }
 const romanNumeral = value => {
     const numerals = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
@@ -157,19 +227,30 @@ function wordProblemScenarios(random) {
 }
 function wordProblems(config = {}, random) {
     const scenarioKinds = configuredKinds(config, 'scenarioKinds', ['mass', 'area', 'time'], ['mass', 'area', 'time'], 'Nhóm ngữ cảnh bài toán đơn vị đo không hợp lệ.');
-    const rows = shuffle(wordProblemScenarios(random).map(createRow => createRow()).filter(row => scenarioKinds.includes(row.kind)), random).slice(0, 4);
+    const selectedKind = choose(scenarioKinds, random);
+    const rows = shuffle(wordProblemScenarios(random).map(createRow => createRow()).filter(row => row.kind === selectedKind), random).slice(0, 4);
     if (rows.length < 4) throw new Error('Nhóm ngữ cảnh bài toán đơn vị đo phải có ít nhất bốn tình huống.');
-    return fillQuestion('measurement.word_problem_units', 'Điền đáp số thích hợp.', rows, 'Đổi đơn vị về cùng đơn vị trước khi tính.', {
-        templateVariables: { scenarioIds: rows.map(row => row.scenarioId), scenarioKinds: scenarioKinds.join(', ') }
+    const kindLabel = KIND_LABELS[selectedKind];
+    return fillQuestion('measurement.word_problem_units', `Điền đáp số thích hợp cho bài toán ${kindLabel}.`, rows, `Đổi các số đo ${kindLabel} về cùng đơn vị trước khi tính.`, {
+        templateVariables: { scenarioIds: rows.map(row => row.scenarioId), scenarioKinds: scenarioKinds.join(', '), selectedKind }
     });
 }
 const generators = {
-    'measurement.mass_unit_convert': (config, random) => fillQuestion('measurement.mass_unit_convert', 'Điền số thích hợp.', massRows(config, random), 'Dùng 1 yến = 10 kg, 1 tạ = 100 kg, 1 tấn = 1 000 kg.'),
-    'measurement.area_unit_convert': (config, random) => fillQuestion('measurement.area_unit_convert', 'Điền số thích hợp.', areaRows(config, random), 'Dùng các quan hệ giữa m², dm², cm² và mm².'),
-    'measurement.time_unit_convert': (config, random) => fillQuestion('measurement.time_unit_convert', 'Điền số thích hợp.', timeRows(config, random), 'Dùng các quan hệ giữa phút và giây.'),
-    'measurement.compare_units': (config, random) => comparisons(random),
-    'measurement.match_equivalences': (config, random) => matching(random),
-    'measurement.unit_true_false': (config, random) => trueFalse(random),
+    'measurement.mass_unit_convert': (config, random) => {
+        const rows = massRows(config, random);
+        return fillQuestion('measurement.mass_unit_convert', 'Điền số thích hợp.', rows, 'Dùng 1 yến = 10 kg, 1 tạ = 100 kg, 1 tấn = 1 000 kg.', { templateVariables: { selectedKind: rows[0].kind } });
+    },
+    'measurement.area_unit_convert': (config, random) => {
+        const rows = areaRows(config, random);
+        return fillQuestion('measurement.area_unit_convert', 'Điền số thích hợp.', rows, 'Dùng các quan hệ giữa m², dm², cm² và mm².', { templateVariables: { selectedKind: rows[0].kind } });
+    },
+    'measurement.time_unit_convert': (config, random) => {
+        const rows = timeRows(config, random);
+        return fillQuestion('measurement.time_unit_convert', 'Điền số thích hợp.', rows, 'Dùng các quan hệ giữa giờ, phút, giây và tuần.', { templateVariables: { selectedKind: rows[0].kind } });
+    },
+    'measurement.compare_units': (config, random) => comparisons(config, random),
+    'measurement.match_equivalences': (config, random) => matching(config, random),
+    'measurement.unit_true_false': (config, random) => trueFalse(config, random),
     'measurement.century_identification': (config, random) => century(config, random),
     'measurement.word_problem_units': (config, random) => wordProblems(config, random)
 };

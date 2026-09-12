@@ -92,8 +92,9 @@ function generateEvenOddClassify(config = {}, random = Math.random) {
         throw new Error('Phạm vi Bài 3 phải có cả số chẵn và số lẻ để tạo phương án nhiễu.');
     }
     const used = new Set();
+    const selectedParity = chooseParity(parities, random);
     const rows = LABELS.map(label => {
-        const targetParity = chooseParity(parities, random);
+        const targetParity = selectedParity;
         const target = randomParityNumber(minimum, maximum, targetParity, random, used);
         used.add(target);
         const distractors = new Set();
@@ -112,7 +113,8 @@ function generateEvenOddClassify(config = {}, random = Math.random) {
         'number.even_odd_classify',
         'Nhận biết số chẵn, số lẻ:',
         rows,
-        'Số chẵn có chữ số tận cùng là 0, 2, 4, 6 hoặc 8; các số còn lại là số lẻ.'
+        'Số chẵn có chữ số tận cùng là 0, 2, 4, 6 hoặc 8; các số còn lại là số lẻ.',
+        { parities: parities.join(', '), selectedParity }
     );
 }
 
@@ -132,6 +134,7 @@ function generateEvenOddCount(config = {}, random = Math.random) {
         throw new Error('Số lượng phần tử trong dãy Bài 3 phải từ 5 đến 12.');
     }
     if (maximum - minimum + 1 < listLengthMax) throw new Error('Phạm vi số không đủ để tạo dãy không lặp phần tử.');
+    const selectedParity = chooseParity(parities, random);
     const rows = LABELS.map(label => {
         const length = randomInt(listLengthMin, listLengthMax, random);
         const values = [];
@@ -139,7 +142,7 @@ function generateEvenOddCount(config = {}, random = Math.random) {
             const value = randomInt(minimum, maximum, random);
             if (!values.includes(value)) values.push(value);
         }
-        const targetParity = chooseParity(parities, random);
+        const targetParity = selectedParity;
         const count = values.filter(value => parityOf(value) === targetParity).length;
         const formattedValues = values.map(formatNumber).join(', ');
         return {
@@ -153,7 +156,8 @@ function generateEvenOddCount(config = {}, random = Math.random) {
         'number.even_odd_count',
         'Đếm số chẵn, số lẻ trong một dãy:',
         rows,
-        'Đọc lần lượt từng số trong dãy, xác định chẵn hoặc lẻ rồi đếm đúng nhóm được hỏi.'
+        'Đọc lần lượt từng số trong dãy, xác định chẵn hoặc lẻ rồi đếm đúng nhóm được hỏi.',
+        { parities: parities.join(', '), selectedParity }
     );
 }
 
@@ -170,9 +174,11 @@ function generateEvenOddSequence(config = {}, random = Math.random) {
     if (unsupportedSteps.length) {
         throw new Error('Bước nhảy dãy chẵn/lẻ không phù hợp với phạm vi số và dạng chẵn/lẻ đã chọn.');
     }
+    const selectedParity = chooseParity(parities, random);
+    const selectedStep = configuredSteps[randomInt(0, configuredSteps.length - 1, random)];
     const rows = LABELS.map(label => {
-        const targetParity = chooseParity(parities, random);
-        const step = configuredSteps[randomInt(0, configuredSteps.length - 1, random)];
+        const targetParity = selectedParity;
+        const step = selectedStep;
         const start = randomParityNumber(minimum, maximum - step * 4, targetParity, random);
         const sequence = [0, 1, 2, 3].map(index => start + index * step);
         const correct = start + step * 4;
@@ -189,7 +195,8 @@ function generateEvenOddSequence(config = {}, random = Math.random) {
         'number.even_odd_sequence',
         'Tìm số thích hợp điền vào dãy:',
         rows,
-        'Dãy số chẵn hoặc dãy số lẻ có thể tăng đều theo một bước nhảy chẵn; vì vậy tính số tiếp theo bằng cách cộng bước nhảy.'
+        'Dãy số chẵn hoặc dãy số lẻ có thể tăng đều theo một bước nhảy chẵn; vì vậy tính số tiếp theo bằng cách cộng bước nhảy.',
+        { parities: parities.join(', '), sequenceSteps: configuredSteps.join(', '), selectedParity, selectedStep }
     );
 }
 
@@ -210,10 +217,11 @@ function generateEvenOddForm(config = {}, random = Math.random) {
     const digitCount = Number(config.digitCount ?? 4);
     if (!Number.isInteger(digitCount) || digitCount < 3 || digitCount > 4) throw new Error('Số thẻ của Bài 3 phải là 3 hoặc 4.');
     const parities = allowedParities(config);
+    const selectedParity = chooseParity(parities, random);
     const rows = LABELS.map(label => {
         const cards = randomCards(digitCount, random);
         const allNumbers = permutations(cards).map(items => Number(items.join('')));
-        const targetParity = chooseParity(parities, random);
+        const targetParity = selectedParity;
         const targetNumbers = allNumbers.filter(value => parityOf(value) === targetParity);
         const distractorNumbers = allNumbers.filter(value => parityOf(value) !== targetParity);
         if (!targetNumbers.length || distractorNumbers.length < 3) throw new Error('Bộ thẻ phải tạo được cả số chẵn và số lẻ.');
@@ -231,7 +239,8 @@ function generateEvenOddForm(config = {}, random = Math.random) {
         'number.even_odd_form',
         'Lập số chẵn, số lẻ từ các thẻ số:',
         rows,
-        'Khi lập số, xét chữ số ở hàng đơn vị: 0, 2, 4, 6, 8 tạo số chẵn; chữ số 1, 3, 5, 7, 9 tạo số lẻ.'
+        'Khi lập số, xét chữ số ở hàng đơn vị: 0, 2, 4, 6, 8 tạo số chẵn; chữ số 1, 3, 5, 7, 9 tạo số lẻ.',
+        { parities: parities.join(', '), selectedParity }
     );
 }
 

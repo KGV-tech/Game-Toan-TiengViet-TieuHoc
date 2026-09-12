@@ -52,7 +52,8 @@ const additionSubtraction = generateQuestion('g4-m-add-sub-multi-digit', { minim
 assert.equal(additionSubtraction.topic, '5. Phép cộng và phép trừ');
 assert.equal(additionSubtraction.type, 'Điền khuyết');
 assert.equal(additionSubtraction.practiceRows.length, 4);
-assert.deepEqual([...additionSubtraction.practiceRows.map(row => row.operation)].sort(), ['+', '+', '-', '-'], 'The merged template must contain exactly two additions and two subtractions.');
+assert.equal(new Set(additionSubtraction.practiceRows.map(row => row.operation)).size, 1, 'The merged template must keep one arithmetic operation across all four parts.');
+assert(['+', '-'].includes(additionSubtraction.practiceRows[0].operation));
 assert.deepEqual(additionSubtraction.partAnswerCounts, [1, 1, 1, 1]);
 assert.equal(answerList(additionSubtraction).length, 4);
 additionSubtraction.practiceRows.forEach(row => {
@@ -70,6 +71,7 @@ missingTerm.practiceRows.forEach(row => {
     assert.equal(row.answer, row.values[row.blankIndex]);
     assert.equal(row.operation === '+' ? first + second : first - second, result);
 });
+assert.equal(new Set(missingTerm.practiceRows.map(row => row.operation)).size, 1, 'Missing-term parts must keep one arithmetic operation.');
 
 const missingDigit = generateQuestion('g4-m-add-sub-missing-digit', { minimumDigits: 5, maximumDigits: 6 }, seededRandom(503));
 assert.equal(missingDigit.practiceRows.length, 4);
@@ -81,12 +83,14 @@ missingDigit.practiceRows.forEach(row => {
     assert(/^[0-9]$/.test(String(row.answer)), 'Each missing-digit answer must be one digit.');
     assert.equal(row.operation === '+' ? first + second : first - second, result);
 });
+assert.equal(new Set(missingDigit.practiceRows.map(row => row.operation)).size, 1, 'Missing-digit parts must keep one arithmetic operation.');
 
 const propertyFill = generateQuestion('g4-m-addition-property-fill', {}, seededRandom(504));
 assert.equal(propertyFill.practiceRows.length, 4);
 assert.equal((propertyFill.q.match(/___/g) || []).length, 4);
 assert.deepEqual(propertyFill.partAnswerCounts, [1, 1, 1, 1]);
 assert(propertyFill.practiceRows.every(row => ['commutative', 'associative'].includes(row.property)));
+assert.equal(new Set(propertyFill.practiceRows.map(row => row.property)).size, 1, 'Property parts must keep one addition property.');
 
 const expressions = generateQuestion('g4-m-add-sub-expression', { minimumDigits: 3, maximumDigits: 5 }, seededRandom(505));
 assert.equal(expressions.practiceRows.length, 4);
@@ -94,6 +98,7 @@ assert.equal((expressions.q.match(/___/g) || []).length, 4);
 assert.deepEqual(expressions.partAnswerCounts, [1, 1, 1, 1]);
 assert(expressions.practiceRows.every(row => /[+−]/.test(row.expression)));
 assert(expressions.practiceRows.every(row => Number.isInteger(row.answer) && row.answer >= 0));
+assert.equal(new Set(expressions.practiceRows.map(row => row.kind)).size, 1, 'Expression parts must keep one expression form.');
 
 const directSumDifference = generateQuestion('g4-m-sum-difference-direct', {}, seededRandom(506));
 assert.equal(answerList(directSumDifference).length, 2);
@@ -131,5 +136,6 @@ assert.equal(trueFalse.type, 'Đúng/Sai');
 assert.equal(trueFalse.statements.length, 4);
 assert.deepEqual(trueFalse.statements.map(statement => statement.label), ['a', 'b', 'c', 'd']);
 assert(trueFalse.statements.every(statement => ['Đúng', 'Sai'].includes(statement.answer)));
+assert.equal(new Set(trueFalse.statements.map(statement => statement.operation)).size, 1, 'True/false parts must keep one arithmetic operation.');
 
 console.log('Grade 4 Topic 5 question templates satisfy the approved contracts.');

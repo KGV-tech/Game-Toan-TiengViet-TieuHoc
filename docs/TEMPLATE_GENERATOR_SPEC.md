@@ -37,6 +37,9 @@ Không dùng prompt thuần để thay thế cấu trúc động. Nếu template
 - Đối chiếu: đúng 4 cặp đáp án và đúng 1 phương án nhiễu trên một trong hai cột. Hình dạng bắt buộc là 5:4 hoặc 4:5.
 - Ngoại lệ số liền trước–sau: mỗi ý có hai ô, nhưng phải đúng cả cặp mới được 0,25 điểm (`partAnswerCounts: [2,2,2,2]`).
 - Ngoại lệ chuỗi quy luật: một ý có 2–3 ô trống và cả dãy là một ý 0,25 điểm.
+- Cohesion nội dung: một output có 4 câu con phải giữ một mục tiêu kiến thức/dạng toán trong cả lượt. Không ánh xạ mỗi câu con sang một Bài học hoặc một kỹ năng khác nhau chỉ vì chúng cùng dùng renderer trắc nghiệm.
+- Mảng cấu hình như `skills`, `modes`, `allowedKinds` và `groups` là phạm vi được phép chọn; generator chọn một trọng tâm cho cả 4 câu con. Cấu hình cũ có nhiều giá trị vẫn tương thích và không còn được hiểu là “mỗi giá trị cho một câu”.
+- Biến thể số liệu, hình minh họa hoặc phép tính trong cùng một mục tiêu vẫn được phép. Các template được đặt tên rõ là một họ chung (ví dụ bốn phép tính hoặc chẵn/lẻ) không bị coi là trộn sai dạng.
 
 ## 4. Chuẩn sinh dữ liệu và chống lặp
 
@@ -113,12 +116,12 @@ Các yêu cầu sinh:
 | Lập số/tổng phân tích | Số phải có ít nhất 2 thành phần giá trị hàng khác 0. |
 | Số liền trước–sau | Số trung tâm không được nằm ở biên min/max. |
 | Bốn phép tính điền số | Có thể chọn phép/bố cục/vị trí ô trống; vị trí thứ tư chỉ dùng với hai biểu thức; chia hết. |
-| Bốn phép tính tính biểu thức | Mỗi lượt dùng đủ cộng, trừ, nhân, chia; có nhiều bước và ngoặc khi cần. |
-| Bốn phép tính so sánh | Mỗi lượt luôn có `>`, `<`, `=` và một dấu lặp ngẫu nhiên. |
+| Bốn phép tính tính biểu thức | Đây là một họ luyện tập chung được đặt tên rõ; mỗi lượt chọn một phép tính trong pool và giữ phép tính đó cho cả bốn ý, có nhiều bước và ngoặc khi cần. |
+| Bốn phép tính so sánh | Mỗi lượt chọn một phép tính trong pool và giữ phép tính đó cho cả bốn ý; dấu `>`, `<`, `=` là đáp án của bốn phép so sánh. |
 | Đọc số | Số 0–999 999 999, đọc đúng quy tắc “linh, mốt, tư, lăm”; đối chiếu tuân chuẩn 5:4/4:5. |
-| Đúng/Sai hàng/lớp | Số có chữ số không lặp; 2 đúng/2 sai; mỗi nhận định nêu số đang xét. |
+| Đúng/Sai hàng/lớp | Số có chữ số không lặp; 2 đúng/2 sai; mỗi lượt chọn một kiểu phát biểu (hàng hoặc lớp), mọi nhận định nêu số đang xét. |
 | Mật khẩu két sắt | 4 ý, mỗi ý 4 mã và 2 điều kiện; duy nhất 1 mã thỏa đồng thời; giữ số 0 đầu mã. |
-| Góc | 4 ý về nhọn/vuông/tù/bẹt; SVG phải được sinh/kiểm thử cùng đáp án. |
+| Góc | Mỗi lượt chọn một dạng đọc số đo hoặc phân loại; SVG phải được sinh/kiểm thử cùng đáp án. |
 
 ## 10. Tích hợp Kho Template và Supabase
 

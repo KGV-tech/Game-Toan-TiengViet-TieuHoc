@@ -4,10 +4,11 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.round_hundred_thousands'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '3. Số có nhiều chữ số';
 const MODES = ['round', 'rule'];
+const MODE_LABELS = { round: 'làm tròn số đến hàng trăm nghìn', rule: 'nhận biết quy tắc làm tròn' };
 
 function integerConfig(value, fallback, label) {
     const result = Number(value ?? fallback);
@@ -25,11 +26,7 @@ function configuredRange(config) {
 }
 
 function configuredModes(config) {
-    const modes = Array.isArray(config.modes) ? [...config.modes] : ['round', 'round', 'round', 'rule'];
-    if (modes.length !== 4 || !modes.includes('round') || !modes.includes('rule') || modes.some(mode => !MODES.includes(mode))) {
-        throw new Error('Bài 13 cần bốn ý, gồm dạng làm tròn và chọn đúng quy tắc làm tròn.');
-    }
-    return modes;
+    return configuredValues(config, 'modes', MODES, MODES, 'Bài 13 cần ít nhất một dạng hợp lệ: làm tròn số hoặc nhận biết quy tắc làm tròn.');
 }
 
 function roundToHundredThousands(number) {
@@ -88,14 +85,18 @@ function makeSubquestion(mode, minimum, maximum, random) {
 function generateRoundHundredThousands(config = {}, random = Math.random) {
     const { minimum, maximum } = configuredRange(config);
     const modes = configuredModes(config);
-    const subquestions = modes.map(mode => makeSubquestion(mode, minimum, maximum, random));
-    const prompt = 'Làm tròn số đến hàng trăm nghìn:';
+    const selectedMode = chooseConfiguredValue(config, 'modes', MODES, MODES, random, 'Bài 13 cần ít nhất một dạng hợp lệ: làm tròn số hoặc nhận biết quy tắc làm tròn.');
+    const subquestions = Array.from({ length: 4 }, (_, index) => ({
+        label: String.fromCharCode(97 + index),
+        ...makeSubquestion(selectedMode, minimum, maximum, random)
+    }));
+    const prompt = `Luyện tập ${MODE_LABELS[selectedMode]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'number.round_hundred_thousands',
         prompt,
         subquestions,
-        'Xét chữ số hàng chục nghìn: nhỏ hơn 5 thì giữ nguyên hàng trăm nghìn, từ 5 đến 9 thì tăng hàng trăm nghìn lên 1.',
-        { question: prompt, modes: modes.join(', ') }
+        `Bốn ý cùng luyện ${MODE_LABELS[selectedMode]}.`,
+        { question: prompt, modes: modes.join(', '), selectedMode }
     );
     question.topic = TOPIC;
     return question;

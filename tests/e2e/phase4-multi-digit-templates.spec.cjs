@@ -54,7 +54,7 @@ test('Phase 4 B10 hiển thị Preview và gameplay bốn câu lập/đọc số
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
   await expect(page.locator('#template-preview-dialog .template-preview__choices')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('1 000 000');
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('undefined');
   await page.keyboard.press('Escape');
   await expect(page.locator('#template-preview-dialog')).toBeHidden();
 
@@ -70,17 +70,16 @@ test('Phase 4 B10 hiển thị Preview và gameplay bốn câu lập/đọc số
       modes: question.subquestions.map(item => item.mode)
     };
   }, template);
-  expect(gameplay).toEqual({
-    subquestions: 4,
-    answers: 4,
-    modes: ['compose', 'read', 'million', 'digit']
-  });
+  expect(gameplay).toMatchObject({ subquestions: 4, answers: 4 });
+  expect(gameplay.modes).toHaveLength(4);
+  expect(new Set(gameplay.modes).size).toBe(1);
+  expect(['compose', 'read', 'million', 'digit']).toContain(gameplay.modes[0]);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');
 });
 
-test('Phase 4 B13 và B16 giữ cấu hình review, Preview và bố cục tablet ngang', async ({ page }) => {
+test('Phase 4 B13 và B16 giữ một dạng review, Preview và bố cục tablet ngang', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -96,8 +95,8 @@ test('Phase 4 B13 và B16 giữ cấu hình review, Preview và bố cục table
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Quy tắc nào đúng');
-  await expect(page.locator('#template-preview-dialog .template-preview__choices').nth(3).locator('span')).toHaveCount(4);
+  await expect(page.locator('#template-preview-dialog .template-preview__choices')).toHaveCount(4);
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('undefined');
   await page.locator('#template-preview-back').click();
 
   const reviewTemplate = phase4Template(
@@ -120,9 +119,12 @@ test('Phase 4 B13 và B16 giữ cấu hình review, Preview và bố cục table
     app.game.state.currentIdx = 0;
     app.game.state.score = 0;
     app.game.loadQuestion();
-    return question.subquestions.map(item => item.skill);
+    return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson }));
   }, reviewTemplate);
-  expect(gameplay).toEqual(['b10', 'b11', 'b12', 'b13']);
+  expect(gameplay).toHaveLength(4);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
+  expect(['b10', 'b11', 'b12', 'b13']).toContain(gameplay[0].skill);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');

@@ -132,8 +132,10 @@ function generateFourArithmeticComparisons(config = {}, random = Math.random) {
     const layouts = (Array.isArray(config.layouts) ? config.layouts : LAYOUTS).filter(item => LAYOUTS.includes(item));
     if (!operations.length || !layouts.length) throw new Error('Hãy chọn ít nhất một phép tính và dạng hai vế.');
 
+    const selectedOperation = choose(operations, random);
+    const selectedLayout = choose(layouts, random);
     const comparisonSigns = comparisonSignsForFourRows(random);
-    const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => generateRow(label, choose(operations, random), choose(layouts, random), comparisonSigns[index], minimum, maximum, random));
+    const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => generateRow(label, selectedOperation, selectedLayout, comparisonSigns[index], minimum, maximum, random));
     const exercises = comparisonRows.map(row => `${row.label}. ${row.display}`).join('<br>');
     const prompt = `Điền dấu thích hợp:<br>${exercises}`;
     return {
@@ -141,7 +143,7 @@ function generateFourArithmeticComparisons(config = {}, random = Math.random) {
         type: 'Kéo thả', templateId: 'number.four_arithmetic_comparisons', q: prompt, options: COMPARISON_SIGNS,
         ans: comparisonRows.map(row => row.answer).join(', '), comparisonRows,
         explanation: 'Tính giá trị hai vế của từng dòng rồi kéo dấu so sánh thích hợp vào vòng tròn.',
-        templateVariables: { question: prompt, exercises, comparison_rows: exercises, blank: '___' }
+        templateVariables: { question: prompt, exercises, comparison_rows: exercises, blank: '___', operations: operations.join(', '), selectedOperation, layouts: layouts.join(', '), selectedLayout }
     };
 }
 
