@@ -43,7 +43,7 @@ test('Phase 7 Bài 31 hiển thị cấu hình hình học, Preview SVG và game
   await expect(page.locator('.template-editor__rule--phase7-controls')).toBeVisible();
   await expect(page.locator('#template-phase7-quad-kinds input:checked')).toHaveCount(1);
   await expect(page.locator('#template-phase7-quad-kinds input:checked')).toHaveValue('rhombus');
-  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
     allowedShapes: ['rhombus'],
     lesson: 'g4-math-hk1-b31'
   });

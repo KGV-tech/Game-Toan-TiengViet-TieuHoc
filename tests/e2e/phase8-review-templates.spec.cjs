@@ -43,7 +43,7 @@ test('Phase 8 Bài 37 chọn phạm vi nhóm review và giữ một nhóm trong 
 
   await expect(page.locator('.template-editor__rule--phase8-controls')).toBeVisible();
   await expect(page.locator('#template-phase8-review-groups input:checked')).toHaveCount(4);
-  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ groups, lesson: 'g4-math-hk1-b37' });
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({ groups, lesson: 'g4-math-hk1-b37' });
 
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();

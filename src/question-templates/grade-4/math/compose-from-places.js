@@ -31,13 +31,24 @@ function generateComposeFromPlaces(config = {}, random = Math.random) {
     const exercises = subquestions.map(item => item.display).join('<br>');
     const prompt = `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
 
-    return createFillBlankQuestion(
+    const question = createFillBlankQuestion(
         'number.compose_from_places',
         prompt,
         subquestions.map(item => item.value),
         'Ghép các chữ số theo từng hàng ở mỗi câu a, b, c, d để viết số đúng.',
-        { question: prompt, exercises, place_values: subquestions.map(item => item.description).join('; '), blank: '___', number: subquestions.map(item => formatNumber(item.value)).join(', ') }
+        {
+            question: prompt,
+            exercises,
+            place_values: subquestions.map(item => item.description).join('; '),
+            blank: '___',
+            number: subquestions.map(item => formatNumber(item.value)).join(', '),
+            subquestions
+        }
     );
+    // Keep each generated row explicit so the authoring presentation can
+    // reuse the same formula for a–d without parsing HTML back into data.
+    question.subquestions = subquestions;
+    return question;
 }
 
 return generateComposeFromPlaces;
