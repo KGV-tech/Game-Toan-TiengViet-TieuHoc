@@ -112,10 +112,10 @@ Chi tiết tại [`docs/templates/TEMPLATE_SYSTEM.md`](../docs/templates/TEMPLAT
 - [x] **Bước 2:** Tách đường ghi điểm/hồ sơ; client không gửi nguyên profile (event RPC có khóa hàng, idempotency, validation và rollback transaction; đã apply migration và hậu kiểm 6/6 trên Supabase production project `bjgbbrufnryrtimtzvhn`).
 - [x] **Bước 3:** Accessibility auth/modal; label, keyboard, focus trap, inert nền.
 - [x] **Bước 4:** Chuẩn hóa select/combobox dữ liệu chính xác và fixture audit (danh sách lớp/học sinh/giới tính có kiểm soát, tương thích dữ liệu cũ, fixture audit không chứa `undefined`).
-- [ ] **Bước 5:** Tối ưu asset/query; projection, pagination, lazy-load và số đo.
-- [ ] **Bước 6:** Cleanup listener/timer/realtime lifecycle.
-- [ ] **Bước 7:** Đồng nhất UI cũ theo design token và state chuẩn.
-- [ ] **Bước 8:** Content QA, full regression, review và release gate trước merge.
+- [x] **Bước 5:** Tối ưu asset/query; projection, pagination, lazy-load và số đo (projection theo màn, phân trang/lazy-load kho Admin, preload có chủ đích và contract performance đã hoàn tất).
+- [x] **Bước 6:** Cleanup listener/timer/realtime lifecycle (registry cleanup, timer/realtime teardown và chống stale sync sau logout/login đã hoàn tất).
+- [x] **Bước 7:** Đồng nhất UI cũ theo design token và state chuẩn (Admin surfaces, focus/disabled/reduced-motion và loading/error/empty state đã được chuẩn hóa theo phạm vi an toàn).
+- [x] **Bước 8:** Content QA, full regression, review và release gate trước merge (contract gate, asset scan, browser regression và self-review đã chạy; không thay đổi Supabase trong đợt này).
 
 ### Quy ước gọi bước
 

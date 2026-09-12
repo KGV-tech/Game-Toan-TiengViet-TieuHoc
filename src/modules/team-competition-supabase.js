@@ -7,6 +7,15 @@
     if (!app || !api) return;
 
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const TEAM_COMPETITION_PROJECTIONS = Object.freeze({
+        team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,status,created_at,updated_at,started_at,ended_at,version',
+        team_competition_teams: 'id,competition_id,name,position,target_member_count,leader_username,exam_id,status,score,submitted_count,correct_count,started_at,completed_at,locked_at,duration_seconds',
+        team_competition_members: 'id,competition_id,team_id,username,position',
+        team_competition_questions: 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts',
+        team_competition_attempts: 'id,competition_id,team_id,leader_username,session_id,status,lock_reason,question_count,current_index,submitted_count,correct_count,score,started_at,completed_at,locked_at,duration_seconds,updated_at',
+        team_competition_answers: 'id,attempt_id,question_index,selected_answer,points,is_correct,submitted_at',
+        team_competition_results: 'id,competition_id,team_id,username,individual_score,team_rank,created_at'
+    });
     const state = {
         client: null,
         enabled: false,
@@ -18,7 +27,8 @@
         idMap: new Map(),
         channel: null,
         syncTimer: null,
-        submitPending: false
+        submitPending: false,
+        lifecycleEpoch: 0
     };
 
     const originalStore = {
@@ -227,8 +237,10 @@
         return response?.data;
     }
 
-    async function fetchRows(table, columns = '*') {
-        return requireResult(state.client.from(table).select(columns));
+    async function fetchRows(table, columns = '') {
+        const projection = String(columns || '').trim() || TEAM_COMPETITION_PROJECTIONS[table];
+        if (!projection) throw new Error(`Thiếu projection cho bảng thi đua: ${table}`);
+        return requireResult(state.client.from(table).select(projection));
     }
 
     async function invoke(name, args) {
@@ -283,8 +295,9 @@
         }
     }
 
-    async function loadRemoteQuestions() {
+    async function loadRemoteQuestions(epoch = state.lifecycleEpoch) {
         const rows = await fetchRows('team_competition_questions', 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts');
+        if (epoch !== state.lifecycleEpoch || !state.enabled) return [];
         api.clearRemoteQuestions();
         rows.forEach(row => {
             const key = `${row.competition_id}:${row.team_id}`;
@@ -319,7 +332,11 @@
         getStatus() { return state.status; },
         getError() { return state.error; },
         configure(client) {
-            if (state.client === client && state.enabled) return this;
+            if (state.client === client && state.enabled) {
+                if (!state.channel) installRealtime();
+                return this;
+            }
+            if (state.channel) this.shutdown();
             state.client = client;
             state.enabled = isClient(client) && Boolean(root.supabase);
             state.status = state.enabled ? 'pending' : 'offline';
@@ -330,10 +347,38 @@
             if (state.enabled) installRealtime();
             return this;
         },
+        shutdown() {
+            state.lifecycleEpoch += 1;
+            if (state.syncTimer) clearTimeout(state.syncTimer);
+            state.syncTimer = null;
+            state.syncPromise = null;
+            state.syncing = false;
+            const channel = state.channel;
+            state.channel = null;
+            if (channel) {
+                try {
+                    if (typeof state.client?.removeChannel === 'function') state.client.removeChannel(channel);
+                    else if (typeof channel.unsubscribe === 'function') channel.unsubscribe();
+                } catch (error) {
+                    console.warn('Không thể dọn realtime thi đua nhóm:', error);
+                }
+            }
+            state.enabled = false;
+            state.status = 'offline';
+            state.realtime = 'disconnected';
+            state.error = null;
+            api.clearRemoteQuestions?.();
+            this.enabled = false;
+            this.status = state.status;
+            this.realtime = state.realtime;
+            return true;
+        },
         async syncRemote(options = {}) {
             if (!state.enabled || !app.data?.currentUser) return [];
             if (state.syncPromise) return state.syncPromise;
-            state.syncPromise = (async () => {
+            const syncEpoch = state.lifecycleEpoch;
+            let syncPromise;
+            syncPromise = (async () => {
                 try {
                     const [compRows, teamRows, memberRows, attemptRows, answerRows, resultRows] = await Promise.all([
                         fetchRows('team_competitions'),
@@ -343,7 +388,9 @@
                         fetchRows('team_competition_answers'),
                         fetchRows('team_competition_results')
                     ]);
-                    await loadRemoteQuestions();
+                    if (syncEpoch !== state.lifecycleEpoch || !state.enabled || !app.data?.currentUser) return [];
+                    await loadRemoteQuestions(syncEpoch);
+                    if (syncEpoch !== state.lifecycleEpoch || !state.enabled || !app.data?.currentUser) return [];
                     const competitions = mapCompetitionRows(compRows || [], teamRows || [], memberRows || [], attemptRows || [], answerRows || [], resultRows || []);
                     state.syncing = true;
                     originalStore.clear();
@@ -369,10 +416,11 @@
                     console.warn('Chưa đồng bộ được thi đua nhóm từ Supabase:', error.message || error);
                     return originalStore.list();
                 } finally {
-                    state.syncPromise = null;
+                    if (state.syncPromise === syncPromise) state.syncPromise = null;
                 }
             })();
-            return state.syncPromise;
+            state.syncPromise = syncPromise;
+            return syncPromise;
         },
         flush() { return state.pendingWrite; },
         async persistCompetition(input) {

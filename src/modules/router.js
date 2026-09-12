@@ -4,14 +4,18 @@
     const app = root.app;
     app.router = {
         open(screenId) {
-            if (app.game && app.game.hardTimer) clearInterval(app.game.hardTimer);
-            if (app.exam && app.exam.examTimer) clearInterval(app.exam.examTimer);
+            app.game?.stopTimers?.();
+            app.exam?.stopTimer?.();
+            app.admin?.stopTeamCompetitionBoardTimer?.();
+            app.teamCompetition?.clearPlayTimer?.();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         },
         openGameView(viewId) {
-            if (app.game && app.game.hardTimer) clearInterval(app.game.hardTimer);
-            if (app.exam && app.exam.examTimer) clearInterval(app.exam.examTimer);
+            app.game?.stopTimers?.();
+            app.exam?.stopTimer?.();
+            app.admin?.stopTeamCompetitionBoardTimer?.();
+            app.teamCompetition?.clearPlayTimer?.();
             document.querySelectorAll('.game-view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
         },

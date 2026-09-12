@@ -38,6 +38,23 @@ const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
 
+// Performance boundary: list screens should request only the fields they can
+// render. Detail payloads (for example a complete exam or question) still
+// travel inside their existing JSON columns, but the query itself is explicit
+// so a new column cannot silently inflate every login and admin request.
+const SUPABASE_LIST_PROJECTIONS = Object.freeze({
+    game_users: 'id,username,fullname,password,role,approved,classlevel,class_name,gender,history,totalscore,stars,energy,energy_date,daily_gift_date,daily_gift_streak,total_stars_earned,last_practice_date,practice_streak,lucky_spin_date,lucky_spin_count,avatar_key,auth_user_id',
+    game_questions: 'id,classlevel,subject,semester,topic,type,q,options,ans,explanation,imageUrl,templateId,statements,subquestions,sharedPrompt,comparisonRows,practiceRows,angleCountRows,angleVisual,partAnswerCounts',
+    question_templates: 'id,name,classlevel,subject,semester,topic,lesson,question_type,generator_key,prompt_template,config,is_active,created_at,updated_at',
+    game_exams: 'id,name,classlevel,subject,period,questions,topics',
+    game_settings: 'id,data',
+    game_quests: 'id,title,target_subject,target_score,target_count,reward_stars,assign_type,assign_target,exam_id,is_active',
+    user_quests: 'id,user_username,quest_id,progress,is_completed',
+    user_pets: 'id,user_username,pet_name,pet_image,rarity,obtained_at',
+    pet_inventory: 'pet_id,remaining,updated_at',
+    user_question_history: 'id,user_username,question_key,last_seen_at'
+});
+
 // Bảng danh hiệu 20 bậc (5 nhóm × 4 cấp), sắp xếp GIẢM DẦN theo số Sao cần đạt.
 // Người chơi đạt danh hiệu tương ứng tổng Sao tích lũy (total_stars_earned) vượt qua ngưỡng.
 const PLAYER_TITLES = [
@@ -249,29 +266,77 @@ const app = {
         exams: [],
         petInventory: {},
         seenQuestionKeys: new Set(),
+        adminDataLoaded: false,
+        adminDataLoadPromise: null,
         settings: { hardTimeLimit: 10, examTimeLimit: 30, lessonMetadata: { questions: {}, quests: {} } },
         currentUser: null,
-        async fetchAllFromSupabase(table, filterCol, filterVal) {
+        getSupabaseProjection(table, columns = '') {
+            return String(columns || '').trim() || SUPABASE_LIST_PROJECTIONS[table] || 'id';
+        },
+        async fetchPageFromSupabase(table, { page = 0, pageSize = 100, filterCol = '', filterVal = '', columns = '' } = {}) {
+            const safePage = Number.isInteger(page) && page >= 0 ? page : 0;
+            const safePageSize = Math.min(500, Math.max(1, Number(pageSize) || 100));
+            if (!window.supabase) return { data: [], page: safePage, pageSize: safePageSize, hasMore: false, error: null };
+            const from = safePage * safePageSize;
+            let query = supabaseClient.from(table).select(this.getSupabaseProjection(table, columns));
+            if (filterCol && filterVal) query = query.ilike(filterCol, `%${filterVal}%`);
+            const { data, error } = await query.range(from, from + safePageSize - 1);
+            if (error) {
+                console.error(`Error fetching ${table}:`, error);
+                return { data: [], page: safePage, pageSize: safePageSize, hasMore: false, error };
+            }
+            const rows = Array.isArray(data) ? data : [];
+            return { data: rows, page: safePage, pageSize: safePageSize, hasMore: rows.length === safePageSize, error: null };
+        },
+        async fetchAllFromSupabase(table, filterCol, filterVal, options = {}) {
             if (!window.supabase) return [];
-            let allData = [];
-            let from = 0;
-            const step = 1000;
+            const pageSize = Math.min(500, Math.max(1, Number(options.pageSize) || 250));
+            const allData = [];
+            let page = 0;
             while (true) {
-                let query = supabaseClient.from(table).select('*');
-                if (filterCol && filterVal) {
-                    query = query.ilike(filterCol, `%${filterVal}%`);
-                }
-                const { data, error } = await query.range(from, from + step - 1);
-                if (error) {
-                    console.error(`Error fetching ${table}:`, error);
-                    break;
-                }
-                if (!data || data.length === 0) break;
-                allData = allData.concat(data);
-                if (data.length < step) break;
-                from += step;
+                const result = await this.fetchPageFromSupabase(table, {
+                    page,
+                    pageSize,
+                    filterCol,
+                    filterVal,
+                    columns: options.columns
+                });
+                if (result.error || result.data.length === 0) break;
+                allData.push(...result.data);
+                if (!result.hasMore) break;
+                page += 1;
             }
             return allData;
+        },
+        async ensureAdminDataLoaded({ force = false } = {}) {
+            if (this.currentUser?.role?.toLowerCase() !== 'admin') return false;
+            if (!force && this.adminDataLoaded) return true;
+            if (this.adminDataLoadPromise) return this.adminDataLoadPromise;
+            if (!window.supabase) {
+                this.adminDataLoaded = true;
+                return true;
+            }
+            this.adminDataLoadPromise = Promise.all([
+                this.fetchAllFromSupabase('game_questions'),
+                this.fetchAllFromSupabase('question_templates'),
+                this.fetchAllFromSupabase('game_quests')
+            ]).then(([questions, templates, quests]) => {
+                if (this.currentUser?.role?.toLowerCase() !== 'admin') return false;
+                this.libraryQuestions = questions;
+                this.hydrateQuestionLessons(this.libraryQuestions);
+                this.questionTemplates = templates;
+                this.quests = quests;
+                this.hydrateQuestCurriculum(this.quests);
+                this.adminDataLoaded = true;
+                return true;
+            }).catch(error => {
+                this.adminDataLoaded = false;
+                console.error('Không thể tải dữ liệu soạn đề Admin:', error);
+                return false;
+            }).finally(() => {
+                this.adminDataLoadPromise = null;
+            });
+            return this.adminDataLoadPromise;
         },
         loadLocalExams() {
             const stored = app.safeStorage?.getItem('game_exams');
@@ -786,6 +851,18 @@ const app = {
             this.petInventory[petId] = Number(data[0].remaining);
             return true;
         },
+        shutdownRealtime() {
+            const channel = this.realtimeChannel;
+            this.realtimeChannel = null;
+            if (!channel) return false;
+            try {
+                if (typeof channel.unsubscribe === 'function') channel.unsubscribe();
+                else if (typeof supabaseClient.removeChannel === 'function') supabaseClient.removeChannel(channel);
+            } catch (error) {
+                console.warn('Không thể dọn realtime dữ liệu game:', error);
+            }
+            return true;
+        },
 
         async init() {
             try {
@@ -808,7 +885,8 @@ const app = {
                 this.ensureLessonMetadata();
 
                 // Realtime subscription
-                supabaseClient.channel('custom-all-channel')
+                this.shutdownRealtime();
+                let realtimeChannel = supabaseClient.channel('custom-all-channel')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_users' }, async (payload) => {
                         console.log('Realtime DB Change received!', payload);
                         // Only process realtime updates if admin is logged in or for currentUser
@@ -894,7 +972,8 @@ const app = {
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'pet_inventory' }, async () => {
                         await this.refreshPetInventory();
                     })
-                    .subscribe();
+                    ;
+                this.realtimeChannel = realtimeChannel.subscribe();
 
             } catch (err) {
                 console.error("Critical DB error during init:", err);
@@ -1500,7 +1579,7 @@ const app = {
             if (authError || !authData?.user) return this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
 
             const { data: user, error: profileError } = await supabaseClient.from('game_users')
-                .select('*').eq('auth_user_id', authData.user.id).single();
+                .select(SUPABASE_LIST_PROJECTIONS.game_users).eq('auth_user_id', authData.user.id).single();
             if (profileError || !user) {
                 await supabaseClient.auth.signOut();
                 return this.showAuthFeedback('login-error', 'Tài khoản chưa được Giáo viên cấp quyền sử dụng game.', ['username']);
@@ -1512,6 +1591,7 @@ const app = {
                     return this.showAuthFeedback('login-error', 'Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!', ['username']);
                 }
                 app.data.currentUser = user;
+                app.teamCompetition?.configureSupabase?.(supabaseClient);
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
                 const localExams = app.data.loadLocalExams();
@@ -1535,19 +1615,16 @@ const app = {
 
                 // Lazy load based on role
                 if (isAdmin) {
-                    const [users, questions, templates, quests] = await Promise.all([
-                        app.data.fetchAllFromSupabase('game_users'),
-                        app.data.fetchAllFromSupabase('game_questions'),
-                        app.data.fetchAllFromSupabase('question_templates'),
-                        app.data.fetchAllFromSupabase('game_quests')
-                    ]);
+                    // Roster is needed by the team adapter immediately after
+                    // login; the large authoring collections are loaded only
+                    // when an Admin opens a relevant workspace.
+                    const users = await app.data.fetchAllFromSupabase('game_users', '', '', { pageSize: 250 });
                     app.data.users = users;
                     app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
-                    app.data.libraryQuestions = questions;
-                    app.data.hydrateQuestionLessons(app.data.libraryQuestions);
-                    app.data.questionTemplates = templates;
-                    app.data.quests = quests;
-                    app.data.hydrateQuestCurriculum(app.data.quests);
+                    app.data.libraryQuestions = [];
+                    app.data.questionTemplates = [];
+                    app.data.quests = [];
+                    app.data.adminDataLoaded = false;
                     document.getElementById('admin-station').style.display = 'flex';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
@@ -1682,8 +1759,19 @@ const app = {
                 if (!confirmed) return;
                 if (app.router) app.router.open('map-screen');
             }
+            await app.teamCompetition?.remote?.flush?.();
+            app.teamCompetition?.remote?.shutdown?.();
             await supabaseClient.auth.signOut();
             app.data.currentUser = null;
+            app.data.adminDataLoaded = false;
+            app.data.adminDataLoadPromise = null;
+            app.data.users = [];
+            app.data.libraryQuestions = [];
+            app.data.questionTemplates = [];
+            app.data.quests = [];
+            app.data.userQuests = [];
+            app.data.userPets = [];
+            app.data.seenQuestionKeys = new Set();
             app.admin?.syncRoleAwareLabels();
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
@@ -1776,6 +1864,24 @@ const app = {
             ])
         },
         state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, answerSubmitted: false, finished: false, historyDetails: [], attemptId: null },
+        matchingResizeHandler: null,
+        matchingLineTimer: null,
+        cleanupMatching() {
+            if (this.matchingResizeHandler) {
+                window.removeEventListener('resize', this.matchingResizeHandler);
+                this.matchingResizeHandler = null;
+            }
+            if (this.matchingLineTimer !== null) {
+                clearTimeout(this.matchingLineTimer);
+                this.matchingLineTimer = null;
+            }
+            app.lifecycle?.cleanup('game-question');
+        },
+        stopTimers() {
+            this.cleanupMatching();
+            if (this.hardTimer) clearInterval(this.hardTimer);
+            this.hardTimer = null;
+        },
         getPersistenceIdentity(user = app.data.currentUser) {
             const raw = String(user?.username || user?.id || 'guest').trim().toLocaleLowerCase('vi-VN');
             return raw.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80) || 'guest';
@@ -2688,6 +2794,7 @@ const app = {
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
         loadQuestion() {
+            this.cleanupMatching();
             if (this.skills) this.skills.state.shieldActive = false;
             
             const q = this.state.questions[this.state.currentIdx];
@@ -3379,7 +3486,11 @@ const app = {
                     });
                 };
                 
-                window.addEventListener('resize', updateLines);
+                if (app.lifecycle?.listen) app.lifecycle.listen('game-question', window, 'resize', updateLines);
+                else {
+                    this.matchingResizeHandler = updateLines;
+                    window.addEventListener('resize', this.matchingResizeHandler);
+                }
                 
                 const handleSelection = () => {
                     if (selectedLeft && selectedRight) {
@@ -3466,7 +3577,11 @@ const app = {
                 colsWrapper.appendChild(rightCol);
                 optContainer.appendChild(colsWrapper);
 
-                setTimeout(updateLines, 50);
+                if (app.lifecycle?.timeout) app.lifecycle.timeout('game-question', updateLines, 50);
+                else this.matchingLineTimer = setTimeout(() => {
+                    this.matchingLineTimer = null;
+                    updateLines();
+                }, 50);
             }
 
 
@@ -3489,17 +3604,20 @@ const app = {
 
                     if (remaining <= 0) {
                         clearInterval(this.hardTimer);
+                        this.hardTimer = null;
                         this.submitAnswer(true);
                     }
                 }, 250);
             } else {
                 timerDisplay.style.display = 'none';
                 if (this.hardTimer) clearInterval(this.hardTimer);
+                this.hardTimer = null;
             }
             this.saveAttemptDraft();
         },
         submitAnswer(isTimeout = false) {
             if (this.hardTimer) clearInterval(this.hardTimer);
+            this.hardTimer = null;
             const q = this.state.questions[this.state.currentIdx];
             let isCorrect = false;
             let scoreResult = null;
@@ -4413,12 +4531,13 @@ const app = {
                 const s = seconds % 60;
                 return `(${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')})`;
             };
-            if (this.examTimer) clearInterval(this.examTimer);
+            this.stopTimer();
             const updateTimer = () => {
                 const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
                 timerDisplay.textContent = formatTime(remaining);
                 if (remaining <= 0) {
                     clearInterval(this.examTimer);
+                    this.examTimer = null;
                     alert('Hết giờ! Hệ thống sẽ tự động nộp bài.');
                     this.submit(true);
                 }
@@ -4429,6 +4548,10 @@ const app = {
                 this.saveAttemptDraft();
             }, 1000);
             this.saveAttemptDraft();
+        },
+        stopTimer() {
+            if (this.examTimer) clearInterval(this.examTimer);
+            this.examTimer = null;
         },
         restoreAttemptDraft(user = app.data.currentUser) {
             if (!app.game.isPersistableStudent(user)) return false;
@@ -4508,14 +4631,14 @@ const app = {
         confirmExit() {
             if (confirm('Bạn chưa nộp bài. Tiến độ hiện tại sẽ được lưu để có thể tiếp tục sau. Bạn vẫn muốn thoát?')) {
                 this.saveAttemptDraft();
-                if (this.examTimer) clearInterval(this.examTimer);
+                this.stopTimer();
                 app.router.open('map-screen');
             }
         },
 
         submit(isTimeout = false) {
             if (!isTimeout && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
-            if (this.examTimer) clearInterval(this.examTimer);
+            this.stopTimer();
             if (this.state.finished) return;
             this.state.finished = true;
 
@@ -4556,6 +4679,10 @@ const app = {
             classlevel: 'Lớp 4',
             subject: 'Toán',
             period: 'Học Kỳ 1'
+        },
+        stopTeamCompetitionBoardTimer() {
+            if (this.teamCompetitionBoardTimer) clearInterval(this.teamCompetitionBoardTimer);
+            this.teamCompetitionBoardTimer = null;
         },
         isAdminUser() {
             return app.data.currentUser?.role?.toLowerCase() === 'admin';
@@ -4769,6 +4896,16 @@ const app = {
             }
             app.router.open('admin-compose-screen');
             this.renderComposer();
+            // Offline fixtures and local-only authoring already have their data in
+            // memory. Do not schedule a microtask that re-renders the workspace
+            // after a test/user has opened a detail form in the same turn.
+            if (window.supabase && !app.data.adminDataLoaded) {
+                void app.data.ensureAdminDataLoaded().then(loaded => {
+                    if (loaded && document.getElementById('admin-compose-screen')?.classList.contains('active')) {
+                        this.renderComposer();
+                    }
+                });
+            }
             return true;
         },
         openComposerModule(module) {
@@ -5845,6 +5982,22 @@ const app = {
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
 
             const box = document.getElementById('treasure-content-area');
+            const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
+            if (needsAdminData && !app.data.adminDataLoaded && window.supabase) {
+                if (box) {
+                    box.setAttribute('aria-busy', 'true');
+                    box.innerHTML = `<div class="admin-loading-state" role="status" aria-live="polite"><span class="admin-loading-state__icon" aria-hidden="true">◌</span><div><strong>Đang mở kho dữ liệu</strong><p>Đang tải đúng phần cần dùng, các màn khác không bị tải theo.</p></div></div>`;
+                }
+                void app.data.ensureAdminDataLoaded().then(loaded => {
+                    if (loaded && document.getElementById('treasure-modal')?.classList.contains('active')) this.switchTab(tab);
+                    else if (box && !loaded) {
+                        box.setAttribute('aria-busy', 'false');
+                        box.innerHTML = `<div class="admin-error-state" role="alert"><strong>Chưa tải được dữ liệu</strong><p>Vui lòng thử lại khi kết nối ổn định.</p><button type="button" class="action-btn" onclick="app.admin.switchTab('${tab}')">Thử lại</button></div>`;
+                    }
+                });
+                return;
+            }
+            if (box) box.setAttribute('aria-busy', 'false');
             if (tab === 'templates') this.renderTemplates(box);
             else if (tab === 'questions') this.renderQuestions(box);
             else if (tab === 'exams') this.renderExams(box);
@@ -5958,7 +6111,7 @@ const app = {
                     <span class="personal-quest-list-heading__count">${quests.length} nhiệm vụ</span>
                 </div>
                 <div class="personal-quest-list">
-                    ${cards || `<div class="personal-quest-empty"><span class="personal-quest-empty__icon" aria-hidden="true">✦</span><div><h4>Chưa có nhiệm vụ cá nhân</h4><p>Bắt đầu bằng một mục tiêu nhỏ, rõ ràng và phù hợp với lộ trình học.</p></div><button type="button" class="personal-quest-empty__button" onclick="app.admin.showAddQuestForm()">Tạo nhiệm vụ đầu tiên <span aria-hidden="true">→</span></button></div>`}
+                    ${cards || `<div class="personal-quest-empty admin-empty-state"><span class="personal-quest-empty__icon" aria-hidden="true">✦</span><div><h4>Chưa có nhiệm vụ cá nhân</h4><p>Bắt đầu bằng một mục tiêu nhỏ, rõ ràng và phù hợp với lộ trình học.</p></div><button type="button" class="personal-quest-empty__button" onclick="app.admin.showAddQuestForm()">Tạo nhiệm vụ đầu tiên <span aria-hidden="true">→</span></button></div>`}
                 </div>
             </section>`;
         },
@@ -6388,7 +6541,7 @@ const app = {
         },
         openTeamCompetitionBoard(id) {
             this.questMode = 'team';
-            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            this.stopTeamCompetitionBoardTimer();
             const box = document.getElementById('treasure-content-area');
             const match = app.teamCompetition?.store.get(id);
             if (!box || !match) return;
@@ -6396,7 +6549,7 @@ const app = {
             this.renderTeamCompetitionBoard(box, match.id);
         },
         renderTeamCompetitionBoard(box, id) {
-            if (this.teamCompetitionBoardTimer) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; }
+            this.stopTeamCompetitionBoardTimer();
             const match = app.teamCompetition?.store.get(id);
             if (!box || !match) return;
             const status = app.teamCompetition.STATUS_LABELS[match.status] || 'Nháp';
@@ -6428,7 +6581,7 @@ const app = {
             box.innerHTML = `<section class="team-competition-board" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button><span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><header class="team-board-hero"><div><p class="team-board-kicker">Thi đua theo nhóm · Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</p><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2><p>${match.teams.length} nhóm · ${match.timeLimitMinutes === null ? 'Không giới hạn thời gian' : `${match.timeLimitMinutes} phút`} · ${match.questionMode === 'different' ? 'Bài riêng theo nhóm' : 'Một bài giống nhau'}</p></div><div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>nhóm</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div></header><div class="team-board-actions">${globalAction}</div><div class="team-board-grid">${cards}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
-                if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { clearInterval(this.teamCompetitionBoardTimer); this.teamCompetitionBoardTimer = null; return; }
+                if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { this.stopTeamCompetitionBoardTimer(); return; }
                 if (current.timeLimitMinutes !== null && current.startedAt && Date.now() >= Number(current.startedAt) + Number(current.timeLimitMinutes) * 60 * 1000) {
                     this.endTeamCompetition(current.id, true);
                     return;
@@ -6911,7 +7064,7 @@ const app = {
                   <footer class="template-library-card__actions"><button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa template</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button></footer>
                 </article>`;
             };
-            const emptyMarkup = `<div class="template-library__empty" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có template phù hợp' : 'Kho template đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một template mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>`;
+            const emptyMarkup = `<div class="template-library__empty admin-empty-state" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có template phù hợp' : 'Kho template đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một template mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo template mới</button></div>`;
 
             box.innerHTML = `
               <section class="template-library" aria-labelledby="template-library-title">
@@ -10154,7 +10307,7 @@ const app = {
                     <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
                 </section>
                 <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
-                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
+                <div class="admin-student-grid">${cards || `<div class="admin-roster-empty admin-empty-state"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
             </div>`;
         },
         async approveUser(username) {
@@ -10720,8 +10873,8 @@ const app = {
                 };
             }
             const [petsResult, questsResult, seenResult] = await Promise.all([
-                supabaseClient.from('user_pets').select('*').eq('user_username', username),
-                supabaseClient.from('user_quests').select('*').eq('user_username', username),
+                supabaseClient.from('user_pets').select(SUPABASE_LIST_PROJECTIONS.user_pets).eq('user_username', username),
+                supabaseClient.from('user_quests').select(SUPABASE_LIST_PROJECTIONS.user_quests).eq('user_username', username),
                 supabaseClient.from('user_question_history').select('question_key,last_seen_at').eq('user_username', username)
             ]);
             const failures = [petsResult, questsResult, seenResult].filter(result => result.error);
@@ -11798,13 +11951,20 @@ window.onload = async () => {
             }
         }
     };
-    window.addEventListener('offline', handleNetworkChange);
-    window.addEventListener('online', handleNetworkChange);
-    window.addEventListener('beforeunload', () => {
+    const listenForAppLifecycle = (target, type, handler) => {
+        if (app.lifecycle?.listen) return app.lifecycle.listen('app-shell', target, type, handler);
+        target.addEventListener(type, handler);
+        return () => target.removeEventListener(type, handler);
+    };
+    listenForAppLifecycle(window, 'offline', handleNetworkChange);
+    listenForAppLifecycle(window, 'online', handleNetworkChange);
+    listenForAppLifecycle(window, 'beforeunload', () => {
         app.game?.saveAttemptDraft?.();
         app.exam?.saveAttemptDraft?.();
+        app.data?.shutdownRealtime?.();
+        app.teamCompetition?.remote?.shutdown?.();
     });
-    document.addEventListener('visibilitychange', () => {
+    listenForAppLifecycle(document, 'visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             app.game?.saveAttemptDraft?.();
             app.exam?.saveAttemptDraft?.();

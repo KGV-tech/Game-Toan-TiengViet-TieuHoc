@@ -3,9 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Hành Trình Tri Thức Lớp 5</title>
+  <link rel="preload" as="image" href="./public/login_reference_bg.webp" fetchpriority="high">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
 
     <!-- Màn hình Đăng nhập -->
     <div id="login-screen" class="screen active auth-screen">
-      <img src="./public/login_reference_bg.webp" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img">
+      <img src="./public/login_reference_bg.webp" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img" loading="eager" fetchpriority="high" decoding="async">
       <div class="login-artwork-anchor">
         <img src="./public/login_logo.webp" class="login-logo" alt="Hành trình: Kết Nối Tri Thức">
         <div class="glass-container login-panel" style="margin-top: 20vh;">
@@ -328,7 +328,7 @@
           </aside>
         </aside>
 
-        <main class="admin-compose-main">
+        <main class="admin-compose-main admin-surface">
           <header class="admin-compose-header">
             <div>
               <p class="admin-compose-breadcrumb">Bản đồ / Không gian Admin</p>
@@ -776,7 +776,7 @@
           <!-- Dynamic Tabs -->
         </div>
 
-        <div id="treasure-content-area" class="admin-content scroll-box"></div>
+        <div id="treasure-content-area" class="admin-content scroll-box admin-surface"></div>
       </div>
     </div>
   </div>
@@ -952,6 +952,7 @@
   <script defer src="./src/modules/constants.js"></script>
   <script defer src="./src/modules/curriculum.js"></script>
   <script defer src="./src/modules/template-manifest.js"></script>
+  <script defer src="./src/modules/lifecycle.js"></script>
   <script defer src="./src/modules/router.js"></script>
   <script defer src="./src/modules/modal.js"></script>
   <script defer src="./src/modules/daily.js"></script>
