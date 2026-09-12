@@ -24,7 +24,7 @@ assert(!source.includes('Ví dụ khai báo'), 'Template editor must no longer p
 assert(source.includes('Số lượng chữ số ít nhất'), 'Four-arithmetic templates must clearly describe the minimum digit count.');
 assert(source.includes('Số lượng chữ số nhiều nhất'), 'Four-arithmetic templates must clearly describe the maximum digit count.');
 assert(css.includes('template-editor__arithmetic-settings'), 'Arithmetic settings must use the compact grid layout.');
-assert(css.includes('max-width: 250px'), 'Range inputs must stay compact instead of stretching across the editor.');
+assert(css.includes('width: 74px'), 'Range inputs must stay compact instead of stretching across the editor.');
 assert(source.includes('onclick="app.admin.renderTemplateForm(null)"'), 'Template Bank must offer a blank template creation flow.');
 assert(source.includes('btn-template-create'), 'Template Bank must expose a visible create-template action.');
 assert(source.includes('template-library-card'), 'Template Bank must render interactive template cards.');
@@ -33,7 +33,7 @@ assert(source.includes('template-select-all'), 'Template editor must provide qui
 assert(source.includes('hundredBillions'), 'Template editor must support place values through hundreds of billions.');
 assert(source.includes('formatMathText'), 'Math content must format long numbers with textbook-style spaces.');
 assert(source.includes('formatTemplateNumberInput'), 'Template range inputs must format numbers while editing.');
-assert(source.includes('template-variable'), 'Template editor must show insertable variables for administrators.');
+assert(!source.includes('template-variables'), 'Template editor must omit the redundant insertable-variable panel.');
 assert(source.includes('template-part-checkbox'), 'Template editor must expose a checkbox for each default subquestion.');
 assert(source.includes('template-part-count'), 'Template editor must expose the supported 1/2/4 subquestion counts.');
 assert(source.includes('exam-structured-part__checkbox'), 'Exam question editors must expose a checkbox for each structured subquestion.');
@@ -41,7 +41,10 @@ assert(source.includes('getEmptyExamQuestionDraft'), 'Blank exam composer cards 
 assert(source.includes('getValidPartAnswerCounts'), 'Question scoring must validate grouped subquestion answers.');
 assert(source.includes('presetPrompt'), 'Templates stored with {question} must show a readable default prompt in the editor.');
 assert(source.includes('defaultPrompt'), 'Every dynamic template must declare its readable default prompt.');
-assert(source.includes('insertTemplateVariable'), 'Template editor must let administrators insert a variable into the prompt.');
+assert(!source.includes('insertTemplateVariable'), 'Template editor must not keep the removed variable-insertion control path.');
+assert(source.includes('id="template-example"'), 'Template editor must keep a compact output summary.');
+assert(source.includes('id="template-preview-open"') && source.includes('template-editor__preview-summary'), 'Preview must live inside the output summary.');
+assert(!source.includes('Muốn xem câu này chạy ra sao?'), 'Template editor must omit the redundant preview callout.');
 assert(source.includes('place_values'), 'Template editor must document the generated place-value wording variable.');
 assert(source.includes('normalizeFillAnswer'), 'Fill-in answers must normalize textbook number spacing before grading.');
 assert(source.includes('template-fill-layout'), 'Dynamic fill-in templates must use a multi-row layout.');

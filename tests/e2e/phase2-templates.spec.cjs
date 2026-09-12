@@ -32,7 +32,7 @@ test('Admin chỉnh được template Phase 2 với preview và cấu hình đú
   await expect(page.locator('#template-lesson')).toHaveValue('g4-math-hk1-b03');
   await expect(page.locator('.template-editor__rule--phase2-controls')).toBeVisible();
   await expect(page.locator('#template-example')).toContainText('Đếm số chẵn, số lẻ');
-  await expect(page.locator('#template-variables')).toContainText('{question}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
 
   const config = await page.evaluate(() => app.admin.collectTemplateForm().config);
   expect(config).toMatchObject({
@@ -46,7 +46,7 @@ test('Admin chỉnh được template Phase 2 với preview và cấu hình đú
   await page.locator('#template-generator').selectOption('number.variable_expression_value');
   await expect(page.locator('#template-question-type')).toHaveValue('Điền khuyết');
   await expect(page.locator('#template-example')).toContainText('Tính giá trị biểu thức chứa chữ');
-  await expect(page.locator('#template-variables')).toContainText('{question}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   await expect(page.locator('#template-phase2-variable-minimum')).toBeEnabled();
   await expect(page.locator('#template-phase2-minimum')).toBeDisabled();
 });

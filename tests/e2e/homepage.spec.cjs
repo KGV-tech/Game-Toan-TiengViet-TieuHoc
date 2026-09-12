@@ -578,7 +578,12 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(page.locator('#template-arithmetic-layouts')).toContainText('Hai vế đều là phép tính');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ ba');
   await expect(page.locator('#template-arithmetic-blank-positions')).toContainText('Số thứ tư');
-  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
+  await expect(page.locator('.template-editor')).not.toContainText('Biến có thể chèn');
+  await expect(page.locator('#template-example')).not.toContainText('Điền khuyết');
+  await expect(page.locator('.template-editor__preview-cta')).toHaveCount(0);
+  await expect(page.locator('#template-example #template-preview-open')).toBeVisible();
+  await expect(page.locator('.template-editor')).not.toContainText('Muốn xem câu này chạy ra sao?');
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__line')).toHaveCount(4);
@@ -604,10 +609,36 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect.poll(() => page.locator('.template-editor__rule--range-controls').evaluate(element => Math.round(element.getBoundingClientRect().width))).toBeGreaterThan(1000);
   await expect(page.locator('label:has(#template-minimum-digits)')).toContainText('Số lượng chữ số ít nhất');
   await expect(page.locator('label:has(#template-maximum-digits)')).toContainText('Số lượng chữ số nhiều nhất');
+  const digitControls = await page.locator('.template-editor__rule--range-controls label').evaluateAll(labels => labels.map(label => {
+    const input = label.querySelector('input');
+    const inputBox = input.getBoundingClientRect();
+    return {
+      inputWidth: inputBox.width,
+      direction: getComputedStyle(label).flexDirection
+    };
+  }));
+  expect(digitControls).toEqual([
+    expect.objectContaining({ direction: 'row' }),
+    expect.objectContaining({ direction: 'row' })
+  ]);
+  expect(digitControls.every(control => control.inputWidth <= 96)).toBe(true);
+  const actionButtons = page.locator('.template-editor__actions > button');
+  await expect(actionButtons).toHaveCount(3);
+  const actionGeometry = await actionButtons.evaluateAll(buttons => buttons.map(button => {
+    const box = button.getBoundingClientRect();
+    return { top: Math.round(box.top), height: Math.round(box.height) };
+  }));
+  expect(new Set(actionGeometry.map(button => button.top)).size).toBe(1);
+  expect(new Set(actionGeometry.map(button => button.height)).size).toBe(1);
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
     minimum: 10000, maximum: 999999, minimumDigits: 5, maximumDigits: 6
   });
   await captureUiReview(page, testInfo, 'generic-digit-count-template-config.png');
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.locator('.template-editor__actions').scrollIntoViewIfNeeded();
+  const tabletActionTops = await actionButtons.evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));
+  expect(new Set(tabletActionTops).size).toBe(1);
+  await captureUiReview(page, testInfo, 'template-actions-tablet-landscape.png');
 });
 
 test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã lưu', async ({ page }) => {
@@ -626,8 +657,7 @@ test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã l
 
   await expect(page.locator('#template-generator')).toHaveValue('g4-m-add-sub-multi-digit');
   await expect(page.locator('#template-question-type')).toHaveValue('Điền khuyết');
-  await expect(page.locator('#template-variables')).toContainText('{question}');
-  await expect(page.locator('#template-variables')).not.toContainText('{place}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   await expect(page.locator('#template-example .template-editor__preview-image')).toHaveCount(0);
   await expect(page.locator('#template-example .template-editor__preview-summary')).toContainText('Bốn phép cộng và trừ số nhiều chữ số');
   await page.locator('#template-preview-open').click();
@@ -750,7 +780,7 @@ test('bốn phép tính điền khuyết chủ đề 1 giữ một phép tính c
   await expect(page.locator('fieldset:has(#template-arithmetic-operations) legend')).toHaveText('Phép tính được phép (chọn một cho cả bốn ý)');
   await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
   await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('5');
-  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
   expect(savedConfig).toEqual(expect.objectContaining({
     minimumDigits: 2, maximumDigits: 5, operations: ['+', '-', '*', '/']
@@ -918,7 +948,7 @@ test('so sánh kéo thả bốn ý cùng một phép tính luôn hiện đủ ba
   await expect(page.locator('.template-editor__rule--four-arithmetic-controls')).toBeVisible();
   await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
   await expect(page.locator('#template-arithmetic-comparisons')).toHaveCount(0);
-  await expect(page.locator('#template-variables')).toContainText('{exercises}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   const savedConfig = await page.evaluate(() => app.admin.collectTemplateForm().config);
   expect(savedConfig).toEqual(expect.objectContaining({
     minimumDigits: 2, maximumDigits: 9, operations: ['+', '-'],
@@ -970,8 +1000,7 @@ test('Kho Template: két sắt hiện đủ khai báo lớp và hàng', async ({
   await expect(page.locator('#template-safe-password-condition1-classes')).toContainText('Lớp tỷ');
   await expect(page.locator('#template-safe-password-condition1-places')).toContainText('Triệu');
   await expect(page.locator('#template-safe-password-condition2-places')).toContainText('Trăm nghìn');
-  await expect(page.locator('#template-variables')).toContainText('{condition1}');
-  await expect(page.locator('#template-variables')).toContainText('{condition2}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   await captureUiReview(page, testInfo, 'safe-password-template-config.png');
 });
 
@@ -996,8 +1025,7 @@ test('Kho Template: Đúng/Sai hiện cấu hình lớp, hàng và biến nhận
   await expect(page.locator('#template-true-false-kinds')).toContainText('Nhận định về hàng');
   await expect(page.locator('#template-true-false-kinds input[value="class"]')).toBeChecked();
   await expect(page.locator('#template-true-false-kinds input[value="place"]')).toBeChecked();
-  await expect(page.locator('#template-variables')).toContainText('{number}');
-  await expect(page.locator('#template-variables')).toContainText('{statements}');
+  await expect(page.locator('#template-variables')).toHaveCount(0);
   await captureUiReview(page, testInfo, 'true-false-template-config.png');
 });
 
