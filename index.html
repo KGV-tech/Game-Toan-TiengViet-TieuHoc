@@ -616,13 +616,6 @@
               <div id="skill-bar-container"
                 style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;">
               </div>
-
-              <button id="submit-ans-btn" class="btn-action btn-check asset-button asset-button--wide" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;" aria-label="Kiểm tra">
-                <img id="submit-ans-img" src="./public/ui/buttons/group1/check.png" alt="" aria-hidden="true">
-                <span id="submit-ans-text" class="sr-only">Kiểm tra</span>
-              </button>
-              
-              <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
             </div>
 
             <div class="play-center">
@@ -637,6 +630,30 @@
               <div id="game-question-container" class="question-box"></div>
               <div id="game-options-container" class="options-grid"></div>
             </div>
+
+            <aside class="play-right" aria-label="Tiến độ và lời giải">
+              <div id="game-progress-panel" class="game-progress-panel">
+                <div id="game-progress-ring" class="game-progress-ring" role="img" aria-label="0 điểm, hoàn thành 0 trên 4 ý" style="--ring-progress: 0%;">
+                  <div class="game-progress-ring__content">
+                    <strong id="game-progress-value">0</strong>
+                    <small>điểm</small>
+                  </div>
+                </div>
+              </div>
+
+              <button id="submit-ans-btn" class="btn-action btn-check asset-button asset-button--wide" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;" aria-label="Kiểm tra">
+                <img id="submit-ans-img" src="./public/ui/buttons/group1/check.png" alt="" aria-hidden="true">
+                <span id="submit-ans-text" class="sr-only">Kiểm tra</span>
+              </button>
+
+              <div id="game-progress-content" class="game-progress-content">
+                <div id="game-progress-copy" class="game-progress-copy" aria-live="polite">
+                  <strong>Hoàn thành <span id="game-progress-completed">0</span>/<span id="game-progress-total">4</span> ý.</strong>
+                  <span id="game-progress-hint">Tiến độ sẽ sáng lên sau mỗi lựa chọn.</span>
+                </div>
+                <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>

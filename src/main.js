@@ -2687,15 +2687,121 @@ const app = {
             const compactNumber = normalized.replace(/\s/g, '');
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
+        getQuestionPartCount(question = this.state.questions?.[this.state.currentIdx]) {
+            if (!question) return 1;
+            const structuredParts = [
+                question.subquestions,
+                question.statements,
+                question.comparisonRows,
+                question.angleItems,
+                question.angleCountRows,
+                question.practiceRows
+            ].find(parts => Array.isArray(parts) && parts.length);
+            if (structuredParts) return structuredParts.length;
+
+            if (Array.isArray(question.sequenceRounds) && question.sequenceRounds.length) {
+                const blankCount = question.sequenceRounds.reduce((total, round) => {
+                    const displayBlanks = (String(round?.display || '').match(/___/g) || []).length;
+                    const indexedBlanks = Array.isArray(round?.blankIndexes) ? round.blankIndexes.length : 0;
+                    return total + Math.max(displayBlanks, indexedBlanks);
+                }, 0);
+                if (blankCount) return blankCount;
+            }
+
+            const placeholderCount = (String(question.q || '').match(/___|\.\.\./g) || []).length;
+            return Math.max(1, placeholderCount);
+        },
+        getCompletedQuestionPartCount(question = this.state.questions?.[this.state.currentIdx]) {
+            const total = this.getQuestionPartCount(question);
+            if (!question) return 0;
+            const countFilled = values => Array.isArray(values)
+                ? values.filter(value => String(value ?? '').trim()).length
+                : null;
+
+            if (Array.isArray(question.subquestions)) return Math.min(total, countFilled(this.state.multipleChoiceSelections) || 0);
+            if (Array.isArray(question.statements)) return Math.min(total, countFilled(this.state.trueFalseSelections) || 0);
+            if (Array.isArray(question.sequenceRounds) || String(question.type || '').includes('Chuỗi')) {
+                const sequenceCount = countFilled(this.state.seqAnswers);
+                if (sequenceCount !== null) return Math.min(total, sequenceCount);
+            }
+            if (Array.isArray(question.comparisonRows)) {
+                return Math.min(total, document.querySelectorAll('#game-question-container .comparison-drag-slot.filled').length);
+            }
+            if (Array.isArray(question.angleItems)) {
+                return Math.min(total, document.querySelectorAll('#game-question-container .angle-drag-row .drag-slot.filled').length);
+            }
+            if (Array.isArray(question.angleCountRows) || Array.isArray(question.practiceRows)) {
+                const fields = [...document.querySelectorAll('#game-play-view input')];
+                if (fields.length) return Math.min(total, fields.filter(field => field.value.trim()).length);
+            }
+            if (String(question.type || '').includes('Đối chiếu')) {
+                return Math.min(total, Array.isArray(this.state.matchingPairs) ? this.state.matchingPairs.length : 0);
+            }
+
+            const fields = [...document.querySelectorAll('#game-play-view input')];
+            if (fields.length) return Math.min(total, fields.filter(field => field.value.trim()).length);
+            const filledSlots = document.querySelectorAll('#game-play-view .drag-slot.filled').length;
+            if (filledSlots) return Math.min(total, filledSlots);
+            const selectedControl = document.querySelector('#game-play-view #game-options-container .selected, #game-play-view #game-question-container .filled');
+            return selectedControl || String(this.state.selectedAns ?? '').trim() ? 1 : 0;
+        },
+        updateProgressPanel() {
+            const ring = document.getElementById('game-progress-ring');
+            if (!ring) return;
+            const question = this.state.questions?.[this.state.currentIdx];
+            const total = Math.max(1, this.getQuestionPartCount(question));
+            const completed = Math.min(total, Math.max(0, this.getCompletedQuestionPartCount(question)));
+            const percentage = Math.round((completed / total) * 100);
+            const score = Number(this.state.score) || 0;
+            const scoreText = Number.isInteger(score) ? String(score) : String(Number(score.toFixed(2)));
+
+            ring.style.setProperty('--ring-progress', `${percentage}%`);
+            ring.setAttribute('aria-label', `${scoreText} điểm, hoàn thành ${completed} trên ${total} ý`);
+            const value = document.getElementById('game-progress-value');
+            const completedValue = document.getElementById('game-progress-completed');
+            const totalValue = document.getElementById('game-progress-total');
+            const hint = document.getElementById('game-progress-hint');
+            if (value) value.textContent = scoreText;
+            if (completedValue) completedValue.textContent = completed;
+            if (totalValue) totalValue.textContent = total;
+            if (hint) {
+                hint.textContent = this.state.answerSubmitted
+                    ? 'Lời giải hiển thị bên dưới.'
+                    : completed >= total
+                        ? 'Sẵn sàng kiểm tra kết quả.'
+                        : 'Tiến độ sẽ sáng lên sau mỗi lựa chọn.';
+            }
+        },
+        bindProgressPanelListeners() {
+            if (this.progressPanelListenersBound) return;
+            const view = document.getElementById('game-play-view');
+            if (!view) return;
+            const sync = event => {
+                const target = event.target;
+                if (target && typeof target.closest === 'function' && target.closest('#game-options-container, #game-question-container')) {
+                    this.updateProgressPanel();
+                }
+            };
+            view.addEventListener('click', sync);
+            view.addEventListener('input', sync);
+            view.addEventListener('change', sync);
+            view.addEventListener('drop', sync);
+            this.progressPanelListenersBound = true;
+        },
         loadQuestion() {
             if (this.skills) this.skills.state.shieldActive = false;
             
             const q = this.state.questions[this.state.currentIdx];
+            this.bindProgressPanelListeners();
             document.getElementById('current-q-index').textContent = this.state.currentIdx + 1;
             document.getElementById('total-q-count').textContent = this.state.questions.length;
             document.getElementById('game-score').textContent = this.state.score;
 
-            document.getElementById('cat-speech-bubble').style.display = 'none';
+            const speechBubble = document.getElementById('cat-speech-bubble');
+            speechBubble.style.display = 'flex';
+            speechBubble.innerHTML = '<span>Cố lên!<br>Bạn làm được!</span>';
+            const progressCopy = document.getElementById('game-progress-copy');
+            if (progressCopy) progressCopy.style.display = 'grid';
             document.getElementById('explanation-box').style.display = 'none';
 
             const user = app.data.currentUser;
@@ -3497,6 +3603,7 @@ const app = {
                 if (this.hardTimer) clearInterval(this.hardTimer);
             }
             this.saveAttemptDraft();
+            this.updateProgressPanel();
         },
         submitAnswer(isTimeout = false) {
             if (this.hardTimer) clearInterval(this.hardTimer);
@@ -3889,12 +3996,10 @@ const app = {
 
             const explanation = q.explanation || q.hint;
             const explBox = document.getElementById('explanation-box');
-            if (explanation) {
-                explBox.style.display = 'block';
-                explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanation}`;
-            } else {
-                explBox.style.display = 'none';
-            }
+            const progressCopy = document.getElementById('game-progress-copy');
+            if (progressCopy) progressCopy.style.display = 'none';
+            explBox.style.display = 'block';
+            explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanation || 'Đáp án đúng đã được đánh dấu trên bài.'}`;
 
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
@@ -3910,6 +4015,7 @@ const app = {
             this.saveAttemptDraft();
 
             document.getElementById('game-score').textContent = this.state.score;
+            this.updateProgressPanel();
 
             const btnCheck = document.getElementById('submit-ans-btn');
 
