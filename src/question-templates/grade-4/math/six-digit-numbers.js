@@ -4,10 +4,11 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.six_digit_numbers'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '3. Số có nhiều chữ số';
 const MODES = ['compose', 'read', 'million', 'digit'];
+const MODE_LABELS = { compose: 'lập số sáu chữ số', read: 'đọc số sáu chữ số', million: 'số liền trước và liền sau một triệu', digit: 'xác định giá trị chữ số' };
 const PLACES = [
     [100000, 'trăm nghìn'],
     [10000, 'chục nghìn'],
@@ -33,11 +34,7 @@ function configuredRange(config) {
 }
 
 function configuredModes(config) {
-    const modes = Array.isArray(config.modes) ? [...config.modes] : [...MODES];
-    if (modes.length !== 4 || new Set(modes).size !== 4 || modes.some(mode => !MODES.includes(mode))) {
-        throw new Error('Bài 10 cần đúng bốn dạng: lập số, đọc số, số 1 000 000 và giá trị chữ số.');
-    }
-    return modes;
+    return configuredValues(config, 'modes', MODES, MODES, 'Bài 10 cần ít nhất một dạng hợp lệ: lập số, đọc số, số 1 000 000 hoặc giá trị chữ số.');
 }
 
 function wordChoices(correctNumber, minimum, maximum, random) {
@@ -57,16 +54,25 @@ function digitAt(number, placeValue) {
     return Math.floor(number / placeValue) % 10;
 }
 
-function makeSubquestion(mode, minimum, maximum, random) {
+function makeSubquestion(mode, minimum, maximum, random, variant = 0) {
     if (mode === 'million') {
-        const answer = 1000000;
+        const boundaryCases = [
+            { number: 999998, direction: 'sau', answer: 999999 },
+            { number: 999999, direction: 'sau', answer: 1000000 },
+            { number: 1000001, direction: 'trước', answer: 1000000 },
+            { number: 1000002, direction: 'trước', answer: 1000001 }
+        ];
+        const boundary = boundaryCases[variant % boundaryCases.length];
+        const answer = boundary.answer;
+        const options = [answer, answer - 1, answer + 1, answer + 1000]
+            .filter((value, index, values) => value >= 0 && values.indexOf(value) === index);
         return {
             mode,
-            prompt: 'Số liền sau của 999 999 là số nào?',
-            options: shuffle([999999, 1000000, 1000001, 1100000].map(formatNumber), random),
+            prompt: `Số liền ${boundary.direction} của ${formatNumber(boundary.number)} là số nào?`,
+            options: shuffle(options.map(formatNumber), random),
             answer: formatNumber(answer),
-            number: 999999,
-            explanation: 'Số liền sau của 999 999 là 1 000 000, đọc là một triệu.'
+            number: boundary.number,
+            explanation: `Số liền ${boundary.direction} của ${formatNumber(boundary.number)} là ${formatNumber(answer)}.`
         };
     }
 
@@ -108,14 +114,16 @@ function makeSubquestion(mode, minimum, maximum, random) {
 function generateSixDigitNumbers(config = {}, random = Math.random) {
     const { minimum, maximum } = configuredRange(config);
     const modes = configuredModes(config);
-    const subquestions = modes.map(mode => makeSubquestion(mode, minimum, maximum, random));
-    const prompt = 'Luyện tập số sáu chữ số và số 1 000 000:';
+    const selectedMode = chooseConfiguredValue(config, 'modes', MODES, MODES, random, 'Bài 10 cần ít nhất một dạng hợp lệ: lập số, đọc số, số 1 000 000 hoặc giá trị chữ số.');
+    const subquestions = Array.from({ length: 4 }, (_, index) => makeSubquestion(selectedMode, minimum, maximum, random, index))
+        .map((part, index) => ({ label: String.fromCharCode(97 + index), ...part }));
+    const prompt = `Luyện tập ${MODE_LABELS[selectedMode]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'number.six_digit_numbers',
         prompt,
         subquestions,
-        'Dựa vào giá trị từng hàng để lập số, đọc số và xác định chữ số; nhớ rằng 1 000 000 là một triệu.',
-        { question: prompt, modes: modes.join(', ') }
+        `Bốn ý cùng luyện ${MODE_LABELS[selectedMode]}.`,
+        { question: prompt, modes: modes.join(', '), selectedMode }
     );
     question.topic = TOPIC;
     return question;

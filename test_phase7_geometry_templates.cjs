@@ -66,17 +66,17 @@ assert.throws(
 const reviewSkills = ['b27', 'b28', 'b29', 'b31'];
 const review = generateQuestion('geometry.hk1_review_b27_b31', { skills: reviewSkills }, seededRandom(7210));
 assertFourChoiceQuestion(review, '6. Đường thẳng vuông góc. Đường thẳng song song');
-assert.deepEqual(review.subquestions.map(item => item.skill), reviewSkills);
-assert.deepEqual(review.subquestions.map(item => item.lesson), [
-    'g4-math-hk1-b27', 'g4-math-hk1-b28', 'g4-math-hk1-b29', 'g4-math-hk1-b31'
-]);
+assert.equal(new Set(review.subquestions.map(item => item.skill)).size, 1);
+assert(reviewSkills.includes(review.subquestions[0].skill));
+assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${review.subquestions[0].skill}`));
+assert.equal(review.templateVariables.selectedSkill, review.subquestions[0].skill);
 assert.equal(review.templateVariables.skills, reviewSkills.join(', '));
 assert.throws(
-    () => generateQuestion('geometry.hk1_review_b27_b31', { skills: ['b27', 'b28', 'b29'] }, seededRandom(7211)),
+    () => generateQuestion('geometry.hk1_review_b27_b31', { skills: [] }, seededRandom(7211)),
     /Bài 27 đến Bài 31/i
 );
 assert.throws(
-    () => generateQuestion('geometry.hk1_review_b27_b31', { skills: ['b27', 'b28', 'b28', 'b31'] }, seededRandom(7212)),
+    () => generateQuestion('geometry.hk1_review_b27_b31', { skills: ['b27', 'b28', 'b32'] }, seededRandom(7212)),
     /Bài 27 đến Bài 31/i
 );
 

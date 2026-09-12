@@ -135,8 +135,14 @@ choice.subquestions.forEach(part => {
 
 const review = templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(17));
 assertFourPartQuestion(review, 'number.hk1_review_b01_b04');
-assert.deepEqual(review.subquestions.map(part => part.skill), ['b01', 'b02', 'b03', 'b04'],
-  'B06 review must cover exactly B01–B04 in order.');
+assert.equal(new Set(review.subquestions.map(part => part.skill)).size, 1,
+  'B06 review must keep one skill across all four parts.');
+assert(['b01', 'b02', 'b03', 'b04'].includes(review.subquestions[0].skill),
+  'B06 review must select a skill from B01–B04.');
+assert.equal(new Set(review.subquestions.map(part => part.lesson)).size, 1,
+  'B06 review must keep one lesson metadata value across all four parts.');
+assert.equal(review.subquestions[0].lesson, `g4-math-hk1-${review.subquestions[0].skill}`,
+  'B06 review must trace each part to the selected lesson.');
 assert.equal(review.subquestions.some(part => /b05/i.test(part.skill || part.prompt)), false,
   'B06 review must not include deferred B05 content.');
 
@@ -147,7 +153,9 @@ for (let seed = 30; seed < 80; seed++) {
   assertFourPartQuestion(templates.generateQuestion('number.even_odd_form', {}, seededRandom(seed)), 'number.even_odd_form');
   assertFourPartFillQuestion(templates.generateQuestion('number.variable_expression_value', {}, seededRandom(seed)), 'number.variable_expression_value');
   assertFourPartQuestion(templates.generateQuestion('number.variable_expression_choice', {}, seededRandom(seed)), 'number.variable_expression_choice');
-  assertFourPartQuestion(templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(seed)), 'number.hk1_review_b01_b04');
+  const reviewQuestion = templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(seed));
+  assertFourPartQuestion(reviewQuestion, 'number.hk1_review_b01_b04');
+  assert.equal(new Set(reviewQuestion.subquestions.map(part => part.skill)).size, 1);
 }
 
 assert.notEqual(

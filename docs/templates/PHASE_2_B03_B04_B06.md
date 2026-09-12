@@ -24,7 +24,7 @@ Mỗi record mới đều gắn đúng một `lesson` cấp cao nhất. `config.
 | `g4-math-hk1-b03` | `number.even_odd_form` | Trắc nghiệm | Lập số từ các thẻ số rồi nhận biết chẵn/lẻ |
 | `g4-math-hk1-b04` | `number.variable_expression_value` | Điền khuyết | Thay `a` vào bốn biểu thức và điền giá trị |
 | `g4-math-hk1-b04` | `number.variable_expression_choice` | Trắc nghiệm | Chọn giá trị đúng của biểu thức chứa chữ |
-| `g4-math-hk1-b06` | `number.hk1_review_b01_b04` | Trắc nghiệm | Một ý B01, B02, B03 và B04 theo đúng thứ tự |
+| `g4-math-hk1-b06` | `number.hk1_review_b01_b04` | Trắc nghiệm | Chọn một skill trong phạm vi B01–B04 rồi dùng thống nhất cho bốn ý |
 
 Tất cả generator mới:
 
@@ -52,7 +52,11 @@ Tất cả generator mới:
 
 ### Bài 6
 
-Blueprint cố định `b01 → b02 → b03 → b04`. Config khác thứ tự hoặc chứa kỹ năng ngoài bốn mã này bị từ chối. Vì Bài 5 đang hoãn nên review không có nhánh fallback sang Bài 5.
+`config.skills` là một pool các skill được phép (`b01`–`b04`). Mỗi lượt sinh
+chọn một skill trong pool rồi dùng thống nhất cho cả bốn ý a–d; không trộn bốn
+loại bài vào cùng một câu. Cấu hình cũ chứa đủ bốn mã vẫn tương thích, nhưng
+không còn được hiểu là thứ tự bốn ý. Giá trị rỗng hoặc ngoài allowlist bị từ
+chối. Vì Bài 5 đang hoãn nên review không có nhánh fallback sang Bài 5.
 
 ## Tích hợp Admin Soạn Đề
 

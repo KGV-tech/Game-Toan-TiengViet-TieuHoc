@@ -97,17 +97,16 @@ test('Phase 5 Bài 20 hiển thị phạm vi thực hành, Preview và gameplay 
       partAnswerCounts: question.partAnswerCounts
     };
   }, template);
-  expect(gameplay).toEqual({
-    kinds: ['area', 'century', 'mass', 'time'],
-    answers: 4,
-    partAnswerCounts: [1, 1, 1, 1]
-  });
+  expect(gameplay).toMatchObject({ answers: 4, partAnswerCounts: [1, 1, 1, 1] });
+  expect(gameplay.kinds).toHaveLength(4);
+  expect(new Set(gameplay.kinds).size).toBe(1);
+  expect(['mass', 'area', 'time', 'century']).toContain(gameplay.kinds[0]);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');
 });
 
-test('Phase 5 Bài 21 giữ đủ nhãn kỹ năng và bố cục tablet ngang', async ({ page }) => {
+test('Phase 5 Bài 21 giữ một kỹ năng và bố cục tablet ngang', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -130,7 +129,7 @@ test('Phase 5 Bài 21 giữ đủ nhãn kỹ năng và bố cục tablet ngang',
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Bài 17');
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('undefined');
   await page.locator('#template-preview-back').click();
 
   const gameplay = await page.evaluate(templateData => {
@@ -141,12 +140,10 @@ test('Phase 5 Bài 21 giữ đủ nhãn kỹ năng và bố cục tablet ngang',
     app.game.loadQuestion();
     return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson }));
   }, template);
-  expect(gameplay).toEqual([
-    { skill: 'b17', lesson: 'g4-math-hk1-b17' },
-    { skill: 'b18', lesson: 'g4-math-hk1-b18' },
-    { skill: 'b19', lesson: 'g4-math-hk1-b19' },
-    { skill: 'b20', lesson: 'g4-math-hk1-b20' }
-  ]);
+  expect(gameplay).toHaveLength(4);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
+  expect(['b17', 'b18', 'b19', 'b20']).toContain(gameplay[0].skill);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');

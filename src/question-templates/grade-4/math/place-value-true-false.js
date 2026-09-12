@@ -4,8 +4,9 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.place_value_true_false'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, configuredValues, chooseConfiguredValue }) {
 
+const STATEMENT_KINDS = ['class', 'place'];
 const places = [
     { divisor: 1, className: 'lớp đơn vị', placeName: 'hàng đơn vị' }, { divisor: 10, className: 'lớp đơn vị', placeName: 'hàng chục' }, { divisor: 100, className: 'lớp đơn vị', placeName: 'hàng trăm' },
     { divisor: 1000, className: 'lớp nghìn', placeName: 'hàng nghìn' }, { divisor: 10000, className: 'lớp nghìn', placeName: 'hàng chục nghìn' }, { divisor: 100000, className: 'lớp nghìn', placeName: 'hàng trăm nghìn' },
@@ -37,10 +38,24 @@ function generatePlaceValueTrueFalse(config = {}, random = Math.random) {
 
     const selectedPlaces = shuffle(availablePlaces, random).slice(0, 4);
     const truthValues = shuffle([true, true, false, false], random);
-    const statementKinds = Array.isArray(config.statementKinds) && config.statementKinds.length ? config.statementKinds.filter(kind => kind === 'class' || kind === 'place') : ['class', 'place'];
+    const statementKinds = configuredValues(
+        config,
+        'statementKinds',
+        STATEMENT_KINDS,
+        STATEMENT_KINDS,
+        'Bài xác định hàng và lớp cần ít nhất một dạng phát biểu hợp lệ.'
+    );
+    const selectedKind = chooseConfiguredValue(
+        config,
+        'statementKinds',
+        STATEMENT_KINDS,
+        STATEMENT_KINDS,
+        random,
+        'Bài xác định hàng và lớp cần ít nhất một dạng phát biểu hợp lệ.'
+    );
     const statements = selectedPlaces.map((place, index) => {
         const digit = digitAt(number, place.divisor);
-        const kind = statementKinds[index % statementKinds.length];
+        const kind = selectedKind;
         if (kind === 'place') {
             const otherPlaces = availablePlaces.filter(item => item.divisor !== place.divisor);
             const placeName = truthValues[index] ? place.placeName : otherPlaces[randomInt(0, otherPlaces.length - 1, random)].placeName;
@@ -57,7 +72,7 @@ function generatePlaceValueTrueFalse(config = {}, random = Math.random) {
         type: 'Đúng/Sai', templateId: 'number.place_value_true_false', q: prompt, options: [],
         ans: statements.map(statement => statement.answer).join(', '), statements,
         explanation: `Xác định lớp hoặc hàng của từng chữ số trong số ${formatNumber(number)} rồi chọn Đúng hoặc Sai.`,
-        templateVariables: { question: prompt, number: formatNumber(number), statements: statements.map(statement => `${statement.label}. ${statement.text}`).join('<br>') }
+        templateVariables: { question: prompt, number: formatNumber(number), statements: statements.map(statement => `${statement.label}. ${statement.text}`).join('<br>'), statementKinds: statementKinds.join(', '), selectedKind }
     };
 }
 

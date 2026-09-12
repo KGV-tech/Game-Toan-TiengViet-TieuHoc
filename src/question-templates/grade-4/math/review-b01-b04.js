@@ -4,10 +4,22 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, configuredValues, chooseConfiguredValue }) {
 
 const TOPIC = '1. Ôn tập và bổ sung';
 const SKILLS = ['b01', 'b02', 'b03', 'b04'];
+const SKILL_LABELS = {
+    b01: 'Bài 1 · Nhận biết chữ số theo hàng',
+    b02: 'Bài 2 · Thực hiện phép tính',
+    b03: 'Bài 3 · Nhận biết số chẵn, số lẻ',
+    b04: 'Bài 4 · Tính giá trị biểu thức chứa chữ'
+};
+const LESSONS = {
+    b01: 'g4-math-hk1-b01',
+    b02: 'g4-math-hk1-b02',
+    b03: 'g4-math-hk1-b03',
+    b04: 'g4-math-hk1-b04'
+};
 const PLACE_NAMES = ['chục nghìn', 'nghìn', 'trăm', 'chục'];
 const PLACE_VALUES = [10000, 1000, 100, 10];
 const OPERATIONS = ['+', '−', '×', '÷'];
@@ -29,9 +41,27 @@ function numericOptions(correct, random, minimum = 0, maximum = 99999) {
     return shuffle(values.map(formatNumber), random);
 }
 
+function parityOptions(correct, targetParity, random) {
+    const expectedParity = targetParity === 'even' ? 0 : 1;
+    const values = [correct];
+    const candidates = shuffle([
+        correct - 1, correct + 1, correct - 3, correct + 3,
+        correct - 5, correct + 5, correct - 7, correct + 7,
+        correct - 9, correct + 9, correct - 11, correct + 11
+    ], random);
+    for (const candidate of candidates) {
+        if (candidate >= 10 && candidate <= 9999 && candidate % 2 !== expectedParity && !values.includes(candidate)) values.push(candidate);
+        if (values.length === 4) break;
+    }
+    for (let candidate = 10; values.length < 4 && candidate <= 9999; candidate += 1) {
+        if (candidate % 2 !== expectedParity && !values.includes(candidate)) values.push(candidate);
+    }
+    return shuffle(values.map(formatNumber), random);
+}
+
 function row(skill, prompt, correct, options, explanation, extra = {}) {
     return {
-        skill, prompt, answer: formatNumber(correct), options, explanation,
+        skill, skillLabel: SKILL_LABELS[skill], lesson: LESSONS[skill], prompt, answer: formatNumber(correct), options, explanation,
         ...extra
     };
 }
@@ -50,8 +80,7 @@ function makeB01(random) {
     );
 }
 
-function makeB02(random) {
-    const operation = OPERATIONS[randomInt(0, OPERATIONS.length - 1, random)];
+function makeB02(random, operation = OPERATIONS[randomInt(0, OPERATIONS.length - 1, random)]) {
     let first;
     let second;
     let correct;
@@ -83,8 +112,7 @@ function makeB02(random) {
     );
 }
 
-function makeB03(random) {
-    const targetParity = random() >= 0.5 ? 'even' : 'odd';
+function makeB03(random, targetParity = (random() >= 0.5 ? 'even' : 'odd')) {
     const parityName = targetParity === 'even' ? 'chẵn' : 'lẻ';
     const correct = randomInt(10, 9999, random);
     const adjusted = correct % 2 === (targetParity === 'even' ? 0 : 1)
@@ -94,16 +122,16 @@ function makeB03(random) {
         'b03',
         `Số nào sau đây là số ${parityName}?`,
         adjusted,
-        numericOptions(adjusted, random, 10, 9999),
+        parityOptions(adjusted, targetParity, random),
         `${formatNumber(adjusted)} có chữ số tận cùng là ${adjusted % 10}, nên là số ${parityName}.`,
         { targetParity, number: adjusted }
     );
 }
 
-function makeB04(random) {
+function makeB04(random, operation = (random() >= 0.5 ? 'subtract' : 'add')) {
     const variable = randomInt(10, 99, random);
     const constant = randomInt(2, 9, random);
-    const useSubtraction = random() >= 0.5 && variable > constant;
+    const useSubtraction = operation === 'subtract' && variable > constant;
     const symbol = useSubtraction ? '−' : '+';
     const correct = useSubtraction ? variable - constant : variable + constant;
     const expression = `a ${symbol} ${constant}`;
@@ -118,20 +146,45 @@ function makeB04(random) {
 }
 
 function generateReview(config = {}, random = Math.random) {
-    const requestedSkills = Array.isArray(config.skills) && config.skills.length ? [...new Set(config.skills)] : [...SKILLS];
-    if (requestedSkills.length !== 4 || requestedSkills.some((skill, index) => skill !== SKILLS[index])) {
-        throw new Error('Bộ ôn tập Bài 6 chỉ nhận đúng bốn kỹ năng Bài 1 đến Bài 4.');
-    }
-    const builders = { b01: makeB01, b02: makeB02, b03: makeB03, b04: makeB04 };
-    const subquestions = requestedSkills.map(skill => ({ label: String.fromCharCode(97 + SKILLS.indexOf(skill)), ...builders[skill](random) }));
-    const title = 'Luyện tập chung Bài 1 đến Bài 4:';
+    const requestedSkills = configuredValues(
+        config,
+        'skills',
+        SKILLS,
+        SKILLS,
+        'Bộ ôn tập Bài 6 cần ít nhất một kỹ năng hợp lệ trong Bài 1 đến Bài 4.'
+    );
+    const selectedSkill = chooseConfiguredValue(
+        config,
+        'skills',
+        SKILLS,
+        SKILLS,
+        random,
+        'Bộ ôn tập Bài 6 cần ít nhất một kỹ năng hợp lệ trong Bài 1 đến Bài 4.'
+    );
+    const selectedOperation = selectedSkill === 'b02'
+        ? OPERATIONS[randomInt(0, OPERATIONS.length - 1, random)]
+        : selectedSkill === 'b04'
+            ? (random() >= 0.5 ? 'subtract' : 'add')
+            : null;
+    const selectedParity = selectedSkill === 'b03' ? (random() >= 0.5 ? 'even' : 'odd') : null;
+    const builders = {
+        b01: makeB01,
+        b02: randomValue => makeB02(randomValue, selectedOperation),
+        b03: randomValue => makeB03(randomValue, selectedParity),
+        b04: randomValue => makeB04(randomValue, selectedOperation)
+    };
+    const subquestions = Array.from({ length: 4 }, (_, index) => ({
+        label: String.fromCharCode(97 + index),
+        ...builders[selectedSkill](random)
+    }));
+    const title = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
         type: 'Trắc nghiệm', templateId: 'number.hk1_review_b01_b04', q: title, options: [],
         ans: subquestions.map(part => part.answer).join(', '),
-        explanation: 'Bộ câu hỏi ôn lại lần lượt nhận biết số, thực hiện phép tính, nhận biết chẵn lẻ và tính biểu thức chứa chữ.',
+        explanation: `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
         subquestions, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: title, skills: requestedSkills.join(', ') }
+        templateVariables: { question: title, skills: requestedSkills.join(', '), selectedSkill, ...(selectedOperation ? { selectedOperation } : {}), ...(selectedParity ? { selectedParity } : {}) }
     };
 }
 

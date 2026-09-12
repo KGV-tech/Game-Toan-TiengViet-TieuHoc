@@ -69,7 +69,7 @@ test('Phase 6 Bài 22 giữ riêng phạm vi phép cộng trong editor và gamep
   ]);
 });
 
-test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và gameplay', async ({ page }) => {
+test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và gameplay thống nhất', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -103,7 +103,7 @@ test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và ga
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Bài 22');
+  await expect(page.locator('#template-preview-dialog')).toContainText(/Bài (22|23|24|25)/);
   await page.locator('#template-preview-back').click();
 
   const gameplay = await page.evaluate(templateData => {
@@ -114,12 +114,11 @@ test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và ga
     app.game.loadQuestion();
     return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson, options: item.options.length }));
   }, reviewTemplate);
-  expect(gameplay).toEqual([
-    { skill: 'b22', lesson: 'g4-math-hk1-b22', options: 4 },
-    { skill: 'b23', lesson: 'g4-math-hk1-b23', options: 4 },
-    { skill: 'b24', lesson: 'g4-math-hk1-b24', options: 4 },
-    { skill: 'b25', lesson: 'g4-math-hk1-b25', options: 4 }
-  ]);
+  expect(gameplay).toHaveLength(4);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
+  expect(['b22', 'b23', 'b24', 'b25']).toContain(gameplay[0].skill);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
+  expect(gameplay.every(item => item.options === 4)).toBe(true);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');

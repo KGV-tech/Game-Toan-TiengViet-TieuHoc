@@ -7,7 +7,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, createFourPartMultipleChoiceQuestion }, available) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }, available) {
 
 const TOPIC = '7. Ôn tập Học kì 1';
 const labels = ['a', 'b', 'c', 'd'];
@@ -38,16 +38,6 @@ const GROUP_LABELS = {
     geometry: 'Bài 35 · Ôn tập hình học',
     measurement: 'Bài 36 · Ôn tập đo lường'
 };
-const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
-
-function configuredList(config, key, defaults, allowed, message) {
-    const source = hasOwn(config, key) ? config[key] : defaults;
-    if (!Array.isArray(source) || source.length !== 4 || new Set(source).size !== 4 || source.some(value => !allowed.includes(value))) {
-        throw new Error(message);
-    }
-    return [...source];
-}
-
 function row(kind, prompt, answer, options, explanation, extra = {}) {
     return { kind, prompt, answer, options, explanation, ...extra };
 }
@@ -119,8 +109,8 @@ function makeSubtraction(random) {
     return row('subtraction', `Tính: ${formatNumber(first)} − ${formatNumber(second)} = ?`, formatNumber(result), numericOptions(result, 1, 999999, random, [1, 10, 100, 1000, 10000]), `${formatNumber(first)} − ${formatNumber(second)} = ${formatNumber(result)}.`, { first, second, result });
 }
 
-function makeProperty(random) {
-    if (random() < 0.5) {
+function makeProperty(random, property = (random() < 0.5 ? 'commutative' : 'associative')) {
+    if (property === 'commutative') {
         const first = randomInt(10, 9999, random);
         const second = randomInt(10, 9999, random);
         return row('property', `${formatNumber(first)} + ${formatNumber(second)} = ${formatNumber(second)} + ?`, formatNumber(first), numericOptions(first, 1, 9999, random, [1, 10, 100, 1000]), 'Tính chất giao hoán cho phép đổi chỗ hai số hạng mà tổng không thay đổi.', { property: 'commutative', first, second });
@@ -205,48 +195,63 @@ function reviewQuestion(templateId, prompt, values, explanation, templateVariabl
 }
 
 function generateNumbersReview(config = {}, random = Math.random) {
-    const skills = configuredList(config, 'skills', B33_SKILLS, B33_SKILLS, 'Bài 33 cần đúng bốn kỹ năng số học hợp lệ.');
-    const parts = skills.map(skill => {
-        const source = makeNumberPart(skill, random);
-        return { ...source, skill, skillLabel: SKILL_LABELS[skill], lesson: LESSONS[skill], prompt: `${SKILL_LABELS[skill]} · ${source.prompt}` };
+    const skills = configuredValues(config, 'skills', B33_SKILLS, B33_SKILLS, 'Bài 33 cần ít nhất một kỹ năng số học hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', B33_SKILLS, B33_SKILLS, random, 'Bài 33 cần ít nhất một kỹ năng số học hợp lệ.');
+    const parts = labels.map(() => {
+        const source = makeNumberPart(selectedSkill, random);
+        return { ...source, skill: selectedSkill, skillLabel: SKILL_LABELS[selectedSkill], lesson: LESSONS[selectedSkill], prompt: `${SKILL_LABELS[selectedSkill]} · ${source.prompt}` };
     });
-    return reviewQuestion('number.hk1_review_b33_numbers', 'Luyện tập chung Bài 33:', parts, 'Ôn lập và đọc số, hàng và lớp, lớp triệu và làm tròn số theo nhãn Bài học.', { question: 'Luyện tập chung Bài 33:', skills: skills.join(', ') });
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    return reviewQuestion('number.hk1_review_b33_numbers', prompt, parts, `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, skills: skills.join(', '), selectedSkill });
 }
 
 function generateAddSubReview(config = {}, random = Math.random) {
-    const skills = configuredList(config, 'skills', B34_SKILLS, B34_SKILLS, 'Bài 34 cần đúng bốn kỹ năng cộng và trừ hợp lệ.');
-    const parts = skills.map(skill => {
-        const source = addSubBuilders[skill](random);
-        return { ...source, skill, skillLabel: SKILL_LABELS[skill], lesson: LESSONS[skill], prompt: `${SKILL_LABELS[skill]} · ${source.prompt}` };
+    const skills = configuredValues(config, 'skills', B34_SKILLS, B34_SKILLS, 'Bài 34 cần ít nhất một kỹ năng cộng/trừ hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', B34_SKILLS, B34_SKILLS, random, 'Bài 34 cần ít nhất một kỹ năng cộng/trừ hợp lệ.');
+    const selectedProperty = selectedSkill === 'b24'
+        ? (random() < 0.5 ? 'commutative' : 'associative')
+        : null;
+    const parts = labels.map(() => {
+        const source = selectedSkill === 'b24'
+            ? makeProperty(random, selectedProperty)
+            : addSubBuilders[selectedSkill](random);
+        return { ...source, skill: selectedSkill, skillLabel: SKILL_LABELS[selectedSkill], lesson: LESSONS[selectedSkill], prompt: `${SKILL_LABELS[selectedSkill]} · ${source.prompt}` };
     });
-    return reviewQuestion('number.hk1_review_b34_add_sub', 'Luyện tập chung Bài 34:', parts, 'Ôn phép cộng, phép trừ, tính chất phép cộng và cách tìm hai số biết tổng và hiệu theo nhãn Bài học.', { question: 'Luyện tập chung Bài 34:', skills: skills.join(', ') });
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    return reviewQuestion('number.hk1_review_b34_add_sub', prompt, parts, `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, skills: skills.join(', '), selectedSkill, ...(selectedProperty ? { selectedProperty } : {}) });
 }
 
 function generateGeometryReview(config = {}, random = Math.random) {
-    const skills = configuredList(config, 'skills', B35_SKILLS, B35_SKILLS, 'Bài 35 cần đúng bốn kỹ năng hình học hợp lệ.');
-    const parts = skills.map(skill => makeGeometryPart(skill, random));
-    return reviewQuestion('geometry.hk1_review_b35', 'Luyện tập chung Bài 35:', parts, 'Ôn nhận biết đường thẳng vuông góc và song song bằng hình vẽ, lưới ô vuông và dấu hiệu hình học.', { question: 'Luyện tập chung Bài 35:', skills: skills.join(', ') });
+    const skills = configuredValues(config, 'skills', B35_SKILLS, B35_SKILLS, 'Bài 35 cần ít nhất một kỹ năng hình học hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', B35_SKILLS, B35_SKILLS, random, 'Bài 35 cần ít nhất một kỹ năng hình học hợp lệ.');
+    const parts = labels.map(() => makeGeometryPart(selectedSkill, random));
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    return reviewQuestion('geometry.hk1_review_b35', prompt, parts, `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, skills: skills.join(', '), selectedSkill });
 }
 
 function generateMeasurementReview(config = {}, random = Math.random) {
-    const skills = configuredList(config, 'skills', B36_SKILLS, B36_SKILLS, 'Bài 36 cần đúng bốn kỹ năng đo lường hợp lệ.');
-    const parts = skills.map(skill => {
-        const source = makeMeasurementPart(skill, random);
-        return { ...source, skill, skillLabel: SKILL_LABELS[skill], lesson: LESSONS[skill], prompt: `${SKILL_LABELS[skill]} · ${source.prompt}` };
+    const skills = configuredValues(config, 'skills', B36_SKILLS, B36_SKILLS, 'Bài 36 cần ít nhất một kỹ năng đo lường hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', B36_SKILLS, B36_SKILLS, random, 'Bài 36 cần ít nhất một kỹ năng đo lường hợp lệ.');
+    const parts = labels.map(() => {
+        const source = makeMeasurementPart(selectedSkill, random);
+        return { ...source, skill: selectedSkill, skillLabel: SKILL_LABELS[selectedSkill], lesson: LESSONS[selectedSkill], prompt: `${SKILL_LABELS[selectedSkill]} · ${source.prompt}` };
     });
-    return reviewQuestion('measurement.hk1_review_b36', 'Luyện tập chung Bài 36:', parts, 'Ôn khối lượng, diện tích, thời gian và thế kỉ theo nhãn Bài học.', { question: 'Luyện tập chung Bài 36:', skills: skills.join(', ') });
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    return reviewQuestion('measurement.hk1_review_b36', prompt, parts, `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, skills: skills.join(', '), selectedSkill });
 }
 
 function generateFullReview(config = {}, random = Math.random) {
-    const groups = configuredList(config, 'groups', REVIEW_GROUPS, REVIEW_GROUPS, 'Bài 37 cần đúng bốn nhóm review HK1 hợp lệ.');
+    const groups = configuredValues(config, 'groups', REVIEW_GROUPS, REVIEW_GROUPS, 'Bài 37 cần ít nhất một nhóm review HK1 hợp lệ.');
+    const selectedGroup = chooseConfiguredValue(config, 'groups', REVIEW_GROUPS, REVIEW_GROUPS, random, 'Bài 37 cần ít nhất một nhóm review HK1 hợp lệ.');
     const builders = {
         numbers: () => { const source = makeNumberPart('b10', random); return { ...source, skillGroup: 'numbers', sourceLesson: 'g4-math-hk1-b33', prompt: `${GROUP_LABELS.numbers} · ${source.prompt}` }; },
         addSub: () => { const source = makeAddition(random); return { ...source, skillGroup: 'addSub', sourceLesson: 'g4-math-hk1-b34', prompt: `${GROUP_LABELS.addSub} · ${source.prompt}` }; },
         geometry: () => { const source = makeGeometryPart('b27', random); return { ...source, skillGroup: 'geometry', sourceLesson: 'g4-math-hk1-b35', lesson: 'g4-math-hk1-b35', prompt: `${GROUP_LABELS.geometry} · ${source.prompt}` }; },
         measurement: () => { const source = makeMeasurementPart('b17', random); return { ...source, skillGroup: 'measurement', sourceLesson: 'g4-math-hk1-b36', prompt: `${GROUP_LABELS.measurement} · ${source.prompt}` }; }
     };
-    const parts = groups.map(group => builders[group]());
-    return reviewQuestion('number.hk1_review_b37_full', 'Luyện tập chung Học kỳ 1:', parts, 'Mỗi nhóm số học, cộng/trừ, hình học và đo lường đóng góp một câu con để giữ cân đối phạm vi ôn tập HK1.', { question: 'Luyện tập chung Học kỳ 1:', groups: groups.join(', ') });
+    const parts = labels.map(() => builders[selectedGroup]());
+    const prompt = `Luyện tập ${GROUP_LABELS[selectedGroup]}:`;
+    return reviewQuestion('number.hk1_review_b37_full', prompt, parts, `Bốn ý cùng luyện ${GROUP_LABELS[selectedGroup].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, groups: groups.join(', '), selectedGroup });
 }
 
 return {

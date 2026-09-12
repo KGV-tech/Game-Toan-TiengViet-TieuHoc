@@ -4,10 +4,11 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.million_class'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '3. Số có nhiều chữ số';
 const MODES = ['read', 'write', 'digit', 'expanded'];
+const MODE_LABELS = { read: 'đọc số trong lớp triệu', write: 'viết số trong lớp triệu', digit: 'xác định giá trị chữ số trong lớp triệu', expanded: 'phân tích số trong lớp triệu' };
 const PLACES = [
     [100000000, 'trăm triệu', 'lớp triệu'],
     [10000000, 'chục triệu', 'lớp triệu'],
@@ -36,11 +37,7 @@ function configuredRange(config) {
 }
 
 function configuredModes(config) {
-    const modes = Array.isArray(config.modes) ? [...config.modes] : [...MODES];
-    if (modes.length !== 4 || new Set(modes).size !== 4 || modes.some(mode => !MODES.includes(mode))) {
-        throw new Error('Bài 12 cần đúng bốn dạng: đọc số, viết số, giá trị chữ số và phân tích số.');
-    }
-    return modes;
+    return configuredValues(config, 'modes', MODES, MODES, 'Bài 12 cần ít nhất một dạng hợp lệ: đọc số, viết số, giá trị chữ số hoặc phân tích số.');
 }
 
 function hasZeroBetweenClasses(value) {
@@ -120,14 +117,18 @@ function generateMillionClass(config = {}, random = Math.random) {
     const { minimum, maximum } = configuredRange(config);
     const modes = configuredModes(config);
     const includeZeroGroups = config.includeZeroGroups !== false;
-    const subquestions = modes.map(mode => makeSubquestion(mode, minimum, maximum, includeZeroGroups, random));
-    const prompt = 'Luyện tập đọc, viết và phân tích số trong phạm vi lớp triệu:';
+    const selectedMode = chooseConfiguredValue(config, 'modes', MODES, MODES, random, 'Bài 12 cần ít nhất một dạng hợp lệ: đọc số, viết số, giá trị chữ số hoặc phân tích số.');
+    const subquestions = Array.from({ length: 4 }, (_, index) => ({
+        label: String.fromCharCode(97 + index),
+        ...makeSubquestion(selectedMode, minimum, maximum, includeZeroGroups, random)
+    }));
+    const prompt = `Luyện tập ${MODE_LABELS[selectedMode]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'number.million_class',
         prompt,
         subquestions,
-        'Đọc theo từng lớp triệu, nghìn, đơn vị; các chữ số 0 ở giữa vẫn phải được giữ đúng khi viết và phân tích số.',
-        { question: prompt, modes: modes.join(', ') }
+        `Bốn ý cùng luyện ${MODE_LABELS[selectedMode]}; các chữ số 0 ở giữa các lớp vẫn phải được giữ đúng.`,
+        { question: prompt, modes: modes.join(', '), selectedMode }
     );
     question.topic = TOPIC;
     return question;

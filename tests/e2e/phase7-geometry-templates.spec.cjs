@@ -72,7 +72,7 @@ test('Phase 7 Bài 31 hiển thị cấu hình hình học, Preview SVG và game
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');
 });
 
-test('Phase 7 Bài 32 giữ đúng bốn skill hình học trên tablet ngang', async ({ page }) => {
+test('Phase 7 Bài 32 giữ một skill hình học trên tablet ngang', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -90,13 +90,15 @@ test('Phase 7 Bài 32 giữ đúng bốn skill hình học trên tablet ngang', 
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__subquestion-visual .geometry-visual')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Bài 27');
+  await expect(page.locator('#template-preview-dialog')).toContainText(/Bài (27|28|29|30|31)/);
   await page.locator('#template-preview-back').click();
 
   const gameplay = await page.evaluate(templateData => {
     const question = app.data.generateTemplateQuestion(templateData);
     return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson, geometry: item.geometry.mode || item.geometry.shapeKind }));
   }, data);
-  expect(gameplay.map(item => item.skill)).toEqual(skills);
-  expect(gameplay.map(item => item.lesson)).toEqual(['g4-math-hk1-b27', 'g4-math-hk1-b28', 'g4-math-hk1-b29', 'g4-math-hk1-b31']);
+  expect(gameplay).toHaveLength(4);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
+  expect(skills).toContain(gameplay[0].skill);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
 });

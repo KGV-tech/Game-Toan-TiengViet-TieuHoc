@@ -33,7 +33,7 @@ async function showTemplate(page, data) {
   }, data);
 }
 
-test('Phase 8 Bài 37 chọn đủ bốn nhóm review và sinh đúng nguồn HK1', async ({ page }) => {
+test('Phase 8 Bài 37 chọn phạm vi nhóm review và giữ một nhóm trong bốn ý', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -48,19 +48,18 @@ test('Phase 8 Bài 37 chọn đủ bốn nhóm review và sinh đúng nguồn HK
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Bài 33');
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('undefined');
   await page.keyboard.press('Escape');
 
   const gameplay = await page.evaluate(templateData => {
     const question = app.data.generateTemplateQuestion(templateData);
     return question.subquestions.map(item => ({ group: item.skillGroup, sourceLesson: item.sourceLesson, options: item.options.length }));
   }, data);
-  expect(gameplay).toEqual([
-    { group: 'numbers', sourceLesson: 'g4-math-hk1-b33', options: 4 },
-    { group: 'addSub', sourceLesson: 'g4-math-hk1-b34', options: 4 },
-    { group: 'geometry', sourceLesson: 'g4-math-hk1-b35', options: 2 },
-    { group: 'measurement', sourceLesson: 'g4-math-hk1-b36', options: 4 }
-  ]);
+  expect(gameplay).toHaveLength(4);
+  expect(new Set(gameplay.map(item => item.group)).size).toBe(1);
+  expect(groups).toContain(gameplay[0].group);
+  expect(gameplay.every(item => item.sourceLesson === `g4-math-hk1-b${{ numbers: 33, addSub: 34, geometry: 35, measurement: 36 }[gameplay[0].group]}`)).toBe(true);
+  expect(gameplay.every(item => item.options >= 2)).toBe(true);
 });
 
 test('Phase 8 Bài 33 giữ preview và lesson trên tablet ngang', async ({ page }) => {
@@ -74,5 +73,5 @@ test('Phase 8 Bài 33 giữ preview và lesson trên tablet ngang', async ({ pag
   await expect(page.locator('#template-lesson')).toHaveValue('g4-math-hk1-b33');
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog .template-preview__mc > div')).toHaveCount(4);
-  await expect(page.locator('#template-preview-dialog')).toContainText('Bài 33');
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('undefined');
 });

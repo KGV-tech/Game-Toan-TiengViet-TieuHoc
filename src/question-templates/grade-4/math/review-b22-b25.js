@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, { 'number.hk1_review_b22_b25': generate });
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, formatNumber, numericOptions, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, formatNumber, numericOptions, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '5. Phép cộng và phép trừ';
 const SKILLS = ['b22', 'b23', 'b24', 'b25'];
@@ -50,8 +50,8 @@ function makeSubtraction(random) {
     };
 }
 
-function makeProperty(random) {
-    if (random() < 0.5) {
+function makeProperty(random, property = (random() < 0.5 ? 'commutative' : 'associative')) {
+    if (property === 'commutative') {
         const first = randomInt(10, 9999, random);
         const second = randomInt(10, 9999, random);
         return {
@@ -96,13 +96,28 @@ function makeSumDifference(random) {
 }
 
 function generateReview(config = {}, random = Math.random) {
-    const skills = Array.isArray(config.skills) && config.skills.length ? [...config.skills] : [...SKILLS];
-    if (skills.length !== 4 || new Set(skills).size !== 4 || skills.some(skill => !SKILLS.includes(skill))) {
-        throw new Error('Bộ ôn tập Bài 22 đến Bài 25 cần đúng bốn kỹ năng hợp lệ.');
-    }
-    const builders = { b22: makeAddition, b23: makeSubtraction, b24: makeProperty, b25: makeSumDifference };
-    const subquestions = skills.map((skill, index) => {
-        const part = builders[skill](random);
+    const skills = configuredValues(
+        config,
+        'skills',
+        SKILLS,
+        SKILLS,
+        'Bộ ôn tập Bài 22 đến Bài 25 cần ít nhất một kỹ năng hợp lệ.'
+    );
+    const selectedSkill = chooseConfiguredValue(
+        config,
+        'skills',
+        SKILLS,
+        SKILLS,
+        random,
+        'Bộ ôn tập Bài 22 đến Bài 25 cần ít nhất một kỹ năng hợp lệ.'
+    );
+    const selectedProperty = selectedSkill === 'b24'
+        ? (random() < 0.5 ? 'commutative' : 'associative')
+        : null;
+    const builders = { b22: makeAddition, b23: makeSubtraction, b24: random => makeProperty(random, selectedProperty), b25: makeSumDifference };
+    const subquestions = Array.from({ length: 4 }, (_, index) => {
+        const skill = selectedSkill;
+        const part = builders[selectedSkill](random);
         return {
             label: labels[index],
             skill,
@@ -112,13 +127,13 @@ function generateReview(config = {}, random = Math.random) {
             prompt: `${SKILL_LABELS[skill]} · ${part.prompt}`
         };
     });
-    const prompt = 'Luyện tập chung Bài 22 đến Bài 25:';
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'number.hk1_review_b22_b25',
         prompt,
         subquestions,
-        'Ôn lại phép cộng, phép trừ, tính chất phép cộng và cách tìm hai số biết tổng và hiệu theo nhãn Bài học.',
-        { question: prompt, skills: skills.join(', ') }
+        `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
+        { question: prompt, skills: skills.join(', '), selectedSkill, ...(selectedProperty ? { selectedProperty } : {}) }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];
