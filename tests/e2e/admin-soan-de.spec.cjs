@@ -164,6 +164,50 @@ test('Kho template dùng thẻ trực quan, có tạo mới và Preview khung c�
   await expect(page.locator('#template-preview-dialog')).toBeHidden();
 });
 
+test('Template lập số dùng câu hỏi chung và công thức câu con trực quan', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Cô giáo Minh', role: 'admin' };
+    app.data.questionTemplates = [{
+      id: 'compose-presentation', name: 'Lập số từ các hàng', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '1. Ôn tập và bổ sung', lesson: 'g4-math-hk1-b01', question_type: 'Điền khuyết',
+      generator_key: 'number.compose_from_places', prompt_template: '{question}',
+      config: { minimum: 10000, maximum: 99999 }, is_active: true
+    }];
+    app.admin.openComposer('templates');
+    app.admin.renderTemplateForm(0);
+  });
+
+  await expect(page.getByLabel('Nội dung chữ 2')).toHaveValue('. Số đó là: ');
+  await expect(page.locator('.template-content-block')).toHaveCount(3);
+  await expect(page.locator('#template-prompt')).toHaveCount(0);
+  await page.locator('#template-common-question').fill('Hãy viết số vào ô trống, biết số đó gồm:');
+  await page.getByRole('button', { name: /Preview/ }).click();
+  await expect(page.locator('#template-preview-dialog')).toBeVisible();
+  await expect(page.locator('#template-preview-dialog')).toContainText('Hãy viết số vào ô trống, biết số đó gồm:');
+  await expect(page.locator('#template-preview-dialog [aria-label="Ô điền đáp án"]')).toHaveCount(4);
+  await expect(page.locator('#template-preview-dialog')).not.toContainText('a) a)');
+
+  const saved = await page.evaluate(() => app.admin.collectTemplateForm());
+  expect(saved.prompt_template).toBe('{question}');
+  expect(saved.config.presentation).toEqual({
+    version: 1,
+    common: 'Hãy viết số vào ô trống, biết số đó gồm:',
+    parts: [
+      { type: 'variable', key: 'place_values', value: '' },
+      { type: 'text', key: 'answer', value: '. Số đó là: ' },
+      { type: 'cell', key: 'answer', value: '' }
+    ]
+  });
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('#template-preview-dialog')).toBeVisible();
+  expect(supabaseRequests).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test('Soạn Đề chỉ mở cho Admin và trạm đề vẫn là Luyện Đề với học sinh', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);

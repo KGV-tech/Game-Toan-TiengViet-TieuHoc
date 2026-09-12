@@ -10,7 +10,8 @@ assert(source.includes("const composerModules = module === 'templates' || module
 assert(indexHtml.includes('id="admin-compose-cards"'), 'Admin must expose the Template, Question Bank, and Exam workspaces in Soạn Đề.');
 assert(source.includes('renderTemplates(box)'), 'Admin must render the Template Bank.');
 assert(source.includes("setTemplateFilter('classlevel'"), 'Template Bank must offer grade filtering.');
-assert(source.includes('template-prompt'), 'Template editor must offer an editable prompt.');
+assert(source.includes('template-common-question'), 'Template editor must offer an editable common question.');
+assert(source.includes('template-content-builder'), 'Template editor must offer visual blocks for each subquestion.');
 assert(source.includes('template-editor'), 'Template editor must use the full modal width through its dedicated layout.');
 assert(source.includes('template-preview-dialog'), 'Template editor must expose a focused question preview dialog.');
 assert(source.includes('template-preview-open'), 'Template editor must expose an explicit Preview action.');
@@ -39,7 +40,7 @@ assert(source.includes('template-part-count'), 'Template editor must expose the 
 assert(source.includes('exam-structured-part__checkbox'), 'Exam question editors must expose a checkbox for each structured subquestion.');
 assert(source.includes('getEmptyExamQuestionDraft'), 'Blank exam composer cards must start with four editable subquestions.');
 assert(source.includes('getValidPartAnswerCounts'), 'Question scoring must validate grouped subquestion answers.');
-assert(source.includes('presetPrompt'), 'Templates stored with {question} must show a readable default prompt in the editor.');
+assert(source.includes('TemplateContentBuilder'), 'Templates stored with {question} must use the visual presentation builder.');
 assert(source.includes('defaultPrompt'), 'Every dynamic template must declare its readable default prompt.');
 assert(!source.includes('insertTemplateVariable'), 'Template editor must not keep the removed variable-insertion control path.');
 assert(source.includes('id="template-example"'), 'Template editor must keep a compact output summary.');

@@ -341,15 +341,15 @@ test('chi tiết điền khuyết bốn phép tính không lặp nhãn phụ r�
   await openOfflineHomepage(page);
 
   const historyQuestion = await page.evaluate(() => app.game.formatHistoryQuestion({
-    q: 'Hãy điền số thích hợp vào chỗ trống:<br>a. ___ + 10 713 = 11 133<br>b. 13 102 = 91 714 ÷ ___',
+    q: 'Hãy điền số thích hợp vào chỗ trống:<br>a) ___ + 10 713 = 11 133<br>b) 13 102 = 91 714 ÷ ___',
     type: 'Điền khuyết',
     subquestions: [{ label: 'a' }, { label: 'b' }]
   }));
 
   expect(historyQuestion).toContain('Hãy điền số thích hợp vào chỗ trống:');
   expect(historyQuestion).not.toContain('undefined');
-  expect(historyQuestion.match(/a\./g)).toHaveLength(1);
-  expect(historyQuestion.match(/b\./g)).toHaveLength(1);
+  expect(historyQuestion.match(/a\)/g)).toHaveLength(1);
+  expect(historyQuestion.match(/b\)/g)).toHaveLength(1);
 });
 
 test('bài kiểm tra đặt nội dung trên nền giấy dễ đọc', async ({ page }) => {
@@ -543,8 +543,8 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
 
   await expect(page.locator('.question-box--fill .template-fill-row')).toHaveCount(5);
   await expect(page.locator('.question-box--fill .magic-input')).toHaveCount(4);
-  await expect(page.locator('.question-box--fill')).toContainText('a.');
-  await expect(page.locator('.question-box--fill')).toContainText('d.');
+  await expect(page.locator('.question-box--fill')).toContainText('a)');
+  await expect(page.locator('.question-box--fill')).toContainText('d)');
   await expect.poll(() => page.locator('.question-box--fill .template-fill-row').nth(1).evaluate(element => getComputedStyle(element).justifyContent)).toBe('flex-start');
   await captureUiReview(page, testInfo, 'four-arithmetic-blanks-desktop.png');
 
@@ -675,7 +675,7 @@ test('trình soạn Chủ đề 5 dùng preset, preview và tên template đã l
   await page.locator('#template-preview-back').click();
   await expect(page.locator('.template-editor__rule--digit-controls').first()).toBeHidden();
   await expect(page.locator('.template-editor__rule--range-controls')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ minimumDigits: 2, maximumDigits: 5, lesson: 'g4-math-hk1-b26' });
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({ minimumDigits: 2, maximumDigits: 5, lesson: 'g4-math-hk1-b26' });
 
   await page.evaluate(() => app.admin.renderTemplates(document.getElementById('treasure-content-area')));
   const templateCard = page.locator('#treasure-content-area .template-library-card').first();
@@ -1120,7 +1120,7 @@ test('Admin có avatar giáo viên, 1.000 sao và xem được giao diện thú 
     app.shop.switchTab('mypets');
   });
 
-  await expect(page.locator('.player-info-card__avatar--teacher')).toHaveAttribute('src', './public/avatar-teacher-female.png');
+  await expect(page.locator('#player-info .player-info-card__avatar--teacher')).toHaveAttribute('src', './public/avatar-teacher-female.png');
   await expect(page.locator('#player-info')).toContainText('1.000');
   await expect(page.getByText('Bộ sưu tập minh hoạ cho Giáo viên')).toBeVisible();
   await expect(page.locator('.admin-pet-preview-card')).toHaveCount(3);
@@ -1452,7 +1452,7 @@ test('bốn template Góc chủ đề 2 có giao diện thật, bốn ý và pre
     await expect(page.locator('#template-preview-dialog .template-preview__line, #template-preview-dialog .template-preview__angle-list > div')).toHaveCount(4);
     await page.locator('#template-preview-back').click();
     await expect(page.locator('.template-editor__rule--angle-info')).toBeVisible();
-    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({ lesson: 'g4-math-hk1-b08' });
+    await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({ lesson: 'g4-math-hk1-b08' });
   }
 });
 

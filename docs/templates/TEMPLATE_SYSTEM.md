@@ -219,6 +219,24 @@ Các quy tắc chi tiết 4 ý, matching, chuỗi, đơn vị đo và chấm đi
 
 Không nhúng nhãn Bài học tự do vào config mới; dùng `lesson` cấp record. Những config cũ có `lesson` chỉ tồn tại để backward compatibility và sẽ được làm sạch sau migration có kiểm chứng.
 
+#### Nội dung hiển thị trong Kho Template
+
+`config.presentation` là lớp biên soạn tùy chọn, không phải tham số toán học của generator và không cần thêm cột Supabase. Khi một giáo viên lưu từ giao diện mới, nó có dạng:
+
+```json
+{
+  "version": 1,
+  "common": "Hãy viết số vào ô trống, biết số đó gồm:",
+  "parts": [
+    { "type": "variable", "key": "place_values" },
+    { "type": "text", "value": ". Số đó là: " },
+    { "type": "cell", "key": "answer" }
+  ]
+}
+```
+
+`common` hiển thị một lần. `parts` là một công thức trực quan áp dụng cho mọi ý a–d: **Chữ** là phần giáo viên gõ, **Biến** là dữ kiện do game sinh, và **Ô trống** là đáp án của học sinh. Record cũ không có `presentation` tiếp tục dùng `prompt_template` cũ; khi lưu lại bằng giao diện mới, `prompt_template` được giữ là `{question}` để bảo toàn cấu trúc động.
+
 Mỗi generator/family mới cần manifest mô tả:
 
 ```text

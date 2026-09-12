@@ -136,7 +136,7 @@ function generateFourArithmeticComparisons(config = {}, random = Math.random) {
     const selectedLayout = choose(layouts, random);
     const comparisonSigns = comparisonSignsForFourRows(random);
     const comparisonRows = ['a', 'b', 'c', 'd'].map((label, index) => generateRow(label, selectedOperation, selectedLayout, comparisonSigns[index], minimum, maximum, random));
-    const exercises = comparisonRows.map(row => `${row.label}. ${row.display}`).join('<br>');
+    const exercises = comparisonRows.map(row => `${row.label}) ${row.display}`).join('<br>');
     const prompt = `Điền dấu thích hợp:<br>${exercises}`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',

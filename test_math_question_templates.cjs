@@ -194,7 +194,7 @@ assert.equal(fourArithmeticBlanks.subquestions.length, 4, 'The arithmetic-fill t
 assert.deepEqual(fourArithmeticBlanks.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
 assert.equal((fourArithmeticBlanks.q.match(/___/g) || []).length, 4, 'Each subquestion must contain exactly one blank.');
 assert.equal(fourArithmeticBlanks.ans.split(', ').length, 4, 'The four blanks must preserve their answer order.');
-assert.match(fourArithmeticBlanks.q, /^Hãy điền số thích hợp vào chỗ trống:<br>a\./);
+assert.match(fourArithmeticBlanks.q, /^Hãy điền số thích hợp vào chỗ trống:<br>a\)/);
 assert(fourArithmeticBlanks.subquestions.every(item => item.operation === '+'), 'The configured operation must be used.');
 assert(fourArithmeticBlanks.subquestions.every(item => item.layout === 'expressionLeft'), 'The configured layout must be used.');
 assert(fourArithmeticBlanks.subquestions.every(item => ['first', 'second', 'third'].includes(item.blankPosition)), 'The blank must be one of the three configured positions.');
@@ -302,7 +302,7 @@ assert.deepEqual([...new Set(fourArithmeticComparisons.comparisonRows.map(item =
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['+', '-'].includes(item.operation)), 'Each row must use an administrator-selected operation.');
 assert.equal(new Set(fourArithmeticComparisons.comparisonRows.map(item => item.operation)).size, 1, 'Comparison rows must keep one arithmetic operation.');
 assert.equal(new Set(fourArithmeticComparisons.comparisonRows.map(item => item.layout)).size, 1, 'Comparison rows must keep one expression layout.');
-assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\./);
+assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\)/);
 
 const divisionComparisons = generateQuestion('number.four_arithmetic_comparisons', {
     minimumDigits: 2,
@@ -318,6 +318,11 @@ assert.equal(comparison.type, 'Kéo thả');
 assert.equal(comparison.comparisonRows.length, 4, 'The number-form comparison template must generate four parts a–d.');
 assert.equal(comparison.ans.split(', ').length, 4);
 assert(comparison.comparisonRows.every(row => ['>', '<', '='].includes(row.answer)), 'Each comparison part must use a valid comparison symbol.');
+assert(comparison.comparisonRows.every(row => {
+    const left = numericValue(row.leftText);
+    const right = row.rightText.split('+').reduce((sum, term) => sum + numericValue(term), 0);
+    return row.answer === (left === right ? '=' : (left > right ? '>' : '<'));
+}), 'Every comparison sign must match the numeric value of the full expanded form.');
 assert.equal((comparison.q.match(/___/g) || []).length, 4, 'The comparison template must contain one slot per part.');
 
 const placeValueTrueFalse = generateQuestion('number.place_value_true_false', { minimum: 10000000, maximum: 99999999 }, seededRandom(10));

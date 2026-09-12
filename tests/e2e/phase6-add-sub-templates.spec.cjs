@@ -47,7 +47,7 @@ test('Phase 6 Bài 22 giữ riêng phạm vi phép cộng trong editor và gamep
 
   await expect(page.locator('#template-topic5-operation')).toBeVisible();
   await expect(page.locator('#template-topic5-operation')).toHaveValue('+');
-  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toEqual({
+  await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
     minimumDigits: 5,
     maximumDigits: 6,
     operation: '+',

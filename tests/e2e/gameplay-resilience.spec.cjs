@@ -22,7 +22,7 @@ function makeSharedPromptQuestion() {
   };
 }
 
-test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạo scrollbar ngoài viewport', async ({ page }) => {
+test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạo scrollbar ngoài viewport', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -31,10 +31,16 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
     document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
     document.getElementById('game-screen').classList.add('active');
     document.getElementById('game-play-view').classList.add('active');
-    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question] };
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: Array.from({ length: 10 }, () => question) };
     app.game.loadQuestion();
     const playCenter = document.querySelector('#game-play-view .play-center');
     const questionBox = document.getElementById('game-question-container');
+    const practiceStatus = document.getElementById('game-practice-status');
+    const gamePlayerInfo = document.getElementById('game-player-info');
+    const scoreDisplay = document.querySelector('#game-play-view .score-display');
+    const progressTrack = document.getElementById('game-question-progress');
+    const leftPanel = document.querySelector('#game-play-view .play-left');
+    const rightPanel = document.querySelector('#game-play-view .play-right');
     const rows = [...document.querySelectorAll('.multi-choice-subquestion h3')].map(element => element.textContent.trim());
     const commonPrompt = questionBox.querySelector('.question-shared-prompt');
     return {
@@ -43,19 +49,58 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
       centerOverflow: playCenter.scrollHeight > playCenter.clientHeight,
       shellBackground: getComputedStyle(document.querySelector('#game-play-view .glass-container-xl')).backgroundColor,
       questionBackground: getComputedStyle(questionBox).backgroundColor,
+      questionGradient: getComputedStyle(questionBox).backgroundImage,
+      practiceStatus: practiceStatus?.textContent.replace(/\s+/g, ' ').trim() || '',
+      studentInfoText: gamePlayerInfo?.textContent.replace(/\s+/g, ' ').trim() || '',
+      scoreDisplayVisible: scoreDisplay ? getComputedStyle(scoreDisplay).display !== 'none' : false,
+      questionText: questionBox.textContent.trim(),
+      progressVisible: getComputedStyle(progressTrack).display !== 'none',
+      progressSegmentCount: progressTrack.children.length,
+      currentSegmentCount: progressTrack.querySelectorAll('.is-current').length,
+      leftGradient: getComputedStyle(leftPanel).backgroundImage,
+      rightGradient: getComputedStyle(rightPanel).backgroundImage,
       commonPromptText: commonPrompt?.textContent.trim() || '',
       commonPromptCount: questionBox.querySelectorAll('.question-shared-prompt').length,
       rows
     };
   }, makeSharedPromptQuestion());
 
+  await page.screenshot({ path: 'test-results/gameplay-layout-after.png', fullPage: true });
+
   expect(layout.pageOverflow).toBe(false);
   expect(layout.centerOverflow).toBe(false);
   expect(layout.shellBackground).not.toBe('rgb(255, 255, 255)');
   expect(layout.questionBackground).not.toBe('rgb(255, 255, 255)');
+  expect(layout.questionGradient).toContain('linear-gradient');
+  expect(layout.practiceStatus).toBe('Bạn đang làm bài Luyện tập VUI HỌC TOÁN');
+  expect(layout.studentInfoText).toContain('Học sinh thử nghiệm');
+  expect(layout.scoreDisplayVisible).toBe(false);
+  expect(layout.questionText).toBe('Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?');
+  expect(layout.progressVisible).toBe(true);
+  expect(layout.progressSegmentCount).toBe(10);
+  expect(layout.currentSegmentCount).toBe(1);
+  expect(layout.leftGradient).toContain('linear-gradient');
+  expect(layout.rightGradient).toContain('linear-gradient');
+  expect(layout.leftGradient).not.toBe(layout.rightGradient);
   expect(layout.commonPromptCount).toBe(1);
   expect(layout.commonPromptText).toContain('Dãy số được lập theo quy luật');
   expect(layout.rows.every(text => !text.includes('Dãy số được lập theo quy luật'))).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('gameplay-shell-desktop.png'), fullPage: true });
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const tabletLayout = await page.evaluate(() => {
+    const shell = document.querySelector('#game-play-view .glass-container-xl');
+    const left = document.querySelector('#game-play-view .play-left');
+    const right = document.querySelector('#game-play-view .play-right');
+    return {
+      pageOverflow: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+      horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      leftFits: left.scrollHeight <= left.clientHeight,
+      rightFits: right.scrollHeight <= right.clientHeight,
+      shellFits: shell.scrollHeight <= shell.clientHeight
+    };
+  });
+  expect(tabletLayout).toEqual({ pageOverflow: false, horizontalOverflow: false, leftFits: true, rightFits: true, shellFits: true });
 });
 
 test('panel phải giữ vòng tiến độ, nút hành động và lời giải theo đúng thứ tự', async ({ page }) => {
@@ -72,11 +117,20 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
     app.game.loadQuestion();
     const right = document.querySelector('#game-play-view .play-right');
     const ring = document.getElementById('game-progress-ring');
+    const action = document.getElementById('submit-ans-btn');
+    const solutionSlot = document.getElementById('game-progress-content');
+    const rightRect = right.getBoundingClientRect();
+    const centerRatio = element => {
+      const rect = element.getBoundingClientRect();
+      return ((rect.top + rect.height / 2) - rightRect.top) / rightRect.height;
+    };
     return {
       order: [...right.children].map(element => element.id || element.className.split(' ')[0]),
       ringVisible: getComputedStyle(ring).display !== 'none',
       ringLabel: ring.getAttribute('aria-label'),
       progressText: document.getElementById('game-progress-copy').textContent.trim(),
+      progressCopyWidth: document.getElementById('game-progress-copy').getBoundingClientRect().width,
+      verticalCenters: [ring, action, solutionSlot].map(centerRatio),
       speechBubbleVisible: getComputedStyle(document.getElementById('cat-speech-bubble')).display !== 'none',
       actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label')
     };
@@ -86,6 +140,10 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
   expect(initial.ringVisible).toBe(true);
   expect(initial.ringLabel).toContain('hoàn thành 0 trên 4 ý');
   expect(initial.progressText).toContain('Hoàn thành 0/4 ý');
+  expect(initial.progressCopyWidth).toBeLessThanOrEqual(2);
+  expect(initial.verticalCenters[0]).toBeCloseTo(.3, 1);
+  expect(initial.verticalCenters[1]).toBeCloseTo(.5, 1);
+  expect(initial.verticalCenters[2]).toBeCloseTo(.7, 1);
   expect(initial.speechBubbleVisible).toBe(true);
   expect(initial.actionLabel).toBe('Kiểm tra');
 
