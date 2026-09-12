@@ -2969,6 +2969,19 @@ const app = {
             document.getElementById('play-cat-img').src = './public/' + equipped;
             app.auth.updateHeader();
 
+            const practiceStatus = document.getElementById('game-practice-status');
+            if (practiceStatus) {
+                const lessonName = app.data.formatMathText(String(q.q || 'Bài luyện tập')
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim());
+                const label = document.createElement('span');
+                label.textContent = 'Bài đang làm';
+                const title = document.createElement('strong');
+                title.textContent = lessonName;
+                practiceStatus.replaceChildren(label, title);
+            }
+
             let qHtml = app.data.formatMathHTML(q.q);
             const isFourPartQuestion = Array.isArray(q.subquestions) && q.subquestions.length === 4;
             const sharedPrompt = this.getSharedSubquestionPrompt(q);

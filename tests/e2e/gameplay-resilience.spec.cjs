@@ -51,7 +51,7 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
       questionBackground: getComputedStyle(questionBox).backgroundColor,
       questionGradient: getComputedStyle(questionBox).backgroundImage,
       practiceStatus: practiceStatus?.textContent.replace(/\s+/g, ' ').trim() || '',
-      studentInfoText: gamePlayerInfo?.textContent.replace(/\s+/g, ' ').trim() || '',
+      studentInfoVisible: Boolean(gamePlayerInfo) && getComputedStyle(gamePlayerInfo).display !== 'none',
       scoreDisplayVisible: scoreDisplay ? getComputedStyle(scoreDisplay).display !== 'none' : false,
       questionText: questionBox.textContent.trim(),
       progressVisible: getComputedStyle(progressTrack).display !== 'none',
@@ -65,15 +65,13 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
     };
   }, makeSharedPromptQuestion());
 
-  await page.screenshot({ path: 'test-results/gameplay-layout-after.png', fullPage: true });
-
   expect(layout.pageOverflow).toBe(false);
   expect(layout.centerOverflow).toBe(false);
   expect(layout.shellBackground).not.toBe('rgb(255, 255, 255)');
   expect(layout.questionBackground).not.toBe('rgb(255, 255, 255)');
   expect(layout.questionGradient).toContain('linear-gradient');
-  expect(layout.practiceStatus).toBe('Bạn đang làm bài Luyện tập VUI HỌC TOÁN');
-  expect(layout.studentInfoText).toContain('Học sinh thử nghiệm');
+  expect(layout.practiceStatus).toBe('Bài đang làmTìm số thích hợp điền vào dãy:');
+  expect(layout.studentInfoVisible).toBe(false);
   expect(layout.scoreDisplayVisible).toBe(false);
   expect(layout.questionText).toBe('Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?');
   expect(layout.progressVisible).toBe(true);
