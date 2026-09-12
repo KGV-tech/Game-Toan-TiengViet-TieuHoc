@@ -2969,6 +2969,12 @@ const app = {
             document.getElementById('play-cat-img').src = './public/' + equipped;
             app.auth.updateHeader();
 
+            const practiceStatus = document.getElementById('game-practice-status');
+            if (practiceStatus) {
+                const lessonName = app.data.formatMathText(q.q || 'Bài luyện tập');
+                practiceStatus.innerHTML = `<span>Bài đang làm</span><strong>${lessonName}</strong>`;
+            }
+
             let qHtml = app.data.formatMathHTML(q.q);
             const isFourPartQuestion = Array.isArray(q.subquestions) && q.subquestions.length === 4;
             const sharedPrompt = this.getSharedSubquestionPrompt(q);
