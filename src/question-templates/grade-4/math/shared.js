@@ -73,6 +73,20 @@ function numericOptions(correct, minimum, maximum, random, candidateSteps = [1, 
     return shuffle(values, random).map(formatNumber);
 }
 
+function configuredValues(config, key, defaults, allowed, message) {
+    const source = Object.prototype.hasOwnProperty.call(config || {}, key) ? config[key] : defaults;
+    const values = Array.isArray(source) ? [...new Set(source)] : [source];
+    if (!values.length || values.some(value => !allowed.includes(value))) {
+        throw new Error(message);
+    }
+    return values;
+}
+
+function chooseConfiguredValue(config, key, defaults, allowed, random, message) {
+    const values = configuredValues(config, key, defaults, allowed, message);
+    return values[randomInt(0, values.length - 1, random)];
+}
+
 function digitOptions(correct, random) {
     const candidates = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(digit => digit !== correct), random).slice(0, 3);
     return shuffle([correct, ...candidates], random).map(String);
@@ -188,5 +202,5 @@ function expandedTerms(value) {
     }, []);
 }
 
-return { randomInt, shuffle, formatNumber, readNumber, numericOptions, digitOptions, expandedForm, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
+return { randomInt, shuffle, formatNumber, readNumber, numericOptions, configuredValues, chooseConfiguredValue, digitOptions, expandedForm, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
 }));

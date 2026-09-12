@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '6. Đường thẳng vuông góc. Đường thẳng song song';
 const labels = ['a', 'b', 'c', 'd'];
@@ -38,15 +38,6 @@ const SKILL_LABELS = {
     b30: 'Bài 30 · Thực hành đường thẳng song song',
     b31: 'Bài 31 · Hình bình hành, hình thoi'
 };
-
-const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
-function configuredList(config, key, defaults, allowed, message) {
-    const source = hasOwn(config, key) ? config[key] : defaults;
-    if (!Array.isArray(source) || !source.length || new Set(source).size !== source.length || source.some(value => !allowed.includes(value))) {
-        throw new Error(message);
-    }
-    return [...source];
-}
 
 function pick(items, random) {
     return items[randomInt(0, items.length - 1, random)];
@@ -200,7 +191,7 @@ function shapePart(shapeKind, random, variant = 0) {
 }
 
 function generateQuadrilateralQuestion(config = {}, random = Math.random) {
-    const shapes = configuredList(config, 'allowedShapes', SHAPES, SHAPES, 'Bài 31 cần chọn ít nhất một loại hình hợp lệ.');
+    const shapes = configuredValues(config, 'allowedShapes', SHAPES, SHAPES, 'Bài 31 cần chọn ít nhất một loại hình hợp lệ.');
     const selected = Array.from({ length: 4 }, (_, index) => shapes[index % shapes.length]);
     const subquestions = selected.map((shape, index) => ({ label: labels[index], ...shapePart(shape, random, index) }));
     const prompt = 'Bài 31 · Nhận biết hình bình hành và hình thoi:';
@@ -236,16 +227,16 @@ function reviewPart(skill, random) {
 }
 
 function generateReview(config = {}, random = Math.random) {
-    const skills = configuredList(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, 'Bộ ôn tập Bài 27 đến Bài 31 cần đúng bốn kỹ năng hợp lệ.');
-    if (skills.length !== 4) throw new Error('Bộ ôn tập Bài 27 đến Bài 31 cần đúng bốn kỹ năng hợp lệ.');
-    const subquestions = skills.map((skill, index) => ({ label: labels[index], ...reviewPart(skill, random) }));
-    const prompt = 'Luyện tập chung Bài 27 đến Bài 31:';
+    const skills = configuredValues(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
+    const selectedSkill = chooseConfiguredValue(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, random, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
+    const subquestions = labels.map(label => ({ label, ...reviewPart(selectedSkill, random) }));
+    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'geometry.hk1_review_b27_b31',
         prompt,
         subquestions,
-        'Ôn nhận biết vuông góc, song song, thực hành trên lưới ô vuông và hình bình hành/hình thoi theo nhãn Bài học.',
-        { question: prompt, skills: skills.join(', ') }
+        `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
+        { question: prompt, skills: skills.join(', '), selectedSkill }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];

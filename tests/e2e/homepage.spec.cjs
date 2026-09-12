@@ -697,7 +697,7 @@ test('tổng phân tích bốn câu dùng bốn thẻ màu cân đối', async (
   await captureUiReview(page, testInfo, 'missing-expanded-addend-desktop.png');
 });
 
-test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ bốn phép', async ({ page }, testInfo) => {
+test('bốn phép tính điền khuyết chủ đề 1 giữ một phép tính cho cả bốn ý', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -725,7 +725,9 @@ test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ b�
     const question = app.game.state.questions[0];
     return { operations: question.practiceRows.map(row => row.operation).sort(), score: app.game.calculateQuestionScore(question, question.ans) };
   });
-  expect(generated.operations).toEqual(['*', '+', '-', '/']);
+  expect(generated.operations).toHaveLength(4);
+  expect(new Set(generated.operations).size).toBe(1);
+  expect(['+', '-', '*', '/']).toContain(generated.operations[0]);
   expect(generated.score).toMatchObject({ correctCount: 4, answerCount: 4, points: 1, isCorrect: true });
   await captureUiReview(page, testInfo, 'four-operations-fill-blanks-desktop.png');
 
@@ -744,8 +746,8 @@ test('bốn phép tính điền khuyết chủ đề 1 có bốn ý và đủ b�
   await expect(page.locator('.template-editor__rule--four-arithmetic-layouts')).toBeHidden();
   await expect(page.locator('.template-editor__rule--four-arithmetic-blank-positions')).toBeHidden();
   await expect(page.locator('#template-arithmetic-operations').locator('input')).toHaveCount(4);
-  await expect(page.locator('#template-arithmetic-operations').locator('input').first()).toBeDisabled();
-  await expect(page.locator('fieldset:has(#template-arithmetic-operations) legend')).toHaveText('Bốn phép tính dùng trong mỗi lượt');
+  await expect(page.locator('#template-arithmetic-operations').locator('input').first()).toBeEnabled();
+  await expect(page.locator('fieldset:has(#template-arithmetic-operations) legend')).toHaveText('Phép tính được phép (chọn một cho cả bốn ý)');
   await expect(page.locator('#template-arithmetic-min-digits')).toHaveValue('2');
   await expect(page.locator('#template-arithmetic-max-digits')).toHaveValue('5');
   await expect(page.locator('#template-variables')).toContainText('{exercises}');
@@ -811,7 +813,7 @@ test('bốn phép tính tính giá trị biểu thức hiển thị dạng nhi�
   expect(longExpressionLayout).toBe(true);
 });
 
-test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
+test('so sánh kéo thả bốn ý cùng một phép tính luôn hiện đủ ba dấu', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -846,6 +848,9 @@ test('so sánh kéo thả bốn phép tính luôn hiện đủ ba dấu', async 
   await expect(page.locator('.comparison-drag-row--tone-1')).toHaveCount(1);
   await expect(page.locator('.comparison-drag-row--tone-2')).toHaveCount(1);
   await expect(page.locator('.comparison-drag-row--tone-3')).toHaveCount(1);
+  const comparisonOperations = await page.evaluate(() => app.game.state.questions[0].comparisonRows.map(row => row.operation));
+  expect(new Set(comparisonOperations).size).toBe(1);
+  expect(['+', '-', '*', '/']).toContain(comparisonOperations[0]);
   await expect(page.locator('#game-play-view .play-center')).toHaveClass(/play-center--four-comparisons/);
   const comparisonLayout = await page.locator('#game-play-view .play-center').evaluate(element => ({
     hasVerticalOverflow: element.scrollHeight > element.clientHeight,

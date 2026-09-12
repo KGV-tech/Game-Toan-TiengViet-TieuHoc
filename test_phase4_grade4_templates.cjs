@@ -44,10 +44,15 @@ for (let seed = 0; seed < 24; seed += 1) {
         modes: ['compose', 'read', 'million', 'digit']
     }, seededRandom(9100 + seed));
     assertFourPartQuestion(question, 'number.six_digit_numbers');
-    assert.deepEqual(question.subquestions.map(item => item.mode), ['compose', 'read', 'million', 'digit']);
-    assert(question.subquestions.filter(item => item.mode !== 'million').every(item => item.number >= 100000 && item.number <= 999999));
-    assert.equal(question.subquestions.find(item => item.mode === 'million').answer.replace(/\s/g, ''), '1000000');
-    assert(/sáu chữ số|1\s*000\s*000/i.test(question.q));
+    assert.equal(new Set(question.subquestions.map(item => item.mode)).size, 1);
+    assert(question.subquestions.every(item => ['compose', 'read', 'million', 'digit'].includes(item.mode)));
+    assert.equal(question.templateVariables.selectedMode, question.subquestions[0].mode);
+    if (question.subquestions[0].mode === 'million') {
+        assert(question.subquestions.some(item => item.answer.replace(/\s/g, '') === '1000000'));
+    } else {
+        assert(question.subquestions.every(item => item.number >= 100000 && item.number <= 999999));
+    }
+    assert(/lập số|đọc số|chữ số|1\s*000\s*000/i.test(question.q));
 }
 
 const sixDigitEdge = generateQuestion('number.six_digit_numbers', {
@@ -55,7 +60,10 @@ const sixDigitEdge = generateQuestion('number.six_digit_numbers', {
     maximum: 100003,
     modes: ['compose', 'read', 'million', 'digit']
 }, seededRandom(9124));
-assert(sixDigitEdge.subquestions.filter(item => item.mode !== 'million').every(item => item.number >= 100000 && item.number <= 100003));
+assert.equal(new Set(sixDigitEdge.subquestions.map(item => item.mode)).size, 1);
+if (sixDigitEdge.subquestions[0].mode !== 'million') {
+    assert(sixDigitEdge.subquestions.every(item => item.number >= 100000 && item.number <= 100003));
+}
 assert.throws(
     () => generateQuestion('number.six_digit_numbers', { minimum: 10000, maximum: 999999 }, seededRandom(9125)),
     /sáu chữ số/i
@@ -69,7 +77,8 @@ for (let seed = 0; seed < 24; seed += 1) {
         includeZeroGroups: true
     }, seededRandom(9200 + seed));
     assertFourPartQuestion(question, 'number.million_class');
-    assert.deepEqual(question.subquestions.map(item => item.mode), ['read', 'write', 'digit', 'expanded']);
+    assert.equal(new Set(question.subquestions.map(item => item.mode)).size, 1);
+    assert.equal(question.templateVariables.selectedMode, question.subquestions[0].mode);
     assert(question.subquestions.every(item => item.number >= 1000000 && item.number <= 999999999));
     assert(question.subquestions.every(item => String(item.number).includes('0')));
     assert(/lớp triệu/i.test(question.q));
@@ -86,17 +95,19 @@ for (let seed = 0; seed < 24; seed += 1) {
         modes: ['round', 'round', 'round', 'rule']
     }, seededRandom(9300 + seed));
     assertFourPartQuestion(question, 'number.round_hundred_thousands');
-    assert.deepEqual(question.subquestions.map(item => item.mode), ['round', 'round', 'round', 'rule']);
-    assert(question.subquestions.slice(0, 3).every(item => item.options.length === 4));
-    assert.equal(question.subquestions[3].mode, 'rule');
-    assert.equal(question.subquestions[3].options.length, 4);
-    question.subquestions.filter(item => item.mode === 'round').forEach(item => {
-        const expected = Math.floor((item.number + 50000) / 100000) * 100000;
-        assert.equal(numericValue(item.answer), expected);
-        assert.equal(item.roundedNumber, expected);
-        assert.equal(expected % 100000, 0);
-    });
-    assert(question.subquestions[3].options.includes(question.subquestions[3].answer));
+    assert.equal(new Set(question.subquestions.map(item => item.mode)).size, 1);
+    assert.equal(question.templateVariables.selectedMode, question.subquestions[0].mode);
+    assert(question.subquestions.every(item => item.options.length === 4));
+    if (question.subquestions[0].mode === 'round') {
+        question.subquestions.forEach(item => {
+            const expected = Math.floor((item.number + 50000) / 100000) * 100000;
+            assert.equal(numericValue(item.answer), expected);
+            assert.equal(item.roundedNumber, expected);
+            assert.equal(expected % 100000, 0);
+        });
+    } else {
+        assert(question.subquestions.every(item => item.options.includes(item.answer)));
+    }
 }
 assert.throws(
     () => generateQuestion('number.round_hundred_thousands', { minimum: 999999, maximum: 100000 }, seededRandom(9325)),
@@ -111,18 +122,19 @@ reviewSkillSets.forEach((skills, setIndex) => {
     for (let seed = 0; seed < 12; seed += 1) {
         const question = generateQuestion('number.hk1_review_b10_b15', { skills }, seededRandom(9400 + setIndex * 100 + seed));
         assertFourPartQuestion(question, 'number.hk1_review_b10_b15');
-        assert.deepEqual(question.subquestions.map(item => item.skill), skills);
+        assert.equal(new Set(question.subquestions.map(item => item.skill)).size, 1);
+        assert(skills.includes(question.subquestions[0].skill));
         assert.deepEqual(question.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
         assert.equal(question.templateVariables.skills, skills.join(', '));
         assert(question.subquestions.every(item => item.prompt && item.explanation));
     }
 });
 assert.throws(
-    () => generateQuestion('number.hk1_review_b10_b15', { skills: ['b10', 'b11', 'b12'] }, seededRandom(9500)),
+    () => generateQuestion('number.hk1_review_b10_b15', { skills: [] }, seededRandom(9500)),
     /bài 10 đến bài 15/i
 );
 assert.throws(
-    () => generateQuestion('number.hk1_review_b10_b15', { skills: ['b10', 'b11', 'b12', 'b17'] }, seededRandom(9501)),
+    () => generateQuestion('number.hk1_review_b10_b15', { skills: ['b10', 'b11', 'b17'] }, seededRandom(9501)),
     /bài 10 đến bài 15/i
 );
 

@@ -41,7 +41,7 @@ assert.equal(Math.max(...matchingColumns.map(column => column.length)), 5, 'The 
 assert.equal(measurementMatching.ans.split(', ').length, 4, 'The distractor must not create an extra answer.');
 
 const measurementTrueFalse = generateQuestion('measurement.unit_true_false', {}, seededRandom(913));
-assert.equal(measurementTrueFalse.q, 'Chọn Đúng/Sai?', 'True/false templates must use the shared concise heading.');
+assert.match(measurementTrueFalse.q, /^Chọn Đúng\/Sai \((khối lượng|diện tích|thời gian|thế kỉ)\):$/, 'True/false templates must use a concise heading with one measurement family.');
 
 const centuryQuestion = generateQuestion('measurement.century_identification', {}, seededRandom(914));
 const anotherCenturyQuestion = generateQuestion('measurement.century_identification', {}, seededRandom(915));
@@ -64,13 +64,22 @@ for (let seed = 916; seed < 996; seed += 1) {
     assert.equal(new Set(generated.practiceRows.map(row => row.scenarioId)).size, 4, 'A question must not repeat a real-world scenario.');
     generated.practiceRows.forEach(row => {
         measurementWordProblemScenarioIds.add(row.scenarioId);
+        assert.equal(new Set(generated.practiceRows.map(item => item.kind)).size, 1, 'A question must keep one measurement family across all word-problem parts.');
         assert(Number.isInteger(row.answer) && row.answer > 0, `${row.scenarioId} must produce a positive whole-number answer.`);
         assert.match(row.display, /___/, `${row.scenarioId} must contain one answer blank.`);
         assert.equal(typeof row.answerPrefix, 'string', `${row.scenarioId} must expose the phrase immediately before its answer.`);
         assert.equal(typeof row.answerSuffix, 'string', `${row.scenarioId} must expose the unit immediately after its answer.`);
     });
 }
-assert.equal(measurementWordProblemScenarioIds.size, 20, 'The measurement word-problem template must draw from all 20 approved scenarios.');
+assert(measurementWordProblemScenarioIds.size >= 4, 'The default word-problem pool must still produce varied scenarios.');
+const allMeasurementWordProblemScenarioIds = new Set();
+for (const scenarioKind of ['mass', 'area', 'time']) {
+    for (let seed = 996; seed < 1036; seed += 1) {
+        const generated = generateQuestion('measurement.word_problem_units', { scenarioKinds: [scenarioKind] }, seededRandom(seed));
+        generated.practiceRows.forEach(row => allMeasurementWordProblemScenarioIds.add(row.scenarioId));
+    }
+}
+assert.equal(allMeasurementWordProblemScenarioIds.size, 20, 'The measurement word-problem template must retain all 20 approved scenarios across its configured pools.');
 
 const smallest = generateQuestion('number.smallest_of_four', {}, seededRandom(1));
 assert.equal(smallest.type, 'Trắc nghiệm');
@@ -198,7 +207,8 @@ const fourOperationsFillBlanks = generateQuestion('number.four_operations_fill_b
 assert.equal(fourOperationsFillBlanks.type, 'Điền khuyết');
 assert.equal(fourOperationsFillBlanks.practiceRows.length, 4, 'The fill-in template must generate parts a–d.');
 assert.deepEqual(fourOperationsFillBlanks.practiceRows.map(item => item.label), ['a', 'b', 'c', 'd']);
-assert.deepEqual([...fourOperationsFillBlanks.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert.equal(new Set(fourOperationsFillBlanks.practiceRows.map(item => item.operation)).size, 1, 'Mỗi lượt phải giữ một phép tính thống nhất.');
+assert(['+', '-', '*', '/'].includes(fourOperationsFillBlanks.practiceRows[0].operation));
 assert(fourOperationsFillBlanks.practiceRows.every(item => /(^___|[+−×÷]\s+___|=\s+___)/.test(item.expression)), 'Mỗi ý điền khuyết phải bốc ô số thứ nhất, thứ hai hoặc kết quả.');
 assert.equal((fourOperationsFillBlanks.q.match(/___/g) || []).length, 4, 'Each part must include one answer blank.');
 assert.deepEqual(fourOperationsFillBlanks.partAnswerCounts, [1, 1, 1, 1], 'Each of the four parts must be worth 0.25 point.');
@@ -210,7 +220,8 @@ const fourOperationsExpressions = generateQuestion('number.four_operations_expre
 }, seededRandom(806));
 assert.equal(fourOperationsExpressions.type, 'Điền khuyết');
 assert.equal(fourOperationsExpressions.practiceRows.length, 4, 'The expression template must generate parts a–d.');
-assert.deepEqual([...fourOperationsExpressions.practiceRows.map(item => item.operation)].sort(), ['*', '+', '-', '/'], 'Mỗi lượt phải có đủ bốn phép cộng, trừ, nhân, chia.');
+assert.equal(new Set(fourOperationsExpressions.practiceRows.map(item => item.operation)).size, 1, 'Mỗi lượt phải giữ một phép tính thống nhất.');
+assert(['+', '-', '*', '/'].includes(fourOperationsExpressions.practiceRows[0].operation));
 assert(fourOperationsExpressions.practiceRows.every(item => (item.expression.match(/[+−×:]/g) || []).length >= 2), 'Mỗi ý tính giá trị biểu thức phải có ít nhất hai phép tính.');
 assert.equal((fourOperationsExpressions.q.match(/___/g) || []).length, 4, 'Each expression must provide one answer blank.');
 assert.deepEqual(fourOperationsExpressions.partAnswerCounts, [1, 1, 1, 1], 'Each expression part must be worth 0.25 point.');
@@ -289,6 +300,8 @@ assert.equal(fourArithmeticComparisons.ans.split(', ').length, 4, 'The four comp
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['>', '<', '='].includes(item.answer)), 'Every comparison row must have a valid sign.');
 assert.deepEqual([...new Set(fourArithmeticComparisons.comparisonRows.map(item => item.answer))].sort(), ['<', '=', '>'], 'Four comparison rows must always include all three comparison signs, regardless of stale configuration.');
 assert(fourArithmeticComparisons.comparisonRows.every(item => ['+', '-'].includes(item.operation)), 'Each row must use an administrator-selected operation.');
+assert.equal(new Set(fourArithmeticComparisons.comparisonRows.map(item => item.operation)).size, 1, 'Comparison rows must keep one arithmetic operation.');
+assert.equal(new Set(fourArithmeticComparisons.comparisonRows.map(item => item.layout)).size, 1, 'Comparison rows must keep one expression layout.');
 assert.match(fourArithmeticComparisons.q, /^Điền dấu thích hợp:<br>a\./);
 
 const divisionComparisons = generateQuestion('number.four_arithmetic_comparisons', {
@@ -317,7 +330,8 @@ assert.equal(new Set(trueFalseDigits).size, 1, 'Every statement must identify th
 const trueFalseNumber = trueFalseDigits[0];
 assert.equal(new Set(trueFalseNumber).size, trueFalseNumber.length, 'True/false numbers must not repeat a digit, so each stated digit has one unambiguous location.');
 assert(placeValueTrueFalse.statements.every(item => trueFalseNumber.includes(item.text.match(/chữ số (\d)/i)[1])), 'Every stated digit must appear in the generated number.');
-assert.deepEqual(placeValueTrueFalse.statements.map(item => item.kind), ['class', 'place', 'class', 'place'], 'The default true/false template must mix class and place statements.');
+assert.equal(new Set(placeValueTrueFalse.statements.map(item => item.kind)).size, 1, 'The true/false template must keep one statement kind per generated question.');
+assert.equal(placeValueTrueFalse.templateVariables.selectedKind, placeValueTrueFalse.statements[0].kind, 'The selected statement kind must be exposed to the template preview.');
 assert.match(placeValueTrueFalse.templateVariables.statements, /<br>/, 'The true/false template must expose its generated statements to administrators.');
 assert.equal(placeValueTrueFalse.q, 'Chọn Đúng/Sai?', 'The true/false template must use the concise shared heading.');
 assert.match(comparison.q, /<br>/, 'Comparison template prompts must separate the instruction from the expression.');

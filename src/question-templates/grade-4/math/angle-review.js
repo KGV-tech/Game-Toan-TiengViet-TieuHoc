@@ -7,51 +7,48 @@
     root.Grade4MathTemplateGenerators['angle.review'] = generate;
 }(typeof globalThis !== 'undefined' ? globalThis : this, function ({ ANGLE_TYPE_KEYS, angleTypeOf, classificationOptions, degreeForType, measureOptions, pickDistinctDegrees, renderAngleSVG, renderProtractorSVG, validateDegreePool, shuffle }) {
 
+const MODE_KEYS = ['measure', 'classify'];
+const MODE_LABELS = { measure: 'đọc số đo góc', classify: 'phân loại góc' };
+
+function configuredModes(config) {
+    const source = Array.isArray(config.modes)
+        ? config.modes
+        : config.mode !== undefined
+            ? [config.mode]
+            : MODE_KEYS;
+    if (!source.length || new Set(source).size !== source.length || source.some(mode => !MODE_KEYS.includes(mode))) {
+        throw new Error('Bộ ôn tập góc cần ít nhất một dạng hợp lệ: đọc số đo hoặc phân loại góc.');
+    }
+    return [...source];
+}
+
 function generateAngleReview(config = {}, random = Math.random) {
     const degreePool = validateDegreePool(config.allowedDegrees);
-    const measureDegrees = pickDistinctDegrees(degreePool, 2, random);
-    const classifyDegrees = shuffle(ANGLE_TYPE_KEYS, random)
-        .slice(0, 2)
-        .map(key => degreeForType(key, random));
-    const subquestions = [
-        {
-            label: 'a',
-            mode: 'measure',
-            degrees: measureDegrees[0],
-            visual: renderProtractorSVG(measureDegrees[0]),
+    const modes = configuredModes(config);
+    const selectedMode = shuffle(modes, random)[0];
+    const subquestions = selectedMode === 'measure'
+        ? pickDistinctDegrees(degreePool, 4, random).map((degrees, index) => ({
+            label: String.fromCharCode(97 + index),
+            mode: selectedMode,
+            degrees,
+            visual: renderProtractorSVG(degrees),
             prompt: 'Đọc số đo góc trên thước đo góc và chọn đáp án đúng (độ).',
-            options: measureOptions(measureDegrees[0], random),
-            answer: `${measureDegrees[0]}°`
-        },
-        {
-            label: 'b',
-            mode: 'classify',
-            degrees: classifyDegrees[0],
-            visual: renderAngleSVG(classifyDegrees[0]),
-            prompt: 'Quan sát hình và chọn tên loại góc đúng.',
-            options: classificationOptions(random),
-            answer: angleTypeOf(classifyDegrees[0])
-        },
-        {
-            label: 'c',
-            mode: 'measure',
-            degrees: measureDegrees[1],
-            visual: renderProtractorSVG(measureDegrees[1]),
-            prompt: 'Đọc số đo góc trên thước đo góc và chọn đáp án đúng (độ).',
-            options: measureOptions(measureDegrees[1], random),
-            answer: `${measureDegrees[1]}°`
-        },
-        {
-            label: 'd',
-            mode: 'classify',
-            degrees: classifyDegrees[1],
-            visual: renderAngleSVG(classifyDegrees[1]),
-            prompt: 'Quan sát hình và chọn tên loại góc đúng.',
-            options: classificationOptions(random),
-            answer: angleTypeOf(classifyDegrees[1])
-        }
-    ];
-    const prompt = 'Ôn tập góc: đọc số đo và nhận biết loại góc.';
+            options: measureOptions(degrees, random),
+            answer: `${degrees}°`
+        }))
+        : shuffle(ANGLE_TYPE_KEYS, random).map((key, index) => {
+            const degrees = degreeForType(key, random);
+            return {
+                label: String.fromCharCode(97 + index),
+                mode: selectedMode,
+                degrees,
+                visual: renderAngleSVG(degrees),
+                prompt: 'Quan sát hình và chọn tên loại góc đúng.',
+                options: classificationOptions(random),
+                answer: angleTypeOf(degrees)
+            };
+        });
+    const prompt = `Ôn tập dạng ${MODE_LABELS[selectedMode]}:`;
     return {
         classlevel: 'Lớp 4',
         subject: 'Toán',
@@ -65,10 +62,14 @@ function generateAngleReview(config = {}, random = Math.random) {
         subquestions,
         partAnswerCounts: [1, 1, 1, 1],
         ans: subquestions.map(item => item.answer).join(', '),
-        explanation: 'Góc nhọn bé hơn 90°, góc vuông bằng 90°, góc tù lớn hơn 90° và bé hơn 180°, còn góc bẹt bằng 180°.',
+        explanation: selectedMode === 'measure'
+            ? 'Đọc hai tia của góc trên thước đo góc và xác định số đo theo đơn vị độ.'
+            : 'Góc nhọn bé hơn 90°, góc vuông bằng 90°, góc tù lớn hơn 90° và bé hơn 180°, còn góc bẹt bằng 180°.',
         templateVariables: {
             question: prompt,
-            skills: 'đo góc, phân loại góc'
+            skills: 'đo góc, phân loại góc',
+            modes: modes.join(', '),
+            selectedMode
         }
     };
 }

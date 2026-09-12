@@ -8,15 +8,6 @@
 
 const OPERATIONS = ['+', '-', '*', '/'];
 
-function shuffle(items, random) {
-    const values = [...items];
-    for (let index = values.length - 1; index > 0; index--) {
-        const swapIndex = randomInt(0, index, random);
-        [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
-    }
-    return values;
-}
-
 function generateExpression(operation, minimum, maximum, random) {
     if (operation === '+') {
         const first = randomInt(minimum, Math.floor(maximum / 3), random);
@@ -50,10 +41,12 @@ return function generateFourOperationsExpressions(config = {}, random = Math.ran
     const minimum = Math.max(Number(config.minimum ?? 10 ** (minimumDigits - 1)), 10 ** (minimumDigits - 1));
     const maximum = Math.min(Number(config.maximum ?? (10 ** maximumDigits - 1)), 10 ** maximumDigits - 1);
     if (!Number.isSafeInteger(minimum) || !Number.isSafeInteger(maximum) || minimum < 10 || maximum < minimum * 2) throw new Error('Phạm vi số chưa đủ để tạo biểu thức.');
-    const selected = Array.isArray(config.operations) ? config.operations : OPERATIONS;
-    if (selected.length !== 4 || new Set(selected).size !== 4 || !OPERATIONS.every(operation => selected.includes(operation))) throw new Error('Template này luôn cần đủ bốn phép cộng, trừ, nhân, chia.');
+    const selected = Array.isArray(config.operations) ? [...new Set(config.operations)] : OPERATIONS;
+    if (!selected.length || selected.some(operation => !OPERATIONS.includes(operation))) throw new Error('Danh sách phép tính phải có ít nhất một phép cộng, trừ, nhân hoặc chia.');
+    const selectedOperation = selected[randomInt(0, selected.length - 1, random)];
 
-    const practiceRows = shuffle(OPERATIONS, random).map((operation, index) => {
+    const practiceRows = Array.from({ length: 4 }, (_, index) => {
+        const operation = selectedOperation;
         const generated = generateExpression(operation, minimum, maximum, random);
         return { label: String.fromCharCode(97 + index), kind: 'expression', operation, ...generated };
     });
@@ -62,9 +55,9 @@ return function generateFourOperationsExpressions(config = {}, random = Math.ran
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '1. Ôn tập và bổ sung',
         type: 'Điền khuyết', templateId: 'number.four_operations_expressions', q: prompt, options: [], ans: practiceRows.map(row => row.answer).join(', '),
-        explanation: 'Bốn ý a–d dùng đủ phép cộng, trừ, nhân, chia; biểu thức có nhiều bước và ngoặc khi cần. Mỗi ý đúng được 0,25 điểm.',
+        explanation: `Bốn ý a–d cùng luyện phép ${selectedOperation === '*' ? 'nhân' : selectedOperation === '/' ? 'chia' : selectedOperation === '+' ? 'cộng' : 'trừ'} trong biểu thức nhiều bước. Mỗi ý đúng được 0,25 điểm.`,
         practiceRows, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: prompt, exercises, practice_rows: exercises, blank: '___' }
+        templateVariables: { question: prompt, exercises, practice_rows: exercises, blank: '___', operations: selected.join(', '), selectedOperation }
     };
 };
 }));

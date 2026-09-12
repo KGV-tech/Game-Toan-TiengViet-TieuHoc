@@ -105,21 +105,21 @@ function generateFourArithmeticBlanks(config = {}, random = Math.random) {
     const compatibleLayouts = layouts.filter(layout => layout === 'twoExpressions' || blankPositions.some(position => position !== 'fourth'));
     if (!compatibleLayouts.length) throw new Error('Vị trí “Số thứ tư” chỉ dùng khi chọn dạng “Hai vế đều là phép tính”.');
 
-    const subquestions = ['a', 'b', 'c', 'd'].map(label => {
-        const layout = choose(compatibleLayouts, random);
-        const compatibleBlankPositions = layout === 'twoExpressions'
-            ? blankPositions
-            : blankPositions.filter(position => position !== 'fourth');
-        return generateArithmeticLine(
-            label,
-            choose(operations, random),
-            layout,
-            choose(compatibleBlankPositions, random),
-            minimum,
-            maximum,
-            random
-        );
-    });
+    const selectedOperation = choose(operations, random);
+    const selectedLayout = choose(compatibleLayouts, random);
+    const compatibleBlankPositions = selectedLayout === 'twoExpressions'
+        ? blankPositions
+        : blankPositions.filter(position => position !== 'fourth');
+    const selectedBlankPosition = choose(compatibleBlankPositions, random);
+    const subquestions = ['a', 'b', 'c', 'd'].map(label => generateArithmeticLine(
+        label,
+        selectedOperation,
+        selectedLayout,
+        selectedBlankPosition,
+        minimum,
+        maximum,
+        random
+    ));
     const exercises = subquestions.map(item => `${item.label}. ${item.display}`).join('<br>');
     const prompt = `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
 
@@ -127,8 +127,8 @@ function generateFourArithmeticBlanks(config = {}, random = Math.random) {
         'number.four_arithmetic_blanks',
         prompt,
         subquestions.map(item => item.answer),
-        'Tính từng phép tính rồi điền số còn thiếu vào mỗi dòng a, b, c, d.',
-        { question: prompt, exercises, blank: '___', subquestions: exercises }
+        `Bốn ý cùng luyện phép ${selectedOperation === '*' ? 'nhân' : selectedOperation === '/' ? 'chia' : selectedOperation === '+' ? 'cộng' : 'trừ'} với cùng dạng trình bày.`,
+        { question: prompt, exercises, blank: '___', subquestions: exercises, operations: operations.join(', '), selectedOperation, selectedLayout, selectedBlankPosition }
     );
     question.subquestions = subquestions;
     return question;

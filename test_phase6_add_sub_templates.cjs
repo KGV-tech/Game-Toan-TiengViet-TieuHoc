@@ -46,10 +46,10 @@ assert.equal(review.topic, '5. Phép cộng và phép trừ');
 assert.equal(review.type, 'Trắc nghiệm');
 assert.equal(review.subquestions.length, 4);
 assert.deepEqual(review.partAnswerCounts, [1, 1, 1, 1]);
-assert.deepEqual(review.subquestions.map(item => item.skill), skills);
-assert.deepEqual(review.subquestions.map(item => item.lesson), [
-    'g4-math-hk1-b22', 'g4-math-hk1-b23', 'g4-math-hk1-b24', 'g4-math-hk1-b25'
-]);
+assert.equal(new Set(review.subquestions.map(item => item.skill)).size, 1);
+assert(skills.includes(review.subquestions[0].skill));
+assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${review.subquestions[0].skill}`));
+assert.equal(review.templateVariables.selectedSkill, review.subquestions[0].skill);
 assert.equal(review.templateVariables.skills, skills.join(', '));
 assert.equal(review.ans.split(', ').length, 4);
 review.subquestions.forEach(item => {
@@ -67,11 +67,11 @@ review.subquestions.forEach(item => {
 });
 
 assert.throws(
-    () => generateQuestion(reviewKey, { skills: ['b22', 'b23', 'b24'] }, seededRandom(6111)),
+    () => generateQuestion(reviewKey, { skills: [] }, seededRandom(6111)),
     /Bài 22 đến Bài 25/i
 );
 assert.throws(
-    () => generateQuestion(reviewKey, { skills: ['b22', 'b23', 'b24', 'b24'] }, seededRandom(6112)),
+    () => generateQuestion(reviewKey, { skills: ['b22', 'b23', 'b26'] }, seededRandom(6112)),
     /Bài 22 đến Bài 25/i
 );
 assert(review.subquestions.every(item => Number.isFinite(numericValue(item.answer)) || ['Đúng', 'Sai'].includes(item.answer)));

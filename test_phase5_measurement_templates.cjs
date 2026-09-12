@@ -122,7 +122,9 @@ const practiceKinds = ['mass', 'area', 'time', 'century'];
 for (let seed = 0; seed < 24; seed += 1) {
     const question = generateQuestion('measurement.practice_cards', { allowedKinds: practiceKinds }, seededRandom(5200 + seed));
     assertFourPartChoice(question, 'measurement.practice_cards');
-    assert.deepEqual([...question.subquestions.map(part => part.kind)].sort(), [...practiceKinds].sort());
+    assert.equal(new Set(question.subquestions.map(part => part.kind)).size, 1);
+    assert(practiceKinds.includes(question.subquestions[0].kind));
+    assert.equal(question.templateVariables.selectedKind, question.subquestions[0].kind);
     assert.equal(question.templateVariables.kinds, practiceKinds.join(', '));
     assert(!/thích hợp nhất/i.test(JSON.stringify(question)));
 }
@@ -133,7 +135,7 @@ assert.throws(
     /thực hành.*nhóm đơn vị/i
 );
 assert.throws(
-    () => generateQuestion('measurement.practice_cards', { allowedKinds: ['mass', 'mass'] }, seededRandom(5232)),
+    () => generateQuestion('measurement.practice_cards', { allowedKinds: ['mass', 'unknown'] }, seededRandom(5232)),
     /thực hành.*nhóm đơn vị/i
 );
 
@@ -144,21 +146,23 @@ const reviewSkillSets = [
 reviewSkillSets.forEach((skills, index) => {
     const question = generateQuestion('measurement.hk1_review_b17_b20', { skills }, seededRandom(5240 + index));
     assertFourPartChoice(question, 'measurement.hk1_review_b17_b20');
-    assert.deepEqual(question.subquestions.map(part => part.skill), skills);
-    assert.deepEqual(question.subquestions.map(part => part.lesson), skills.map(skill => ({ b17: 'g4-math-hk1-b17', b18: 'g4-math-hk1-b18', b19: 'g4-math-hk1-b19', b20: 'g4-math-hk1-b20' }[skill])));
+    assert.equal(new Set(question.subquestions.map(part => part.skill)).size, 1);
+    assert(skills.includes(question.subquestions[0].skill));
+    assert(question.subquestions.every(part => part.lesson === `g4-math-hk1-${question.subquestions[0].skill}`));
+    assert.equal(question.templateVariables.selectedSkill, question.subquestions[0].skill);
     assert.equal(question.templateVariables.skills, skills.join(', '));
 });
 assert.throws(
-    () => generateQuestion('measurement.hk1_review_b17_b20', { skills: ['b17', 'b18', 'b19'] }, seededRandom(5250)),
+    () => generateQuestion('measurement.hk1_review_b17_b20', { skills: [] }, seededRandom(5250)),
     /Bài 17 đến Bài 20/i
 );
 assert.throws(
-    () => generateQuestion('measurement.hk1_review_b17_b20', { skills: ['b17', 'b18', 'b19', 'b19'] }, seededRandom(5251)),
+    () => generateQuestion('measurement.hk1_review_b17_b20', { skills: ['b17', 'b18', 'b21'] }, seededRandom(5251)),
     /Bài 17 đến Bài 20/i
 );
 
 const defaultReview = generateQuestion('measurement.hk1_review_b17_b20', {}, seededRandom(5252));
-assert.deepEqual(defaultReview.subquestions.map(part => part.skill), ['b17', 'b18', 'b19', 'b20']);
+assert.equal(new Set(defaultReview.subquestions.map(part => part.skill)).size, 1);
 assert(defaultReview.subquestions.every(part => part.lesson && part.skillLabel));
 assert(defaultReview.subquestions.flatMap(part => part.options).every(option => Number.isFinite(numericValue(option)) || /XVIII|XIX|XX|XXI/.test(option)));
 

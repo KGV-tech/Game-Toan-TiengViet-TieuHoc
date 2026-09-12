@@ -43,7 +43,7 @@ Tập tài liệu hiện có cung cấp đầy đủ căn cứ cho HK1. Danh m�
 ### 2.2. Quy tắc nội dung
 
 1. `Bài học` là phạm vi nhỏ nhất để một Template hoạt động. Template hoạt động phải gắn đúng **một** `lesson`.
-2. `Luyện tập chung` vẫn là một Bài học hợp lệ. Nó có thể trộn các kỹ năng đã học trong đúng cụm trước đó, nhưng phải mang `lesson` của chính bài luyện tập chung.
+2. `Luyện tập chung` vẫn là một Bài học hợp lệ, nhưng một bản câu hỏi 4 ý phải giữ một mục tiêu/dạng toán thống nhất. Có thể chọn nhiều kỹ năng trong cấu hình làm pool; generator chọn một kỹ năng cho cả lượt thay vì trộn một kỹ năng vào mỗi câu con.
 3. Không dùng một Template “toàn Chủ đề” để đại diện cho nhiều bài nếu generator có thể tách được.
 4. Không đưa kiến thức của bài sau vào bài trước chỉ vì cùng một Chủ đề.
 5. Bài toán có lời văn phải giới hạn phép tính, đơn vị và số liệu theo Bài học; không chỉ đổi câu chữ của một generator tổng quát.
@@ -256,7 +256,7 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | Bài 3 | Đã có family riêng trong Phase 2: phân loại, đếm, dãy và lập số. | Tiếp tục preview/seed; kiểm tra thêm khi có dữ liệu Admin thật. |
 | Bài 4 | Đã có generator thay giá trị và chọn giá trị biểu thức chứa chữ. | Tiếp tục preview/seed; không mở rộng sang semantics ngoài SGK. |
 | Bài 5 | Chưa triển khai theo yêu cầu người dùng. | Tạm hoãn generator bài toán ba bước, không seed hoặc gắn vào review. |
-| Bài 6 | Đã có blueprint review B01–B04 trong Phase 2. | Giữ đúng bốn kỹ năng đã học, không trộn nội dung B05. |
+| Bài 6 | Đã có blueprint review B01–B04 trong Phase 2. | Cho phép pool bốn kỹ năng đã học; mỗi lượt chọn một kỹ năng và giữ kỹ năng đó cho cả bốn ý, không trộn nội dung B05. |
 | Bài 7 | Các generator góc hiện tại chủ yếu bị suy luận về Bài 8. | Bổ sung đo góc/đơn vị độ và tách Bài 7 khỏi Bài 8. |
 | Bài 9 | Chưa có review góc riêng. | Tạo pool review Bài 9. |
 | Bài 10, 12, 13 | Thiếu số sáu chữ số/1 000 000, lớp triệu, làm tròn trăm nghìn. | Thêm generator đúng từng kỹ năng. |
@@ -280,7 +280,7 @@ Các lỗ hổng hoặc mapping đang quá rộng cần xử lý trong rebuild:
 | B03 `g4-math-hk1-b03` | Phân loại chẵn/lẻ; đếm số chẵn/lẻ trong đoạn; dãy chẵn/lẻ; lập số chẵn/lẻ từ thẻ số. |
 | B04 `g4-math-hk1-b04` | Thay giá trị vào biểu thức chứa chữ; tính giá trị; chọn biểu thức đúng; so sánh giá trị đơn giản. |
 | B05 `g4-math-hk1-b05` | Tạm hoãn theo duyệt của người dùng; chưa tạo generator/record. |
-| B06 `g4-math-hk1-b06` | Review có nhãn kỹ năng của B01–B04; không sinh nội dung vượt quá cụm này. |
+| B06 `g4-math-hk1-b06` | Review có pool nhãn kỹ năng của B01–B04; mỗi lượt giữ một kỹ năng cho cả bốn ý và không sinh nội dung vượt quá cụm này. |
 
 ### Giai đoạn nội dung B — Góc và đơn vị đo góc
 
@@ -374,13 +374,13 @@ Không dùng tên “Bộ số nâng cao” hoặc “Bài tổng hợp” nếu
 
 ### 10.3. Review Template
 
-Template của các bài “Luyện tập chung”/“Ôn tập” được phép có nhiều skill, nhưng phải:
+Template của các bài “Luyện tập chung”/“Ôn tập” có thể nhận nhiều skill trong phạm vi cấu hình, nhưng phải:
 
 - khai báo lesson review cụ thể;
-- có blueprint tỷ trọng hoặc danh sách skill cho phép;
+- có blueprint hoặc danh sách skill cho phép; danh sách này là pool chọn trọng tâm, không phải phép chia một skill cho từng câu con;
 - không chọn ngẫu nhiên sang topic/Bài học chưa học;
-- hiển thị skill trong preview để Admin biết đề đang bao phủ gì;
-- test tối thiểu nhiều seed để không rơi toàn bộ vào một dạng.
+- hiển thị skill được chọn trong preview để Admin biết cả bốn câu đang luyện gì;
+- test tối thiểu nhiều seed để xác nhận mỗi lượt đồng nhất và pool vẫn tạo được các trọng tâm khác nhau qua nhiều lượt.
 
 ## 11. Gắn code
 
@@ -589,7 +589,7 @@ Phụ thuộc: Phase 1 và duyệt family nội dung A.
 
 - thêm bốn generator số chẵn/lẻ B03;
 - thêm hai generator biểu thức chứa chữ B04;
-- tạo review B06 cố định B01–B04;
+- tạo review B06 với pool B01–B04, mỗi lượt chọn một kỹ năng và giữ kỹ năng đó cho cả bốn ý;
 - nối bảy lựa chọn/preset/preview vào Admin editor;
 - tạo migration seed idempotent, không chứa B05;
 - kiểm thử contract nhiều seed và browser editor ở desktop.

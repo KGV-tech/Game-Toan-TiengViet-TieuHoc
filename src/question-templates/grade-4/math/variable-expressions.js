@@ -36,9 +36,9 @@ function operations(config = {}) {
     return values;
 }
 
-function chooseOperations(config, random) {
+function chooseOperation(config, random) {
     const allowed = operations(config);
-    return shuffle(Array.from({ length: 4 }, (_, index) => allowed[index % allowed.length]), random);
+    return allowed[randomInt(0, allowed.length - 1, random)];
 }
 
 function safeRangesForDivision(variableMinimum, variableMaximum, constantMinimum, constantMaximum) {
@@ -108,25 +108,30 @@ function numericOptions(correct, random) {
 
 function generateValue(config = {}, random = Math.random) {
     const limits = ranges(config);
-    const rows = chooseOperations(config, random).map((operation, index) => ({
-        label: LABELS[index], ...makeRow(operation, limits, random)
+    const allowedOperations = operations(config);
+    const selectedOperation = chooseOperation(config, random);
+    const rows = LABELS.map((label, index) => ({
+        label,
+        ...makeRow(selectedOperation, limits, random)
     }));
     const exercises = rows.map(row => `${row.label}) ${row.display}`).join('<br>');
-    const prompt = `Tính giá trị của biểu thức chứa chữ:<br>${exercises}`;
+    const prompt = `Tính giá trị của biểu thức chứa chữ (phép ${selectedOperation === 'add' ? 'cộng' : selectedOperation === 'subtract' ? 'trừ' : selectedOperation === 'multiply' ? 'nhân' : 'chia'}):<br>${exercises}`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
         type: 'Điền khuyết', templateId: 'number.variable_expression_value', q: prompt, options: [],
         ans: rows.map(row => formatNumber(row.answer)).join(', '),
-        explanation: 'Thay giá trị của a vào từng biểu thức rồi thực hiện phép tính theo thứ tự đã học.',
+        explanation: 'Thay cùng dạng phép tính với giá trị đã cho của a rồi tính từng biểu thức.',
         practiceRows: rows, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: prompt, exercises }
+        templateVariables: { question: prompt, exercises, operations: allowedOperations.join(', '), selectedOperation }
     };
 }
 
 function generateChoice(config = {}, random = Math.random) {
     const limits = ranges(config);
-    const rows = chooseOperations(config, random).map((operation, index) => {
-        const row = makeRow(operation, limits, random);
+    const allowedOperations = operations(config);
+    const selectedOperation = chooseOperation(config, random);
+    const rows = LABELS.map((label, index) => {
+        const row = makeRow(selectedOperation, limits, random);
         const answer = formatNumber(row.answer);
         return {
             ...row,
@@ -136,14 +141,14 @@ function generateChoice(config = {}, random = Math.random) {
             options: numericOptions(row.expressionValue, random)
         };
     });
-    const title = 'Chọn giá trị đúng của biểu thức chứa chữ:';
+    const title = `Chọn giá trị đúng của biểu thức chứa chữ (phép ${selectedOperation === 'add' ? 'cộng' : selectedOperation === 'subtract' ? 'trừ' : selectedOperation === 'multiply' ? 'nhân' : 'chia'}):`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
         type: 'Trắc nghiệm', templateId: 'number.variable_expression_choice', q: title, options: [],
         ans: rows.map(row => row.answer).join(', '),
-        explanation: 'Thay giá trị đã cho của a vào biểu thức, sau đó tính để đối chiếu với các phương án.',
+        explanation: 'Thay giá trị đã cho của a vào cùng dạng phép tính, sau đó tính để đối chiếu với các phương án.',
         subquestions: rows, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: title }
+        templateVariables: { question: title, operations: allowedOperations.join(', '), selectedOperation }
     };
 }
 
