@@ -52,7 +52,7 @@ return function generateFourOperationsFillBlanks(config = {}, random = Math.rand
         const display = `${blankIndex === 0 ? '___' : formatNumber(pair.first)} ${symbolFor(operation)} ${blankIndex === 1 ? '___' : formatNumber(pair.second)} = ${blankIndex === 2 ? '___' : formatNumber(pair.result)}`;
         return { label: String.fromCharCode(97 + index), kind: 'blank', operation, expression: display, answer: formatNumber(values[blankIndex]) };
     });
-    const exercises = practiceRows.map(row => `${row.label}. ${row.expression}`).join('<br>');
+    const exercises = practiceRows.map(row => `${row.label}) ${row.expression}`).join('<br>');
     const prompt = config.prompt || `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '1. Ôn tập và bổ sung',

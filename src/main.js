@@ -679,7 +679,11 @@ const app = {
             const registry = window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
             try {
-                const generated = registry.generateQuestion(template.generator_key, template.config || {});
+                let generated = registry.generateQuestion(template.generator_key, template.config || {});
+                const presentation = template.config?.presentation;
+                if (presentation && window.TemplateContentBuilder) {
+                    generated = window.TemplateContentBuilder.apply(generated, template.generator_key, presentation);
+                }
                 const variables = { question: generated.q, ...(generated.templateVariables || {}) };
                 const legacySafePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
                 const safePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.';
@@ -1812,7 +1816,10 @@ const app = {
                   ${progressLine}
                   <span class="player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${starCount}</b> Sao</span>
                 </span>`;
-            $id('player-info').innerHTML = html;
+            const mapPlayerInfo = $id('player-info');
+            if (mapPlayerInfo) mapPlayerInfo.innerHTML = html;
+            const gamePlayerInfo = $id('game-player-info');
+            if (gamePlayerInfo) gamePlayerInfo.innerHTML = html;
 
             const adminNotif = $id('admin-notification');
             if (adminNotif) {
@@ -2793,6 +2800,30 @@ const app = {
             const compactNumber = normalized.replace(/\s/g, '');
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
+        showCorrectAnswerReveal(question) {
+            const questionContainer = document.getElementById('game-question-container');
+            if (!questionContainer) return;
+
+            questionContainer.querySelector('.game-answer-reveal')?.remove();
+            const reveal = document.createElement('section');
+            reveal.className = 'game-answer-reveal';
+            reveal.setAttribute('role', 'status');
+            reveal.setAttribute('aria-label', 'Đáp án đúng');
+
+            const label = document.createElement('span');
+            label.className = 'game-answer-reveal__label';
+            label.textContent = '✓ Đáp án đúng';
+            const answer = document.createElement('strong');
+            answer.className = 'game-answer-reveal__value';
+            answer.textContent = app.data.formatMathText(question?.ans || '');
+            reveal.append(label, answer);
+            questionContainer.appendChild(reveal);
+        },
+        setAnswerState(element, isCorrect) {
+            if (!element) return;
+            element.classList.remove('answer-state-correct', 'answer-state-wrong');
+            element.classList.add(isCorrect ? 'answer-state-correct' : 'answer-state-wrong');
+        },
         getQuestionPartCount(question = this.state.questions?.[this.state.currentIdx]) {
             if (!question) return 1;
             const structuredParts = [
@@ -2851,7 +2882,29 @@ const app = {
             const selectedControl = document.querySelector('#game-play-view #game-options-container .selected, #game-play-view #game-question-container .filled');
             return selectedControl || String(this.state.selectedAns ?? '').trim() ? 1 : 0;
         },
+        updateQuestionProgressTrack() {
+            const track = document.getElementById('game-question-progress');
+            if (!track) return;
+            const total = Math.max(1, this.state.questions?.length || 1);
+            const current = Math.min(total, Math.max(1, Number(this.state.currentIdx || 0) + 1));
+            if (track.children.length !== total) {
+                track.replaceChildren(...Array.from({ length: total }, (_, index) => {
+                    const segment = document.createElement('span');
+                    segment.setAttribute('aria-hidden', 'true');
+                    segment.dataset.questionIndex = String(index + 1);
+                    return segment;
+                }));
+            }
+            [...track.children].forEach((segment, index) => {
+                segment.classList.toggle('is-complete', index < current - 1);
+                segment.classList.toggle('is-current', index === current - 1);
+            });
+            track.setAttribute('aria-valuenow', String(current));
+            track.setAttribute('aria-valuemax', String(total));
+            track.setAttribute('aria-valuetext', `Câu ${current} trên ${total}`);
+        },
         updateProgressPanel() {
+            this.updateQuestionProgressTrack();
             const ring = document.getElementById('game-progress-ring');
             if (!ring) return;
             const question = this.state.questions?.[this.state.currentIdx];
@@ -2914,8 +2967,23 @@ const app = {
             const user = app.data.currentUser;
             let equipped = app.getEquippedPet(user);
             document.getElementById('play-cat-img').src = './public/' + equipped;
+            app.auth.updateHeader();
+
+            const practiceStatus = document.getElementById('game-practice-status');
+            if (practiceStatus) {
+                const lessonName = app.data.formatMathText(String(q.q || 'Bài luyện tập')
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim());
+                const label = document.createElement('span');
+                label.textContent = 'Bài đang làm';
+                const title = document.createElement('strong');
+                title.textContent = lessonName;
+                practiceStatus.replaceChildren(label, title);
+            }
 
             let qHtml = app.data.formatMathHTML(q.q);
+            const isFourPartQuestion = Array.isArray(q.subquestions) && q.subquestions.length === 4;
             const sharedPrompt = this.getSharedSubquestionPrompt(q);
             const sharedPromptMarkup = sharedPrompt
                 ? `<div class="question-shared-prompt">${app.data.formatMathHTML(sharedPrompt)}</div>`
@@ -2923,13 +2991,18 @@ const app = {
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
             playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count', 'question-box--shared-only');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
                 questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>${sharedPromptMarkup}`;
             } else {
                 if (q.imageUrl) qHtml += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                questionContainer.innerHTML = `${qHtml}${sharedPromptMarkup}`;
+                if (isFourPartQuestion && sharedPromptMarkup) {
+                    questionContainer.classList.add('question-box--shared-only');
+                    questionContainer.innerHTML = sharedPromptMarkup;
+                } else {
+                    questionContainer.innerHTML = `${qHtml}${sharedPromptMarkup}`;
+                }
             }
 
             const optContainer = document.getElementById('game-options-container');
@@ -3026,8 +3099,8 @@ const app = {
                 this.state.trueFalseSelections = new Array(q.statements.length).fill('');
                 q.statements.forEach((statement, index) => {
                     const row = document.createElement('div');
-                    row.className = 'tf-statement';
-                    row.innerHTML = `<span class="tf-statement__label">${statement.label}.</span><span class="tf-statement__text">${app.data.formatMathText(statement.text)}</span><span class="tf-statement__choices"><button type="button" data-choice="Đúng">ĐÚNG</button><button type="button" data-choice="Sai">SAI</button></span>`;
+                    row.className = `tf-statement tf-statement--tone-${index % 4}`;
+                    row.innerHTML = `<span class="tf-statement__label">${statement.label})</span><span class="tf-statement__text">${app.data.formatMathText(statement.text)}</span><span class="tf-statement__choices"><button type="button" data-choice="Đúng">ĐÚNG</button><button type="button" data-choice="Sai">SAI</button></span>`;
                     row.querySelectorAll('button').forEach(button => {
                         button.onclick = () => {
                             row.querySelectorAll('button').forEach(item => item.classList.remove('selected'));
@@ -3097,7 +3170,7 @@ const app = {
                 optContainer.className = '';
                 playCenter?.classList.add('play-center--four-comparisons');
                 questionContainer.classList.add('question-box--template', 'question-box--four-comparisons');
-                questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row comparison-drag-row--tone-${index % 4}"><span class="comparison-drag-label">${row.label}.</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
+                questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row comparison-drag-row--tone-${index % 4}"><span class="comparison-drag-label">${row.label})</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
                 const answers = new Array(q.comparisonRows.length).fill('');
                 let selectedSign = '';
                 const signButtons = [...questionContainer.querySelectorAll('.comparison-drag-sign')];
@@ -3151,7 +3224,7 @@ const app = {
                     const instruction = app.data.formatMathText(q.instruction || 'Kéo thả tên loại góc thích hợp vào ô trống.');
                     html += `<div class="template-question-copy">${instruction}</div><div class="angle-drag-rows">`;
                     q.angleItems.forEach((item, index) => {
-                        html += `<div class="angle-drag-row angle-drag-row--tone-${index % 4}"><b>${app.data.sanitizeHTML(item.label)}.</b><span class="angle-drag-figure">${item.svg}</span><div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}" aria-label="Ô thả đáp án câu ${app.data.sanitizeHTML(item.label)}"></div></div>`;
+                        html += `<div class="angle-drag-row angle-drag-row--tone-${index % 4}"><b>${app.data.sanitizeHTML(item.label)})</b><span class="angle-drag-figure">${item.svg}</span><div class="drag-slot" id="slot-${numSlots}" data-index="${numSlots}" aria-label="Ô thả đáp án câu ${app.data.sanitizeHTML(item.label)}"></div></div>`;
                         numSlots++;
                     });
                     html += '</div>';
@@ -3396,7 +3469,7 @@ const app = {
                 const renderExpression = (row, index) => {
                     const [beforeBlank = '', afterBlank = ''] = String(row.expression || '').split('___');
                     const tone = ['sky', 'rose', 'mint', 'lavender'][index];
-                    return `<div class="four-operations-expression-row"><div class="four-operations-expression-row__label">${app.data.sanitizeHTML(row.label)}.</div><div class="four-operations-expression-row__content"><div class="four-operations-practice__expression four-operations-practice__expression--${tone}">${app.data.formatMathText(beforeBlank)}<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off">${app.data.formatMathText(afterBlank)}</div></div></div>`;
+                    return `<div class="four-operations-expression-row four-operations-expression-row--tone-${index % 4}"><div class="four-operations-expression-row__label">${app.data.sanitizeHTML(row.label)})</div><div class="four-operations-expression-row__content"><div class="four-operations-practice__expression four-operations-practice__expression--${tone}">${app.data.formatMathText(beforeBlank)}<input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off">${app.data.formatMathText(afterBlank)}</div></div></div>`;
                 };
                 questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--four-operations-expressions');
                 questionContainer.innerHTML = `<div class="four-operations-expression-title">${app.data.formatMathText(instruction)}</div><div class="four-operations-expression-list">${q.practiceRows.map(renderExpression).join('')}</div>`;
@@ -3419,7 +3492,7 @@ const app = {
                 const rows = q.angleCountRows.map((row, index) => {
                     const label = app.data.sanitizeHTML(row.label || String.fromCharCode(97 + index));
                     const text = app.data.sanitizeHTML(row.text || 'góc');
-                    return `<label class="angle-count-row angle-count-row--tone-${index % 4}"><span class="angle-count-row__label">${label}.</span><span class="angle-count-row__text">${text}</span><input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Số ${text}"></label>`;
+                    return `<label class="angle-count-row angle-count-row--tone-${index % 4}"><span class="angle-count-row__label">${label})</span><span class="angle-count-row__text">${text}</span><input type="text" inputmode="numeric" class="magic-input" id="fill-input-${index}" autocomplete="off" aria-label="Số ${text}"></label>`;
                 }).join('');
                 questionContainer.innerHTML = `<div class="angle-count-title">${instruction}</div><div class="angle-count-visual">${q.angleVisual || ''}</div><div class="angle-count-rows">${rows}</div>`;
                 q.angleCountRows.forEach((_, index) => {
@@ -3474,6 +3547,10 @@ const app = {
                         const html = `<div class="template-compose-layout"><div class="template-compose-heading">${app.data.formatMathText(heading)}</div>${subquestions.map(renderSubquestion).join('')}</div>`;
                         questionContainer.classList.add('question-box--template', 'question-box--fill', 'question-box--compose', 'question-box--four-part-fill');
                         questionContainer.innerHTML = html;
+                        questionContainer.querySelectorAll('.template-compose-row').forEach((row, index) => {
+                            const label = String.fromCharCode(97 + index);
+                            row.innerHTML = row.innerHTML.replace(new RegExp(`^\\s*${label}\\)`), `<span class="four-part-label four-part-label--tone-${index}">${label})</span>`);
+                        });
                     } else {
                         const toRows = text => String(text).replace(/<br\s*\/?\s*>/gi, '</div><div class="template-fill-row">');
                         let html = '<div class="template-fill-layout"><div class="template-fill-row">';
@@ -3491,7 +3568,11 @@ const app = {
                         questionContainer.innerHTML = html;
                         if (hasFourSubquestions) {
                             questionContainer.querySelectorAll('.template-fill-row').forEach((row, index) => {
-                                if (index > 0) row.classList.add(`template-fill-row--tone-${index - 1}`);
+                                if (index === 0) return;
+                                const tone = index - 1;
+                                const label = String.fromCharCode(97 + tone);
+                                row.classList.add(`template-fill-row--tone-${tone}`);
+                                row.innerHTML = row.innerHTML.replace(new RegExp(`^\\s*${label}\\)`), `<span class="four-part-label four-part-label--tone-${tone}">${label})</span>`);
                             });
                         }
                     }
@@ -3772,16 +3853,7 @@ const app = {
                 }
 
                 if (!isCorrect) {
-                    const optContainer = document.getElementById('game-options-container');
-                    const corr = document.createElement('div');
-                    corr.className = 'fill-input correct';
-                    corr.style.marginTop = '20px';
-                    corr.style.pointerEvents = 'none';
-                    corr.style.width = 'auto';
-                    corr.style.display = 'inline-block';
-                    corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.display = 'inline-block'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-                    corr.innerHTML = `✅ Đáp án đúng: <b>${app.data.formatMathText(q.ans)}</b>`;
-                    optContainer.appendChild(corr);
+                    this.showCorrectAnswerReveal(q);
                 }
             } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 const expectedAnswers = q.subquestions.map(subquestion => String(subquestion.answer || '').trim());
@@ -3848,15 +3920,13 @@ const app = {
                 isCorrect = this.state.selectedAns === q.ans;
                 const slot = document.querySelector('.compare-slot');
                 if (slot) {
-                    slot.style.position = 'relative';
+                    this.setAnswerState(slot, isCorrect);
                     if (isCorrect) {
-                        slot.style.background = 'linear-gradient(180deg, #4ade80, #16a34a)';
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-v';
                         icon.textContent = '✔️';
                         slot.appendChild(icon);
                     } else {
-                        slot.style.background = 'linear-gradient(180deg, #f87171, #dc2626)';
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
@@ -3864,16 +3934,14 @@ const app = {
                         const btns = document.querySelectorAll('.cmp-btn');
                         btns.forEach(b => {
                             if (b.childNodes[0].textContent.trim() === q.ans) {
-                                b.style.background = 'linear-gradient(180deg, #4ade80, #16a34a)';
-                                b.style.color = 'white';
-                                b.style.borderColor = '#22c55e';
+                                this.setAnswerState(b, true);
                                 const correctIcon = document.createElement('div');
                                 correctIcon.className = 'result-icon icon-v';
                                 correctIcon.textContent = '✔️';
-                                b.style.position = 'relative';
                                 b.appendChild(correctIcon);
                             }
                         });
+                        this.showCorrectAnswerReveal(q);
                     }
                 }
             } else if (qType === 'Kéo thả') {
@@ -3882,19 +3950,14 @@ const app = {
                 isCorrect = selectedArr.length === ansArr.length && selectedArr.every((val, i) => val === ansArr[i]);
                 const slots = document.querySelectorAll('.drag-slot');
                 slots.forEach((slot, i) => {
-                    slot.style.position = 'relative';
-                    if (slot.textContent === ansArr[i]) {
-                        slot.style.borderColor = '#4ade80';
-                        slot.style.backgroundColor = '#dcfce7';
-                        slot.style.color = '#16a34a';
+                    const slotIsCorrect = slot.textContent === ansArr[i];
+                    this.setAnswerState(slot, slotIsCorrect);
+                    if (slotIsCorrect) {
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-v';
                         icon.textContent = '✔️';
                         slot.appendChild(icon);
                     } else {
-                        slot.style.borderColor = '#f87171';
-                        slot.style.backgroundColor = '#fee2e2';
-                        slot.style.color = '#dc2626';
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
@@ -3903,16 +3966,7 @@ const app = {
                 });
 
                 if (!isCorrect) {
-                    const optContainer = document.getElementById('game-options-container');
-                    const corr = document.createElement('div');
-                    corr.className = 'fill-input correct';
-                    corr.style.marginTop = '20px';
-                    corr.style.pointerEvents = 'none';
-                    corr.style.width = 'auto';
-                    corr.style.display = 'inline-block';
-                    corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-                    corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
-                    optContainer.appendChild(corr);
+                    this.showCorrectAnswerReveal(q);
                 }
             } else if (qType === 'Chuỗi quy luật') {
                 const ansArr = this.getAnsArr(q.ans);
@@ -3921,21 +3975,14 @@ const app = {
 
                 const slots = document.querySelectorAll('.seq-slot');
                 slots.forEach((slot, i) => {
-                    slot.style.position = 'relative';
-                    if (slot.textContent === ansArr[i]) {
-                        slot.style.borderColor = '#4ade80';
-                        slot.style.background = '#dcfce7';
-                        slot.style.color = '#16a34a';
-                        slot.style.textShadow = 'none';
+                    const slotIsCorrect = slot.textContent === ansArr[i];
+                    this.setAnswerState(slot, slotIsCorrect);
+                    if (slotIsCorrect) {
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-v';
                         icon.textContent = '✔️';
                         slot.appendChild(icon);
                     } else {
-                        slot.style.borderColor = '#f87171';
-                        slot.style.background = '#fee2e2';
-                        slot.style.color = '#dc2626';
-                        slot.style.textShadow = 'none';
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
@@ -3944,16 +3991,7 @@ const app = {
                 });
 
                 if (!isCorrect) {
-                    const optContainer = document.getElementById('game-options-container');
-                    const corr = document.createElement('div');
-                    corr.className = 'fill-input correct';
-                    corr.style.marginTop = '20px';
-                    corr.style.pointerEvents = 'none';
-                    corr.style.width = 'auto';
-                    corr.style.display = 'inline-block';
-                    corr.style.fontSize = '1.5rem'; corr.style.whiteSpace = 'nowrap'; corr.style.padding = '5px 15px'; corr.style.backgroundColor = 'rgba(255,255,255,0.95)'; corr.style.borderRadius = '20px'; corr.style.border = '2px solid #4ade80'; corr.style.color = '#16a34a'; corr.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-                    corr.innerHTML = `✅ Đáp án đúng: <b>${q.ans}</b>`;
-                    optContainer.appendChild(corr);
+                    this.showCorrectAnswerReveal(q);
                 }
             } else if (qType === 'Đối chiếu trùng khớp') {
                 const pairs = this.state.matchingPairs || [];
@@ -7329,22 +7367,7 @@ const app = {
             const safeCondition1Digits = (config.condition1Digits || [0]).map(String);
             const safeCondition2Digits = (config.condition2Digits || [3]).map(String);
             const angleDegrees = Array.isArray(config.allowedDegrees) ? config.allowedDegrees.join(', ') : '';
-            const presetPrompt = this.templatePresets[existing?.generator_key]?.defaultPrompt;
-            const legacySafePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng mật khẩu có {codeLength} chữ số, {condition1} và {condition2}.';
-            const existingPrompt = String(existing?.prompt_template || '').trim();
-            const legacyFourPartPrompt = {
-                'number.digit_at_place': 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
-                'number.smallest_of_four': 'Hãy tìm số bé nhất trong các số sau.',
-                'number.largest_of_four': 'Hãy tìm số lớn nhất trong các số sau.',
-                'number.compose_from_places': 'Viết số rồi đọc số, biết số đó gồm {place_values}. Số đó là {blank}',
-                'number.missing_expanded_addend': 'Điền số còn thiếu:<br>{number} = {expression}',
-                'number.neighbor_numbers': 'Hãy nhập số liền trước và số liền sau của {number}:<br>{neighbor_line}',
-                'number.compare_number_forms': 'Điền dấu thích hợp:<br>{comparison}'
-            }[existing?.generator_key];
-            const safePrompt = 'Số nào dưới đây là mật khẩu mở khóa két sắt?<br>Biết rằng {condition1} và {condition2}.';
-            const displayedPrompt = (existingPrompt === '{question}' || existingPrompt === legacyFourPartPrompt || (existing?.generator_key === 'number.safe_password_by_place_value' && [legacySafePrompt, safePrompt].includes(existingPrompt))) && presetPrompt
-                ? presetPrompt
-                : (existing?.prompt_template || 'Số nào dưới đây có chữ số hàng {place} là {digit}?');
+            this.templateContentPresentation = window.TemplateContentBuilder?.normalize(config.presentation, existing?.generator_key) || null;
             const box = this.getComposerContentBox();
             box.innerHTML = `<section class="template-editor" aria-labelledby="template-editor-title">
               <header class="template-editor__header"><div><p class="template-editor__eyebrow">KHO TEMPLATE · LỚP 4</p><h3 id="template-editor-title">${isNew ? 'Tạo template mới' : 'Sửa template'}</h3><p>${isNew ? 'Tạo một cấu hình mới để sinh câu hỏi sát từng Bài học.' : 'Chỉnh cấu hình hiện có, xem Preview hoặc lưu thành bản mới để áp dụng cho lớp/chủ đề khác.'}</p></div><span class="template-editor__badge">Câu hỏi động</span></header>
@@ -7359,7 +7382,7 @@ const app = {
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
-              <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · ĐẦU RA</p><h4 id="template-display-title">2. Câu hỏi hiển thị</h4></div><span class="template-editor__section-note">Cô đang soạn câu sẽ gửi tới học sinh</span></div><p class="template-editor__section-intro">Viết câu dẫn bằng chữ và chèn các biến màu vàng khi muốn giữ phần nội dung do game tự sinh. Cô có thể xem đúng khung câu hỏi ở nút Preview bên dưới.</p><label class="template-editor__field template-editor__prompt-field"><span id="template-prompt-hint">Dùng biến <code>{place}</code> cho hàng X và <code>{digit}</code> cho chữ số Y</span><textarea id="template-prompt" class="form-input" aria-describedby="template-prompt-help">${app.data.sanitizeHTML(displayedPrompt)}</textarea><small id="template-prompt-help">Biến <code>{question}</code> giữ nguyên câu hỏi động; các biến khác chèn một phần cụ thể như hàng, chữ số hoặc ô đáp án.</small></label><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu con mặc định</strong><span>Template sinh 4 câu con. Cô có thể chọn 1, 2 hoặc 4 câu; mỗi câu được chia đều điểm.</span></div><label><span>Số câu con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu con mặc định">${[1, 2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select></label></div><div class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu con ${label}</strong><small>Ý ${partIndex + 1} của template</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-variables" class="template-editor__variables" aria-live="polite"></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div><div class="template-editor__preview-cta"><div><strong>Muốn xem câu này chạy ra sao?</strong><span>Preview chỉ hiển thị khung câu hỏi và các đáp án, không kèm hình minh họa của game.</span></div><button type="button" id="template-preview-open" class="template-editor__preview-button" onclick="app.admin.openTemplatePreview()"><span aria-hidden="true">◉</span> Preview</button></div></section>
+              <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · NỘI DUNG HIỂN THỊ</p><h4 id="template-display-title">2. Câu hỏi chung và câu con</h4></div><span class="template-editor__section-note">Soạn theo đúng thứ học sinh sẽ nhìn thấy</span></div><p class="template-editor__section-intro">Câu hỏi chung chỉ hiện một lần. Công thức câu con sẽ lặp lại cho 4 ý; thẻ <b>Biến</b> là dữ kiện game sinh, còn <b>Ô trống</b> là chỗ học sinh nhập đáp án.</p><label class="template-editor__field template-editor__prompt-field"><span>1. Câu hỏi chung</span><textarea id="template-common-question" class="form-input" placeholder="Ví dụ: Hãy viết số vào ô trống, biết số đó gồm:" oninput="app.admin.updateTemplateCommonQuestion(this.value)">${app.data.sanitizeHTML(this.templateContentPresentation?.common || '')}</textarea><small>Thường chỉ cần gõ câu chữ, không cần chèn biến.</small></label><div class="template-content-builder" aria-labelledby="template-content-builder-title"><div class="template-content-builder__heading"><div><strong id="template-content-builder-title">2. Công thức cho mỗi câu con</strong><span>Một công thức được áp dụng tự động cho a, b, c, d.</span></div><div class="template-content-builder__actions"><button type="button" onclick="app.admin.addTemplateContentBlock('text')">＋ Chữ</button><button type="button" onclick="app.admin.addTemplateContentBlock('variable')">＋ Biến</button><button type="button" onclick="app.admin.addTemplateContentBlock('cell')">＋ Ô trống</button></div></div><div id="template-content-blocks" class="template-content-builder__blocks"></div></div><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu con mặc định</strong><span>Template sinh 4 câu con. Cô có thể chọn 1, 2 hoặc 4 câu; mỗi câu được chia đều điểm.</span></div><label><span>Số câu con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu con mặc định">${[1, 2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select></label></div><div class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu con ${label}</strong><small>Ý ${partIndex + 1} của template</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div></section>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule template-editor__rule--range-controls" aria-label="Số lượng chữ số"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-minimum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-maximum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMaximumDigits}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
@@ -7378,7 +7401,7 @@ const app = {
                   <div class="template-editor__rule template-editor__rule--phase8-controls" hidden><h5>Phạm vi Phase 8</h5><p>Chọn phạm vi nhóm kiến thức. Mỗi lượt sinh chọn một nhóm và dùng cùng nhóm đó cho cả bốn câu con.</p><fieldset><legend>Phạm vi nhóm review Bài 37</legend><div id="template-phase8-review-groups" class="template-editor__checks" aria-label="Nhóm review Phase 8">${[['numbers', 'Số và lớp triệu'], ['addSub', 'Cộng và trừ'], ['geometry', 'Hình học'], ['measurement', 'Đo lường']].map(([value, label]) => checkbox(value, label, phase8ReviewGroups, 'phase8-review-groups')).join('')}</div></fieldset></div>
                   <div class="template-editor__rule template-editor__rule--measurement-controls" hidden><h5>Cấu hình đơn vị đo</h5><p>Chỉ trường phù hợp với generator đang chọn được áp dụng khi lưu; danh sách rỗng hoặc giá trị ngoài allowlist sẽ bị chặn.</p><fieldset class="template-measurement-config--mass" hidden><legend>Dạng đổi khối lượng</legend><div id="template-measurement-mass-kinds" class="template-editor__checks">${[['yenToKg', 'Yến → kg'], ['taToKg', 'Tạ → kg'], ['tonToKg', 'Tấn → kg'], ['yenAndKgToKg', 'Yến và kg → kg'], ['tonAndYenToKg', 'Tấn và yến → kg']].map(([value, label]) => checkbox(value, label, measurementMassKinds, 'measurement-mass-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--area" hidden><legend>Dạng đổi diện tích</legend><div id="template-measurement-area-kinds" class="template-editor__checks">${[['m2ToDm2', 'm² → dm²'], ['dm2ToCm2', 'dm² → cm²'], ['dm2ToMm2', 'dm² → mm²'], ['cm2ToDm2', 'cm² → dm²']].map(([value, label]) => checkbox(value, label, measurementAreaKinds, 'measurement-area-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--time" hidden><legend>Dạng đổi thời gian</legend><div id="template-measurement-time-kinds" class="template-editor__checks">${[['minuteToSeconds', 'Phút → giây'], ['hourToMinutes', 'Giờ → phút'], ['minutesAndSecondsToSeconds', 'Phút và giây → giây'], ['weekAndDaysToDays', 'Tuần và ngày → ngày']].map(([value, label]) => checkbox(value, label, measurementTimeKinds, 'measurement-time-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--century" hidden><legend>Khoảng thế kỉ</legend><div class="template-editor__fields"><label class="template-editor__field"><span>Thế kỉ bắt đầu</span><input id="template-measurement-century-start" class="form-input" type="number" min="1" max="99" value="${measurementCenturyStart}"></label><label class="template-editor__field"><span>Thế kỉ kết thúc</span><input id="template-measurement-century-end" class="form-input" type="number" min="1" max="99" value="${measurementCenturyEnd}"></label></div></fieldset><fieldset class="template-measurement-config--word-problem" hidden><legend>Nhóm tình huống lời văn</legend><div id="template-measurement-scenario-kinds" class="template-editor__checks">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian']].map(([value, label]) => checkbox(value, label, measurementScenarioKinds, 'measurement-scenario-kinds')).join('')}</div></fieldset></div>
               </div></div>
-              <footer class="template-editor__actions"><button type="button" class="btn-opt" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="btn-primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="btn-success" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="btn-primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
+              <footer class="template-editor__actions"><button type="button" class="template-editor__action template-editor__action--back" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="template-editor__action template-editor__action--secondary" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
               <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
             </section>`;
             if (existing?.generator_key === 'number.safe_password_by_place_value') {
@@ -7523,6 +7546,7 @@ const app = {
             const topic5OperationControl = document.getElementById('template-topic5-operation');
             if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions, ...phase6TemplateOptions, ...phase7TemplateOptions, ...phase8TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            this.renderTemplateContentBlocks();
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
             const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
@@ -8207,20 +8231,90 @@ const app = {
             this.openComposerModule('exams');
             setTimeout(() => this.renderESubTab('select_for_q', questionIndex), 0);
         },
+        getTemplateContentPresentation() {
+            const generator = document.getElementById('template-generator')?.value || 'number.digit_at_place';
+            const common = document.getElementById('template-common-question')?.value || '';
+            return window.TemplateContentBuilder?.normalize({
+                common,
+                parts: this.templateContentPresentation?.parts || []
+            }, generator) || null;
+        },
+        updateTemplateCommonQuestion(value) {
+            if (!this.templateContentPresentation) return;
+            this.templateContentPresentation.common = value;
+        },
+        addTemplateContentBlock(type) {
+            const generator = document.getElementById('template-generator')?.value || 'number.digit_at_place';
+            if (type === 'cell' && !this.canTemplateUseContentCell()) return;
+            const presentation = this.getTemplateContentPresentation() || window.TemplateContentBuilder?.defaultPresentation(generator);
+            if (!presentation) return;
+            const block = type === 'text'
+                ? { type: 'text', value: '' }
+                : type === 'cell'
+                    ? { type: 'cell', key: 'answer' }
+                    : { type: 'variable', key: generator === 'number.compose_from_places' ? 'place_values' : 'generated' };
+            presentation.parts.push(block);
+            this.templateContentPresentation = presentation;
+            this.renderTemplateContentBlocks();
+        },
+        canTemplateUseContentCell() {
+            const type = document.getElementById('template-question-type')?.value || '';
+            return ['Điền khuyết', 'So sánh', 'Chuỗi Quy luật'].includes(type);
+        },
+        updateTemplateContentBlock(index, value) {
+            const block = this.templateContentPresentation?.parts?.[index];
+            if (!block) return;
+            if (block.type === 'text') block.value = value;
+            if (block.type === 'variable') block.key = value;
+        },
+        moveTemplateContentBlock(index, direction) {
+            const blocks = this.templateContentPresentation?.parts;
+            const target = index + direction;
+            if (!blocks || target < 0 || target >= blocks.length) return;
+            [blocks[index], blocks[target]] = [blocks[target], blocks[index]];
+            this.renderTemplateContentBlocks();
+        },
+        removeTemplateContentBlock(index) {
+            const blocks = this.templateContentPresentation?.parts;
+            if (!blocks || blocks.length <= 1) return;
+            blocks.splice(index, 1);
+            this.renderTemplateContentBlocks();
+        },
+        renderTemplateContentBlocks() {
+            const target = document.getElementById('template-content-blocks');
+            const generator = document.getElementById('template-generator')?.value || 'number.digit_at_place';
+            if (!target || !window.TemplateContentBuilder) return;
+            this.templateContentPresentation = window.TemplateContentBuilder.normalize(this.templateContentPresentation, generator);
+            const addCell = document.getElementById('template-content-add-cell');
+            if (addCell) {
+                addCell.disabled = !this.canTemplateUseContentCell();
+                addCell.title = addCell.disabled ? 'Template này không có ô trả lời dạng điền.' : '';
+            }
+            const variableLabel = generator === 'number.compose_from_places' ? 'Các hàng của số do game sinh' : 'Nội dung do game sinh';
+            target.innerHTML = this.templateContentPresentation.parts.map((block, index) => {
+                const controls = `<div class="template-content-block__controls"><button type="button" aria-label="Đưa thẻ sang trái" onclick="app.admin.moveTemplateContentBlock(${index}, -1)" ${index === 0 ? 'disabled' : ''}>←</button><button type="button" aria-label="Đưa thẻ sang phải" onclick="app.admin.moveTemplateContentBlock(${index}, 1)" ${index === this.templateContentPresentation.parts.length - 1 ? 'disabled' : ''}>→</button><button type="button" aria-label="Xóa thẻ" onclick="app.admin.removeTemplateContentBlock(${index})" ${this.templateContentPresentation.parts.length === 1 ? 'disabled' : ''}>×</button></div>`;
+                if (block.type === 'text') return `<article class="template-content-block template-content-block--text"><span class="template-content-block__type">Chữ ${index + 1}</span><input class="form-input" aria-label="Nội dung chữ ${index + 1}" value="${app.data.sanitizeHTML(block.value)}" placeholder="Ví dụ: Số đó là: " oninput="app.admin.updateTemplateContentBlock(${index}, this.value)">${controls}</article>`;
+                if (block.type === 'cell') return `<article class="template-content-block template-content-block--cell"><span class="template-content-block__type">Ô trống ${index + 1}</span><strong>[Cell${index + 1}] Học sinh nhập đáp án</strong>${controls}</article>`;
+                return `<article class="template-content-block template-content-block--variable"><span class="template-content-block__type">Biến ${index + 1}</span><select class="form-input" aria-label="Chọn biến ${index + 1}" onchange="app.admin.updateTemplateContentBlock(${index}, this.value)"><option value="${generator === 'number.compose_from_places' ? 'place_values' : 'generated'}" selected>[Biến${index + 1}] ${variableLabel}</option></select>${controls}</article>`;
+            }).join('');
+        },
         showTemplateExample() {
             const generator = document.getElementById('template-generator')?.value;
+            if (this.templateContentPresentation && window.TemplateContentBuilder) {
+                this.templateContentPresentation = window.TemplateContentBuilder.normalize(this.templateContentPresentation, generator);
+                this.renderTemplateContentBlocks();
+            }
             const preset = this.templatePresets[generator] || this.templatePresets['number.digit_at_place'];
             const target = document.getElementById('template-example');
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
-            const variables = document.getElementById('template-variables');
             const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
-            if (target) target.innerHTML = `<div class="template-editor__preview-summary"><span class="template-editor__preview-summary-icon" aria-hidden="true">✦</span><div><strong>Mẫu đầu ra</strong><span>${app.data.sanitizeHTML(previewLabel)}</span></div><b>${app.data.sanitizeHTML(preset.type || 'Câu hỏi')}</b></div><p>Preview sẽ giữ đúng dạng <strong>${app.data.sanitizeHTML(preset.type || 'câu hỏi')}</strong>, các ô trả lời và đáp án mà generator này tạo ra.</p>`;
+            if (target) target.innerHTML = `<div class="template-editor__preview-summary"><span class="template-editor__preview-summary-icon" aria-hidden="true">✦</span><div><strong>Mẫu đầu ra</strong><span>${app.data.sanitizeHTML(previewLabel)}</span></div><button type="button" id="template-preview-open" class="template-editor__preview-button" onclick="app.admin.openTemplatePreview()"><span aria-hidden="true">◉</span> Preview</button></div><p>Xem trước câu dẫn, các ô trả lời và đáp án mà template này tạo ra.</p>`;
             if (guide) guide.textContent = preset.guide;
             if (hint) hint.innerHTML = preset.hint;
-            if (variables) variables.innerHTML = `<b>Biến có thể chèn</b><div>${preset.variables.map(([token, description]) => `<button type="button" class="template-variable" title="${app.data.sanitizeHTML(description)}" onclick="app.admin.insertTemplateVariable('${token}')"><code>${token}</code><span>${app.data.sanitizeHTML(description)}</span></button>`).join('')}</div>`;
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
+            this.renderTemplateContentBlocks();
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles', 'g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator);
@@ -8296,15 +8390,6 @@ const app = {
             document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-operations input').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-parities input').forEach(input => { input.disabled = !isPhase2B03; });
-        },
-        insertTemplateVariable(token) {
-            const input = document.getElementById('template-prompt');
-            if (!input) return;
-            const start = input.selectionStart ?? input.value.length;
-            const end = input.selectionEnd ?? start;
-            input.value = `${input.value.slice(0, start)}${token}${input.value.slice(end)}`;
-            input.focus();
-            input.setSelectionRange(start + token.length, start + token.length);
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
@@ -8422,11 +8507,8 @@ const app = {
                                 : genericConfig;
             const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig))))))));
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
-            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: value('template-prompt'), config: templateConfig, is_active: true };
-            if (!template.name || !template.prompt_template) throw new Error('Hãy nhập tên và câu hỏi.');
-            const knownVariables = new Set((this.templatePresets[template.generator_key]?.variables || (generatorKey === 'number.natural_sequence' ? [['{question}'], ['{sequence}'], ['{step}'], ['{direction}'], ['{blank}']] : [])).map(([token]) => token.slice(1, -1)));
-            const unknownVariables = [...template.prompt_template.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(([, variable]) => variable).filter(variable => !knownVariables.has(variable));
-            if (unknownVariables.length) throw new Error(`Biến chưa được hỗ trợ: ${[...new Set(unknownVariables)].map(variable => `{${variable}}`).join(', ')}.`);
+            const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: '{question}', config: templateConfig, is_active: true };
+            if (!template.name) throw new Error('Hãy nhập tên template.');
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
             if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
@@ -8535,6 +8617,8 @@ const app = {
                 if (!Number.isInteger(prefixWords) || prefixWords < 0 || (seedText && !Number.isInteger(Number(seedText)))) throw new Error('Từ tiền tố chung và seed phải là số nguyên hợp lệ.');
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
+            const presentation = this.getTemplateContentPresentation();
+            if (presentation) template.config.presentation = presentation;
             const selectedPartIndexes = this.readTemplatePartSelection();
             if (selectedPartIndexes.length !== 4) template.config.selectedParts = selectedPartIndexes;
             else delete template.config.selectedParts;

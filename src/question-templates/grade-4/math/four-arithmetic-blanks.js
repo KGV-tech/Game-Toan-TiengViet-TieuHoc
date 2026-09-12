@@ -120,7 +120,7 @@ function generateFourArithmeticBlanks(config = {}, random = Math.random) {
         maximum,
         random
     ));
-    const exercises = subquestions.map(item => `${item.label}. ${item.display}`).join('<br>');
+    const exercises = subquestions.map(item => `${item.label}) ${item.display}`).join('<br>');
     const prompt = `Hãy điền số thích hợp vào chỗ trống:<br>${exercises}`;
 
     const question = createFillBlankQuestion(

@@ -50,7 +50,7 @@ return function generateFourOperationsExpressions(config = {}, random = Math.ran
         const generated = generateExpression(operation, minimum, maximum, random);
         return { label: String.fromCharCode(97 + index), kind: 'expression', operation, ...generated };
     });
-    const exercises = practiceRows.map(row => `${row.label}. ${row.expression}`).join('<br>');
+    const exercises = practiceRows.map(row => `${row.label}) ${row.expression}`).join('<br>');
     const prompt = config.prompt || `Tính giá trị của biểu thức:<br>${exercises}`;
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '1. Ôn tập và bổ sung',

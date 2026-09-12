@@ -606,10 +606,16 @@
         <div class="glass-container-xl">
           <div class="play-layout">
             <div class="play-left">
+              <div id="game-player-info" class="player-info-card player-info-card--game" aria-label="Thông tin học sinh"></div>
               <div class="cat-wrapper"
                 style="position: relative; display: flex; justify-content: center; align-items: center; margin-top: 60px;">
                 <div id="cat-speech-bubble" class="speech-bubble" style="display:none;"></div>
                 <img id="play-cat-img" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="cat-avatar-large">
+              </div>
+
+              <div id="game-practice-status" class="game-practice-status">
+                <span>Bài đang làm</span>
+                <strong>Đang tải bài học…</strong>
               </div>
 
               <!-- Skill Bar Container -->
@@ -623,9 +629,12 @@
                 <div class="question-progress">Câu <span id="current-q-index">1</span>/<span
                     id="total-q-count">10</span>
                 </div>
-                <div class="score-display">Điểm: <span id="game-score">0</span> <span id="hard-timer-display"
-                    style="display:none; color:#ff4444; margin-left:10px; font-weight:bold;"></span></div>
+                <span id="game-score" class="sr-only">0</span>
+                <span id="hard-timer-display" style="display:none; color:#ff4444; margin-left:10px; font-weight:bold;"></span>
               </div>
+
+              <div id="game-question-progress" class="game-question-progress" role="progressbar"
+                aria-label="Tiến độ lượt làm bài" aria-valuemin="1" aria-valuenow="1" aria-valuemax="10"></div>
 
               <div id="game-question-container" class="question-box"></div>
               <div id="game-options-container" class="options-grid"></div>
@@ -651,6 +660,7 @@
                   <strong>Hoàn thành <span id="game-progress-completed">0</span>/<span id="game-progress-total">4</span> ý.</strong>
                   <span id="game-progress-hint">Tiến độ sẽ sáng lên sau mỗi lựa chọn.</span>
                 </div>
+                <h3 class="game-solution-title">Lời giải</h3>
                 <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
               </div>
             </aside>
@@ -963,6 +973,7 @@
   <script defer src="./src/question-templates/grade-4/math/angle-measure.js"></script>
   <script defer src="./src/question-templates/grade-4/math/angle-review.js"></script>
   <script defer src="./src/question-templates/grade-4/math/index.js"></script>
+  <script defer src="./src/template-content-builder.js"></script>
   <script defer src="./src/main.js?v=exam-composer-v1"></script>
   <script defer src="./src/modules/utils.js"></script>
   <script defer src="./src/modules/safe-storage.js"></script>

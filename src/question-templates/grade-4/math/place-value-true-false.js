@@ -72,7 +72,7 @@ function generatePlaceValueTrueFalse(config = {}, random = Math.random) {
         type: 'Đúng/Sai', templateId: 'number.place_value_true_false', q: prompt, options: [],
         ans: statements.map(statement => statement.answer).join(', '), statements,
         explanation: `Xác định lớp hoặc hàng của từng chữ số trong số ${formatNumber(number)} rồi chọn Đúng hoặc Sai.`,
-        templateVariables: { question: prompt, number: formatNumber(number), statements: statements.map(statement => `${statement.label}. ${statement.text}`).join('<br>'), statementKinds: statementKinds.join(', '), selectedKind }
+        templateVariables: { question: prompt, number: formatNumber(number), statements: statements.map(statement => `${statement.label}) ${statement.text}`).join('<br>'), statementKinds: statementKinds.join(', '), selectedKind }
     };
 }
 
