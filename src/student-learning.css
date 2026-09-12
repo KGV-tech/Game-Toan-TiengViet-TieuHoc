@@ -903,12 +903,6 @@
     #game-play-view .angle-drag-row--tone-3,
     #game-play-view .angle-count-row--tone-3 { border-color: #d1adff !important; background: linear-gradient(135deg, #49306f 0%, #263b63 100%) !important; }
 
-    /* Four-choice rounds use one shared learning surface; the a–d accents stay on labels only. */
-    #game-play-view .play-center--four-part-mc .multi-choice-subquestion {
-        border-color: rgba(104, 203, 232, .74) !important;
-        border-top-color: rgba(154, 183, 255, .88) !important;
-        background: linear-gradient(145deg, #1b4c70 0%, #1a405f 54%, #292f61 100%) !important;
-    }
 
     #game-play-view .tf-statement--tone-0 .tf-statement__label,
     #game-play-view .comparison-drag-row--tone-0 .comparison-drag-label,
