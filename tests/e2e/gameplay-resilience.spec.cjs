@@ -58,6 +58,183 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
   expect(layout.rows.every(text => !text.includes('Dãy số được lập theo quy luật'))).toBe(true);
 });
 
+test('panel phải giữ vòng tiến độ, nút hành động và lời giải theo đúng thứ tự', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const initial = await page.evaluate(question => {
+    app.data.currentUser = { username: 'progress-panel-student', fullname: 'Học sinh thử nghiệm', role: 'student' };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    const questions = [0, 1].map(() => ({ ...question, explanation: 'Số chẵn có chữ số tận cùng là 0, 2, 4, 6 hoặc 8.' }));
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions };
+    app.game.loadQuestion();
+    const right = document.querySelector('#game-play-view .play-right');
+    const ring = document.getElementById('game-progress-ring');
+    return {
+      order: [...right.children].map(element => element.id || element.className.split(' ')[0]),
+      ringVisible: getComputedStyle(ring).display !== 'none',
+      ringLabel: ring.getAttribute('aria-label'),
+      progressText: document.getElementById('game-progress-copy').textContent.trim(),
+      speechBubbleVisible: getComputedStyle(document.getElementById('cat-speech-bubble')).display !== 'none',
+      actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label')
+    };
+  }, makeSharedPromptQuestion());
+
+  expect(initial.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
+  expect(initial.ringVisible).toBe(true);
+  expect(initial.ringLabel).toContain('hoàn thành 0 trên 4 ý');
+  expect(initial.progressText).toContain('Hoàn thành 0/4 ý');
+  expect(initial.speechBubbleVisible).toBe(true);
+  expect(initial.actionLabel).toBe('Kiểm tra');
+
+  for (let index = 0; index < 4; index++) {
+    await page.locator('.multi-choice-subquestion__option').nth(index * 4).click();
+  }
+  await expect(page.locator('#game-progress-copy')).toContainText('Hoàn thành 4/4 ý');
+
+  const beforeCheck = await page.evaluate(() => ({
+    ringVisible: getComputedStyle(document.getElementById('game-progress-ring')).display !== 'none',
+    ringProgress: getComputedStyle(document.getElementById('game-progress-ring')).getPropertyValue('--ring-progress').trim(),
+    solutionVisible: getComputedStyle(document.getElementById('explanation-box')).display !== 'none'
+  }));
+  expect(beforeCheck.ringVisible).toBe(true);
+  expect(beforeCheck.ringProgress).toBe('100%');
+  expect(beforeCheck.solutionVisible).toBe(false);
+
+  await page.locator('#submit-ans-btn').click();
+  await expect(page.locator('#explanation-box')).toBeVisible();
+  const afterCheck = await page.evaluate(() => ({
+    order: [...document.querySelector('#game-play-view .play-right').children].map(element => element.id || element.className.split(' ')[0]),
+    ringVisible: getComputedStyle(document.getElementById('game-progress-ring')).display !== 'none',
+    ringProgress: getComputedStyle(document.getElementById('game-progress-ring')).getPropertyValue('--ring-progress').trim(),
+    actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label'),
+    solutionText: document.getElementById('explanation-box').textContent
+  }));
+  expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
+  expect(afterCheck.ringVisible).toBe(true);
+  expect(afterCheck.ringProgress).toBe('100%');
+  expect(afterCheck.actionLabel).toBe('Tiếp tục');
+  expect(afterCheck.solutionText).toContain('Lời giải');
+
+  await page.locator('#submit-ans-btn').click();
+  await expect(page.locator('#current-q-index')).toHaveText('2');
+  const nextQuestion = await page.evaluate(() => ({
+    ringVisible: getComputedStyle(document.getElementById('game-progress-ring')).display !== 'none',
+    ringProgress: getComputedStyle(document.getElementById('game-progress-ring')).getPropertyValue('--ring-progress').trim(),
+    progressText: document.getElementById('game-progress-copy').textContent,
+    solutionVisible: getComputedStyle(document.getElementById('explanation-box')).display !== 'none'
+  }));
+  expect(nextQuestion.ringVisible).toBe(true);
+  expect(nextQuestion.ringProgress).toBe('0%');
+  expect(nextQuestion.progressText).toContain('Hoàn thành 0/4 ý');
+  expect(nextQuestion.solutionVisible).toBe(false);
+});
+
+test('bốn câu con hiển thị thành lưới hai hàng hai cột như card lớn', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const grid = await page.evaluate(question => {
+    app.data.currentUser = { username: 'square-card-student', fullname: 'Học sinh thử nghiệm', role: 'student' };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const cards = [...document.querySelectorAll('.multi-choice-subquestion')].map(element => {
+      const rect = element.getBoundingClientRect();
+      return { top: Math.round(rect.top), left: Math.round(rect.left), width: rect.width, height: rect.height };
+    });
+    const optionGrid = getComputedStyle(cards.length ? document.querySelector('.multi-choice-subquestion__options') : document.body);
+    return { cards, optionColumns: optionGrid.gridTemplateColumns.split(' ').length };
+  }, makeSharedPromptQuestion());
+
+  const topRows = new Set(grid.cards.map(card => card.top));
+  const firstRow = grid.cards.filter(card => card.top === grid.cards[0].top);
+  expect(grid.cards).toHaveLength(4);
+  expect(topRows.size).toBe(2);
+  expect(firstRow).toHaveLength(2);
+  expect(grid.cards.every(card => card.height / card.width >= .65)).toBe(true);
+  expect(grid.optionColumns).toBe(2);
+});
+
+test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn thẻ câu hỏi', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const layout = await page.evaluate(question => {
+    app.data.currentUser = { username: 'balanced-student', fullname: 'Học sinh thử nghiệm', role: 'student' };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+
+    const rect = selector => {
+      const element = document.querySelector(selector);
+      const box = element?.getBoundingClientRect();
+      return box ? { top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height } : null;
+    };
+    const actionImage = document.getElementById('submit-ans-img');
+    const actionImageBox = actionImage.getBoundingClientRect();
+    return {
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      shell: rect('#game-play-view > .glass-container-xl'),
+      left: rect('#game-play-view .play-left'),
+      center: rect('#game-play-view .play-center'),
+      action: rect('#submit-ans-btn'),
+      actionImage: { width: actionImageBox.width, height: actionImageBox.height },
+      actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label'),
+      rows: [...document.querySelectorAll('.multi-choice-subquestion')].map(element => ({
+        height: element.getBoundingClientRect().height,
+        contentHeight: element.scrollHeight,
+        bottom: element.getBoundingClientRect().bottom
+      }))
+    };
+  }, makeSharedPromptQuestion());
+
+  expect(layout.shell.bottom).toBeLessThanOrEqual(layout.viewport.height);
+  expect(layout.shell.right).toBeLessThanOrEqual(layout.viewport.width);
+  expect(layout.left.width).toBeGreaterThanOrEqual(220);
+  expect(layout.action.width).toBeGreaterThanOrEqual(180);
+  expect(layout.action.height).toBeGreaterThanOrEqual(42);
+  expect(layout.actionImage.width).toBeGreaterThanOrEqual(layout.action.width * .9);
+  expect(layout.actionImage.height).toBeGreaterThan(40);
+  expect(layout.actionLabel).toBe('Kiểm tra');
+  expect(layout.rows.every(row => row.height <= row.contentHeight + 28)).toBe(true);
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const tabletLayout = await page.evaluate(question => {
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question] };
+    app.game.loadQuestion();
+    const shell = document.querySelector('#game-play-view > .glass-container-xl').getBoundingClientRect();
+    const left = document.querySelector('#game-play-view .play-left').getBoundingClientRect();
+    const action = document.getElementById('submit-ans-btn').getBoundingClientRect();
+    const actionImage = document.getElementById('submit-ans-img').getBoundingClientRect();
+    return {
+      shell: { right: shell.right, bottom: shell.bottom },
+      leftWidth: left.width,
+      action: { width: action.width, height: action.height },
+      actionImage: { width: actionImage.width, height: actionImage.height },
+      rows: [...document.querySelectorAll('.multi-choice-subquestion')].map(element => ({
+        height: element.getBoundingClientRect().height,
+        contentHeight: element.scrollHeight
+      }))
+    };
+  }, makeSharedPromptQuestion());
+
+  expect(tabletLayout.shell.right).toBeLessThanOrEqual(1024);
+  expect(tabletLayout.shell.bottom).toBeLessThanOrEqual(768);
+  expect(tabletLayout.leftWidth).toBeGreaterThanOrEqual(170);
+  expect(tabletLayout.action.width).toBeGreaterThanOrEqual(145);
+  expect(tabletLayout.action.height).toBeGreaterThanOrEqual(40);
+  expect(tabletLayout.actionImage.width).toBeGreaterThanOrEqual(tabletLayout.action.width * .9);
+  expect(tabletLayout.actionImage.height).toBeGreaterThan(35);
+  expect(tabletLayout.rows.every(row => row.height <= row.contentHeight + 28)).toBe(true);
+});
+
 test('tiến độ lượt làm được lưu cục bộ và khôi phục đúng câu đang làm', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
