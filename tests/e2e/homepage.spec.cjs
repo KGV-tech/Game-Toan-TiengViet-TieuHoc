@@ -626,10 +626,19 @@ test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh
   await expect(actionButtons).toHaveCount(3);
   const actionGeometry = await actionButtons.evaluateAll(buttons => buttons.map(button => {
     const box = button.getBoundingClientRect();
-    return { top: Math.round(box.top), height: Math.round(box.height) };
+    return { left: Math.round(box.left), top: Math.round(box.top), width: Math.round(box.width), height: Math.round(box.height) };
   }));
   expect(new Set(actionGeometry.map(button => button.top)).size).toBe(1);
   expect(new Set(actionGeometry.map(button => button.height)).size).toBe(1);
+  expect(new Set(actionGeometry.map(button => button.width)).size).toBe(1);
+  const actionBarGeometry = await page.locator('.template-editor__actions').evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { left: Math.round(box.left), width: Math.round(box.width) };
+  });
+  const groupLeft = actionGeometry[0].left;
+  const groupRight = actionGeometry.at(-1).left + actionGeometry.at(-1).width;
+  expect(groupRight - groupLeft).toBeLessThan(actionBarGeometry.width * 0.75);
+  expect(Math.abs((groupLeft + groupRight) / 2 - (actionBarGeometry.left + actionBarGeometry.width / 2))).toBeLessThanOrEqual(2);
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config)).toMatchObject({
     minimum: 10000, maximum: 999999, minimumDigits: 5, maximumDigits: 6
   });
