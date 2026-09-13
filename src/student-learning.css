@@ -989,7 +989,7 @@
         --mockup-gold: #ffd45e;
         --mockup-green: #63e5a5;
         padding: 14px !important;
-        overflow: auto !important;
+        overflow: hidden !important;
         background:
             radial-gradient(circle at 8% 8%, rgba(55, 203, 255, .24), transparent 28%),
             radial-gradient(circle at 92% 85%, rgba(114, 82, 231, .22), transparent 32%),
@@ -1004,7 +1004,7 @@
         max-height: none !important;
         min-height: 0 !important;
         padding: clamp(18px, 2.4vw, 32px) clamp(20px, 3vw, 48px) !important;
-        overflow: auto !important;
+        overflow: hidden !important;
         border: 1px solid rgba(92, 224, 255, .52) !important;
         border-radius: 22px !important;
         background:
@@ -1114,7 +1114,7 @@
 
     #game-config-view .student-learning-hud {
         display: grid;
-        grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 18px;
         min-width: 0;
@@ -1123,7 +1123,7 @@
     }
 
     #game-config-view .student-learning-hud__brand,
-    #game-config-view .student-learning-hud__reward {
+    #game-config-view .student-learning-hud__profile {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -1155,50 +1155,46 @@
     }
 
     #game-config-view .student-learning-hud__brand small,
-    #game-config-view .student-learning-hud__headline span,
-    #game-config-view .student-learning-hud__reward small {
+    #game-config-view .student-learning-hud__profile-copy small {
         color: var(--route-muted);
         font-size: .68rem;
         font-weight: 800;
     }
 
-    #game-config-view .student-learning-hud__headline {
-        display: grid;
-        justify-items: center;
-        gap: 2px;
+    #game-config-view .student-learning-hud__profile {
         min-width: 0;
-        text-align: center;
+        padding: 5px 12px 5px 6px;
+        border: 1px solid rgba(88, 233, 255, .58);
+        border-radius: 999px;
+        background: linear-gradient(145deg, rgba(10, 91, 137, .78), rgba(15, 47, 91, .86));
+        box-shadow: 0 0 18px rgba(88, 233, 255, .12), inset 0 1px 0 rgba(255, 255, 255, .12);
     }
 
-    #game-config-view .student-learning-hud__headline strong {
+    #game-config-view .student-learning-hud__avatar {
+        display: block;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        border: 2px solid var(--mockup-cyan);
+        border-radius: 50%;
+        background-color: rgba(4, 29, 63, .7);
+        box-shadow: 0 0 14px rgba(88, 233, 255, .28);
+    }
+
+    #game-config-view .student-learning-hud__profile-copy {
+        display: grid;
+        min-width: 0;
+        gap: 1px;
+    }
+
+    #game-config-view .student-learning-hud__profile-copy strong {
+        max-width: 180px;
         overflow: hidden;
-        color: var(--mockup-gold);
-        font-size: clamp(1.1rem, 2.4vw, 1.85rem);
-        line-height: 1.05;
+        color: #fff;
+        font-size: .82rem;
+        line-height: 1.15;
         text-overflow: ellipsis;
         white-space: nowrap;
-        text-shadow: 0 0 18px rgba(255, 212, 94, .28);
-    }
-
-    #game-config-view .student-learning-hud__reward {
-        min-width: 88px;
-        justify-content: center;
-        padding: 8px 13px;
-        border: 1px solid rgba(255, 212, 94, .68);
-        border-radius: 999px;
-        background: rgba(83, 61, 19, .66);
-        box-shadow: 0 0 18px rgba(255, 212, 94, .12);
-    }
-
-    #game-config-view .student-learning-hud__reward > span {
-        color: var(--mockup-gold);
-        font-size: 1.35rem;
-        line-height: 1;
-    }
-
-    #game-config-view .student-learning-hud__reward strong {
-        color: #fff4b2;
-        font-size: 1rem;
     }
 
     #game-config-view .student-learning-screen--daily {
@@ -1556,10 +1552,13 @@
 
     #game-config-view .student-learning-screen--route {
         display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
         align-content: start;
         gap: 15px;
         min-width: 0;
         min-height: 0;
+        height: 100%;
+        overflow: hidden;
     }
 
     #game-config-view .student-learning-route-intro {
@@ -1598,18 +1597,25 @@
     #game-config-view .student-learning-route-intro__progress span { color: #a8e9d0; font-size: .62rem; font-weight: 900; }
 
     #game-config-view .student-learning-screen--route > .student-learning-path {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        height: 100%;
         min-height: 0;
+        overflow: hidden;
         padding: 16px;
     }
 
     #game-config-view .student-learning-screen--route .student-learning-path__list {
         min-height: 0;
+        overflow: hidden;
     }
 
     #game-config-view .student-learning-screen--route .student-learning-route {
         display: grid;
         grid-template-columns: minmax(175px, 23%) minmax(0, 1fr);
         gap: 14px;
+        height: 100%;
+        min-height: 0;
         min-width: 0;
     }
 
@@ -1623,9 +1629,13 @@
     }
 
     #game-config-view .student-learning-screen--route .student-learning-topic-nav {
-        position: sticky;
-        top: 0;
-        align-self: start;
+        position: relative;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        align-self: stretch;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
         padding: 14px;
     }
 
@@ -1661,7 +1671,14 @@
 
     #game-config-view .student-learning-screen--route .student-learning-topic-nav__list {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        min-height: 0;
         gap: 6px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-right: 4px;
+        scrollbar-color: rgba(88, 233, 255, .7) rgba(6, 31, 67, .5);
     }
 
     #game-config-view .student-learning-screen--route .student-learning-topic-link {
@@ -1723,7 +1740,9 @@
     }
 
     #game-config-view .student-learning-screen--route .student-learning-route-board {
-        max-height: calc(100dvh - 255px);
+        height: 100%;
+        max-height: none;
+        min-height: 0;
         overflow: auto;
         padding: 15px;
         scrollbar-color: rgba(88, 233, 255, .7) rgba(6, 31, 67, .5);
@@ -2384,6 +2403,94 @@
             grid-column: auto;
         }
 
+    }
+
+    /* Student route viewport: the decorative frame stays fixed while each learning surface owns its scroll. */
+    #game-config-view:has(.student-learning-shell--mockup) {
+        height: 100dvh !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+        height: calc(100dvh - 28px) !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-layout,
+    #game-config-view:has(.student-learning-shell--mockup) .config-top,
+    #game-config-view:has(.student-learning-shell--mockup) .config-center,
+    #game-config-view:has(.student-learning-shell--mockup) .config-section,
+    #game-config-view:has(.student-learning-shell--mockup) #topics-list.student-learning-home {
+        min-height: 0 !important;
+        height: 100% !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-top {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 0 !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-left {
+        display: none !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-center {
+        grid-column: 1 !important;
+        overflow: hidden;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) #topics-list.student-learning-home {
+        overflow: hidden !important;
+    }
+
+    #game-config-view .student-learning-shell--mockup {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-screen--daily {
+        min-height: 0;
+        overflow: auto;
+        padding-right: 3px;
+        scrollbar-color: rgba(88, 233, 255, .7) rgba(6, 31, 67, .5);
+    }
+
+    #game-config-view .student-learning-screen--route > .student-learning-path,
+    #game-config-view .student-learning-screen--route .student-learning-route,
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav,
+    #game-config-view .student-learning-screen--route .student-learning-route-board {
+        min-height: 0;
+    }
+
+    @media (max-width: 900px) {
+        #game-config-view .student-learning-screen--route {
+            height: auto;
+            overflow: auto;
+        }
+
+        #game-config-view .student-learning-screen--route > .student-learning-path,
+        #game-config-view .student-learning-screen--route .student-learning-route {
+            height: auto;
+            overflow: visible;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-topic-nav {
+            height: auto;
+            max-height: 230px;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-topic-nav__list {
+            max-height: 170px;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-route-board {
+            height: min(560px, calc(100dvh - 290px));
+            max-height: calc(100dvh - 290px);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

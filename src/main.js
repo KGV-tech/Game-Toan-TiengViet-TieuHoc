@@ -2549,7 +2549,7 @@ const app = {
             const missionStatus = recommended?.state === 'completed'
                 ? 'Đã hoàn thành mốc hiện tại · Luyện lại để nhớ lâu nhé'
                 : recommended?.state === 'current'
-                    ? 'Đang học · Đây là bước tiếp theo của con'
+                    ? 'Đang học · Đây là bước tiếp theo của bạn'
                     : 'Sẵn sàng luyện tập';
             const missionAction = recommended?.state === 'completed' ? 'Ôn lại bài này' : 'Tiếp tục';
             const pathStateLabel = {
@@ -2618,7 +2618,7 @@ const app = {
                       <header class="student-learning-route-board__header">
                         <div>
                           <span class="student-learning-eyebrow">Lộ trình đầy đủ</span>
-                          <h4>Cùng khám phá hành trình của con</h4>
+                          <h4>Cùng khám phá hành trình của bạn</h4>
                           <p>Các Bài được xếp đúng theo thứ tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
                         </div>
                         <div class="student-learning-release-badge" aria-label="${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'Chưa có mốc mở bài')}" >
@@ -2641,19 +2641,23 @@ const app = {
                     </div>
                   </div>`
                 : `<div class="student-learning-empty" role="status"><strong>Chưa có nội dung luyện tập</strong><span>Giáo viên cần mở lộ trình hoặc bổ sung câu hỏi cho môn này.</span></div>`;
-            const stars = Number(app.data.currentUser?.stars) || 0;
+            const student = app.data.currentUser || {};
+            const studentName = student.fullname || student.username || 'Bạn học';
+            const studentClassLevel = app.data.normalizeClassLevel(classlevel) || '—';
+            const studentAvatar = app.auth.getAvatar(student.avatar_key);
+            const studentAvatarMarkup = studentAvatar.image
+                ? `<img class="student-learning-hud__avatar" src="${studentAvatar.image}" alt="Avatar ${esc(studentAvatar.label)}">`
+                : `<span class="student-learning-hud__avatar avatar-art avatar-art--${studentAvatar.key}" role="img" aria-label="Avatar ${esc(studentAvatar.label)}"></span>`;
+            const brandTitle = subjectLabel === 'Toán' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
             const hudMarkup = `
                 <header class="student-learning-hud" aria-label="Thông tin hành trình học tập">
                   <div class="student-learning-hud__brand">
                     <span class="student-learning-hud__brand-mark" aria-hidden="true">✦</span>
-                    <span><strong>Hành trình tri thức</strong><small>Tiểu học · ${esc(subjectLabel)}</small></span>
+                    <span><strong>${brandTitle}</strong><small>Lớp ${esc(studentClassLevel)}</small></span>
                   </div>
-                  <div class="student-learning-hud__headline">
-                    <span>Học hôm nay, tiến xa mỗi ngày</span>
-                    <strong>${expanded ? 'Lộ trình đầy đủ' : 'Hôm nay mình học gì?'}</strong>
-                  </div>
-                  <div class="student-learning-hud__reward" aria-label="${stars} ngôi sao">
-                    <span aria-hidden="true">★</span><strong>${stars}</strong><small>sao</small>
+                  <div class="student-learning-hud__profile" aria-label="Thông tin học sinh">
+                    ${studentAvatarMarkup}
+                    <span class="student-learning-hud__profile-copy"><strong>${esc(studentName)}</strong><small>Lớp ${esc(studentClassLevel)}</small></span>
                   </div>
                 </header>`;
             const dailyScreenMarkup = `
@@ -2662,7 +2666,7 @@ const app = {
                     <div class="student-learning-hero__copy">
                       <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
                       <h2 id="student-learning-title">Hôm nay mình học gì?</h2>
-                      <p>Con chỉ cần bấm tiếp tục. Hệ thống sẽ nhớ bài đang học và đưa con đi đúng hành trình của lớp.</p>
+                      <p>Bạn chỉ cần bấm tiếp tục. Hệ thống sẽ nhớ bài đang học và đưa bạn đi đúng hành trình của lớp.</p>
                     </div>
                     <div class="student-learning-hero__progress" aria-label="Tóm tắt tiến độ">
                       <strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong>
@@ -2680,11 +2684,11 @@ const app = {
                     <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)} <span aria-hidden="true">›</span></button>
                   </section>` : ''}
 
-                  ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Con vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để con không làm trước nội dung chưa học.</p></aside>` : '')}
+                  ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Bạn vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để bạn không làm trước nội dung chưa học.</p></aside>` : '')}
 
                   <section class="student-learning-path student-learning-path--compact" aria-labelledby="student-learning-path-title">
                     <header class="student-learning-path__header">
-                      <div><span class="student-learning-eyebrow">Hành trình của con</span><h3 id="student-learning-path-title">Lộ trình học gần đây</h3></div>
+                      <div><span class="student-learning-eyebrow">Hành trình của bạn</span><h3 id="student-learning-path-title">Lộ trình học gần đây</h3></div>
                       <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="false">Xem lộ trình đầy đủ</button>
                     </header>
                     <div class="student-learning-path__list">${compactPathMarkup}</div>
@@ -2695,14 +2699,14 @@ const app = {
                   <div class="student-learning-route-intro">
                     <div>
                       <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
-                      <h2 id="student-learning-route-title">Cùng khám phá lộ trình của con</h2>
+                      <h2 id="student-learning-route-title">Cùng khám phá lộ trình của bạn</h2>
                       <p>Các Bài được xếp đúng theo trình tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
                     </div>
                     <div class="student-learning-route-intro__progress"><strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong><span>bài đã vững</span></div>
                   </div>
                   <section class="student-learning-path student-learning-path--full" aria-labelledby="student-learning-path-title">
                     <header class="student-learning-path__header">
-                      <div><span class="student-learning-eyebrow">Hành trình của con</span><h3 id="student-learning-path-title">Lộ trình đầy đủ</h3></div>
+                      <div><span class="student-learning-eyebrow">Hành trình của bạn</span><h3 id="student-learning-path-title">Lộ trình đầy đủ</h3></div>
                       <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="true">Quay lại hôm nay</button>
                     </header>
                     <div class="student-learning-path__list">${fullRouteMarkup}</div>
