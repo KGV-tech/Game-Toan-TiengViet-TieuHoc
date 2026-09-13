@@ -1585,11 +1585,14 @@ const app = {
 
             this.loginPending = true;
             app.ui.setButtonLoading('login-btn', true, 'Đang đăng nhập…');
+            let loginStage = 'auth';
+            let authenticatedProfile = false;
             try {
 
             const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
             if (authError || !authData?.user) return this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
 
+            loginStage = 'profile';
             const { data: user, error: profileError } = await supabaseClient.from('game_users')
                 .select(SUPABASE_LIST_PROJECTIONS.game_users).eq('auth_user_id', authData.user.id).single();
             if (profileError || !user) {
@@ -1603,9 +1606,11 @@ const app = {
                     return this.showAuthFeedback('login-error', 'Tài khoản của bạn đang chờ phê duyệt từ Giáo viên!', ['username']);
                 }
                 app.data.currentUser = user;
+                authenticatedProfile = true;
                 app.teamCompetition?.configureSupabase?.(supabaseClient);
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
+                loginStage = 'load-shared-data';
                 const localExams = app.data.loadLocalExams();
                 const pendingExamSnapshot = app.data.loadPendingExamSnapshot();
                 const [exams, settingsData] = await Promise.all([
@@ -1640,6 +1645,7 @@ const app = {
                     document.getElementById('admin-station').style.display = 'flex';
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
+                    loginStage = 'load-student-data';
                     const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
                     const [questions, templates, , quests, userQuests, userPets] = await Promise.all([
                         app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
@@ -1663,10 +1669,12 @@ const app = {
                 // Team competitions are persisted separately from personal
                 // quests. Load the server snapshot only after Auth succeeds so
                 // RLS can scope the result to the teacher/leader account.
+                loginStage = 'sync-team-competition';
                 if (app.teamCompetition?.syncRemote) {
                     await app.teamCompetition.syncRemote();
                 }
 
+                loginStage = 'open-home';
                 await app.data.updateUserScore();
                 this.updateHeader();
 
@@ -1688,7 +1696,22 @@ const app = {
             } else {
                 this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
             }
-            } catch (_) {
+            } catch (error) {
+                console.error(`Đăng nhập lỗi tại bước ${loginStage}:`, error);
+                if (authenticatedProfile && app.data.currentUser) {
+                    // Authentication and profile lookup have succeeded. A failure
+                    // in optional post-login data must not send the student back to
+                    // the login screen; keep the session usable and expose the
+                    // exact stage for diagnosis.
+                    try {
+                        this.updateHeader();
+                        app.router.open('map-screen');
+                        app.daily?.onMapEnter?.();
+                    } catch (recoveryError) {
+                        console.error('Không thể mở màn hình sau đăng nhập:', recoveryError);
+                    }
+                    return;
+                }
                 this.showAuthFeedback('login-error', 'Không thể đăng nhập lúc này. Vui lòng thử lại sau.', ['username']);
             } finally {
                 this.loginPending = false;
