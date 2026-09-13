@@ -201,7 +201,13 @@ test('bốn câu con hiển thị thành lưới hai hàng hai cột như card l
     app.game.loadQuestion();
     const cards = [...document.querySelectorAll('.multi-choice-subquestion')].map(element => {
       const rect = element.getBoundingClientRect();
-      return { top: Math.round(rect.top), left: Math.round(rect.left), width: rect.width, height: rect.height };
+      return {
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+        width: rect.width,
+        height: rect.height,
+        gradient: getComputedStyle(element).backgroundImage
+      };
     });
     const optionGrid = getComputedStyle(cards.length ? document.querySelector('.multi-choice-subquestion__options') : document.body);
     return { cards, optionColumns: optionGrid.gridTemplateColumns.split(' ').length };
@@ -213,6 +219,7 @@ test('bốn câu con hiển thị thành lưới hai hàng hai cột như card l
   expect(topRows.size).toBe(2);
   expect(firstRow).toHaveLength(2);
   expect(grid.cards.every(card => card.height / card.width >= .65)).toBe(true);
+  expect(new Set(grid.cards.map(card => card.gradient)).size).toBe(4);
   expect(grid.optionColumns).toBe(2);
 });
 
@@ -337,6 +344,32 @@ test('tiến độ lượt làm được lưu cục bộ và khôi phục đúng
     score: 2.25,
     savedQuestionIndex: 4
   });
+});
+
+test('Admin Lớp 4 vẫn khởi động được Chủ đề 1 khi kho Supabase chưa có template', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const outcome = await page.evaluate(async () => {
+    const alerts = [];
+    window.alert = message => alerts.push(message);
+    app.data.currentUser = { username: 'teacher', fullname: 'Cô giáo Minh', role: 'admin', classlevel: '4' };
+    app.data.libraryQuestions = [];
+    app.data.questionTemplates = [];
+    app.game.openConfig('math');
+    app.game.state.adminclasslevel = '4';
+    app.game.state.selectedTopics = ['1. Ôn tập và bổ sung'];
+    await app.game.startPlay();
+    return {
+      alerts,
+      count: app.game.state.questions.length,
+      templateIds: app.game.state.questions.map(question => question.templateId)
+    };
+  });
+
+  expect(outcome.alerts).toEqual([]);
+  expect(outcome.count).toBe(10);
+  expect(outcome.templateIds.every(Boolean)).toBe(true);
 });
 
 test('kết quả vẫn hiện và có bản local khi đồng bộ máy chủ thất bại', async ({ page }) => {
