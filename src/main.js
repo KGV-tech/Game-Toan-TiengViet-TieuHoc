@@ -6591,17 +6591,13 @@ const app = {
             document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
-                { id: 'learning-path', label: 'Lộ trình học' },
+                { id: 'learning-path', label: 'Quản lý lộ trình học' },
                 { id: 'settings', label: 'Điều chỉnh' },
                 { id: 'quests', label: 'Quản lý Nhiệm vụ' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
             const treasureTitle = document.getElementById('treasure-title');
-            const titleByTab = {
-                'learning-path': 'Hành Trình Tri Thức',
-                settings: 'Cài Đặt Hệ Thống'
-            };
-            if (treasureTitle) treasureTitle.textContent = titleByTab[tab] || 'Cài Đặt Hệ Thống';
+            if (treasureTitle) treasureTitle.textContent = 'Cài Đặt Hệ Thống';
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
@@ -7660,32 +7656,32 @@ const app = {
             if (!box) return;
             box.innerHTML = `
                 <div class="learning-release-dashboard">
-                <section class="learning-release-workspace learning-release-workspace--mockup" aria-labelledby="learning-release-title">
+                <aside class="learning-release-control-rail" aria-labelledby="learning-release-title">
                     <header class="learning-release-header">
-                        <div><span class="settings-workspace__kicker">Lộ trình học · Admin</span><h3 id="learning-release-title">Mở bài cho lớp học</h3><p>Cô chọn một mốc theo đúng tiến độ đã dạy. Học sinh được ôn lại bài trước nhưng không thể vượt qua mốc này; nếu chưa chọn, hệ thống chỉ mở Bài 1.</p></div>
-                        <div class="learning-release-badge"><strong>1</strong><span>mốc cần chọn</span></div>
+                        <div><span class="settings-workspace__kicker">Cài đặt lớp học</span><h3 id="learning-release-title">Quản lý lộ trình học</h3><p>Chọn lớp, môn và thời gian để xem đúng danh sách Bài học. Mốc đã lưu sẽ giới hạn nội dung học sinh có thể học mới.</p></div>
                     </header>
                     <div class="learning-release-controls" aria-label="Phạm vi lớp học">
                         <label><span>Lớp</span><select id="learning-release-class" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4" selected>Lớp 4</option><option value="5">Lớp 5</option></select></label>
                         <label><span>Môn</span><select id="learning-release-subject" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="math" selected>Toán</option><option value="vietnamese">Tiếng Việt</option></select></label>
-                        <label><span>Học kỳ</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
+                        <label for="learning-release-semester"><span>Thời gian</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
                     </div>
+                </aside>
+                <section class="learning-release-workspace learning-release-workspace--mockup learning-release-main-panel" aria-labelledby="learning-release-current-title">
+                    <header class="learning-release-main-panel__header">
+                        <div><span class="settings-workspace__kicker">Mốc học tập hiện tại</span><h3 id="learning-release-current-title">Học sinh đang học đến bài</h3><strong id="learning-release-card-boundary">Đang tải mốc học</strong></div>
+                        <p>Học sinh có thể ôn lại các Bài trước, nhưng không thể học mới vượt quá mốc này.</p>
+                    </header>
                     <div class="learning-release-boundary">
-                        <label for="learning-release-lesson"><strong>Cho học sinh học đến:</strong></label>
+                        <label for="learning-release-lesson"><strong>Chọn bài mở đến</strong></label>
                         <select id="learning-release-lesson" class="form-input" aria-describedby="learning-release-summary" onchange="app.admin.renderLessonReleaseEditor()"></select>
                         <button type="button" id="learning-release-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveLessonRelease()">Lưu mốc học tập</button>
                     </div>
                     <div id="learning-release-summary" class="learning-release-summary" role="status"></div>
-                    <div id="learning-release-preview" class="learning-release-preview" aria-label="Xem trước lộ trình"></div>
+                    <section class="learning-release-list-panel" aria-labelledby="learning-release-list-title">
+                        <header><h4 id="learning-release-list-title">Danh sách bài học</h4><span>Cuộn để xem các Bài còn lại</span></header>
+                        <div id="learning-release-preview" class="learning-release-preview" aria-label="Danh sách bài học"></div>
+                    </section>
                 </section>
-                <aside class="learning-release-class-card" aria-label="Thông tin lớp học">
-                    <span class="learning-release-class-card__kicker">Thông tin lớp học</span>
-                    <h4>Tiến độ lớp</h4>
-                    <strong id="learning-release-card-boundary">Đang tải mốc học</strong>
-                    <p>Học sinh được ôn lại các Bài trước nhưng không vượt qua mốc cô đã mở.</p>
-                    <button type="button" class="learning-release-class-card__button" onclick="document.getElementById('learning-release-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })">Kiểm tra nội dung <span aria-hidden="true">›</span></button>
-                    <div class="learning-release-class-card__tip"><span aria-hidden="true">↻</span> Học sinh được ôn lại bài trước</div>
-                </aside>
                 </div>
             `;
             this.renderLessonReleaseEditor();
