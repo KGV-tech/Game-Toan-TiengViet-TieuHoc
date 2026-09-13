@@ -2551,7 +2551,7 @@ const app = {
                     && !app.data.validateQuestionScoring(q);
             });
 
-            const dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
+            let dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
                 if (template.is_active === false) return false;
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
                 const matchSubject = same(template.subject, mappedSubject);
@@ -2564,6 +2564,45 @@ const app = {
                 return matchSubject && matchClass && matchTopic && matchSemester
                     && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
+
+            // Các generator Lớp 4 đã được bundle cùng game. Khi kho Supabase chưa
+            // có record tương ứng, Admin vẫn phải test được đúng Chủ đề đã chọn.
+            // Fallback này chỉ đọc generator cục bộ, không ghi hay sửa dữ liệu server.
+            if (pool.length === 0 && dynamicTemplates.length === 0 && isAdmin && clLevel === '4' && this.state.subject === 'math') {
+                const registry = window.Grade4MathTemplates;
+                const seenTemplateIds = new Set();
+                const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+                const fallbackTemplates = (registry?.templateIds || []).reduce((templates, generatorKey) => {
+                    try {
+                        const sample = registry.generateQuestion(generatorKey, {});
+                        const canonicalId = sample.templateId || generatorKey;
+                        if (seenTemplateIds.has(canonicalId)) return templates;
+                        const selectedTopic = this.state.selectedTopics.find(topic => same(sample.topic, topic));
+                        if (!selectedTopic || !same(sample.classlevel, 'Lớp 4') || !same(sample.subject, mappedSubject)) return templates;
+                        const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
+                        const semesterTopics = Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
+                        const expectedSemester = semesterTopics?.[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2';
+                        if (!semesterTopics || !same(sample.semester, expectedSemester)) return templates;
+                        seenTemplateIds.add(canonicalId);
+                        templates.push({
+                            id: `built-in-${canonicalId}`,
+                            classlevel: sample.classlevel,
+                            subject: sample.subject,
+                            semester: sample.semester,
+                            topic: sample.topic,
+                            question_type: sample.type,
+                            generator_key: generatorKey,
+                            prompt_template: '{question}',
+                            config: {},
+                            is_active: true
+                        });
+                    } catch {
+                        // Bỏ qua generator cục bộ không hợp lệ để các generator còn lại vẫn chạy.
+                    }
+                    return templates;
+                }, []);
+                dynamicTemplates = fallbackTemplates;
+            }
 
             if (pool.length === 0 && dynamicTemplates.length === 0) {
                 alert('Không có câu hỏi phù hợp! Vui lòng nhập thêm dữ liệu vào thư viện.');
@@ -2981,7 +3020,6 @@ const app = {
                 title.textContent = lessonName;
                 practiceStatus.replaceChildren(label, title);
             }
-
             let qHtml = app.data.formatMathHTML(q.q);
             const isFourPartQuestion = Array.isArray(q.subquestions) && q.subquestions.length === 4;
             const sharedPrompt = this.getSharedSubquestionPrompt(q);
