@@ -34,5 +34,15 @@ assert.doesNotMatch(
     /team_competition_members:\s*'id,/,
     'Team member projection must not request a non-existent id column.'
 );
+assert.match(
+    main,
+    /loginStage/,
+    'The login flow must expose the post-authentication stage when a runtime failure is caught.'
+);
+assert.match(
+    main,
+    /if \(authenticatedProfile && app\.data\.currentUser\)[\s\S]*app\.router\.open\('map-screen'\)/,
+    'A failure after profile authentication must not strand the student on the login screen.'
+);
 
 console.log('Supabase schema compatibility contract tests passed.');
