@@ -61,9 +61,79 @@ test('đáp án dài tự xuống dòng trong khối tối và ô nhập giữ f
   const tabletLayout = await page.locator('.game-answer-reveal').evaluate(panel => {
     const rect = panel.getBoundingClientRect();
     const host = document.getElementById('game-question-container').getBoundingClientRect();
-    return { fitsWidth: panel.scrollWidth <= panel.clientWidth, fitsHost: rect.right <= host.right + 1 };
+    const question = document.getElementById('game-question-container');
+    return {
+      fitsWidth: panel.scrollWidth <= panel.clientWidth,
+      fitsHost: rect.right <= host.right + 1,
+      questionFits: question.scrollWidth <= question.clientWidth
+    };
   });
-  expect(tabletLayout).toEqual({ fitsWidth: true, fitsHost: true });
+  expect(tabletLayout).toEqual({ fitsWidth: true, fitsHost: true, questionFits: true });
+});
+
+test('chấm sai ô điền bằng gạch đỏ, hiện đáp án kế bên và gắn nhãn từng ý', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await openQuestion(page, {
+    q: 'Tính giá trị của biểu thức:<br>a) 91 + 6 = ___<br>b) 74 + 9 = ___<br>c) 90 + 6 = ___<br>d) 84 + 2 = ___',
+    type: 'Điền khuyết',
+    ans: '97, 83, 96, 86'
+  });
+
+  for (let index = 0; index < 4; index++) {
+    await page.locator(`#fill-input-${index}`).fill('0');
+  }
+  await page.locator('#submit-ans-btn').click();
+
+  await expect(page.locator('.magic-input.wrong')).toHaveCount(4);
+  await expect(page.locator('.answer-correction')).toHaveCount(4);
+  await expect(page.locator('.answer-correction')).toHaveText(['Đúng: 97', 'Đúng: 83', 'Đúng: 96', 'Đúng: 86']);
+
+  const wrongInputStyle = await page.locator('.magic-input.wrong').first().evaluate(input => ({
+    decoration: getComputedStyle(input).textDecorationLine,
+    color: getComputedStyle(input).color
+  }));
+  expect(wrongInputStyle.decoration).toContain('line-through');
+  expect(wrongInputStyle.color).not.toBe('rgb(30, 41, 59)');
+
+  await expect(page.locator('.game-answer-reveal__part')).toHaveText(['a) 97', 'b) 83', 'c) 96', 'd) 86']);
+});
+
+test('các dạng nhiều ý khác cũng hiện bảng đáp án có nhãn sau khi chấm sai', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await openQuestion(page, {
+    q: 'Chọn đáp án đúng cho mỗi ý.',
+    type: 'Trắc nghiệm',
+    ans: '2, 4, 6, 8',
+    subquestions: [
+      { label: 'a', prompt: 'Một cộng một bằng?', options: ['1', '2'], answer: '2' },
+      { label: 'b', prompt: 'Hai cộng hai bằng?', options: ['3', '4'], answer: '4' },
+      { label: 'c', prompt: 'Ba cộng ba bằng?', options: ['5', '6'], answer: '6' },
+      { label: 'd', prompt: 'Bốn cộng bốn bằng?', options: ['7', '8'], answer: '8' }
+    ],
+    partAnswerCounts: [1, 1, 1, 1]
+  });
+
+  for (const row of await page.locator('.multi-choice-subquestion').all()) {
+    await row.locator('.multi-choice-subquestion__option').first().click();
+  }
+  await page.locator('#submit-ans-btn').click();
+
+  await expect(page.locator('.multi-choice-subquestion__option.wrong')).toHaveCount(4);
+  await expect(page.locator('.multi-choice-subquestion__option.wrong').first()).toHaveCSS('text-decoration-line', 'line-through');
+  await expect(page.locator('.game-answer-reveal__part')).toHaveText(['a) 2', 'b) 4', 'c) 6', 'd) 8']);
+});
+
+test('dạng điền một ô cũng ghi đáp án đúng cạnh câu trả lời sai', async ({ page }) => {
+  await openOfflineHomepage(page);
+  await openQuestion(page, { q: 'Số liền sau của 8 là', type: 'Điền khuyết', ans: '9' });
+  await page.locator('.magic-input').fill('7');
+  await page.locator('#submit-ans-btn').click();
+
+  await expect(page.locator('.magic-input.wrong')).toHaveCount(1);
+  await expect(page.locator('.answer-correction')).toHaveText('Đúng: 9');
+  await expect(page.locator('.game-answer-reveal__value')).toHaveText('9');
 });
 
 test('ô dấu dùng dạng vuông tối và vẫn giữ bề mặt tối khi chấm sai', async ({ page }) => {
@@ -100,6 +170,48 @@ test('ô dấu dùng dạng vuông tối và vẫn giữ bề mặt tối khi ch
   expect(checkedCell.state).toContain('answer-state-wrong');
   expect(checkedCell.background).not.toBe('rgb(254, 226, 226)');
   expect(checkedCell.color).not.toBe('rgb(220, 38, 38)');
+
+  const comparisonLayout = await page.locator('.comparison-drag-row').evaluateAll(rows => rows.map(row => {
+    const rect = row.getBoundingClientRect();
+    const host = document.getElementById('game-question-container').getBoundingClientRect();
+    return rect.right <= host.right + 1;
+  }));
+  expect(comparisonLayout.every(Boolean)).toBe(true);
+});
+
+test('dạng kéo thả góc vẫn đặt đáp án sửa bài cạnh ô mà không tràn dòng', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await openQuestion(page, {
+    q: 'Kéo thả tên loại góc thích hợp vào ô trống bên cạnh mỗi hình vẽ:',
+    type: 'Kéo thả',
+    ans: 'Góc vuông, Góc tù, Góc bẹt, Góc nhọn',
+    options: ['Góc nhọn', 'Góc vuông', 'Góc tù', 'Góc bẹt'],
+    angleItems: [
+      { label: 'a', type: 'Góc vuông', svg: '<svg viewBox="0 0 10 10"></svg>' },
+      { label: 'b', type: 'Góc tù', svg: '<svg viewBox="0 0 10 10"></svg>' },
+      { label: 'c', type: 'Góc bẹt', svg: '<svg viewBox="0 0 10 10"></svg>' },
+      { label: 'd', type: 'Góc nhọn', svg: '<svg viewBox="0 0 10 10"></svg>' }
+    ]
+  });
+
+  await page.evaluate(() => {
+    const slots = [...document.querySelectorAll('.drag-slot')];
+    slots.forEach(slot => {
+      slot.textContent = 'Góc nhọn';
+      slot.classList.add('filled');
+    });
+    app.game.state.selectedAns = slots.map(() => 'Góc nhọn').join(', ');
+    app.game.submitAnswer();
+  });
+
+  await expect(page.locator('.answer-correction')).toHaveCount(3);
+  const rowsFit = await page.locator('.angle-drag-row').evaluateAll(rows => rows.map(row => {
+    const rect = row.getBoundingClientRect();
+    const host = document.getElementById('game-question-container').getBoundingClientRect();
+    return rect.right <= host.right + 1;
+  }));
+  expect(rowsFit.every(Boolean)).toBe(true);
 });
 
 test('mọi nhóm template tạo sẵn đều giữ bề mặt tối và font giao diện', async ({ page }) => {
