@@ -421,6 +421,11 @@ assert.equal(matchingFiveFour.ans.split(', ').length, 4);
 const matchingFourThree = generateQuestion('number.match_number_words', { shapes: ['4:3'], digits: [7], digitWeights: { 7: 1 } }, seededRandom(13));
 assert.equal(matchingFourThree.options[0].split(', ').length, 4);
 assert.equal(matchingFourThree.options[1].split(', ').length, 3);
+const b01Matching = generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [4, 5] }, seededRandom(130));
+assert(
+    b01Matching.options[0].split(', ').every(number => [4, 5].includes(number.replace(/\s/g, '').length)),
+    'Bài 1 matching must generate only four- or five-digit numbers.'
+);
 assert.deepEqual(
     generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7], seed: 123 }, seededRandom(14)),
     generateQuestion('number.match_number_words', { shapes: ['5:4'], digits: [7], seed: 123 }, seededRandom(15)),
@@ -445,6 +450,12 @@ assert(gradeFourNaturalSequence.sequenceRounds.every(round => round.sequence.len
 assert(gradeFourNaturalSequence.sequenceRounds.every(round => round.sequence.slice(1).every((value, index) => value - round.sequence[index] === -7000)), 'Every term must follow the selected fixed step.');
 assert.equal((gradeFourNaturalSequence.q.match(/___/g) || []).length, 8, 'Every round must expose its generated blanks.');
 assert.equal(gradeFourNaturalSequence.ans.split(', ').length, 8, 'Answers must retain every blank in round order.');
+
+const defaultGradeFourNaturalSequence = generateQuestion('number.natural_sequence', {}, seededRandom(170));
+assert(defaultGradeFourNaturalSequence.sequenceRounds.every(round => round.sequence.length === 6),
+    'The default Grade 4 sequence template must always generate six terms.');
+assert(defaultGradeFourNaturalSequence.partAnswerCounts.every(count => count >= 1 && count <= 3),
+    'The default Grade 4 sequence template must allow one, two, or three blanks per round.');
 
 const lowerGradeNaturalSequence = generateQuestion('number.natural_sequence', {
     minimum: 10,

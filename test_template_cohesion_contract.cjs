@@ -22,6 +22,16 @@ function assertFourPartCohesion(question, field, label) {
     assertCollectionCohesion(question, collection, field, label);
 }
 
+function assertBalancedParity(question, label) {
+    const parts = question.subquestions || question.sequenceRounds;
+    assert.ok(Array.isArray(parts), `${label} phải có các ý để kiểm tra chẵn/lẻ.`);
+    const counts = parts.reduce((total, part) => {
+        total[part.targetParity] = (total[part.targetParity] || 0) + 1;
+        return total;
+    }, {});
+    assert.deepEqual(counts, { even: 2, odd: 2 }, `${label} phải có 2 ý chẵn và 2 ý lẻ.`);
+}
+
 const homogeneousCases = [
     ['number.four_arithmetic_blanks', { operations: ['+', '-'], layouts: ['expressionLeft', 'twoExpressions'], blankPositions: ['first', 'second', 'third'] }, 'subquestions', 'operation'],
     ['number.four_arithmetic_blanks', { operations: ['+', '-'], layouts: ['expressionLeft', 'twoExpressions'], blankPositions: ['first', 'second', 'third'] }, 'subquestions', 'layout'],
@@ -32,7 +42,7 @@ const homogeneousCases = [
     ['number.even_odd_classify', { parities: ['even', 'odd'] }, 'subquestions', 'targetParity'],
     ['number.even_odd_count', { parities: ['even', 'odd'] }, 'subquestions', 'targetParity'],
     ['number.even_odd_sequence', { parities: ['even', 'odd'], sequenceSteps: [2, 4, 6] }, 'subquestions', 'targetParity'],
-    ['number.even_odd_sequence', { parities: ['even', 'odd'], sequenceSteps: [2, 4, 6] }, 'subquestions', 'step'],
+    ['number.even_odd_sequence', { parities: ['even', 'odd'], sequenceSteps: [2, 4, 6] }, 'sequenceRounds', 'step'],
     ['number.even_odd_form', { parities: ['even', 'odd'] }, 'subquestions', 'targetParity'],
     ['number.variable_expression_value', { operations: ['add', 'subtract', 'multiply', 'divide'] }, 'practiceRows', 'operation'],
     ['number.variable_expression_choice', { operations: ['add', 'subtract', 'multiply', 'divide'] }, 'subquestions', 'operation'],
@@ -65,7 +75,8 @@ homogeneousCases.forEach(([templateId, config, collectionOrField, maybeField], i
     const question = generateQuestion(templateId, config, seededRandom(9100 + index));
     const collection = maybeField ? collectionOrField : (question.subquestions ? 'subquestions' : 'statements');
     const field = maybeField || collectionOrField;
-    assertCollectionCohesion(question, collection, field, templateId);
+    if (field === 'targetParity') assertBalancedParity(question, templateId);
+    else assertCollectionCohesion(question, collection, field, templateId);
 });
 
 [
@@ -91,7 +102,8 @@ homogeneousCases.forEach(([templateId, config, collectionOrField, maybeField], i
     ['number.hk1_review_b01_b04', { skills: ['b04'] }, 'operation']
 ].forEach(([templateId, config, field], index) => {
     const question = generateQuestion(templateId, config, seededRandom(9500 + index));
-    assertCollectionCohesion(question, 'subquestions', field, `${templateId} ${field}`);
+    if (field === 'targetParity') assertBalancedParity(question, `${templateId} ${field}`);
+    else assertCollectionCohesion(question, 'subquestions', field, `${templateId} ${field}`);
 });
 
 const parityReview = generateQuestion('number.hk1_review_b01_b04', { skills: ['b03'] }, seededRandom(9203));

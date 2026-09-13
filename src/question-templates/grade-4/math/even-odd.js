@@ -54,6 +54,13 @@ function chooseParity(parities, random) {
     return parities[randomInt(0, parities.length - 1, random)];
 }
 
+function balancedParities(parities, random) {
+    if (parities.length === 1) return Array(LABELS.length).fill(parities[0]);
+    const first = chooseParity(parities, random);
+    const second = parities.find(parity => parity !== first);
+    return LABELS.map((_, index) => index % 2 === 0 ? first : second);
+}
+
 function multipleChoice(templateId, title, subquestions, explanation, templateVariables = {}) {
     if (subquestions.length !== 4) throw new Error('Bài 3 cần đúng bốn câu con.');
     const normalizePrompt = value => String(value || '')
@@ -92,9 +99,9 @@ function generateEvenOddClassify(config = {}, random = Math.random) {
         throw new Error('Phạm vi Bài 3 phải có cả số chẵn và số lẻ để tạo phương án nhiễu.');
     }
     const used = new Set();
-    const selectedParity = chooseParity(parities, random);
-    const rows = LABELS.map(label => {
-        const targetParity = selectedParity;
+    const targetParities = balancedParities(parities, random);
+    const rows = LABELS.map((label, index) => {
+        const targetParity = targetParities[index];
         const target = randomParityNumber(minimum, maximum, targetParity, random, used);
         used.add(target);
         const distractors = new Set();
@@ -114,7 +121,7 @@ function generateEvenOddClassify(config = {}, random = Math.random) {
         'Nhận biết số chẵn, số lẻ:',
         rows,
         'Số chẵn có chữ số tận cùng là 0, 2, 4, 6 hoặc 8; các số còn lại là số lẻ.',
-        { parities: parities.join(', '), selectedParity }
+        { parities: parities.join(', '), targetParities: targetParities.join(', ') }
     );
 }
 
@@ -134,15 +141,15 @@ function generateEvenOddCount(config = {}, random = Math.random) {
         throw new Error('Số lượng phần tử trong dãy Bài 3 phải từ 5 đến 12.');
     }
     if (maximum - minimum + 1 < listLengthMax) throw new Error('Phạm vi số không đủ để tạo dãy không lặp phần tử.');
-    const selectedParity = chooseParity(parities, random);
-    const rows = LABELS.map(label => {
+    const targetParities = balancedParities(parities, random);
+    const rows = LABELS.map((label, index) => {
         const length = randomInt(listLengthMin, listLengthMax, random);
         const values = [];
         while (values.length < length) {
             const value = randomInt(minimum, maximum, random);
             if (!values.includes(value)) values.push(value);
         }
-        const targetParity = selectedParity;
+        const targetParity = targetParities[index];
         const count = values.filter(value => parityOf(value) === targetParity).length;
         const formattedValues = values.map(formatNumber).join(', ');
         return {
@@ -157,47 +164,58 @@ function generateEvenOddCount(config = {}, random = Math.random) {
         'Đếm số chẵn, số lẻ trong một dãy:',
         rows,
         'Đọc lần lượt từng số trong dãy, xác định chẵn hoặc lẻ rồi đếm đúng nhóm được hỏi.',
-        { parities: parities.join(', '), selectedParity }
+        { parities: parities.join(', '), targetParities: targetParities.join(', ') }
     );
 }
 
 function generateEvenOddSequence(config = {}, random = Math.random) {
     const { minimum, maximum } = numberRange(config);
     const parities = allowedParities(config);
+    const blankCountMin = Number(config.blankCountMin ?? 1);
+    const blankCountMax = Number(config.blankCountMax ?? 3);
     const configuredSteps = Array.isArray(config.sequenceSteps) && config.sequenceSteps.length
         ? [...new Set(config.sequenceSteps.map(Number))]
         : [2, 4, 6];
     if (configuredSteps.some(step => !Number.isSafeInteger(step) || step <= 0 || step % 2 !== 0)) {
         throw new Error('Bước nhảy dãy chẵn/lẻ phải là số nguyên dương, chẵn.');
     }
-    const unsupportedSteps = configuredSteps.filter(step => parities.some(parity => !hasParity(minimum, maximum - step * 4, parity)));
+    if (!Number.isInteger(blankCountMin) || !Number.isInteger(blankCountMax) || blankCountMin < 1 || blankCountMax < blankCountMin || blankCountMax > 3) {
+        throw new Error('Số ô trống của dãy chẵn/lẻ phải từ 1 đến 3.');
+    }
+    const unsupportedSteps = configuredSteps.filter(step => parities.some(parity => !hasParity(minimum, maximum - step * 5, parity)));
     if (unsupportedSteps.length) {
         throw new Error('Bước nhảy dãy chẵn/lẻ không phù hợp với phạm vi số và dạng chẵn/lẻ đã chọn.');
     }
-    const selectedParity = chooseParity(parities, random);
+    const targetParities = balancedParities(parities, random);
     const selectedStep = configuredSteps[randomInt(0, configuredSteps.length - 1, random)];
-    const rows = LABELS.map(label => {
-        const targetParity = selectedParity;
+    const rows = LABELS.map((label, index) => {
+        const targetParity = targetParities[index];
         const step = selectedStep;
-        const start = randomParityNumber(minimum, maximum - step * 4, targetParity, random);
-        const sequence = [0, 1, 2, 3].map(index => start + index * step);
-        const correct = start + step * 4;
-        const excluded = new Set(sequence.concat(correct));
-        const answer = formatNumber(correct);
+        const start = randomParityNumber(minimum, maximum - step * 5, targetParity, random);
+        const sequence = Array.from({ length: 6 }, (_, sequenceIndex) => start + sequenceIndex * step);
+        const blankCount = randomInt(blankCountMin, blankCountMax, random);
+        const candidates = [1, 2, 3, 4];
+        const blankIndexes = [];
+        while (blankIndexes.length < blankCount) {
+            blankIndexes.push(candidates.splice(randomInt(0, candidates.length - 1, random), 1)[0]);
+        }
+        blankIndexes.sort((first, second) => first - second);
+        const blankSet = new Set(blankIndexes);
         return {
-            label, targetParity, step, sequence, answer,
-            prompt: `Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?<br>${sequence.map(formatNumber).join(', ')}, ___`,
-            options: makeChoiceOptions(answer, () => formatNumber(randomParityNumber(minimum, maximum, targetParity, random, excluded)), random),
-            explanation: `Mỗi số sau hơn số trước ${formatNumber(step)}, nên số tiếp theo là ${formatNumber(correct)}.`
+            label, targetParity, step, sequence, blankIndexes,
+            display: sequence.map((value, sequenceIndex) => blankSet.has(sequenceIndex) ? '___' : formatNumber(value)).join(', ')
         };
     });
-    return multipleChoice(
-        'number.even_odd_sequence',
-        'Tìm số thích hợp điền vào dãy:',
-        rows,
-        'Dãy số chẵn hoặc dãy số lẻ có thể tăng đều theo một bước nhảy chẵn; vì vậy tính số tiếp theo bằng cách cộng bước nhảy.',
-        { parities: parities.join(', '), sequenceSteps: configuredSteps.join(', '), selectedParity, selectedStep }
-    );
+    const answers = rows.flatMap(row => row.blankIndexes.map(index => formatNumber(row.sequence[index])));
+    return {
+        classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
+        type: 'Chuỗi Quy luật', templateId: 'number.even_odd_sequence', q: 'Điền số thích hợp vào mỗi dãy:', options: [],
+        ans: answers.join(', '),
+        explanation: 'Dãy số chẵn hoặc dãy số lẻ tăng đều theo một bước nhảy chẵn; điền các số còn thiếu theo quy luật đó.',
+        sequenceRounds: rows,
+        partAnswerCounts: rows.map(row => row.blankIndexes.length),
+        templateVariables: { question: 'Điền số thích hợp vào mỗi dãy:', parities: parities.join(', '), sequenceSteps: configuredSteps.join(', '), targetParities: targetParities.join(', '), selectedStep, blank: '___' }
+    };
 }
 
 function permutations(items) {
@@ -217,11 +235,11 @@ function generateEvenOddForm(config = {}, random = Math.random) {
     const digitCount = Number(config.digitCount ?? 4);
     if (!Number.isInteger(digitCount) || digitCount < 3 || digitCount > 4) throw new Error('Số thẻ của Bài 3 phải là 3 hoặc 4.');
     const parities = allowedParities(config);
-    const selectedParity = chooseParity(parities, random);
-    const rows = LABELS.map(label => {
+    const targetParities = balancedParities(parities, random);
+    const rows = LABELS.map((label, index) => {
         const cards = randomCards(digitCount, random);
         const allNumbers = permutations(cards).map(items => Number(items.join('')));
-        const targetParity = selectedParity;
+        const targetParity = targetParities[index];
         const targetNumbers = allNumbers.filter(value => parityOf(value) === targetParity);
         const distractorNumbers = allNumbers.filter(value => parityOf(value) !== targetParity);
         if (!targetNumbers.length || distractorNumbers.length < 3) throw new Error('Bộ thẻ phải tạo được cả số chẵn và số lẻ.');
@@ -240,7 +258,7 @@ function generateEvenOddForm(config = {}, random = Math.random) {
         'Lập số chẵn, số lẻ từ các thẻ số:',
         rows,
         'Khi lập số, xét chữ số ở hàng đơn vị: 0, 2, 4, 6, 8 tạo số chẵn; chữ số 1, 3, 5, 7, 9 tạo số lẻ.',
-        { parities: parities.join(', '), selectedParity }
+        { parities: parities.join(', '), targetParities: targetParities.join(', ') }
     );
 }
 

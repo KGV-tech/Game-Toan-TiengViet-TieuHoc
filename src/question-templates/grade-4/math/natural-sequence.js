@@ -38,9 +38,9 @@ function chooseBlankIndexes(length, blankCount, random) {
 function generateNaturalSequence(config = {}, random = Math.random) {
     const minimum = integerConfig(config.minimum, 10000, 'Số nhỏ nhất');
     const maximum = integerConfig(config.maximum, 9999999, 'Số lớn nhất');
-    const sequenceLengthMin = integerConfig(config.sequenceLengthMin, 5, 'Số lượng số ít nhất');
-    const sequenceLengthMax = integerConfig(config.sequenceLengthMax, 7, 'Số lượng số nhiều nhất');
-    const blankCountMin = integerConfig(config.blankCountMin, 2, 'Số ô trống ít nhất');
+    const sequenceLengthMin = integerConfig(config.sequenceLengthMin, 6, 'Số lượng số ít nhất');
+    const sequenceLengthMax = integerConfig(config.sequenceLengthMax, 6, 'Số lượng số nhiều nhất');
+    const blankCountMin = integerConfig(config.blankCountMin, 1, 'Số ô trống ít nhất');
     const blankCountMax = integerConfig(config.blankCountMax, 3, 'Số ô trống nhiều nhất');
     const allowedSteps = (Array.isArray(config.allowedSteps) ? config.allowedSteps : DEFAULT_STEPS).map(Number);
 
