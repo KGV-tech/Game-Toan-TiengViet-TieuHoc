@@ -24,6 +24,12 @@ const PLACE_NAMES = ['chục nghìn', 'nghìn', 'trăm', 'chục'];
 const PLACE_VALUES = [10000, 1000, 100, 10];
 const OPERATIONS = ['+', '−', '×', '÷'];
 
+function balancedParities(random) {
+    const first = random() >= 0.5 ? 'even' : 'odd';
+    const second = first === 'even' ? 'odd' : 'even';
+    return [first, second, first, second];
+}
+
 function numericOptions(correct, random, minimum = 0, maximum = 99999) {
     const values = [correct];
     const candidates = shuffle([
@@ -166,16 +172,16 @@ function generateReview(config = {}, random = Math.random) {
         : selectedSkill === 'b04'
             ? (random() >= 0.5 ? 'subtract' : 'add')
             : null;
-    const selectedParity = selectedSkill === 'b03' ? (random() >= 0.5 ? 'even' : 'odd') : null;
+    const targetParities = selectedSkill === 'b03' ? balancedParities(random) : null;
     const builders = {
         b01: makeB01,
         b02: randomValue => makeB02(randomValue, selectedOperation),
-        b03: randomValue => makeB03(randomValue, selectedParity),
+        b03: (randomValue, index) => makeB03(randomValue, targetParities[index]),
         b04: randomValue => makeB04(randomValue, selectedOperation)
     };
     const subquestions = Array.from({ length: 4 }, (_, index) => ({
         label: String.fromCharCode(97 + index),
-        ...builders[selectedSkill](random)
+        ...builders[selectedSkill](random, index)
     }));
     const title = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     return {
@@ -184,7 +190,7 @@ function generateReview(config = {}, random = Math.random) {
         ans: subquestions.map(part => part.answer).join(', '),
         explanation: `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
         subquestions, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: title, skills: requestedSkills.join(', '), selectedSkill, ...(selectedOperation ? { selectedOperation } : {}), ...(selectedParity ? { selectedParity } : {}) }
+        templateVariables: { question: title, skills: requestedSkills.join(', '), selectedSkill, ...(selectedOperation ? { selectedOperation } : {}), ...(targetParities ? { targetParities: targetParities.join(', ') } : {}) }
     };
 }
 

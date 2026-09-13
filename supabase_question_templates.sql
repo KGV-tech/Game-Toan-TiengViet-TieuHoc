@@ -49,7 +49,8 @@ SET question_type = 'Đối chiếu trùng khớp',
     config = '{"shapes":["5:4","4:5"],"digits":[7,8,9],"digitStrategy":"balanced","digitWeights":null,"prefixWords":0,"seed":null}'::jsonb
 WHERE name = 'Đối chiếu số với cách đọc'
   AND classlevel = 'Lớp 4'
-  AND subject = 'Toán';
+  AND subject = 'Toán'
+  AND topic <> '1. Ôn tập và bổ sung';
 
 INSERT INTO public.question_templates (
     name, classlevel, subject, semester, topic, question_type, generator_key, prompt_template, config
@@ -168,7 +169,7 @@ SELECT
     'Dãy số theo quy luật', 'Lớp 4', 'Toán', 'Học kỳ 1', '3. Số có nhiều chữ số',
     'Chuỗi Quy luật', 'number.natural_sequence',
     '{question}',
-    '{"minimum":10000,"maximum":9999999,"allowedSteps":[1000,2000,3000,4000,5000,6000,7000,8000,9000,-1000,-2000,-3000,-4000,-5000,-6000,-7000,-8000,-9000],"sequenceLengthMin":5,"sequenceLengthMax":7,"blankCountMin":2,"blankCountMax":3}'::jsonb
+    '{"minimum":10000,"maximum":9999999,"allowedSteps":[1000,2000,3000,4000,5000,6000,7000,8000,9000,-1000,-2000,-3000,-4000,-5000,-6000,-7000,-8000,-9000],"sequenceLengthMin":6,"sequenceLengthMax":6,"blankCountMin":1,"blankCountMax":3}'::jsonb
 WHERE NOT EXISTS (
     SELECT 1 FROM public.question_templates WHERE generator_key = 'number.natural_sequence'
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '3. Số có nhiều chữ số'
@@ -279,7 +280,7 @@ SELECT
         WHEN 'number.missing_expanded_addend' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
         WHEN 'number.neighbor_numbers' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
         WHEN 'number.compare_number_forms' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5}'::jsonb
-        WHEN 'number.match_number_words' THEN '{"shapes":["5:4","4:5"],"digits":[2,3,4,5],"digitStrategy":"balanced","digitWeights":null,"prefixWords":0,"seed":null}'::jsonb
+        WHEN 'number.match_number_words' THEN '{"shapes":["5:4","4:5"],"digits":[4,5],"digitStrategy":"balanced","digitWeights":null,"prefixWords":0,"seed":null}'::jsonb
         WHEN 'number.four_arithmetic_blanks' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"],"layouts":["expressionLeft","expressionRight","twoExpressions"],"blankPositions":["first","second","third","fourth"]}'::jsonb
         WHEN 'number.four_arithmetic_comparisons' THEN '{"minimum":10,"maximum":99999,"minimumDigits":2,"maximumDigits":5,"operations":["+","-","*","/"],"layouts":["expressionLeft","expressionRight","twoExpressions"]}'::jsonb
         ELSE config

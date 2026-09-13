@@ -43,6 +43,7 @@ test('đáp án dài tự xuống dòng trong khối tối và ô nhập giữ f
       fitsWidth: panel.scrollWidth <= panel.clientWidth,
       fitsHost: panelRect.right <= hostRect.right + 1,
       panelBackground: panelStyle.backgroundColor,
+      panelGradient: panelStyle.backgroundImage,
       inputFont: inputStyle.fontFamily,
       inputColor: inputStyle.color
     };
@@ -51,6 +52,7 @@ test('đáp án dài tự xuống dòng trong khối tối và ô nhập giữ f
   expect(layout.fitsWidth).toBe(true);
   expect(layout.fitsHost).toBe(true);
   expect(layout.panelBackground).not.toBe('rgb(255, 255, 255)');
+  expect(layout.panelGradient).toContain('linear-gradient');
   expect(layout.inputFont.toLowerCase()).toContain('quicksand');
   expect(layout.inputColor).not.toBe('rgb(126, 34, 206)');
   await page.screenshot({ path: testInfo.outputPath('long-answer-reveal.png'), fullPage: true });

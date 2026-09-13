@@ -76,6 +76,7 @@ classify.subquestions.forEach(part => {
   assert.equal(answer % 2 === 0 ? 'even' : 'odd', part.targetParity,
     'Classification answer must match its requested parity.');
 });
+assertBalancedParities(classify, 'number.even_odd_classify');
 
 const count = templates.generateQuestion('number.even_odd_count', {}, seededRandom(12));
 assertFourPartQuestion(count, 'number.even_odd_count');
@@ -83,18 +84,10 @@ count.subquestions.forEach(part => {
   const expected = part.values.filter(value => (value % 2 === 0 ? 'even' : 'odd') === part.targetParity).length;
   assert.equal(numberValue(part.answer), expected, 'Count answer must match the generated list.');
 });
+assertBalancedParities(count, 'number.even_odd_count');
 
 const sequence = templates.generateQuestion('number.even_odd_sequence', {}, seededRandom(13));
-assertFourPartQuestion(sequence, 'number.even_odd_sequence');
-assert.equal(sequence.q, 'Tìm số thích hợp điền vào dãy:',
-  'The sequence family must describe the actual task instead of labelling it as a generic even/odd question.');
-assert.equal(sequence.sharedPrompt, 'Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?',
-  'Repeated sequence instructions must be promoted to one shared prompt.');
-sequence.subquestions.forEach(part => {
-  assert.equal(numberValue(part.answer) % 2 === 0 ? 'even' : 'odd', part.targetParity,
-    'Sequence answer must preserve parity.');
-  assert.equal(part.step % 2, 0, 'Even/odd sequence step must preserve parity.');
-});
+assertEvenOddSequence(sequence);
 
 assert.throws(
   () => templates.generateQuestion('number.digit_at_place', {
@@ -118,6 +111,7 @@ form.subquestions.forEach(part => {
   assert.deepEqual([...String(answer)].map(Number).sort(), [...part.cards].sort(),
     'Formed number must use the displayed digit cards.');
 });
+assertBalancedParities(form, 'number.even_odd_form');
 
 const value = templates.generateQuestion('number.variable_expression_value', {}, seededRandom(15));
 assertFourPartFillQuestion(value, 'number.variable_expression_value');
@@ -146,16 +140,49 @@ assert.equal(review.subquestions[0].lesson, `g4-math-hk1-${review.subquestions[0
 assert.equal(review.subquestions.some(part => /b05/i.test(part.skill || part.prompt)), false,
   'B06 review must not include deferred B05 content.');
 
+const parityReview = templates.generateQuestion('number.hk1_review_b01_b04', { skills: ['b03'] }, seededRandom(18));
+assertBalancedParities(parityReview, 'number.hk1_review_b01_b04 / b03');
+
 for (let seed = 30; seed < 80; seed++) {
   assertFourPartQuestion(templates.generateQuestion('number.even_odd_classify', {}, seededRandom(seed)), 'number.even_odd_classify');
   assertFourPartQuestion(templates.generateQuestion('number.even_odd_count', {}, seededRandom(seed)), 'number.even_odd_count');
-  assertFourPartQuestion(templates.generateQuestion('number.even_odd_sequence', {}, seededRandom(seed)), 'number.even_odd_sequence');
+  assertEvenOddSequence(templates.generateQuestion('number.even_odd_sequence', {}, seededRandom(seed)));
   assertFourPartQuestion(templates.generateQuestion('number.even_odd_form', {}, seededRandom(seed)), 'number.even_odd_form');
   assertFourPartFillQuestion(templates.generateQuestion('number.variable_expression_value', {}, seededRandom(seed)), 'number.variable_expression_value');
   assertFourPartQuestion(templates.generateQuestion('number.variable_expression_choice', {}, seededRandom(seed)), 'number.variable_expression_choice');
   const reviewQuestion = templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(seed));
   assertFourPartQuestion(reviewQuestion, 'number.hk1_review_b01_b04');
   assert.equal(new Set(reviewQuestion.subquestions.map(part => part.skill)).size, 1);
+}
+
+function assertBalancedParities(question, key) {
+  const counts = question.subquestions.reduce((total, part) => {
+    total[part.targetParity] = (total[part.targetParity] || 0) + 1;
+    return total;
+  }, {});
+  assert.deepEqual(counts, { even: 2, odd: 2 },
+    `${key} must distribute the four parts evenly between even and odd targets.`);
+}
+
+function assertEvenOddSequence(question) {
+  assert.equal(question.type, 'Chuỗi Quy luật', 'The sequence family must be a fill-in sequence, not multiple choice.');
+  assert.equal(question.options.length, 0, 'The sequence family must not generate A–D answer choices.');
+  assert.equal(question.sequenceRounds?.length, 4, 'The sequence family must generate four sequences.');
+  assert(question.sequenceRounds.every(round => round.sequence.length === 6),
+    'Each even/odd sequence must always contain six terms.');
+  assert(question.partAnswerCounts.every(count => count >= 1 && count <= 3),
+    'Each even/odd sequence must have from one to three blanks.');
+  question.sequenceRounds.forEach(round => {
+    assert.equal(round.step % 2, 0, 'Even/odd sequence step must preserve parity.');
+    assert(round.sequence.every(value => (value % 2 === 0 ? 'even' : 'odd') === round.targetParity),
+      'Each term must preserve its requested parity.');
+  });
+  const counts = question.sequenceRounds.reduce((total, round) => {
+    total[round.targetParity] = (total[round.targetParity] || 0) + 1;
+    return total;
+  }, {});
+  assert.deepEqual(counts, { even: 2, odd: 2 },
+    'Each sequence set must distribute the four parts evenly between even and odd targets.');
 }
 
 assert.notEqual(

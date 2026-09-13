@@ -41,6 +41,8 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
     const progressTrack = document.getElementById('game-question-progress');
     const leftPanel = document.querySelector('#game-play-view .play-left');
     const rightPanel = document.querySelector('#game-play-view .play-right');
+    const bubble = document.getElementById('cat-speech-bubble');
+    const cat = document.getElementById('play-cat-img');
     const rows = [...document.querySelectorAll('.multi-choice-subquestion h3')].map(element => element.textContent.trim());
     const commonPrompt = questionBox.querySelector('.question-shared-prompt');
     return {
@@ -59,6 +61,9 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
       currentSegmentCount: progressTrack.querySelectorAll('.is-current').length,
       leftGradient: getComputedStyle(leftPanel).backgroundImage,
       rightGradient: getComputedStyle(rightPanel).backgroundImage,
+      bubbleRadius: Number.parseFloat(getComputedStyle(bubble).borderTopLeftRadius),
+      bubbleGap: cat.getBoundingClientRect().top - bubble.getBoundingClientRect().bottom,
+      catAreaOverflow: getComputedStyle(cat.parentElement).overflow,
       commonPromptText: commonPrompt?.textContent.trim() || '',
       commonPromptCount: questionBox.querySelectorAll('.question-shared-prompt').length,
       rows
@@ -70,8 +75,8 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
   expect(layout.shellBackground).not.toBe('rgb(255, 255, 255)');
   expect(layout.questionBackground).not.toBe('rgb(255, 255, 255)');
   expect(layout.questionGradient).toContain('linear-gradient');
-  expect(layout.practiceStatus).toBe('Bài đang làmTìm số thích hợp điền vào dãy:');
-  expect(layout.studentInfoVisible).toBe(false);
+  expect(layout.practiceStatus).toBe('Bạn đang làm bài Luyện tậpVUI HỌC TOÁN');
+  expect(layout.studentInfoVisible).toBe(true);
   expect(layout.scoreDisplayVisible).toBe(false);
   expect(layout.questionText).toBe('Dãy số được lập theo quy luật. Số thích hợp điền vào chỗ trống là số nào?');
   expect(layout.progressVisible).toBe(true);
@@ -80,6 +85,9 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
   expect(layout.leftGradient).toContain('linear-gradient');
   expect(layout.rightGradient).toContain('linear-gradient');
   expect(layout.leftGradient).not.toBe(layout.rightGradient);
+  expect(layout.bubbleRadius).toBeGreaterThanOrEqual(22);
+  expect(layout.bubbleGap).toBeGreaterThanOrEqual(10);
+  expect(layout.catAreaOverflow).toBe('visible');
   expect(layout.commonPromptCount).toBe(1);
   expect(layout.commonPromptText).toContain('Dãy số được lập theo quy luật');
   expect(layout.rows.every(text => !text.includes('Dãy số được lập theo quy luật'))).toBe(true);
@@ -98,7 +106,36 @@ test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạ
       shellFits: shell.scrollHeight <= shell.clientHeight
     };
   });
+  await page.screenshot({ path: testInfo.outputPath('gameplay-shell-tablet.png'), fullPage: true });
   expect(tabletLayout).toEqual({ pageOverflow: false, horizontalOverflow: false, leftFits: true, rightFits: true, shellFits: true });
+});
+
+test('khung trạng thái gameplay giữ nhãn ngắn theo môn học và lượt luyện đề', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const labels = await page.evaluate(question => {
+    app.data.currentUser = { username: 'sidebar-student', fullname: 'Bùi Cát Vy Anh', role: 'student', classlevel: '4', class_name: '4/4' };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question], subject: 'math', examName: '' };
+    app.game.loadQuestion();
+    const readStatus = () => document.getElementById('game-practice-status').textContent.replace(/\s+/g, ' ').trim();
+    const math = readStatus();
+    app.game.state.subject = 'vietnamese';
+    app.game.loadQuestion();
+    const vietnamese = readStatus();
+    app.game.state.examName = 'Đề giữa kỳ';
+    app.game.loadQuestion();
+    return { math, vietnamese, exam: readStatus() };
+  }, makeSharedPromptQuestion());
+
+  expect(labels).toEqual({
+    math: 'Bạn đang làm bài Luyện tậpVUI HỌC TOÁN',
+    vietnamese: 'Bạn đang làm bài Luyện tậpVUI HỌC TIẾNG VIỆT',
+    exam: 'Bạn đang làm bài Luyện ĐềLUYỆN ĐỀ'
+  });
 });
 
 test('panel phải giữ vòng tiến độ, nút hành động và lời giải theo đúng thứ tự', async ({ page }) => {
@@ -128,7 +165,9 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
       ringLabel: ring.getAttribute('aria-label'),
       progressText: document.getElementById('game-progress-copy').textContent.trim(),
       progressCopyWidth: document.getElementById('game-progress-copy').getBoundingClientRect().width,
-      verticalCenters: [ring, action, solutionSlot].map(centerRatio),
+      verticalCenters: [ring, action].map(centerRatio),
+      ringWidth: ring.getBoundingClientRect().width,
+      solutionSlotVisible: getComputedStyle(solutionSlot).display !== 'none',
       speechBubbleVisible: getComputedStyle(document.getElementById('cat-speech-bubble')).display !== 'none',
       actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label')
     };
@@ -141,7 +180,8 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
   expect(initial.progressCopyWidth).toBeLessThanOrEqual(2);
   expect(initial.verticalCenters[0]).toBeCloseTo(.3, 1);
   expect(initial.verticalCenters[1]).toBeCloseTo(.5, 1);
-  expect(initial.verticalCenters[2]).toBeCloseTo(.7, 1);
+  expect(initial.ringWidth).toBeGreaterThanOrEqual(132);
+  expect(initial.solutionSlotVisible).toBe(false);
   expect(initial.speechBubbleVisible).toBe(true);
   expect(initial.actionLabel).toBe('Kiểm tra');
 
@@ -166,13 +206,15 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
     ringVisible: getComputedStyle(document.getElementById('game-progress-ring')).display !== 'none',
     ringProgress: getComputedStyle(document.getElementById('game-progress-ring')).getPropertyValue('--ring-progress').trim(),
     actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label'),
-    solutionText: document.getElementById('explanation-box').textContent
+    solutionText: document.getElementById('explanation-box').textContent,
+    solutionSlotVisible: getComputedStyle(document.getElementById('game-progress-content')).display !== 'none'
   }));
   expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
   expect(afterCheck.ringVisible).toBe(true);
   expect(afterCheck.ringProgress).toBe('100%');
   expect(afterCheck.actionLabel).toBe('Tiếp tục');
   expect(afterCheck.solutionText).toContain('Lời giải');
+  expect(afterCheck.solutionSlotVisible).toBe(true);
 
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
@@ -206,7 +248,8 @@ test('bốn câu con hiển thị thành lưới hai hàng hai cột như card l
         left: Math.round(rect.left),
         width: rect.width,
         height: rect.height,
-        gradient: getComputedStyle(element).backgroundImage
+        gradient: getComputedStyle(element).backgroundImage,
+        promptFontSize: Number.parseFloat(getComputedStyle(element.querySelector('h3')).fontSize)
       };
     });
     const optionGrid = getComputedStyle(cards.length ? document.querySelector('.multi-choice-subquestion__options') : document.body);
@@ -221,6 +264,7 @@ test('bốn câu con hiển thị thành lưới hai hàng hai cột như card l
   expect(grid.cards.every(card => card.height / card.width >= .65)).toBe(true);
   expect(new Set(grid.cards.map(card => card.gradient)).size).toBe(4);
   expect(grid.optionColumns).toBe(2);
+  expect(grid.cards.every(card => card.promptFontSize >= 19)).toBe(true);
 });
 
 test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn thẻ câu hỏi', async ({ page }) => {
