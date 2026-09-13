@@ -2839,6 +2839,62 @@ const app = {
             const compactNumber = normalized.replace(/\s/g, '');
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
+        getAnswerGroups(question) {
+            const answerValues = Array.isArray(question?.statements)
+                ? question.statements.map(statement => String(statement?.answer ?? '').trim())
+                : this.getAnsArr(String(question?.ans || ''));
+            const structuredParts = [
+                question?.subquestions,
+                question?.statements,
+                question?.comparisonRows,
+                question?.angleItems,
+                question?.angleCountRows,
+                question?.sequenceRounds,
+                question?.practiceRows
+            ].find(parts => Array.isArray(parts) && parts.length);
+            const explicitCounts = app.data.getValidPartAnswerCounts(question, answerValues.length);
+            let partAnswerCounts = explicitCounts;
+
+            // Các template cũ chỉ có chuỗi đáp án nhưng vẫn khai báo bốn dòng
+            // a–d trong đề. Khi số đáp án trùng số dòng, mỗi dòng là một nhóm.
+            if (!partAnswerCounts && structuredParts?.length === answerValues.length) {
+                partAnswerCounts = new Array(structuredParts.length).fill(1);
+            }
+            if (!partAnswerCounts && answerValues.length > 1 && answerValues.length <= 4) {
+                partAnswerCounts = new Array(answerValues.length).fill(1);
+            }
+
+            if (!partAnswerCounts) {
+                return [{ label: '', answers: answerValues }];
+            }
+
+            let offset = 0;
+            return partAnswerCounts.map((count, index) => {
+                const part = structuredParts?.[index];
+                const fallbackLabel = String.fromCharCode(97 + index);
+                const label = String(part?.label || fallbackLabel)
+                    .trim()
+                    .replace(/[.)]$/, '')
+                    .toLocaleLowerCase('vi-VN') || fallbackLabel;
+                const answers = answerValues.slice(offset, offset + count);
+                offset += count;
+                return { label, answers };
+            });
+        },
+        showInlineAnswerCorrection(element, correctAnswer) {
+            if (!element || !String(correctAnswer ?? '').trim()) return;
+            if (element._answerCorrection?.isConnected) element._answerCorrection.remove();
+
+            const correction = document.createElement('span');
+            correction.className = 'answer-correction';
+            correction.setAttribute('role', 'note');
+            const formattedAnswer = app.data.formatMathText(correctAnswer);
+            correction.setAttribute('aria-label', `Đáp án đúng: ${formattedAnswer}`);
+            correction.textContent = `Đúng: ${formattedAnswer}`;
+            element.parentElement?.classList.add('has-answer-correction');
+            element.after(correction);
+            element._answerCorrection = correction;
+        },
         showCorrectAnswerReveal(question) {
             const questionContainer = document.getElementById('game-question-container');
             if (!questionContainer) return;
@@ -2854,7 +2910,21 @@ const app = {
             label.textContent = '✓ Đáp án đúng';
             const answer = document.createElement('strong');
             answer.className = 'game-answer-reveal__value';
-            answer.textContent = app.data.formatMathText(question?.ans || '');
+            const groups = this.getAnswerGroups(question);
+            if (groups.length > 1) {
+                const parts = document.createElement('span');
+                parts.className = 'game-answer-reveal__parts';
+                groups.forEach(group => {
+                    const part = document.createElement('span');
+                    part.className = 'game-answer-reveal__part';
+                    const answerText = group.answers.map(value => app.data.formatMathText(value)).join(', ');
+                    part.textContent = group.label ? `${group.label}) ${answerText}` : answerText;
+                    parts.appendChild(part);
+                });
+                answer.appendChild(parts);
+            } else {
+                answer.textContent = groups[0]?.answers.map(value => app.data.formatMathText(value)).join(', ') || '';
+            }
             reveal.append(label, answer);
             questionContainer.appendChild(reveal);
         },
@@ -3875,23 +3945,26 @@ const app = {
                     for (let i = 0; i < parts.length - 1; i++) {
                         const inp = document.getElementById(`fill-input-${i}`);
                         if (inp) {
-                            if (this.normalizeFillAnswer(inp.value) === this.normalizeFillAnswer(ansArr[i])) {
+                            const inputIsCorrect = this.normalizeFillAnswer(inp.value) === this.normalizeFillAnswer(ansArr[i]);
+                            inp.classList.remove('correct', 'wrong');
+                            if (inputIsCorrect) {
                                 inp.classList.add('correct');
                             } else {
                                 inp.classList.add('wrong');
+                                this.showInlineAnswerCorrection(inp, ansArr[i]);
                             }
                         }
                     }
                 } else {
-                    const inp = document.querySelector('.fill-input');
+                    const inp = document.querySelector('.fill-input, .magic-input');
                     if (inp) {
+                        inp.classList.remove('correct', 'wrong');
                         if (isCorrect) inp.classList.add('correct');
-                        else inp.classList.add('wrong');
+                        else {
+                            inp.classList.add('wrong');
+                            this.showInlineAnswerCorrection(inp, ansArr[0]);
+                        }
                     }
-                }
-
-                if (!isCorrect) {
-                    this.showCorrectAnswerReveal(q);
                 }
             } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 const expectedAnswers = q.subquestions.map(subquestion => String(subquestion.answer || '').trim());
@@ -3979,7 +4052,6 @@ const app = {
                                 b.appendChild(correctIcon);
                             }
                         });
-                        this.showCorrectAnswerReveal(q);
                     }
                 }
             } else if (qType === 'Kéo thả') {
@@ -4000,12 +4072,9 @@ const app = {
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
                         slot.appendChild(icon);
+                        this.showInlineAnswerCorrection(slot, ansArr[i]);
                     }
                 });
-
-                if (!isCorrect) {
-                    this.showCorrectAnswerReveal(q);
-                }
             } else if (qType === 'Chuỗi quy luật') {
                 const ansArr = this.getAnsArr(q.ans);
                 const selectedArr = this.getAnsArr(this.state.selectedAns);
@@ -4025,12 +4094,9 @@ const app = {
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
                         slot.appendChild(icon);
+                        this.showInlineAnswerCorrection(slot, ansArr[i]);
                     }
                 });
-
-                if (!isCorrect) {
-                    this.showCorrectAnswerReveal(q);
-                }
             } else if (qType === 'Đối chiếu trùng khớp') {
                 const pairs = this.state.matchingPairs || [];
                 const correctPairsStr = q.ans.split(',').map(s => s.trim());
@@ -4142,6 +4208,10 @@ const app = {
             scoreResult = this.calculateQuestionScore(q, selectedForScore);
             isCorrect = scoreResult.isCorrect;
             this.state.score += scoreResult.points;
+
+            // Mọi loại câu đều có cùng một vùng đáp án sau khi chấm sai,
+            // kể cả trắc nghiệm/Đúng-Sai/matching vốn trước đây chỉ tô màu lựa chọn.
+            if (!isCorrect) this.showCorrectAnswerReveal(q);
 
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
                 document.querySelectorAll('.safe-password-illustration').forEach(safeImage => {

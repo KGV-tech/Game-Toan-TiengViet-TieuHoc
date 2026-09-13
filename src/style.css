@@ -3992,6 +3992,35 @@ input[type="text"], input[type="password"], select, textarea {
 }
 #game-play-view .game-answer-reveal__label { color: #a5f3c8; font-weight: 900; white-space: nowrap; }
 #game-play-view .game-answer-reveal__value { min-width: 0; color: var(--template-text); font-size: clamp(1rem, 1.35vw, 1.25rem); line-height: 1.45; overflow-wrap: anywhere; }
+#game-play-view .game-answer-reveal__parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 4px 14px; width: 100%; }
+#game-play-view .game-answer-reveal__part { display: block; min-width: 0; }
+
+/* Kiểu cô giáo sửa bài: gạch đỏ đáp án học sinh sai và ghi đáp án đúng ngay cạnh ô. */
+#game-play-view .answer-correction {
+    display: inline-flex;
+    align-items: center;
+    min-width: max-content;
+    margin-inline: 4px;
+    color: #ff7182;
+    font-size: .92em;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+#game-play-view .answer-correction::before { content: '→'; margin-right: 4px; color: #ff7182; }
+#game-play-view .question-box--angle-drag .angle-drag-row.has-answer-correction {
+    grid-template-columns: auto 96px minmax(0, 1fr) max-content;
+}
+#game-play-view .play-center--four-comparisons .comparison-drag-row.has-answer-correction {
+    grid-template-columns: auto minmax(0, 1fr) auto max-content minmax(0, 1fr);
+}
+#game-play-view :is(.magic-input.wrong, .fill-input.wrong, .answer-state-wrong, .ans-btn.wrong, .tf-card.wrong-fill, .multi-choice-subquestion__option.wrong, .tf-statement__choices button.wrong-fill) {
+    text-decoration-line: line-through;
+    text-decoration-color: #ff7182;
+    text-decoration-thickness: 3px;
+    text-decoration-skip-ink: none;
+}
+#game-play-view :is(.magic-input.wrong, .fill-input.wrong) { color: #ffd1d7 !important; }
 
 #game-play-view .ans-btn,
 #game-play-view .tf-card,
