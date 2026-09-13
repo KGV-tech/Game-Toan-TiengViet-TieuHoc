@@ -332,6 +332,124 @@ WHERE NOT EXISTS (
       AND classlevel = 'Lớp 4' AND subject = 'Toán' AND topic = '1. Ôn tập và bổ sung'
 );
 
+-- Grade 4 Math, Topic 1 follow-up repairs.
+-- Keep the two old min/max rows for history, but remove them from the active
+-- pool after replacing them with one mixed four-part template.
+UPDATE public.question_templates
+SET lesson = 'g4-math-hk1-b01',
+    prompt_template = '{question}'
+WHERE classlevel = 'Lớp 4'
+  AND subject = 'Toán'
+  AND topic = '1. Ôn tập và bổ sung'
+  AND generator_key IN (
+      'number.digit_at_place', 'number.compose_from_places',
+      'number.missing_expanded_addend', 'number.neighbor_numbers',
+      'number.compare_number_forms', 'number.match_number_words',
+      'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons',
+      'number.four_operations_fill_blanks', 'number.four_operations_expressions'
+  );
+
+UPDATE public.question_templates
+SET prompt_template = '{question}'
+WHERE id = '5fa3511a-2cb6-4f96-a7ea-7d2173edafe7'::uuid
+  AND generator_key = 'number.missing_expanded_addend';
+
+UPDATE public.question_templates
+SET is_active = false,
+    lesson = 'g4-math-hk1-b01'
+WHERE classlevel = 'Lớp 4'
+  AND subject = 'Toán'
+  AND topic = '1. Ôn tập và bổ sung'
+  AND generator_key IN ('number.smallest_of_four', 'number.largest_of_four');
+
+UPDATE public.question_templates
+SET lesson = 'g4-math-hk1-b01',
+    question_type = 'Chuỗi Quy luật',
+    prompt_template = '{question}',
+    config = COALESCE(config, '{}'::jsonb) || '{"minimum":10,"maximum":99999,"allowedSteps":[1,10,100,1000,10000,-1,-10,-100,-1000,-10000],"sequenceLengthMin":6,"sequenceLengthMax":6,"blankCountMin":1,"blankCountMax":3}'::jsonb,
+    is_active = true
+WHERE classlevel = 'Lớp 4'
+  AND subject = 'Toán'
+  AND topic = '1. Ôn tập và bổ sung'
+  AND generator_key = 'number.natural_sequence';
+
+UPDATE public.question_templates
+SET lesson = 'g4-math-hk1-b01',
+    question_type = 'Đúng/Sai',
+    prompt_template = 'Chọn Đúng/Sai?',
+    config = COALESCE(config, '{}'::jsonb) || '{"minimum":1001,"maximum":99999,"statementKinds":["place","comparison"],"statementLayout":"b01-four-types"}'::jsonb,
+    is_active = true
+WHERE classlevel = 'Lớp 4'
+  AND subject = 'Toán'
+  AND topic = '1. Ôn tập và bổ sung'
+  AND generator_key = 'number.place_value_true_false';
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, lesson,
+    question_type, generator_key, prompt_template, config, is_active
+)
+SELECT
+    'Tìm số bé nhất và số lớn nhất trong các nhóm bốn số',
+    'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung', 'g4-math-hk1-b01',
+    'Trắc nghiệm', 'number.min_max_of_four', '{question}',
+    '{"minimum":10,"maximum":99999}'::jsonb, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
+      AND topic = '1. Ôn tập và bổ sung'
+      AND generator_key = 'number.min_max_of_four'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, lesson,
+    question_type, generator_key, prompt_template, config, is_active
+)
+SELECT
+    'Dãy số theo quy luật · Bài 1',
+    'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung', 'g4-math-hk1-b01',
+    'Chuỗi Quy luật', 'number.natural_sequence', '{question}',
+    '{"minimum":10,"maximum":99999,"allowedSteps":[1,10,100,1000,10000,-1,-10,-100,-1000,-10000],"sequenceLengthMin":6,"sequenceLengthMax":6,"blankCountMin":1,"blankCountMax":3}'::jsonb, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
+      AND topic = '1. Ôn tập và bổ sung'
+      AND generator_key = 'number.natural_sequence'
+      AND is_active
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, lesson,
+    question_type, generator_key, prompt_template, config, is_active
+)
+SELECT
+    'Làm tròn số đến hàng chục, trăm, nghìn, chục nghìn',
+    'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung', 'g4-math-hk1-b01',
+    'Trắc nghiệm', 'number.round_number', '{question}',
+    '{"minimum":10,"maximum":99999,"allowedPlaces":["tens","hundreds","thousands","tenThousands"]}'::jsonb, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
+      AND topic = '1. Ôn tập và bổ sung'
+      AND generator_key = 'number.round_number'
+);
+
+INSERT INTO public.question_templates (
+    name, classlevel, subject, semester, topic, lesson,
+    question_type, generator_key, prompt_template, config, is_active
+)
+SELECT
+    'Đúng/Sai: hàng và ba kiểu so sánh · Bài 1',
+    'Lớp 4', 'Toán', 'Học kỳ 1', '1. Ôn tập và bổ sung', 'g4-math-hk1-b01',
+    'Đúng/Sai', 'number.place_value_true_false', 'Chọn Đúng/Sai?',
+    '{"minimum":1001,"maximum":99999,"statementKinds":["place","comparison"],"statementLayout":"b01-four-types"}'::jsonb, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.question_templates
+    WHERE classlevel = 'Lớp 4' AND subject = 'Toán'
+      AND topic = '1. Ôn tập và bổ sung'
+      AND generator_key = 'number.place_value_true_false'
+      AND is_active
+);
+
 -- Grade 4 Math, Topic 2: Góc và đơn vị đo góc.
 -- These generators own their geometry, so their configuration intentionally remains empty.
 INSERT INTO public.question_templates (

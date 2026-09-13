@@ -231,7 +231,7 @@ test('mọi nhóm template tạo sẵn đều giữ bề mặt tối và font gi
       const question = window.Grade4MathTemplates.generateQuestion(templateId, {}, (() => { let seed = 42; return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000); })());
       app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [question], answerSubmitted: false };
       app.game.loadQuestion();
-      const controls = [...document.querySelectorAll('#game-play-view :is(.ans-btn, .tf-statement, .drag-slot, .magic-input, .matching-item)')];
+      const controls = [...document.querySelectorAll('#game-play-view :is(.ans-btn, .tf-statement, .drag-slot, .magic-input, .seq-slot, .matching-item)')];
       return {
         templateId,
         hasControls: controls.length > 0,

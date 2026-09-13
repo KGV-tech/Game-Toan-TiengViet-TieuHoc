@@ -1181,7 +1181,7 @@ test('chọn chủ đề giữ khung rộng cho nhiều chủ đề và mèo má
   expect(examPanel.width).toBeLessThanOrEqual(1280);
 });
 
-test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấy chủ đề đã khóa', async ({ page }) => {
+test('admin khóa chủ đề nhưng vẫn test được, lộ trình học sinh tôn trọng khóa', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -1224,9 +1224,9 @@ test('admin khóa chủ đề nhưng vẫn test được, học sinh chỉ thấ
     app.data.currentUser = { username: 'student', role: 'student', classlevel: '5' };
     app.game.openConfig('math');
   });
-  const studentLockedTopic = page.locator('#topics-list .topic-card', { hasText: lockedTopicName.trim().replace('Đã khóa', '').trim() }).first();
-  await expect(studentLockedTopic).toHaveClass(/topic-card--locked/);
-  await expect(studentLockedTopic.locator('input')).toBeDisabled();
+  await expect(page.locator('#student-learning-title')).toHaveText('Hôm nay mình học gì?');
+  const studentLockedStep = page.locator('#topics-list .student-learning-step--locked').first();
+  await expect(studentLockedStep).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Giao diện Test', exact: true })).toBeHidden();
 
   await page.evaluate(() => {
@@ -1254,8 +1254,7 @@ test('học sinh chỉ mở chủ đề kế tiếp sau một lượt luyện t�
       firstLocked: app.game.isStudentProgressionLocked('5', 'math', firstTopic),
       secondLocked: app.game.isStudentProgressionLocked('5', 'math', secondTopic)
     };
-    const firstCard = document.querySelector('#topics-list .topic-card');
-    const secondCard = document.querySelectorAll('#topics-list .topic-card')[1];
+    const initialPlan = app.game.getLearningPlan();
 
     app.data.currentUser.history.push({
       title: 'Toán', topic: firstTopic, score: 9, questionCount: 10, details: Array(10).fill({})
@@ -1269,24 +1268,27 @@ test('học sinh chỉ mở chủ đề kế tiếp sau một lượt luyện t�
     const nextTopic = topics[2];
     const nextLocked = app.game.isStudentProgressionLocked('5', 'math', nextTopic);
     app.data.settings.topicUnlockOverrides = { '5': { math: { [nextTopic]: true } } };
+    const planAfterPerfect = app.game.getLearningPlan();
 
     return {
       before,
-      initialCards: { first: firstCard.classList.contains('topic-card--locked'), second: secondCard.classList.contains('topic-card--locked') },
+      initialSteps: { first: initialPlan.states[0].state, second: initialPlan.states[1].state },
       afterNine,
       afterPerfect,
       nextLocked,
-      teacherOpenedNext: app.game.isStudentProgressionLocked('5', 'math', nextTopic)
+      teacherOpenedNext: app.game.isStudentProgressionLocked('5', 'math', nextTopic),
+      nextStepAfterTeacherOverride: planAfterPerfect.states[2].state
     };
   });
 
   expect(progression).toEqual({
     before: { firstLocked: false, secondLocked: true },
-    initialCards: { first: false, second: true },
+    initialSteps: { first: 'current', second: 'locked' },
     afterNine: true,
     afterPerfect: false,
     nextLocked: true,
-    teacherOpenedNext: false
+    teacherOpenedNext: false,
+    nextStepAfterTeacherOverride: 'available'
   });
 });
 
