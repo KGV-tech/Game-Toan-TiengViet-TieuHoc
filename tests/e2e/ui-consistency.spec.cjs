@@ -138,11 +138,13 @@ test('shell học sinh vẫn gọn và cuộn nội bộ trên tablet ngang', as
   const state = await page.locator('#game-config-view .station-shell').evaluate(shell => ({
     bounds: shell.getBoundingClientRect().toJSON(),
     overflowX: getComputedStyle(shell).overflowX,
+    overflowY: getComputedStyle(shell).overflowY,
     rootOverflow: document.documentElement.scrollWidth > window.innerWidth
   }));
   expect(state.bounds.x).toBeGreaterThanOrEqual(12);
   expect(state.bounds.right).toBeLessThanOrEqual(1012);
-  expect(state.overflowX).toBe('auto');
+  expect(state.overflowX).toBe('hidden');
+  expect(state.overflowY).toBe('hidden');
   expect(state.rootOverflow).toBe(false);
 
   expect(supabaseRequests).toEqual([]);

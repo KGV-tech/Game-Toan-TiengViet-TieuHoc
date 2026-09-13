@@ -36,8 +36,15 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-shell')).toHaveClass(/student-learning-shell--cosmic/);
   await expect(page.locator('.student-learning-shell')).toHaveClass(/student-learning-shell--mockup/);
   await expect(page.locator('.student-learning-hud')).toBeVisible();
+  await expect(page.locator('.student-learning-hud__brand strong')).toHaveText('VUI HỌC TOÁN');
+  await expect(page.locator('.student-learning-hud__brand small')).toHaveText('Lớp 4');
+  await expect(page.locator('.student-learning-hud__profile')).toContainText('Học sinh Minh họa');
+  await expect(page.locator('.student-learning-hud__avatar')).toBeVisible();
+  await expect(page.locator('.student-learning-hud__headline')).toHaveCount(0);
+  await expect(page.locator('.student-learning-hud__reward')).toHaveCount(0);
   await expect(page.locator('.student-learning-screen--daily')).toBeVisible();
-  await expect(page.locator('.student-learning-mascot-bubble')).toBeVisible();
+  await expect(page.locator('.student-learning-mascot-bubble')).toBeHidden();
+  await expect(page.locator('#game-config-view .config-left')).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Hôm nay mình học gì?' })).toBeVisible();
   await expect(page.locator('.student-learning-mission')).toContainText('Bài 1. Ôn tập các số đến 100 000');
   await expect(page.locator('.student-learning-mission')).toHaveAttribute('data-learning-focus', 'next');
@@ -63,13 +70,17 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
     recommended: app.game.getLearningPlan().recommended?.id,
     release: app.game.getLearningPlan().release?.id,
     visibleWidth: document.querySelector('#game-config-view .station-shell').getBoundingClientRect().right <= window.innerWidth,
-    overflowX: document.documentElement.scrollWidth > window.innerWidth
+    overflowX: document.documentElement.scrollWidth > window.innerWidth,
+    configOverflowY: getComputedStyle(document.querySelector('#game-config-view')).overflowY,
+    shellOverflowY: getComputedStyle(document.querySelector('#game-config-view .station-shell')).overflowY
   }));
   expect(state).toEqual({
     recommended: 'g4-math-hk1-b01',
     release: 'g4-math-hk1-b03',
     visibleWidth: true,
-    overflowX: false
+    overflowX: false,
+    configOverflowY: 'hidden',
+    shellOverflowY: 'hidden'
   });
   await page.screenshot({ path: testInfo.outputPath('learning-path-desktop.png') });
 
@@ -80,6 +91,17 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-topic-nav')).toBeVisible();
   await expect(page.locator('.student-learning-route-board')).toBeVisible();
   await expect(page.locator('.student-learning-release-badge')).toContainText('Đã mở đến Bài 3');
+  const routeLayout = await page.locator('.student-learning-screen--route').evaluate(screen => {
+    const topicList = screen.querySelector('.student-learning-topic-nav__list');
+    const board = screen.querySelector('.student-learning-route-board');
+    return {
+      topicColumns: getComputedStyle(topicList).gridTemplateColumns.trim().split(/\s+/).length,
+      topicOverflowY: getComputedStyle(topicList).overflowY,
+      boardOverflowY: getComputedStyle(board).overflowY,
+      screenOverflowY: getComputedStyle(screen).overflowY
+    };
+  });
+  expect(routeLayout).toEqual({ topicColumns: 2, topicOverflowY: 'auto', boardOverflowY: 'auto', screenOverflowY: 'hidden' });
   await expect(page.locator('[data-learning-group-jump]').first()).toBeVisible();
   await expect(page.locator('.student-learning-route-board [data-learning-entry="g4-math-hk1-b04"]')).toBeDisabled();
   const secondTopic = page.locator('[data-learning-group-jump]').nth(1);
@@ -99,10 +121,12 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   const fullTabletState = await page.locator('#game-config-view .station-shell').evaluate(shell => ({
     right: shell.getBoundingClientRect().right,
     viewport: window.innerWidth,
-    rootOverflow: document.documentElement.scrollWidth > window.innerWidth
+    rootOverflow: document.documentElement.scrollWidth > window.innerWidth,
+    overflowY: getComputedStyle(shell).overflowY
   }));
   expect(fullTabletState.right).toBeLessThanOrEqual(fullTabletState.viewport);
   expect(fullTabletState.rootOverflow).toBe(false);
+  expect(fullTabletState.overflowY).toBe('hidden');
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
