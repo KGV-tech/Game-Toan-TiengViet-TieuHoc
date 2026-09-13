@@ -6556,12 +6556,17 @@ const app = {
             document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
+                { id: 'learning-path', label: 'Lộ trình học' },
                 { id: 'settings', label: 'Điều chỉnh' },
                 { id: 'quests', label: 'Quản lý Nhiệm vụ' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
             const treasureTitle = document.getElementById('treasure-title');
-            if (treasureTitle) treasureTitle.textContent = tab === 'settings' ? 'Hành trình tri thức' : 'Cài Đặt Hệ Thống';
+            const titleByTab = {
+                'learning-path': 'Hành Trình Tri Thức',
+                settings: 'Cài Đặt Hệ Thống'
+            };
+            if (treasureTitle) treasureTitle.textContent = titleByTab[tab] || 'Cài Đặt Hệ Thống';
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
@@ -6584,6 +6589,7 @@ const app = {
             else if (tab === 'questions') this.renderQuestions(box);
             else if (tab === 'exams') this.renderExams(box);
             else if (tab === 'players') this.renderPlayers(box);
+            else if (tab === 'learning-path') this.renderLearningPath(box);
             else if (tab === 'settings') this.renderSettings(box);
             else if (tab === 'quests') this.renderQuests(box);
         },
@@ -7615,9 +7621,8 @@ const app = {
             this.renderLessonReleaseEditor();
             alert(draft.lesson ? 'Đã lưu mốc học tập cho lớp.' : 'Đã bỏ mốc Bài học; lớp quay về phạm vi hiện có.');
         },
-        renderSettings(box) {
-            const hardTime = Number(app.data.settings.hardTimeLimit) || 10;
-            const examTime = Number(app.data.settings.examTimeLimit) || 30;
+        renderLearningPath(box) {
+            if (!box) return;
             box.innerHTML = `
                 <div class="learning-release-dashboard">
                 <section class="learning-release-workspace learning-release-workspace--mockup" aria-labelledby="learning-release-title">
@@ -7647,6 +7652,13 @@ const app = {
                     <div class="learning-release-class-card__tip"><span aria-hidden="true">↻</span> Học sinh được ôn lại bài trước</div>
                 </aside>
                 </div>
+            `;
+            this.renderLessonReleaseEditor();
+        },
+        renderSettings(box) {
+            const hardTime = Number(app.data.settings.hardTimeLimit) || 10;
+            const examTime = Number(app.data.settings.examTimeLimit) || 30;
+            box.innerHTML = `
                 <section class="settings-workspace" aria-label="Điều chỉnh hệ thống">
                     <header class="settings-workspace__hero">
                         <div>
@@ -7688,7 +7700,6 @@ const app = {
                     </section>
                 </section>
             `;
-            this.renderLessonReleaseEditor();
         },
         async saveSettings() {
             const hardTime = parseInt(document.getElementById('setting-hard-time').value, 10);

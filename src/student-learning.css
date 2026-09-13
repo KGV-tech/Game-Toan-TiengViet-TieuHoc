@@ -1890,10 +1890,9 @@
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-panel {
         position: relative;
-        display: grid !important;
-        grid-template-columns: clamp(155px, 15vw, 210px) minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 14px 20px;
+        display: flex !important;
+        flex-direction: column;
+        gap: 14px;
         box-sizing: border-box;
         width: min(96vw, 1640px) !important;
         max-width: min(96vw, 1640px) !important;
@@ -1912,74 +1911,62 @@
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row {
         display: flex !important;
-        grid-column: 1 / -1;
         align-items: center;
-        justify-content: flex-start;
-        width: auto;
-        max-width: none;
-        margin: 0;
-        padding: 2px 0 12px;
-        border: 0;
-        border-bottom: 1px solid rgba(87, 226, 255, .3);
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-        backdrop-filter: none;
+        justify-content: center;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0 auto 12px;
+        padding: 9px clamp(18px, 2.5vw, 32px);
+        border: 1px solid rgba(126, 224, 244, .46);
+        border-radius: 14px;
+        background: rgba(5, 20, 33, .78);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 9px 22px rgba(0, 0, 0, .24);
+        backdrop-filter: blur(8px);
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row::before {
-        display: grid;
-        width: 40px;
-        height: 40px;
-        margin-right: 11px;
-        place-items: center;
-        border: 2px solid var(--mockup-cyan);
-        border-radius: 50%;
-        background: linear-gradient(145deg, #18b6dc, #4d5fce);
-        color: #fff3a0;
-        content: '✦';
-        font-size: 1.2rem;
-        box-shadow: 0 0 18px rgba(88, 233, 255, .34);
+        display: none;
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #treasure-title {
         color: #ffe080;
         font-size: clamp(1.45rem, 2.8vw, 2.3rem);
         letter-spacing: .015em;
-        text-align: left;
+        text-align: center;
         text-shadow: 0 3px 0 rgba(112, 60, 26, .7), 0 0 18px rgba(255, 212, 94, .3);
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs {
         display: flex !important;
-        flex-direction: column;
+        flex: 0 0 auto;
+        flex-direction: row;
         flex-wrap: nowrap;
-        grid-column: 1;
-        grid-row: 2;
-        align-items: stretch;
+        align-items: end;
         justify-content: flex-start;
-        gap: 8px;
+        gap: 10px;
+        width: 100%;
         min-width: 0;
-        margin: 0;
-        padding: 0;
-        overflow: auto;
-        border: 0;
+        margin: 0 0 16px;
+        padding: 0 0 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-bottom: 1px solid rgba(250, 204, 21, .34);
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn {
-        width: 100%;
-        min-width: 0;
+        width: auto;
+        min-width: 190px;
         min-height: 48px;
-        padding: 11px 12px;
-        border: 1px solid rgba(115, 188, 220, .3);
-        border-bottom: 2px solid rgba(30, 118, 166, .75);
-        border-radius: 13px;
-        background: rgba(7, 62, 101, .62);
-        color: #bde2f2;
-        font-size: .75rem;
+        padding: 13px 20px;
+        border: 1px solid rgba(133, 160, 194, .52);
+        border-bottom: 3px solid rgba(133, 160, 194, .52);
+        border-radius: 15px 15px 7px 7px;
+        background: linear-gradient(145deg, rgba(58, 72, 93, .9), rgba(30, 43, 63, .96));
+        color: #d3dce9;
+        font-size: .92rem;
         font-weight: 900;
-        text-align: left;
-        box-shadow: none;
+        text-align: center;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .22);
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn:hover,
@@ -1991,8 +1978,8 @@
     }
 
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-content {
-        grid-column: 2;
-        grid-row: 2;
+        flex: 1 1 auto;
+        width: 100%;
         min-width: 0;
         min-height: 0;
         padding: 0 5px 0 0;
@@ -2232,19 +2219,6 @@
         line-height: 1.35;
     }
 
-    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-learning-mascot {
-        position: absolute;
-        right: 18px;
-        bottom: 12px;
-        z-index: 3;
-        display: block;
-        width: clamp(90px, 10vw, 145px);
-        filter: drop-shadow(0 12px 14px rgba(0, 0, 0, .4)) drop-shadow(0 0 16px rgba(88, 233, 255, .28));
-        pointer-events: none;
-    }
-
-    #treasure-modal .admin-learning-mascot { display: none; }
-
     @media (max-width: 1120px) {
         #game-config-view .student-learning-shell--mockup .student-learning-steps,
         #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-steps {
@@ -2319,7 +2293,6 @@
         }
 
         #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-panel {
-            grid-template-columns: 145px minmax(0, 1fr);
             gap: 12px;
             padding: 18px !important;
         }
@@ -2411,9 +2384,6 @@
             grid-column: auto;
         }
 
-        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-learning-mascot {
-            display: none;
-        }
     }
 
     @media (prefers-reduced-motion: reduce) {
