@@ -13,7 +13,7 @@ async function openAdmin(page) {
   });
 }
 
-test('Admin soạn câu hỏi thấy Bài học đúng điều kiện, học sinh vẫn chỉ thấy Chủ đề', async ({ page }) => {
+test('Admin soạn câu hỏi thấy Bài học đúng điều kiện, học sinh được dẫn vào lộ trình', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openAdmin(page);
   await page.evaluate(() => app.admin.switchTab('questions'));
@@ -43,8 +43,11 @@ test('Admin soạn câu hỏi thấy Bài học đúng điều kiện, học sin
   });
   await expect(page.locator('#game-config-view')).toBeVisible();
   await expect(page.locator('#game-config-view #topics-list')).toBeVisible();
-  await expect(page.locator('#game-config-view [id*="lesson"]')).toHaveCount(0);
-  await expect(page.locator('#game-config-view')).not.toContainText('Bài học');
+  await expect(page.locator('#student-learning-title')).toHaveText('Hôm nay mình học gì?');
+  await expect(page.locator('.student-learning-step[data-learning-entry="g4-math-hk1-b01"]')).toContainText('Bài 1. Ôn tập các số đến 100 000');
+  await expect(page.locator('.student-learning-step[data-learning-entry="g4-math-hk1-b02"]')).toBeDisabled();
+  await expect(page.locator('.student-learning-notice--guardrail')).toBeVisible();
+  await expect(page.locator('#game-start-btn')).toBeHidden();
 });
 
 test('Soạn đề Toán lớp 4 có bộ lọc Bài học và tự động chỉ bốc đúng bài đã chọn', async ({ page }) => {

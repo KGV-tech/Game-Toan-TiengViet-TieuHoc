@@ -537,10 +537,10 @@
     }
 
     #game-play-view .play-center--four-part-mc .multi-choice-subquestions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-rows: repeat(2, minmax(0, 1fr));
-        align-content: stretch;
-        height: 100%;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        align-content: start;
+        height: auto;
         gap: 10px !important;
     }
 
@@ -598,21 +598,50 @@
 
     #game-play-view .play-center--four-part-mc .multi-choice-subquestion__options {
         flex: 0 0 auto;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        width: 100%;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
         grid-auto-rows: minmax(38px, auto);
-        align-content: end;
+        align-content: center;
         gap: 7px !important;
         margin-top: auto;
     }
 
+    /* A four-part MC round is one horizontal answer row per subquestion.
+       Keep the compact two-by-two layout out of gameplay; it leaves large
+       empty square cards and is especially confusing for the Bài 1 groups. */
+    #game-play-view .play-center--four-part-mc .multi-choice-subquestion {
+        grid-template-columns: max-content minmax(0, 1fr) !important;
+        grid-template-rows: auto !important;
+        align-items: center;
+    }
+
+    #game-play-view .play-center--four-part-mc .multi-choice-subquestion--label-only .multi-choice-subquestion__label-only {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+    }
+
+    #game-play-view .play-center--four-part-mc .multi-choice-subquestion--label-only .multi-choice-subquestion__options {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        align-self: center;
+        margin-top: 0;
+    }
+
     #game-play-view .multi-choice-subquestion__heading { min-width: 0; gap: 7px; }
+
+    #game-play-view .play-center--four-part-mc .multi-choice-subquestion__heading {
+        width: 100%;
+        justify-content: flex-start;
+    }
 
     #game-play-view .multi-choice-subquestion h3 {
         min-width: 0;
+        width: 100%;
         margin: 0 0 5px !important;
         color: #eaf8ff !important;
         font-size: clamp(1rem, 1.45vw, 1.25rem) !important;
         line-height: 1.28 !important;
+        justify-content: flex-start;
         text-align: left;
     }
 
@@ -941,4 +970,1457 @@
     #game-play-view .measurement-word-problem-row--tone-3 .measurement-word-problem-row__label,
     #game-play-view .angle-drag-row--tone-3 > b,
     #game-play-view .angle-count-row--tone-3 .angle-count-row__label { color: #d1adff !important; }
+}
+
+/* Approved learning mockup: bright space-route surfaces for students and teachers. */
+@media screen {
+    :root {
+        --mockup-cyan: #58e9ff;
+        --mockup-gold: #ffd45e;
+        --mockup-green: #63e5a5;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) {
+        --mockup-sky-950: #06152d;
+        --mockup-sky-900: #0a2d55;
+        --mockup-sky-800: #0c5d93;
+        --mockup-cyan: #58e9ff;
+        --mockup-cyan-deep: #19a9db;
+        --mockup-gold: #ffd45e;
+        --mockup-green: #63e5a5;
+        padding: 14px !important;
+        overflow: auto !important;
+        background:
+            radial-gradient(circle at 8% 8%, rgba(55, 203, 255, .24), transparent 28%),
+            radial-gradient(circle at 92% 85%, rgba(114, 82, 231, .22), transparent 32%),
+            linear-gradient(135deg, #041126 0%, #082851 52%, #10275d 100%) !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+        box-sizing: border-box;
+        width: min(calc(100vw - 28px), 1540px) !important;
+        max-width: none !important;
+        height: calc(100dvh - 28px) !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        padding: clamp(18px, 2.4vw, 32px) clamp(20px, 3vw, 48px) !important;
+        overflow: auto !important;
+        border: 1px solid rgba(92, 224, 255, .52) !important;
+        border-radius: 22px !important;
+        background:
+            radial-gradient(circle at 88% 6%, rgba(77, 221, 255, .18), transparent 25%),
+            radial-gradient(circle at 6% 90%, rgba(113, 89, 232, .18), transparent 27%),
+            linear-gradient(145deg, rgba(5, 30, 64, .98), rgba(5, 21, 49, .98) 56%, rgba(15, 28, 74, .98)) !important;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset, 0 0 42px rgba(40, 211, 255, .15), 0 20px 55px rgba(0, 0, 0, .38) !important;
+        scrollbar-color: rgba(88, 233, 255, .7) rgba(3, 17, 38, .6);
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-layout {
+        display: block !important;
+        width: 100%;
+        min-height: 100%;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-top {
+        position: relative;
+        display: grid !important;
+        grid-template-columns: clamp(154px, 17vw, 230px) minmax(0, 1fr);
+        align-items: start !important;
+        gap: clamp(18px, 2.6vw, 42px) !important;
+        min-height: 100%;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-left {
+        position: fixed !important;
+        top: clamp(76px, 12vh, 132px);
+        left: max(24px, calc((100vw - min(calc(100vw - 28px), 1540px)) / 2 + 24px));
+        z-index: 4;
+        align-self: start;
+        grid-column: 1;
+        display: flex;
+        justify-content: flex-start;
+        width: auto;
+        min-height: 430px;
+        height: min(72vh, 600px);
+        padding: 28px 0 0;
+        transform: none !important;
+        pointer-events: auto;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-left .cat-avatar {
+        width: clamp(148px, 15vw, 220px) !important;
+        filter: drop-shadow(0 14px 16px rgba(0, 0, 0, .4)) drop-shadow(0 0 22px rgba(85, 226, 255, .38));
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-left #game-start-btn,
+    #game-config-view:has(.student-learning-shell--mockup) .screen-title-row,
+    #game-config-view:has(.student-learning-shell--mockup) .topic-header {
+        display: none !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-center {
+        grid-column: 2;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) .config-section {
+        width: 100%;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) #topics-list.student-learning-home {
+        display: block !important;
+        width: 100% !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    #game-config-view .student-learning-shell--mockup {
+        --route-ink: #f2fbff;
+        --route-muted: #a9cce4;
+        --route-line: rgba(90, 228, 255, .48);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: clamp(14px, 1.7vw, 22px);
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: 0 !important;
+        overflow: visible;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    #game-config-view .student-learning-shell--mockup::before,
+    #game-config-view .student-learning-shell--mockup::after {
+        opacity: .1;
+    }
+
+    #game-config-view .student-learning-shell--mockup > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    #game-config-view .student-learning-hud {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.1fr) auto;
+        align-items: center;
+        gap: 18px;
+        min-width: 0;
+        padding: 0 4px 14px;
+        border-bottom: 1px solid rgba(91, 226, 255, .32);
+    }
+
+    #game-config-view .student-learning-hud__brand,
+    #game-config-view .student-learning-hud__reward {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #game-config-view .student-learning-hud__brand-mark {
+        display: grid;
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border: 2px solid var(--mockup-cyan);
+        border-radius: 50%;
+        background: linear-gradient(145deg, #19a9db, #694edc);
+        color: #fff5ad;
+        font-size: 1.3rem;
+        box-shadow: 0 0 18px rgba(88, 233, 255, .4);
+    }
+
+    #game-config-view .student-learning-hud__brand strong,
+    #game-config-view .student-learning-hud__brand small {
+        display: block;
+    }
+
+    #game-config-view .student-learning-hud__brand strong {
+        color: var(--route-ink);
+        font-size: clamp(.92rem, 1.3vw, 1.15rem);
+        letter-spacing: .02em;
+    }
+
+    #game-config-view .student-learning-hud__brand small,
+    #game-config-view .student-learning-hud__headline span,
+    #game-config-view .student-learning-hud__reward small {
+        color: var(--route-muted);
+        font-size: .68rem;
+        font-weight: 800;
+    }
+
+    #game-config-view .student-learning-hud__headline {
+        display: grid;
+        justify-items: center;
+        gap: 2px;
+        min-width: 0;
+        text-align: center;
+    }
+
+    #game-config-view .student-learning-hud__headline strong {
+        overflow: hidden;
+        color: var(--mockup-gold);
+        font-size: clamp(1.1rem, 2.4vw, 1.85rem);
+        line-height: 1.05;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-shadow: 0 0 18px rgba(255, 212, 94, .28);
+    }
+
+    #game-config-view .student-learning-hud__reward {
+        min-width: 88px;
+        justify-content: center;
+        padding: 8px 13px;
+        border: 1px solid rgba(255, 212, 94, .68);
+        border-radius: 999px;
+        background: rgba(83, 61, 19, .66);
+        box-shadow: 0 0 18px rgba(255, 212, 94, .12);
+    }
+
+    #game-config-view .student-learning-hud__reward > span {
+        color: var(--mockup-gold);
+        font-size: 1.35rem;
+        line-height: 1;
+    }
+
+    #game-config-view .student-learning-hud__reward strong {
+        color: #fff4b2;
+        font-size: 1rem;
+    }
+
+    #game-config-view .student-learning-screen--daily {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+        align-content: start;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    #game-config-view .student-learning-screen--daily > .student-learning-hero {
+        grid-column: 1;
+    }
+
+    #game-config-view .student-learning-screen--daily > .student-learning-mission {
+        grid-column: 2;
+    }
+
+    #game-config-view .student-learning-screen--daily > .student-learning-notice,
+    #game-config-view .student-learning-screen--daily > .student-learning-path {
+        grid-column: 1 / -1;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero,
+    #game-config-view .student-learning-shell--mockup .student-learning-mission,
+    #game-config-view .student-learning-shell--mockup .student-learning-path {
+        min-width: 0;
+        border: 1px solid var(--route-line);
+        background:
+            radial-gradient(circle at 93% 14%, rgba(82, 223, 255, .24), transparent 24%),
+            linear-gradient(145deg, rgba(10, 78, 129, .92), rgba(5, 35, 76, .96) 62%, rgba(24, 43, 103, .96));
+        box-shadow: 0 12px 26px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .13);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        min-height: 160px;
+        padding: clamp(18px, 2.2vw, 28px);
+        overflow: hidden;
+        border-radius: 22px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero::after {
+        position: absolute;
+        right: -44px;
+        bottom: -78px;
+        width: 190px;
+        height: 190px;
+        border: 2px solid rgba(86, 230, 255, .28);
+        border-radius: 50%;
+        box-shadow: 0 0 0 16px rgba(86, 230, 255, .06), 0 0 0 34px rgba(86, 230, 255, .04);
+        content: '';
+        transform: rotate(-22deg);
+        pointer-events: none;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-eyebrow {
+        display: block;
+        color: var(--mockup-cyan);
+        font-size: .68rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        line-height: 1.3;
+        text-transform: uppercase;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero h2 {
+        margin: 7px 0 7px;
+        color: #fff;
+        font-size: clamp(1.55rem, 3.3vw, 2.55rem);
+        line-height: 1.02;
+        text-shadow: 0 3px 0 rgba(5, 50, 102, .8), 0 0 22px rgba(86, 230, 255, .16);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero p {
+        max-width: 620px;
+        margin: 0;
+        color: #c7ebf7;
+        font-size: .82rem;
+        line-height: 1.5;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero__progress {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        flex: 0 0 112px;
+        place-items: center;
+        min-height: 112px;
+        padding: 10px;
+        border: 2px solid var(--mockup-gold);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 211, 89, .34), rgba(69, 53, 24, .6));
+        color: var(--mockup-gold);
+        text-align: center;
+        box-shadow: 0 0 22px rgba(255, 212, 94, .2);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero__progress strong {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero__progress span {
+        color: #fff0aa;
+        font-size: .62rem;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-content: center;
+        gap: 12px;
+        min-height: 160px;
+        padding: 20px;
+        border-color: rgba(255, 212, 94, .88);
+        border-radius: 22px;
+        background:
+            radial-gradient(circle at 90% 10%, rgba(255, 224, 110, .22), transparent 30%),
+            linear-gradient(145deg, rgba(70, 80, 35, .88), rgba(13, 54, 74, .96));
+        box-shadow: 0 0 24px rgba(255, 212, 94, .12), inset 0 1px 0 rgba(255, 255, 255, .15);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission__badge {
+        display: grid;
+        width: 52px;
+        height: 52px;
+        place-items: center;
+        border: 2px solid var(--mockup-cyan);
+        border-radius: 16px;
+        background: linear-gradient(145deg, #1ab4dd, #3c60ca);
+        font-size: 1.55rem;
+        box-shadow: 0 0 18px rgba(88, 233, 255, .25);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission__kicker {
+        color: var(--mockup-gold);
+        font-size: .68rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission h3 {
+        margin: 4px 0 4px;
+        color: #fff;
+        font-size: clamp(1rem, 1.55vw, 1.32rem);
+        line-height: 1.16;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission p {
+        margin: 0;
+        color: #d7edeb;
+        font-size: .75rem;
+        line-height: 1.4;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-continue {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 46px;
+        margin-top: 2px;
+        padding: 10px 16px;
+        border: 1px solid #fff1a5;
+        border-bottom: 3px solid #c8891d;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #ffe681, #f2b942);
+        color: #122d47;
+        font-size: .9rem;
+        font-weight: 950;
+        box-shadow: 0 8px 18px rgba(255, 212, 94, .2);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-continue span {
+        font-size: 1.35rem;
+        line-height: .7;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 10px 13px;
+        border: 1px solid rgba(88, 233, 255, .34);
+        border-radius: 12px;
+        background: rgba(8, 74, 103, .68);
+        color: #c8edf5;
+        font-size: .72rem;
+        line-height: 1.45;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-notice > span {
+        color: var(--mockup-gold);
+        font-size: 1rem;
+        font-weight: 950;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-notice p { margin: 0; }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path {
+        padding: 16px 18px 18px;
+        border-radius: 22px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(92, 224, 255, .28);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path__header h3 {
+        margin: 4px 0 0;
+        color: #fff;
+        font-size: 1.08rem;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path-toggle {
+        min-height: 36px;
+        padding: 7px 13px;
+        border: 1px solid rgba(88, 233, 255, .62);
+        border-radius: 999px;
+        background: rgba(10, 100, 145, .7);
+        color: #e6fbff;
+        font-size: .7rem;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path__list {
+        display: grid;
+        gap: 13px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-group h4 {
+        margin: 0 0 8px;
+        color: #aeeeff;
+        font-size: .7rem;
+        font-weight: 950;
+        letter-spacing: .02em;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-steps {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 58px;
+        padding: 8px 9px;
+        border: 1px solid rgba(142, 219, 241, .38);
+        border-bottom: 3px solid rgba(41, 125, 161, .8);
+        border-radius: 13px;
+        background: rgba(10, 63, 104, .72);
+        color: #eafaff;
+        text-align: left;
+        transition: transform .18s ease, filter .18s ease, border-color .18s ease;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step:hover:not(:disabled) {
+        border-color: var(--mockup-cyan);
+        filter: brightness(1.12);
+        transform: translateY(-2px);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step__icon {
+        display: grid;
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border: 2px solid rgba(174, 230, 247, .68);
+        border-radius: 50%;
+        background: rgba(6, 27, 62, .64);
+        color: #d9f8ff;
+        font-size: .78rem;
+        font-weight: 950;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step__copy {
+        display: grid;
+        min-width: 0;
+        gap: 2px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step__copy strong,
+    #game-config-view .student-learning-shell--mockup .student-learning-step__copy small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step__copy strong {
+        color: #f5fdff;
+        font-size: .71rem;
+        line-height: 1.25;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step__copy small {
+        color: #9fd0e5;
+        font-size: .61rem;
+        font-weight: 900;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--completed {
+        border-color: rgba(99, 229, 165, .72);
+        background: linear-gradient(145deg, rgba(24, 119, 100, .8), rgba(9, 71, 91, .84));
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--completed .student-learning-step__icon {
+        border-color: var(--mockup-green);
+        background: rgba(99, 229, 165, .24);
+        color: #adffd2;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--current {
+        border-color: var(--mockup-gold);
+        background: linear-gradient(145deg, rgba(119, 93, 32, .9), rgba(20, 74, 93, .9));
+        box-shadow: 0 0 22px rgba(255, 212, 94, .16);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--current .student-learning-step__icon {
+        border-color: var(--mockup-gold);
+        background: rgba(255, 212, 94, .22);
+        color: #fff3a7;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--locked {
+        border-color: rgba(151, 183, 210, .2);
+        background: rgba(19, 42, 75, .64);
+        opacity: .72;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--locked .student-learning-step__copy strong,
+    #game-config-view .student-learning-shell--mockup .student-learning-step--locked .student-learning-step__copy small {
+        color: #91abc4;
+    }
+
+    #game-config-view .student-learning-screen--route {
+        display: grid;
+        align-content: start;
+        gap: 15px;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    #game-config-view .student-learning-route-intro {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 4px 4px 0;
+    }
+
+    #game-config-view .student-learning-route-intro h2 {
+        margin: 5px 0;
+        color: #fff;
+        font-size: clamp(1.3rem, 2.4vw, 2rem);
+        line-height: 1.08;
+    }
+
+    #game-config-view .student-learning-route-intro p {
+        margin: 0;
+        color: var(--route-muted);
+        font-size: .78rem;
+    }
+
+    #game-config-view .student-learning-route-intro__progress {
+        display: grid;
+        min-width: 100px;
+        place-items: center;
+        padding: 9px 14px;
+        border: 1px solid rgba(99, 229, 165, .68);
+        border-radius: 14px;
+        background: rgba(17, 103, 86, .54);
+        text-align: center;
+    }
+
+    #game-config-view .student-learning-route-intro__progress strong { color: #aaffd0; font-size: 1.08rem; }
+    #game-config-view .student-learning-route-intro__progress span { color: #a8e9d0; font-size: .62rem; font-weight: 900; }
+
+    #game-config-view .student-learning-screen--route > .student-learning-path {
+        min-height: 0;
+        padding: 16px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-path__list {
+        min-height: 0;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route {
+        display: grid;
+        grid-template-columns: minmax(175px, 23%) minmax(0, 1fr);
+        gap: 14px;
+        min-width: 0;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav,
+    #game-config-view .student-learning-screen--route .student-learning-route-board {
+        min-width: 0;
+        border: 1px solid rgba(87, 220, 255, .44);
+        border-radius: 17px;
+        background: linear-gradient(160deg, rgba(7, 76, 122, .82), rgba(8, 38, 79, .9));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 8px 20px rgba(0, 0, 0, .18);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        padding: 14px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav__heading {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(101, 227, 255, .27);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav__heading::before {
+        display: grid;
+        width: 31px;
+        height: 31px;
+        place-items: center;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #22c5e7, #3367cb);
+        color: #fff4a0;
+        content: '✦';
+        font-size: 1.15rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav__heading strong {
+        color: #f4fdff;
+        font-size: 1.03rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav__heading .student-learning-eyebrow {
+        display: none;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-nav__list {
+        display: grid;
+        gap: 6px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+        padding: 10px 9px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: rgba(9, 59, 96, .62);
+        color: #e5f8ff;
+        text-align: left;
+        transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link:hover,
+    #game-config-view .student-learning-screen--route .student-learning-topic-link.is-active {
+        border-color: var(--mockup-gold);
+        background: linear-gradient(145deg, rgba(255, 212, 94, .92), rgba(38, 126, 163, .8));
+        color: #102e4a;
+        transform: translateX(2px);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link__icon {
+        display: grid;
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 9px;
+        background: rgba(83, 224, 255, .2);
+        font-size: 1.05rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link__copy {
+        display: grid;
+        min-width: 0;
+        gap: 2px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link__copy strong {
+        overflow: hidden;
+        font-size: .75rem;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link__copy small {
+        color: #9ed1e3;
+        font-size: .6rem;
+        font-weight: 850;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-topic-link.is-active .student-learning-topic-link__copy small,
+    #game-config-view .student-learning-screen--route .student-learning-topic-link:hover .student-learning-topic-link__copy small {
+        color: #214c69;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board {
+        max-height: calc(100dvh - 255px);
+        overflow: auto;
+        padding: 15px;
+        scrollbar-color: rgba(88, 233, 255, .7) rgba(6, 31, 67, .5);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(95, 226, 255, .28);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__header .student-learning-eyebrow {
+        color: var(--mockup-cyan);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__header h4 {
+        margin: 4px 0;
+        color: #fff;
+        font-size: 1.02rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__header p {
+        margin: 0;
+        color: var(--route-muted);
+        font-size: .7rem;
+        line-height: 1.35;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-release-badge {
+        display: grid;
+        flex: 0 0 112px;
+        min-height: 64px;
+        place-items: center;
+        align-content: center;
+        border: 1px solid var(--mockup-green);
+        border-radius: 15px;
+        background: rgba(18, 129, 92, .66);
+        color: #d4ffe6;
+        text-align: center;
+        box-shadow: 0 0 18px rgba(99, 229, 165, .12);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-release-badge strong {
+        color: #fff3a0;
+        font-size: 1.2rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-release-badge span {
+        max-width: 94px;
+        color: #d6f9e7;
+        font-size: .59rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__groups {
+        display: grid;
+        gap: 17px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group--route {
+        padding: 12px;
+        border: 1px solid rgba(115, 211, 239, .25);
+        border-radius: 14px;
+        background: rgba(4, 37, 76, .52);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group__heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group__heading div > span {
+        color: var(--mockup-cyan);
+        font-size: .6rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group__heading h4 {
+        margin: 2px 0 0;
+        color: #fff;
+        font-size: .91rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group__heading > strong {
+        color: var(--mockup-gold);
+        font-size: .68rem;
+        white-space: nowrap;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-steps {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-step--route {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        align-content: center;
+        gap: 6px;
+        min-height: 88px;
+        padding: 9px 6px;
+        border-radius: 14px;
+        text-align: center;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-step--route .student-learning-step__icon {
+        width: 36px;
+        height: 36px;
+        font-size: .9rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-step--route .student-learning-step__copy {
+        justify-items: center;
+        width: 100%;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-step--route .student-learning-step__copy strong {
+        max-width: 100%;
+        font-size: .68rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-step--route .student-learning-step__copy small {
+        color: #add8e8;
+        font-size: .58rem;
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:not(:nth-child(5n))::after {
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        width: 12px;
+        border-top: 2px dashed rgba(91, 224, 255, .56);
+        content: '';
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path-toggle:focus-visible,
+    #game-config-view .student-learning-shell--mockup .student-learning-continue:focus-visible,
+    #game-config-view .student-learning-shell--mockup .student-learning-step:focus-visible,
+    #game-config-view .student-learning-shell--mockup .student-learning-topic-link:focus-visible {
+        outline: 3px solid #fff0a0;
+        outline-offset: 3px;
+    }
+
+    /* Teacher release workspace: the same route language, with a clear class-control rail. */
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) {
+        background:
+            radial-gradient(circle at 8% 12%, rgba(52, 220, 255, .24), transparent 27%),
+            radial-gradient(circle at 92% 78%, rgba(99, 75, 228, .25), transparent 32%),
+            rgba(2, 13, 32, .88);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-panel {
+        position: relative;
+        display: grid !important;
+        grid-template-columns: clamp(155px, 15vw, 210px) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 14px 20px;
+        box-sizing: border-box;
+        width: min(96vw, 1640px) !important;
+        max-width: min(96vw, 1640px) !important;
+        height: min(94vh, 1180px) !important;
+        max-height: min(94vh, 1180px) !important;
+        padding: 22px clamp(18px, 2.7vw, 42px) !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(88, 233, 255, .56) !important;
+        border-radius: 28px !important;
+        background:
+            radial-gradient(circle at 88% 8%, rgba(77, 221, 255, .2), transparent 27%),
+            radial-gradient(circle at 12% 88%, rgba(102, 83, 233, .16), transparent 29%),
+            linear-gradient(145deg, rgba(5, 31, 63, .98), rgba(5, 19, 43, .98) 56%, rgba(16, 26, 70, .98));
+        box-shadow: 0 24px 80px rgba(0, 0, 0, .56), 0 0 40px rgba(64, 214, 255, .13), inset 0 1px 0 rgba(255, 255, 255, .1);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row {
+        display: flex !important;
+        grid-column: 1 / -1;
+        align-items: center;
+        justify-content: flex-start;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 2px 0 12px;
+        border: 0;
+        border-bottom: 1px solid rgba(87, 226, 255, .3);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row::before {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        margin-right: 11px;
+        place-items: center;
+        border: 2px solid var(--mockup-cyan);
+        border-radius: 50%;
+        background: linear-gradient(145deg, #18b6dc, #4d5fce);
+        color: #fff3a0;
+        content: '✦';
+        font-size: 1.2rem;
+        box-shadow: 0 0 18px rgba(88, 233, 255, .34);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #treasure-title {
+        color: #ffe080;
+        font-size: clamp(1.45rem, 2.8vw, 2.3rem);
+        letter-spacing: .015em;
+        text-align: left;
+        text-shadow: 0 3px 0 rgba(112, 60, 26, .7), 0 0 18px rgba(255, 212, 94, .3);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs {
+        display: flex !important;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        grid-column: 1;
+        grid-row: 2;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 8px;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        overflow: auto;
+        border: 0;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        padding: 11px 12px;
+        border: 1px solid rgba(115, 188, 220, .3);
+        border-bottom: 2px solid rgba(30, 118, 166, .75);
+        border-radius: 13px;
+        background: rgba(7, 62, 101, .62);
+        color: #bde2f2;
+        font-size: .75rem;
+        font-weight: 900;
+        text-align: left;
+        box-shadow: none;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn:hover,
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn.active {
+        border-color: var(--mockup-cyan);
+        background: linear-gradient(145deg, #159ac4, #1854aa);
+        color: #fff;
+        box-shadow: 0 0 17px rgba(88, 233, 255, .18);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-content {
+        grid-column: 2;
+        grid-row: 2;
+        min-width: 0;
+        min-height: 0;
+        padding: 0 5px 0 0;
+        overflow: auto;
+        scrollbar-color: rgba(88, 233, 255, .72) rgba(3, 17, 38, .54);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(210px, 255px);
+        align-items: start;
+        gap: 15px;
+        min-width: 0;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-workspace--mockup {
+        display: grid;
+        gap: 14px;
+        min-width: 0;
+        margin: 0;
+        padding: clamp(15px, 1.8vw, 24px);
+        border: 1px solid rgba(88, 233, 255, .7);
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at 95% 5%, rgba(64, 218, 255, .18), transparent 24%),
+            linear-gradient(145deg, rgba(7, 79, 125, .9), rgba(6, 34, 70, .96) 64%, rgba(24, 40, 92, .96));
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .12);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-header {
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-header h3 {
+        margin: 4px 0 5px;
+        color: #fff;
+        font-size: clamp(1.35rem, 2.5vw, 2rem);
+        line-height: 1.08;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-header p {
+        max-width: 690px;
+        color: #c8ebf5;
+        font-size: .76rem;
+        line-height: 1.45;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-badge {
+        flex: 0 0 76px;
+        min-height: 68px;
+        border-color: var(--mockup-gold);
+        border-radius: 16px;
+        background: rgba(112, 83, 24, .72);
+        color: #fff1a2;
+        box-shadow: 0 0 18px rgba(255, 212, 94, .14);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-badge span {
+        color: #ffe9a0;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-controls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 11px;
+        border: 1px solid rgba(103, 222, 255, .28);
+        border-radius: 14px;
+        background: rgba(4, 42, 78, .58);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-controls label,
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary {
+        gap: 6px;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-controls label > span,
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary > label {
+        color: #bce8f5;
+        font-size: .68rem;
+        font-weight: 950;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-controls .form-input,
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary .form-input {
+        min-height: 42px;
+        border: 2px solid rgba(74, 215, 246, .7);
+        border-radius: 11px;
+        background: #dff6ff;
+        color: #0b3760;
+        font-weight: 900;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary {
+        grid-template-columns: minmax(145px, .75fr) minmax(0, 2fr) auto;
+        align-items: end;
+        gap: 10px;
+        padding: 12px;
+        border: 2px solid rgba(255, 212, 94, .8);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(82, 73, 30, .78), rgba(8, 66, 91, .8));
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary > label {
+        align-self: center;
+        color: #ffe78b;
+        font-size: .82rem;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button {
+        min-height: 42px;
+        border-color: #fff0a4;
+        border-bottom-color: #c8891d;
+        border-radius: 11px;
+        background: linear-gradient(180deg, #ffe886, #efb53f);
+        color: #193452;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary {
+        padding: 10px 12px;
+        border: 1px solid rgba(99, 229, 165, .62);
+        border-left-width: 4px;
+        border-radius: 10px;
+        background: rgba(20, 119, 88, .5);
+        color: #dcffe9;
+        font-size: .73rem;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary span {
+        color: #baf1d0;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-preview {
+        max-height: 355px;
+        padding-right: 3px;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-group h4 {
+        color: var(--mockup-cyan);
+        font-size: .72rem;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-row {
+        min-height: 38px;
+        border-color: rgba(124, 216, 242, .34);
+        border-radius: 10px;
+        background: rgba(7, 55, 91, .7);
+        color: #e1f7ff;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-row--locked {
+        background: rgba(27, 48, 78, .55);
+        color: #9db6cc;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-row.is-boundary {
+        border-color: var(--mockup-gold);
+        background: linear-gradient(145deg, rgba(123, 96, 30, .84), rgba(19, 75, 93, .9));
+        box-shadow: 0 0 14px rgba(255, 212, 94, .14);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+        min-width: 0;
+        min-height: 250px;
+        padding: 17px;
+        border: 1px solid rgba(88, 233, 255, .68);
+        border-radius: 19px;
+        background:
+            radial-gradient(circle at 100% 0%, rgba(91, 229, 255, .2), transparent 33%),
+            linear-gradient(160deg, rgba(8, 79, 121, .9), rgba(7, 39, 78, .94));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 10px 22px rgba(0, 0, 0, .2);
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card__kicker {
+        color: var(--mockup-cyan);
+        font-size: .68rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card h4 {
+        margin: 0;
+        color: #fff;
+        font-size: 1.12rem;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-card-boundary {
+        color: #ffe88b;
+        font-size: 1.18rem;
+        line-height: 1.15;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card p {
+        margin: 0;
+        color: #c8eaf5;
+        font-size: .74rem;
+        line-height: 1.45;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card__button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 42px;
+        padding: 8px 11px;
+        border: 1px solid rgba(88, 233, 255, .8);
+        border-radius: 11px;
+        background: rgba(9, 91, 133, .75);
+        color: #effcff;
+        font-size: .71rem;
+        font-weight: 950;
+        text-align: left;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card__button span {
+        color: var(--mockup-gold);
+        font-size: 1.35rem;
+        line-height: .7;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card__tip {
+        padding: 9px 10px;
+        border: 1px solid rgba(99, 229, 165, .64);
+        border-radius: 11px;
+        background: rgba(18, 121, 87, .62);
+        color: #d4ffe7;
+        font-size: .68rem;
+        font-weight: 850;
+        line-height: 1.35;
+    }
+
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-learning-mascot {
+        position: absolute;
+        right: 18px;
+        bottom: 12px;
+        z-index: 3;
+        display: block;
+        width: clamp(90px, 10vw, 145px);
+        filter: drop-shadow(0 12px 14px rgba(0, 0, 0, .4)) drop-shadow(0 0 16px rgba(88, 233, 255, .28));
+        pointer-events: none;
+    }
+
+    #treasure-modal .admin-learning-mascot { display: none; }
+
+    @media (max-width: 1120px) {
+        #game-config-view .student-learning-shell--mockup .student-learning-steps,
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-steps {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:not(:nth-child(5n))::after {
+            display: none;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:not(:nth-child(4n))::after {
+            display: block;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:nth-child(4n)::after {
+            display: none;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
+            grid-template-columns: minmax(0, 1fr) minmax(190px, 220px);
+        }
+    }
+
+    @media (max-width: 900px) {
+        #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+            padding: 18px 20px !important;
+        }
+
+        #game-config-view:has(.student-learning-shell--mockup) .config-top {
+            grid-template-columns: 142px minmax(0, 1fr);
+            gap: 16px !important;
+        }
+
+        #game-config-view:has(.student-learning-shell--mockup) .config-left {
+            min-height: 360px;
+        }
+
+        #game-config-view .student-learning-hud {
+            grid-template-columns: minmax(150px, 1fr) auto;
+        }
+
+        #game-config-view .student-learning-hud__headline { display: none; }
+
+        #game-config-view .student-learning-screen--daily {
+            grid-template-columns: 1fr;
+        }
+
+        #game-config-view .student-learning-screen--daily > .student-learning-hero,
+        #game-config-view .student-learning-screen--daily > .student-learning-mission {
+            grid-column: 1;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-route {
+            grid-template-columns: 1fr;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-topic-nav {
+            position: static;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-topic-nav__list {
+            display: flex;
+            overflow-x: auto;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-topic-link {
+            flex: 0 0 170px;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-route-board {
+            max-height: none;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-panel {
+            grid-template-columns: 145px minmax(0, 1fr);
+            gap: 12px;
+            padding: 18px !important;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
+            grid-template-columns: 1fr;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-class-card {
+            grid-row: 2;
+        }
+    }
+
+    @media (max-width: 700px) {
+        #game-config-view:has(.student-learning-shell--mockup) .config-top {
+            grid-template-columns: 1fr;
+        }
+
+        #game-config-view:has(.student-learning-shell--mockup) .config-left {
+            position: fixed !important;
+            top: 28px;
+            left: 20px;
+            min-height: 120px;
+            height: 160px;
+            padding: 0;
+        }
+
+        #game-config-view:has(.student-learning-shell--mockup) .config-left .cat-avatar {
+            width: 120px !important;
+        }
+
+        #game-config-view:has(.student-learning-shell--mockup) .config-center {
+            grid-column: 1;
+        }
+
+        #game-config-view .student-learning-shell--mockup .student-learning-hero {
+            align-items: flex-start;
+        }
+
+        #game-config-view .student-learning-shell--mockup .student-learning-hero__progress {
+            flex-basis: 82px;
+            min-height: 82px;
+        }
+
+        #game-config-view .student-learning-shell--mockup .student-learning-steps,
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-steps {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:not(:nth-child(4n))::after {
+            display: none;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:not(:nth-child(2n))::after {
+            display: block;
+        }
+
+        #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-step--route:nth-child(2n)::after {
+            display: none;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-panel {
+            display: flex !important;
+            flex-direction: column;
+            overflow: auto !important;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs {
+            flex-direction: row;
+            flex-wrap: wrap;
+            grid-row: auto;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #admin-tabs .tab-btn {
+            width: auto;
+            flex: 1 1 145px;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-content {
+            overflow: visible;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-controls,
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary {
+            grid-template-columns: 1fr;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary > label {
+            grid-column: auto;
+        }
+
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .admin-learning-mascot {
+            display: none;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #game-config-view .student-learning-shell--mockup *,
+        #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) * {
+            animation-duration: .01ms !important;
+            transition-duration: .01ms !important;
+        }
+    }
 }

@@ -5,16 +5,19 @@ const { chromium } = require('playwright');
 
 const outputDirectory = join(process.cwd(), 'src', 'assets', 'template-previews');
 const previews = [
-  ['number.digit_at_place', 'digit-at-place.jpg', { minimum: 10000, maximum: 999999, allowedPlaces: ['hundreds'], allowedDigits: [8] }],
+  ['number.digit_at_place', 'digit-at-place.jpg', { minimum: 10, maximum: 99999, allowedPlaces: ['hundreds', 'thousands'], allowedDigits: [8, 9] }],
   ['number.smallest_of_four', 'smallest-of-four.jpg', { minimum: 10000, maximum: 999999 }],
   ['number.largest_of_four', 'largest-of-four.jpg', { minimum: 10000, maximum: 999999 }],
+  ['number.min_max_of_four', 'min-max-of-four.jpg', { minimum: 10, maximum: 99999 }],
   ['number.compose_from_places', 'compose-from-places.jpg', { minimum: 10000, maximum: 999999 }],
   ['number.missing_expanded_addend', 'missing-expanded-addend.jpg', { minimum: 10000, maximum: 999999 }],
   ['number.four_arithmetic_blanks', 'four-arithmetic-blanks.jpg', { minimumDigits: 3, maximumDigits: 4, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'], blankPositions: ['first', 'second', 'third', 'fourth'] }],
   ['number.four_arithmetic_comparisons', 'four-arithmetic-comparisons.jpg', { minimumDigits: 3, maximumDigits: 4, operations: ['+', '-'], layouts: ['expressionLeft', 'expressionRight', 'twoExpressions'] }],
   ['number.neighbor_numbers', 'neighbor-numbers.jpg', { minimum: 10000, maximum: 999999 }],
   ['number.compare_number_forms', 'compare-number-forms.jpg', { minimum: 10000, maximum: 999999 }],
-  ['number.place_value_true_false', 'place-value-true-false.jpg', { minimum: 10000000, maximum: 999999999, statementKinds: ['class', 'place'] }],
+  ['number.place_value_true_false', 'place-value-true-false.jpg', { minimum: 1001, maximum: 99999, statementKinds: ['place', 'comparison'], statementLayout: 'b01-four-types' }],
+  ['number.natural_sequence', 'natural-sequence.jpg', { minimum: 10, maximum: 99999, allowedSteps: [1, 10, 100, 1000, 10000, -1, -10, -100, -1000, -10000], sequenceLengthMin: 6, sequenceLengthMax: 6, blankCountMin: 1, blankCountMax: 3 }],
+  ['number.round_number', 'round-number.jpg', { minimum: 10, maximum: 99999, allowedPlaces: ['tens', 'hundreds', 'thousands', 'tenThousands'] }],
   ['number.safe_password_by_place_value', 'safe-password-by-place-value.jpg', { minimum: 10000000, maximum: 999999999, minimumCodeLength: 8, maximumCodeLength: 9 }],
   ['number.match_number_words', 'match-number-words.jpg', { shapes: ['4:5'], digits: [6], digitStrategy: 'balanced' }],
   ['g4-m-angle-count-in-polygon', 'angle-count-in-polygon.jpg', {}],

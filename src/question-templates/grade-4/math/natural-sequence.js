@@ -4,9 +4,9 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['number.natural_sequence'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, formatNumber }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber }) {
 
-const DEFAULT_STEPS = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, -1000, -2000, -3000, -4000, -5000, -6000, -7000, -8000, -9000];
+const DEFAULT_STEPS = [1, 10, 100, 1000, 10000, -1, -10, -100, -1000, -10000];
 
 function choose(items, random) {
     return items[randomInt(0, items.length - 1, random)];
@@ -26,13 +26,10 @@ function ruleText(step) {
 }
 
 function chooseBlankIndexes(length, blankCount, random) {
-    const candidates = Array.from({ length: length - 2 }, (_, index) => index + 1);
-    const indexes = [];
-    while (indexes.length < blankCount) {
-        const choiceIndex = randomInt(0, candidates.length - 1, random);
-        indexes.push(candidates.splice(choiceIndex, 1)[0]);
-    }
-    return indexes.sort((first, second) => first - second);
+    const knownPairStart = randomInt(0, length - 2, random);
+    const candidates = Array.from({ length }, (_, index) => index)
+        .filter(index => index !== knownPairStart && index !== knownPairStart + 1);
+    return shuffle(candidates, random).slice(0, blankCount).sort((first, second) => first - second);
 }
 
 function generateNaturalSequence(config = {}, random = Math.random) {

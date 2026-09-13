@@ -1870,7 +1870,7 @@ const app = {
                 'g4-m-angle-review', 'angle.review'
             ])
         },
-        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, answerSubmitted: false, finished: false, historyDetails: [], attemptId: null },
+        state: { subject: '', topicMode: 'single', adminTopicMode: 'test', selectedTopics: [], selectedLessons: [], difficulty: 'easy', questions: [], currentIdx: 0, score: 0, selectedAns: null, answerSubmitted: false, finished: false, historyDetails: [], attemptId: null },
         matchingResizeHandler: null,
         matchingLineTimer: null,
         cleanupMatching() {
@@ -1924,6 +1924,7 @@ const app = {
                 subject: this.state.subject,
                 topicMode: this.state.topicMode,
                 selectedTopics: Array.isArray(this.state.selectedTopics) ? this.state.selectedTopics : [],
+                selectedLessons: Array.isArray(this.state.selectedLessons) ? this.state.selectedLessons : [],
                 difficulty: this.state.difficulty,
                 questions,
                 currentIdx: Math.max(0, Math.min(resumeIdx, questions.length - 1)),
@@ -1962,6 +1963,7 @@ const app = {
                     subject: payload.subject || this.state.subject,
                     topicMode: payload.topicMode || this.state.topicMode,
                     selectedTopics: Array.isArray(payload.selectedTopics) ? payload.selectedTopics : [],
+                    selectedLessons: Array.isArray(payload.selectedLessons) ? payload.selectedLessons : [],
                     difficulty: payload.difficulty || this.state.difficulty,
                     questions: payload.questions,
                     currentIdx,
@@ -2249,6 +2251,7 @@ const app = {
         openConfig(subject) {
             this.state.subject = subject;
             this.state.selectedTopics = [];
+            this.state.selectedLessons = [];
             this.state.topicMode = 'single';
             this.state.adminTopicMode = 'test';
             this.state.examName = null;
@@ -2260,6 +2263,7 @@ const app = {
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
             const adminSelector = document.getElementById('admin-class-selector');
             if (adminSelector) adminSelector.style.display = isAdmin ? 'block' : 'none';
+            document.getElementById('topics-list')?.removeAttribute('data-expanded');
             if (isAdmin && !this.state.adminclasslevel) {
                 this.state.adminclasslevel = '5';
             }
@@ -2348,15 +2352,18 @@ const app = {
                     button.classList.toggle('active', button.dataset.topicAdminMode === (isManaging ? 'manage' : 'test'));
                 });
             }
-            if (topicMode) topicMode.style.display = isManaging ? 'none' : '';
+            if (topicMode) topicMode.style.display = isManaging || !isAdmin ? 'none' : '';
             if (difficulty) difficulty.style.display = isManaging ? 'none' : '';
             if (lockActions) lockActions.style.display = isManaging ? 'inline-flex' : 'none';
-            if (startButton) startButton.style.display = isManaging ? 'none' : '';
+            if (startButton) startButton.style.display = isManaging || !isAdmin ? 'none' : '';
+            const title = document.getElementById('topic-picker-heading');
+            if (title) title.textContent = isAdmin ? 'Chọn Chủ đề' : 'Lộ trình luyện tập';
         },
         setAdminTopicMode(mode) {
             if (!this.isAdmin()) return;
             this.state.adminTopicMode = mode === 'manage' ? 'manage' : 'test';
             this.state.selectedTopics = [];
+            this.state.selectedLessons = [];
             this.syncTopicControls();
             this.renderTopics();
         },
@@ -2406,12 +2413,302 @@ const app = {
             group.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             this.state.selectedTopics = [];
+            this.state.selectedLessons = [];
             this.renderTopics();
         },
         toggleTopicMode() {
             this.state.topicMode = document.querySelector('input[name="topicMode"]:checked').value;
             if (this.state.topicMode === 'single') this.state.selectedTopics = [];
             this.renderTopics();
+        },
+        getLearningClassLevel() {
+            const isAdmin = this.isAdmin();
+            const raw = isAdmin ? (this.state.adminclasslevel || '5') : (app.data.currentUser?.classlevel || '5');
+            return String(raw).replace(/^Lớp\s*/i, '').trim() || '5';
+        },
+        getLearningPlan() {
+            if (!app.learningPath) return { entries: [], states: [], summary: {}, recommended: null };
+            const classlevel = this.getLearningClassLevel();
+            const subject = this.state.subject;
+            const entries = app.learningPath.getEntries({ classlevel, subject });
+            const release = app.learningPath.getReleaseBoundary({
+                settings: app.data.settings,
+                classlevel,
+                subject
+            });
+            let states = app.learningPath.getProgressStates({
+                entries,
+                releaseId: release?.id || '',
+                history: app.data.currentUser?.history || []
+            });
+
+            states = states.map(entry => {
+                const topicLocked = this.isTopicLocked(classlevel, subject, entry.topic);
+                const oldProgressionLocked = entry.kind === 'topic'
+                    && this.isStudentProgressionLocked(classlevel, subject, entry.topic);
+                if (topicLocked || oldProgressionLocked) {
+                    return { ...entry, state: 'locked', lockReason: topicLocked ? 'teacher' : 'progression' };
+                }
+                return entry;
+            });
+
+            const summary = app.learningPath.getSummary(states);
+            return {
+                classlevel,
+                subject,
+                entries,
+                states,
+                release,
+                summary,
+                recommended: app.learningPath.getRecommendedEntry(states)
+            };
+        },
+        getSelectedLearningLessonId() {
+            const selected = Array.isArray(this.state.selectedLessons) ? this.state.selectedLessons[0] : '';
+            if (!selected || !app.learningPath) return '';
+            const plan = this.getLearningPlan();
+            const entry = plan.states.find(item => item.id === selected);
+            return entry?.kind === 'lesson' && entry.state !== 'locked' ? entry.id : '';
+        },
+        getQuestionLessonId(question) {
+            if (question?.lesson) return String(question.lesson).trim();
+            return app.curriculum?.getTemplateLesson({
+                classlevel: question?.classlevel,
+                subject: question?.subject,
+                semester: question?.semester,
+                topic: question?.topic,
+                generator_key: question?.templateId || question?.generator_key
+            }) || '';
+        },
+        getTemplateLessonId(template) {
+            return app.curriculum?.getTemplateLesson(template)
+                || template?.lesson
+                || template?.config?.lesson
+                || '';
+        },
+        selectLearningEntry(entryId) {
+            const plan = this.getLearningPlan();
+            const entry = plan.states.find(item => item.id === entryId);
+            if (!entry || entry.state === 'locked') return;
+            this.state.selectedTopics = [entry.topic];
+            this.state.selectedLessons = entry.kind === 'lesson' ? [entry.id] : [];
+            this.startPlay();
+        },
+        renderStudentLearningHome(classlevel) {
+            const container = document.getElementById('topics-list');
+            if (!container || !app.learningPath) return;
+
+            const plan = this.getLearningPlan();
+            const states = Array.isArray(plan.states) ? plan.states : [];
+            const recommended = plan.recommended || states.find(entry => entry.state !== 'locked') || null;
+            const recommendedIndex = Math.max(0, states.findIndex(entry => entry.id === recommended?.id));
+            const expanded = container.dataset.expanded === 'true';
+            const compactStart = Math.max(0, recommendedIndex - 1);
+            const compactEnd = Math.min(states.length, Math.max(compactStart + 5, recommendedIndex + 3));
+            const visibleStates = expanded ? states : states.slice(compactStart, compactEnd);
+            const subjectLabel = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
+            const esc = value => app.data.sanitizeHTML(value);
+            const isFallbackTopicPlan = states.some(entry => entry.kind === 'topic');
+            const releaseText = plan.release
+                ? `Đã mở đến ${esc(plan.release.label)}`
+                : isFallbackTopicPlan
+                    ? 'Đang theo dõi theo Chủ đề'
+                    : 'Chưa đặt mốc · đang giữ ở Bài 1';
+            const missionTitle = recommended?.label || 'Chưa có bài học được mở';
+            const missionStatus = recommended?.state === 'completed'
+                ? 'Đã hoàn thành mốc hiện tại · Luyện lại để nhớ lâu nhé'
+                : recommended?.state === 'current'
+                    ? 'Đang học · Đây là bước tiếp theo của con'
+                    : 'Sẵn sàng luyện tập';
+            const missionAction = recommended?.state === 'completed' ? 'Ôn lại bài này' : 'Tiếp tục';
+            const pathStateLabel = {
+                completed: 'Đã vững',
+                current: 'Đang học',
+                available: 'Có thể luyện',
+                locked: 'Chưa mở'
+            };
+            const pathIcon = {
+                completed: '✓',
+                current: '▶',
+                available: '○',
+                locked: '🔒'
+            };
+            const topicIcons = ['🔢', '📐', '📏', '📊', '💡', '⭐'];
+            const groups = [];
+            visibleStates.forEach(entry => {
+                const key = `${entry.semester}:${entry.topic}`;
+                let group = groups.find(item => item.key === key);
+                if (!group) {
+                    group = {
+                        key,
+                        domId: `student-learning-group-${groups.length + 1}`,
+                        semesterLabel: entry.semesterLabel,
+                        topic: entry.topic,
+                        entries: []
+                    };
+                    groups.push(group);
+                }
+                group.entries.push(entry);
+            });
+
+            const renderEntry = (entry, isFullRoute = false) => {
+                const locked = entry.state === 'locked';
+                const lessonName = entry.kind === 'lesson' ? entry.label : 'Luyện tập theo Chủ đề';
+                const routeClass = isFullRoute ? ' student-learning-step--route' : '';
+                return `<button type="button" class="student-learning-step student-learning-step--${entry.state}${routeClass}" data-learning-entry="${esc(entry.id)}" ${locked ? 'disabled aria-disabled="true"' : ''} role="listitem" aria-label="${esc(`${lessonName} — ${pathStateLabel[entry.state]}`)}">
+                  <span class="student-learning-step__icon" aria-hidden="true">${pathIcon[entry.state]}</span>
+                  <span class="student-learning-step__copy"><strong>${esc(lessonName)}</strong><small>${esc(pathStateLabel[entry.state])}</small></span>
+                </button>`;
+            };
+
+            const renderCompactGroup = group => `
+                    <section class="student-learning-group" aria-labelledby="${group.domId}" data-learning-group="${group.domId}">
+                      <h4 id="${group.domId}">${esc(group.semesterLabel)} · ${esc(group.topic)}</h4>
+                      <div class="student-learning-steps" role="list">
+                        ${group.entries.map(entry => renderEntry(entry)).join('')}
+                      </div>
+                    </section>`;
+
+            const compactPathMarkup = groups.length
+                ? groups.map(renderCompactGroup).join('')
+                : `<div class="student-learning-empty" role="status"><strong>Chưa có nội dung luyện tập</strong><span>Giáo viên cần mở lộ trình hoặc bổ sung câu hỏi cho môn này.</span></div>`;
+            const fullRouteMarkup = groups.length
+                ? `<div class="student-learning-route">
+                    <aside class="student-learning-topic-nav" aria-label="Các chủ đề trong lộ trình">
+                      <div class="student-learning-topic-nav__heading"><span class="student-learning-eyebrow">Bản đồ bài học</span><strong>Chủ đề</strong></div>
+                      <div class="student-learning-topic-nav__list">
+                        ${groups.map((group, index) => `<button type="button" class="student-learning-topic-link${index === 0 ? ' is-active' : ''}" data-learning-group-jump="${group.domId}" aria-controls="${group.domId}" aria-current="${index === 0 ? 'true' : 'false'}">
+                          <span class="student-learning-topic-link__icon" aria-hidden="true">${topicIcons[index % topicIcons.length]}</span>
+                          <span class="student-learning-topic-link__copy"><strong>${esc(group.topic)}</strong><small>${esc(group.semesterLabel)}</small></span>
+                        </button>`).join('')}
+                      </div>
+                    </aside>
+                    <div class="student-learning-route-board">
+                      <header class="student-learning-route-board__header">
+                        <div>
+                          <span class="student-learning-eyebrow">Lộ trình đầy đủ</span>
+                          <h4>Cùng khám phá hành trình của con</h4>
+                          <p>Các Bài được xếp đúng theo thứ tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
+                        </div>
+                        <div class="student-learning-release-badge" aria-label="${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'Chưa có mốc mở bài')}" >
+                          <strong>${Number(plan.summary.released || 0)}</strong>
+                          <span>${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'bài đã mở')}</span>
+                        </div>
+                      </header>
+                      <div class="student-learning-route-board__groups">
+                        ${groups.map(group => `
+                          <section class="student-learning-group student-learning-group--route" aria-labelledby="${group.domId}" data-learning-group="${group.domId}">
+                            <div class="student-learning-group__heading">
+                              <div><span>${esc(group.semesterLabel)}</span><h4 id="${group.domId}">${esc(group.topic)}</h4></div>
+                              <strong>${group.entries.length} Bài</strong>
+                            </div>
+                            <div class="student-learning-steps" role="list">
+                              ${group.entries.map(entry => renderEntry(entry, true)).join('')}
+                            </div>
+                          </section>`).join('')}
+                      </div>
+                    </div>
+                  </div>`
+                : `<div class="student-learning-empty" role="status"><strong>Chưa có nội dung luyện tập</strong><span>Giáo viên cần mở lộ trình hoặc bổ sung câu hỏi cho môn này.</span></div>`;
+            const stars = Number(app.data.currentUser?.stars) || 0;
+            const hudMarkup = `
+                <header class="student-learning-hud" aria-label="Thông tin hành trình học tập">
+                  <div class="student-learning-hud__brand">
+                    <span class="student-learning-hud__brand-mark" aria-hidden="true">✦</span>
+                    <span><strong>Hành trình tri thức</strong><small>Tiểu học · ${esc(subjectLabel)}</small></span>
+                  </div>
+                  <div class="student-learning-hud__headline">
+                    <span>Học hôm nay, tiến xa mỗi ngày</span>
+                    <strong>${expanded ? 'Lộ trình đầy đủ' : 'Hôm nay mình học gì?'}</strong>
+                  </div>
+                  <div class="student-learning-hud__reward" aria-label="${stars} ngôi sao">
+                    <span aria-hidden="true">★</span><strong>${stars}</strong><small>sao</small>
+                  </div>
+                </header>`;
+            const dailyScreenMarkup = `
+                <section class="student-learning-screen student-learning-screen--daily" aria-labelledby="student-learning-title">
+                  <section class="student-learning-hero" aria-labelledby="student-learning-title">
+                    <div class="student-learning-hero__copy">
+                      <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
+                      <h2 id="student-learning-title">Hôm nay mình học gì?</h2>
+                      <p>Con chỉ cần bấm tiếp tục. Hệ thống sẽ nhớ bài đang học và đưa con đi đúng hành trình của lớp.</p>
+                    </div>
+                    <div class="student-learning-hero__progress" aria-label="Tóm tắt tiến độ">
+                      <strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong>
+                      <span>bài đã vững</span>
+                    </div>
+                  </section>
+
+                  ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
+                    <div class="student-learning-mission__badge" aria-hidden="true">${recommended.kind === 'lesson' ? '📖' : '🧭'}</div>
+                    <div class="student-learning-mission__copy">
+                      <span class="student-learning-mission__kicker">Bước tiếp theo</span>
+                      <h3 id="student-learning-mission-title">${esc(missionTitle)}</h3>
+                      <p>${esc(recommended.kind === 'lesson' ? `${recommended.topic} · ${recommended.semesterLabel}` : 'Luyện tập theo Chủ đề')} · ${esc(missionStatus)}</p>
+                    </div>
+                    <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)} <span aria-hidden="true">›</span></button>
+                  </section>` : ''}
+
+                  ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Con vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để con không làm trước nội dung chưa học.</p></aside>` : '')}
+
+                  <section class="student-learning-path student-learning-path--compact" aria-labelledby="student-learning-path-title">
+                    <header class="student-learning-path__header">
+                      <div><span class="student-learning-eyebrow">Hành trình của con</span><h3 id="student-learning-path-title">Lộ trình học gần đây</h3></div>
+                      <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="false">Xem lộ trình đầy đủ</button>
+                    </header>
+                    <div class="student-learning-path__list">${compactPathMarkup}</div>
+                  </section>
+                </section>`;
+            const routeScreenMarkup = `
+                <section class="student-learning-screen student-learning-screen--route" aria-labelledby="student-learning-route-title">
+                  <div class="student-learning-route-intro">
+                    <div>
+                      <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
+                      <h2 id="student-learning-route-title">Cùng khám phá lộ trình của con</h2>
+                      <p>Các Bài được xếp đúng theo trình tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
+                    </div>
+                    <div class="student-learning-route-intro__progress"><strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong><span>bài đã vững</span></div>
+                  </div>
+                  <section class="student-learning-path student-learning-path--full" aria-labelledby="student-learning-path-title">
+                    <header class="student-learning-path__header">
+                      <div><span class="student-learning-eyebrow">Hành trình của con</span><h3 id="student-learning-path-title">Lộ trình đầy đủ</h3></div>
+                      <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="true">Quay lại hôm nay</button>
+                    </header>
+                    <div class="student-learning-path__list">${fullRouteMarkup}</div>
+                  </section>
+                </section>`;
+            const screenMarkup = expanded ? routeScreenMarkup : dailyScreenMarkup;
+
+            container.className = 'student-learning-home';
+            container.style.display = 'block';
+            container.style.width = '100%';
+            container.style.margin = '0';
+            container.innerHTML = `
+                <div class="student-learning-shell student-learning-shell--cosmic student-learning-shell--mockup" data-classlevel="${esc(classlevel)}" data-subject="${esc(subjectLabel)}" data-view="${expanded ? 'route' : 'daily'}">
+                  ${hudMarkup}
+                  ${screenMarkup}
+                </div>`;
+
+            container.querySelectorAll('[data-learning-entry]').forEach(button => {
+                button.addEventListener('click', () => this.selectLearningEntry(button.dataset.learningEntry));
+            });
+            container.querySelectorAll('[data-learning-group-jump]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const target = Array.from(container.querySelectorAll('[data-learning-group]'))
+                        .find(group => group.dataset.learningGroup === button.dataset.learningGroupJump);
+                    if (!target) return;
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    container.querySelectorAll('[data-learning-group-jump]').forEach(item => {
+                        const active = item === button;
+                        item.classList.toggle('is-active', active);
+                        item.setAttribute('aria-current', String(active));
+                    });
+                });
+            });
+            container.querySelector('[data-learning-path-toggle]')?.addEventListener('click', event => {
+                container.dataset.expanded = String(event.currentTarget.getAttribute('aria-expanded') !== 'true');
+                this.renderStudentLearningHome(classlevel);
+            });
         },
         renderTopics() {
             const isAdmin = this.isAdmin();
@@ -2423,6 +2720,10 @@ const app = {
             const topics = this.state.subject === 'math' ? topicDict.math : topicDict.vietnamese;
 
             const container = document.getElementById('topics-list');
+            if (!isAdmin && app.learningPath) {
+                this.renderStudentLearningHome(clLevel);
+                return;
+            }
             container.innerHTML = '';
             container.style.display = 'flex';
             container.style.gap = '20px';
@@ -2505,12 +2806,20 @@ const app = {
             btn.classList.add('active');
         },
         async startPlay() {
+            const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
+
+            if (!isAdmin && this.state.selectedTopics.length === 0) {
+                const recommended = this.getLearningPlan().recommended;
+                if (recommended) {
+                    this.state.selectedTopics = [recommended.topic];
+                    this.state.selectedLessons = recommended.kind === 'lesson' ? [recommended.id] : [];
+                }
+            }
+
             if (this.state.selectedTopics.length === 0) {
                 alert('Vui lòng chọn ít nhất 1 chủ đề!');
                 return;
             }
-
-            const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
 
             // C2: Giới hạn 5 lượt chơi/ngày bằng năng lượng (chỉ áp dụng học sinh, không áp dụng admin).
             if (!isAdmin && app.daily.getEnergy(app.data.currentUser) <= 0) {
@@ -2533,6 +2842,17 @@ const app = {
             }
 
             const mappedSubject = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
+            const selectedLessonId = !isAdmin ? this.getSelectedLearningLessonId() : '';
+            const requestedLessonId = !isAdmin && Array.isArray(this.state.selectedLessons)
+                ? this.state.selectedLessons[0]
+                : '';
+            if (!isAdmin && requestedLessonId && !selectedLessonId) {
+                this.state.selectedTopics = [];
+                this.state.selectedLessons = [];
+                this.renderTopics();
+                alert('Bài này chưa được mở theo tiến độ của lớp. Hãy chọn bài đang học nhé.');
+                return;
+            }
 
             let pool = app.data.libraryQuestions.filter(q => {
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
@@ -2545,8 +2865,10 @@ const app = {
                     const semesterTopics = Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
                     return semesterTopics && same(q.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
                 })();
+                const questionLesson = selectedLessonId ? this.getQuestionLessonId(q) : '';
+                const matchLesson = !selectedLessonId || same(questionLesson, selectedLessonId);
 
-                return matchSubject && matchClass && matchTopic && selectedSemester
+                return matchSubject && matchClass && matchTopic && selectedSemester && matchLesson
                     && this.isTemplateAllowedForTopic(q.templateId || q.generator_key, selectedTopic)
                     && !app.data.validateQuestionScoring(q);
             });
@@ -2561,7 +2883,10 @@ const app = {
                 const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
                 const semesterTopics = selectedTopic && Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
                 const matchSemester = semesterTopics && same(template.semester, semesterTopics[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2');
+                const templateLesson = selectedLessonId ? this.getTemplateLessonId(template) : '';
+                const matchLesson = !selectedLessonId || same(templateLesson, selectedLessonId);
                 return matchSubject && matchClass && matchTopic && matchSemester
+                    && matchLesson
                     && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
 
@@ -2577,19 +2902,35 @@ const app = {
                         const sample = registry.generateQuestion(generatorKey, {});
                         const canonicalId = sample.templateId || generatorKey;
                         if (seenTemplateIds.has(canonicalId)) return templates;
-                        const selectedTopic = this.state.selectedTopics.find(topic => same(sample.topic, topic));
+                        const selectedTopic = this.state.selectedTopics.find(topic => same(sample.topic, topic)
+                            || Boolean(app.curriculum?.getTemplateLesson({
+                                classlevel: sample.classlevel,
+                                subject: mappedSubject,
+                                semester: sample.semester,
+                                topic,
+                                generator_key: generatorKey
+                            })));
                         if (!selectedTopic || !same(sample.classlevel, 'Lớp 4') || !same(sample.subject, mappedSubject)) return templates;
                         const topicData = app.constants.topics[clLevel]?.[this.state.subject] || {};
                         const semesterTopics = Object.entries(topicData).find(([, topics]) => topics.includes(selectedTopic));
                         const expectedSemester = semesterTopics?.[0] === 'hk1' ? 'Học kỳ 1' : 'Học kỳ 2';
                         if (!semesterTopics || !same(sample.semester, expectedSemester)) return templates;
+                        const mappedLesson = app.curriculum?.getTemplateLesson({
+                            classlevel: sample.classlevel,
+                            subject: mappedSubject,
+                            semester: sample.semester,
+                            topic: selectedTopic,
+                            generator_key: generatorKey
+                        }) || '';
+                        if (selectedLessonId && !same(mappedLesson, selectedLessonId)) return templates;
                         seenTemplateIds.add(canonicalId);
                         templates.push({
                             id: `built-in-${canonicalId}`,
                             classlevel: sample.classlevel,
                             subject: sample.subject,
                             semester: sample.semester,
-                            topic: sample.topic,
+                            topic: selectedTopic,
+                            lesson: mappedLesson,
                             question_type: sample.type,
                             generator_key: generatorKey,
                             prompt_template: '{question}',
@@ -2966,7 +3307,7 @@ const app = {
 
             if (Array.isArray(question.subquestions)) return Math.min(total, countFilled(this.state.multipleChoiceSelections) || 0);
             if (Array.isArray(question.statements)) return Math.min(total, countFilled(this.state.trueFalseSelections) || 0);
-            if (Array.isArray(question.sequenceRounds) || String(question.type || '').includes('Chuỗi')) {
+            if (Array.isArray(question.sequenceRounds) || question.templateId === 'number.natural_sequence' || String(question.type || '').includes('Chuỗi')) {
                 const sequenceCount = countFilled(this.state.seqAnswers);
                 if (sequenceCount !== null) return Math.min(total, sequenceCount);
             }
@@ -3098,8 +3439,8 @@ const app = {
                 : '';
             const questionContainer = document.getElementById('game-question-container');
             const playCenter = document.querySelector('#game-play-view .play-center');
-            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count');
-            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count', 'question-box--shared-only');
+            playCenter?.classList.remove('play-center--four-part-mc', 'play-center--four-expressions', 'play-center--four-comparisons', 'play-center--angle-drag', 'play-center--angle-count', 'play-center--sequence');
+            questionContainer.classList.remove('question-box--template', 'question-box--fill', 'question-box--comparison', 'question-box--safe-password', 'question-box--four-operations-expressions', 'question-box--four-part-fill', 'question-box--angle-drag', 'question-box--angle-count', 'question-box--sequence', 'question-box--shared-only');
             if (q.templateId === 'number.safe_password_by_place_value') {
                 questionContainer.classList.add('question-box--template', 'question-box--safe-password');
                 questionContainer.innerHTML = `<div class="safe-password-copy">${qHtml}</div>${sharedPromptMarkup}`;
@@ -3136,6 +3477,9 @@ const app = {
             else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
             else qType = 'Điền khuyết';
             if (Array.isArray(q.comparisonRows)) qType = 'Kéo thả';
+            if (Array.isArray(q.sequenceRounds)) qType = 'Chuỗi quy luật';
+            if (q.templateId === 'number.natural_sequence') qType = 'Chuỗi quy luật';
+            if (Array.isArray(q.statements)) qType = 'Đúng/Sai';
 
             let opts = q.options || [];
 
@@ -3144,7 +3488,7 @@ const app = {
                 else if (qType === 'So sánh') opts = ['>', '<', '='];
                 else if (qType === 'Kéo thả' && Array.isArray(q.comparisonRows)) opts = ['>', '<', '='];
                 else if (qType === 'Trắc nghiệm') opts = [q.ans];
-                else qType = 'Điền khuyết';
+                else if (qType !== 'Chuỗi quy luật') qType = 'Điền khuyết';
             }
 
             if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
@@ -3278,7 +3622,8 @@ const app = {
                 optContainer.className = '';
                 playCenter?.classList.add('play-center--four-comparisons');
                 questionContainer.classList.add('question-box--template', 'question-box--four-comparisons');
-                questionContainer.innerHTML = `<div class="template-question-copy">Điền dấu thích hợp:</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row comparison-drag-row--tone-${index % 4}"><span class="comparison-drag-label">${row.label})</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
+                const comparisonTitle = String(q.q || '').split(/<br\s*\/?\s*>/i)[0].replace(/<[^>]*>/g, ' ').trim() || 'Điền dấu thích hợp:';
+                questionContainer.innerHTML = `<div class="comparison-drag-title template-question-copy">${app.data.formatMathHTML(comparisonTitle)}</div><div class="comparison-drag-controls" aria-label="Dấu so sánh">${['>', '<', '='].map(sign => `<button type="button" class="comparison-drag-sign" draggable="true" data-sign="${sign}" aria-label="Dấu ${sign}">${sign}</button>`).join('')}</div><div class="comparison-drag-rows">${q.comparisonRows.map((row, index) => `<div class="comparison-drag-row comparison-drag-row--tone-${index % 4}"><span class="comparison-drag-label">${row.label})</span><span class="comparison-drag-side">${app.data.formatMathText(row.leftText)}</span><button type="button" class="comparison-drag-slot drag-slot" data-index="${index}" aria-label="Ô điền dấu câu ${row.label}">?</button><span class="comparison-drag-side">${app.data.formatMathText(row.rightText)}</span></div>`).join('')}</div>`;
                 const answers = new Array(q.comparisonRows.length).fill('');
                 let selectedSign = '';
                 const signButtons = [...questionContainer.querySelectorAll('.comparison-drag-sign')];
@@ -3455,120 +3800,91 @@ const app = {
                 });
             } else if (qType === 'Chuỗi quy luật') {
                 optContainer.className = '';
-                const parts = (q.q || '').split(/\.\.\.|___/);
+                const questionText = String(q.q || '');
+                const parts = questionText.split(/\.\.\.|___/);
+                const sequenceLines = questionText.split(/<br\s*\/?\s*>/i);
+                const sequenceRounds = Array.isArray(q.sequenceRounds) && q.sequenceRounds.length
+                    ? q.sequenceRounds
+                    : q.templateId === 'number.natural_sequence'
+                        ? sequenceLines.map(line => {
+                            const match = line.trim().match(/^([a-dA-D])[.)]\s*(.*)$/);
+                            return match ? { label: match[1].toLowerCase(), display: match[2] } : null;
+                        }).filter(Boolean)
+                        : [];
+                const sequenceInstruction = (sequenceLines[0] || 'Điền số thích hợp vào mỗi dãy:')
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim() || 'Điền số thích hợp vào mỗi dãy:';
+                const renderInput = (index, label) => `<span class="seq-slot-wrap"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" class="train-node train-slot seq-slot" data-index="${index}" autocomplete="off" placeholder="?" aria-label="Ô điền dãy ${app.data.sanitizeHTML(label)}"></span>`;
 
-                const shapes = ['shape-train', 'shape-light', 'shape-book', 'shape-flower', 'shape-apple', 'shape-balloon', 'shape-square'];
-                const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
-
-                let html = `<div class="train-container ${randomShape}">`;
-                const numSlots = parts.length - 1;
-                this.state.seqAnswers = new Array(numSlots).fill('');
-                this.state.focusedSeqSlot = 0;
-
-                if (Array.isArray(q.sequenceRounds)) {
-                    let slotIndex = 0;
-                    html = '<div class="template-sequence-title">Điền số thích hợp vào mỗi dãy:</div>';
-                    q.sequenceRounds.forEach(round => {
-                        html += `<div class="train-container ${randomShape}"><b>${round.label})</b>`;
+                let html = '';
+                let numSlots = 0;
+                if (sequenceRounds.length) {
+                    html = `<div class="template-sequence-title">${app.data.formatMathHTML(sequenceInstruction)}</div>`;
+                    sequenceRounds.forEach((round, roundIndex) => {
+                        const roundLabel = String(round.label || String.fromCharCode(97 + roundIndex)).replace(/[.)]/g, '').trim();
+                        html += `<div class="train-container template-sequence-row template-sequence-row--tone-${roundIndex % 4}"><b class="template-sequence-round-label">${app.data.sanitizeHTML(roundLabel)})</b><div class="template-sequence-track">`;
                         const displayTerms = String(round.display || '').split(',').map(term => term.trim()).filter(Boolean);
                         if (displayTerms.length) {
                             displayTerms.forEach((term, index) => {
                                 const isBlank = term.replace(/\s/g, '') === '___';
-                                html += isBlank ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathText(term)}</div>`;
+                                html += isBlank ? renderInput(numSlots++, roundLabel) : `<div class="train-node">${app.data.formatMathText(term)}</div>`;
                                 if (index < displayTerms.length - 1) html += '<div class="train-arrow">➔</div>';
                             });
                         } else {
                             const sequence = Array.isArray(round.sequence) ? round.sequence : [];
                             const blankIndexes = Array.isArray(round.blankIndexes) ? round.blankIndexes : [];
                             sequence.forEach((value, index) => {
-                                html += blankIndexes.includes(index) ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.formatMathNumber(value)}</div>`;
+                                html += blankIndexes.includes(index) ? renderInput(numSlots++, roundLabel) : `<div class="train-node">${app.data.formatMathNumber(value)}</div>`;
                                 if (index < sequence.length - 1) html += '<div class="train-arrow">➔</div>';
                             });
                         }
-                        html += '</div>';
+                        html += '</div></div>';
                     });
                 } else if (q.templateId === 'number.natural_sequence') {
+                    html = `<div class="template-sequence-title">${app.data.formatMathHTML(sequenceInstruction)}</div>`;
                     let slotIndex = 0;
-                    q.q.split(',').map(item => item.trim()).filter(Boolean).forEach((term, index, terms) => {
-                        html += term === '___' ? `<div class="train-node train-slot seq-slot" data-index="${slotIndex++}">?</div>` : `<div class="train-node">${app.data.sanitizeHTML(term)}</div>`;
-                        if (index < terms.length - 1) html += `<div class="train-arrow">➔</div>`;
+                    sequenceLines.slice(1).forEach((line, roundIndex) => {
+                        const match = line.trim().match(/^([a-dA-D])[.)]\s*(.*)$/);
+                        if (!match) return;
+                        const roundLabel = match[1].toLowerCase();
+                        const terms = match[2].split(',').map(item => item.trim()).filter(Boolean);
+                        html += `<div class="train-container template-sequence-row template-sequence-row--tone-${roundIndex % 4}"><b class="template-sequence-round-label">${roundLabel})</b><div class="template-sequence-track">`;
+                        terms.forEach((term, index) => {
+                            html += term.replace(/\s/g, '') === '___' ? renderInput(slotIndex++, roundLabel) : `<div class="train-node">${app.data.formatMathText(term)}</div>`;
+                            if (index < terms.length - 1) html += '<div class="train-arrow">➔</div>';
+                        });
+                        html += '</div></div>';
                     });
+                    numSlots = slotIndex;
                 } else {
+                    html = '<div class="train-container">';
                     for (let i = 0; i < parts.length; i++) {
                         const text = parts[i].trim();
-                        if (text) html += `<div class="train-node">${text}</div>`;
+                        if (text) html += `<div class="train-node">${app.data.formatMathHTML(text)}</div>`;
                         if (i < parts.length - 1) {
-                            if (text) html += `<div class="train-arrow">➔</div>`;
-                            html += `<div class="train-node train-slot seq-slot" data-index="${i}">?</div>`;
-                            if (i < parts.length - 2) html += `<div class="train-arrow">➔</div>`;
+                            if (text) html += '<div class="train-arrow">➔</div>';
+                            html += renderInput(numSlots++, '');
+                            if (i < parts.length - 2) html += '<div class="train-arrow">➔</div>';
                         }
                     }
+                    html += '</div>';
                 }
-                html += '</div>';
-                document.getElementById('game-question-container').innerHTML = q.q.includes('___') || q.q.includes('...') ? html : (app.data.formatMathHTML(q.q) + html);
+                this.state.seqAnswers = new Array(numSlots).fill('');
+                questionContainer.classList.add('question-box--template', 'question-box--sequence');
+                playCenter?.classList.add('play-center--sequence');
+                document.getElementById('game-question-container').innerHTML = html;
 
                 const slots = document.querySelectorAll('.seq-slot');
-                const updateFocus = () => {
-                    slots.forEach((s, idx) => {
-                        if (idx === this.state.focusedSeqSlot) {
-                            s.style.animation = 'pulse-border 2s infinite';
-                            s.style.boxShadow = '0 0 15px rgba(253, 224, 71, 0.8)';
-                        } else {
-                            s.style.animation = 'none';
-                            s.style.boxShadow = 'none';
-                        }
-                    });
-                };
-
                 slots.forEach((slot, idx) => {
-                    slot.onclick = () => {
-                        this.state.focusedSeqSlot = idx;
-                        updateFocus();
-                    };
-                });
-
-                if (slots.length > 0) updateFocus();
-
-                const numpad = document.createElement('div');
-                numpad.className = 'numpad';
-                const buttons = ['7', '8', '9', '4', '5', '6', '1', '2', '3', 'Xóa', '0'];
-                buttons.forEach(btnText => {
-                    const btn = document.createElement('button');
-                    btn.className = 'num-btn';
-                    if (btnText === '0') btn.classList.add('zero');
-                    if (btnText === 'Xóa') btn.classList.add('del');
-                    btn.textContent = btnText;
-                    btn.onclick = () => {
-                        const idx = this.state.focusedSeqSlot;
-                        if (idx < 0 || idx >= numSlots) return;
-
-                        let currentVal = this.state.seqAnswers[idx];
-                        if (btnText === 'Xóa') {
-                            currentVal = currentVal.slice(0, -1);
-                        } else if (currentVal.length < 7) {
-                            currentVal += btnText;
-                        }
-
-                        this.state.seqAnswers[idx] = currentVal;
-
-                        const slot = slots[idx];
-                        if (slot) {
-                            slot.textContent = currentVal || '?';
-                            if (currentVal) {
-                                slot.style.borderColor = '#4ade80';
-                                slot.style.color = '#4ade80';
-                            } else {
-                                slot.style.borderColor = '#fde047';
-                                slot.style.color = '#fde047';
-                            }
-                        }
-
+                    slot.addEventListener('input', () => {
+                        const digitsOnly = slot.value.replace(/[^0-9]/g, '');
+                        if (slot.value !== digitsOnly) slot.value = digitsOnly;
+                        this.state.seqAnswers[idx] = digitsOnly;
                         this.state.selectedAns = this.state.seqAnswers.join(', ');
-                        btnCheck.disabled = !this.state.seqAnswers.every(x => x.length > 0);
-                    };
-                    numpad.appendChild(btn);
+                        btnCheck.disabled = !this.state.seqAnswers.every(value => value.length > 0);
+                    });
                 });
-                optContainer.appendChild(numpad);
             } else if (qType === 'Điền khuyết' && q.templateId === 'number.four_operations_expressions' && Array.isArray(q.practiceRows)) {
                 optContainer.className = '';
                 playCenter?.classList.add('play-center--four-expressions');
@@ -3670,14 +3986,14 @@ const app = {
                         }
                         html += '</div></div>';
                         if (q.imageUrl) html += `<br><img src="${q.imageUrl}" style="max-height:200px; margin-top:10px;">`;
-                        const hasFourSubquestions = parts.length === 5;
+                        const hasFourSubquestions = String(q.q || '').split(/<br\s*\/?\s*>/i).filter(line => /^\s*[a-d][.)]\s*/i.test(line)).length === 4;
                         questionContainer.classList.add('question-box--template', 'question-box--fill');
                         if (hasFourSubquestions) questionContainer.classList.add('question-box--four-part-fill');
                         questionContainer.innerHTML = html;
                         if (hasFourSubquestions) {
-                            questionContainer.querySelectorAll('.template-fill-row').forEach((row, index) => {
-                                if (index === 0) return;
-                                const tone = index - 1;
+                            const labeledRows = [...questionContainer.querySelectorAll('.template-fill-row')]
+                                .filter(row => /^\s*[a-d][.)]\s*/i.test(row.textContent.trim()));
+                            labeledRows.forEach((row, tone) => {
                                 const label = String.fromCharCode(97 + tone);
                                 row.classList.add(`template-fill-row--tone-${tone}`);
                                 row.innerHTML = row.innerHTML.replace(new RegExp(`^\\s*${label}\\)`), `<span class="four-part-label four-part-label--tone-${tone}">${label})</span>`);
@@ -3701,7 +4017,6 @@ const app = {
                     inp.style.width = '200px';
                     inp.autocomplete = 'off';
                     inp.oninput = () => { this.state.selectedAns = inp.value; btnCheck.disabled = !inp.value.trim(); };
-                    optContainer.appendChild(inp);
                     optContainer.appendChild(inp);
                 }
             } else if (qType === 'Đối chiếu trùng khớp') {
@@ -3927,11 +4242,14 @@ const app = {
             else if (rawType.includes('Đối chiếu')) qType = 'Đối chiếu trùng khớp';
             else qType = 'Điền khuyết';
             if (Array.isArray(q.comparisonRows)) qType = 'Kéo thả';
+            if (Array.isArray(q.sequenceRounds)) qType = 'Chuỗi quy luật';
+            if (q.templateId === 'number.natural_sequence') qType = 'Chuỗi quy luật';
+            if (Array.isArray(q.statements)) qType = 'Đúng/Sai';
 
             let opts = q.options || [];
 
             if (opts.length === 0) {
-                if (qType !== 'Đúng/Sai' && qType !== 'So sánh' && qType !== 'Trắc nghiệm' && qType !== 'Kéo thả') {
+                if (qType !== 'Đúng/Sai' && qType !== 'So sánh' && qType !== 'Trắc nghiệm' && qType !== 'Kéo thả' && qType !== 'Chuỗi quy luật') {
                     qType = 'Điền khuyết';
                 }
             }
@@ -4078,22 +4396,24 @@ const app = {
             } else if (qType === 'Chuỗi quy luật') {
                 const ansArr = this.getAnsArr(q.ans);
                 const selectedArr = this.getAnsArr(this.state.selectedAns);
-                isCorrect = selectedArr.every((val, i) => val === ansArr[i]);
+                isCorrect = selectedArr.length === ansArr.length && selectedArr.every((val, i) => this.normalizeFillAnswer(val) === this.normalizeFillAnswer(ansArr[i]));
 
                 const slots = document.querySelectorAll('.seq-slot');
                 slots.forEach((slot, i) => {
-                    const slotIsCorrect = slot.textContent === ansArr[i];
+                    const enteredValue = typeof slot.value === 'string' ? slot.value : slot.textContent;
+                    const slotIsCorrect = this.normalizeFillAnswer(enteredValue) === this.normalizeFillAnswer(ansArr[i]);
                     this.setAnswerState(slot, slotIsCorrect);
+                    const resultHost = slot.parentElement || slot;
                     if (slotIsCorrect) {
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-v';
                         icon.textContent = '✔️';
-                        slot.appendChild(icon);
+                        resultHost.appendChild(icon);
                     } else {
                         const icon = document.createElement('div');
                         icon.className = 'result-icon icon-x';
                         icon.textContent = '❌';
-                        slot.appendChild(icon);
+                        resultHost.appendChild(icon);
                         this.showInlineAnswerCorrection(slot, ansArr[i]);
                     }
                 });
@@ -4510,6 +4830,8 @@ const app = {
                 difficulty: diff,
                 questionCount: qCount,
                 score,
+                lesson: playedLessons.length === 1 ? playedLessons[0] : null,
+                lessons: playedLessons,
                 details: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : []
             };
             return { entry, newlyUnlockedTopic, playedTopics, fallbackTopics, playedLessons };
@@ -4591,6 +4913,8 @@ const app = {
 
         getQuestionType(question) {
             if (Array.isArray(question?.comparisonRows)) return 'Kéo thả';
+            if (Array.isArray(question?.sequenceRounds) || question?.templateId === 'number.natural_sequence') return 'Chuỗi Quy luật';
+            if (Array.isArray(question?.statements)) return 'Đúng/Sai';
             const type = String(question.type || 'Trắc nghiệm').trim().normalize('NFC');
             if (type.includes('Đúng/Sai')) return 'Đúng/Sai';
             if (type.includes('So sánh')) return 'So sánh';
@@ -6227,6 +6551,8 @@ const app = {
             if (composerModules && this.isAdminUser()) {
                 return this.openComposerModule(module);
             }
+            const adminModal = document.getElementById('treasure-modal');
+            if (adminModal && this.isAdminUser()) adminModal.dataset.uiContext = 'admin';
             document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
@@ -6234,6 +6560,8 @@ const app = {
                 { id: 'quests', label: 'Quản lý Nhiệm vụ' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
+            const treasureTitle = document.getElementById('treasure-title');
+            if (treasureTitle) treasureTitle.textContent = tab === 'settings' ? 'Hành trình tri thức' : 'Cài Đặt Hệ Thống';
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
@@ -7180,10 +7508,145 @@ const app = {
                 this.renderQuests(document.getElementById('treasure-content-area'));
             }
         },
+        getLessonReleaseDraft() {
+            const classlevel = document.getElementById('learning-release-class')?.value || '4';
+            const subject = document.getElementById('learning-release-subject')?.value || 'math';
+            const semester = document.getElementById('learning-release-semester')?.value || 'all';
+            const lessonSelect = document.getElementById('learning-release-lesson');
+            const lesson = lessonSelect?.value || lessonSelect?.dataset.preservedRelease || '';
+            return { classlevel, subject, semester, lesson };
+        },
+        renderLessonReleaseEditor() {
+            const preview = document.getElementById('learning-release-preview');
+            const lessonField = document.getElementById('learning-release-lesson');
+            const summary = document.getElementById('learning-release-summary');
+            if (!preview || !lessonField || !summary || !app.learningPath) return;
+
+            const draft = this.getLessonReleaseDraft();
+            const entries = app.learningPath.getEntries({ classlevel: draft.classlevel, subject: draft.subject })
+                .filter(entry => draft.semester === 'all' || entry.semester === draft.semester);
+            const supportsLessons = entries.some(entry => entry.kind === 'lesson');
+            const currentRelease = app.learningPath.getReleaseBoundary({
+                settings: app.data.settings,
+                classlevel: draft.classlevel,
+                subject: draft.subject
+            });
+            const selectedLesson = entries.some(entry => entry.id === draft.lesson)
+                ? draft.lesson
+                : (entries.some(entry => entry.id === currentRelease?.id) ? currentRelease.id : '');
+            const currentReleaseOutsideFilter = Boolean(currentRelease && !entries.some(entry => entry.id === currentRelease.id));
+
+            lessonField.disabled = !supportsLessons;
+            lessonField.dataset.preservedRelease = currentReleaseOutsideFilter ? currentRelease.id : '';
+            lessonField.innerHTML = supportsLessons
+                ? `<option value="">${currentReleaseOutsideFilter ? `Giữ mốc hiện tại · ${app.data.sanitizeHTML(currentRelease.label)}` : 'Chưa đặt mốc · tạm mở Bài 1'}</option>${entries.map(entry => `<option value="${app.data.sanitizeHTML(entry.id)}" ${entry.id === selectedLesson ? 'selected' : ''}>${app.data.sanitizeHTML(entry.label)}</option>`).join('')}`
+                : '<option value="">Chưa có danh mục Bài học chính thức</option>';
+            lessonField.value = supportsLessons ? selectedLesson : '';
+
+            if (!supportsLessons) {
+                const cardBoundary = document.getElementById('learning-release-card-boundary');
+                if (cardBoundary) cardBoundary.textContent = 'Chưa có mốc Bài học';
+                summary.innerHTML = `<strong>Chưa thể đặt mốc Bài học cho ${draft.classlevel === '4' && draft.subject === 'math' ? 'phạm vi này' : 'khối/môn đang chọn'}.</strong><span>Danh mục Bài học chính thức chưa được khai báo. Hệ thống giữ nguyên luyện tập theo Chủ đề để không suy đoán nội dung giáo trình.</span>`;
+                preview.innerHTML = `<div class="learning-release-empty" role="status"><span aria-hidden="true">ℹ</span><p>Hãy chọn <strong>Lớp 4 → Toán</strong> để dùng mốc Bài học hiện có, hoặc cập nhật danh mục chính thức trước khi mở chi tiết cho phạm vi này.</p></div>`;
+                return;
+            }
+
+            const releaseId = lessonField.value || '';
+            const states = app.learningPath.getProgressStates({ entries, releaseId });
+            const releaseEntry = states.find(entry => entry.id === releaseId);
+            const cardBoundary = document.getElementById('learning-release-card-boundary');
+            if (cardBoundary) cardBoundary.textContent = releaseEntry ? `Đã mở đến ${releaseEntry.label}` : 'Chưa đặt mốc · tạm mở Bài 1';
+            summary.innerHTML = releaseEntry
+                ? `<strong>Học sinh được học đến ${app.data.sanitizeHTML(releaseEntry.label)}.</strong><span>Các Bài trước vẫn có thể được ôn lại; Bài sau mốc sẽ hiện khóa.</span>`
+                : '<strong>Chưa đặt mốc Bài học.</strong><span>Hệ thống tạm chỉ mở Bài 1 để học sinh không làm trước nội dung chưa học.</span>';
+
+            const groups = [];
+            states.forEach(entry => {
+                const key = `${entry.semester}:${entry.topic}`;
+                let group = groups.find(item => item.key === key);
+                if (!group) {
+                    group = { key, semesterLabel: entry.semesterLabel, topic: entry.topic, entries: [] };
+                    groups.push(group);
+                }
+                group.entries.push(entry);
+            });
+            preview.innerHTML = groups.map(group => `<section class="learning-release-group" aria-label="${app.data.sanitizeHTML(`${group.semesterLabel} · ${group.topic}`)}">
+                <h4>${app.data.sanitizeHTML(group.semesterLabel)} · ${app.data.sanitizeHTML(group.topic)}</h4>
+                <div class="learning-release-rows">${group.entries.map(entry => `<div class="learning-release-row learning-release-row--${entry.state}${entry.id === releaseId ? ' is-boundary' : ''}">
+                  <span class="learning-release-row__icon" aria-hidden="true">${entry.state === 'locked' ? '🔒' : entry.id === releaseId ? '⚑' : '✓'}</span>
+                  <strong>${app.data.sanitizeHTML(entry.label)}</strong>
+                  <span>${entry.id === releaseId ? 'Mốc đang mở cho học sinh' : entry.state === 'locked' ? 'Chưa mở' : 'Có thể học'}</span>
+                </div>`).join('')}</div>
+              </section>`).join('');
+        },
+        async saveLessonRelease() {
+            const draft = this.getLessonReleaseDraft();
+            const entries = app.learningPath?.getEntries({ classlevel: draft.classlevel, subject: draft.subject }) || [];
+            const validLesson = entries.some(entry => entry.kind === 'lesson' && entry.id === draft.lesson);
+            if (draft.lesson && !validLesson) {
+                alert('Mốc Bài học không hợp lệ với khối và môn đang chọn.');
+                return;
+            }
+
+            const previous = JSON.parse(JSON.stringify(app.data.settings?.lessonReleaseByClass || {}));
+            const releaseByClass = JSON.parse(JSON.stringify(previous));
+            releaseByClass[draft.classlevel] ||= {};
+            if (draft.lesson) releaseByClass[draft.classlevel][draft.subject] = draft.lesson;
+            else delete releaseByClass[draft.classlevel][draft.subject];
+            if (Object.keys(releaseByClass[draft.classlevel]).length === 0) delete releaseByClass[draft.classlevel];
+
+            app.data.settings = { ...app.data.settings, lessonReleaseByClass: releaseByClass };
+            const button = document.getElementById('learning-release-save-button');
+            const oldText = button?.textContent || 'Lưu mốc học tập';
+            if (button) {
+                button.textContent = 'Đang lưu…';
+                button.disabled = true;
+            }
+            const error = await app.data.saveSettings();
+            if (button) {
+                button.textContent = oldText;
+                button.disabled = false;
+            }
+            if (error) {
+                app.data.settings = { ...app.data.settings, lessonReleaseByClass: previous };
+                this.renderLessonReleaseEditor();
+                return;
+            }
+            this.renderLessonReleaseEditor();
+            alert(draft.lesson ? 'Đã lưu mốc học tập cho lớp.' : 'Đã bỏ mốc Bài học; lớp quay về phạm vi hiện có.');
+        },
         renderSettings(box) {
             const hardTime = Number(app.data.settings.hardTimeLimit) || 10;
             const examTime = Number(app.data.settings.examTimeLimit) || 30;
             box.innerHTML = `
+                <div class="learning-release-dashboard">
+                <section class="learning-release-workspace learning-release-workspace--mockup" aria-labelledby="learning-release-title">
+                    <header class="learning-release-header">
+                        <div><span class="settings-workspace__kicker">Lộ trình học · Admin</span><h3 id="learning-release-title">Mở bài cho lớp học</h3><p>Cô chọn một mốc theo đúng tiến độ đã dạy. Học sinh được ôn lại bài trước nhưng không thể vượt qua mốc này; nếu chưa chọn, hệ thống chỉ mở Bài 1.</p></div>
+                        <div class="learning-release-badge"><strong>1</strong><span>mốc cần chọn</span></div>
+                    </header>
+                    <div class="learning-release-controls" aria-label="Phạm vi lớp học">
+                        <label><span>Lớp</span><select id="learning-release-class" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4" selected>Lớp 4</option><option value="5">Lớp 5</option></select></label>
+                        <label><span>Môn</span><select id="learning-release-subject" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="math" selected>Toán</option><option value="vietnamese">Tiếng Việt</option></select></label>
+                        <label><span>Học kỳ</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
+                    </div>
+                    <div class="learning-release-boundary">
+                        <label for="learning-release-lesson"><strong>Cho học sinh học đến:</strong></label>
+                        <select id="learning-release-lesson" class="form-input" aria-describedby="learning-release-summary" onchange="app.admin.renderLessonReleaseEditor()"></select>
+                        <button type="button" id="learning-release-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveLessonRelease()">Lưu mốc học tập</button>
+                    </div>
+                    <div id="learning-release-summary" class="learning-release-summary" role="status"></div>
+                    <div id="learning-release-preview" class="learning-release-preview" aria-label="Xem trước lộ trình"></div>
+                </section>
+                <aside class="learning-release-class-card" aria-label="Thông tin lớp học">
+                    <span class="learning-release-class-card__kicker">Thông tin lớp học</span>
+                    <h4>Tiến độ lớp</h4>
+                    <strong id="learning-release-card-boundary">Đang tải mốc học</strong>
+                    <p>Học sinh được ôn lại các Bài trước nhưng không vượt qua mốc cô đã mở.</p>
+                    <button type="button" class="learning-release-class-card__button" onclick="document.getElementById('learning-release-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })">Kiểm tra nội dung <span aria-hidden="true">›</span></button>
+                    <div class="learning-release-class-card__tip"><span aria-hidden="true">↻</span> Học sinh được ôn lại bài trước</div>
+                </aside>
+                </div>
                 <section class="settings-workspace" aria-label="Điều chỉnh hệ thống">
                     <header class="settings-workspace__hero">
                         <div>
@@ -7225,6 +7688,7 @@ const app = {
                     </section>
                 </section>
             `;
+            this.renderLessonReleaseEditor();
         },
         async saveSettings() {
             const hardTime = parseInt(document.getElementById('setting-hard-time').value, 10);
@@ -7377,6 +7841,33 @@ const app = {
                 delete lesson.dataset.selected;
                 lesson.value = '';
             }
+            this.syncTemplateTrueFalseControls();
+        },
+        syncTemplateTrueFalseControls() {
+            const rule = document.querySelector('.template-editor__rule--true-false-controls');
+            if (!rule) return;
+            const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
+            const isB01 = selectedLesson === 'g4-math-hk1-b01';
+            const classInput = rule.querySelector('input[data-template-group="true-false-kinds"][value="class"]');
+            const classLabel = classInput?.closest('label');
+            if (classLabel) classLabel.hidden = isB01;
+            if (classInput) {
+                classInput.disabled = isB01;
+                if (isB01) classInput.checked = false;
+            }
+            rule.querySelectorAll('input[data-template-group="true-false-kinds"]').forEach(input => {
+                if (input.value === 'class') return;
+                input.disabled = isB01;
+                if (isB01 && ['place', 'comparison'].includes(input.value)) input.checked = true;
+            });
+            const description = rule.querySelector('p');
+            if (description) description.textContent = isB01
+                ? 'Bài 1 luôn có đủ 4 kiểu: nhận định hàng; so sánh số–số; so sánh số–biểu thức; so sánh biểu thức–biểu thức. Số có 4 hoặc 5 chữ số.'
+                : 'Chọn pool nội dung cho bốn nhận định A–D. Mỗi lượt game chọn một loại (lớp, hàng hoặc so sánh) và giữ nguyên loại đó cho cả bốn ý; game tự tạo cả nhận định Đúng lẫn Sai.';
+            const note = rule.querySelector('.template-editor__rule-note');
+            if (note) note.textContent = isB01
+                ? 'Bài 1 không dùng khái niệm “lớp”. Hai lựa chọn dưới đây là cố định và chỉ mang tính mô tả; game tự sinh đủ bốn kiểu theo đúng thứ tự.'
+                : 'Có thể chọn các dạng để đa dạng giữa các lượt; game không trộn các dạng trong cùng một lượt.';
         },
         getNewTemplateDraft() {
             const generatorKey = 'number.digit_at_place';
@@ -7415,12 +7906,19 @@ const app = {
             const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
             const matchingDigits = (config.digits || (selectedTemplateLesson === 'g4-math-hk1-b01' ? [4, 5] : [7, 8, 9])).join(', ');
             const matchingWeights = config.digitWeights ? Object.entries(config.digitWeights).map(([digit, weight]) => `${digit}:${weight}`).join(', ') : '';
-            const naturalSteps = (config.allowedSteps || [1000,2000,3000,4000,5000,6000,7000,8000,9000,-1000,-2000,-3000,-4000,-5000,-6000,-7000,-8000,-9000]).join(', ');
+            const naturalSteps = (config.allowedSteps || [1,10,100,1000,10000,-1,-10,-100,-1000,-10000]).join(', ');
             const naturalLengthMin = Number(config.sequenceLengthMin ?? 6);
             const naturalLengthMax = Number(config.sequenceLengthMax ?? 6);
             const naturalBlankMin = Number(config.blankCountMin ?? 1);
             const naturalBlankMax = Number(config.blankCountMax ?? 3);
-            const trueFalseKinds = config.statementKinds || ['class', 'place'];
+            const isB01Lesson = selectedTemplateLesson === 'g4-math-hk1-b01';
+            const trueFalseAllowedKinds = isB01Lesson ? ['place', 'comparison'] : ['class', 'place', 'comparison'];
+            const configuredTrueFalseKinds = Array.isArray(config.statementKinds)
+                ? config.statementKinds.filter(kind => trueFalseAllowedKinds.includes(kind))
+                : [];
+            const trueFalseKinds = configuredTrueFalseKinds.length
+                ? configuredTrueFalseKinds
+                : (isB01Lesson ? ['place', 'comparison'] : ['class', 'place']);
             const digitCount = number => String(Math.max(0, Math.trunc(Number(number) || 0))).length;
             const rangeMinimumDigits = Math.max(1, Math.min(12, Number(config.minimumDigits ?? digitCount(config.minimum ?? 10000))));
             const rangeMaximumDigits = Math.max(rangeMinimumDigits, Math.min(12, Number(config.maximumDigits ?? digitCount(config.maximum ?? 100000))));
@@ -7466,7 +7964,20 @@ const app = {
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedDigits = config.allowedDigits || [1,2,3,4,5,6,7,8,9];
-            const checkbox = (value, label, selected, group) => `<label class="template-editor__check"><input class="template-checkbox" data-template-group="${group}" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${label}</span></label>`;
+            const roundingPlaceChoices = [['tens', 'Hàng chục'], ['hundreds', 'Hàng trăm'], ['thousands', 'Hàng nghìn'], ['tenThousands', 'Hàng chục nghìn']];
+            const selectedRoundingPlaces = Array.isArray(config.allowedPlaces) && config.allowedPlaces.some(place => roundingPlaceChoices.some(([value]) => value === place))
+                ? config.allowedPlaces.filter(place => roundingPlaceChoices.some(([value]) => value === place))
+                : roundingPlaceChoices.map(([value]) => value);
+            const checkbox = (value, label, selected, group, disabled = false) => `<label class="template-editor__check"><input class="template-checkbox" data-template-group="${group}" type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span>${label}</span></label>`;
+            const trueFalseDescription = isB01Lesson
+                ? 'Bài 1 luôn có đủ 4 kiểu: nhận định hàng; so sánh số–số; so sánh số–biểu thức; so sánh biểu thức–biểu thức. Số có 4 hoặc 5 chữ số.'
+                : 'Chọn pool nội dung cho bốn nhận định A–D. Mỗi lượt game chọn một loại (lớp, hàng hoặc so sánh) và giữ nguyên loại đó cho cả bốn ý; game tự tạo cả nhận định Đúng lẫn Sai.';
+            const trueFalseControls = isB01Lesson
+                ? `${checkbox('place', 'Nhận định về hàng · Có 1 ý.', ['place'], 'true-false-kinds', true)}${checkbox('comparison', 'Nhận định so sánh · Có 3 ý: số–số, số–biểu thức, biểu thức–biểu thức.', ['comparison'], 'true-false-kinds', true)}`
+                : `${checkbox('class', 'Nhận định về lớp · Ví dụ: Chữ số 8 thuộc lớp nghìn.', trueFalseKinds, 'true-false-kinds')}${checkbox('place', 'Nhận định về hàng · Ví dụ: Chữ số 9 ở hàng nghìn.', trueFalseKinds, 'true-false-kinds')}${checkbox('comparison', 'Nhận định so sánh · Ví dụ: 9 999 < 10 000.', trueFalseKinds, 'true-false-kinds')}`;
+            const trueFalseNote = isB01Lesson
+                ? 'Bài 1 không dùng khái niệm “lớp”. Hai lựa chọn là cố định và chỉ mang tính mô tả; game tự sinh đủ bốn kiểu theo đúng thứ tự.'
+                : 'Có thể chọn các dạng để đa dạng giữa các lượt; game không trộn các dạng trong cùng một lượt.';
             const placeChoices = [['ones','Đơn vị'],['tens','Chục'],['hundreds','Trăm'],['thousands','Nghìn'],['tenThousands','Chục nghìn'],['hundredThousands','Trăm nghìn'],['millions','Triệu'],['tenMillions','Chục triệu'],['hundredMillions','Trăm triệu'],['billions','Tỷ'],['tenBillions','Chục tỷ'],['hundredBillions','Trăm tỷ']];
             const safePlaces = placeChoices;
             const safeClasses = [['unitsClass', 'Lớp đơn vị (trăm, chục, đơn vị)'], ['thousandsClass', 'Lớp nghìn (trăm nghìn, chục nghìn, nghìn)'], ['millionsClass', 'Lớp triệu (trăm triệu, chục triệu, triệu)'], ['billionsClass', 'Lớp tỷ (trăm tỷ, chục tỷ, tỷ)']];
@@ -7490,9 +8001,9 @@ const app = {
                 <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input" onchange="app.admin.refreshTemplateLessons()"></select></label>
-                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(selectedTemplateLesson)}"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu template áp dụng cho cả Chủ đề.</small></label>
+                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(selectedTemplateLesson)}" onchange="app.admin.refreshTemplateLessons()"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu template áp dụng cho cả Chủ đề.</small></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
-                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về lớp của chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
+                <label class="template-editor__field"><span>Template</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về vị trí chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
               <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · NỘI DUNG HIỂN THỊ</p><h4 id="template-display-title">2. Câu hỏi chung và câu con</h4></div><span class="template-editor__section-note">Soạn theo đúng thứ học sinh sẽ nhìn thấy</span></div><p class="template-editor__section-intro">Câu hỏi chung chỉ hiện một lần. Công thức câu con sẽ lặp lại cho 4 ý; thẻ <b>Biến</b> là dữ kiện game sinh, còn <b>Ô trống</b> là chỗ học sinh nhập đáp án.</p><label class="template-editor__field template-editor__prompt-field"><span>1. Câu hỏi chung</span><textarea id="template-common-question" class="form-input" placeholder="Ví dụ: Hãy viết số vào ô trống, biết số đó gồm:" oninput="app.admin.updateTemplateCommonQuestion(this.value)">${app.data.sanitizeHTML(this.templateContentPresentation?.common || '')}</textarea><small>Thường chỉ cần gõ câu chữ, không cần chèn biến.</small></label><div class="template-content-builder" aria-labelledby="template-content-builder-title"><div class="template-content-builder__heading"><div><strong id="template-content-builder-title">2. Công thức cho mỗi câu con</strong><span>Một công thức được áp dụng tự động cho a, b, c, d.</span></div><div class="template-content-builder__actions"><button type="button" onclick="app.admin.addTemplateContentBlock('text')">＋ Chữ</button><button type="button" onclick="app.admin.addTemplateContentBlock('variable')">＋ Biến</button><button type="button" onclick="app.admin.addTemplateContentBlock('cell')">＋ Ô trống</button></div></div><div id="template-content-blocks" class="template-content-builder__blocks"></div></div><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu con mặc định</strong><span>Template sinh 4 câu con. Cô có thể chọn 1, 2 hoặc 4 câu; mỗi câu được chia đều điểm.</span></div><label><span>Số câu con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu con mặc định">${[1, 2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select></label></div><div class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu con ${label}</strong><small>Ý ${partIndex + 1} của template</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div></section>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
@@ -7500,7 +8011,7 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--matching-controls"><h5>Cấu hình đối chiếu số – chữ</h5><div class="template-editor__fields"><label class="template-editor__field"><span>Dạng ghép</span><input id="template-match-shapes" class="form-input" value="${app.data.sanitizeHTML(matchingShapes)}" placeholder="5:4, 4:5"></label><label class="template-editor__field"><span>Độ dài số</span><input id="template-match-digits" class="form-input" value="${app.data.sanitizeHTML(matchingDigits)}" placeholder="7, 8, 9"></label><label class="template-editor__field"><span>Phân bố</span><select id="template-match-strategy" class="form-input">${['balanced','random','cycle'].map(item => `<option value="${item}" ${(config.digitStrategy || 'balanced') === item ? 'selected' : ''}>${item}</option>`).join('')}</select></label><label class="template-editor__field"><span>Tỷ lệ sinh số (tùy chọn)</span><input id="template-match-weights" class="form-input" value="${app.data.sanitizeHTML(matchingWeights)}" placeholder="7:20, 8:30, 9:50"></label><label class="template-editor__field"><span>Từ tiền tố chung</span><input id="template-match-prefix" class="form-input" type="number" min="0" value="${Number(config.prefixWords || 0)}"></label><label class="template-editor__field"><span>Seed (tùy chọn)</span><input id="template-match-seed" class="form-input" type="number" value="${config.seed ?? ''}"></label></div></div>
-                <div class="template-editor__rule template-editor__rule--true-false-controls"><h5>Nhận định Đúng/Sai</h5><p>Chọn pool nội dung cho bốn nhận định A–D. Mỗi lượt game chọn một loại (lớp hoặc hàng) và giữ nguyên loại đó cho cả bốn ý; game chỉ hỏi chữ số có trong số đã sinh, không lặp chữ số và tự tạo cả nhận định Đúng lẫn Sai.</p><div id="template-true-false-kinds" class="template-editor__checks template-editor__checks--true-false" aria-label="Loại nhận định">${checkbox('class', 'Nhận định về lớp · Ví dụ: Chữ số 8 thuộc lớp nghìn.', trueFalseKinds, 'true-false-kinds')}${checkbox('place', 'Nhận định về hàng · Ví dụ: Chữ số 9 ở hàng nghìn.', trueFalseKinds, 'true-false-kinds')}</div><p class="template-editor__rule-note">Có thể chọn cả hai để đa dạng giữa các lượt; game không trộn hai loại trong cùng một lượt.</p></div>
+                <div class="template-editor__rule template-editor__rule--true-false-controls"><h5>Nhận định Đúng/Sai</h5><p>${trueFalseDescription}</p><div id="template-true-false-kinds" class="template-editor__checks template-editor__checks--true-false" aria-label="Loại nhận định">${trueFalseControls}</div><p class="template-editor__rule-note">${trueFalseNote}</p></div>
                 <div class="template-editor__rule template-editor__rule--four-arithmetic-controls"><div class="template-editor__arithmetic-settings"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-arithmetic-min-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-arithmetic-max-digits" class="form-input" type="number" min="2" max="9" value="${arithmeticMaximumDigits}"></label></div><fieldset><legend>Phép tính được phép</legend><p class="template-editor__rule-note">Game chọn một phép tính cho cả bốn ý; chọn nhiều để đa dạng giữa các lượt.</p><div id="template-arithmetic-operations" class="template-editor__checks">${checkbox('+', 'Phép cộng (+)', arithmeticOperations, 'arithmetic-operations')}${checkbox('-', 'Phép trừ (−)', arithmeticOperations, 'arithmetic-operations')}${checkbox('*', 'Phép nhân (×)', arithmeticOperations, 'arithmetic-operations')}${checkbox('/', 'Phép chia (÷)', arithmeticOperations, 'arithmetic-operations')}</div></fieldset><fieldset class="template-editor__rule--four-arithmetic-layouts"><legend>Dạng hiển thị hai vế</legend><div id="template-arithmetic-layouts" class="template-editor__checks">${checkbox('expressionLeft', 'Phép tính bên trái = kết quả', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('expressionRight', 'Kết quả = phép tính bên phải', arithmeticLayouts, 'arithmetic-layouts')}${checkbox('twoExpressions', 'Hai vế đều là phép tính', arithmeticLayouts, 'arithmetic-layouts')}</div></fieldset><fieldset class="template-editor__rule--four-arithmetic-blank-positions"><legend>Vị trí ô trống có thể bốc</legend><div id="template-arithmetic-blank-positions" class="template-editor__checks">${checkbox('first', 'Số thứ nhất', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('second', 'Số thứ hai', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('third', 'Số thứ ba', arithmeticBlankPositions, 'arithmetic-blank-positions')}${checkbox('fourth', 'Số thứ tư', arithmeticBlankPositions, 'arithmetic-blank-positions')}</div></fieldset></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-range-controls" aria-label="Khoảng giá trị mật khẩu"><div class="template-editor__range"><label><span>Số nhỏ nhất</span><input id="template-minimum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.minimum ?? 0)}"></label><span>đến</span><label><span>Số lớn nhất</span><input id="template-maximum" class="form-input" type="text" inputmode="numeric" oninput="app.admin.formatTemplateNumberInput(this)" value="${app.data.formatMathNumber(config.maximum ?? (10 ** safePasswordMaxLength - 1))}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--safe-password-controls"><h5>Độ dài mật khẩu</h5><p>Game nêu số chữ số ngay trong câu hỏi; két sắt chỉ là ảnh minh họa. Mỗi lượt, độ dài được bốc trong khoảng khai báo.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số chữ số ít nhất</span><input id="template-safe-password-min-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMinLength}"></label><label class="template-editor__field"><span>Số chữ số nhiều nhất</span><input id="template-safe-password-max-length" class="form-input" type="number" min="2" max="9" value="${safePasswordMaxLength}"></label></div><div class="template-editor__safe-conditions"><fieldset><legend>Điều kiện 1</legend><p>Chữ số ở một hàng được chọn phải khác một chữ số được chọn.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-places')">Tất cả</button></div><div id="template-safe-password-condition1-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition1Places, 'safe-condition1-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition1-digits')">Tất cả</button></div><div id="template-safe-password-condition1-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition1Digits, 'safe-condition1-digits')).join('')}</div></fieldset><fieldset><legend>Điều kiện 2</legend><p>Game tự bốc một hàng khác nếu còn hàng phù hợp với độ dài mật khẩu.</p><div class="template-editor__rule-heading"><b>Hàng có thể bốc</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-places')">Tất cả</button></div><div id="template-safe-password-condition2-places" class="template-editor__checks template-editor__checks--places">${safePlaces.map(([value,label]) => checkbox(value, label, safeCondition2Places, 'safe-condition2-places')).join('')}</div><div class="template-editor__rule-heading"><b>Chữ số phải khác</b><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('safe-condition2-digits')">Tất cả</button></div><div id="template-safe-password-condition2-digits" class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), safeCondition2Digits, 'safe-condition2-digits')).join('')}</div></fieldset></div></div>
@@ -7640,7 +8151,15 @@ const app = {
             measurementTemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const coreB01TemplateOptions = [
+                ['number.min_max_of_four', 'Bài 1 · Tìm số bé nhất/lớn nhất trong bốn số'],
+                ['number.round_number', 'Bài 1 · Làm tròn đến chục, trăm, nghìn, chục nghìn']
+            ];
+            coreB01TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             if (generatorControl && !generatorControl.querySelector('option[value="number.natural_sequence"]')) generatorControl.insertAdjacentHTML('beforeend', '<option value="number.natural_sequence">Dãy số theo quy luật</option>');
+            if (generatorControl && coreB01TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && arithmeticTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && existing?.generator_key === 'number.natural_sequence') generatorControl.value = existing.generator_key;
             if (generatorControl && measurementTemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
@@ -7653,6 +8172,8 @@ const app = {
             if (generatorControl && phase8TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Mặc định mỗi dãy có 6 số và từ 1 đến 3 ô trống. Cô có thể chỉnh các giới hạn này, phạm vi số và bước nhảy trước khi lưu template.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
+            const roundingRule = `<div class="template-editor__rule template-editor__rule--rounding-controls"><h5>Làm tròn số theo hàng</h5><p>Chọn các hàng được phép hỏi. Với Bài 1, nên giữ đủ bốn hàng để mỗi lượt có một câu về chục, trăm, nghìn và chục nghìn.</p><div class="template-editor__checks template-editor__checks--rounding-places" aria-label="Hàng được phép làm tròn">${roundingPlaceChoices.map(([value, label]) => checkbox(value, label, selectedRoundingPlaces, 'rounding-places')).join('')}</div></div>`;
+            box.querySelector('.template-editor__rule--natural-sequence-controls')?.insertAdjacentHTML('afterend', roundingRule);
             const topic5OperationRule = '<div class="template-editor__rule template-editor__rule--topic5-operation"><div class="template-editor__rule-heading"><h5>Phép tính theo Bài học</h5></div><p>Chọn cộng hoặc trừ nếu template chỉ dùng cho một Bài học; để mặc định để cho phép cả hai.</p><label class="template-editor__field template-editor__field--wide"><span>Phạm vi phép tính</span><select id="template-topic5-operation" class="form-input"><option value="">Cộng và trừ (mặc định)</option><option value="+">Chỉ phép cộng (+)</option><option value="-">Chỉ phép trừ (−)</option></select></label></div>';
             box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
             const topic5OperationControl = document.getElementById('template-topic5-operation');
@@ -7661,7 +8182,7 @@ const app = {
             this.renderTemplateContentBlocks();
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
-            const configurableGenerator = ['number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
+            const configurableGenerator = ['number.min_max_of_four', 'number.round_number', 'number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -7695,6 +8216,14 @@ const app = {
                     previewImage: 'largest-of-four.jpg',
                     type: 'Trắc nghiệm',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)']]
+                },
+                'number.min_max_of_four': {
+                    defaultPrompt: '{question}',
+                    guide: 'Gộp temp 7 và temp 8 thành một lượt gồm bốn câu con: hai câu đầu tìm số bé nhất, hai câu sau tìm số lớn nhất trong từng nhóm bốn số.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên câu dẫn chung. Game tự sinh bốn nhóm số khác nhau và đáp án tương ứng.',
+                    previewImage: 'min-max-of-four.jpg',
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'câu dẫn chung cùng bốn nhóm số do game sinh']]
                 },
                 'number.compose_from_places': {
                     defaultPrompt: '{question}',
@@ -7752,6 +8281,14 @@ const app = {
                     type: 'Điền khuyết',
                     variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số đã cho'], ['{neighbor_line}', 'dòng ___ ; số đã cho ; ___'], ['{blank}', 'ô nhập đáp án (___)']]
                 },
+                'number.natural_sequence': {
+                    defaultPrompt: '{question}',
+                    guide: 'Khôi phục dạng điền khuyết chuỗi quy luật của Bài 1. Mỗi lượt sinh bốn dãy số, mỗi dãy mặc định có 6 số và từ 1 đến 3 ô trống; học sinh nhập trực tiếp bằng bàn phím.',
+                    hint: 'Dùng <code>{question}</code> để giữ nguyên bốn dãy số do game sinh; không tự thêm câu dẫn trùng. Các ô trống có thể nằm ở mọi vị trí nhưng luôn còn hai số liền kề để nhận ra quy luật.',
+                    previewImage: 'natural-sequence.jpg',
+                    type: 'Chuỗi Quy luật',
+                    variables: [['{question}', 'câu dẫn và bốn dãy số do game sinh'], ['{sequence}', 'bốn dãy đầy đủ để đối chiếu đáp án'], ['{blank}', 'ô nhập số (___)']]
+                },
                 'number.compare_number_forms': {
                     defaultPrompt: '{question}',
                     guide: 'Tạo 4 câu con a–d để so sánh số tự nhiên với dạng tổng theo các hàng; mỗi câu con đúng được 0,25 điểm.',
@@ -7762,11 +8299,19 @@ const app = {
                 },
                 'number.place_value_true_false': {
                     defaultPrompt: 'Chọn Đúng/Sai?',
-                    guide: 'Tạo một số nhiều chữ số và bốn nhận định Đúng/Sai về lớp hoặc hàng của chữ số. Mỗi chữ số được hỏi xuất hiện đúng một lần trong số đã cho.',
+                    guide: 'Tạo một số nhiều chữ số và bốn nhận định Đúng/Sai về lớp, hàng hoặc so sánh giữa số và biểu thức. Mỗi lượt giữ nguyên một dạng nhận định.',
                     hint: 'Tiêu đề dùng chung là <code>Chọn Đúng/Sai?</code>. Mỗi nhận định tự nêu <code>{number}</code>; có thể chèn <code>{statements}</code> nếu cần xem danh sách nhận định.',
                     previewImage: 'place-value-true-false.jpg',
                     type: 'Đúng/Sai',
-                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh'], ['{statements}', 'bốn nhận định A–D đã sinh về lớp hoặc hàng']]
+                    variables: [['{question}', 'câu mặc định đầy đủ (xem trong ô Câu hỏi)'], ['{number}', 'số nhiều chữ số đã sinh'], ['{statements}', 'bốn nhận định A–D đã sinh về lớp, hàng hoặc so sánh']]
+                },
+                'number.round_number': {
+                    defaultPrompt: '{question}',
+                    guide: 'Tạo bốn câu trắc nghiệm làm tròn số; Bài 1 lần lượt hỏi hàng chục, hàng trăm, hàng nghìn và hàng chục nghìn.',
+                    hint: 'Dùng <code>{question}</code> để giữ câu dẫn chung. Chọn các hàng được phép trong phần quy tắc; game sinh phương án nhiễu theo đúng hàng đang hỏi.',
+                    previewImage: 'round-number.jpg',
+                    type: 'Trắc nghiệm',
+                    variables: [['{question}', 'câu dẫn chung và bốn câu làm tròn do game sinh'], ['{roundingPlace}', 'hàng cần làm tròn'], ['{roundedNumber}', 'kết quả làm tròn đúng']]
                 },
                 'number.safe_password_by_place_value': {
                     defaultPrompt: '{question}',
@@ -8070,6 +8615,12 @@ const app = {
             const blank = '<i class="template-preview__blank" aria-label="Ô điền đáp án"></i>';
             const choices = values => `<div class="template-preview__choices">${values.map((value, index) => `<span><b>${'ABCD'[index]}</b>${value}</span>`).join('')}</div>`;
             const arithmeticRows = ['125 + ___ = 368', '720 − ___ = 415', '24 × 3 = ___', '144 : 12 = ___'];
+            if (generator === 'number.min_max_of_four') return preview('Hãy chọn đáp án đúng', `<div class="template-preview__mc">${[
+                ['Tìm số bé nhất?', ['19 851', '64 630', '84 409', '62 575']],
+                ['Tìm số bé nhất?', ['37 912', '12 197', '15 679', '42 846']],
+                ['Tìm số lớn nhất?', ['85 040', '16 499', '15 154', '78 031']],
+                ['Tìm số lớn nhất?', ['19 000', '54 273', '45 272', '67 335']]
+            ].map(([prompt, values], index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(values)}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'g4-m-add-sub-multi-digit') return preview('Đặt tính rồi tính:', fillRows([`45 728 + 13 564 = ${blank}`, `80 934 − 27 658 = ${blank}`, `62 417 + 25 306 = ${blank}`, `91 205 − 48 739 = ${blank}`]), 'template-preview--fill');
             if (generator === 'g4-m-add-sub-word-problem') return preview('Thư viện có 3 825 quyển sách, đã cho mượn 1 468 quyển. Thư viện còn lại bao nhiêu quyển sách?', `<p class="template-preview__answer-line">Trả lời: ${blank} quyển sách</p>`, 'template-preview--fill', '1 câu · 1 điểm');
             if (generator === 'g4-m-add-sub-missing-term') return preview('Điền số thích hợp vào chỗ trống:', fillRows([`${blank} + 27 584 = 63 902`, `82 460 − ${blank} = 31 725`, `${blank} − 18 946 = 42 381`, `36 508 + 14 295 = ${blank}`]), 'template-preview--fill');
@@ -8108,9 +8659,15 @@ const app = {
             if (generator === 'number.six_digit_numbers') return preview('Luyện tập Bài 10 · Lập số sáu chữ số:', `<div class="template-preview__mc">${['Số gồm 4 trăm nghìn, 2 chục nghìn, 5 nghìn là số nào?', 'Số gồm 7 trăm nghìn, 1 nghìn, 6 đơn vị là số nào?', 'Số gồm 3 trăm nghìn, 8 chục nghìn, 9 trăm là số nào?', 'Số gồm 6 trăm nghìn, 4 chục nghìn, 2 chục là số nào?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(index === 0 ? ['425 000', '452 000', '245 000', '524 000'] : index === 1 ? ['700 016', '701 006', '710 006', '716 000'] : index === 2 ? ['308 900', '380 900', '380 090', '389 000'] : ['604 020', '640 020', '640 200', '642 000'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.million_class') return preview('Luyện tập Bài 12 · Đọc số trong lớp triệu:', `<div class="template-preview__mc">${['Cách đọc đúng của số 12 305 040 là gì?', 'Cách đọc đúng của số 205 010 006 là gì?', 'Cách đọc đúng của số 34 500 200 là gì?', 'Cách đọc đúng của số 701 002 030 là gì?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(['Mười hai triệu ba trăm linh năm nghìn không trăm bốn mươi', 'Hai trăm linh năm triệu không trăm mười nghìn không trăm linh sáu', 'Ba mươi tư triệu năm trăm nghìn hai trăm', 'Bảy trăm linh một triệu không trăm linh hai nghìn không trăm ba mươi'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.round_hundred_thousands') return preview('Luyện tập Bài 13 · Làm tròn đến hàng trăm nghìn:', `<div class="template-preview__mc">${['Làm tròn số 234 567 đến hàng trăm nghìn được số nào?', 'Làm tròn số 650 000 đến hàng trăm nghìn được số nào?', 'Làm tròn số 849 999 đến hàng trăm nghìn được số nào?', 'Làm tròn số 1 250 000 đến hàng trăm nghìn được số nào?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(['200 000', '300 000', '400 000', '500 000'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
+            if (generator === 'number.round_number') return preview('Hãy làm tròn số theo yêu cầu.', `<div class="template-preview__mc template-preview__mc--left">${[
+                ['Làm tròn 8 276 đến hàng chục được số nào?', ['8 270', '8 280', '8 300', '8 000']],
+                ['Làm tròn 3 354 đến hàng trăm được số nào?', ['3 300', '3 350', '3 400', '3 000']],
+                ['Làm tròn 7 650 đến hàng nghìn được số nào?', ['7 000', '7 500', '8 000', '10 000']],
+                ['Làm tròn 46 201 đến hàng chục nghìn được số nào?', ['40 000', '46 000', '50 000', '60 000']]
+            ].map(([prompt, values], index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(values)}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.hk1_review_b10_b15') return preview('Luyện tập một kỹ năng Bài 10–15 · Lập số sáu chữ số:', `<div class="template-preview__mc">${['Số gồm 4 trăm nghìn, 2 chục nghìn, 5 nghìn là số nào?', 'Số gồm 7 trăm nghìn, 1 nghìn, 6 đơn vị là số nào?', 'Số gồm 3 trăm nghìn, 8 chục nghìn, 9 trăm là số nào?', 'Số gồm 6 trăm nghìn, 4 chục nghìn, 2 chục là số nào?'].map((prompt, index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(['425 000', '452 000', '245 000', '524 000'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'g4-m-angle-review') return preview('Ôn tập dạng đọc số đo góc:', `<div class="template-preview__mc">${['Đọc số đo góc 30° trên thước đo.', 'Đọc số đo góc 45° trên thước đo.', 'Đọc số đo góc 60° trên thước đo.', 'Đọc số đo góc 75° trên thước đo.'].map((prompt, index) => `<div><b>${'abcd'[index]})</b>${prompt}${choices(['30°', '45°', '60°', '75°'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
-            if (generator === 'number.place_value_true_false') return preview('Chọn Đúng/Sai về lớp của chữ số:', `<div class="template-preview__true-false">${['Trong số 14 021 983, chữ số 4 thuộc lớp triệu.', 'Trong số 14 021 983, chữ số 2 thuộc lớp nghìn.', 'Trong số 14 021 983, chữ số 9 thuộc lớp đơn vị.', 'Trong số 14 021 983, chữ số 1 thuộc lớp triệu.'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
+            if (generator === 'number.place_value_true_false') return preview('Chọn Đúng/Sai?', `<div class="template-preview__true-false">${['Trong số 69 345, chữ số 3 ở hàng trăm.', '9 999 < 10 000', '32 395 = 22 395 + 10 000', '10 000 + 3 000 + 500 + 50 + 7 < 19 000 + 400 + 20 + 3'].map((row, index) => `<div><b>${'ABCD'[index]}.</b><span>${row}</span><em>ĐÚNG</em><i>SAI</i></div>`).join('')}</div>`, 'template-preview--true-false');
             if (generator === 'number.even_odd_classify') return preview('Chọn số chẵn hoặc số lẻ:', `<div class="template-preview__mc">${['Số nào là số chẵn?', 'Số nào là số lẻ?', 'Số nào là số chẵn?', 'Số nào là số lẻ?'].map((title, index) => `<div><b>${'abcd'[index]})</b>${title}${choices([index % 2 ? '7 231' : '4 268', index % 2 ? '5 108' : '3 417', index % 2 ? '9 452' : '8 025', index % 2 ? '1 999' : '6 734'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.even_odd_count') return preview('Đếm số chẵn, số lẻ trong dãy:', `<div class="template-preview__mc">${['2, 4, 7, 9, 12, 15', '3, 6, 8, 11, 14, 18', '21, 22, 25, 28, 30, 33', '40, 43, 46, 51, 54, 57'].map((values, index) => `<div><b>${'abcd'[index]})</b>Dãy số: ${values}<br>Có bao nhiêu số ${index % 2 ? 'lẻ' : 'chẵn'}?${choices(['2', '3', '4', '5'])}</div>`).join('')}</div>`, 'template-preview--multiple-choice');
             if (generator === 'number.even_odd_sequence') return preview('Điền số thích hợp vào mỗi dãy:', fillRows(['2, ___, 6, 8, ___, 12', '3, 5, ___, 9, 11, 13', '10, ___, 18, ___, 26, 30', '15, 17, 19, 21, ___, 25']), 'template-preview--fill');
@@ -8195,7 +8752,8 @@ const app = {
                 }
                 return frame(`<div class="template-preview__mc">${parts.map((part, index) => {
                     const visualMarkup = visual(part.visual);
-                    return `<div><b>${label(part, index)})</b>${visualMarkup ? `<div class="template-preview__subquestion-visual">${visualMarkup}</div>` : ''}<span>${text(part.prompt || part.text || 'Câu hỏi con')}</span>${choices(part.options)}</div>`;
+                    const childPrompt = part.prompt || part.text || (part.taskLabel ? `Chọn ${part.taskLabel}.` : '');
+                    return `<div><b>${label(part, index)})</b>${visualMarkup ? `<div class="template-preview__subquestion-visual">${visualMarkup}</div>` : ''}${childPrompt ? `<span>${text(childPrompt)}</span>` : ''}${choices(part.options)}</div>`;
                 }).join('')}</div>`, 'template-preview--multiple-choice');
             }
             if (kind === 'statements') {
@@ -8417,12 +8975,16 @@ const app = {
                 this.renderTemplateContentBlocks();
             }
             const preset = this.templatePresets[generator] || this.templatePresets['number.digit_at_place'];
+            const isB01PlaceValueTrueFalse = generator === 'number.place_value_true_false'
+                && this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '') === 'g4-math-hk1-b01';
             const target = document.getElementById('template-example');
             const guide = document.getElementById('template-guide-copy');
             const hint = document.getElementById('template-prompt-hint');
             const previewLabel = document.querySelector('#template-generator option:checked')?.textContent || preset.type || 'câu hỏi';
             if (target) target.innerHTML = `<div class="template-editor__preview-summary"><span class="template-editor__preview-summary-icon" aria-hidden="true">✦</span><div><strong>Mẫu đầu ra</strong><span>${app.data.sanitizeHTML(previewLabel)}</span></div><button type="button" id="template-preview-open" class="template-editor__preview-button" onclick="app.admin.openTemplatePreview()"><span aria-hidden="true">◉</span> Preview</button></div><p>Xem trước câu dẫn, các ô trả lời và đáp án mà template này tạo ra.</p>`;
-            if (guide) guide.textContent = preset.guide;
+            if (guide) guide.textContent = isB01PlaceValueTrueFalse
+                ? 'Tạo đúng bốn nhận định Đúng/Sai: nhận định hàng; so sánh số–số (chỉ dùng < hoặc >); so sánh số–biểu thức; so sánh biểu thức–biểu thức. Dùng số có 4 hoặc 5 chữ số, không dùng khái niệm lớp.'
+                : preset.guide;
             if (hint) hint.innerHTML = preset.hint;
             const questionType = document.getElementById('template-question-type');
             if (questionType && preset.type) questionType.value = preset.type;
@@ -8470,6 +9032,7 @@ const app = {
             document.querySelectorAll('.template-editor__rule--topic5-operation').forEach(rule => { rule.hidden = !topic5OperationKeys.includes(generator); });
             document.querySelectorAll('.template-editor__rule--true-false-controls').forEach(rule => { rule.hidden = generator !== 'number.place_value_true_false'; });
             document.querySelectorAll('.template-editor__rule--natural-sequence-controls').forEach(rule => { rule.hidden = generator !== 'number.natural_sequence'; });
+            document.querySelectorAll('.template-editor__rule--rounding-controls').forEach(rule => { rule.hidden = generator !== 'number.round_number'; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-controls').forEach(rule => { rule.hidden = !isFourArithmetic; });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-layouts').forEach(rule => { rule.hidden = !['number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator); });
             document.querySelectorAll('.template-editor__rule--four-arithmetic-blank-positions').forEach(rule => { rule.hidden = generator !== 'number.four_arithmetic_blanks'; });
@@ -8502,12 +9065,14 @@ const app = {
             document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-operations input').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-parities input').forEach(input => { input.disabled = !isPhase2B03; });
+            this.syncTemplateTrueFalseControls();
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
-            const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
-            const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && /^\d$/.test(input.value)).map(input => Number(input.value));
+            const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'places' && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
+            const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'digits' && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
+            const roundingPlaceKeys = ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'];
             const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression', 'g4-m-add-sub-true-false'];
@@ -8543,6 +9108,7 @@ const app = {
             const condition1Scope = generatorKey === 'number.safe_password_by_place_value' ? 'random' : (value('template-safe-password-condition1-scope') || 'place');
             const condition2Scope = 'place';
             const statementKinds = selectedSafeValues('true-false-kinds');
+            const roundingPlaces = selectedSafeValues('rounding-places');
             const arithmeticMinimumDigits = Number(document.getElementById('template-arithmetic-min-digits')?.value || 2);
             const arithmeticMaximumDigits = Number(document.getElementById('template-arithmetic-max-digits')?.value || 9);
             const arithmeticOperations = selectedSafeValues('arithmetic-operations');
@@ -8587,8 +9153,15 @@ const app = {
             const isAngleMeasureTemplate = ['g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generatorKey);
             const enteredMinimum = isSafePassword ? app.data.parseMathNumber(value('template-minimum')) : 10 ** (minimumDigits - 1);
             const enteredMaximum = isSafePassword ? app.data.parseMathNumber(value('template-maximum')) : 10 ** maximumDigits - 1;
+            const isB01PlaceValueTrueFalse = generatorKey === 'number.place_value_true_false' && selectedLesson === 'g4-math-hk1-b01';
+            const effectiveMinimum = isB01PlaceValueTrueFalse ? Math.max(1001, enteredMinimum) : enteredMinimum;
+            const effectiveMaximum = isB01PlaceValueTrueFalse ? Math.min(99999, enteredMaximum) : enteredMaximum;
+            const effectiveStatementKinds = isB01PlaceValueTrueFalse
+                ? ['place', 'comparison']
+                : statementKinds;
             const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && !isPhase5Template && !isPhase7Template && !isPhase8Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
-            const genericConfig = { minimum: enteredMinimum, maximum: enteredMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds, minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
+            const genericConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds: effectiveStatementKinds, ...(isB01PlaceValueTrueFalse ? { statementLayout: 'b01-four-types' } : {}), minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
+            const roundingConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces: roundingPlaces };
             const topic5Config = generatorKey === 'g4-m-addition-property-fill'
                 ? { properties: phase6Properties }
                 : ((topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {});
@@ -8620,11 +9193,14 @@ const app = {
                             : generatorKey === 'measurement.word_problem_units'
                                 ? { scenarioKinds: measurementScenarioKinds }
                                 : genericConfig;
-            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : genericConfig))))))));
+            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : (generatorKey === 'number.round_number' ? roundingConfig : genericConfig)))))))));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: '{question}', config: templateConfig, is_active: true };
             if (!template.name) throw new Error('Hãy nhập tên template.');
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
-            if (template.generator_key === 'number.place_value_true_false' && !statementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định: lớp hoặc hàng.');
+            if (template.generator_key === 'number.round_number' && (!roundingPlaces.length || roundingPlaces.some(place => !roundingPlaceKeys.includes(place)))) throw new Error('Hãy chọn ít nhất một hàng hợp lệ để làm tròn.');
+            if (template.generator_key === 'number.min_max_of_four' && enteredMaximum - enteredMinimum + 1 < 4) throw new Error('Phạm vi tìm số bé nhất/lớn nhất phải có ít nhất bốn số khác nhau.');
+            if (template.generator_key === 'number.place_value_true_false' && !effectiveStatementKinds.length) throw new Error('Hãy chọn ít nhất một loại nhận định hợp lệ.');
+            if (isB01PlaceValueTrueFalse && effectiveMinimum >= effectiveMaximum) throw new Error('Bài 1 cần phạm vi số lớn hơn 1 000 và nhỏ hơn 100 000.');
             if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
             if (isAngleMeasureTemplate && angleDegreesInput && (angleDegrees.length === 0 || angleDegrees.some(item => !Number.isInteger(item) || item < 10 || item > 170 || item % 5 !== 0))) throw new Error('Số đo góc phải là số nguyên theo bội 5, từ 10 đến 170 độ.');
             if (isPhase2B03) {

@@ -230,7 +230,7 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
   expect(nextQuestion.solutionVisible).toBe(false);
 });
 
-test('bốn câu con hiển thị thành lưới hai hàng hai cột như card lớn', async ({ page }) => {
+test('bốn câu con trắc nghiệm hiển thị thành các hàng ngang gọn và đủ rộng', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -249,22 +249,19 @@ test('bốn câu con hiển thị thành lưới hai hàng hai cột như card l
         width: rect.width,
         height: rect.height,
         gradient: getComputedStyle(element).backgroundImage,
-        promptFontSize: Number.parseFloat(getComputedStyle(element.querySelector('h3')).fontSize)
+        optionWidth: element.querySelector('.multi-choice-subquestion__option')?.getBoundingClientRect().width || 0,
+        optionHeight: element.querySelector('.multi-choice-subquestion__option')?.getBoundingClientRect().height || 0
       };
     });
     const optionGrid = getComputedStyle(cards.length ? document.querySelector('.multi-choice-subquestion__options') : document.body);
     return { cards, optionColumns: optionGrid.gridTemplateColumns.split(' ').length };
   }, makeSharedPromptQuestion());
 
-  const topRows = new Set(grid.cards.map(card => card.top));
-  const firstRow = grid.cards.filter(card => card.top === grid.cards[0].top);
   expect(grid.cards).toHaveLength(4);
-  expect(topRows.size).toBe(2);
-  expect(firstRow).toHaveLength(2);
-  expect(grid.cards.every(card => card.height / card.width >= .65)).toBe(true);
+  expect(grid.cards.every(card => card.width > card.height * 2)).toBe(true);
+  expect(grid.cards.every(card => card.optionWidth > card.optionHeight * 2)).toBe(true);
   expect(new Set(grid.cards.map(card => card.gradient)).size).toBe(4);
-  expect(grid.optionColumns).toBe(2);
-  expect(grid.cards.every(card => card.promptFontSize >= 19)).toBe(true);
+  expect(grid.optionColumns).toBe(4);
 });
 
 test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn thẻ câu hỏi', async ({ page }) => {

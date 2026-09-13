@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./src/login-layout.css">
   <link rel="stylesheet" href="./src/map-layout.css">
   <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1">
-  <link rel="stylesheet" href="./src/student-learning.css?v=learning-deck-v1">
+  <link rel="stylesheet" href="./src/student-learning.css?v=learning-deck-v2">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
   <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
@@ -543,6 +543,7 @@
           <div class="config-layout">
             <div class="config-top">
               <div class="config-left">
+                <div class="student-learning-mascot-bubble" aria-hidden="true">Cùng khám phá!</div>
                 <img src="./public/robot_cat_normal.webp" alt="Robot mèo thám hiểm" class="cat-avatar heartbeat" style="width: 170px;">
                 <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
                   onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
@@ -574,7 +575,7 @@
                   <div class="topic-header"
                     style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
                     <div class="topic-header__primary">
-                      <h3 style="margin: 0;">Chọn Chủ đề</h3>
+                      <h3 id="topic-picker-heading" style="margin: 0;">Chọn Chủ đề</h3>
                       <div class="topic-mode-toggle">
                         <label class="topic-mode-option"><input type="radio" name="topicMode" value="single" checked
                             onchange="app.game.toggleTopicMode()"><span>Chọn 1</span></label>
@@ -804,6 +805,7 @@
         </div>
 
         <div id="treasure-content-area" class="admin-content scroll-box admin-surface"></div>
+        <img class="admin-learning-mascot" src="./public/robot_cat_normal.webp" alt="" aria-hidden="true" loading="lazy">
       </div>
     </div>
   </div>
@@ -939,6 +941,7 @@
   <script defer src="./src/question-templates/grade-4/math/shared.js"></script>
   <script defer src="./src/question-templates/grade-4/math/smallest-of-four.js"></script>
   <script defer src="./src/question-templates/grade-4/math/largest-of-four.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/min-max-of-four.js"></script>
   <script defer src="./src/question-templates/grade-4/math/digit-at-place.js"></script>
   <script defer src="./src/question-templates/grade-4/math/compose-from-places.js"></script>
   <script defer src="./src/question-templates/grade-4/math/missing-expanded-addend.js"></script>
@@ -953,6 +956,7 @@
   <script defer src="./src/question-templates/grade-4/math/six-digit-numbers.js"></script>
   <script defer src="./src/question-templates/grade-4/math/million-class.js"></script>
   <script defer src="./src/question-templates/grade-4/math/round-hundred-thousands.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/round-number.js"></script>
   <script defer src="./src/question-templates/grade-4/math/review-b10-b15.js"></script>
   <script defer src="./src/question-templates/grade-4/math/place-value-true-false.js"></script>
   <script defer src="./src/question-templates/grade-4/math/safe-password-by-place-value.js"></script>
@@ -979,6 +983,7 @@
   <script defer src="./src/modules/safe-storage.js"></script>
   <script defer src="./src/modules/constants.js"></script>
   <script defer src="./src/modules/curriculum.js"></script>
+  <script defer src="./src/modules/learning-path.js"></script>
   <script defer src="./src/modules/template-manifest.js"></script>
   <script defer src="./src/modules/lifecycle.js"></script>
   <script defer src="./src/modules/router.js"></script>

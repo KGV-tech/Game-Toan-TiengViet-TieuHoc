@@ -7,6 +7,7 @@ require('./src/modules/utils.js');
 require('./src/modules/safe-storage.js');
 require('./src/modules/constants.js');
 require('./src/modules/curriculum.js');
+require('./src/modules/learning-path.js');
 require('./src/modules/router.js');
 require('./src/modules/daily.js');
 require('./src/modules/ui.js');
@@ -29,6 +30,8 @@ assert.ok(globalThis.app.constants.lessonCatalog,
   'app.constants must expose the lesson catalog.');
 assert.ok(globalThis.app.curriculum && typeof globalThis.app.curriculum.getLessons === 'function',
   'curriculum module must expose getLessons.');
+assert.ok(globalThis.app.learningPath && typeof globalThis.app.learningPath.getEntries === 'function',
+  'learning path module must expose getEntries.');
 assert.ok(Array.isArray(globalThis.app.constants.topics['5'].math.hk2),
   'Grade 5 Math HK2 topics must be an array.');
 assert.ok(globalThis.app.constants.topics['1'].vietnamese.hk2.length > 0,
