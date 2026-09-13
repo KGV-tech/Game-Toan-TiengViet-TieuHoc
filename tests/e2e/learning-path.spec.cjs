@@ -133,7 +133,7 @@ test('khối chưa có danh mục Bài học chính thức không bị suy đoá
   expect(consoleErrors).toEqual([]);
 });
 
-test('giáo viên đặt mốc Bài học trong màn hình Điều chỉnh', async ({ page }, testInfo) => {
+test('giáo viên đặt mốc Bài học trong tab Lộ trình học', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
 
@@ -141,10 +141,14 @@ test('giáo viên đặt mốc Bài học trong màn hình Điều chỉnh', asy
     app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
     app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };
     app.treasure.open();
-    app.admin.switchTab('settings');
+    app.admin.switchTab('learning-path');
   });
 
   await expect(page.locator('#treasure-modal')).toHaveAttribute('data-ui-context', 'admin');
+  await expect(page.locator('#treasure-modal .admin-learning-mascot')).toHaveCount(0);
+  await expect(page.locator('#admin-tabs .tab-btn')).toHaveCount(4);
+  await expect(page.locator('#admin-tabs .tab-btn', { hasText: 'Lộ trình học' })).toBeVisible();
+  await expect(page.locator('#admin-tabs')).toHaveCSS('flex-direction', 'row');
   await expect(page.getByRole('heading', { name: 'Mở bài cho lớp học' })).toBeVisible();
   await expect(page.locator('.learning-release-dashboard')).toBeVisible();
   await expect(page.locator('.learning-release-class-card')).toBeVisible();
@@ -167,6 +171,11 @@ test('giáo viên đặt mốc Bài học trong màn hình Điều chỉnh', asy
   }));
   expect(tabletState.right).toBeLessThanOrEqual(tabletState.viewport);
   expect(tabletState.rootOverflow).toBe(false);
+  await page.locator('#admin-tabs .tab-btn', { hasText: 'Điều chỉnh' }).click();
+  await expect(page.locator('.settings-workspace')).toBeVisible();
+  await expect(page.locator('.learning-release-workspace')).toHaveCount(0);
+  await expect(page.locator('#learning-release-lesson')).toHaveCount(0);
+  await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

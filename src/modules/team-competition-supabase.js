@@ -10,7 +10,7 @@
     const TEAM_COMPETITION_PROJECTIONS = Object.freeze({
         team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,status,created_at,updated_at,started_at,ended_at,version',
         team_competition_teams: 'id,competition_id,name,position,target_member_count,leader_username,exam_id,status,score,submitted_count,correct_count,started_at,completed_at,locked_at,duration_seconds',
-        team_competition_members: 'id,competition_id,team_id,username,position',
+        team_competition_members: 'competition_id,team_id,username,position',
         team_competition_questions: 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts',
         team_competition_attempts: 'id,competition_id,team_id,leader_username,session_id,status,lock_reason,question_count,current_index,submitted_count,correct_count,score,started_at,completed_at,locked_at,duration_seconds,updated_at',
         team_competition_answers: 'id,attempt_id,question_index,selected_answer,points,is_correct,submitted_at',
