@@ -35,7 +35,8 @@ test('các trạm học sinh dùng chung shell, token và trạng thái tương 
 
   await expect(page.locator('#game-config-view')).toBeVisible();
   await expect(page.locator('#game-config-view .station-shell')).toBeVisible();
-  await expect(page.locator('#game-config-view .screen-title-row')).toBeVisible();
+  await expect(page.locator('#game-config-view .student-learning-hud')).toBeVisible();
+  await expect(page.locator('#game-config-view .screen-title-row')).toBeHidden();
 
   const configState = await page.locator('#game-config-view .station-shell').evaluate(shell => {
     const style = getComputedStyle(shell);
@@ -48,6 +49,9 @@ test('các trạm học sinh dùng chung shell, token và trạng thái tương 
       borderTopWidth: style.borderTopWidth,
       titleRadius: title.borderRadius,
       titleBackdrop: title.backdropFilter,
+      mockupShell: Boolean(shell.querySelector('.student-learning-shell--mockup')),
+      dailyScreen: Boolean(shell.querySelector('.student-learning-screen--daily')),
+      titleDisplay: title.display,
       lockedDecoration: topicStyle?.textDecorationLine || 'none',
       lockedStrikeLayer: topic ? getComputedStyle(topic, '::after').backgroundImage : 'none'
     };
@@ -57,15 +61,17 @@ test('các trạm học sinh dùng chung shell, token và trạng thái tương 
   expect(configState.borderTopWidth).toBe('1px');
   expect(configState.titleRadius).toBe('14px');
   expect(configState.titleBackdrop).toContain('blur');
+  expect(configState.mockupShell).toBe(true);
+  expect(configState.dailyScreen).toBe(true);
+  expect(configState.titleDisplay).toBe('none');
   expect(configState.lockedDecoration).toBe('none');
   expect(configState.lockedStrikeLayer).toBe('none');
 
-  const lockedTopic = page.locator('#topics-list .topic-card--locked').first();
-  await expect(lockedTopic).toHaveAttribute('aria-disabled', 'true');
-  await expect(lockedTopic.locator('.topic-lock-status')).toBeVisible();
-  const selectableTopic = page.locator('#topics-list .topic-card:not(.topic-card--locked)').first();
-  await selectableTopic.press('Enter');
-  await expect(selectableTopic).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#student-learning-title')).toHaveText('Hôm nay mình học gì?');
+  await expect(page.locator('#student-learning-mission-title')).toBeVisible();
+  await expect(page.locator('#topics-list .student-learning-step--locked').first()).toBeDisabled();
+  await expect(page.locator('#topics-list .topic-card')).toHaveCount(0);
+  await expect(page.locator('#game-start-btn')).toBeHidden();
 
   await page.evaluate(() => app.router.open('exam-select-screen'));
   await expect(page.locator('#exam-select-screen')).toBeVisible();

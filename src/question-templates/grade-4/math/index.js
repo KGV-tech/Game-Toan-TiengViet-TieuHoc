@@ -2,6 +2,7 @@
     const generators = typeof module !== 'undefined' && module.exports ? {
         'number.smallest_of_four': require('./smallest-of-four'),
         'number.largest_of_four': require('./largest-of-four'),
+        'number.min_max_of_four': require('./min-max-of-four'),
         'number.digit_at_place': require('./digit-at-place'),
         'number.compose_from_places': require('./compose-from-places'),
         'number.missing_expanded_addend': require('./missing-expanded-addend'),
@@ -16,6 +17,7 @@
         'number.six_digit_numbers': require('./six-digit-numbers'),
         'number.million_class': require('./million-class'),
         'number.round_hundred_thousands': require('./round-hundred-thousands'),
+        'number.round_number': require('./round-number'),
         'number.hk1_review_b10_b15': require('./review-b10-b15'),
         'number.place_value_true_false': require('./place-value-true-false'),
         'number.safe_password_by_place_value': require('./safe-password-by-place-value'),
