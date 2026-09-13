@@ -44,9 +44,12 @@ const defaultExams = [];
 // so a new column cannot silently inflate every login and admin request.
 const SUPABASE_LIST_PROJECTIONS = Object.freeze({
     game_users: 'id,username,fullname,password,role,approved,classlevel,class_name,gender,history,totalscore,stars,energy,energy_date,daily_gift_date,daily_gift_streak,total_stars_earned,last_practice_date,practice_streak,lucky_spin_date,lucky_spin_count,avatar_key,auth_user_id',
-    game_questions: 'id,classlevel,subject,semester,topic,type,q,options,ans,explanation,imageUrl,templateId,statements,subquestions,sharedPrompt,comparisonRows,practiceRows,angleCountRows,angleVisual,partAnswerCounts',
+    // Keep this list aligned with the legacy production table. Structured
+    // template fields are stored in question_templates and generated in the
+    // browser; game_questions only has the original flat question columns.
+    game_questions: 'id,classlevel,subject,semester,topic,type,q,options,ans,explanation,imageurl,created_at',
     question_templates: 'id,name,classlevel,subject,semester,topic,lesson,question_type,generator_key,prompt_template,config,is_active,created_at,updated_at',
-    game_exams: 'id,name,classlevel,subject,period,questions,topics',
+    game_exams: 'id,name,classlevel,subject,period,questions',
     game_settings: 'id,data',
     game_quests: 'id,title,target_subject,target_score,target_count,reward_stars,assign_type,assign_target,exam_id,is_active',
     user_quests: 'id,user_username,quest_id,progress,is_completed',
@@ -273,6 +276,11 @@ const app = {
         getSupabaseProjection(table, columns = '') {
             return String(columns || '').trim() || SUPABASE_LIST_PROJECTIONS[table] || 'id';
         },
+        normalizeSupabaseRow(table, row) {
+            if (table !== 'game_questions' || !row || typeof row !== 'object') return row;
+            if (!Object.prototype.hasOwnProperty.call(row, 'imageurl')) return row;
+            return { ...row, imageUrl: row.imageurl };
+        },
         async fetchPageFromSupabase(table, { page = 0, pageSize = 100, filterCol = '', filterVal = '', columns = '' } = {}) {
             const safePage = Number.isInteger(page) && page >= 0 ? page : 0;
             const safePageSize = Math.min(500, Math.max(1, Number(pageSize) || 100));
@@ -285,7 +293,7 @@ const app = {
                 console.error(`Error fetching ${table}:`, error);
                 return { data: [], page: safePage, pageSize: safePageSize, hasMore: false, error };
             }
-            const rows = Array.isArray(data) ? data : [];
+            const rows = Array.isArray(data) ? data.map(row => this.normalizeSupabaseRow(table, row)) : [];
             return { data: rows, page: safePage, pageSize: safePageSize, hasMore: rows.length === safePageSize, error: null };
         },
         async fetchAllFromSupabase(table, filterCol, filterVal, options = {}) {
