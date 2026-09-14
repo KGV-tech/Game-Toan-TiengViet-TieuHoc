@@ -2017,6 +2017,7 @@ const app = {
             if (!this.restoreAttemptDraft(user)) return false;
             const kind = this.restoredAttemptKind;
             if (kind === 'exam' && app.exam?.restoreAttemptDraft) return app.exam.restoreAttemptDraft(user);
+            app.router.open('game-screen');
             app.router.openGameView('game-play-view');
             this.loadQuestion();
             return true;

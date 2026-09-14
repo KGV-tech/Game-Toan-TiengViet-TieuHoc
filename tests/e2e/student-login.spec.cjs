@@ -1,5 +1,26 @@
 const { test, expect } = require('@playwright/test');
 
+test('khôi phục bài luyện tập dang dở mở màn hình game thay vì giữ màn hình đăng nhập', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/**', route =>
+    route.fulfill({ contentType: 'application/javascript', body: '' })
+  );
+  await page.goto('/');
+
+  const result = await page.evaluate(() => {
+    window.app.game.restoreAttemptDraft = () => true;
+    window.app.game.restoredAttemptKind = 'practice';
+    window.app.game.loadQuestion = () => {};
+    window.app.game.resumeSavedAttempt({ username: 'vyanh' });
+    return {
+      loginActive: document.getElementById('login-screen').classList.contains('active'),
+      gameActive: document.getElementById('game-screen').classList.contains('active'),
+      playViewActive: document.getElementById('game-play-view').classList.contains('active')
+    };
+  });
+
+  expect(result).toEqual({ loginActive: false, gameActive: true, playViewActive: true });
+});
+
 test('học sinh vẫn vào map nếu lỗi xảy ra sau khi Auth và profile đã thành công', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const consoleErrors = [];
