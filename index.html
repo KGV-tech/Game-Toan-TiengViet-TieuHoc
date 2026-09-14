@@ -986,6 +986,18 @@
   <script defer src="./src/modules/curriculum.js"></script>
   <script defer src="./src/modules/learning-path.js"></script>
   <script defer src="./src/modules/template-manifest.js"></script>
+  <div id="attempt-resume-modal" class="modal attempt-resume-modal" role="dialog" aria-modal="true"
+    aria-labelledby="attempt-resume-title" aria-describedby="attempt-resume-message" aria-hidden="true" style="display:none;">
+    <section class="modal-content attempt-resume-card">
+      <h2 id="attempt-resume-title">Bài đang làm dở dang</h2>
+      <p id="attempt-resume-message">Bạn đang có bài đang làm. Bạn có muốn luyện tập tiếp bài đang làm hay muốn hủy bài làm đó?</p>
+      <div class="attempt-resume-actions">
+        <button type="button" id="attempt-resume-continue" class="btn-primary">Tiếp</button>
+        <button type="button" id="attempt-resume-cancel" class="btn-secondary">Hủy</button>
+      </div>
+    </section>
+  </div>
+
   <script defer src="./src/modules/lifecycle.js"></script>
   <script defer src="./src/modules/router.js"></script>
   <script defer src="./src/modules/modal.js"></script>

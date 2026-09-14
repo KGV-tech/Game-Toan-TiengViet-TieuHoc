@@ -5661,3 +5661,26 @@ input[type="text"], input[type="password"], select, textarea {
         box-shadow: none !important;
     }
 }
+/* Resume prompt is shown only after a student signs in with a saved local attempt. */
+.attempt-resume-modal {
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 13, 42, .72);
+}
+
+.attempt-resume-card {
+    width: min(460px, calc(100vw - 40px));
+    padding: 28px;
+    text-align: center;
+    border: 2px solid #61e9ff;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #0c5c99, #071d59 72%) !important;
+    box-shadow: 0 10px 38px rgba(0, 8, 35, .88), 0 0 22px rgba(79, 220, 255, .55), inset 0 1px 0 rgba(215, 251, 255, .55);
+    color: #f5fcff;
+}
+
+.attempt-resume-card h2 { margin-top: 0; color: #fff; text-shadow: 0 2px 3px #06265f; }
+.attempt-resume-card p { color: #d9f6ff; line-height: 1.55; }
+.attempt-resume-actions { display: flex; justify-content: center; gap: 14px; margin-top: 24px; }
+.attempt-resume-actions button { min-width: 120px; }

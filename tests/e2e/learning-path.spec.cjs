@@ -36,9 +36,34 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-shell')).toHaveClass(/student-learning-shell--cosmic/);
   await expect(page.locator('.student-learning-shell')).toHaveClass(/student-learning-shell--mockup/);
   await expect(page.locator('.student-learning-hud')).toBeVisible();
-  await expect(page.locator('.student-learning-hud__brand strong')).toHaveText('VUI HỌC TOÁN');
+  await expect(page.locator('.student-learning-hud').evaluate(hud => getComputedStyle(hud, '::before').backgroundImage)).resolves.toBe('none');
+  const titleLogo = page.locator('.student-learning-hud__brand-image');
+  await expect(titleLogo).toHaveAttribute('src', './public/student-learning-title-math.png');
+  await expect(titleLogo).toHaveAttribute('alt', 'Vui học Toán');
+  await expect(page.locator('.student-learning-hud__brand-mark')).toHaveCount(0);
+  const titleAlignment = await titleLogo.evaluate(title => {
+    const box = title.getBoundingClientRect();
+    return Math.round((box.left + box.right) / 2 - window.innerWidth / 2);
+  });
+  expect(Math.abs(titleAlignment)).toBe(0);
+  const profileAlignment = await page.locator('.student-learning-hud__profile').evaluate(profile => {
+    const box = profile.getBoundingClientRect();
+    return Math.round(window.innerWidth - box.right);
+  });
+  expect(profileAlignment).toBeLessThanOrEqual(64);
   await expect(page.locator('.student-learning-hud__brand small')).toHaveCount(0);
   await expect(page.locator('.student-learning-hud').getByRole('button', { name: 'Về bản đồ' })).toBeVisible();
+  const mapButtonPosition = await page.locator('[data-learning-back-map]').evaluate(button => {
+    const box = button.getBoundingClientRect();
+    const header = document.querySelector('.student-learning-hud').getBoundingClientRect();
+    return {
+      left: Math.round(box.left),
+      top: Math.round(box.top),
+      verticalOffset: Math.round((box.top + box.bottom) / 2 - (header.top + header.bottom) / 2)
+    };
+  });
+  expect(mapButtonPosition.left).toBeLessThanOrEqual(48);
+  expect(Math.abs(mapButtonPosition.verticalOffset)).toBeLessThanOrEqual(8);
   await expect(page.locator('#game-config-view > .utility-close-button')).toHaveCount(0);
   await expect(page.locator('.student-learning-hud__profile')).toContainText('Học sinh Minh họa');
   await expect(page.locator('.student-learning-hud__profile')).toContainText('Học sinh · Cấp lớp 4');
@@ -53,23 +78,74 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-practice-robot img')).toHaveAttribute('src', './public/student-practice-robot.png');
   await expect(page.locator('.student-learning-mascot-bubble')).toBeHidden();
   await expect(page.locator('#game-config-view .config-left')).toBeHidden();
-  await expect(page.locator('.student-learning-mission-card__lesson')).toHaveText('Bài 1. Ôn tập các số đến 100 000');
+  await expect(page.locator('.student-learning-mission-card')).toHaveCount(0);
   await expect(page.locator('.student-learning-mission-card__heading')).toHaveCount(0);
   await expect(page.locator('.student-learning-mission-card__check')).toHaveCount(0);
   await expect(page.locator('.student-learning-mission-card__count')).toHaveCount(0);
   await expect(page.locator('.student-learning-mission')).toHaveAttribute('data-learning-focus', 'next');
-  await expect(page.locator('.student-learning-mission-card')).toHaveCSS('background-image', /student-learning-lesson-frame.png/);
   await expect(page.locator('#game-config-view')).toHaveCSS('overflow-x', 'hidden');
   await expect(page.locator('.student-learning-screen--daily')).toHaveCSS('overflow-y', 'hidden');
   await expect(page.locator('.student-learning-lesson-sign')).toBeHidden();
-  await expect(page.locator('.student-learning-continue')).toHaveText('Vào luyện tập nào!');
-  await expect(page.locator('.student-learning-step--current .student-learning-step__icon')).toHaveCSS('border-radius', '50%');
-  await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toBeDisabled();
-  await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toContainText('Chưa học');
-  await expect(page.locator('[data-learning-entry="g4-math-hk1-b03"]')).toContainText('Có thể luyện');
+  await expect(page.locator('.student-learning-continue')).toHaveAttribute('aria-label', 'Vào luyện tập nào!');
+  await expect(page.locator('.student-learning-continue__art')).toHaveAttribute('src', './public/student-learning-practice-button.png');
+  const achievements = page.locator('.student-learning-achievements');
+  await expect(achievements).toContainText('THÀNH TÍCH HÔM NAY');
+  await expect(achievements.locator('li').nth(0)).toContainText('Hoàn thành bài học');
+  await expect(achievements.locator('li').nth(0).locator('strong')).toHaveText('0');
+  await expect(achievements.locator('li').nth(1)).toContainText('Đạt sao');
+  await expect(achievements.locator('li').nth(1).locator('strong')).toHaveText('0');
+  await expect(achievements.locator('li').nth(2)).toContainText('Thời gian Luyện tập');
+  await expect(achievements.locator('li').nth(2).locator('strong')).toHaveText('0 phút');
+  await expect(achievements).toHaveCSS('position', 'fixed');
+  const rightRail = await page.evaluate(() => {
+    const bounds = selector => {
+      const box = document.querySelector(selector).getBoundingClientRect();
+      const style = getComputedStyle(document.querySelector(selector));
+      return {
+        left: Math.round(box.left), right: Math.round(box.right), top: Math.round(box.top), bottom: Math.round(box.bottom),
+        borderRadius: style.borderRadius, backgroundImage: style.backgroundImage, fontSize: parseFloat(style.fontSize), boxShadow: style.boxShadow
+      };
+    };
+    return {
+      profile: bounds('.student-learning-hud__profile'),
+      route: bounds('.student-learning-path-toggle--right-rail'),
+      achievements: bounds('.student-learning-achievements')
+    };
+  });
+  expect(rightRail.profile.left).toBe(rightRail.route.left);
+  expect(rightRail.profile.left).toBe(rightRail.achievements.left);
+  expect(rightRail.profile.right).toBe(rightRail.route.right);
+  expect(rightRail.profile.right).toBe(rightRail.achievements.right);
+  expect(rightRail.achievements.top).toBeGreaterThan(rightRail.profile.bottom);
+  expect(rightRail.route.top).toBeGreaterThan(rightRail.achievements.bottom);
+  expect(rightRail.route.borderRadius).toBe(rightRail.profile.borderRadius);
+  expect(rightRail.achievements.borderRadius).toBe(rightRail.profile.borderRadius);
+  expect(rightRail.route.backgroundImage).toContain('linear-gradient');
+  expect(rightRail.achievements.backgroundImage).toContain('linear-gradient');
+  expect(rightRail.route.bottom - rightRail.route.top).toBeGreaterThanOrEqual(100);
+  expect(rightRail.route.fontSize).toBeGreaterThanOrEqual(24);
+  expect(rightRail.route.boxShadow).toContain('rgba(89, 242, 255, 0.92)');
+  expect(rightRail.profile.top).toBeGreaterThanOrEqual(0);
+  expect(rightRail.route.bottom).toBeLessThanOrEqual(900);
+  await expect(page.locator('.student-learning-path-toggle__icon')).toBeVisible();
+  await expect(page.locator('.student-learning-path-toggle__icon img')).toHaveAttribute('src', './public/student-learning-route-icon.svg');
+  await expect(page.locator('.student-learning-continue__art')).toHaveCSS('filter', /22px/);
   await expect(page.locator('.topic-mode-toggle')).toBeHidden();
   await expect(page.locator('#game-start-btn')).toBeHidden();
-  await expect(page.locator('.student-learning-path')).toHaveClass(/student-learning-path--approved-frame/);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const laptopRailFits = await page.evaluate(() => {
+    const bounds = selector => document.querySelector(selector).getBoundingClientRect();
+    const profile = bounds('.student-learning-hud__profile');
+    const achievements = bounds('.student-learning-achievements');
+    const route = bounds('.student-learning-path-toggle--right-rail');
+    return {
+      inViewport: profile.top >= 0 && route.bottom <= window.innerHeight,
+      ordered: achievements.top > profile.bottom && route.top > achievements.bottom,
+      noVerticalScroll: document.documentElement.scrollHeight <= document.documentElement.clientHeight
+    };
+  });
+  expect(laptopRailFits).toEqual({ inViewport: true, ordered: true, noVerticalScroll: true });
 
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(page.locator('#game-config-view')).toBeVisible();
@@ -190,7 +266,10 @@ test('khối chưa có danh mục Bài học chính thức không bị suy đoá
   });
 
   await expect(page.locator('.student-learning-notice')).toBeVisible();
-  await expect(page.locator('.student-learning-step--current')).toContainText('Luyện tập theo Chủ đề');
+  await expect(page.locator('.student-learning-shell')).toHaveAttribute('data-subject', 'Tiếng Việt');
+  await expect(page.locator('.student-learning-hud__brand-image')).toHaveAttribute('src', './public/student-learning-title-vietnamese.png');
+  await expect(page.locator('#game-config-view')).toHaveCSS('background-image', /student-learning-vietnamese-background.png/);
+  await expect(page.locator('.student-learning-path-toggle--right-rail')).toHaveText('Xem lộ trình đầy đủ');
   await expect(page.locator('.student-learning-shell')).toHaveAttribute('data-classlevel', '5');
 
   const tabletState = await page.locator('#game-config-view .station-shell').evaluate(shell => ({

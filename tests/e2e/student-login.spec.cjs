@@ -1,5 +1,103 @@
 const { test, expect } = require('@playwright/test');
 
+test('hộp thoại bài làm dở dang hiển thị tiêu đề rõ ràng', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/**', route =>
+    route.fulfill({ contentType: 'application/javascript', body: '' })
+  );
+  await page.goto('/');
+
+  const prompt = page.evaluate(() => app.auth.promptSavedAttempt());
+  await expect(page.getByRole('heading', { name: 'Bài đang làm dở dang' })).toBeVisible();
+  await page.getByRole('button', { name: 'Hủy' }).click();
+  await expect(prompt).resolves.toBe(false);
+  await expect(page.locator('#attempt-resume-modal')).toHaveAttribute('aria-hidden', 'true');
+});
+
+test('hủy bài làm dở dang xóa lượt luyện tập và không thể khôi phục lại', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/**', route =>
+    route.fulfill({ contentType: 'application/javascript', body: '' })
+  );
+  await page.goto('/');
+
+  const result = await page.evaluate(() => {
+    app.data.currentUser = { username: 'discard-draft', role: 'student' };
+    app.game.state = {
+      ...app.game.state,
+      subject: 'math',
+      questions: [{ id: 'draft-q1', text: 'Câu hỏi đang làm' }],
+      currentIdx: 0,
+      score: 7,
+      historyDetails: [{ correct: true }],
+      attemptId: 'practice:discard-draft'
+    };
+    app.game.saveAttemptDraft();
+    app.game.savePendingResult({ entry: { attempt_id: 'practice:discard-draft' } });
+    app.game.restoreAttemptDraft();
+    app.game.discardAttemptDraft('practice');
+    return {
+      draftExists: Boolean(app.safeStorage.getItem(app.game.getAttemptStorageKey('practice'))),
+      canRestoreAgain: app.game.restoreAttemptDraft(),
+      pendingResultExists: Boolean(app.safeStorage.getItem(app.game.getPendingResultsStorageKey())),
+      questionCount: app.game.state.questions.length,
+      score: app.game.state.score,
+      historyCount: app.game.state.historyDetails.length,
+      attemptId: app.game.state.attemptId
+    };
+  });
+
+  expect(result).toEqual({
+    draftExists: false,
+    canRestoreAgain: false,
+    pendingResultExists: false,
+    questionCount: 0,
+    score: 0,
+    historyCount: 0,
+    attemptId: null
+  });
+});
+
+test('hủy bài làm dở dang xóa lượt làm đề và không thể khôi phục lại', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/**', route =>
+    route.fulfill({ contentType: 'application/javascript', body: '' })
+  );
+  await page.goto('/');
+
+  const result = await page.evaluate(() => {
+    app.data.currentUser = { username: 'discard-exam-draft', role: 'student' };
+    app.exam.state = {
+      ...app.exam.state,
+      questions: [{ id: 'exam-draft-q1', q: 'Câu hỏi trong đề đang làm' }],
+      name: 'Đề đang làm',
+      score: 8,
+      historyDetails: [{ correct: true }],
+      attemptId: 'exam:discard-draft'
+    };
+    app.exam.saveAttemptDraft();
+    app.game.savePendingResult({ entry: { attempt_id: 'exam:discard-draft' }, isExam: true });
+    app.game.restoreAttemptDraft();
+    app.game.discardAttemptDraft('exam');
+    return {
+      draftExists: Boolean(app.safeStorage.getItem(app.game.getAttemptStorageKey('exam'))),
+      canRestoreAgain: app.game.restoreAttemptDraft(),
+      pendingResultExists: Boolean(app.safeStorage.getItem(app.game.getPendingResultsStorageKey())),
+      questionCount: app.exam.state.questions.length,
+      score: app.exam.state.score,
+      historyCount: app.exam.state.historyDetails.length,
+      attemptId: app.exam.state.attemptId
+    };
+  });
+
+  expect(result).toEqual({
+    draftExists: false,
+    canRestoreAgain: false,
+    pendingResultExists: false,
+    questionCount: 0,
+    score: 0,
+    historyCount: 0,
+    attemptId: null
+  });
+});
+
 test('khôi phục bài luyện tập dang dở mở màn hình game thay vì giữ màn hình đăng nhập', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/**', route =>
     route.fulfill({ contentType: 'application/javascript', body: '' })
