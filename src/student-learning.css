@@ -3703,6 +3703,39 @@
     width: var(--practice-cta-width) !important;
 }
 
+/* The active lesson is the luminous focal point of the learning route. */
+#game-config-view .student-learning-path--approved-frame .student-learning-step__icon {
+    flex: 0 0 40px;
+    aspect-ratio: 1;
+    border-radius: 50% !important;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current {
+    animation: student-learning-current-lesson-glow 2s ease-in-out infinite;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__icon {
+    border-radius: 50% !important;
+    animation: student-learning-current-icon-glow 1.7s ease-in-out infinite;
+}
+
+@keyframes student-learning-current-lesson-glow {
+    50% {
+        border-color: #fff1a2;
+        box-shadow: 0 0 24px rgba(255, 224, 77, .72), inset 0 0 18px rgba(255, 219, 77, .18);
+        filter: brightness(1.1);
+    }
+}
+
+@keyframes student-learning-current-icon-glow {
+    50% { box-shadow: 0 0 22px rgba(255, 233, 111, .95), 0 0 6px #fff6ba; }
+}
+
+/* A shorter call-to-action leaves the portal visible on both sides. */
+#game-config-view:has(.student-learning-shell--mockup) {
+    --practice-cta-width: min(350px, 26vw);
+}
+
 /* Supplied landscape artwork is used at its native orientation for the lesson plate. */
 #game-config-view .student-learning-mission-card {
     min-height: 88px !important;

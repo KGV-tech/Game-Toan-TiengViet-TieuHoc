@@ -62,7 +62,8 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('#game-config-view')).toHaveCSS('overflow-x', 'hidden');
   await expect(page.locator('.student-learning-screen--daily')).toHaveCSS('overflow-y', 'hidden');
   await expect(page.locator('.student-learning-lesson-sign')).toBeHidden();
-  await expect(page.locator('.student-learning-continue')).toContainText('Vào luyện tập nào!');
+  await expect(page.locator('.student-learning-continue')).toHaveText('Vào luyện tập nào!');
+  await expect(page.locator('.student-learning-step--current .student-learning-step__icon')).toHaveCSS('border-radius', '50%');
   await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toBeDisabled();
   await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toContainText('Chưa học');
   await expect(page.locator('[data-learning-entry="g4-math-hk1-b03"]')).toContainText('Có thể luyện');

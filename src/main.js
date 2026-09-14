@@ -2679,7 +2679,7 @@ const app = {
 
                   ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
                     <div class="student-learning-practice-robot" aria-hidden="true"><img src="./public/student-practice-robot.png" alt=""></div>
-                    <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)} <span aria-hidden="true">›</span></button>
+                    <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)}</button>
                   </section>` : ''}
 
                   ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Bạn vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để bạn không làm trước nội dung chưa học.</p></aside>` : '')}
