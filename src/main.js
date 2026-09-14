@@ -684,7 +684,9 @@ const app = {
             ]);
         },
         generateTemplateQuestion(template) {
-            const registry = window.Grade4MathTemplates;
+            const registry = app.data.normalizeQuestionPart(template?.subject) === app.data.normalizeQuestionPart('Tiếng Việt')
+                ? window.Grade4VietnameseTemplates
+                : window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
             try {
                 let generated = registry.generateQuestion(template.generator_key, template.config || {});
@@ -2987,6 +2989,17 @@ const app = {
                     && matchLesson
                     && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
+
+            // Tiếng Việt lớp 4 có catalog nội bộ theo từng Bài học. Khi chưa
+            // seed Supabase, dùng các record chỉ-đọc này để lộ trình và luyện
+            // tập không bị trống; chúng không ghi dữ liệu lên server.
+            if (pool.length === 0 && dynamicTemplates.length === 0 && clLevel === '4' && this.state.subject === 'vietnamese') {
+                const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
+                dynamicTemplates = (window.Grade4VietnameseTemplates?.getDefaultTemplates?.() || []).filter(template => {
+                    const selectedTopic = this.state.selectedTopics.find(topic => same(template.topic, topic));
+                    return Boolean(selectedTopic) && (!selectedLessonId || same(template.lesson, selectedLessonId));
+                });
+            }
 
             // Các generator Lớp 4 đã được bundle cùng game. Khi kho Supabase chưa
             // có record tương ứng, Admin vẫn phải test được đúng Chủ đề đã chọn.
@@ -7411,16 +7424,16 @@ const app = {
             const lessonField = document.getElementById('quest-lesson-field');
             const lessonEl = document.getElementById('quest-lesson');
             if (!field || !topicEl || !lessonEl) return;
-            const isMath = subject === 'math';
-            field.hidden = !isMath;
-            if (!isMath) {
+            const subjectKey = subject === 'math' || subject === 'vietnamese' ? subject : '';
+            field.hidden = !subjectKey;
+            if (!subjectKey) {
                 lessonField.hidden = true;
                 lessonEl.disabled = true;
                 return;
             }
             const classNumber = app.curriculum?.normalizeClassNumber(classlevel) || '';
             const topics = classNumber
-                ? (app.constants.topics[classNumber]?.math?.[app.curriculum.normalizeSemesterKey(semester) || 'hk1'] || [])
+                ? (app.constants.topics[classNumber]?.[subjectKey]?.[app.curriculum.normalizeSemesterKey(semester) || 'hk1'] || [])
                 : [];
             const selectedTopic = topicEl.value;
             topicEl.innerHTML = `<option value="">Không giới hạn Chủ đề</option>${topics.map(topic => `<option value="${app.data.sanitizeHTML(topic)}" ${topic === selectedTopic ? 'selected' : ''}>${app.data.sanitizeHTML(topic)}</option>`).join('')}`;
@@ -7429,12 +7442,13 @@ const app = {
             lessonField.hidden = !supportsLessons;
             lessonEl.disabled = !supportsLessons;
             const selectedLesson = lessonEl.value || lessonEl.dataset.selected || '';
-            const lessons = supportsLessons ? app.curriculum.getLessons({ classlevel, subject: 'Toán', semester, topic }) : [];
+            const lessons = supportsLessons ? app.curriculum.getLessons({ classlevel, subject: subjectKey, semester, topic }) : [];
             lessonEl.innerHTML = this.getLessonOptions(lessons, selectedLesson);
             lessonEl.value = supportsLessons ? (this.normalizeAdminLesson(selectedLesson) || '') : '';
         },
         getQuestCurriculumSelection() {
-            if (document.getElementById('quest-subject')?.value !== 'math') return {};
+            const subject = document.getElementById('quest-subject')?.value || '';
+            if (!['math', 'vietnamese'].includes(subject)) return {};
             const classlevel = document.getElementById('quest-classlevel')?.value || '';
             const semester = document.getElementById('quest-semester')?.value || '';
             const topic = document.getElementById('quest-topic')?.value || '';
@@ -7850,7 +7864,12 @@ const app = {
         },
         renderTemplates(box) {
             if (!box) return;
-            const templates = app.data.questionTemplates || [];
+            const savedTemplates = app.data.questionTemplates || [];
+            const builtInVietnamese = window.Grade4VietnameseTemplates?.getDefaultTemplates?.() || [];
+            const savedVietnameseLessons = new Set(savedTemplates
+                .filter(template => template.classlevel === 'Lớp 4' && template.subject === 'Tiếng Việt')
+                .map(template => this.getTemplateLesson(template)));
+            const templates = [...savedTemplates, ...builtInVietnamese.filter(template => !savedVietnameseLessons.has(template.lesson))];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
             const filters = this.templateFilters;
@@ -9420,7 +9439,8 @@ const app = {
             else delete template.config.selectedParts;
             if (selectedLesson) template.config.lesson = selectedLesson;
             else delete template.config.lesson;
-            if (!window.Grade4MathTemplates?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
+            const registry = template.subject === 'Tiếng Việt' ? window.Grade4VietnameseTemplates : window.Grade4MathTemplates;
+            if (!registry?.templateIds?.includes(template.generator_key)) throw new Error('Template này chưa được cài trong mã nguồn game.');
             if (!isAngleTemplate && !isPhase2Template && !isTopic5Template && !isPhase4Review && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isMeasurementTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
