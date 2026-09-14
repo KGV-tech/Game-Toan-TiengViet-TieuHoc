@@ -2,6 +2,11 @@
 // Được tách khỏi main.js để giảm kích thước tệp monolith.
 ;(function (root) {
     if (!root.app) root.app = {};
+    const vietnameseLesson = (semester, number, title, ...activities) => ({
+        id: `g4-vietnamese-${semester}-b${String(number).padStart(2, '0')}`,
+        label: `Bài ${number}. ${title}`,
+        activities
+    });
     root.app.constants = {
         topics: {
             "1": {
@@ -199,6 +204,90 @@
                                 { id: 'g4-math-hk2-b73', label: 'Bài 73. Ôn tập chung', page: 116 }
                             ]
                         }
+                    ]
+                },
+                vietnamese: {
+                    hk1: [
+                        { topic: '1. Mỗi người một vẻ', lessons: [
+                            vietnameseLesson('hk1', 1, 'Điều kì diệu', 'Đọc: Điều kì diệu', 'Luyện từ và câu: Danh từ', 'Viết: Tìm hiểu đoạn văn và câu chủ đề'),
+                            vietnameseLesson('hk1', 2, 'Thi nhạc', 'Đọc: Thi nhạc', 'Viết: Tìm hiểu cách viết đoạn văn nêu ý kiến', 'Nói và nghe: Tôi và bạn'),
+                            vietnameseLesson('hk1', 3, 'Anh em sinh đôi', 'Đọc: Anh em sinh đôi', 'Luyện từ và câu: Danh từ chung, danh từ riêng', 'Viết: Tìm ý cho đoạn văn nêu ý kiến'),
+                            vietnameseLesson('hk1', 4, 'Công chúa và người dẫn chuyện', 'Đọc: Công chúa và người dẫn chuyện', 'Viết: Viết đoạn văn nêu ý kiến', 'Đọc mở rộng'),
+                            vietnameseLesson('hk1', 5, 'Thần lằn xanh và tắc kè', 'Đọc: Thần lằn xanh và tắc kè', 'Luyện từ và câu: Luyện tập về danh từ', 'Viết: Trả bài viết đoạn văn nêu ý kiến'),
+                            vietnameseLesson('hk1', 6, 'Nghệ sĩ trống', 'Đọc: Nghệ sĩ trống', 'Viết: Tìm hiểu cách viết báo cáo thảo luận nhóm', 'Nói và nghe: Kể chuyện Bốn anh tài'),
+                            vietnameseLesson('hk1', 7, 'Những bức chân dung', 'Đọc: Những bức chân dung', 'Luyện từ và câu: Quy tắc viết tên cơ quan, tổ chức', 'Viết: Lập dàn ý cho báo cáo thảo luận nhóm'),
+                            vietnameseLesson('hk1', 8, 'Đò ngang', 'Đọc: Đò ngang', 'Viết: Viết báo cáo thảo luận nhóm', 'Đọc mở rộng')
+                        ] },
+                        { topic: '2. Trải nghiệm và khám phá', lessons: [
+                            vietnameseLesson('hk1', 9, 'Bầu trời trong quả trứng', 'Đọc: Bầu trời trong quả trứng', 'Luyện từ và câu: Động từ', 'Viết: Tìm hiểu cách viết bài văn thuật lại một sự việc'),
+                            vietnameseLesson('hk1', 10, 'Tiếng nói của cỏ cây', 'Đọc: Tiếng nói của cỏ cây', 'Viết: Lập dàn ý cho bài văn thuật lại một sự việc', 'Nói và nghe: Trải nghiệm đáng nhớ'),
+                            vietnameseLesson('hk1', 11, 'Tập làm văn', 'Đọc: Tập làm văn', 'Luyện từ và câu: Luyện tập về động từ', 'Viết: Viết bài văn thuật lại một sự việc'),
+                            vietnameseLesson('hk1', 12, 'Nhà phát minh 6 tuổi', 'Đọc: Nhà phát minh 6 tuổi', 'Viết: Tìm hiểu cách viết bài văn kể lại một câu chuyện', 'Đọc mở rộng'),
+                            vietnameseLesson('hk1', 13, 'Con vẹt xanh', 'Đọc: Con vẹt xanh', 'Luyện từ và câu: Luyện tập về động từ', 'Viết: Luyện viết mở bài, kết bài cho bài văn kể lại một câu chuyện'),
+                            vietnameseLesson('hk1', 14, 'Chân trời cuối phố', 'Đọc: Chân trời cuối phố', 'Viết: Lập dàn ý cho bài văn kể lại một câu chuyện', 'Nói và nghe: Việc làm có ích'),
+                            vietnameseLesson('hk1', 15, 'Gặt chữ trên non', 'Đọc: Gặt chữ trên non', 'Luyện từ và câu: Cách dùng và công dụng của từ điển', 'Viết: Viết bài văn kể lại một câu chuyện'),
+                            vietnameseLesson('hk1', 16, 'Trước ngày xa quê', 'Đọc: Trước ngày xa quê', 'Viết: Trả bài văn kể lại một câu chuyện', 'Đọc mở rộng')
+                        ] },
+                        { topic: '3. Niềm vui sáng tạo', lessons: [
+                            vietnameseLesson('hk1', 17, 'Vẽ màu', 'Đọc: Vẽ màu', 'Luyện từ và câu: Biện pháp nhân hoá', 'Viết: Tìm hiểu cách viết đoạn văn tưởng tượng'),
+                            vietnameseLesson('hk1', 18, 'Đồng cỏ nở hoa', 'Đọc: Đồng cỏ nở hoa', 'Viết: Tìm ý cho đoạn văn tưởng tượng', 'Nói và nghe: Chúng em sáng tạo'),
+                            vietnameseLesson('hk1', 19, 'Thanh âm của núi', 'Đọc: Thanh âm của núi', 'Luyện từ và câu: Luyện tập về biện pháp nhân hoá', 'Viết: Viết đoạn văn tưởng tượng'),
+                            vietnameseLesson('hk1', 20, 'Bầu trời mùa thu', 'Đọc: Bầu trời mùa thu', 'Viết: Trả bài viết đoạn văn tưởng tượng', 'Đọc mở rộng'),
+                            vietnameseLesson('hk1', 21, 'Làm thỏ con bằng giấy', 'Đọc: Làm thỏ con bằng giấy', 'Luyện từ và câu: Tính từ', 'Viết: Tìm hiểu cách viết hướng dẫn thực hiện một công việc'),
+                            vietnameseLesson('hk1', 22, 'Bức tường có nhiều phép lạ', 'Đọc: Bức tường có nhiều phép lạ', 'Viết: Viết hướng dẫn thực hiện một công việc', 'Nói và nghe: Kể chuyện Nhà phát minh và bà cụ'),
+                            vietnameseLesson('hk1', 23, 'Bét-tô-ven và bản xô-nát Ánh trăng', 'Đọc: Bét-tô-ven và bản xô-nát Ánh trăng', 'Luyện từ và câu: Luyện tập về tính từ', 'Viết: Tìm hiểu cách viết đơn'),
+                            vietnameseLesson('hk1', 24, 'Người tìm đường lên các vì sao', 'Đọc: Người tìm đường lên các vì sao', 'Viết: Viết đơn', 'Đọc mở rộng')
+                        ] },
+                        { topic: '4. Chắp cánh ước mơ', lessons: [
+                            vietnameseLesson('hk1', 25, 'Bay cùng ước mơ', 'Đọc: Bay cùng ước mơ', 'Luyện từ và câu: Luyện tập về tính từ', 'Viết: Tìm hiểu cách viết bài văn miêu tả con vật'),
+                            vietnameseLesson('hk1', 26, 'Con trai người làm vườn', 'Đọc: Con trai người làm vườn', 'Viết: Quan sát con vật', 'Nói và nghe: Ước mơ của em'),
+                            vietnameseLesson('hk1', 27, 'Nếu em có một khu vườn', 'Đọc: Nếu em có một khu vườn', 'Luyện từ và câu: Dấu gạch ngang', 'Viết: Luyện viết đoạn văn miêu tả con vật'),
+                            vietnameseLesson('hk1', 28, 'Bốn mùa mơ ước', 'Đọc: Bốn mùa mơ ước', 'Viết: Lập dàn ý cho bài văn miêu tả con vật', 'Đọc mở rộng'),
+                            vietnameseLesson('hk1', 29, 'Ở Vương quốc Tương Lai', 'Đọc: Ở Vương quốc Tương Lai', 'Luyện từ và câu: Luyện tập về dấu gạch ngang', 'Viết: Viết bài văn miêu tả con vật'),
+                            vietnameseLesson('hk1', 30, 'Cánh chim nhỏ', 'Đọc: Cánh chim nhỏ', 'Viết: Trả bài văn miêu tả con vật', 'Nói và nghe: Kể chuyện Đôi cánh của ngựa trắng'),
+                            vietnameseLesson('hk1', 31, 'Nếu chúng mình có phép lạ', 'Đọc: Nếu chúng mình có phép lạ', 'Luyện từ và câu: Luyện tập về danh từ, động từ, tính từ', 'Viết: Tìm hiểu cách viết thư'),
+                            vietnameseLesson('hk1', 32, 'Anh Ba', 'Đọc: Anh Ba', 'Viết: Viết thư', 'Đọc mở rộng')
+                        ] }
+                    ],
+                    hk2: [
+                        { topic: '5. Sống để yêu thương', lessons: [
+                            vietnameseLesson('hk2', 1, 'Hải Thượng Lãn Ông', 'Đọc: Hải Thượng Lãn Ông', 'Luyện từ và câu: Câu', 'Viết: Tìm hiểu cách viết đoạn văn nêu tình cảm, cảm xúc'),
+                            vietnameseLesson('hk2', 2, 'Vệt phấn trên mặt bàn', 'Đọc: Vệt phấn trên mặt bàn', 'Viết: Tìm ý cho đoạn văn nêu tình cảm, cảm xúc về một người gần gũi, thân thiết', 'Nói và nghe: Giúp bạn'),
+                            vietnameseLesson('hk2', 3, 'Ông Bụt đã đến', 'Đọc: Ông Bụt đã đến', 'Luyện từ và câu: Hai thành phần chính của câu', 'Viết: Viết đoạn văn nêu tình cảm, cảm xúc về một người gần gũi, thân thiết'),
+                            vietnameseLesson('hk2', 4, 'Quả ngọt cuối mùa', 'Đọc: Quả ngọt cuối mùa', 'Viết: Tìm ý cho đoạn văn nêu tình cảm, cảm xúc về một nhân vật trong văn học', 'Đọc mở rộng'),
+                            vietnameseLesson('hk2', 5, 'Tờ báo tường của tôi', 'Đọc: Tờ báo tường của tôi', 'Luyện từ và câu: Luyện tập về chủ ngữ', 'Viết: Viết đoạn văn nêu tình cảm, cảm xúc về một nhân vật trong văn học'),
+                            vietnameseLesson('hk2', 6, 'Tiếng ru', 'Đọc: Tiếng ru', 'Viết: Trả bài viết đoạn văn nêu tình cảm, cảm xúc về một nhân vật trong văn học', 'Nói và nghe: Kể chuyện Bài học quý'),
+                            vietnameseLesson('hk2', 7, 'Con muốn làm một cái cây', 'Đọc: Con muốn làm một cái cây', 'Luyện từ và câu: Luyện tập về vị ngữ', 'Viết: Tìm hiểu cách viết hướng dẫn sử dụng một sản phẩm'),
+                            vietnameseLesson('hk2', 8, 'Trên khóm tre đầu ngõ', 'Đọc: Trên khóm tre đầu ngõ', 'Viết: Viết hướng dẫn sử dụng một sản phẩm', 'Đọc mở rộng')
+                        ] },
+                        { topic: '6. Uống nước nhớ nguồn', lessons: [
+                            vietnameseLesson('hk2', 9, 'Sự tích con Rồng cháu Tiên', 'Đọc: Sự tích con Rồng cháu Tiên', 'Luyện từ và câu: Luyện tập về hai thành phần chính của câu', 'Viết: Lập dàn ý cho bài văn kể lại một câu chuyện'),
+                            vietnameseLesson('hk2', 10, 'Cảm xúc Trường Sa', 'Đọc: Cảm xúc Trường Sa', 'Viết: Viết bài văn kể lại một câu chuyện', 'Nói và nghe: Những tấm gương sáng'),
+                            vietnameseLesson('hk2', 11, 'Sáng tháng Năm', 'Đọc: Sáng tháng Năm', 'Luyện từ và câu: Trạng ngữ', 'Viết: Trả bài văn kể lại một câu chuyện'),
+                            vietnameseLesson('hk2', 12, 'Chàng trai làng Phù Ủng', 'Đọc: Chàng trai làng Phù Ủng', 'Viết: Viết đoạn văn nêu ý kiến', 'Đọc mở rộng'),
+                            vietnameseLesson('hk2', 13, 'Vườn của ông tôi', 'Đọc: Vườn của ông tôi', 'Luyện từ và câu: Trạng ngữ chỉ thời gian, nơi chốn', 'Viết: Trả bài viết đoạn văn nêu ý kiến'),
+                            vietnameseLesson('hk2', 14, 'Trong lời mẹ hát', 'Đọc: Trong lời mẹ hát', 'Viết: Lập dàn ý cho bài văn thuật lại một sự việc', 'Nói và nghe: Truyền thống Uống nước nhớ nguồn'),
+                            vietnameseLesson('hk2', 15, 'Người thầy đầu tiên của bố tôi', 'Đọc: Người thầy đầu tiên của bố tôi', 'Luyện từ và câu: Trạng ngữ chỉ nguyên nhân, mục đích', 'Viết: Viết bài văn thuật lại một sự việc'),
+                            vietnameseLesson('hk2', 16, 'Ngựa biên phòng', 'Đọc: Ngựa biên phòng', 'Viết: Trả bài văn thuật lại một sự việc', 'Đọc mở rộng')
+                        ] },
+                        { topic: '7. Quê hương trong tôi', lessons: [
+                            vietnameseLesson('hk2', 17, 'Cây đa quê hương', 'Đọc: Cây đa quê hương', 'Luyện từ và câu: Trạng ngữ chỉ phương tiện', 'Viết: Tìm hiểu cách viết bài văn miêu tả cây cối'),
+                            vietnameseLesson('hk2', 18, 'Bước mùa xuân', 'Đọc: Bước mùa xuân', 'Viết: Tìm hiểu cách viết bài văn miêu tả cây cối (tiếp theo)', 'Nói và nghe: Những miền quê yêu dấu'),
+                            vietnameseLesson('hk2', 19, 'Đi hội chùa Hương', 'Đọc: Đi hội chùa Hương', 'Luyện từ và câu: Dấu ngoặc kép', 'Viết: Quan sát cây cối'),
+                            vietnameseLesson('hk2', 20, 'Chiều ngoại ô', 'Đọc: Chiều ngoại ô', 'Viết: Luyện viết đoạn văn miêu tả cây cối', 'Đọc mở rộng'),
+                            vietnameseLesson('hk2', 21, 'Những cánh buồm', 'Đọc: Những cánh buồm', 'Luyện từ và câu: Dấu ngoặc đơn', 'Viết: Luyện viết mở bài, kết bài cho bài văn miêu tả cây cối'),
+                            vietnameseLesson('hk2', 22, 'Cái cầu', 'Đọc: Cái cầu', 'Viết: Lập dàn ý cho bài văn miêu tả cây cối', 'Nói và nghe: Kể chuyện Về quê ngoại'),
+                            vietnameseLesson('hk2', 23, 'Đường đi Sa Pa', 'Đọc: Đường đi Sa Pa', 'Luyện từ và câu: Luyện tập viết tên cơ quan, tổ chức', 'Viết: Viết bài văn miêu tả cây cối'),
+                            vietnameseLesson('hk2', 24, 'Quê ngoại', 'Đọc: Quê ngoại', 'Viết: Trả bài văn miêu tả cây cối', 'Đọc mở rộng')
+                        ] },
+                        { topic: '8. Vì một thế giới bình yên', lessons: [
+                            vietnameseLesson('hk2', 25, 'Khu bảo tồn động vật hoang dã Ngô-rông-gô-rô', 'Đọc: Khu bảo tồn động vật hoang dã Ngô-rông-gô-rô', 'Luyện từ và câu: Lựa chọn từ ngữ', 'Viết: Viết đoạn văn tưởng tượng'),
+                            vietnameseLesson('hk2', 26, 'Ngôi nhà của yêu thương', 'Đọc: Ngôi nhà của yêu thương', 'Viết: Trả bài viết đoạn văn tưởng tượng', 'Nói và nghe: Chung tay bảo vệ động vật'),
+                            vietnameseLesson('hk2', 27, 'Băng tan', 'Đọc: Băng tan', 'Luyện từ và câu: Luyện tập lựa chọn từ ngữ', 'Viết: Viết đoạn văn tưởng tượng'),
+                            vietnameseLesson('hk2', 28, 'Chuyến du lịch thú vị', 'Đọc: Chuyến du lịch thú vị', 'Viết: Hướng dẫn cách viết thư', 'Đọc mở rộng'),
+                            vietnameseLesson('hk2', 29, 'Lễ hội ở Nhật Bản', 'Đọc: Lễ hội ở Nhật Bản', 'Luyện từ và câu: Luyện tập về dấu câu', 'Viết: Viết thư'),
+                            vietnameseLesson('hk2', 30, 'Ngày hội', 'Đọc: Ngày hội', 'Viết: Viết giấy mời', 'Nói và nghe: Cuộc sống xanh')
+                        ] }
                     ]
                 }
             }

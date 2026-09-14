@@ -130,8 +130,8 @@
         const direct = findLessonById(target);
         if (direct) return direct;
         const normalizedTarget = normalizeText(target);
-        for (const semester of ['hk1', 'hk2']) {
-            const entries = getCatalog()['4']?.math?.[semester] || [];
+        for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
+            const entries = getCatalog()['4']?.[subject]?.[semester] || [];
             for (const entry of entries) {
                 const lesson = entry.lessons.find(item => normalizeText(item.label) === normalizedTarget);
                 if (lesson) return lesson;
@@ -143,8 +143,8 @@
     const findLessonById = id => {
         const target = String(id ?? '').trim();
         if (!target) return null;
-        for (const semester of ['hk1', 'hk2']) {
-            const entries = getCatalog()['4']?.math?.[semester] || [];
+        for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
+            const entries = getCatalog()['4']?.[subject]?.[semester] || [];
             for (const entry of entries) {
                 const lesson = entry.lessons.find(item => item.id === target);
                 if (lesson) return lesson;
@@ -158,13 +158,15 @@
         normalizeSubjectKey: subjectKeyOf,
         normalizeSemesterKey: semesterKeyOf,
         supportsLessons(classlevel, subject) {
-            return classNumberOf(classlevel) === '4' && subjectKeyOf(subject) === 'math';
+            const subjectKey = subjectKeyOf(subject);
+            return classNumberOf(classlevel) === '4' && Boolean(getCatalog()['4']?.[subjectKey]);
         },
         getTopicEntries({ classlevel, subject, semester } = {}) {
             if (!this.supportsLessons(classlevel, subject)) return [];
+            const subjectKey = subjectKeyOf(subject);
             const semesterKey = semesterKeyOf(semester);
-            if (semesterKey) return getCatalog()['4']?.math?.[semesterKey] || [];
-            return ['hk1', 'hk2'].flatMap(key => getCatalog()['4']?.math?.[key] || []);
+            if (semesterKey) return getCatalog()['4']?.[subjectKey]?.[semesterKey] || [];
+            return ['hk1', 'hk2'].flatMap(key => getCatalog()['4']?.[subjectKey]?.[key] || []);
         },
         getTopicEntry({ classlevel, subject, semester, topic } = {}) {
             const normalizedTopic = String(topic ?? '').trim().normalize('NFC');
@@ -186,11 +188,11 @@
         getLessonContext(id) {
             const target = String(id ?? '').trim();
             if (!target) return null;
-            for (const semester of ['hk1', 'hk2']) {
-                const entries = getCatalog()['4']?.math?.[semester] || [];
+            for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
+                const entries = getCatalog()['4']?.[subject]?.[semester] || [];
                 for (const entry of entries) {
                     const lesson = entry.lessons.find(item => item.id === target);
-                    if (lesson) return { semester, topic: entry.topic, lesson };
+                    if (lesson) return { subject, semester, topic: entry.topic, lesson };
                 }
             }
             return null;
