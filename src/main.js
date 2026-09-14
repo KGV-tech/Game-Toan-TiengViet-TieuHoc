@@ -2648,49 +2648,51 @@ const app = {
             const studentStars = Number(student.stars || 0).toLocaleString('vi-VN');
             const studentAvatar = app.auth.getAvatar(student.avatar_key);
             const studentAvatarMarkup = studentAvatar.image
-                ? `<img class="student-learning-hud__avatar" src="${studentAvatar.image}" alt="Avatar ${esc(studentAvatar.label)}">`
-                : `<span class="student-learning-hud__avatar avatar-art avatar-art--${studentAvatar.key}" role="img" aria-label="Avatar ${esc(studentAvatar.label)}"></span>`;
+                ? `<img class="student-learning-hud__avatar player-info-card__avatar" src="${studentAvatar.image}" alt="Avatar ${esc(studentAvatar.label)}">`
+                : `<span class="student-learning-hud__avatar player-info-card__avatar avatar-art avatar-art--${studentAvatar.key}" role="img" aria-label="Avatar ${esc(studentAvatar.label)}"></span>`;
             const brandTitle = subjectLabel === 'Toán' ? 'VUI HỌC TOÁN' : 'VUI HỌC TIẾNG VIỆT';
+            const brandTitleMarkup = subjectLabel === 'Toán'
+                ? '<img class="student-learning-hud__brand-image" src="./public/student-learning-title-math.png" alt="Vui học Toán">'
+                : subjectLabel === 'Tiếng Việt'
+                    ? '<img class="student-learning-hud__brand-image" src="./public/student-learning-title-vietnamese.png" alt="Vui học Tiếng Việt">'
+                    : `<strong>${brandTitle}</strong>`;
             const hudMarkup = `
                 <header class="student-learning-hud" aria-label="Thông tin hành trình học tập">
                   <div class="student-learning-hud__brand">
-                    <span class="student-learning-hud__brand-mark" aria-hidden="true">✦</span>
                     <span class="student-learning-hud__brand-copy">
-                      <strong>${brandTitle}</strong>
-                      <button type="button" class="student-learning-back-map" data-learning-back-map aria-label="Về bản đồ"><span aria-hidden="true">←</span> Về bản đồ</button>
+                      ${brandTitleMarkup}
                     </span>
                   </div>
-                  <div class="student-learning-hud__profile" aria-label="Thông tin học sinh">
+                  <div class="student-learning-hud__profile player-info-card" aria-label="Thông tin học sinh">
                     ${studentAvatarMarkup}
-                    <span class="student-learning-hud__profile-copy">
+                    <span class="student-learning-hud__profile-copy player-info-card__content">
                       <strong>${esc(studentName)}</strong>
                       <small>Học sinh · ${esc(studentClassLabel)}</small>
-                      <span class="student-learning-hud__profile-title"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${esc(studentTitle)}</b></span>
+                      <span class="student-learning-hud__profile-title player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${esc(studentTitle)}</b></span>
                       <span class="student-learning-hud__profile-progress" role="progressbar" aria-label="Tiến độ danh hiệu ${Math.round(studentProgress.percent)}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(studentProgress.percent)}"><span style="width:${studentProgress.percent}%"></span></span>
-                      <span class="student-learning-hud__profile-stars"><i aria-hidden="true">⭐</i> <b>${esc(studentStars)}</b> Sao</span>
+                      <span class="student-learning-hud__profile-stars player-info-card__stats"><i aria-hidden="true">⭐</i> <b>${esc(studentStars)}</b> Sao</span>
                     </span>
                   </div>
+                  <button type="button" class="student-learning-back-map" data-learning-back-map aria-label="Về bản đồ"><span aria-hidden="true">←</span> Về bản đồ</button>
                 </header>`;
             const dailyScreenMarkup = `
                 <section class="student-learning-screen student-learning-screen--daily" aria-labelledby="student-learning-title">
-                  <section class="student-learning-hero student-learning-mission-card" aria-labelledby="student-learning-title">
-                    <h2 id="student-learning-title" class="student-learning-mission-card__lesson">${esc(missionTitle)}</h2>
-                  </section>
+                  <aside class="student-learning-achievements" aria-label="Thành tích hôm nay">
+                    <h3><span aria-hidden="true">📋</span> THÀNH TÍCH HÔM NAY</h3>
+                    <ul>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">✅</span><span>Hoàn thành bài học</span><strong>0</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⭐</span><span>Đạt sao</span><strong>0</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⏱️</span><span>Thời gian Luyện tập</span><strong>0 phút</strong></li>
+                    </ul>
+                  </aside>
 
                   ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
                     <div class="student-learning-practice-robot" aria-hidden="true"><img src="./public/student-practice-robot.png" alt=""></div>
-                    <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)}</button>
+                    <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}" aria-label="${esc(missionAction)}"><img class="student-learning-continue__art" src="./public/student-learning-practice-button.png" alt=""></button>
                   </section>` : ''}
 
                   ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Bạn vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để bạn không làm trước nội dung chưa học.</p></aside>` : '')}
-
-                  <section class="student-learning-path student-learning-path--compact student-learning-path--approved-frame" aria-labelledby="student-learning-path-title">
-                    <header class="student-learning-path__header">
-                      <div><span class="student-learning-eyebrow">Hành trình của bạn</span><h3 id="student-learning-path-title">Lộ trình học gần đây</h3></div>
-                      <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="false">Xem lộ trình đầy đủ</button>
-                    </header>
-                    <div class="student-learning-path__list">${compactPathMarkup}</div>
-                  </section>
+                  <button type="button" class="student-learning-path-toggle student-learning-path-toggle--right-rail" data-learning-path-toggle aria-expanded="false"><span class="student-learning-path-toggle__icon" aria-hidden="true"><img src="./public/student-learning-route-icon.svg" alt=""></span><span>Xem lộ trình đầy đủ</span></button>
                 </section>`;
             const routeScreenMarkup = `
                 <section class="student-learning-screen student-learning-screen--route" aria-label="Lộ trình học tập">

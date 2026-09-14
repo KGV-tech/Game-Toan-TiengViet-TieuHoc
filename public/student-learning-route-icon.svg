@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="map" x1="16" y1="10" x2="78" y2="85" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d7fcff"/>
+      <stop offset=".48" stop-color="#47dcff"/>
+      <stop offset="1" stop-color="#0d70d6"/>
+    </linearGradient>
+    <linearGradient id="pin" x1="48" y1="24" x2="48" y2="69" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff7a1"/>
+      <stop offset="1" stop-color="#ffad2e"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path d="M14 22 37 13l22 9 23-9v59l-23 10-22-9-23 10V22Z" fill="url(#map)" stroke="#a8f8ff" stroke-width="4" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="m37 13 1 60m21-51v60" fill="none" stroke="#075093" stroke-width="3" opacity=".68"/>
+  <path d="M48 25c-10 0-18 8-18 18 0 14 18 30 18 30s18-16 18-30c0-10-8-18-18-18Z" fill="url(#pin)" stroke="#fff7b0" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="48" cy="43" r="6" fill="#075aa9" stroke="#d6fcff" stroke-width="3"/>
+  <path d="m75 20 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="#fff6a3"/>
+</svg>
