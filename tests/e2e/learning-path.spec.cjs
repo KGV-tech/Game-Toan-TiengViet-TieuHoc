@@ -37,22 +37,45 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-shell')).toHaveClass(/student-learning-shell--mockup/);
   await expect(page.locator('.student-learning-hud')).toBeVisible();
   await expect(page.locator('.student-learning-hud__brand strong')).toHaveText('VUI HỌC TOÁN');
-  await expect(page.locator('.student-learning-hud__brand small')).toHaveText('Lớp 4');
+  await expect(page.locator('.student-learning-hud__brand small')).toHaveCount(0);
+  await expect(page.locator('.student-learning-hud').getByRole('button', { name: 'Về bản đồ' })).toBeVisible();
+  await expect(page.locator('#game-config-view > .utility-close-button')).toHaveCount(0);
   await expect(page.locator('.student-learning-hud__profile')).toContainText('Học sinh Minh họa');
+  await expect(page.locator('.student-learning-hud__profile')).toContainText('Học sinh · Cấp lớp 4');
+  await expect(page.locator('.student-learning-hud__profile')).toContainText('Danh hiệu: Học Trò Chăm Chỉ');
+  await expect(page.locator('.student-learning-hud__profile')).toContainText('7 Sao');
+  await expect(page.locator('.student-learning-hud__profile .student-learning-hud__profile-progress')).toBeVisible();
   await expect(page.locator('.student-learning-hud__avatar')).toBeVisible();
   await expect(page.locator('.student-learning-hud__headline')).toHaveCount(0);
   await expect(page.locator('.student-learning-hud__reward')).toHaveCount(0);
   await expect(page.locator('.student-learning-screen--daily')).toBeVisible();
+  await expect(page.locator('.student-learning-practice-robot')).toBeVisible();
+  await expect(page.locator('.student-learning-practice-robot img')).toHaveAttribute('src', './public/student-practice-robot.png');
   await expect(page.locator('.student-learning-mascot-bubble')).toBeHidden();
   await expect(page.locator('#game-config-view .config-left')).toBeHidden();
-  await expect(page.getByRole('heading', { name: 'Hôm nay mình học gì?' })).toBeVisible();
-  await expect(page.locator('.student-learning-mission')).toContainText('Bài 1. Ôn tập các số đến 100 000');
+  await expect(page.locator('.student-learning-mission-card__lesson')).toHaveText('Bài 1. Ôn tập các số đến 100 000');
+  await expect(page.locator('.student-learning-mission-card__heading')).toHaveCount(0);
+  await expect(page.locator('.student-learning-mission-card__check')).toHaveCount(0);
+  await expect(page.locator('.student-learning-mission-card__count')).toHaveCount(0);
   await expect(page.locator('.student-learning-mission')).toHaveAttribute('data-learning-focus', 'next');
-  await expect(page.locator('.student-learning-continue')).toContainText('Tiếp tục');
+  await expect(page.locator('.student-learning-mission-card')).toHaveCSS('background-image', /student-learning-lesson-frame.png/);
+  await expect(page.locator('#game-config-view')).toHaveCSS('overflow-x', 'hidden');
+  await expect(page.locator('.student-learning-screen--daily')).toHaveCSS('overflow-y', 'hidden');
+  await expect(page.locator('.student-learning-lesson-sign')).toBeHidden();
+  await expect(page.locator('.student-learning-continue')).toContainText('Vào luyện tập nào!');
   await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toBeDisabled();
+  await expect(page.locator('[data-learning-entry="g4-math-hk1-b04"]')).toContainText('Chưa học');
   await expect(page.locator('[data-learning-entry="g4-math-hk1-b03"]')).toContainText('Có thể luyện');
   await expect(page.locator('.topic-mode-toggle')).toBeHidden();
   await expect(page.locator('#game-start-btn')).toBeHidden();
+  await expect(page.locator('.student-learning-path')).toHaveClass(/student-learning-path--approved-frame/);
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('#game-config-view')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => ({
+    page: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    canvas: document.querySelector('#game-config-view').scrollWidth <= document.querySelector('#game-config-view').clientWidth
+  }))).toEqual({ page: true, canvas: true });
 
   const guardrail = await page.evaluate(async () => {
     const alerts = [];
@@ -82,14 +105,21 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
     configOverflowY: 'hidden',
     shellOverflowY: 'hidden'
   });
+  const practiceBackdrop = await page.locator('#game-config-view').evaluate(view => getComputedStyle(view).backgroundImage);
+  expect(practiceBackdrop).toContain('student-practice-space.png');
   await page.screenshot({ path: testInfo.outputPath('learning-path-desktop.png') });
 
   await page.getByRole('button', { name: 'Xem lộ trình đầy đủ' }).click();
   await expect(page.locator('.student-learning-screen--route')).toBeVisible();
   await expect(page.locator('.student-learning-screen--daily')).toHaveCount(0);
   await expect(page.locator('.student-learning-path--full')).toBeVisible();
+  await expect(page.locator('.student-learning-route-intro')).toHaveCount(0);
+  await expect(page.locator('.student-learning-path--full .student-learning-path__header')).toHaveCount(0);
   await expect(page.locator('.student-learning-topic-nav')).toBeVisible();
   await expect(page.locator('.student-learning-route-board')).toBeVisible();
+  await expect(page.locator('.student-learning-route-board__header')).toContainText('Cùng khám phá hành trình của bạn');
+  await expect(page.locator('.student-learning-route-board__header')).toContainText('Các Bài được xếp đúng theo thứ tự trên lớp');
+  await expect(page.getByRole('button', { name: 'Quay lại Luyện tập' })).toBeVisible();
   await expect(page.locator('.student-learning-release-badge')).toContainText('Đã mở đến Bài 3');
   const routeLayout = await page.locator('.student-learning-screen--route').evaluate(screen => {
     const topicList = screen.querySelector('.student-learning-topic-nav__list');
@@ -98,10 +128,12 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
       topicColumns: getComputedStyle(topicList).gridTemplateColumns.trim().split(/\s+/).length,
       topicOverflowY: getComputedStyle(topicList).overflowY,
       boardOverflowY: getComputedStyle(board).overflowY,
-      screenOverflowY: getComputedStyle(screen).overflowY
+      screenOverflowY: getComputedStyle(screen).overflowY,
+      topicNameWrap: getComputedStyle(topicList.querySelector('.student-learning-topic-link__copy strong')).whiteSpace,
+      backButtonIsCompact: screen.querySelector('[data-learning-path-toggle]').getBoundingClientRect().width < board.getBoundingClientRect().width / 2
     };
   });
-  expect(routeLayout).toEqual({ topicColumns: 2, topicOverflowY: 'auto', boardOverflowY: 'auto', screenOverflowY: 'hidden' });
+  expect(routeLayout).toEqual({ topicColumns: 1, topicOverflowY: 'auto', boardOverflowY: 'auto', screenOverflowY: 'hidden', topicNameWrap: 'normal', backButtonIsCompact: true });
   await expect(page.locator('[data-learning-group-jump]').first()).toBeVisible();
   await expect(page.locator('.student-learning-route-board [data-learning-entry="g4-math-hk1-b04"]')).toBeDisabled();
   const secondTopic = page.locator('[data-learning-group-jump]').nth(1);
@@ -118,15 +150,30 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await page.screenshot({ path: testInfo.outputPath('learning-path-full-desktop.png') });
 
   await page.setViewportSize({ width: 1024, height: 768 });
-  const fullTabletState = await page.locator('#game-config-view .station-shell').evaluate(shell => ({
+  await expect.poll(() => page.evaluate(() => {
+    const firstTopicName = document.querySelector('.student-learning-topic-link__copy strong');
+    return {
+      page: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      canvas: document.querySelector('#game-config-view').scrollWidth <= document.querySelector('#game-config-view').clientWidth,
+      topicNameFits: firstTopicName.scrollWidth <= firstTopicName.clientWidth
+    };
+  })).toEqual({ page: true, canvas: true, topicNameFits: true });
+
+  await page.getByRole('button', { name: 'Quay lại Luyện tập' }).click();
+  await expect(page.locator('.student-learning-screen--daily')).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const dailyTabletState = await page.locator('#game-config-view .station-shell').evaluate(shell => ({
     right: shell.getBoundingClientRect().right,
     viewport: window.innerWidth,
     rootOverflow: document.documentElement.scrollWidth > window.innerWidth,
-    overflowY: getComputedStyle(shell).overflowY
+    overflowY: getComputedStyle(shell).overflowY,
+    profileRight: document.querySelector('.student-learning-hud__profile').getBoundingClientRect().right
   }));
-  expect(fullTabletState.right).toBeLessThanOrEqual(fullTabletState.viewport);
-  expect(fullTabletState.rootOverflow).toBe(false);
-  expect(fullTabletState.overflowY).toBe('hidden');
+  expect(dailyTabletState.right).toBeLessThanOrEqual(dailyTabletState.viewport);
+  expect(dailyTabletState.profileRight).toBeLessThanOrEqual(dailyTabletState.viewport);
+  expect(dailyTabletState.rootOverflow).toBe(false);
+  expect(dailyTabletState.overflowY).toBe('hidden');
+  await page.screenshot({ path: testInfo.outputPath('learning-path-daily-tablet.png') });
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

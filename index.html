@@ -538,7 +538,9 @@
 
       <!-- Cấu hình -->
       <div id="game-config-view" class="game-view station-view station-view--config active">
-        <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
+        <button type="button" class="student-learning-back-map student-learning-back-map--fallback" onclick="app.router.open('map-screen')" aria-label="Về bản đồ">
+          <span aria-hidden="true">←</span> Về bản đồ
+        </button>
         <div class="glass-container-xl station-shell">
           <div class="config-layout">
             <div class="config-top">

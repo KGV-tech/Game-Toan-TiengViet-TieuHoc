@@ -1150,8 +1150,10 @@
 
     #game-config-view .student-learning-hud__brand strong {
         color: var(--route-ink);
-        font-size: clamp(.92rem, 1.3vw, 1.15rem);
+        font-size: clamp(1.22rem, 2vw, 1.72rem);
         letter-spacing: .02em;
+        line-height: 1;
+        text-shadow: 0 0 14px rgba(125, 211, 252, .36);
     }
 
     #game-config-view .student-learning-hud__brand small,
@@ -1162,19 +1164,20 @@
     }
 
     #game-config-view .student-learning-hud__profile {
-        min-width: 0;
-        padding: 5px 12px 5px 6px;
-        border: 1px solid rgba(88, 233, 255, .58);
-        border-radius: 999px;
+        min-width: min(360px, 34vw);
+        max-width: min(400px, 38vw);
+        padding: 8px 16px 8px 8px;
+        border: 2px solid rgba(88, 233, 255, .58);
+        border-radius: 16px 16px 24px 16px;
         background: linear-gradient(145deg, rgba(10, 91, 137, .78), rgba(15, 47, 91, .86));
         box-shadow: 0 0 18px rgba(88, 233, 255, .12), inset 0 1px 0 rgba(255, 255, 255, .12);
     }
 
     #game-config-view .student-learning-hud__avatar {
         display: block;
-        flex: 0 0 44px;
-        width: 44px;
-        height: 44px;
+        flex: 0 0 58px;
+        width: 58px;
+        height: 58px;
         border: 2px solid var(--mockup-cyan);
         border-radius: 50%;
         background-color: rgba(4, 29, 63, .7);
@@ -1184,25 +1187,62 @@
     #game-config-view .student-learning-hud__profile-copy {
         display: grid;
         min-width: 0;
-        gap: 1px;
+        gap: 2px;
     }
 
     #game-config-view .student-learning-hud__profile-copy strong {
-        max-width: 180px;
+        max-width: none;
         overflow: hidden;
         color: #fff;
-        font-size: .82rem;
+        font-size: .96rem;
         line-height: 1.15;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
+    #game-config-view .student-learning-hud__profile-title,
+    #game-config-view .student-learning-hud__profile-stars {
+        color: #d7f6ff;
+        font-size: .72rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    #game-config-view .student-learning-hud__profile-title b,
+    #game-config-view .student-learning-hud__profile-stars b {
+        color: #fde68a;
+    }
+
+    #game-config-view .student-learning-hud__profile-title i,
+    #game-config-view .student-learning-hud__profile-stars i {
+        font-style: normal;
+    }
+
+    #game-config-view .student-learning-hud__profile-progress {
+        display: block;
+        width: 100%;
+        height: 7px;
+        overflow: hidden;
+        border: 1px solid rgba(225, 248, 255, .62);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .18);
+    }
+
+    #game-config-view .student-learning-hud__profile-progress > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #ffd75d, #ffae31);
+        box-shadow: 0 0 8px rgba(255, 214, 90, .6);
+    }
+
     #game-config-view .student-learning-screen--daily {
         display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
-        align-content: start;
-        gap: 16px;
+        grid-template-columns: minmax(188px, .52fr) minmax(360px, 1.15fr) minmax(210px, .62fr);
+        align-content: stretch;
+        gap: 14px;
         min-width: 0;
+        min-height: 0;
     }
 
     #game-config-view .student-learning-screen--daily > .student-learning-hero {
@@ -1213,8 +1253,12 @@
         grid-column: 2;
     }
 
-    #game-config-view .student-learning-screen--daily > .student-learning-notice,
     #game-config-view .student-learning-screen--daily > .student-learning-path {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    #game-config-view .student-learning-screen--daily > .student-learning-notice {
         grid-column: 1 / -1;
     }
 
@@ -1231,13 +1275,15 @@
 
     #game-config-view .student-learning-shell--mockup .student-learning-hero {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        min-height: 160px;
-        padding: clamp(18px, 2.2vw, 28px);
+        justify-content: center;
+        gap: 14px;
+        min-height: 290px;
+        padding: clamp(18px, 2vw, 25px);
         overflow: hidden;
         border-radius: 22px;
+        text-align: center;
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-hero::after {
@@ -1267,7 +1313,7 @@
     #game-config-view .student-learning-shell--mockup .student-learning-hero h2 {
         margin: 7px 0 7px;
         color: #fff;
-        font-size: clamp(1.55rem, 3.3vw, 2.55rem);
+        font-size: clamp(1.25rem, 2vw, 1.7rem);
         line-height: 1.02;
         text-shadow: 0 3px 0 rgba(5, 50, 102, .8), 0 0 22px rgba(86, 230, 255, .16);
     }
@@ -1276,7 +1322,7 @@
         max-width: 620px;
         margin: 0;
         color: #c7ebf7;
-        font-size: .82rem;
+        font-size: .75rem;
         line-height: 1.5;
     }
 
@@ -1284,9 +1330,9 @@
         position: relative;
         z-index: 1;
         display: grid;
-        flex: 0 0 112px;
+        flex: 0 0 96px;
         place-items: center;
-        min-height: 112px;
+        min-height: 96px;
         padding: 10px;
         border: 2px solid var(--mockup-gold);
         border-radius: 50%;
@@ -1309,21 +1355,140 @@
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-mission {
+        position: relative;
+        isolation: isolate;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-content: center;
         gap: 12px;
-        min-height: 160px;
-        padding: 20px;
+        min-height: 290px;
+        padding: 24px;
+        overflow: hidden;
         border-color: rgba(255, 212, 94, .88);
         border-radius: 22px;
-        background:
-            radial-gradient(circle at 90% 10%, rgba(255, 224, 110, .22), transparent 30%),
-            linear-gradient(145deg, rgba(70, 80, 35, .88), rgba(13, 54, 74, .96));
+        background: linear-gradient(145deg, rgba(10, 55, 99, .96), rgba(4, 26, 66, .98));
         box-shadow: 0 0 24px rgba(255, 212, 94, .12), inset 0 1px 0 rgba(255, 255, 255, .15);
     }
 
+    #game-config-view .student-learning-math-pyramid {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(255, 255, 255, .84) 0 1px, transparent 2px),
+            radial-gradient(circle at 75% 12%, rgba(255, 255, 255, .72) 0 1px, transparent 2px),
+            radial-gradient(circle at 93% 40%, rgba(255, 255, 255, .66) 0 1px, transparent 2px),
+            linear-gradient(160deg, rgba(31, 145, 205, .42), transparent 48%);
+    }
+
+    #game-config-view .student-learning-winter-lodge::before {
+        position: absolute;
+        right: 8%;
+        bottom: -7%;
+        width: 54%;
+        height: 61%;
+        border: 3px solid rgba(181, 240, 255, .68);
+        border-radius: 22px 22px 8px 8px;
+        background: linear-gradient(90deg, rgba(40, 147, 197, .94), rgba(18, 91, 148, .95));
+        box-shadow: inset 0 0 0 7px rgba(255, 255, 255, .08), 0 0 30px rgba(102, 224, 255, .18);
+        content: '';
+    }
+
+    #game-config-view .student-learning-winter-lodge::after {
+        position: absolute;
+        right: 3%;
+        bottom: 45%;
+        width: 65%;
+        height: 52%;
+        border-radius: 18px 20px 4px 4px;
+        background: linear-gradient(145deg, #397dc4, #164f9d);
+        clip-path: polygon(50% 0, 100% 68%, 91% 76%, 50% 24%, 9% 76%, 0 68%);
+        filter: drop-shadow(0 8px 8px rgba(0, 16, 61, .38));
+        content: '';
+    }
+
+    #game-config-view .student-learning-winter-lodge__snowcap {
+        position: absolute;
+        right: 4.5%;
+        bottom: 61%;
+        z-index: 1;
+        width: 62%;
+        height: 38%;
+        background: linear-gradient(160deg, #ffffff, #d7f5ff 58%, #8bd9f5 59%, #eafcff 70%);
+        clip-path: polygon(50% 0, 100% 72%, 91% 72%, 50% 26%, 9% 72%, 0 72%);
+        filter: drop-shadow(0 5px 5px rgba(0, 19, 67, .28));
+    }
+
+    #game-config-view .student-learning-winter-lodge__chimney {
+        position: absolute;
+        right: 23%;
+        bottom: 60%;
+        width: 9%;
+        height: 23%;
+        border: 2px solid rgba(203, 245, 255, .62);
+        border-radius: 5px 5px 0 0;
+        background: #367eb7;
+        box-shadow: 0 -10px 16px rgba(239, 251, 255, .24);
+    }
+
+    #game-config-view .student-learning-winter-lodge__window,
+    #game-config-view .student-learning-winter-lodge__door {
+        position: absolute;
+        z-index: 1;
+        bottom: 18%;
+        border: 2px solid rgba(255, 234, 129, .86);
+        background: radial-gradient(circle, #fff6ae, #e9a93c 58%, #884916);
+        box-shadow: 0 0 17px rgba(255, 218, 86, .72);
+    }
+
+    #game-config-view .student-learning-winter-lodge__window {
+        width: 10%;
+        height: 16%;
+        border-radius: 50%;
+    }
+
+    #game-config-view .student-learning-winter-lodge__window--left { right: 44%; }
+    #game-config-view .student-learning-winter-lodge__window--right { right: 17%; }
+
+    #game-config-view .student-learning-winter-lodge__door {
+        right: 31%;
+        width: 13%;
+        height: 27%;
+        border-radius: 10px 10px 0 0;
+        background: linear-gradient(90deg, #123d79, #2768a7);
+        box-shadow: 0 0 20px rgba(106, 225, 255, .32);
+    }
+
+    #game-config-view .student-learning-winter-lodge__sign {
+        position: absolute;
+        top: 44%;
+        right: 13%;
+        z-index: 3;
+        display: grid;
+        width: 58%;
+        min-height: 48px;
+        place-items: center;
+        padding: 7px 16px;
+        border: 2px solid #ffe797;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(255, 246, 190, .98), rgba(255, 202, 74, .96));
+        box-shadow: 0 7px 0 rgba(121, 70, 19, .76), 0 0 20px rgba(255, 214, 94, .35);
+        color: #15345f;
+        font-size: clamp(.76rem, 1.25vw, 1.06rem);
+        line-height: 1.14;
+        text-align: center;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission > :not(.student-learning-math-pyramid) {
+        position: relative;
+        z-index: 1;
+    }
+
     #game-config-view .student-learning-shell--mockup .student-learning-mission__badge {
+        position: absolute !important;
+        top: 12%;
+        left: 8%;
         display: grid;
         width: 52px;
         height: 52px;
@@ -1344,27 +1509,38 @@
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-mission h3 {
-        margin: 4px 0 4px;
-        color: #fff;
-        font-size: clamp(1rem, 1.55vw, 1.32rem);
-        line-height: 1.16;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-mission p {
-        margin: 0;
-        color: #d7edeb;
-        font-size: .75rem;
-        line-height: 1.4;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-continue {
+        position: absolute !important;
+        right: 8%;
+        bottom: 12%;
+        left: 8%;
+        z-index: 4;
         grid-column: 1 / -1;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        width: 100%;
-        min-height: 46px;
+        width: auto;
+        min-height: 52px;
         margin-top: 2px;
         padding: 10px 16px;
         border: 1px solid #fff1a5;
@@ -1372,7 +1548,7 @@
         border-radius: 14px;
         background: linear-gradient(180deg, #ffe681, #f2b942);
         color: #122d47;
-        font-size: .9rem;
+        font-size: 1rem;
         font-weight: 950;
         box-shadow: 0 8px 18px rgba(255, 212, 94, .2);
     }
@@ -1404,13 +1580,14 @@
     #game-config-view .student-learning-shell--mockup .student-learning-notice p { margin: 0; }
 
     #game-config-view .student-learning-shell--mockup .student-learning-path {
-        padding: 16px 18px 18px;
+        padding: 16px 14px;
         border-radius: 22px;
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-path__header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
+        flex-direction: column;
         justify-content: space-between;
         gap: 14px;
         margin-bottom: 14px;
@@ -1433,7 +1610,7 @@
         color: #e6fbff;
         font-size: .7rem;
         font-weight: 950;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-path__list {
@@ -1451,7 +1628,7 @@
 
     #game-config-view .student-learning-shell--mockup .student-learning-steps {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 8px;
     }
 
@@ -1460,7 +1637,7 @@
         align-items: center;
         gap: 8px;
         min-width: 0;
-        min-height: 58px;
+        min-height: 44px;
         padding: 8px 9px;
         border: 1px solid rgba(142, 219, 241, .38);
         border-bottom: 3px solid rgba(41, 125, 161, .8);
@@ -2353,6 +2530,10 @@
     }
 
     @media (max-width: 1120px) {
+        #game-config-view .student-learning-screen--daily > .student-learning-path .student-learning-steps {
+            grid-template-columns: 1fr;
+        }
+
         #game-config-view .student-learning-shell--mockup .student-learning-steps,
         #game-config-view .student-learning-screen--route .student-learning-group--route .student-learning-steps {
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2400,8 +2581,13 @@
         }
 
         #game-config-view .student-learning-screen--daily > .student-learning-hero,
-        #game-config-view .student-learning-screen--daily > .student-learning-mission {
+        #game-config-view .student-learning-screen--daily > .student-learning-mission,
+        #game-config-view .student-learning-screen--daily > .student-learning-path {
             grid-column: 1;
+        }
+
+        #game-config-view .student-learning-screen--daily > .student-learning-path {
+            grid-row: auto;
         }
 
         #game-config-view .student-learning-screen--route .student-learning-route {
@@ -2617,5 +2803,966 @@
             animation-duration: .01ms !important;
             transition-duration: .01ms !important;
         }
+    }
+
+    /* Winter hub rebuild: 3D assets form the scenery while HTML keeps learning data live. */
+    #game-config-view:has(.student-learning-shell--mockup) {
+        padding: 0 !important;
+        background: #061743 url('assets/student-learning/winter-hub/winter-sky-background.png') center / cover no-repeat !important;
+    }
+
+    #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+        width: 100% !important;
+        height: 100dvh !important;
+        padding: clamp(16px, 2.2vw, 32px) clamp(20px, 4vw, 64px) !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: linear-gradient(180deg, rgba(4, 20, 61, .14), rgba(2, 12, 42, .32)) !important;
+        box-shadow: none !important;
+    }
+
+    #game-config-view .student-learning-shell--mockup {
+        gap: clamp(10px, 1.4vw, 18px);
+    }
+
+    #game-config-view .student-learning-hud {
+        padding: 0 4px 10px;
+        border-bottom-color: rgba(198, 240, 255, .48);
+    }
+
+    #game-config-view .student-learning-hud__brand-mark {
+        border-color: #d9f8ff;
+        background: radial-gradient(circle at 35% 32%, #a8fbff, #4d8df2 55%, #293eae);
+        box-shadow: 0 0 24px rgba(155, 247, 255, .62);
+    }
+
+    #game-config-view .student-learning-hud__brand strong {
+        font-size: clamp(1.35rem, 2.5vw, 2.1rem);
+        letter-spacing: .025em;
+        text-shadow: 0 3px 0 #164c90, 0 0 18px rgba(178, 247, 255, .48);
+    }
+
+    #game-config-view .student-learning-hud__profile {
+        min-width: min(380px, 42vw);
+        padding: 9px 18px 9px 9px;
+        border: 0;
+        border-radius: 22px;
+        background: url('assets/student-learning/winter-hub/frost-panel.png') center / 100% 100% no-repeat;
+        box-shadow: 0 10px 22px rgba(1, 13, 48, .32);
+    }
+
+    #game-config-view .student-learning-screen--daily {
+        grid-template-columns: minmax(190px, .56fr) minmax(390px, 1.1fr) minmax(224px, .64fr);
+        align-items: stretch;
+        gap: clamp(10px, 1.5vw, 20px);
+        padding: 2px 0 8px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero,
+    #game-config-view .student-learning-shell--mockup .student-learning-path {
+        position: relative;
+        isolation: isolate;
+        border: 0;
+        border-radius: 0;
+        background: url('assets/student-learning/winter-hub/frost-panel.png') center / 100% 100% no-repeat;
+        box-shadow: none;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero {
+        min-height: 0;
+        padding: clamp(46px, 5vw, 72px) clamp(24px, 2.4vw, 38px) clamp(38px, 4vw, 58px);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero::after { display: none; }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero h2 {
+        font-size: clamp(1.22rem, 1.7vw, 1.65rem);
+        text-shadow: 0 2px 0 #0d4f92;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-hero__progress {
+        flex-basis: 86px;
+        min-height: 86px;
+        border-color: #fff2a2;
+        background: radial-gradient(circle, rgba(255, 235, 133, .78), rgba(112, 98, 37, .68));
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission {
+        min-height: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    #game-config-view .student-learning-winter-lodge {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: visible;
+        background: none;
+    }
+
+    #game-config-view .student-learning-math-pyramid::before,
+    #game-config-view .student-learning-math-pyramid::after { display: none; }
+
+    #game-config-view .student-learning-math-pyramid > img {
+        position: absolute;
+        bottom: -3%;
+        left: 50%;
+        width: min(94%, 670px);
+        max-height: 108%;
+        object-fit: contain;
+        transform: translateX(-50%);
+        filter: drop-shadow(0 18px 16px rgba(0, 14, 51, .45));
+    }
+
+    #game-config-view .student-learning-math-pyramid__sign {
+        top: 43%;
+        right: 50%;
+        z-index: 3;
+        width: min(58%, 390px);
+        min-height: 48px;
+        padding: 10px 28px;
+        transform: translateX(50%);
+        border: 0;
+        border-radius: 0;
+        background: url('assets/student-learning/winter-hub/lesson-sign.png') center / 100% 100% no-repeat;
+        box-shadow: none;
+        color: #f6fbff;
+        font-size: clamp(.8rem, 1.25vw, 1.08rem);
+        font-weight: 950;
+        text-shadow: 0 2px 0 #102e61, 0 0 10px rgba(149, 234, 255, .55);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission__badge {
+        top: 13%;
+        left: 11%;
+        width: 58px;
+        height: 58px;
+        border: 0;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #6deaff, #367ce4 58%, #3940ad);
+        box-shadow: 0 0 0 3px rgba(234, 254, 255, .76), 0 9px 16px rgba(5, 28, 87, .3);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-mission__copy { display: none; }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-continue {
+        right: 16%;
+        bottom: 7%;
+        left: 16%;
+        min-height: 56px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fff4a4, #ffd052 54%, #ee941b);
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, .78), inset 0 -5px 0 rgba(157, 75, 12, .7), 0 9px 0 rgba(89, 50, 14, .55), 0 14px 26px rgba(255, 184, 52, .24);
+        color: #17315c;
+        font-size: clamp(.9rem, 1.35vw, 1.15rem);
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path {
+        min-height: 0;
+        padding: clamp(42px, 4.5vw, 62px) clamp(22px, 2.3vw, 34px) clamp(30px, 3.5vw, 46px);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-path-toggle {
+        align-self: stretch;
+        border-color: rgba(231, 251, 255, .9);
+        background: linear-gradient(180deg, #2cbbe0, #1267ac);
+        box-shadow: 0 4px 0 #073f79;
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-steps { grid-template-columns: 1fr; }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step {
+        min-height: 48px;
+        border-color: rgba(174, 243, 255, .58);
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(20, 112, 173, .9), rgba(7, 44, 104, .94));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 4px 0 rgba(2, 25, 75, .64);
+    }
+
+    #game-config-view .student-learning-shell--mockup .student-learning-step--current {
+        border-color: #ffe275;
+        background: linear-gradient(135deg, rgba(147, 115, 35, .96), rgba(13, 92, 132, .96));
+        box-shadow: 0 0 16px rgba(255, 218, 86, .3), inset 0 1px 0 rgba(255, 255, 255, .25);
+    }
+
+    @media (max-width: 1120px) {
+        #game-config-view .student-learning-screen--daily {
+            grid-template-columns: minmax(170px, .48fr) minmax(330px, 1fr) minmax(200px, .58fr);
+        }
+
+        #game-config-view .student-learning-math-pyramid > img { width: min(100%, 590px); }
+        #game-config-view .student-learning-math-pyramid__sign { width: 64%; }
+        #game-config-view .student-learning-shell--mockup .student-learning-continue { right: 12%; left: 12%; }
+    }
+
+    @media (max-width: 900px) {
+        #game-config-view .student-learning-screen--daily {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+            overflow: auto;
+        }
+
+        #game-config-view .student-learning-screen--daily > .student-learning-hero { grid-column: 1; grid-row: 1; }
+        #game-config-view .student-learning-screen--daily > .student-learning-mission { grid-column: 2; grid-row: 1 / span 2; }
+        #game-config-view .student-learning-screen--daily > .student-learning-path { grid-column: 1; grid-row: 2; }
+        #game-config-view .student-learning-hud__profile { min-width: min(330px, 48vw); }
+    }
+}
+
+/* Practice-space hub: the supplied scene stays visible while HTML keeps progress live. */
+#game-config-view:has(.student-learning-shell--mockup) {
+    background: #061743 url('../public/student-practice-space.png') center / cover no-repeat !important;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+    background: linear-gradient(180deg, rgba(2, 14, 55, .08), rgba(2, 12, 42, .2)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-hero,
+#game-config-view .student-learning-shell--mockup .student-learning-path,
+#game-config-view .student-learning-hud__profile {
+    background-color: rgba(5, 33, 93, .82);
+    background-image: linear-gradient(145deg, rgba(24, 121, 188, .78), rgba(5, 31, 84, .9));
+    border: 2px solid rgba(156, 237, 255, .75);
+    border-radius: 22px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .24), 0 10px 26px rgba(0, 10, 52, .36);
+}
+
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-path--approved-frame {
+    border: 3px solid #53e6ff;
+    border-radius: 24px;
+    background-color: rgba(2, 43, 89, .9);
+    background-image: linear-gradient(145deg, rgba(9, 94, 150, .92), rgba(2, 33, 78, .94) 70%);
+    box-shadow: inset 0 0 0 2px rgba(10, 21, 78, .9), inset 0 1px 0 rgba(193, 251, 255, .45), 0 0 18px rgba(52, 222, 255, .4);
+}
+
+#game-config-view .student-learning-mission-card {
+    display: block;
+    align-self: start;
+    padding: clamp(18px, 2vw, 30px);
+}
+
+#game-config-view .student-learning-mission-card__heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid rgba(105, 228, 255, .68);
+    width: 100%;
+}
+
+#game-config-view .student-learning-mission-card__heading > span { font-size: clamp(1.7rem, 2.3vw, 2.4rem); }
+
+#game-config-view .student-learning-mission-card h2 {
+    margin: 0;
+    color: #f2fdff;
+    font-size: clamp(1.08rem, 1.8vw, 1.55rem);
+    font-weight: 950;
+    text-transform: uppercase;
+    text-shadow: 0 2px 0 #07518a;
+}
+
+#game-config-view .student-learning-mission-card__body {
+    display: grid;
+    grid-template-columns: clamp(48px, 5.2vw, 70px) minmax(0, 1fr) clamp(48px, 5.2vw, 70px);
+    align-items: center;
+    gap: clamp(10px, 1.2vw, 18px);
+    padding-top: clamp(18px, 2.2vw, 30px);
+    width: 100%;
+}
+
+#game-config-view .student-learning-mission-card__check,
+#game-config-view .student-learning-mission-card__count {
+    display: grid;
+    width: clamp(48px, 5.2vw, 70px);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 2px solid #67d8ff;
+    border-radius: 50%;
+    color: #f4fbff;
+    font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+    font-weight: 950;
+}
+
+#game-config-view .student-learning-mission-card__count {
+    border-color: #ffe15b;
+    color: #ffe15b;
+    font-size: clamp(1rem, 1.55vw, 1.35rem);
+    box-shadow: 0 0 14px rgba(255, 222, 77, .35);
+}
+
+#game-config-view .student-learning-mission-card__body strong { color: #f4fbff; font-size: clamp(1rem, 1.55vw, 1.32rem); line-height: 1.25; }
+#game-config-view .student-learning-mission-card__body p { margin: 10px 0 0; color: #b7dbf4; font-size: clamp(.8rem, 1.1vw, 1rem); line-height: 1.45; }
+
+#game-config-view .student-learning-path--approved-frame { padding: clamp(18px, 2vw, 28px); }
+#game-config-view .student-learning-path--approved-frame .student-learning-path__header { flex-direction: row; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 2px solid rgba(105, 228, 255, .68); }
+#game-config-view .student-learning-path--approved-frame .student-learning-eyebrow { display: none; }
+#game-config-view .student-learning-path--approved-frame h3 { margin: 0; color: #f2fdff; font-size: clamp(1.08rem, 1.65vw, 1.4rem); font-weight: 950; text-transform: uppercase; }
+#game-config-view .student-learning-path--approved-frame h3::before { content: '🗺️'; margin-right: 11px; font-size: 1.35em; }
+#game-config-view .student-learning-path--approved-frame .student-learning-path-toggle { width: auto; min-height: 0; padding: 9px 15px; border: 2px solid #5be7ff; border-radius: 999px; background: rgba(4, 79, 143, .86); box-shadow: none; color: #effdff; font-size: .76rem; font-weight: 900; }
+#game-config-view .student-learning-path--approved-frame .student-learning-steps { gap: 0; }
+#game-config-view .student-learning-path--approved-frame .student-learning-step { min-height: 64px; padding: 9px 0; border: 0; border-bottom: 1px solid rgba(124, 206, 250, .32); border-radius: 0; background: transparent; box-shadow: none; }
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current { padding: 9px 11px; border: 1px solid rgba(255, 220, 79, .7); border-radius: 17px; background: linear-gradient(90deg, rgba(112, 95, 39, .74), rgba(7, 65, 112, .42)); box-shadow: 0 0 14px rgba(255, 221, 74, .18); }
+#game-config-view .student-learning-path--approved-frame .student-learning-step__icon { border-color: #71c8f2; color: #b9e8ff; }
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__icon { border-color: #ffe05a; background: #d6a836; color: #fff8cb; box-shadow: 0 0 12px rgba(255, 223, 79, .42); }
+#game-config-view .student-learning-path--approved-frame .student-learning-step__copy strong { color: #d8edfa; }
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__copy strong { color: #f7fbff; }
+
+@media (min-width: 1121px) {
+    #game-config-view .student-learning-screen--daily {
+        grid-template-columns: minmax(330px, .7fr) minmax(410px, 1.05fr) minmax(340px, .75fr);
+    }
+}
+
+/* Approved student cards: angular cyan frames, replacing the previous rounded panels. */
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-path--approved-frame {
+    border: 3px solid #4be5ff;
+    border-radius: 0 24px 0 24px;
+    background:
+        linear-gradient(135deg, transparent 16px, rgba(3, 55, 108, .96) 17px) padding-box,
+        linear-gradient(135deg, #78f4ff, #0e86c4 68%, #64ecff) border-box;
+    box-shadow: inset 0 0 0 2px rgba(6, 25, 82, .92), inset 0 0 22px rgba(23, 179, 247, .2), 0 0 18px rgba(47, 221, 255, .38);
+}
+
+#game-config-view .student-learning-mission-card {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+#game-config-view .student-learning-mission-card__heading,
+#game-config-view .student-learning-path--approved-frame .student-learning-path__header {
+    min-height: 52px;
+    padding: 0 0 13px;
+    border-bottom: 2px solid rgba(81, 224, 255, .55);
+}
+
+#game-config-view .student-learning-mission-card__heading > span { filter: drop-shadow(0 0 6px rgba(255, 205, 72, .6)); }
+#game-config-view .student-learning-mission-card h2,
+#game-config-view .student-learning-path--approved-frame h3 { font-size: clamp(1rem, 1.35vw, 1.35rem); }
+
+#game-config-view .student-learning-mission-card__body {
+    position: relative;
+    grid-template-columns: 52px minmax(0, 1fr) 58px;
+    gap: 13px;
+    padding: 19px 0 0;
+}
+
+#game-config-view .student-learning-mission-card__check { width: 48px; border-color: #6cbcf0; color: #8ed3ff; }
+#game-config-view .student-learning-mission-card__count { width: 58px; border-color: #ffd94d; color: #ffe35c; }
+#game-config-view .student-learning-mission-card__body strong { font-size: clamp(.95rem, 1.2vw, 1.2rem); }
+#game-config-view .student-learning-mission-card__body p { margin-top: 8px; font-size: clamp(.76rem, .95vw, .92rem); color: #b1d9f4; }
+
+#game-config-view .student-learning-path--approved-frame {
+    align-self: start;
+    max-height: min(680px, calc(100dvh - 160px));
+    overflow: hidden;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-path__list {
+    position: relative;
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-steps {
+    position: relative;
+    padding-left: 6px;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-steps::before {
+    content: '';
+    position: absolute;
+    top: 29px;
+    bottom: 29px;
+    left: 30px;
+    width: 3px;
+    background: linear-gradient(#f9d954, #6ebfe9 28%, #6ebfe9 82%, transparent);
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step {
+    position: relative;
+    z-index: 1;
+    min-height: 72px;
+    padding: 10px 0;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step__icon {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #6bb8e6;
+    background: #0b477c;
+    font-size: 1.45rem;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current {
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 215, 71, .82);
+    border-radius: 17px;
+    background: linear-gradient(100deg, rgba(97, 83, 30, .84), rgba(7, 62, 107, .72));
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__icon {
+    border-color: #fff0a2;
+    background: radial-gradient(circle at 35% 30%, #fff39a, #e1ac2c 65%);
+    color: #714315;
+    box-shadow: 0 0 15px rgba(255, 218, 74, .48);
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step__copy strong { font-size: clamp(.82rem, 1.02vw, 1rem); }
+#game-config-view .student-learning-path--approved-frame .student-learning-step__copy small { font-size: .74rem; }
+
+/* Rebuilt angular frame shell: four clipped corners and a double neon rail. */
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-path--approved-frame {
+    --frame-cut: 22px;
+    position: relative;
+    isolation: isolate;
+    border: 0 !important;
+    border-radius: 0 !important;
+    clip-path: polygon(0 var(--frame-cut), var(--frame-cut) 0, calc(100% - var(--frame-cut)) 0, 100% var(--frame-cut), 100% calc(100% - var(--frame-cut)), calc(100% - var(--frame-cut)) 100%, var(--frame-cut) 100%, 0 calc(100% - var(--frame-cut)));
+    background: linear-gradient(135deg, #63efff, #1595d4 40%, #65efff) !important;
+    box-shadow: 0 0 20px rgba(48, 226, 255, .56), 0 0 0 2px rgba(117, 245, 255, .74) !important;
+}
+
+#game-config-view .student-learning-mission-card::before,
+#game-config-view .student-learning-path--approved-frame::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: 4px;
+    clip-path: polygon(0 calc(var(--frame-cut) - 4px), calc(var(--frame-cut) - 4px) 0, calc(100% - var(--frame-cut) + 4px) 0, 100% calc(var(--frame-cut) - 4px), 100% calc(100% - var(--frame-cut) + 4px), calc(100% - var(--frame-cut) + 4px) 100%, calc(var(--frame-cut) - 4px) 100%, 0 calc(100% - var(--frame-cut) + 4px));
+    background: linear-gradient(145deg, rgba(10, 92, 151, .98), rgba(2, 29, 77, .98) 72%);
+    box-shadow: inset 0 0 0 2px rgba(102, 234, 255, .5), inset 0 0 28px rgba(20, 177, 248, .22);
+}
+
+#game-config-view .student-learning-mission-card > *,
+#game-config-view .student-learning-path--approved-frame > * { position: relative; z-index: 1; }
+
+#game-config-view .student-learning-mission-card::after,
+#game-config-view .student-learning-path--approved-frame::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 16%;
+    width: 22%;
+    height: 4px;
+    background: #74f5ff;
+    box-shadow: 0 0 10px #4eeaff;
+    pointer-events: none;
+}
+
+#game-config-view .student-learning-mission-card { min-height: 282px; padding: 24px 30px 26px; }
+#game-config-view .student-learning-path--approved-frame { padding: 24px 28px 26px; }
+
+#game-config-view .student-learning-mission-card__heading,
+#game-config-view .student-learning-path--approved-frame .student-learning-path__header {
+    border-bottom-color: rgba(81, 224, 255, .78);
+}
+
+/* User-approved raster frame, shared by the mission and route panels. */
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-path--approved-frame {
+    border: 0 !important;
+    border-radius: 0 !important;
+    clip-path: none !important;
+    background: url('../public/student-learning-frame.png') center / 100% 100% no-repeat !important;
+    box-shadow: none !important;
+}
+
+#game-config-view .student-learning-mission-card::before,
+#game-config-view .student-learning-mission-card::after,
+#game-config-view .student-learning-path--approved-frame::before,
+#game-config-view .student-learning-path--approved-frame::after { display: none !important; }
+
+#game-config-view .student-learning-mission-card { padding: 34px 38px 36px; }
+#game-config-view .student-learning-path--approved-frame { padding: 34px 36px 38px; }
+
+/* Dark interior gradient keeps the supplied neon frames readable over the vivid scene. */
+#game-config-view .student-learning-mission-card {
+    background:
+        linear-gradient(145deg, rgba(12, 105, 164, .18), rgba(2, 25, 75, .42) 72%),
+        url('../public/student-learning-frame.png') center / 100% 100% no-repeat !important;
+}
+
+#game-config-view .student-learning-path--approved-frame {
+    background:
+        linear-gradient(145deg, rgba(10, 87, 146, .14), rgba(2, 20, 61, .42) 70%),
+        url('../public/student-learning-route-frame.png') center / 100% 100% no-repeat !important;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step {
+    background: linear-gradient(90deg, rgba(3, 27, 72, .62), rgba(3, 27, 72, .12));
+}
+
+/* Final approved frame artwork used consistently for both student panels. */
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-path--approved-frame {
+    background: url('../public/student-learning-frame-transparent.png') center / 100% 100% no-repeat !important;
+}
+
+/* Compact HUD positions for the approved student learning layout. */
+#game-config-view .student-learning-mission-card {
+    position: fixed !important;
+    z-index: 8 !important;
+    top: clamp(210px, 25vh, 270px) !important;
+    left: 50% !important;
+    width: min(430px, 38vw) !important;
+    min-height: 0;
+    max-height: none;
+    padding: 25px 34px 28px;
+    transform: translateX(-50%) !important;
+}
+
+#game-config-view .student-learning-mission-card__heading { min-height: 38px; }
+#game-config-view .student-learning-mission-card__body { padding-top: 12px; }
+#game-config-view .student-learning-mission-card__body p { display: none; }
+
+#game-config-view .student-learning-path--approved-frame {
+    height: 450px;
+    max-height: 450px;
+    overflow: hidden;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-path__list,
+#game-config-view .student-learning-path--approved-frame .student-learning-steps {
+    overflow: hidden !important;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step {
+    min-height: 58px;
+    padding: 6px 0;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.12rem;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-steps::before {
+    top: 24px;
+    bottom: 24px;
+    left: 26px;
+}
+
+#game-config-view .student-learning-practice-robot {
+    position: fixed !important;
+    z-index: 7 !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: clamp(82px, 9vh, 120px) !important;
+    left: calc(50% - min(340px, 28vw)) !important;
+    width: clamp(112px, 10vw, 155px) !important;
+}
+
+#game-config-view .student-learning-lesson-sign,
+#game-config-view .student-learning-mission__badge,
+#game-config-view .student-learning-mission__copy { display: none !important; }
+
+@media (max-width: 1120px) {
+    #game-config-view .student-learning-mission-card { width: min(390px, 42vw); }
+    #game-config-view .student-learning-path--approved-frame { height: 420px; max-height: 420px; }
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-mission {
+    position: relative;
+    isolation: isolate;
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+    background: transparent;
+}
+
+#game-config-view .student-learning-practice-robot {
+    position: absolute;
+    z-index: 2;
+    bottom: clamp(12px, 2.2vh, 30px);
+    left: clamp(-8px, -1vw, 12px);
+    width: clamp(118px, 13vw, 205px);
+    pointer-events: none;
+}
+
+#game-config-view .student-learning-practice-robot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 12px 14px rgba(0, 10, 49, .55));
+}
+
+#game-config-view .student-learning-lesson-sign {
+    position: fixed;
+    z-index: 3;
+    top: clamp(258px, 31vh, 350px);
+    bottom: auto;
+    left: 50%;
+    display: grid;
+    width: min(68%, 440px);
+    min-height: clamp(56px, 7vw, 92px);
+    padding: 10px 13%;
+    place-items: center;
+    transform: translateX(-50%);
+    color: #17254b;
+    font-size: clamp(.95rem, 1.5vw, 1.3rem);
+    font-weight: 950;
+    line-height: 1.2;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    z-index: 4;
+    right: 18%;
+    bottom: 7%;
+    left: 18%;
+    border: 2px solid #fff0a5;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fff59b, #ffc13c 55%, #e58b17);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .75), 0 7px 0 #b95d0d, 0 12px 26px rgba(255, 184, 52, .28);
+}
+
+@media (max-width: 1120px) {
+    #game-config-view .student-learning-screen--daily { grid-template-columns: minmax(170px, .48fr) minmax(350px, 1fr) minmax(200px, .58fr); }
+    #game-config-view .student-learning-practice-robot { width: clamp(108px, 13vw, 160px); }
+}
+
+@media (max-width: 900px) {
+    #game-config-view .student-learning-screen--daily { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); }
+    #game-config-view .student-learning-practice-robot { width: 112px; }
+}
+
+/* Final practice-screen refinements: current lesson, companion and brand. */
+#game-config-view .student-learning-mission-card {
+    width: min(330px, 30vw) !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 17px 36px 19px !important;
+    top: clamp(205px, 24vh, 250px) !important;
+}
+
+#game-config-view .student-learning-mission-card__heading,
+#game-config-view .student-learning-mission-card__body,
+#game-config-view .student-learning-mission-card__check,
+#game-config-view .student-learning-mission-card__count {
+    display: none !important;
+}
+
+#game-config-view .student-learning-mission-card__lesson {
+    margin: 0 !important;
+    color: #f6fbff !important;
+    font-size: clamp(.92rem, 1.1vw, 1.15rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.35 !important;
+    text-align: center !important;
+    text-shadow: 0 2px 7px rgba(0, 11, 51, .9) !important;
+}
+
+#game-config-view .student-learning-practice-robot {
+    position: fixed !important;
+    z-index: 7 !important;
+    bottom: clamp(52px, 6vh, 80px) !important;
+    left: calc(50% - min(405px, 33vw)) !important;
+    width: clamp(224px, 20vw, 310px) !important;
+}
+
+#game-config-view .student-learning-hud__brand strong {
+    color: #ffd95a !important;
+    text-shadow: 0 2px 0 #07559a, 0 0 4px #ffffff, 0 0 15px rgba(70, 232, 255, .96) !important;
+}
+
+/* Navigation belongs with the learning title, not in the global close-button slot. */
+#game-config-view:has(.student-learning-shell--mockup) > .student-learning-back-map {
+    position: fixed;
+    z-index: 12;
+    top: clamp(128px, 14vh, 156px);
+    left: clamp(54px, 4.7vw, 92px);
+    display: inline-flex;
+    align-items: center;
+    gap: .48rem;
+    padding: 0 0 .36rem;
+    border: 0;
+    border-bottom: 3px solid #68ecff;
+    background: transparent;
+    color: #f5fcff;
+    font: 800 clamp(.9rem, 1.15vw, 1.15rem)/1.2 inherit;
+    letter-spacing: .015em;
+    text-shadow: 0 2px 5px rgba(0, 16, 62, .92);
+    cursor: pointer;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .student-learning-back-map span {
+    font-size: 1.25em;
+    line-height: 1;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .student-learning-back-map:hover,
+#game-config-view:has(.student-learning-shell--mockup) > .student-learning-back-map:focus-visible {
+    color: #ffdf69;
+    border-bottom-color: #ffdf69;
+    outline: none;
+}
+
+/* Place the lesson sign lower on the pyramid and settle the companion on the ground. */
+#game-config-view .student-learning-mission-card {
+    top: clamp(270px, 34vh, 380px) !important;
+}
+
+#game-config-view .student-learning-practice-robot {
+    bottom: clamp(-16px, -1vh, 0px) !important;
+}
+
+/* Header is a single quiet, translucent title rail. */
+#game-config-view .student-learning-hud {
+    position: relative;
+    isolation: isolate;
+    min-height: clamp(104px, 12vh, 138px);
+    padding: 10px 4px 8px !important;
+    border-bottom: 0 !important;
+}
+
+#game-config-view .student-learning-hud::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0 -1.2vw;
+    border-bottom: 1px solid rgba(155, 237, 255, .45);
+    background: linear-gradient(90deg, rgba(2, 25, 72, .3), rgba(12, 75, 139, .3) 52%, rgba(2, 25, 72, .3));
+    pointer-events: none;
+}
+
+#game-config-view .student-learning-hud__brand {
+    align-self: start;
+    transform: translateY(clamp(-14px, -1.25vh, -7px));
+}
+
+#game-config-view .student-learning-hud__brand-copy {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+}
+
+#game-config-view .student-learning-hud .student-learning-back-map {
+    display: inline-flex;
+    align-items: center;
+    gap: .48rem;
+    padding: 0 0 .32rem;
+    border: 0;
+    border-bottom: 3px solid #68ecff;
+    background: transparent;
+    color: #f5fcff;
+    font: 800 clamp(.82rem, 1vw, 1.05rem)/1.15 inherit;
+    letter-spacing: .015em;
+    text-shadow: 0 2px 5px rgba(0, 16, 62, .92);
+    cursor: pointer;
+}
+
+#game-config-view .student-learning-hud .student-learning-back-map span {
+    font-size: 1.25em;
+    line-height: 1;
+}
+
+#game-config-view .student-learning-hud .student-learning-back-map:hover,
+#game-config-view .student-learning-hud .student-learning-back-map:focus-visible {
+    color: #ffdf69;
+    border-bottom-color: #ffdf69;
+    outline: none;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .student-learning-back-map--fallback {
+    display: none;
+}
+
+/* Turn the transparent portrait frame on its side for the short lesson-name plate. */
+#game-config-view .student-learning-mission-card {
+    width: min(430px, 34vw) !important;
+    padding: 24px 46px !important;
+    overflow: visible !important;
+    background: transparent !important;
+}
+
+#game-config-view .student-learning-mission-card::before {
+    display: block !important;
+    position: absolute !important;
+    z-index: 0 !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 84px !important;
+    height: min(430px, 34vw) !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center !important;
+    background: url('../public/student-learning-frame-transparent.png') center / 100% 100% no-repeat !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+}
+
+#game-config-view .student-learning-mission-card__lesson {
+    position: relative;
+    z-index: 1;
+}
+
+/* The right-side profile and route panel sit closer to the screen edge. */
+#game-config-view .student-learning-hud__profile,
+#game-config-view .student-learning-path--approved-frame {
+    transform: translateX(clamp(8px, .9vw, 18px));
+}
+
+/* Match the portal width and give the primary action more theatrical lift. */
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    right: auto !important;
+    left: 50% !important;
+    width: min(390px, 29vw) !important;
+    min-height: clamp(68px, 7.3vh, 84px);
+    padding: 16px 26px !important;
+    transform: translateX(-50%);
+    color: #123f88;
+    font-size: clamp(1.05rem, 1.45vw, 1.35rem);
+    font-weight: 950;
+    letter-spacing: .035em;
+    text-shadow: 0 1px 0 #fff8bf, 0 0 12px rgba(255, 255, 255, .9);
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, .82), 0 7px 0 #b95d0d, 0 0 20px rgba(255, 213, 75, .8), 0 12px 26px rgba(255, 184, 52, .35);
+    animation: student-learning-cta-pulse 1.9s ease-in-out infinite;
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-continue span {
+    display: inline-block;
+    margin-left: .16em;
+    color: #cf6a0c;
+    font-size: 1.45em;
+    text-shadow: 0 0 10px #fff2a3;
+    transform: translateY(.05em);
+}
+
+@keyframes student-learning-cta-pulse {
+    50% { filter: brightness(1.12) saturate(1.12); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .88), 0 7px 0 #b95d0d, 0 0 30px rgba(255, 230, 104, .95), 0 14px 28px rgba(255, 184, 52, .48); }
+}
+
+#game-config-view .student-learning-practice-robot {
+    bottom: clamp(-42px, -3vh, -22px) !important;
+}
+
+/*
+ * Practice-scene placement knobs. Adjust these four custom properties to tune
+ * the robot and primary action without having to search through layout rules.
+ */
+#game-config-view:has(.student-learning-shell--mockup) {
+    --practice-robot-left: calc(50% - min(405px, 33vw));
+    --practice-robot-bottom: clamp(-42px, -3vh, -22px);
+    --practice-cta-bottom: 7%;
+    --practice-cta-width: min(390px, 29vw);
+    overflow-x: hidden !important;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .station-shell,
+#game-config-view:has(.student-learning-shell--mockup) .config-center,
+#game-config-view:has(.student-learning-shell--mockup) #topics-list.student-learning-home,
+#game-config-view:has(.student-learning-shell--mockup) .student-learning-shell,
+#game-config-view .student-learning-shell--mockup .student-learning-screen--daily {
+    overflow-x: hidden !important;
+}
+
+/* The desktop canvas never scrolls; only a deliberately scrollable child may. */
+#game-config-view .student-learning-shell--mockup .student-learning-screen--daily {
+    overflow-y: hidden !important;
+    padding-right: 0 !important;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) > .station-shell {
+    padding-right: clamp(6px, 1vw, 18px) !important;
+}
+
+#game-config-view .student-learning-hud__profile,
+#game-config-view .student-learning-path--approved-frame {
+    transform: none;
+}
+
+#game-config-view .student-learning-practice-robot {
+    left: var(--practice-robot-left) !important;
+    bottom: var(--practice-robot-bottom) !important;
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    bottom: var(--practice-cta-bottom) !important;
+    width: var(--practice-cta-width) !important;
+}
+
+/* Supplied landscape artwork is used at its native orientation for the lesson plate. */
+#game-config-view .student-learning-mission-card {
+    min-height: 88px !important;
+    padding: 24px 54px !important;
+    background: url('../public/student-learning-lesson-frame.png') center / 100% 100% no-repeat !important;
+}
+
+#game-config-view .student-learning-mission-card::before {
+    display: none !important;
+}
+
+/* Full route: keep the journey summary inside its main board and prioritize readable topic names. */
+#game-config-view .student-learning-screen--route {
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+}
+
+#game-config-view .student-learning-screen--route > .student-learning-path {
+    grid-template-rows: minmax(0, 1fr);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+#game-config-view .student-learning-screen--route .student-learning-route {
+    grid-template-columns: minmax(270px, 29%) minmax(0, 1fr);
+}
+
+#game-config-view .student-learning-screen--route .student-learning-topic-nav__list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+#game-config-view .student-learning-screen--route .student-learning-topic-link__copy strong {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+#game-config-view .student-learning-screen--route .student-learning-route-board__actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+}
+
+#game-config-view .student-learning-screen--route .student-learning-route-board__actions .student-learning-path-toggle {
+    width: fit-content;
+    min-height: 0;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+@media (max-width: 1120px) {
+    #game-config-view .student-learning-screen--route .student-learning-route {
+        grid-template-columns: minmax(240px, 32%) minmax(0, 1fr);
+    }
+
+    #game-config-view .student-learning-screen--route .student-learning-route-board__actions {
+        align-items: flex-end;
+        flex-direction: column;
     }
 }

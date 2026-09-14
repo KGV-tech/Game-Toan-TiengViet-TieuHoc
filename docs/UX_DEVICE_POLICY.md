@@ -22,6 +22,15 @@ Quyết định này áp dụng cho mọi đề xuất thiết kế, sửa lỗi
 - Vẫn sửa nếu lỗi trên điện thoại gây ảnh hưởng đến laptop/tablet, liên quan an toàn/khả năng truy cập, hoặc làm ứng dụng trắng trang/không dùng được ngoài ý định hiển thị hướng dẫn xoay ngang.
 - Khi review nêu vấn đề chỉ trên điện thoại, ghi nhãn: `Ngoài phạm vi ưu tiên — điện thoại không phải nền tảng mục tiêu`; chỉ chuyển thành việc cần làm khi người phụ trách xác nhận.
 
+## Bắt buộc: khung giao diện lớn không có thanh cuộn
+
+Áp dụng cho màn hình học sinh luyện tập và mọi giao diện toàn cảnh laptop/tablet:
+
+1. Canvas hoặc khung giao diện lớn phải vừa hoàn toàn trong viewport; không xuất hiện thanh cuộn ngang hoặc dọc ở canvas, màn hình, vỏ trạm hay khu vực nội dung chính.
+2. Thành phần trang trí và panel không được tràn qua mép viewport hoặc bị cắt viền. Cần thu gọn, thay đổi khoảng đệm hoặc bố trí lại trước khi dùng phép dịch chuyển gây tràn.
+3. Thanh cuộn chỉ được phép ở **khung con có chủ đích**, ví dụ danh sách bài dài, lịch sử hoặc nội dung chi tiết; khung con đó phải có chiều cao/chiều rộng giới hạn rõ ràng.
+4. Mọi thay đổi UI toàn cảnh phải kiểm tra ở ít nhất 1280×720, 1440×900 và tablet ngang 1024×768 để xác nhận không có thanh cuộn trên canvas chính.
+
 ## Quy tắc thiết kế và kiểm thử
 
 1. Thiết kế mới bắt đầu từ laptop, sau đó kiểm tra tablet ngang.

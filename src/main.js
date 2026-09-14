@@ -2536,28 +2536,23 @@ const app = {
             const recommendedIndex = Math.max(0, states.findIndex(entry => entry.id === recommended?.id));
             const expanded = container.dataset.expanded === 'true';
             const compactStart = Math.max(0, recommendedIndex - 1);
-            const compactEnd = Math.min(states.length, Math.max(compactStart + 5, recommendedIndex + 3));
+            const compactEnd = Math.min(states.length, compactStart + 4);
             const visibleStates = expanded ? states : states.slice(compactStart, compactEnd);
             const subjectLabel = this.state.subject === 'math' ? 'Toán' : 'Tiếng Việt';
             const esc = value => app.data.sanitizeHTML(value);
             const isFallbackTopicPlan = states.some(entry => entry.kind === 'topic');
-            const releaseText = plan.release
-                ? `Đã mở đến ${esc(plan.release.label)}`
-                : isFallbackTopicPlan
-                    ? 'Đang theo dõi theo Chủ đề'
-                    : 'Chưa đặt mốc · đang giữ ở Bài 1';
             const missionTitle = recommended?.label || 'Chưa có bài học được mở';
             const missionStatus = recommended?.state === 'completed'
                 ? 'Đã hoàn thành mốc hiện tại · Luyện lại để nhớ lâu nhé'
                 : recommended?.state === 'current'
                     ? 'Đang học · Đây là bước tiếp theo của bạn'
                     : 'Sẵn sàng luyện tập';
-            const missionAction = recommended?.state === 'completed' ? 'Ôn lại bài này' : 'Tiếp tục';
+            const missionAction = recommended?.state === 'completed' ? 'Ôn lại bài này' : 'Vào luyện tập nào!';
             const pathStateLabel = {
                 completed: 'Đã vững',
                 current: 'Đang học',
                 available: 'Có thể luyện',
-                locked: 'Chưa mở'
+                locked: 'Chưa học'
             };
             const pathIcon = {
                 completed: '✓',
@@ -2622,9 +2617,12 @@ const app = {
                           <h4>Cùng khám phá hành trình của bạn</h4>
                           <p>Các Bài được xếp đúng theo thứ tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
                         </div>
-                        <div class="student-learning-release-badge" aria-label="${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'Chưa có mốc mở bài')}" >
-                          <strong>${Number(plan.summary.released || 0)}</strong>
-                          <span>${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'bài đã mở')}</span>
+                        <div class="student-learning-route-board__actions">
+                          <div class="student-learning-release-badge" aria-label="${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'Chưa có mốc mở bài')}" >
+                            <strong>${Number(plan.summary.released || 0)}</strong>
+                            <span>${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'bài đã mở')}</span>
+                          </div>
+                          <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="true">Quay lại Luyện tập</button>
                         </div>
                       </header>
                       <div class="student-learning-route-board__groups">
@@ -2644,7 +2642,10 @@ const app = {
                 : `<div class="student-learning-empty" role="status"><strong>Chưa có nội dung luyện tập</strong><span>Giáo viên cần mở lộ trình hoặc bổ sung câu hỏi cho môn này.</span></div>`;
             const student = app.data.currentUser || {};
             const studentName = student.fullname || student.username || 'Bạn học';
-            const studentClassLevel = app.data.normalizeClassLevel(classlevel) || '—';
+            const studentClassLabel = app.data.getStudentClassLabel(student);
+            const studentTitle = app.auth.getPlayerTitle(student);
+            const studentProgress = app.auth.getPlayerProgress(student);
+            const studentStars = Number(student.stars || 0).toLocaleString('vi-VN');
             const studentAvatar = app.auth.getAvatar(student.avatar_key);
             const studentAvatarMarkup = studentAvatar.image
                 ? `<img class="student-learning-hud__avatar" src="${studentAvatar.image}" alt="Avatar ${esc(studentAvatar.label)}">`
@@ -2654,40 +2655,36 @@ const app = {
                 <header class="student-learning-hud" aria-label="Thông tin hành trình học tập">
                   <div class="student-learning-hud__brand">
                     <span class="student-learning-hud__brand-mark" aria-hidden="true">✦</span>
-                    <span><strong>${brandTitle}</strong><small>Lớp ${esc(studentClassLevel)}</small></span>
+                    <span class="student-learning-hud__brand-copy">
+                      <strong>${brandTitle}</strong>
+                      <button type="button" class="student-learning-back-map" data-learning-back-map aria-label="Về bản đồ"><span aria-hidden="true">←</span> Về bản đồ</button>
+                    </span>
                   </div>
                   <div class="student-learning-hud__profile" aria-label="Thông tin học sinh">
                     ${studentAvatarMarkup}
-                    <span class="student-learning-hud__profile-copy"><strong>${esc(studentName)}</strong><small>Lớp ${esc(studentClassLevel)}</small></span>
+                    <span class="student-learning-hud__profile-copy">
+                      <strong>${esc(studentName)}</strong>
+                      <small>Học sinh · ${esc(studentClassLabel)}</small>
+                      <span class="student-learning-hud__profile-title"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${esc(studentTitle)}</b></span>
+                      <span class="student-learning-hud__profile-progress" role="progressbar" aria-label="Tiến độ danh hiệu ${Math.round(studentProgress.percent)}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(studentProgress.percent)}"><span style="width:${studentProgress.percent}%"></span></span>
+                      <span class="student-learning-hud__profile-stars"><i aria-hidden="true">⭐</i> <b>${esc(studentStars)}</b> Sao</span>
+                    </span>
                   </div>
                 </header>`;
             const dailyScreenMarkup = `
                 <section class="student-learning-screen student-learning-screen--daily" aria-labelledby="student-learning-title">
-                  <section class="student-learning-hero" aria-labelledby="student-learning-title">
-                    <div class="student-learning-hero__copy">
-                      <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
-                      <h2 id="student-learning-title">Hôm nay mình học gì?</h2>
-                      <p>Bạn chỉ cần bấm tiếp tục. Hệ thống sẽ nhớ bài đang học và đưa bạn đi đúng hành trình của lớp.</p>
-                    </div>
-                    <div class="student-learning-hero__progress" aria-label="Tóm tắt tiến độ">
-                      <strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong>
-                      <span>bài đã vững</span>
-                    </div>
+                  <section class="student-learning-hero student-learning-mission-card" aria-labelledby="student-learning-title">
+                    <h2 id="student-learning-title" class="student-learning-mission-card__lesson">${esc(missionTitle)}</h2>
                   </section>
 
                   ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
-                    <div class="student-learning-mission__badge" aria-hidden="true">${recommended.kind === 'lesson' ? '📖' : '🧭'}</div>
-                    <div class="student-learning-mission__copy">
-                      <span class="student-learning-mission__kicker">Bước tiếp theo</span>
-                      <h3 id="student-learning-mission-title">${esc(missionTitle)}</h3>
-                      <p>${esc(recommended.kind === 'lesson' ? `${recommended.topic} · ${recommended.semesterLabel}` : 'Luyện tập theo Chủ đề')} · ${esc(missionStatus)}</p>
-                    </div>
+                    <div class="student-learning-practice-robot" aria-hidden="true"><img src="./public/student-practice-robot.png" alt=""></div>
                     <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}">${esc(missionAction)} <span aria-hidden="true">›</span></button>
                   </section>` : ''}
 
                   ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Bạn vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để bạn không làm trước nội dung chưa học.</p></aside>` : '')}
 
-                  <section class="student-learning-path student-learning-path--compact" aria-labelledby="student-learning-path-title">
+                  <section class="student-learning-path student-learning-path--compact student-learning-path--approved-frame" aria-labelledby="student-learning-path-title">
                     <header class="student-learning-path__header">
                       <div><span class="student-learning-eyebrow">Hành trình của bạn</span><h3 id="student-learning-path-title">Lộ trình học gần đây</h3></div>
                       <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="false">Xem lộ trình đầy đủ</button>
@@ -2696,20 +2693,8 @@ const app = {
                   </section>
                 </section>`;
             const routeScreenMarkup = `
-                <section class="student-learning-screen student-learning-screen--route" aria-labelledby="student-learning-route-title">
-                  <div class="student-learning-route-intro">
-                    <div>
-                      <span class="student-learning-eyebrow">${esc(subjectLabel)} · ${esc(releaseText)}</span>
-                      <h2 id="student-learning-route-title">Cùng khám phá lộ trình của bạn</h2>
-                      <p>Các Bài được xếp đúng theo trình tự trên lớp. Bài chưa học sẽ sáng lên sau.</p>
-                    </div>
-                    <div class="student-learning-route-intro__progress"><strong>${Number(plan.summary.completed || 0)}/${Number(plan.summary.released || 0)}</strong><span>bài đã vững</span></div>
-                  </div>
-                  <section class="student-learning-path student-learning-path--full" aria-labelledby="student-learning-path-title">
-                    <header class="student-learning-path__header">
-                      <div><span class="student-learning-eyebrow">Hành trình của bạn</span><h3 id="student-learning-path-title">Lộ trình đầy đủ</h3></div>
-                      <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="true">Quay lại hôm nay</button>
-                    </header>
+                <section class="student-learning-screen student-learning-screen--route" aria-label="Lộ trình học tập">
+                  <section class="student-learning-path student-learning-path--full" aria-label="Lộ trình đầy đủ">
                     <div class="student-learning-path__list">${fullRouteMarkup}</div>
                   </section>
                 </section>`;
@@ -2728,6 +2713,7 @@ const app = {
             container.querySelectorAll('[data-learning-entry]').forEach(button => {
                 button.addEventListener('click', () => this.selectLearningEntry(button.dataset.learningEntry));
             });
+            container.querySelector('[data-learning-back-map]')?.addEventListener('click', () => app.router.open('map-screen'));
             container.querySelectorAll('[data-learning-group-jump]').forEach(button => {
                 button.addEventListener('click', () => {
                     const target = Array.from(container.querySelectorAll('[data-learning-group]'))
