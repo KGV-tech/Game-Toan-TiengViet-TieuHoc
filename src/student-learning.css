@@ -3665,8 +3665,8 @@
 #game-config-view:has(.student-learning-shell--mockup) {
     --practice-robot-left: calc(50% - min(405px, 33vw));
     --practice-robot-bottom: clamp(-42px, -3vh, -22px);
-    --practice-cta-bottom: 7%;
-    --practice-cta-width: min(390px, 29vw);
+    --practice-cta-bottom: 3%;
+    --practice-cta-width: min(360px, 29vw);
     overflow-x: hidden !important;
 }
 
@@ -3727,6 +3727,192 @@
     }
 }
 
+/* Align the map action to the header rail, regardless of the title artwork size. */
+#game-config-view .student-learning-hud .student-learning-back-map {
+    position: fixed;
+    top: clamp(52px, 7.33vh, 66px);
+    left: clamp(22px, 2.5vw, 48px);
+    transform: none;
+}
+
+/* The supplied wordmark is intentionally the dominant title treatment. */
+#game-config-view .student-learning-hud__brand-image {
+    height: clamp(174px, 24vh, 276px);
+    max-width: min(720px, 56vw);
+}
+
+/* Pin the summary to the upper-left of the learning area and reuse its matching frame. */
+#game-config-view .student-learning-achievements {
+    top: clamp(150px, 23vh, 270px);
+    width: min(340px, 26vw);
+    padding: 31px 28px 28px;
+    border: 0;
+    border-radius: 0;
+    background: url('../public/student-learning-achievements-frame.png') center / 100% 100% no-repeat;
+    box-shadow: none;
+}
+
+#game-config-view .student-learning-achievements li {
+    background: rgba(5, 52, 118, .68);
+}
+
+/* Retain a responsive cue on the action, but keep it close to the supplied button edge. */
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    animation: student-learning-cta-pulse-tight 1.9s ease-in-out infinite;
+}
+
+#game-config-view .student-learning-continue__art {
+    filter: drop-shadow(0 4px 0 rgba(124, 53, 0, .65)) drop-shadow(0 0 5px rgba(255, 224, 76, .48));
+}
+
+@keyframes student-learning-cta-pulse-tight {
+    50% { filter: brightness(1.08) saturate(1.06); }
+}
+
+/* The current lesson itself stays quiet; only its gold round play marker radiates. */
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current {
+    animation: none;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__icon {
+    animation: student-learning-current-icon-glow-tight 1.7s ease-in-out infinite;
+}
+
+/* Keep the Vietnamese journey visually distinct while sharing all controls and layout. */
+#game-config-view:has(.student-learning-shell--mockup[data-subject="Tiếng Việt"]) {
+    background: #07153d url('../public/student-learning-vietnamese-background.png') center / cover no-repeat !important;
+}
+
+/* Final header and achievement-panel finishing overrides. */
+#game-config-view .student-learning-hud,
+#game-config-view .student-learning-hud::before {
+    background: none !important;
+    border-bottom: 0 !important;
+}
+
+#game-config-view .student-learning-hud__brand-image {
+    height: clamp(150px, 21vh, 240px);
+    max-width: min(620px, 50vw);
+}
+
+#game-config-view .student-learning-achievements {
+    top: clamp(112px, 15vh, 160px);
+    background-image: url('../public/student-learning-achievements-frame-transparent.png');
+}
+
+/* Stable right-hand rail for the daily learning screen. */
+#game-config-view .student-learning-hud__profile {
+    position: fixed;
+    z-index: 10;
+    top: clamp(22px, 3vh, 42px);
+    right: clamp(22px, 3vw, 58px);
+    left: auto;
+    min-width: min(360px, 32vw);
+    max-width: min(400px, 35vw);
+    padding: 8px 16px 8px 8px;
+    border: 2px solid rgba(88, 233, 255, .58);
+    border-radius: 16px 16px 24px 16px;
+    background: linear-gradient(145deg, rgba(10, 91, 137, .9), rgba(15, 47, 91, .94)) !important;
+    box-shadow: 0 0 18px rgba(88, 233, 255, .22), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+
+#game-config-view .student-learning-path-toggle--right-rail {
+    position: fixed;
+    z-index: 9;
+    top: clamp(180px, 24vh, 270px);
+    right: clamp(22px, 3vw, 58px);
+    left: auto;
+    width: min(400px, 35vw);
+    min-height: 76px;
+    border: 2px solid #8ff4ff;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #37c1eb 0%, #1478ba 100%) !important;
+    box-shadow: 0 5px 0 #07548e, inset 0 2px 0 rgba(255,255,255,.56);
+    color: #fff;
+    font-weight: 900;
+}
+
+#game-config-view .student-learning-achievements {
+    position: fixed;
+    z-index: 8;
+    top: clamp(285px, 38vh, 430px);
+    right: clamp(22px, 3vw, 58px);
+    left: auto;
+    width: min(400px, 35vw);
+    min-height: 250px;
+    padding: 32px 30px;
+    background: url('../public/student-learning-achievements-frame-square.png') center / 100% 100% no-repeat !important;
+}
+
+#game-config-view .student-learning-hud__profile.player-info-card {
+    background: linear-gradient(135deg, rgba(3, 26, 51, .95), rgba(5, 75, 116, .91)) !important;
+    border: 2px solid rgba(71, 201, 255, .78);
+    border-radius: 12px 12px 20px 12px;
+    box-shadow: 0 0 0 2px rgba(7, 39, 70, .88), 0 7px 18px rgba(0,0,0,.35), inset 0 0 20px rgba(34, 211, 238, .2);
+}
+
+/* Right rail: student profile, full-route entry, then today's achievements. */
+#game-config-view .student-learning-mission-card,
+#game-config-view .student-learning-screen--daily > .student-learning-path--compact {
+    display: none !important;
+}
+
+#game-config-view .student-learning-hud__profile,
+#game-config-view .student-learning-path-toggle--right-rail,
+#game-config-view .student-learning-achievements {
+    right: clamp(22px, 3vw, 58px);
+    left: auto;
+}
+
+#game-config-view .student-learning-hud__profile {
+    background: url('../public/student-learning-lesson-frame.png') center / 100% 100% no-repeat !important;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 18px 28px;
+}
+
+#game-config-view .student-learning-path-toggle--right-rail {
+    position: fixed;
+    z-index: 8;
+    top: clamp(170px, 22vh, 240px);
+    width: min(340px, 26vw);
+    min-height: 72px;
+    border: 0;
+    border-radius: 0;
+    background: url('../public/student-learning-lesson-frame.png') center / 100% 100% no-repeat;
+    color: #fff;
+    font-size: clamp(.88rem, 1.1vw, 1.05rem);
+}
+
+#game-config-view .student-learning-achievements {
+    top: clamp(270px, 35vh, 360px);
+    width: min(340px, 26vw);
+    min-height: 245px;
+    background-image: url('../public/student-learning-achievements-frame-square.png');
+}
+
+/* Let the illustrated sky run continuously behind the header controls. */
+#game-config-view .student-learning-hud,
+#game-config-view .student-learning-hud::before {
+    background: none !important;
+    border-bottom: 0 !important;
+}
+
+#game-config-view .student-learning-hud__brand-image {
+    height: clamp(150px, 21vh, 240px);
+    max-width: min(620px, 50vw);
+}
+
+#game-config-view .student-learning-achievements {
+    top: clamp(112px, 15vh, 160px);
+    background-image: url('../public/student-learning-achievements-frame-transparent.png');
+}
+
+@keyframes student-learning-current-icon-glow-tight {
+    50% { box-shadow: 0 0 11px rgba(255, 233, 111, .9), 0 0 3px #fff6ba; }
+}
+
 @keyframes student-learning-current-icon-glow {
     50% { box-shadow: 0 0 22px rgba(255, 233, 111, .95), 0 0 6px #fff6ba; }
 }
@@ -3745,6 +3931,202 @@
 
 #game-config-view .student-learning-mission-card::before {
     display: none !important;
+}
+
+/* Narrow the lesson plate and primary action without taking focus away from the portal. */
+#game-config-view .student-learning-mission-card {
+    width: min(370px, 29vw) !important;
+}
+
+#game-config-view:has(.student-learning-shell--mockup) {
+    --practice-cta-width: min(310px, 24vw);
+}
+
+/* Keep the subject title centered independently from the profile card. */
+#game-config-view .student-learning-hud__brand {
+    position: absolute;
+    top: 10px;
+    left: calc(50% - 22px);
+    transform: translateX(-50%);
+}
+
+#game-config-view .student-learning-hud__brand-mark {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 10px);
+    transform: translateY(-50%);
+}
+
+#game-config-view .student-learning-hud__brand-copy {
+    justify-items: center;
+}
+
+#game-config-view .student-learning-hud__profile {
+    margin-left: auto;
+}
+
+/* Reduce the lesson plate by 10% in both dimensions while preserving its centered label. */
+#game-config-view .student-learning-mission-card {
+    width: min(333px, 26.1vw) !important;
+    min-height: 79px !important;
+    padding: 22px 16px !important;
+}
+
+/* Keep map navigation independent from the centered subject title. */
+#game-config-view .student-learning-hud .student-learning-back-map {
+    position: fixed;
+    z-index: 13;
+    top: clamp(18px, 2.3vh, 28px);
+    left: clamp(22px, 2.5vw, 48px);
+}
+
+/* Use the panel's rounded inner edge for the active lesson glow. */
+#game-config-view .student-learning-path--approved-frame .student-learning-path__list {
+    padding-top: 12px;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current {
+    overflow: hidden;
+}
+
+#game-config-view .student-learning-path--approved-frame h3 {
+    text-align: center;
+}
+
+/* A prominent blue subject wordmark with a warm gold outline. */
+#game-config-view .student-learning-hud__brand strong {
+    background: linear-gradient(180deg, #d6fbff 0%, #46cfff 44%, #1268c8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 1.5px #ffdd61;
+    color: transparent !important;
+    font-size: clamp(1.7rem, 2.8vw, 2.45rem);
+    text-shadow: 0 3px 0 #0a438c, 0 0 12px rgba(255, 214, 82, .72), 0 0 22px rgba(74, 218, 255, .48) !important;
+}
+
+/* Use the supplied math wordmark without adding a separate decorative badge. */
+#game-config-view .student-learning-hud__brand {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#game-config-view .student-learning-hud__brand-image {
+    display: block;
+    width: auto;
+    height: clamp(58px, 8.5vh, 92px);
+    max-width: min(360px, 32vw);
+    object-fit: contain;
+}
+
+/* Keep the map control legible against any part of the illustrated background. */
+#game-config-view .student-learning-hud .student-learning-back-map {
+    padding: 10px 18px;
+    border: 2px solid #8ff4ff;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0c4ca7 0%, #087fc7 52%, #14cde5 100%);
+    color: #fff;
+    text-shadow: 0 2px 3px rgba(0, 37, 94, .9);
+    box-shadow: 0 4px 0 #073a8d, 0 0 16px rgba(83, 237, 255, .72), inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+
+#game-config-view .student-learning-hud .student-learning-back-map:hover,
+#game-config-view .student-learning-hud .student-learning-back-map:focus-visible {
+    background: linear-gradient(135deg, #1466d2 0%, #08a5df 54%, #48ebf6 100%);
+}
+
+/* The supplied CTA remains a semantic button so click, keyboard, and focus behavior are retained. */
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+}
+
+#game-config-view .student-learning-continue__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 7px 0 rgba(124, 53, 0, .7)) drop-shadow(0 0 14px rgba(255, 224, 76, .66));
+}
+
+/* A compact, static daily summary sits at the left-middle without covering the primary portal. */
+#game-config-view .student-learning-achievements {
+    position: fixed;
+    z-index: 7;
+    top: 48%;
+    left: clamp(20px, 3vw, 58px);
+    width: min(288px, 23vw);
+    padding: 15px;
+    border: 2px solid #42dff4;
+    border-radius: 22px;
+    background: linear-gradient(150deg, rgba(9, 77, 145, .96), rgba(4, 38, 99, .94));
+    box-shadow: 0 5px 0 rgba(1, 30, 87, .78), 0 0 20px rgba(52, 220, 249, .55), inset 0 1px 0 rgba(184, 249, 255, .55);
+    color: #f7fdff;
+}
+
+#game-config-view .student-learning-achievements h3 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 11px;
+    color: #fff;
+    font-size: clamp(.88rem, 1.15vw, 1.04rem);
+    line-height: 1.12;
+}
+
+#game-config-view .student-learning-achievements h3 span {
+    font-size: 1.55em;
+}
+
+#game-config-view .student-learning-achievements ul {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#game-config-view .student-learning-achievements li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 1px solid rgba(83, 218, 246, .65);
+    border-radius: 12px;
+    background: rgba(5, 52, 118, .58);
+    color: #e7faff;
+    font-size: clamp(.67rem, .8vw, .77rem);
+    font-weight: 700;
+}
+
+#game-config-view .student-learning-achievements__icon {
+    font-size: 1.45em;
+}
+
+#game-config-view .student-learning-achievements li strong {
+    color: #fff4a2;
+    font-size: 1.1em;
+    white-space: nowrap;
+}
+
+@media (max-width: 1120px) {
+    #game-config-view .student-learning-achievements {
+        top: 52%;
+        width: min(252px, 27vw);
+        padding: 12px;
+    }
+
+    #game-config-view .student-learning-achievements li {
+        gap: 5px;
+        min-height: 32px;
+        padding: 5px 6px;
+    }
 }
 
 /* Full route: keep the journey summary inside its main board and prioritize readable topic names. */
@@ -3797,5 +4179,142 @@
     #game-config-view .student-learning-screen--route .student-learning-route-board__actions {
         align-items: flex-end;
         flex-direction: column;
+    }
+}
+
+/* Final daily-screen refinements must follow the broader mockup rules above. */
+#game-config-view .student-learning-hud .student-learning-back-map {
+    position: fixed;
+    top: clamp(52px, 7.33vh, 66px);
+    left: clamp(22px, 2.5vw, 48px);
+    transform: none;
+}
+
+#game-config-view .student-learning-hud__brand-image {
+    height: clamp(174px, 24vh, 276px);
+    max-width: min(720px, 56vw);
+}
+
+#game-config-view .student-learning-shell--mockup .student-learning-continue {
+    animation: student-learning-cta-pulse-tight 1.9s ease-in-out infinite;
+}
+
+#game-config-view .student-learning-continue__art {
+    filter: drop-shadow(0 4px 0 rgba(124, 53, 0, .65)) drop-shadow(0 0 5px rgba(255, 224, 76, .48));
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current {
+    animation: none;
+}
+
+#game-config-view .student-learning-path--approved-frame .student-learning-step--current .student-learning-step__icon {
+    animation: student-learning-current-icon-glow-tight 1.7s ease-in-out infinite;
+}
+
+/* Final polish after all earlier mockup overrides. */
+#game-config-view .student-learning-hud,
+#game-config-view .student-learning-hud::before {
+    background: none !important;
+    border-bottom: 0 !important;
+}
+
+#game-config-view .student-learning-hud__brand-image {
+    height: clamp(150px, 21vh, 240px);
+    max-width: min(620px, 50vw);
+}
+
+/* Daily rail: student profile, achievements, then the illustrated route entry. */
+#game-config-view .student-learning-hud__profile,
+#game-config-view .student-learning-path-toggle--right-rail,
+#game-config-view .student-learning-achievements {
+    --student-learning-rail-width: min(360px, 32vw);
+    right: clamp(22px, 3vw, 58px) !important;
+    left: auto !important;
+    width: var(--student-learning-rail-width) !important;
+    border: 2px solid rgba(71, 201, 255, .78) !important;
+    border-radius: 12px 12px 20px 12px !important;
+    background: linear-gradient(135deg, rgba(3, 26, 51, .95), rgba(5, 75, 116, .91)) !important;
+    box-shadow: 0 0 0 2px rgba(7, 39, 70, .88), 0 7px 18px rgba(0, 0, 0, .35), inset 0 0 20px rgba(34, 211, 238, .2) !important;
+}
+
+#game-config-view .student-learning-hud__profile {
+    top: clamp(22px, 3vh, 42px) !important;
+    min-width: 0;
+    max-width: none;
+    padding: 8px 16px 8px 8px;
+}
+
+#game-config-view .student-learning-path-toggle--right-rail {
+    top: clamp(350px, 40vh, 390px) !important;
+    z-index: 9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 108px !important;
+    padding: 16px 20px !important;
+    border-color: #59f2ff !important;
+    color: #f7fdff;
+    font-size: clamp(1.5rem, 1.8vw, 1.84rem) !important;
+    letter-spacing: .015em;
+    text-shadow: 0 3px 5px rgba(0, 31, 82, .96), 0 0 13px rgba(219, 251, 255, .9);
+    box-shadow: 0 0 0 2px rgba(7, 39, 70, .88), 0 0 16px rgba(89, 242, 255, .92), 0 0 34px rgba(26, 185, 255, .72), inset 0 0 22px rgba(34, 211, 238, .28) !important;
+}
+
+#game-config-view .student-learning-achievements {
+    top: clamp(126px, 16vh, 144px) !important;
+    z-index: 8;
+    min-height: 0;
+    padding: 18px;
+}
+
+#game-config-view .student-learning-achievements li {
+    border-radius: 10px;
+    background: rgba(5, 52, 118, .58);
+}
+
+#game-config-view .student-learning-path-toggle__icon {
+    display: grid;
+    flex: 0 0 60px;
+    width: 60px;
+    height: 60px;
+    place-items: center;
+    filter: drop-shadow(0 0 9px rgba(107, 239, 255, .82));
+}
+
+#game-config-view .student-learning-path-toggle__icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#game-config-view .student-learning-continue__art {
+    filter: drop-shadow(0 6px 0 rgba(124, 53, 0, .82)) drop-shadow(0 0 22px rgba(255, 224, 76, .92)) drop-shadow(0 0 38px rgba(255, 153, 0, .68));
+}
+
+@media (max-width: 1120px) {
+    #game-config-view .student-learning-hud__profile,
+    #game-config-view .student-learning-path-toggle--right-rail,
+    #game-config-view .student-learning-achievements {
+        --student-learning-rail-width: min(300px, 32vw);
+    }
+
+    #game-config-view .student-learning-path-toggle--right-rail {
+        top: clamp(318px, 42vh, 350px) !important;
+        gap: 10px;
+        min-height: 96px !important;
+        padding: 14px 16px !important;
+        font-size: clamp(1.25rem, 2.1vw, 1.5rem) !important;
+    }
+
+    #game-config-view .student-learning-achievements {
+        top: clamp(124px, 17vh, 142px) !important;
+        padding: 14px;
+    }
+
+    #game-config-view .student-learning-path-toggle__icon {
+        flex-basis: 48px;
+        width: 48px;
+        height: 48px;
     }
 }
