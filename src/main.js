@@ -1424,6 +1424,22 @@ const app = {
             const firstField = fieldIds.map(fieldId => document.getElementById(fieldId)).find(Boolean);
             if (tone !== 'success') firstField?.focus({ preventScroll: true });
         },
+        promptSavedAttempt() {
+            const modal = document.getElementById('attempt-resume-modal');
+            if (!modal) return Promise.resolve(false);
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            return new Promise(resolve => {
+                const close = resume => {
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    resolve(resume);
+                };
+                document.getElementById('attempt-resume-continue').onclick = () => close(true);
+                document.getElementById('attempt-resume-cancel').onclick = () => close(false);
+                document.getElementById('attempt-resume-continue').focus();
+            });
+        },
         bindAuthFeedback(fields, feedbackId) {
             fields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
@@ -1679,9 +1695,20 @@ const app = {
                 this.updateHeader();
 
                 await app.game.flushPendingResults();
-                const resumedAttempt = app.game.resumeSavedAttempt();
-                if (!resumedAttempt) app.router.open('map-screen');
-                app.daily.onMapEnter();
+                const hasSavedAttempt = app.game.restoreAttemptDraft();
+                if (hasSavedAttempt) {
+                    const resume = await this.promptSavedAttempt();
+                    if (resume) {
+                        app.game.resumeSavedAttempt();
+                    } else {
+                        app.game.discardAttemptDraft(app.game.restoredAttemptKind);
+                        app.router.open('map-screen');
+                        app.daily.onMapEnter();
+                    }
+                } else {
+                    app.router.open('map-screen');
+                    app.daily.onMapEnter();
+                }
 
                 // Hiển thị mũi tên hướng dẫn nếu là lần đầu login
                 setTimeout(() => {
@@ -2024,6 +2051,53 @@ const app = {
         },
         clearAttemptDraft(kind = this.state.examName ? 'exam' : 'practice', user = app.data.currentUser) {
             app.safeStorage?.removeItem(this.getAttemptStorageKey(kind, user));
+        },
+        discardAttemptDraft(kind = this.restoredAttemptKind || (this.state.examName ? 'exam' : 'practice'), user = app.data.currentUser) {
+            const draft = this.readStoredJson(this.getAttemptStorageKey(kind, user), null);
+            const attemptId = kind === 'exam'
+                ? (app.exam?.state?.attemptId || draft?.attemptId)
+                : (this.state.attemptId || draft?.attemptId);
+            this.clearAttemptDraft(kind, user);
+            if (attemptId) this.removePendingResult(attemptId, user);
+            if (kind === 'exam') {
+                app.exam?.stopTimer?.();
+                if (app.exam?.state) {
+                    app.exam.state = {
+                        ...app.exam.state,
+                        questions: [],
+                        name: '',
+                        historyDetails: [],
+                        score: 0,
+                        examId: null,
+                        questId: null,
+                        attemptId: null,
+                        finished: false
+                    };
+                }
+            } else {
+                this.stopTimers();
+                this.state = {
+                    ...this.state,
+                    subject: '',
+                    topicMode: 'single',
+                    selectedTopics: [],
+                    selectedLessons: [],
+                    questions: [],
+                    currentIdx: 0,
+                    score: 0,
+                    selectedAns: null,
+                    multipleChoiceSelections: null,
+                    trueFalseSelections: null,
+                    answerSubmitted: false,
+                    finished: false,
+                    historyDetails: [],
+                    attemptId: null,
+                    examName: '',
+                    examId: null,
+                    questId: null
+                };
+            }
+            this.restoredAttemptKind = null;
         },
         savePendingResult({ entry, isExam = false, examId = null, questId = null, topics = [], lessons = [] } = {}) {
             const user = app.data.currentUser;
