@@ -103,6 +103,11 @@ assert.deepEqual(team.assignTeamScoreToMembers({ id: 'team-1', memberUsernames: 
 ]);
 assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8 }, { id: 'b', score: 8 }, { id: 'c', score: 5 }] }, 'c'), 3);
 assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8 }, { id: 'b', score: 8 }, { id: 'c', score: 5 }] }, 'b'), 1);
+assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8, completedAt: 200 }, { id: 'b', score: 8, completedAt: 100 }] }, 'b'), 1);
+assert.equal(team.getRaceProgress(7.25), 0.725);
+assert.equal(team.getRaceQuarterSteps(7.25), 29);
+assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'space-launch', presentationTeamIdentity: { 'team-1': 'rocket-3' } }).presentationTheme, 'space-launch');
+assert.ok(team.validateConfig({ ...validConfig, teamCount: 9 }, { students, exams }).errors.some(error => error.code === 'team_count_invalid'));
 
 const draft = team.normalizeCompetition({ ...validConfig, id: 'match-1' });
 assert.equal(draft.status, team.STATUS.DRAFT);

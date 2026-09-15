@@ -78,7 +78,8 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Bắt đầu thi đua' }).click();
   await expect(page.locator('.team-status-pill--active')).toBeVisible();
-  await expect(page.locator('.team-board-card').first()).toContainText('0/2 câu đã nộp');
+  await expect(page.locator('.team-race-lane')).toHaveCount(2);
+  await expect(page.locator('.team-race-lane').first()).toContainText('0/10 điểm');
 });
 
 test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {

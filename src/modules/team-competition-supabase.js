@@ -8,7 +8,7 @@
 
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const TEAM_COMPETITION_PROJECTIONS = Object.freeze({
-        team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,status,created_at,updated_at,started_at,ended_at,version',
+        team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,presentation_theme,presentation_team_identity,status,created_at,updated_at,started_at,ended_at,version',
         team_competition_teams: 'id,competition_id,name,position,target_member_count,leader_username,exam_id,status,score,submitted_count,correct_count,started_at,completed_at,locked_at,duration_seconds',
         team_competition_members: 'competition_id,team_id,username,position',
         team_competition_questions: 'id,competition_id,team_id,question_index,question_payload,question_type,answer_count,part_answer_counts',
@@ -204,6 +204,8 @@
                 participantMode: row.participant_mode,
                 questionMode: row.question_mode,
                 commonExamId: row.common_exam_id || null,
+                presentationTheme: row.presentation_theme || 'speed-race',
+                presentationTeamIdentity: row.presentation_team_identity || {},
                 timeLimitMinutes: row.time_limit_minutes === null ? null : toNumber(row.time_limit_minutes),
                 status: row.status,
                 createdAt: toDateValue(row.created_at) || Date.now(),
@@ -437,6 +439,8 @@
                 participant_mode: candidate.participantMode,
                 question_mode: candidate.questionMode,
                 common_exam_id: candidate.questionMode === 'same' ? candidate.commonExamId : null,
+                presentation_theme: candidate.presentationTheme,
+                presentation_team_identity: candidate.presentationTeamIdentity,
                 time_limit_minutes: candidate.timeLimitMinutes,
                 status: 'draft',
                 version: candidate.version || 1

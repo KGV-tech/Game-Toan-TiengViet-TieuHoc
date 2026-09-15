@@ -17,6 +17,7 @@
     });
     const STATUS_ORDER = Object.freeze([STATUS.DRAFT, STATUS.PREPARED, STATUS.ACTIVE, STATUS.ENDED]);
     const ATTEMPT_STATUS = Object.freeze({ ACTIVE: 'active', COMPLETED: 'completed', LOCKED: 'locked' });
+    const PRESENTATION_THEMES = Object.freeze({ SPEED_RACE: 'speed-race', SPACE_LAUNCH: 'space-launch' });
     const STORAGE_KEY = 'team_competitions_v1';
     const ATTEMPT_STORAGE_KEY = 'team_competition_attempts_v1';
     const EVENT_NAME = 'team-competition-updated';
@@ -221,7 +222,7 @@
 
         const teams = Array.isArray(config.teams) ? config.teams : [];
         const teamCount = Number(config.teamCount || teams.length);
-        if (!Number.isInteger(teamCount) || teamCount < 2) errors.push(error('team_count_invalid', 'Số nhóm phải là số nguyên từ 2 trở lên.'));
+        if (!Number.isInteger(teamCount) || teamCount < 2 || teamCount > 8) errors.push(error('team_count_invalid', 'Số nhóm phải là số nguyên từ 2 đến 8.'));
         if (teams.length !== teamCount) errors.push(error('team_count_mismatch', 'Số nhóm và danh sách nhóm chưa khớp.'));
 
         const rosterByKey = new Map();
@@ -328,6 +329,8 @@
     function normalizeCompetition(input = {}) {
         const questionMode = input.questionMode || input.assignmentMode || 'same';
         const teams = (Array.isArray(input.teams) ? input.teams : []).map(normalizeTeam);
+        const presentationTeamIdentity = { ...(input.presentationTeamIdentity && typeof input.presentationTeamIdentity === 'object' ? input.presentationTeamIdentity : {}) };
+        teams.forEach((team, index) => { if (!presentationTeamIdentity[team.id]) presentationTeamIdentity[team.id] = `racer-${index + 1}`; });
         const teamCount = Number(input.teamCount || teams.length || 0);
         const timeLimitMinutes = input.hasTimer === false || input.timeLimitMinutes === null || input.timeLimitMinutes === ''
             ? null
@@ -346,6 +349,8 @@
             teamCount,
             teams,
             questionMode,
+            presentationTheme: Object.values(PRESENTATION_THEMES).includes(input.presentationTheme) ? input.presentationTheme : PRESENTATION_THEMES.SPEED_RACE,
+            presentationTeamIdentity,
             commonExamId: input.commonExamId || (questionMode === 'same' ? input.examId || teams[0]?.examId || null : null),
             timeLimitMinutes,
             status,
@@ -647,12 +652,27 @@
         return (Array.isArray(competition?.teams) ? competition.teams : []).filter(team => team.memberUsernames.includes(key));
     }
 
+    function getRaceProgress(score) {
+        return Math.max(0, Math.min(1, Number(score || 0) / 10));
+    }
+
+    function getRaceQuarterSteps(score) {
+        return Math.round(Math.max(0, Math.min(10, Number(score || 0)) * 4));
+    }
+
     function getTeamRank(competition, teamId) {
         const teams = Array.isArray(competition?.teams) ? competition.teams : [];
         const target = teams.find(team => String(team.id) === String(teamId));
         if (!target) return null;
         const targetScore = Number(target.score) || 0;
-        return 1 + teams.reduce((count, team) => count + ((Number(team.score) || 0) > targetScore ? 1 : 0), 0);
+        const targetCompleted = Number(target.completedAt || 0);
+        return 1 + teams.reduce((count, team) => {
+            const score = Number(team.score) || 0;
+            if (score > targetScore) return count + 1;
+            if (score !== targetScore) return count;
+            const completed = Number(team.completedAt || 0);
+            return completed && targetCompleted && completed < targetCompleted ? count + 1 : count;
+        }, 0);
     }
 
     function getExamForTeam(competition, team) {
@@ -972,6 +992,7 @@
         STATUS_LABELS,
         STATUS_ORDER,
         ATTEMPT_STATUS,
+        PRESENTATION_THEMES,
         STORAGE_KEY,
         ATTEMPT_STORAGE_KEY,
         normalizeClass,
@@ -996,6 +1017,8 @@
         buildMemberResults,
         getTeamsForUser,
         getTeamRank,
+        getRaceProgress,
+        getRaceQuarterSteps,
         store,
         attemptStore,
         subscribe,
