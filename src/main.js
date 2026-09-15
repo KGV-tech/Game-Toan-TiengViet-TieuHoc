@@ -7163,7 +7163,7 @@ const app = {
             const saved = app.teamCompetition.store.upsert(candidate);
             if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
             if (app.teamCompetition.remote?.getStatus?.() === 'error') {
-                return alert('Không thể lưu trận thi đua lên Supabase. Bản nháp local vẫn được giữ; hãy kiểm tra kết nối/migration rồi thử lại.');
+                return alert(app.teamCompetition.remote.getSaveErrorMessage());
             }
             this.teamCompetitionDraft = null;
             if (asPrepared) this.openTeamCompetitionBoard(saved.id);
@@ -7182,7 +7182,7 @@ const app = {
                 const prepared = app.teamCompetition.prepareCompetition(match, { students: app.data.users || [], exams: app.data.exams || [], validateQuestionScoring: question => app.data.validateQuestionScoring(question) });
                 app.teamCompetition.store.upsert(prepared);
                 if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
-                if (app.teamCompetition.remote?.getStatus?.() === 'error') throw new Error('Không thể chuẩn bị trận trên Supabase.');
+                if (app.teamCompetition.remote?.getStatus?.() === 'error') throw new Error(app.teamCompetition.remote.getSaveErrorMessage());
                 this.openTeamCompetitionBoard(prepared.id);
             } catch (exception) {
                 const messages = exception.validation?.errors?.map(item => item.message) || [exception.message];

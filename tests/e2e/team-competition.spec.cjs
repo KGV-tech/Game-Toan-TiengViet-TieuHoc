@@ -224,3 +224,77 @@ test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trư�
   await firstGroup.locator('.team-member-slot-select').first().selectOption('hs3');
   await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([['hs3', 'hs2'], ['hs1']]);
 });
+
+for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
+  test('lưu trận giữ bản nháp khi thiếu migration và phục hồi khi thử lại ' + viewport.width, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await openOfflineHomepage(page);
+    await page.route('**/*.supabase.co/**', route => route.abort());
+    await page.evaluate(({ users, exam }) => {
+      app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+      app.data.users = users;
+      app.data.exams = [exam];
+      app.teamCompetition.store.clear();
+      app.admin.openAdmin();
+      app.admin.switchTab('quests');
+      app.admin.switchQuestMode('team');
+      window.saveTest = {
+        error: { code: 'PGRST204', message: "Could not find the 'presentation_theme' column of 'team_competitions' in the schema cache" },
+        rows: []
+      };
+      window.supabase = {};
+      app.teamCompetition.remote.configure({
+        from(table) {
+          const result = { data: [], error: null };
+          return {
+            select() { return this; }, range() { return this; }, eq() { return this; },
+            upsert(row) {
+              if (table === 'team_competitions') {
+                window.saveTest.rows.push(row);
+                result.error = window.saveTest.error;
+              }
+              return this;
+            },
+            insert() { return this; }, delete() { return this; },
+            then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); }
+          };
+        },
+        rpc() { return Promise.resolve({ data: null, error: null }); },
+        channel() { return { on() { return this; }, subscribe() { return this; } }; }
+      });
+    }, { users: demoUsers(), exam: demoExam() });
+    const dialogs = [];
+    page.on('dialog', async dialog => {
+      dialogs.push(dialog.message());
+      await dialog.accept();
+    });
+    await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
+    await page.locator('#team-comp-name').fill('Trận thử lưu lại');
+    await page.locator('#team-comp-common-exam').selectOption('exam-team');
+    await page.locator('#team-comp-presentation-theme').selectOption('space-launch');
+    await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
+    await expect.poll(() => dialogs.length).toBe(1);
+    expect(dialogs[0]).toContain('20260915_team_competition_presentations.sql');
+    await expect(page.locator('.team-form-hero')).toBeVisible();
+    await expect(page.locator('#team-comp-name')).toHaveValue('Trận thử lưu lại');
+    await expect.poll(() => page.evaluate(() => app.teamCompetition.store.list())).toMatchObject([
+      { name: 'Trận thử lưu lại', presentationTheme: 'space-launch' }
+    ]);
+    await page.evaluate(() => { window.saveTest.error = null; });
+    await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
+    await expect(page.locator('.team-dashboard-hero')).toBeVisible();
+    await expect(page.locator('.team-form-hero')).toHaveCount(0);
+    expect(dialogs).toHaveLength(1);
+    const saved = await page.evaluate(() => ({
+      rows: window.saveTest.rows,
+      status: app.teamCompetition.remote.getStatus(),
+      matches: app.teamCompetition.store.list()
+    }));
+    expect(saved.status).toBe('ready');
+    expect(saved.rows).toHaveLength(2);
+    expect(saved.rows[1].id).toBe(saved.rows[0].id);
+    expect(saved.rows[1].presentation_theme).toBe('space-launch');
+    expect(saved.matches).toHaveLength(1);
+    expect(saved.matches[0].name).toBe('Trận thử lưu lại');
+  });
+}

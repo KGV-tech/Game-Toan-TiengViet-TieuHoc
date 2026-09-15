@@ -48,13 +48,23 @@ const rows = {
   team_competition_results: []
 };
 
+let writeError = null;
+let prepareError = null;
+const savedRows = [];
+
 function builder(table) {
   const result = { data: rows[table] || [], error: null };
   return {
     select() { return this; },
     range() { return this; },
     eq() { return this; },
-    upsert() { return this; },
+    upsert(row) {
+      if (table === 'team_competitions') {
+        savedRows.push(row);
+        result.error = writeError;
+      }
+      return this;
+    },
     insert() { return this; },
     delete() { return this; },
     single() { return this; },
@@ -65,6 +75,7 @@ function builder(table) {
 const client = {
   from(table) { return builder(table); },
   rpc(name) {
+    if (name === 'team_competition_prepare') return Promise.resolve({ data: null, error: prepareError });
     if (name === 'team_competition_start_attempt') return Promise.resolve({ data: null, error: null });
     return Promise.resolve({ data: null, error: null });
   },
@@ -86,5 +97,50 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.deepEqual(competition.excludedStudentUsernames, ['hs3']);
   assert.equal(competition.teams[0].score, 5);
   assert.equal(api.getQuestionsForTeam(competition, competition.teams[0])[0].q, '1 + 1 = ?');
+  const draft = { ...competition, status: api.STATUS.DRAFT, presentationTheme: 'space-launch' };
+  writeError = { code: '42703', message: 'column presentation_theme does not exist' };
+  api.store.upsert(draft);
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'error');
+  assert.equal(api.store.get(draft.id).presentationTheme, 'space-launch', 'failed save must retain local draft');
+
+  writeError = null;
+  api.store.upsert(draft);
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'ready', 'successful retry must clear stale write failure');
+  assert.equal(api.remote.getError(), null);
+  assert.equal(savedRows.at(-1).presentation_theme, 'space-launch');
+  assert.deepEqual(savedRows.at(-1).presentation_team_identity, api.store.get(draft.id).presentationTeamIdentity);
+
+  prepareError = { code: 'P0001', message: 'Cannot prepare competition' };
+  api.store.upsert({ ...draft, status: api.STATUS.PREPARED });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'error', 'a final prepare RPC failure must not be reported as saved');
+  prepareError = null;
+  api.store.upsert({ ...draft, status: api.STATUS.PREPARED });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'ready');
+  assert.equal(api.remote.getError(), null);
+
+  for (const column of ['presentation_theme', 'presentation_team_identity']) {
+    for (const code of ['42703', 'PGRST204']) {
+      writeError = { code, message: 'Missing column ' + column };
+      api.store.upsert(draft);
+      await api.remote.flush();
+      assert.match(api.remote.getSaveErrorMessage(), /20260915_team_competition_presentations\.sql/);
+      assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
+    }
+  }
+  for (const error of [
+    { code: '42501', message: 'permission denied presentation_theme' },
+    { code: '42703', message: 'column unrelated_field does not exist' },
+    { message: 'Failed to fetch' }
+  ]) {
+    writeError = error;
+    api.store.upsert(draft);
+    await api.remote.flush();
+    assert.doesNotMatch(api.remote.getSaveErrorMessage(), /20260915/);
+    assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
+  }
   console.log('team competition Supabase adapter contract tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
