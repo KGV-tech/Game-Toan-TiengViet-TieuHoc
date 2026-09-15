@@ -328,7 +328,34 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
   await expect(page.getByRole('heading', { name: 'Quản lý lộ trình học' })).toBeVisible();
   await expect(page.locator('.learning-release-dashboard')).toBeVisible();
   await expect(page.locator('.learning-release-control-rail')).toBeVisible();
-  await expect(page.locator('.learning-release-main-panel')).toBeVisible();
+  await expect(page.locator('.learning-release-dashboard > .learning-release-list-panel')).toBeVisible();
+  await expect(page.locator('.learning-release-release-rail')).toBeVisible();
+  await expect(page.locator('.learning-release-main-panel')).toHaveCount(0);
+  const learningPathLayout = await page.locator('.learning-release-dashboard').evaluate(dashboard => ({
+    columnCount: getComputedStyle(dashboard).gridTemplateColumns.split(' ').length,
+    filterBackground: getComputedStyle(dashboard.querySelector('#learning-release-class')).backgroundColor,
+    releaseRailHasExplanation: dashboard.querySelector('.learning-release-release-rail').textContent.includes('không thể học mới vượt quá mốc này'),
+    listIsMiddleColumn: dashboard.querySelector('.learning-release-list-panel').previousElementSibling.classList.contains('learning-release-control-rail'),
+    columnsFitViewport: Array.from(dashboard.children).every(child => {
+      const rect = child.getBoundingClientRect();
+      return rect.left >= 0 && rect.right <= window.innerWidth;
+    }),
+    filtersStayInsideLeftRail: (() => {
+      const rail = dashboard.querySelector('.learning-release-control-rail').getBoundingClientRect();
+      return Array.from(dashboard.querySelectorAll('.learning-release-controls .form-input')).every(filter => {
+        const rect = filter.getBoundingClientRect();
+        return rect.left >= rail.left && rect.right <= rail.right;
+      });
+    })()
+  }));
+  expect(learningPathLayout).toEqual({
+    columnCount: 3,
+    filterBackground: 'rgb(3, 21, 36)',
+    releaseRailHasExplanation: true,
+    listIsMiddleColumn: true,
+    columnsFitViewport: true,
+    filtersStayInsideLeftRail: true
+  });
   await expect(page.locator('.learning-release-class-card')).toHaveCount(0);
   await expect(page.locator('label[for="learning-release-semester"] > span')).toHaveText('Thời gian');
   await expect(page.locator('.learning-release-preview')).toHaveCSS('overflow-y', 'auto');
