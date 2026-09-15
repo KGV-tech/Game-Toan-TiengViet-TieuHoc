@@ -4234,7 +4234,7 @@
 
 /* Learning path: left filters, central lesson list, right release controls. */
 #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
-    grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(240px, 285px);
+    grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(390px, 430px);
     grid-template-rows: minmax(0, 1fr);
     gap: 14px;
     overflow: hidden;
@@ -4287,18 +4287,32 @@
 #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-boundary {
     grid-template-columns: 1fr;
     align-items: stretch;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
     border-color: rgba(250, 204, 21, .62);
 }
 
 #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-summary,
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .form-input {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 @media (max-width: 1120px) {
     #treasure-modal[data-ui-context="admin"] .station-shell__title-row { margin-right: 52px; }
     #treasure-modal[data-ui-context="admin"] #admin-tabs .tab-btn { min-width: 118px; padding-right: 9px; padding-left: 9px; }
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
-        grid-template-columns: minmax(180px, 210px) minmax(0, 1fr) minmax(205px, 235px);
+        grid-template-columns: minmax(180px, 210px) minmax(0, 1fr) minmax(310px, 350px);
     }
 }
 

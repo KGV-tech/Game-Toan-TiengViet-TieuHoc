@@ -346,6 +346,12 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
         const rect = filter.getBoundingClientRect();
         return rect.left >= rail.left && rect.right <= rail.right;
       });
+    })(),
+    releaseRailWidth: Math.round(dashboard.querySelector('.learning-release-release-rail').getBoundingClientRect().width),
+    saveButtonFitsReleaseRail: (() => {
+      const rail = dashboard.querySelector('.learning-release-release-rail').getBoundingClientRect();
+      const button = dashboard.querySelector('#learning-release-save-button').getBoundingClientRect();
+      return button.left >= rail.left && button.right <= rail.right;
     })()
   }));
   expect(learningPathLayout).toEqual({
@@ -354,8 +360,11 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
     releaseRailHasExplanation: true,
     listIsMiddleColumn: true,
     columnsFitViewport: true,
-    filtersStayInsideLeftRail: true
+    filtersStayInsideLeftRail: true,
+    releaseRailWidth: expect.any(Number),
+    saveButtonFitsReleaseRail: true
   });
+  expect(learningPathLayout.releaseRailWidth).toBeGreaterThanOrEqual(400);
   await expect(page.locator('.learning-release-class-card')).toHaveCount(0);
   await expect(page.locator('label[for="learning-release-semester"] > span')).toHaveText('Thời gian');
   await expect(page.locator('.learning-release-preview')).toHaveCSS('overflow-y', 'auto');
