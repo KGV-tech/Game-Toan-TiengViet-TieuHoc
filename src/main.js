@@ -1273,13 +1273,17 @@ const app = {
             const toInsert = [];
             const newExamBatch = [];
             let firstError = null;
+            // `topics` is presentation metadata derived from the questions. The
+            // legacy production game_exams schema stores only the exam fields
+            // below, so never include it in a server write.
+            const toServerExam = ({ topics, ...exam }) => exam;
 
             try {
                 for (const e of this.exams) {
-                    if (e.id) toUpdate.push(e);
+                    if (e.id) toUpdate.push(toServerExam(e));
                     else {
                         const { id, ...rest } = e;
-                        toInsert.push(rest);
+                        toInsert.push(toServerExam(rest));
                         newExamBatch.push(e);
                     }
                 }
@@ -7750,7 +7754,11 @@ const app = {
                         <label for="learning-release-semester"><span>Thời gian</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
                     </div>
                 </aside>
-                <section class="learning-release-workspace learning-release-workspace--mockup learning-release-main-panel" aria-labelledby="learning-release-current-title">
+                <section class="learning-release-list-panel" aria-labelledby="learning-release-list-title">
+                    <header><h4 id="learning-release-list-title">Danh sách bài học</h4><span>Cuộn để xem các Bài còn lại</span></header>
+                    <div id="learning-release-preview" class="learning-release-preview" aria-label="Danh sách bài học"></div>
+                </section>
+                <aside class="learning-release-release-rail learning-release-workspace" aria-labelledby="learning-release-current-title">
                     <header class="learning-release-main-panel__header">
                         <div><span class="settings-workspace__kicker">Mốc học tập hiện tại</span><h3 id="learning-release-current-title">Học sinh đang học đến bài</h3><strong id="learning-release-card-boundary">Đang tải mốc học</strong></div>
                         <p>Học sinh có thể ôn lại các Bài trước, nhưng không thể học mới vượt quá mốc này.</p>
@@ -7761,11 +7769,7 @@ const app = {
                         <button type="button" id="learning-release-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveLessonRelease()">Lưu mốc học tập</button>
                     </div>
                     <div id="learning-release-summary" class="learning-release-summary" role="status"></div>
-                    <section class="learning-release-list-panel" aria-labelledby="learning-release-list-title">
-                        <header><h4 id="learning-release-list-title">Danh sách bài học</h4><span>Cuộn để xem các Bài còn lại</span></header>
-                        <div id="learning-release-preview" class="learning-release-preview" aria-label="Danh sách bài học"></div>
-                    </section>
-                </section>
+                </aside>
                 </div>
             `;
             this.renderLessonReleaseEditor();
