@@ -333,6 +333,16 @@
         isReady() { return state.enabled && state.status === 'ready'; },
         getStatus() { return state.status; },
         getError() { return state.error; },
+        getSaveErrorMessage() {
+            const error = state.error;
+            const detail = [error?.message, error?.details, error?.cause?.hint].filter(Boolean).join(' ');
+            const missingPresentation = ['42703', 'PGRST204'].includes(error?.code)
+                && /\bpresentation_(theme|team_identity)\b/.test(detail);
+            if (missingPresentation) {
+                return 'Không thể lưu trận thi đua vì Supabase còn thiếu cột cấu hình giao diện. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260915_team_competition_presentations.sql vào đúng dự án Supabase, rồi thử lưu lại.';
+            }
+            return 'Không thể lưu trận thi đua lên Supabase. Bản nháp vẫn được giữ trên máy; hãy kiểm tra kết nối và cấu hình Supabase rồi thử lại.';
+        },
         configure(client) {
             if (state.client === client && state.enabled) {
                 if (!state.channel) installRealtime();
@@ -427,6 +437,7 @@
         flush() { return state.pendingWrite; },
         async persistCompetition(input) {
             if (!state.enabled || !isAdmin()) return input;
+            const writeEpoch = state.lifecycleEpoch;
             const candidate = normalizeForRemote(input);
             if (candidate.status === api.STATUS.ACTIVE) return this.startCompetition(candidate.id);
             if (candidate.status === api.STATUS.ENDED) return this.endCompetition(candidate.id);
@@ -477,6 +488,11 @@
                 }
             }
             if (candidate.status === api.STATUS.PREPARED) await this.prepareCompetition(candidate.id);
+            if (writeEpoch === state.lifecycleEpoch && state.enabled) {
+                state.error = null;
+                state.status = 'ready';
+                this.status = state.status;
+            }
             return candidate;
         },
         async prepareCompetition(id) {
