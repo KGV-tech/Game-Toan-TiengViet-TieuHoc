@@ -7037,6 +7037,7 @@ const app = {
                 excludedStudentUsernames,
                 questionMode,
                 commonExamId: document.getElementById('team-comp-common-exam')?.value || draft.commonExamId || null,
+                presentationTheme: document.getElementById('team-comp-presentation-theme')?.value || draft.presentationTheme || 'speed-race',
                 timeLimitMinutes: hasTimer && Number.isInteger(minutes) && minutes > 0 ? minutes : null,
                 status: draft.status || app.teamCompetition.STATUS.DRAFT
             });
@@ -7064,7 +7065,7 @@ const app = {
             const excludedSet = new Set(excludedStudentUsernames);
             const students = allStudents.filter(student => !excludedSet.has(String(student.username)));
             const exams = this.getTeamCompetitionExams(classlevel);
-            const teamCount = Math.max(2, Number(draft.teamCount || draft.teams?.length || 2));
+            const teamCount = Math.min(8, Math.max(2, Number(draft.teamCount || draft.teams?.length || 2)));
             const teams = Array.from({ length: teamCount }, (_, index) => draft.teams?.[index] || ({ id: `team-${index + 1}`, name: `Nhóm ${index + 1}`, memberUsernames: [], leaderUsername: '', examId: null }));
             draft.teamCount = teamCount;
             draft.teams = teams;
@@ -7124,7 +7125,7 @@ const app = {
                   <label class="team-field-label team-field-label--wide"><span>Tên trận</span><input id="team-comp-name" class="form-input" value="${esc(draft.name)}" placeholder="VD: Thử thách Toán nhanh"></label>
                   <label class="team-field-label"><span>Cấp lớp</span><select id="team-comp-class" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classOptions}</select></label>
                   <label class="team-field-label"><span>Lớp</span><select id="team-comp-class-name" class="form-input" onchange="app.admin.switchTeamCompetitionMode()">${classNameOptions}</select></label>
-                  <label class="team-field-label"><span>Số lượng nhóm</span><input id="team-comp-team-count" class="form-input" type="number" min="2" max="20" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
+                  <label class="team-field-label"><span>Số lượng nhóm</span><input id="team-comp-team-count" class="form-input" type="number" min="2" max="8" value="${teamCount}" onchange="app.admin.switchTeamCompetitionMode()"></label>
                   <label class="team-field-label"><span>Cách chọn học sinh</span><select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chọn ngẫu nhiên</option></select></label>
                   <label class="team-field-label team-field-label--wide team-field-label--multiselect"><span>Danh sách học sinh không tham gia</span><select id="team-comp-excluded-students" class="form-input" multiple size="${Math.min(6, Math.max(3, allStudents.length))}" aria-label="Danh sách học sinh không tham gia" onchange="app.admin.changeTeamCompetitionExcludedStudents()">${excludedOptions}</select><small>Giữ Ctrl/Cmd để chọn nhiều học sinh vắng mặt hoặc không thể tham gia.</small></label>
                 </div></section>
@@ -7135,6 +7136,7 @@ const app = {
                   ${draft.questionMode !== 'different' ? `<label class="team-field-label"><span>Bộ đề chung</span><select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint team-form-hint--panel">Chọn bộ đề riêng trong từng ô nhóm. Tất cả bộ đề phải có cùng số câu.</p>'}
                 </div></section>
                 <section class="team-form-section team-form-section--timer"><div class="team-section-heading"><div><span class="team-section-kicker">Tuỳ chọn</span><h4>Thời gian làm bài</h4><p>Giới hạn thời gian giúp trận thi đua có nhịp độ rõ ràng.</p></div><span class="team-section-icon" aria-hidden="true">◷</span></div><div class="team-timer-fields"><label><input id="team-comp-has-timer" type="checkbox" ${draft.timeLimitMinutes !== null ? 'checked' : ''} onchange="document.getElementById('team-comp-time').disabled = !this.checked"> Có thời gian</label><input id="team-comp-time" class="form-input" type="number" min="1" max="180" value="${draft.timeLimitMinutes || 15}" ${draft.timeLimitMinutes === null ? 'disabled' : ''} aria-label="Số phút làm bài"><span>phút</span><span class="team-form-hint">Bỏ chọn để không giới hạn.</span></div></section>
+                <section class="team-form-section"><div class="team-section-heading"><div><span class="team-section-kicker">Trình chiếu lớp</span><h4>Giao diện thi đua</h4><p>Xe/phi thuyền di chuyển theo điểm, không theo số câu đã nộp.</p></div></div><label class="team-field-label"><span>Chủ đề</span><select id="team-comp-presentation-theme" class="form-input"><option value="speed-race" ${draft.presentationTheme !== 'space-launch' ? 'selected' : ''}>Đường đua tốc độ — chạy ngang</option><option value="space-launch" ${draft.presentationTheme === 'space-launch' ? 'selected' : ''}>Phóng phi thuyền lên không gian — chạy dọc</option></select></label></section>
                 <footer class="team-form-actions"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">Hủy</button><button type="button" class="btn-primary" onclick="app.admin.saveTeamCompetitionDraft(false)">Lưu Nháp</button><button type="button" class="btn-success" onclick="app.admin.saveTeamCompetitionDraft(true)">Đã chuẩn bị</button></footer>
             </section>`;
         },
@@ -7255,6 +7257,7 @@ const app = {
             const usersByName = new Map((app.data.users || []).map(user => [String(user.username), user]));
             const token = encodeURIComponent(String(match.id));
             const isLive = match.status === app.teamCompetition.STATUS.ACTIVE;
+            const presentationTheme = match.presentationTheme === 'space-launch' ? 'space-launch' : 'speed-race';
             const cards = match.teams.map((team, index) => {
                 const memberNames = team.memberUsernames.map(username => app.data.sanitizeHTML(usersByName.get(String(username))?.fullname || username));
                 const teamName = app.data.sanitizeHTML(team.name || `Nhóm ${index + 1}`);
@@ -7270,6 +7273,10 @@ const app = {
                 const metaRight = isLive ? `${team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : 'Đang làm')}${elapsedLabel}` : (match.status === app.teamCompetition.STATUS.ENDED ? 'Đã kết thúc' : '');
                 const teamStatus = team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : (isLive ? 'Đang làm' : 'Sẵn sàng'));
                 const teamStatusClass = ['pending', 'active', 'completed', 'locked'].includes(team.status) ? team.status : 'pending';
+                if (isLive) {
+                    const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
+                    return `<article class="team-race-lane team-race-lane--${presentationTheme} team-race-lane--${teamStatusClass}" style="--race-progress:${scoreProgress};--team-index:${index}" aria-label="${teamName}: ${score} trên 10, hạng tạm thời ${rank}"><div class="team-race-lane__info"><strong>${teamName}</strong><span>${score}/10 · Hạng tạm thời ${rank}</span></div><div class="team-race-lane__track" aria-hidden="true"><span class="team-race-lane__racer">${presentationTheme === 'space-launch' ? '🚀' : '🏎️'}</span></div><div class="team-race-lane__status"><span>${teamStatus}</span><small>${Number(team.score || 0).toLocaleString('vi-VN')}/10 điểm</small></div></article>`;
+                }
                 return `<article class="team-board-card team-board-card--${teamStatusClass}"><header class="team-board-card__top"><div class="team-board-rank">${String(index + 1).padStart(2, '0')}</div><div><p class="team-board-card__kicker">Đội ${index + 1}</p><h3>${teamName}</h3></div><span class="team-board-score">${score}<small>/10</small></span></header><div class="team-board-card__status-row"><span>${isLive ? `${progress}/${total || '?'} câu đã nộp` : `${team.memberUsernames.length} thành viên`}</span><span>${teamStatus}</span></div><div class="team-board-card__progress" aria-label="Tiến độ ${teamName}"><span style="width:${total ? Math.min(100, progress / total * 100) : 0}%"></span></div><div class="team-board-card__meta"><span>${isLive || match.status === app.teamCompetition.STATUS.ENDED ? `Hạng ${rank}` : teamStatus}</span><span>${metaRight}</span></div>${!isLive && match.status !== app.teamCompetition.STATUS.ENDED ? `<details class="team-board-members"><summary>Thành viên (${team.memberUsernames.length})</summary><p>${memberNames.join(', ') || 'Chưa phân công'}</p><p>Trưởng nhóm: ${app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn')}</p></details>` : ''}<div class="team-board-card__actions">${editAction}</div></article>`;
             }).join('');
             const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
