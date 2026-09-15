@@ -295,6 +295,30 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
     app.admin.switchTab('learning-path');
   });
 
+  const readAdminShell = () => page.locator('#treasure-modal').evaluate(modal => {
+    const panel = modal.querySelector('.admin-panel');
+    const title = modal.querySelector('#treasure-title');
+    const tabs = modal.querySelector('#admin-tabs');
+    const panelStyle = getComputedStyle(panel);
+    const titleStyle = getComputedStyle(title);
+    const tabsStyle = getComputedStyle(tabs);
+    return {
+      panelWidth: panel.getBoundingClientRect().width,
+      panelHeight: panel.getBoundingClientRect().height,
+      panelBorderRadius: panelStyle.borderRadius,
+      panelBackground: panelStyle.backgroundImage,
+      titleFontSize: titleStyle.fontSize,
+      tabsMarginBottom: tabsStyle.marginBottom,
+      tabsPaddingBottom: tabsStyle.paddingBottom
+    };
+  });
+
+  await page.evaluate(() => app.admin.switchTab('settings'));
+  const settingsShell = await readAdminShell();
+  await page.evaluate(() => app.admin.switchTab('learning-path'));
+  const learningPathShell = await readAdminShell();
+  expect(learningPathShell).toEqual(settingsShell);
+
   await expect(page.locator('#treasure-modal')).toHaveAttribute('data-ui-context', 'admin');
   await expect(page.locator('#treasure-modal .admin-learning-mascot')).toHaveCount(0);
   await expect(page.locator('#admin-tabs .tab-btn')).toHaveCount(4);
@@ -326,6 +350,11 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
 
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(page.locator('#treasure-modal .learning-release-workspace')).toBeVisible();
+  const tabletLearningPathShell = await readAdminShell();
+  await page.evaluate(() => app.admin.switchTab('settings'));
+  const tabletSettingsShell = await readAdminShell();
+  expect(tabletLearningPathShell).toEqual(tabletSettingsShell);
+  await page.evaluate(() => app.admin.switchTab('learning-path'));
   const tabletState = await page.locator('#treasure-modal .station-shell').evaluate(shell => ({
     right: shell.getBoundingClientRect().right,
     viewport: window.innerWidth,
@@ -335,6 +364,11 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
   expect(tabletState.rootOverflow).toBe(false);
   await page.screenshot({ path: testInfo.outputPath('learning-release-admin-tablet.png') });
   await page.setViewportSize({ width: 900, height: 700 });
+  const compactLearningPathShell = await readAdminShell();
+  await page.evaluate(() => app.admin.switchTab('settings'));
+  const compactSettingsShell = await readAdminShell();
+  expect(compactLearningPathShell).toEqual(compactSettingsShell);
+  await page.evaluate(() => app.admin.switchTab('learning-path'));
   await expect(page.locator('#treasure-modal .admin-content')).toHaveCSS('overflow-y', 'hidden');
   await expect(page.locator('.learning-release-preview')).toHaveCSS('overflow-y', 'auto');
   const compactState = await page.locator('#treasure-modal .station-shell').evaluate(shell => document.documentElement.scrollWidth <= window.innerWidth && shell.getBoundingClientRect().right <= window.innerWidth);
