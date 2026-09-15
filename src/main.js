@@ -1273,13 +1273,17 @@ const app = {
             const toInsert = [];
             const newExamBatch = [];
             let firstError = null;
+            // `topics` is presentation metadata derived from the questions. The
+            // legacy production game_exams schema stores only the exam fields
+            // below, so never include it in a server write.
+            const toServerExam = ({ topics, ...exam }) => exam;
 
             try {
                 for (const e of this.exams) {
-                    if (e.id) toUpdate.push(e);
+                    if (e.id) toUpdate.push(toServerExam(e));
                     else {
                         const { id, ...rest } = e;
-                        toInsert.push(rest);
+                        toInsert.push(toServerExam(rest));
                         newExamBatch.push(e);
                     }
                 }

@@ -43,6 +43,47 @@ async function openExamComposerWithSupabaseFailure(page) {
   });
 }
 
+async function openExamComposerWithLegacyExamSchema(page) {
+  await page.route('https://cdn.jsdelivr.net/**', route => {
+    if (route.request().url().includes('@supabase/supabase-js')) {
+      return route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.__examWrites = [];
+          window.supabase = {
+            createClient() {
+              return {
+                from(table) {
+                  const query = {
+                    select() { return this; },
+                    range() { return Promise.resolve({ data: [], error: null }); },
+                    upsert(rows) {
+                      window.__examWrites.push({ operation: 'upsert', table, rows });
+                      return Promise.resolve({ error: rows.some(row => Object.hasOwn(row, 'topics')) ? { message: "Could not find the 'topics' column of 'game_exams' in the schema cache." } : null });
+                    },
+                    insert(rows) {
+                      window.__examWrites.push({ operation: 'insert', table, rows });
+                      const error = rows.some(row => Object.hasOwn(row, 'topics')) ? { message: "Could not find the 'topics' column of 'game_exams' in the schema cache." } : null;
+                      return { select: () => Promise.resolve({ data: error ? null : rows.map((row, index) => ({ ...row, id: 'saved-' + index })), error }) };
+                    }
+                  };
+                  return query;
+                },
+                channel() { return { on() { return this; }, subscribe() { return this; } }; },
+                auth: { signInWithPassword: async () => ({ data: null, error: { message: 'stub' } }) }
+              };
+            }
+          };`
+      });
+    }
+    return route.fulfill({ contentType: 'application/javascript', body: '' });
+  });
+  await page.goto('/');
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.exams = [];
+  });
+}
+
 test('đề đã lưu ở chế độ local vẫn còn sau khi refresh', async ({ page }) => {
   await openExamComposer(page);
 
@@ -90,6 +131,36 @@ test('đề vẫn có bản chờ đồng bộ và báo lỗi khi Supabase từ 
 
   await page.reload();
   await expect.poll(() => page.evaluate(() => app.data.exams.some(item => item.name === 'Đề chờ đồng bộ'))).toBe(true);
+});
+
+test('saveExams không gửi topics vào schema game_exams cũ', async ({ page }) => {
+  await openExamComposerWithLegacyExamSchema(page);
+
+  const result = await page.evaluate(async () => {
+    app.data.exams = [{
+      name: 'Đề thi đua nhóm',
+      classlevel: 'Lớp 4',
+      subject: 'Toán',
+      period: 'Học Kỳ 1',
+      topics: ['Số có nhiều chữ số'],
+      questions: [{ q: '12 + 34 = ?', ans: '46', type: 'Điền khuyết', topic: 'Số có nhiều chữ số' }]
+    }];
+    const error = await app.data.saveExams();
+    return { error: error?.message || null, writes: window.__examWrites };
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.writes).toEqual([{
+    operation: 'insert',
+    table: 'game_exams',
+    rows: [{
+      name: 'Đề thi đua nhóm',
+      classlevel: 'Lớp 4',
+      subject: 'Toán',
+      period: 'Học Kỳ 1',
+      questions: [{ q: '12 + 34 = ?', ans: '46', type: 'Điền khuyết', topic: 'Số có nhiều chữ số' }]
+    }]
+  }]);
 });
 
 test('bản chờ đồng bộ giữ nội dung mới khi máy chủ còn bản cũ cùng tên', async ({ page }) => {
