@@ -1518,6 +1518,16 @@
         white-space: nowrap;
     }
 
+    #game-config-view .student-learning-screen__title {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
     #game-config-view .student-learning-shell--mockup .student-learning-mission p {
         position: absolute;
         width: 1px;
@@ -2674,18 +2684,21 @@
 
     /* Winter hub rebuild: 3D assets form the scenery while HTML keeps learning data live. */
     #game-config-view:has(.student-learning-shell--mockup) {
-        padding: 0 !important;
+        padding: 14px !important;
         background: #061743 url('assets/student-learning/winter-hub/winter-sky-background.png') center / cover no-repeat !important;
     }
 
     #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
-        width: 100% !important;
-        height: 100dvh !important;
-        padding: clamp(16px, 2.2vw, 32px) clamp(20px, 4vw, 64px) !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        background: linear-gradient(180deg, rgba(4, 20, 61, .14), rgba(2, 12, 42, .32)) !important;
-        box-shadow: none !important;
+        width: min(calc(100vw - 28px), 1540px) !important;
+        height: calc(100dvh - 28px) !important;
+        padding: clamp(18px, 2.4vw, 32px) clamp(20px, 3vw, 48px) !important;
+        border: 1px solid rgba(92, 224, 255, .52) !important;
+        border-radius: 22px !important;
+        background:
+            radial-gradient(circle at 88% 6%, rgba(77, 221, 255, .18), transparent 25%),
+            radial-gradient(circle at 6% 90%, rgba(113, 89, 232, .18), transparent 27%),
+            linear-gradient(145deg, rgba(5, 30, 64, .98), rgba(5, 21, 49, .98) 56%, rgba(15, 28, 74, .98)) !important;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset, 0 0 42px rgba(40, 211, 255, .15), 0 20px 55px rgba(0, 0, 0, .38) !important;
     }
 
     #game-config-view .student-learning-shell--mockup {
@@ -3597,7 +3610,7 @@
 /* Align the map action to the header rail, regardless of the title artwork size. */
 #game-config-view .student-learning-hud .student-learning-back-map {
     position: fixed;
-    top: clamp(52px, 7.33vh, 66px);
+    top: clamp(68px, 8.7vh, 78px);
     left: clamp(22px, 2.5vw, 48px);
     transform: none;
 }
@@ -4052,7 +4065,7 @@
 /* Final daily-screen refinements must follow the broader mockup rules above. */
 #game-config-view .student-learning-hud .student-learning-back-map {
     position: fixed;
-    top: clamp(52px, 7.33vh, 66px);
+    top: clamp(68px, 8.7vh, 78px);
     left: clamp(22px, 2.5vw, 48px);
     transform: none;
 }
