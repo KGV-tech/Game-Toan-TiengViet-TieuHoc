@@ -84,6 +84,13 @@
         padding: 24px;
     }
 
+    #game-config-view > .student-learning-back-map--fallback {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+    }
+
     #game-config-view .station-shell {
         display: block;
         width: min(100%, 1440px) !important;

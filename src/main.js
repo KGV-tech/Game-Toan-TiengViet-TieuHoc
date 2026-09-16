@@ -2757,6 +2757,7 @@ const app = {
                 </header>`;
             const dailyScreenMarkup = `
                 <section class="student-learning-screen student-learning-screen--daily" aria-labelledby="student-learning-title">
+                  <h2 id="student-learning-title" class="student-learning-screen__title">Hôm nay mình học gì?</h2>
                   <aside class="student-learning-achievements" aria-label="Thành tích hôm nay">
                     <h3><span aria-hidden="true">📋</span> THÀNH TÍCH HÔM NAY</h3>
                     <ul>
@@ -2767,11 +2768,14 @@ const app = {
                   </aside>
 
                   ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
+                    <h3 id="student-learning-mission-title">${esc(missionTitle)}</h3>
+                    <p>${esc(recommended.kind === 'lesson' ? `${recommended.topic} · ${recommended.semesterLabel}` : 'Luyện tập theo Chủ đề')} · ${esc(missionStatus)}</p>
                     <div class="student-learning-practice-robot" aria-hidden="true"><img src="./public/student-practice-robot.png" alt=""></div>
                     <button type="button" class="student-learning-continue" data-learning-entry="${esc(recommended.id)}" aria-label="${esc(missionAction)}"><img class="student-learning-continue__art" src="./public/student-learning-practice-button.png" alt=""></button>
                   </section>` : ''}
 
                   ${isFallbackTopicPlan ? `<aside class="student-learning-notice" role="note"><span aria-hidden="true">ℹ</span><p>Môn này chưa có danh mục Bài học chính thức trong hệ thống. Bạn vẫn được luyện theo Chủ đề hiện tại; khi giáo viên cập nhật danh mục, lộ trình sẽ tự hiển thị theo từng Bài.</p></aside>` : (!plan.release ? `<aside class="student-learning-notice student-learning-notice--guardrail" role="note"><span aria-hidden="true">🛡</span><p>Giáo viên chưa đặt mốc tiến độ. Hệ thống tạm mở Bài 1 để bạn không làm trước nội dung chưa học.</p></aside>` : '')}
+                  <section class="student-learning-path student-learning-path--compact" aria-label="Các bước học gần đây"><div class="student-learning-path__list">${compactPathMarkup}</div></section>
                   <button type="button" class="student-learning-path-toggle student-learning-path-toggle--right-rail" data-learning-path-toggle aria-expanded="false"><span class="student-learning-path-toggle__icon" aria-hidden="true"><img src="./public/student-learning-route-icon.svg" alt=""></span><span>Xem lộ trình đầy đủ</span></button>
                 </section>`;
             const routeScreenMarkup = `
@@ -5679,7 +5683,14 @@ const app = {
             return true;
         },
         supportsAdminLessons(classlevel, subject) {
-            return Boolean(app.curriculum?.supportsLessons(classlevel, subject));
+            const normalizedClasslevel = String(classlevel || '').replace('Lớp ', '').trim();
+            const normalizedSubject = app.data.normalizeQuestionPart(subject);
+            const isMathSubject = normalizedSubject === 'math'
+                || normalizedSubject === app.data.normalizeQuestionPart('Toán');
+            // The student catalog also supports Vietnamese lessons; Admin lesson selectors remain Math 4 only.
+            return normalizedClasslevel === '4'
+                && isMathSubject
+                && Boolean(app.curriculum?.supportsLessons(classlevel, subject));
         },
         normalizeAdminLesson(value) {
             const raw = String(value ?? '').trim();
@@ -7906,12 +7917,10 @@ const app = {
         },
         renderTemplates(box) {
             if (!box) return;
-            const savedTemplates = app.data.questionTemplates || [];
-            const builtInVietnamese = window.Grade4VietnameseTemplates?.getDefaultTemplates?.() || [];
-            const savedVietnameseLessons = new Set(savedTemplates
-                .filter(template => template.classlevel === 'Lớp 4' && template.subject === 'Tiếng Việt')
-                .map(template => this.getTemplateLesson(template)));
-            const templates = [...savedTemplates, ...builtInVietnamese.filter(template => !savedVietnameseLessons.has(template.lesson))];
+            // The library indexes are also used by edit/delete actions, so it must
+            // contain only persisted templates. Built-in Vietnamese templates are
+            // read-only practice fallbacks and are not admin-library records.
+            const templates = Array.isArray(app.data.questionTemplates) ? app.data.questionTemplates : [];
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
             const filters = this.templateFilters;
