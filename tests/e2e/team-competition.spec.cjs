@@ -74,8 +74,12 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('#treasure-modal')).toHaveClass(/team-board-fullscreen/);
   await expect(page.locator('.team-status-pill--prepared')).toBeVisible();
   await expect(page.locator('.team-board-hero')).toBeVisible();
-  await expect(page.locator('.team-board-summary')).toBeVisible();
+  await expect(page.locator('.team-board-summary')).not.toBeVisible();
   await expect(page.locator('.team-board-card')).toHaveCount(2);
+  await expect(page.locator('.team-board-members__leader').first()).toContainText('Trưởng nhóm');
+  await expect(page.locator('.team-board-members__leader').first()).toContainText('Học sinh 1');
+  await expect(page.locator('.team-board-members__list').first()).toContainText('Học sinh 1');
+  expect(await page.locator('.team-board-members__leader').first().evaluate(node => Number.parseFloat(getComputedStyle(node.querySelector('strong')).fontSize))).toBeGreaterThanOrEqual(16);
   await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
   const startDialogs = [];
   page.on('dialog', async dialog => {
@@ -88,10 +92,13 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   expect(startDialogs).toEqual([]);
   await expect(page.locator('.team-race-stadium')).toBeVisible();
   await expect(page.locator('.team-race-scoreboard')).toBeVisible();
-  await expect(page.locator('.team-race-lane')).toHaveCount(2);
-  await expect(page.locator('.team-race-lane__vehicle')).toHaveCount(2);
-  await expect(page.locator('.team-race-lane__track-tick')).toHaveCount(20);
-  await expect(page.locator('.team-race-lane').first()).toContainText('0/10 điểm');
+  await expect(page.locator('.team-stadium-canvas')).toBeVisible();
+  await expect(page.locator('.team-stadium-lane')).toHaveCount(2);
+  await expect(page.locator('.team-stadium-lane__vehicle')).toHaveCount(2);
+  expect(await page.locator('.team-stadium-lane').evaluateAll(nodes => nodes.map(node => node.dataset.stadiumLane))).toEqual(['3', '6']);
+  await expect(page.locator('.team-stadium-lane').first()).toContainText('0 điểm');
+  await expect(page.locator('.team-stadium-canvas')).toHaveCSS('background-image', /stadium-8-lanes\.png/);
+  await expect(page.locator('.team-race-lane__finish')).toHaveCount(0);
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
@@ -116,9 +123,26 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
       app.admin.openTeamCompetitionBoard(match.id);
     }, { users: demoUsers(), exam: demoExam() });
 
-    await expect(page.locator('.team-race-stadium')).toBeVisible();
-    await expect(page.locator('.team-race-lane')).toHaveCount(2);
-    expect(await page.locator('.team-race-lane__vehicle').first().evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(48);
+    await expect(page.locator('.team-stadium-canvas')).toBeVisible();
+    await expect(page.locator('.team-stadium-lane')).toHaveCount(2);
+    expect(await page.locator('.team-stadium-lane').evaluateAll(nodes => nodes.map(node => node.dataset.stadiumLane))).toEqual(['3', '6']);
+    expect(await page.locator('.team-stadium-lane__vehicle').first().evaluate(node => Number.parseFloat(getComputedStyle(node).width))).toBeGreaterThanOrEqual(72);
+    const vehiclePosition = await page.locator('.team-stadium-canvas').evaluate(canvas => {
+      const vehicle = canvas.querySelector('.team-stadium-lane__vehicle');
+      const lane = vehicle.closest('.team-stadium-lane');
+      const canvasRect = canvas.getBoundingClientRect();
+      const vehicleRect = vehicle.getBoundingClientRect();
+      const laneRect = lane.getBoundingClientRect();
+      const progress = Number.parseFloat(getComputedStyle(vehicle).getPropertyValue('--race-progress')) || 0;
+      return {
+        startLineOffset: Math.abs(vehicleRect.right - (canvasRect.left + canvasRect.width * (.25 + progress / 100))),
+        verticalOffset: (vehicleRect.top + vehicleRect.height / 2) - (laneRect.top + laneRect.height / 2),
+        laneHeight: laneRect.height
+      };
+    });
+    expect(vehiclePosition.startLineOffset).toBeLessThanOrEqual(2);
+    expect(vehiclePosition.verticalOffset).toBeLessThan(-vehiclePosition.laneHeight * .8);
+    expect(vehiclePosition.verticalOffset).toBeGreaterThan(-vehiclePosition.laneHeight * 1.2);
     const dimensions = await page.locator('.team-competition-board').evaluate(node => ({
       scrollHeight: node.scrollHeight,
       clientHeight: node.clientHeight
@@ -126,6 +150,81 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.clientHeight + 2);
   });
 }
+
+test('bảng xếp hạng đường đua hiển thị 8 cột và đổi hạng ngay khi điểm thay đổi', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'scoreboard-match', name: 'Bảng xếp hạng trực tiếp', classlevel: '5', teamCount: 8,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, status: app.teamCompetition.STATUS.ACTIVE,
+      timeLimitMinutes: 15, startedAt: Date.now(), teams: [
+        { id: 'team-a', name: 'Đội A', memberUsernames: ['hs1'], leaderUsername: 'hs1', score: 4, status: 'active' },
+        { id: 'team-b', name: 'Đội B', memberUsernames: ['hs2'], leaderUsername: 'hs2', score: 9, status: 'active' },
+        { id: 'team-c', name: 'Đội C', memberUsernames: ['hs3'], leaderUsername: 'hs3', score: 7, status: 'active' },
+        { id: 'team-d', name: 'Đội D', memberUsernames: ['hs4'], leaderUsername: 'hs4', score: 1, status: 'active' },
+        { id: 'team-e', name: 'Đội E', memberUsernames: [], leaderUsername: '', score: 6, status: 'active' },
+        { id: 'team-f', name: 'Đội F', memberUsernames: [], leaderUsername: '', score: 3, status: 'active' },
+        { id: 'team-g', name: 'Đội G', memberUsernames: [], leaderUsername: '', score: 8, status: 'active' },
+        { id: 'team-h', name: 'Đội H', memberUsernames: [], leaderUsername: '', score: 2, status: 'active' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.admin.openAdmin();
+    app.admin.openTeamCompetitionBoard(match.id);
+  }, { users: demoUsers(), exam: demoExam() });
+
+  const entries = page.locator('.team-race-scoreboard__entry');
+  await expect(entries).toHaveCount(8);
+  await expect(page.locator('.team-stadium-title-card')).toHaveText('Bảng xếp hạng trực tiếp');
+  await expect(page.locator('.team-race-clock strong')).toHaveText(/^\d{2}:\d{2}$/);
+  expect(await entries.evaluateAll(nodes => nodes.map(node => node.querySelector('strong').textContent))).toEqual(['Đội B', 'Đội G', 'Đội C', 'Đội E', 'Đội A', 'Đội F', 'Đội H', 'Đội D']);
+  expect(await entries.evaluateAll(nodes => nodes.map(node => node.dataset.rank))).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).getPropertyValue('--leaderboard-accent').trim()))).toEqual(['#fee732', '#2494fd', '#fe6b5e', '#35d063', '#25e1fc', '#fc78bc', '#fd8d2f', '#a963fa']);
+  expect(await page.locator('.team-race-scoreboard ol').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(8);
+  await expect(entries.nth(0)).toHaveClass(/team-race-scoreboard__entry--yellow/);
+
+  await page.evaluate(() => {
+    const match = app.teamCompetition.store.get('scoreboard-match');
+    const updated = {
+      ...match,
+      teams: match.teams.map(team => team.id === 'team-d' ? { ...team, score: 10 } : team)
+    };
+    app.teamCompetition.store.upsert(updated);
+    app.admin.renderTeamCompetitionBoard(document.querySelector('#treasure-content-area'), updated.id);
+  });
+  await expect(entries.first()).toContainText('Đội D');
+  await expect(entries.first()).toHaveAttribute('data-rank', '1');
+  await expect(entries.first()).toHaveClass(/team-race-scoreboard__entry--violet/);
+
+  await page.evaluate(() => {
+    const match = app.teamCompetition.store.get('scoreboard-match');
+    const readyToStart = { ...match, teams: match.teams.map(team => ({ ...team, score: 0 })) };
+    app.teamCompetition.store.upsert(readyToStart);
+    app.admin.renderTeamCompetitionBoard(document.querySelector('#treasure-content-area'), readyToStart.id);
+  });
+  expect(await page.locator('.team-stadium-canvas').evaluate(canvas => {
+    const canvasRect = canvas.getBoundingClientRect();
+    const startX = canvasRect.left + canvasRect.width * .25;
+    const labels = [...canvas.querySelectorAll('.team-stadium-lane__info')].map(node => node.getBoundingClientRect());
+    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map((vehicle, index) => {
+      const rect = vehicle.getBoundingClientRect();
+      const label = labels[index];
+      const intersectsLabel = rect.left < label.right && rect.right > label.left && rect.top < label.bottom && rect.bottom > label.top;
+      return { startLineOffset: Math.abs(rect.right - startX), intersectsLabel };
+    });
+  })).toEqual(Array.from({ length: 8 }, () => ({ startLineOffset: expect.any(Number), intersectsLabel: false })));
+  const startLinePositions = await page.locator('.team-stadium-canvas').evaluate(canvas => {
+    const canvasRect = canvas.getBoundingClientRect();
+    const startX = canvasRect.left + canvasRect.width * .25;
+    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map(vehicle => Math.abs(vehicle.getBoundingClientRect().right - startX));
+  });
+  expect(startLinePositions.every(offset => offset <= 2)).toBe(true);
+});
 
 test('mở form sau bảng trình chiếu vẫn cuộn được trong cửa sổ quản trị', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
