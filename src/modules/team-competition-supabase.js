@@ -338,8 +338,13 @@
             const detail = [error?.message, error?.details, error?.cause?.hint].filter(Boolean).join(' ');
             const missingPresentation = ['42703', 'PGRST204'].includes(error?.code)
                 && /\bpresentation_(theme|team_identity)\b/.test(detail);
+            const unsupportedGroupedAnswers = error?.code === 'P0001'
+                && /\bunsupported_question_answer_count\b/.test(detail);
             if (missingPresentation) {
                 return 'Không thể lưu trận thi đua vì Supabase còn thiếu cột cấu hình giao diện. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260915_team_competition_presentations.sql vào đúng dự án Supabase, rồi thử lưu lại.';
+            }
+            if (unsupportedGroupedAnswers) {
+                return 'Không thể lưu trận thi đua vì Supabase chưa hỗ trợ câu hỏi có nhiều đáp án trong cùng một ý. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260916_team_competition_grouped_answers.sql vào đúng dự án Supabase, rồi thử lưu lại.';
             }
             return 'Không thể lưu trận thi đua lên Supabase. Bản nháp vẫn được giữ trên máy; hãy kiểm tra kết nối và cấu hình Supabase rồi thử lại.';
         },

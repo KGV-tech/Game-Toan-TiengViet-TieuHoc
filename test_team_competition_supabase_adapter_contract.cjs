@@ -50,7 +50,9 @@ const rows = {
 
 let writeError = null;
 let prepareError = null;
+let groupedAnswerError = null;
 const savedRows = [];
+const rpcCalls = [];
 
 function builder(table) {
   const result = { data: rows[table] || [], error: null };
@@ -74,7 +76,11 @@ function builder(table) {
 
 const client = {
   from(table) { return builder(table); },
-  rpc(name) {
+  rpc(name, args) {
+    rpcCalls.push({ name, args });
+    if (name === 'team_competition_save_questions' && groupedAnswerError) {
+      return Promise.resolve({ data: null, error: groupedAnswerError });
+    }
     if (name === 'team_competition_prepare') return Promise.resolve({ data: null, error: prepareError });
     if (name === 'team_competition_start_attempt') return Promise.resolve({ data: null, error: null });
     return Promise.resolve({ data: null, error: null });
@@ -142,5 +148,33 @@ assert.equal(api.remote.getStatus(), 'pending');
     assert.doesNotMatch(api.remote.getSaveErrorMessage(), /20260915/);
     assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
   }
+
+  app.data.exams = [{
+    id: 'exam-grouped-answers',
+    questions: [{
+      q: 'Điền số liền trước và số liền sau.',
+      type: 'Điền khuyết',
+      ans: '10, 12, 20, 22, 30, 32, 40, 42',
+      partAnswerCounts: [2, 2, 2, 2],
+      practiceRows: []
+    }]
+  }];
+  writeError = null;
+  groupedAnswerError = { code: 'P0001', message: 'unsupported_question_answer_count' };
+  const groupedDraft = api.store.upsert({
+    ...draft,
+    id: 'grouped-answer-draft',
+    commonExamId: 'exam-grouped-answers',
+    teams: draft.teams.map(team => ({ ...team, examId: 'exam-grouped-answers' }))
+  });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'error');
+  const groupedSaveCall = rpcCalls.find(call => call.name === 'team_competition_save_questions'
+    && call.args?.p_questions?.[0]?.partAnswerCounts?.length === 4);
+  assert.ok(groupedSaveCall, 'grouped questions must reach the save RPC');
+  assert.deepEqual(groupedSaveCall.args.p_questions[0].partAnswerCounts, [2, 2, 2, 2]);
+  assert.equal(api.store.get(groupedDraft.id).commonExamId, 'exam-grouped-answers');
+  assert.match(api.remote.getSaveErrorMessage(), /20260916_team_competition_grouped_answers\.sql/);
+  assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
   console.log('team competition Supabase adapter contract tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

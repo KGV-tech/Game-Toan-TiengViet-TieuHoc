@@ -5,6 +5,8 @@ const file = 'supabase/migrations/20260906_team_competitions.sql';
 const sql = fs.readFileSync(file, 'utf8');
 const lower = sql.toLowerCase();
 const classNameMigration = fs.readFileSync('supabase/migrations/20260907_team_competitions_class_name.sql', 'utf8').toLowerCase();
+const groupedAnswersMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_grouped_answers.sql', 'utf8').toLowerCase();
+const groupedAnswersSql = groupedAnswersMigration.replace(/--.*$/gm, '');
 
 for (const table of [
   'team_competitions',
@@ -34,6 +36,14 @@ assert.match(lower, /private\.team_competition_answer_keys/);
 assert.match(lower, /team_competition_sanitize_question/);
 assert.match(lower, /team_competition_score_question/);
 assert.match(lower, /team_competition_guard_team_update/);
+assert.match(lower, /jsonb_array_length\(input->'partanswercounts'\)/,
+  'Grouped answer counts must be recognized when saving questions.');
+assert.match(lower, /jsonb_array_length\(input->'partanswercounts'\)\s+in\s*\(1,\s*2,\s*4\)/,
+  'Only supported scoring-group counts may be stored for grouped questions.');
+assert.match(lower, /array_length\(part_counts,\s*1\),\s*0\)\s+in\s*\(1,\s*2,\s*4\)/,
+  'Server scoring must apply the same grouped-question limits as the client.');
+assert.match(lower, /grouped_correct_count::numeric\s*\/\s*array_length\(part_counts,\s*1\)/,
+  'Server scoring must normalize grouped questions by their number of scoring groups.');
 assert.match(lower, /alter table public\.team_competitions enable row level security/);
 assert.match(lower, /alter table public\.team_competition_attempts enable row level security/);
 assert.match(lower, /revoke all on private\.team_competition_answer_keys from public, anon, authenticated/);
@@ -52,5 +62,15 @@ assert.doesNotMatch(lower, /delete\s+from\s+public\.game_users/);
 assert.doesNotMatch(lower, /grant\s+.*team_competition_answer_keys\s+to\s+(public|anon|authenticated)/);
 assert.doesNotMatch(lower, /supabase_rls\.sql\s*\n\s*run/);
 assert.match(classNameMigration, /alter table public\.team_competitions\s+add column if not exists class_name text/);
+
+for (const fn of [
+  'private.team_competition_answer_count',
+  'private.team_competition_score_question',
+  'public.team_competition_save_questions'
+]) {
+  assert.match(groupedAnswersSql, new RegExp('create or replace function ' + fn.replaceAll('.', '\\.')), fn + ' grouped-answer patch is missing');
+}
+assert.doesNotMatch(groupedAnswersSql, /create table|alter table|create policy|drop policy|grant |revoke /,
+  'Grouped-answer patch must not change schema, RLS, or permissions.');
 
 console.log('team competition migration contract tests passed');

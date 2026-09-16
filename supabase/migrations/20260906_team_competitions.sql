@@ -167,6 +167,8 @@ IMMUTABLE
 AS $$
 DECLARE
     value_count INTEGER;
+    group_count INTEGER;
+    group_total INTEGER;
 BEGIN
     IF jsonb_typeof(input->'statements') = 'array' THEN
         SELECT count(*) INTO value_count FROM jsonb_array_elements(input->'statements');
@@ -174,6 +176,20 @@ BEGIN
         SELECT count(*) INTO value_count
         FROM unnest(regexp_split_to_array(coalesce(input->>'ans', ''), '[|,]')) AS part
         WHERE char_length(trim(part)) > 0;
+    END IF;
+    IF jsonb_typeof(input->'partAnswerCounts') = 'array'
+       AND jsonb_array_length(input->'partAnswerCounts') IN (1, 2, 4)
+       AND NOT EXISTS (
+           SELECT 1
+           FROM jsonb_array_elements(input->'partAnswerCounts') AS part(value)
+           WHERE jsonb_typeof(part.value) <> 'number'
+              OR (part.value #>> '{}') !~ '^[1-9][0-9]*$'
+       ) THEN
+        group_count := jsonb_array_length(input->'partAnswerCounts');
+        SELECT coalesce(sum((part.value #>> '{}')::INTEGER), 0)
+        INTO group_total
+        FROM jsonb_array_elements(input->'partAnswerCounts') AS part(value);
+        IF group_total = value_count THEN RETURN group_count; END IF;
     END IF;
     RETURN coalesce(value_count, 0);
 END;
@@ -253,7 +269,7 @@ BEGIN
         FROM jsonb_array_elements(question_key->'partAnswerCounts') WITH ORDINALITY;
     END IF;
 
-    IF coalesce(array_length(part_counts, 1), 0) = 4
+    IF coalesce(array_length(part_counts, 1), 0) IN (1, 2, 4)
        AND (SELECT coalesce(sum(value), 0) FROM unnest(part_counts) AS value) = expected_count
        AND expected_count > 0 THEN
         FOREACH group_size IN ARRAY part_counts LOOP
@@ -272,10 +288,10 @@ BEGIN
         END LOOP;
         supported := true;
         correct_count := grouped_correct_count;
-        score := grouped_correct_count::numeric / 4;
+        score := grouped_correct_count::numeric / array_length(part_counts, 1);
         RETURN jsonb_build_object(
-            'answerCount', 4, 'correctCount', correct_count,
-            'points', round(score, 6), 'isCorrect', correct_count = 4
+            'answerCount', array_length(part_counts, 1), 'correctCount', correct_count,
+            'points', round(score, 6), 'isCorrect', correct_count = array_length(part_counts, 1)
         );
     END IF;
 
