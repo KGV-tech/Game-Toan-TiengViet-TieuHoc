@@ -6,6 +6,7 @@ const sql = fs.readFileSync(file, 'utf8');
 const lower = sql.toLowerCase();
 const classNameMigration = fs.readFileSync('supabase/migrations/20260907_team_competitions_class_name.sql', 'utf8').toLowerCase();
 const groupedAnswersMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_grouped_answers.sql', 'utf8').toLowerCase();
+const uuidDefaultsMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_uuid_defaults.sql', 'utf8').toLowerCase();
 const groupedAnswersSql = groupedAnswersMigration.replace(/--.*$/gm, '');
 
 for (const table of [
@@ -72,5 +73,18 @@ for (const fn of [
 }
 assert.doesNotMatch(groupedAnswersSql, /create table|alter table|create policy|drop policy|grant |revoke /,
   'Grouped-answer patch must not change schema, RLS, or permissions.');
+
+for (const target of [
+  'team_competitions alter column id set default gen_random_uuid\\(\\)',
+  'team_competition_teams alter column id set default gen_random_uuid\\(\\)',
+  'team_competition_questions alter column id set default gen_random_uuid\\(\\)',
+  'team_competition_attempts alter column id set default gen_random_uuid\\(\\)',
+  'team_competition_attempts alter column session_id set default gen_random_uuid\\(\\)',
+  'team_competition_answers alter column id set default gen_random_uuid\\(\\)',
+  'team_competition_results alter column id set default gen_random_uuid\\(\\)'
+]) {
+  assert.match(uuidDefaultsMigration.replace(/\s+/g, ' '), new RegExp(`alter table public\\.${target}`), `UUID default patch is missing: ${target}`);
+}
+assert.doesNotMatch(uuidDefaultsMigration, /uuid_generate_v4/, 'UUID patch must not require uuid-ossp.');
 
 console.log('team competition migration contract tests passed');
