@@ -106,6 +106,15 @@ assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8 }, { id: 'b', score:
 assert.equal(team.getTeamRank({ teams: [{ id: 'a', score: 8, completedAt: 200 }, { id: 'b', score: 8, completedAt: 100 }] }, 'b'), 1);
 assert.equal(team.getRaceProgress(7.25), 0.725);
 assert.equal(team.getRaceQuarterSteps(7.25), 29);
+assert.deepEqual(team.getStadiumLaneAssignments(2).map(lane => lane.number), [3, 6]);
+assert.deepEqual(team.getStadiumLaneAssignments(3).map(lane => lane.number), [2, 4, 6]);
+assert.deepEqual(team.getStadiumLaneAssignments(4).map(lane => lane.number), [1, 3, 5, 7]);
+assert.deepEqual(team.getStadiumLaneAssignments(5).map(lane => lane.number), [2, 3, 4, 5, 6]);
+assert.deepEqual(team.getStadiumLaneAssignments(6).map(lane => lane.number), [2, 3, 4, 5, 6, 7]);
+assert.deepEqual(team.getStadiumLaneAssignments(7).map(lane => lane.number), [1, 2, 3, 4, 5, 6, 7]);
+assert.deepEqual(team.getStadiumLaneAssignments(8).map(lane => lane.number), [1, 2, 3, 4, 5, 6, 7, 8]);
+assert.deepEqual(team.getStadiumLaneAssignments(4).map(lane => lane.color), ['cyan', 'coral', 'green', 'blue']);
+assert.throws(() => team.getStadiumLaneAssignments(1), /between 2 and 8/);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'space-launch', presentationTeamIdentity: { 'team-1': 'rocket-3' } }).presentationTheme, 'space-launch');
 assert.ok(team.validateConfig({ ...validConfig, teamCount: 9 }, { students, exams }).errors.some(error => error.code === 'team_count_invalid'));
 

@@ -17,7 +17,17 @@
     });
     const STATUS_ORDER = Object.freeze([STATUS.DRAFT, STATUS.PREPARED, STATUS.ACTIVE, STATUS.ENDED]);
     const ATTEMPT_STATUS = Object.freeze({ ACTIVE: 'active', COMPLETED: 'completed', LOCKED: 'locked' });
-    const PRESENTATION_THEMES = Object.freeze({ SPEED_RACE: 'speed-race', SPACE_LAUNCH: 'space-launch' });
+    const PRESENTATION_THEMES = Object.freeze({ STADIUM_3D: 'stadium-3d', SPEED_RACE: 'speed-race', SPACE_LAUNCH: 'space-launch' });
+    const STADIUM_LANES = Object.freeze([
+        Object.freeze({ number: 1, color: 'cyan', vehicleSprite: 0 }),
+        Object.freeze({ number: 2, color: 'yellow', vehicleSprite: 1 }),
+        Object.freeze({ number: 3, color: 'coral', vehicleSprite: 2 }),
+        Object.freeze({ number: 4, color: 'violet', vehicleSprite: 3 }),
+        Object.freeze({ number: 5, color: 'green', vehicleSprite: 4 }),
+        Object.freeze({ number: 6, color: 'pink', vehicleSprite: 5 }),
+        Object.freeze({ number: 7, color: 'blue', vehicleSprite: 6 }),
+        Object.freeze({ number: 8, color: 'orange', vehicleSprite: 7 })
+    ]);
     const STORAGE_KEY = 'team_competitions_v1';
     const ATTEMPT_STORAGE_KEY = 'team_competition_attempts_v1';
     const EVENT_NAME = 'team-competition-updated';
@@ -349,7 +359,7 @@
             teamCount,
             teams,
             questionMode,
-            presentationTheme: Object.values(PRESENTATION_THEMES).includes(input.presentationTheme) ? input.presentationTheme : PRESENTATION_THEMES.SPEED_RACE,
+            presentationTheme: Object.values(PRESENTATION_THEMES).includes(input.presentationTheme) ? input.presentationTheme : PRESENTATION_THEMES.STADIUM_3D,
             presentationTeamIdentity,
             commonExamId: input.commonExamId || (questionMode === 'same' ? input.examId || teams[0]?.examId || null : null),
             timeLimitMinutes,
@@ -690,6 +700,23 @@
         return Math.round(Math.max(0, Math.min(10, Number(score || 0)) * 4));
     }
 
+    function getStadiumLaneAssignments(teamCount) {
+        const count = Number(teamCount);
+        if (!Number.isInteger(count) || count < 2 || count > STADIUM_LANES.length) {
+            throw new Error(`teamCount must be between 2 and ${STADIUM_LANES.length}`);
+        }
+        const balancedLaneNumbers = {
+            2: [3, 6],
+            3: [2, 4, 6],
+            4: [1, 3, 5, 7]
+        };
+        if (balancedLaneNumbers[count]) {
+            return balancedLaneNumbers[count].map(number => STADIUM_LANES[number - 1]);
+        }
+        const start = Math.floor((STADIUM_LANES.length - count) / 2);
+        return STADIUM_LANES.slice(start, start + count);
+    }
+
     function getTeamRank(competition, teamId) {
         const teams = Array.isArray(competition?.teams) ? competition.teams : [];
         const target = teams.find(team => String(team.id) === String(teamId));
@@ -1023,6 +1050,7 @@
         STATUS_ORDER,
         ATTEMPT_STATUS,
         PRESENTATION_THEMES,
+        STADIUM_LANES,
         STORAGE_KEY,
         ATTEMPT_STORAGE_KEY,
         normalizeClass,
@@ -1050,6 +1078,7 @@
         getTeamRank,
         getRaceProgress,
         getRaceQuarterSteps,
+        getStadiumLaneAssignments,
         store,
         attemptStore,
         subscribe,
