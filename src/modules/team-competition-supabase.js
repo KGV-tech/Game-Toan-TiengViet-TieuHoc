@@ -226,6 +226,12 @@
     function remoteError(error) {
         if (!error) return null;
         const text = `${error.code || ''} ${error.message || error.details || error.hint || error}`.trim();
+        if (String(error.code || '') === '42883' && /uuid_generate_v4/i.test(text)) {
+            const setupError = new Error('Máy chủ thi đua chưa có bản vá UUID. Hãy triển khai migration 20260916_team_competition_uuid_defaults.sql rồi thử lại.');
+            setupError.code = 'team_competition_uuid_setup_required';
+            setupError.cause = error;
+            return setupError;
+        }
         const result = new Error(text || 'Supabase request failed');
         result.code = error.code;
         result.details = error.details;
@@ -492,7 +498,13 @@
                     await invoke('team_competition_save_questions', { p_team_id: team.id, p_questions: copy(exam.questions) });
                 }
             }
-            if (candidate.status === api.STATUS.PREPARED) await this.prepareCompetition(candidate.id);
+            if (candidate.status === api.STATUS.PREPARED) {
+                await this.prepareCompetition(candidate.id);
+                // The initial upsert is intentionally a draft so its roster and
+                // questions can be written safely. Re-read after the prepare RPC:
+                // otherwise a realtime draft event can overwrite the local board.
+                await this.syncRemote({ silent: true });
+            }
             if (writeEpoch === state.lifecycleEpoch && state.enabled) {
                 state.error = null;
                 state.status = 'ready';

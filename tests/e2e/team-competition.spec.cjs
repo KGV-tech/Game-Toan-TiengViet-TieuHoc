@@ -71,16 +71,61 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await page.getByRole('button', { name: 'Đã chuẩn bị' }).click();
 
   await expect(page.locator('.team-competition-board')).toBeVisible();
+  await expect(page.locator('#treasure-modal')).toHaveClass(/team-board-fullscreen/);
+  await expect(page.locator('.team-status-pill--prepared')).toBeVisible();
   await expect(page.locator('.team-board-hero')).toBeVisible();
   await expect(page.locator('.team-board-summary')).toBeVisible();
   await expect(page.locator('.team-board-card')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
-  page.once('dialog', dialog => dialog.accept());
+  const startDialogs = [];
+  page.on('dialog', async dialog => {
+    startDialogs.push(dialog.message());
+    await dialog.dismiss();
+  });
   await page.getByRole('button', { name: 'Bắt đầu thi đua' }).click();
   await expect(page.locator('.team-status-pill--active')).toBeVisible();
+  await expect(page.locator('#treasure-modal')).toHaveClass(/team-board-fullscreen/);
+  expect(startDialogs).toEqual([]);
+  await expect(page.locator('.team-race-stadium')).toBeVisible();
+  await expect(page.locator('.team-race-scoreboard')).toBeVisible();
   await expect(page.locator('.team-race-lane')).toHaveCount(2);
+  await expect(page.locator('.team-race-lane__vehicle')).toHaveCount(2);
+  await expect(page.locator('.team-race-lane__track-tick')).toHaveCount(20);
   await expect(page.locator('.team-race-lane').first()).toContainText('0/10 điểm');
 });
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
+  test(`bảng trình chiếu đường đua vừa khung ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await openOfflineHomepage(page);
+    await page.evaluate(({ users, exam }) => {
+      app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+      app.data.users = users;
+      app.data.exams = [exam];
+      const match = app.teamCompetition.normalizeCompetition({
+        id: `presentation-${window.innerWidth}`, name: 'Đấu trường tri thức', classlevel: '5', teamCount: 2,
+        participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, status: app.teamCompetition.STATUS.ACTIVE,
+        startedAt: Date.now(), teams: [
+          { id: 'team-a', name: 'Đội Biển Xanh', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1', score: 7.5, submittedCount: 2, status: 'active' },
+          { id: 'team-b', name: 'Đội Ánh Dương', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3', score: 9, submittedCount: 2, status: 'completed' }
+        ]
+      });
+      app.teamCompetition.store.clear();
+      app.teamCompetition.store.upsert(match);
+      app.admin.openAdmin();
+      app.admin.openTeamCompetitionBoard(match.id);
+    }, { users: demoUsers(), exam: demoExam() });
+
+    await expect(page.locator('.team-race-stadium')).toBeVisible();
+    await expect(page.locator('.team-race-lane')).toHaveCount(2);
+    expect(await page.locator('.team-race-lane__vehicle').first().evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(48);
+    const dimensions = await page.locator('.team-competition-board').evaluate(node => ({
+      scrollHeight: node.scrollHeight,
+      clientHeight: node.clientHeight
+    }));
+    expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.clientHeight + 2);
+  });
+}
 
 test('mở form sau bảng trình chiếu vẫn cuộn được trong cửa sổ quản trị', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
@@ -239,6 +284,39 @@ test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên
   await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.excludedStudentUsernames)).toEqual(['hs4']);
   await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.flatMap(team => team.memberUsernames))).not.toContain('hs4');
   await expect(page.locator('.team-member-slot-select option[value="hs4"]')).toHaveCount(0);
+});
+
+test('trưởng nhóm nhận hướng dẫn triển khai khi máy chủ thiếu UUID thay vì lỗi PostgreSQL thô', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const dialogs = [];
+  page.on('dialog', async dialog => {
+    dialogs.push(dialog.message());
+    await dialog.accept();
+  });
+  await page.evaluate(({ users, exam }) => {
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.data.currentUser = { ...users[0] };
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'uuid-error-match', name: 'Trận UUID', classlevel: '5', teamCount: 2, participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: 'uuid-team-a', name: 'Nhóm A', memberUsernames: ['hs1'], leaderUsername: 'hs1' },
+        { id: 'uuid-team-b', name: 'Nhóm B', memberUsernames: ['hs2'], leaderUsername: 'hs2' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.teamCompetition.remote.configure({
+      from() { return { select() { return this; }, then(resolve) { return Promise.resolve({ data: [], error: null }).then(resolve); } }; },
+      rpc() { return Promise.resolve({ data: null, error: { code: '42883', message: 'function uuid_generate_v4() does not exist' } }); },
+      channel() { return { on() { return this; }, subscribe() { return this; } }; }
+    });
+    app.teamCompetition.remote.openLeaderAttempt(match.id);
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await expect.poll(() => dialogs.length).toBe(1);
+  expect(dialogs[0]).toContain('20260916_team_competition_uuid_defaults.sql');
+  expect(dialogs[0]).not.toContain('uuid_generate_v4');
 });
 
 test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trưởng nhóm từ thành viên đã chọn', async ({ page }) => {
