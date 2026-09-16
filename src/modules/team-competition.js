@@ -540,6 +540,36 @@
         return transitionStatus(input, STATUS.ENDED, at);
     }
 
+    function replayCompetition(input, at = Date.now()) {
+        const ended = normalizeCompetition(input);
+        if (ended.status !== STATUS.ENDED) throw new Error('Only ended competitions can be replayed');
+        const replayedAt = nowValue(at);
+        return normalizeCompetition({
+            ...ended,
+            id: makeId('match'),
+            status: STATUS.DRAFT,
+            createdAt: replayedAt,
+            updatedAt: replayedAt,
+            startedAt: null,
+            endedAt: null,
+            attempts: {},
+            results: [],
+            presentationTeamIdentity: {},
+            teams: ended.teams.map((team, index) => ({
+                ...team,
+                id: makeId(`team${index + 1}`),
+                status: 'pending',
+                score: 0,
+                submittedCount: 0,
+                correctCount: 0,
+                startedAt: null,
+                completedAt: null,
+                lockedAt: null,
+                durationSeconds: null
+            }))
+        });
+    }
+
     function calculateTeamScore(details, totalQuestions) {
         const list = Array.isArray(details) ? details : [];
         const denominator = Number(totalQuestions) > 0 ? Number(totalQuestions) : list.length;
@@ -1007,6 +1037,7 @@
         prepareCompetition,
         startCompetition,
         endCompetition,
+        replayCompetition,
         calculateTeamScore,
         assignTeamScoreToMembers,
         createAttempt,

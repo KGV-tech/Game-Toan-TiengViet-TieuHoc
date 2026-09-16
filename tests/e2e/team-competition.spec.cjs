@@ -82,6 +82,67 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-race-lane').first()).toContainText('0/10 điểm');
 });
 
+test('mở form sau bảng trình chiếu vẫn cuộn được trong cửa sổ quản trị', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'form-scroll-match', name: 'Trận cần soạn', classlevel: '5', teamCount: 2, participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: 'scroll-team-a', name: 'Nhóm A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+        { id: 'scroll-team-b', name: 'Nhóm B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.admin.openAdmin();
+    app.admin.openTeamCompetitionBoard(match.id);
+    app.admin.showAddTeamCompetitionForm();
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await expect(page.locator('.team-competition-form')).toBeVisible();
+  await expect(page.locator('#treasure-modal')).not.toHaveClass(/team-board-fullscreen/);
+  const scrollBox = page.locator('#treasure-content-area');
+  expect(await scrollBox.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
+  await scrollBox.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(page.getByRole('button', { name: 'Đã chuẩn bị' })).toBeVisible();
+});
+
+test('trận đã kết thúc có thể chơi lại bằng một bản nháp mới mà không mất kết quả cũ', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const snapshot = await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    const ended = app.teamCompetition.normalizeCompetition({
+      id: 'ended-replay-match', name: 'Trận đã xong', classlevel: '5', teamCount: 2, participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.ENDED, endedAt: Date.now(), results: [{ username: 'hs1', teamId: 'replay-team-a', individualScore: 8, teamRank: 1 }], teams: [
+        { id: 'replay-team-a', name: 'Nhóm A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1', score: 8, submittedCount: 2, status: 'completed' },
+        { id: 'replay-team-b', name: 'Nhóm B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3', score: 5, submittedCount: 2, status: 'completed' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(ended);
+    app.admin.openAdmin();
+    app.admin.switchTab('quests');
+    app.admin.switchQuestMode('team');
+    return ended;
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await page.getByRole('button', { name: 'Chơi lại' }).click();
+  await expect(page.locator('.team-competition-form')).toBeVisible();
+  const replayed = await page.evaluate(() => app.admin.teamCompetitionDraft);
+  expect(replayed).toMatchObject({ status: 'draft', name: 'Trận đã xong · Lượt 2', results: [] });
+  expect(replayed.id).not.toBe(snapshot.id);
+  expect(replayed.teams.map(team => team.id)).not.toEqual(snapshot.teams.map(team => team.id));
+  expect(replayed.teams.map(team => team.score)).toEqual([0, 0]);
+  expect(replayed.teams.map(team => team.submittedCount)).toEqual([0, 0]);
+  expect(await page.evaluate(id => app.teamCompetition.store.get(id), snapshot.id)).toMatchObject({ status: 'ended', results: snapshot.results });
+});
+
 test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openOfflineHomepage(page);
