@@ -53,6 +53,14 @@ Mọi thay đổi UI ưu tiên laptop và tablet ngang theo `docs/UX_DEVICE_POLI
 4. Codex tự review diff và xử lý các lỗi có bằng chứng, sau đó gửi commit lên nhánh riêng.
 5. Chỉ merge vào `main` khi các lỗi bắt buộc đã xử lý, kiểm thử xanh và người dùng đã cho phép.
 
+### GitHub delivery mặc định
+
+Người phụ trách dự án ủy quyền mặc định cho Codex, sau khi kiểm thử và self-review
+đạt, tự thực hiện tuần tự: push nhánh riêng → tạo Pull Request → merge vào `main`.
+Chỉ dừng để hỏi khi có lỗi test, xung đột, quyền GitHub thiếu, hoặc thay đổi vượt
+phạm vi đã giao. Các thao tác Supabase/production vẫn cần xác nhận riêng cho từng
+lần triển khai; cơ chế xác nhận an toàn của môi trường không bị thay thế bởi quy tắc này.
+
 ## Quy trình skill trước commit
 
 Trước khi triển khai, review hoặc commit bất kỳ thay đổi nào, đọc và làm theo

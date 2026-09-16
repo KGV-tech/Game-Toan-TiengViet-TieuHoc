@@ -4847,6 +4847,9 @@ input[type="text"], input[type="password"], select, textarea {
 }
 #treasure-modal .admin-content {
     padding-right: 4px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     scrollbar-color: rgba(92, 210, 235, .8) rgba(3, 17, 29, .5);
 }
 #treasure-modal .admin-content::-webkit-scrollbar-thumb {
@@ -5094,6 +5097,7 @@ input[type="text"], input[type="password"], select, textarea {
 .team-board-actions:empty { display: none; }
 .team-board-start { width: auto; min-width: 240px; margin: 14px 0 0; padding: 12px 18px; border: 1px solid rgba(255, 235, 129, .55); border-radius: 12px; background: linear-gradient(135deg, #f5c858, #e7744e); color: #2b1c0d; font-size: .82rem; text-transform: none; box-shadow: 0 10px 24px rgba(228, 131, 57, .25); }
 .team-board-end { min-width: 190px; margin-top: 14px; padding: 11px 16px; font-size: .76rem; text-transform: none; }
+.team-board-replay { min-width: 190px; margin-top: 14px; padding: 11px 16px; font-size: .76rem; text-transform: none; }
 .team-board-grid { grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 13px; margin-top: 18px; }
 .team-board-card { position: relative; gap: 11px; padding: 16px; border: 1px solid rgba(111, 160, 190, .32); border-radius: 16px; background: linear-gradient(145deg, rgba(12, 40, 59, .95), rgba(7, 24, 42, .97)); box-shadow: 0 10px 22px rgba(0, 0, 0, .24); }
 .team-board-card::before { position: absolute; top: 0; left: 16px; right: 16px; height: 2px; content: ''; background: linear-gradient(90deg, #52d4e9, transparent); }

@@ -6705,6 +6705,7 @@ const app = {
             else if (tab === 'quests') this.renderQuests(box);
         },
         switchQuestMode(mode) {
+            this.exitTeamCompetitionPresentation();
             this.questMode = mode === 'team' ? 'team' : 'personal';
             this.renderQuests(document.getElementById('treasure-content-area'));
         },
@@ -7141,8 +7142,25 @@ const app = {
             </section>`;
         },
         showAddTeamCompetitionForm(editId = null) {
+            this.exitTeamCompetitionPresentation();
             this.questMode = 'team';
             this.teamCompetitionDraft = editId ? app.teamCompetition?.store.get(editId) : null;
+            this.renderTeamCompetitionForm();
+        },
+        replayTeamCompetition(id) {
+            const match = app.teamCompetition?.store.get(id);
+            if (!match || match.status !== app.teamCompetition.STATUS.ENDED) return;
+            const baseName = String(match.name || 'Trận thi đua').replace(/\s·\sLượt\s\d+$/u, '').trim();
+            const nextRound = 1 + app.teamCompetition.store.list().filter(item => {
+                const name = String(item.name || '').trim();
+                return name === baseName || new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s·\\sLượt\\s\\d+$`, 'u').test(name);
+            }).length;
+            this.teamCompetitionDraft = {
+                ...app.teamCompetition.replayCompetition(match),
+                name: `${baseName} · Lượt ${nextRound}`
+            };
+            this.exitTeamCompetitionPresentation();
+            this.questMode = 'team';
             this.renderTeamCompetitionForm();
         },
         async saveTeamCompetitionDraft(asPrepared = false) {
@@ -7235,7 +7253,7 @@ const app = {
                 const durationLabel = match.timeLimitMinutes === null ? 'Không giới hạn' : `${match.timeLimitMinutes} phút`;
                 const action = match.status === app.teamCompetition.STATUS.DRAFT
                     ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button><button type="button" class="btn-success" onclick="app.admin.prepareTeamCompetition(decodeURIComponent('${token}'))">Đã chuẩn bị</button>`
-                    : `<button type="button" class="btn-primary" onclick="app.admin.openTeamCompetitionBoard(decodeURIComponent('${token}'))">Mở bảng</button>${match.status === app.teamCompetition.STATUS.PREPARED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button>` : ''}`;
+                    : `<button type="button" class="btn-primary" onclick="app.admin.openTeamCompetitionBoard(decodeURIComponent('${token}'))">Mở bảng</button>${match.status === app.teamCompetition.STATUS.PREPARED ? `<button type="button" class="btn-opt" onclick="app.admin.showAddTeamCompetitionForm(decodeURIComponent('${token}'))">Sửa</button>` : ''}${match.status === app.teamCompetition.STATUS.ENDED ? `<button type="button" class="btn-success" onclick="app.admin.replayTeamCompetition(decodeURIComponent('${token}'))">Chơi lại</button>` : ''}`;
                 html += `<article class="team-competition-list-item team-competition-list-item--${statusClass}"><div class="team-competition-list-item__body"><header class="team-match-heading"><span class="team-match-icon team-match-icon--${statusClass}" aria-hidden="true">${statusIcon}</span><div><p class="team-match-kicker">Trận thi đua · ${status}</p><h4>${app.data.sanitizeHTML(match.name || 'Trận chưa đặt tên')}</h4></div></header><div class="team-match-tags"><span>Lớp ${app.data.sanitizeHTML(match.classlevel)}${match.className ? ` · ${app.data.sanitizeHTML(match.className)}` : ''}</span><span>${match.teamCount} nhóm</span><span>${deliveryLabel}</span><span>${durationLabel}</span></div><div class="team-competition-list-teams" aria-label="Danh sách nhóm">${teamSummary}</div></div><div class="team-competition-list-meta"><div class="team-match-meta"><span class="team-status-pill team-status-pill--${statusClass}">${status}</span><small>Cập nhật ${updatedLabel}</small></div><div class="team-list-actions">${action}<button type="button" class="btn-danger" onclick="app.admin.deleteTeamCompetition(decodeURIComponent('${token}'))">Xóa</button></div></div></article>`;
             });
             box.innerHTML = html + '</div></section>';
@@ -7248,6 +7266,11 @@ const app = {
             if (!box || !match) return;
             document.getElementById('treasure-modal')?.classList.add('team-board-fullscreen');
             this.renderTeamCompetitionBoard(box, match.id);
+        },
+        exitTeamCompetitionPresentation() {
+            this.stopTeamCompetitionBoardTimer();
+            document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
+            if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
         },
         renderTeamCompetitionBoard(box, id) {
             this.stopTeamCompetitionBoardTimer();
@@ -7284,7 +7307,7 @@ const app = {
             }).join('');
             const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
                 ? `<button type="button" class="btn-start-massive team-board-start" onclick="app.admin.startTeamCompetition(decodeURIComponent('${token}'))">Bắt đầu thi đua</button>`
-                : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : '');
+                : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : (match.status === app.teamCompetition.STATUS.ENDED ? `<button type="button" class="btn-success team-board-replay" onclick="app.admin.replayTeamCompetition(decodeURIComponent('${token}'))">Chơi lại</button>` : ''));
             const statusClass = ['draft', 'prepared', 'active', 'ended'].includes(match.status) ? match.status : 'draft';
             const totalQuestions = match.teams.reduce((max, team) => Math.max(max, app.teamCompetition.getExamForTeam(match, team)?.questions?.length || 0), 0);
             const rankedTeams = [...match.teams].sort((left, right) => app.teamCompetition.getTeamRank(match, left.id) - app.teamCompetition.getTeamRank(match, right.id));
