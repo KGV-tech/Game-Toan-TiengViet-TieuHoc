@@ -7229,11 +7229,15 @@ const app = {
                 active: countByStatus(app.teamCompetition.STATUS.ACTIVE),
                 ended: countByStatus(app.teamCompetition.STATUS.ENDED)
             };
+            const remoteReady = remote?.isReady?.();
+            const realtimeReady = remote?.isRealtimeReady?.() ?? remote?.realtime === 'connected';
             const adapterNotice = !remote?.enabled
                 ? '<div class="team-local-adapter-notice">Đang chạy chế độ local/demo vì Supabase chưa được nạp. Khi đăng nhập thật, dữ liệu sẽ được đồng bộ qua migration thi đua nhóm.</div>'
-                : (remote.isReady?.()
+                : (remoteReady && realtimeReady
                     ? '<div class="team-remote-status-notice team-remote-status-notice--ready">Đã kết nối dữ liệu thi đua nhóm và realtime Supabase.</div>'
-                    : '<div class="team-remote-status-notice team-remote-status-notice--warning">Chưa đồng bộ được backend thi đua nhóm. Kiểm tra migration/RLS và kết nối trước khi bắt đầu trận.</div>');
+                    : (remoteReady
+                        ? '<div class="team-remote-status-notice team-remote-status-notice--warning">Đã kết nối lưu dữ liệu thi đua nhóm; realtime đang tạm thời không khả dụng. Lưu bản nháp vẫn dùng đường REST của Supabase.</div>'
+                        : '<div class="team-remote-status-notice team-remote-status-notice--warning">Chưa đồng bộ được backend thi đua nhóm. Kiểm tra migration/RLS và kết nối trước khi bắt đầu trận.</div>'));
             const overviewCards = [
                 { key: 'all', label: 'Tổng trận', value: competitions.length, note: 'Tất cả bản soạn', tone: 'cyan' },
                 { key: 'draft', label: 'Bản nháp', value: statusCounts.draft, note: 'Đang chuẩn bị', tone: 'slate' },
