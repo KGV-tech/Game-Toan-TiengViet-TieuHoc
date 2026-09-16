@@ -94,6 +94,38 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-race-lane').first()).toContainText('0/10 điểm');
 });
 
+test('lỗi Realtime không chặn REST và được báo đúng trên dashboard', async ({ page }) => {
+  await openOfflineHomepage(page);
+  await page.evaluate(() => {
+    window.supabase = {};
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.teamCompetition.remote.configure({
+      from() {
+        const result = { data: [], error: null };
+        return {
+          select() { return this; },
+          range() { return this; },
+          eq() { return this; },
+          then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); }
+        };
+      },
+      rpc() { return Promise.resolve({ data: null, error: null }); },
+      channel() {
+        return {
+          on() { return this; },
+          subscribe(callback) { callback('CHANNEL_ERROR'); return this; }
+        };
+      }
+    });
+    return app.teamCompetition.remote.syncRemote({ silent: true }).then(() => {
+      app.admin.renderTeamCompetitions(document.getElementById('treasure-content-area'));
+    });
+  });
+
+  await expect(page.locator('.team-remote-status-notice')).toContainText('realtime đang tạm thời không khả dụng');
+  await expect(page.locator('.team-remote-status-notice')).toContainText('Lưu bản nháp vẫn dùng đường REST');
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
   test(`bảng trình chiếu đường đua vừa khung ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);

@@ -289,16 +289,23 @@
     function installRealtime() {
         if (!state.client?.channel || state.channel) return;
         try {
+            const realtimeEpoch = state.lifecycleEpoch;
+            state.realtime = 'connecting';
+            remote.realtime = state.realtime;
             let channel = state.client.channel('team-competition-live');
             ['team_competitions', 'team_competition_teams', 'team_competition_members', 'team_competition_questions', 'team_competition_attempts', 'team_competition_answers', 'team_competition_results'].forEach(table => {
                 channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleSync);
             });
             state.channel = channel.subscribe(status => {
+                if (realtimeEpoch !== state.lifecycleEpoch || !state.enabled) return;
                 if (status === 'SUBSCRIBED') state.realtime = 'connected';
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') state.realtime = 'error';
+                else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') state.realtime = 'error';
+                else if (status === 'CLOSED') state.realtime = 'disconnected';
+                remote.realtime = state.realtime;
             });
         } catch (error) {
             state.realtime = 'error';
+            remote.realtime = state.realtime;
             console.warn('Không thể đăng ký realtime thi đua nhóm:', error);
         }
     }
@@ -337,6 +344,7 @@
         status: 'offline',
         realtime: 'disconnected',
         isReady() { return state.enabled && state.status === 'ready'; },
+        isRealtimeReady() { return state.enabled && state.realtime === 'connected'; },
         getStatus() { return state.status; },
         getError() { return state.error; },
         getSaveErrorMessage() {
@@ -346,11 +354,21 @@
                 && /\bpresentation_(theme|team_identity)\b/.test(detail);
             const unsupportedGroupedAnswers = error?.code === 'P0001'
                 && /\bunsupported_question_answer_count\b/.test(detail);
+            const missingUuidDefaults = error?.code === 'team_competition_uuid_setup_required'
+                || (error?.code === '42883' && /\buuid_generate_v4\b/i.test(detail));
+            const permissionDenied = ['401', '403', '42501'].includes(String(error?.code || ''))
+                || /(permission denied|row-level security|not authorized|jwt|auth session)/i.test(detail);
             if (missingPresentation) {
                 return 'Không thể lưu trận thi đua vì Supabase còn thiếu cột cấu hình giao diện. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260915_team_competition_presentations.sql vào đúng dự án Supabase, rồi thử lưu lại.';
             }
             if (unsupportedGroupedAnswers) {
                 return 'Không thể lưu trận thi đua vì Supabase chưa hỗ trợ câu hỏi có nhiều đáp án trong cùng một ý. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260916_team_competition_grouped_answers.sql vào đúng dự án Supabase, rồi thử lưu lại.';
+            }
+            if (missingUuidDefaults) {
+                return 'Không thể lưu trận thi đua vì Supabase chưa có cấu hình UUID cần thiết. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260916_team_competition_uuid_defaults.sql vào đúng dự án Supabase, rồi thử lưu lại.';
+            }
+            if (permissionDenied) {
+                return 'Không thể lưu trận thi đua vì phiên đăng nhập Admin hoặc quyền RLS trên Supabase không hợp lệ. Bản nháp vẫn được giữ trên máy. Hãy đăng nhập lại bằng tài khoản Admin và kiểm tra policy của đúng dự án Supabase.';
             }
             return 'Không thể lưu trận thi đua lên Supabase. Bản nháp vẫn được giữ trên máy; hãy kiểm tra kết nối và cấu hình Supabase rồi thử lại.';
         },

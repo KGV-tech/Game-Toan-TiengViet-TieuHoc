@@ -51,6 +51,8 @@ const rows = {
 let writeError = null;
 let prepareError = null;
 let groupedAnswerError = null;
+let uuidError = null;
+let realtimeStatus = null;
 const savedRows = [];
 const rpcCalls = [];
 
@@ -81,11 +83,22 @@ const client = {
     if (name === 'team_competition_save_questions' && groupedAnswerError) {
       return Promise.resolve({ data: null, error: groupedAnswerError });
     }
+    if (name === 'team_competition_save_questions' && uuidError) {
+      return Promise.resolve({ data: null, error: uuidError });
+    }
     if (name === 'team_competition_prepare') return Promise.resolve({ data: null, error: prepareError });
     if (name === 'team_competition_start_attempt') return Promise.resolve({ data: null, error: null });
     return Promise.resolve({ data: null, error: null });
   },
-  channel() { return { on() { return this; }, subscribe() { return this; } }; }
+  channel() {
+    return {
+      on() { return this; },
+      subscribe(callback) {
+        if (realtimeStatus) callback(realtimeStatus);
+        return this;
+      }
+    };
+  }
 };
 
 api.remote.configure(client);
@@ -147,6 +160,7 @@ assert.equal(api.remote.getStatus(), 'pending');
     await api.remote.flush();
     assert.doesNotMatch(api.remote.getSaveErrorMessage(), /20260915/);
     assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
+    if (error.code === '42501') assert.match(api.remote.getSaveErrorMessage(), /quyền|phiên đăng nhập/i);
   }
 
   app.data.exams = [{
@@ -176,5 +190,28 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.equal(api.store.get(groupedDraft.id).commonExamId, 'exam-grouped-answers');
   assert.match(api.remote.getSaveErrorMessage(), /20260916_team_competition_grouped_answers\.sql/);
   assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
+
+  groupedAnswerError = null;
+  uuidError = { code: '42883', message: 'function uuid_generate_v4() does not exist' };
+  api.store.upsert({
+    ...draft,
+    id: 'uuid-save-draft',
+    commonExamId: 'exam-grouped-answers',
+    teams: draft.teams.map(team => ({ ...team, examId: 'exam-grouped-answers' }))
+  });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'error');
+  assert.match(api.remote.getSaveErrorMessage(), /20260916_team_competition_uuid_defaults\.sql/);
+  assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
+
+  realtimeStatus = 'CHANNEL_ERROR';
+  api.remote.shutdown();
+  api.remote.configure(client);
+  assert.equal(api.remote.realtime, 'error');
+  assert.equal(api.remote.isRealtimeReady(), false);
+  uuidError = null;
+  api.store.upsert({ ...draft, id: 'realtime-fallback-draft' });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'ready', 'a Realtime failure must not block REST draft persistence');
   console.log('team competition Supabase adapter contract tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
