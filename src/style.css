@@ -3489,7 +3489,10 @@ input[type="text"], input[type="password"], select, textarea {
 .template-library-card--amber { border-color: #f6bb47; border-bottom-color: #ad6d08; background: linear-gradient(145deg, rgba(82, 57, 20, .86), rgba(22, 31, 33, .96)); color: #ffd15a; }
 .template-library-card--cyan { border-color: #51e0f5; border-bottom-color: #0e92ab; background: linear-gradient(145deg, rgba(10, 80, 97, .86), rgba(8, 32, 49, .96)); color: #57e3f5; }
 .template-library-card--green { border-color: #71e6b1; border-bottom-color: #218c69; background: linear-gradient(145deg, rgba(20, 82, 72, .86), rgba(8, 36, 45, .96)); color: #8ff1c5; }
+.template-library-card--coral { border-color: #ff9b8b; border-bottom-color: #b84d42; background: linear-gradient(145deg, rgba(105, 48, 45, .88), rgba(43, 25, 40, .96)); color: #ffad9e; }
+.template-library-card--indigo { border-color: #8aa6ff; border-bottom-color: #405eae; background: linear-gradient(145deg, rgba(37, 57, 121, .88), rgba(18, 27, 62, .96)); color: #a9c0ff; }
 .template-library-card--violet { border-color: #bd9cff; border-bottom-color: #7950b7; background: linear-gradient(145deg, rgba(60, 47, 107, .88), rgba(23, 27, 58, .96)); color: #c4a1ff; }
+.template-library-card--fuchsia { border-color: #ff9de4; border-bottom-color: #b5488e; background: linear-gradient(145deg, rgba(103, 40, 93, .88), rgba(49, 22, 64, .96)); color: #ffb4eb; }
 .template-library-card__header { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
 .template-library-card__icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border: 1px solid rgba(255, 255, 255, .38); border-radius: 12px; background: rgba(255, 255, 255, .2); color: #092038; font-size: 1.15rem; font-weight: 950; }
 .template-library-card__heading { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 7px; }

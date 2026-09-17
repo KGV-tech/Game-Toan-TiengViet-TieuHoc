@@ -167,6 +167,26 @@ test('Kho template dùng thẻ trực quan, có tạo mới và Preview khung c�
   await expect(page.locator('#template-preview-dialog')).toBeHidden();
 });
 
+test('bảy loại cấu hình câu hỏi có bảy tông màu thẻ riêng biệt', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  await page.evaluate(() => {
+    const questionTypes = ['Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
+    app.data.currentUser = { username: 'teacher', fullname: 'Cô giáo Minh', role: 'admin' };
+    app.data.questionTemplates = questionTypes.map((question_type, index) => ({
+      id: `tone-${index}`, name: question_type, classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1',
+      topic: '1. Ôn tập và bổ sung', question_type, generator_key: 'number.digit_at_place', prompt_template: '{question}', config: {}, is_active: true
+    }));
+    app.admin.openComposer('templates');
+  });
+
+  const expectedTones = ['amber', 'cyan', 'green', 'coral', 'indigo', 'violet', 'fuchsia'];
+  for (const [index, tone] of expectedTones.entries()) {
+    await expect(page.locator(`[data-template-card-index="${index}"]`)).toHaveClass(new RegExp(`template-library-card--${tone}`));
+  }
+});
+
 test('Template lập số dùng câu hỏi chung và công thức câu con trực quan', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
