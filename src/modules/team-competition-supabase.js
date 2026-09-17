@@ -596,7 +596,7 @@
                     questModal.style.display = 'none';
                     questModal.classList.remove('active');
                 }
-                app.router?.open('team-competition-play-screen');
+                api.openLeaderPracticeSurface?.(competition, team);
                 if (attempt.status === api.ATTEMPT_STATUS.ACTIVE) api.renderLeaderQuestion();
                 else api.renderLeaderLocked('Lượt của đội đã được khóa trước đó.');
                 return attempt;
@@ -613,10 +613,10 @@
             const questions = api.getQuestionsForTeam(competition, team);
             const index = Number(attempt.currentIndex || 0);
             const question = questions[index];
-            if (!question || typeof app.exam?.readQuestionAnswer !== 'function') return;
-            const selected = app.exam.readQuestionAnswer(question, index);
+            const selected = api.readLeaderAnswer?.(question, index);
+            if (!question || selected === null || selected === undefined || selected === '') return;
             state.submitPending = true;
-            const button = document.getElementById('team-play-submit');
+            const button = document.getElementById('submit-ans-btn') || document.getElementById('team-play-submit');
             if (button) button.disabled = true;
             try {
                 const data = await invoke('team_competition_submit_answer', {

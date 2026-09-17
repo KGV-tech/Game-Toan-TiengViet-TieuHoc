@@ -841,7 +841,96 @@
         return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
     }
 
+    function getTeamSubject(competition, team) {
+        const subject = String(getExamForTeam(competition, team)?.subject || '').trim().toLocaleLowerCase('vi-VN');
+        return subject.includes('việt') ? 'vietnamese' : 'math';
+    }
+
+    function openLeaderPracticeSurface(competition, team) {
+        if (typeof document === 'undefined') return;
+        const subject = getTeamSubject(competition, team);
+        if (app.router) {
+            app.router.open('game-screen');
+            const gameScreen = document.getElementById('game-screen');
+            if (gameScreen) gameScreen.className = `screen station-screen active ${subject === 'vietnamese' ? 'theme-vietnamese' : 'theme-math'}`;
+            app.router.openGameView('game-play-view');
+        }
+        const view = document.getElementById('game-play-view');
+        view?.classList.add('team-competition-leader-mode');
+        const back = document.getElementById('game-btn-back');
+        if (back) {
+            back.onclick = () => api.requestLeaderExit('exit');
+            back.setAttribute('aria-label', 'Thoát lượt đội nhóm');
+            back.style.display = 'inline-grid';
+        }
+    }
+
+    function updateLeaderPracticeSidebar(competition, team, attempt) {
+        if (typeof document === 'undefined') return;
+        const info = document.getElementById('game-player-info');
+        const status = document.getElementById('game-practice-status');
+        const subject = getTeamSubject(competition, team) === 'vietnamese' ? 'TIẾNG VIỆT' : 'TOÁN';
+        const classLevel = String(competition?.classlevel || '').replace(/^Lớp\s*/i, '').trim() || '—';
+        if (info) {
+            const matchName = document.createElement('strong');
+            matchName.className = 'team-leader-match-name';
+            matchName.textContent = competition?.name || 'Trận thi đua';
+            const teamName = document.createElement('span');
+            teamName.className = 'team-leader-team-name';
+            teamName.textContent = team?.name || 'Nhóm thi đua';
+            info.replaceChildren(matchName, teamName);
+            info.setAttribute('aria-label', `Trận ${matchName.textContent}, ${teamName.textContent}`);
+        }
+        if (status) {
+            const participants = document.createElement('span');
+            participants.textContent = 'Các bạn đang tham gia';
+            const competitionLabel = document.createElement('strong');
+            competitionLabel.textContent = 'THI ĐUA NHÓM';
+            const subjectLabel = document.createElement('small');
+            subjectLabel.textContent = `MÔN ${subject} LỚP ${classLevel}`;
+            status.replaceChildren(participants, competitionLabel, subjectLabel);
+        }
+        const score = document.getElementById('game-score');
+        if (score) score.textContent = Number(attempt?.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+    }
+
+    function setLeaderSubmitButton(disabled = false) {
+        const submit = typeof document !== 'undefined' ? document.getElementById('submit-ans-btn') : null;
+        if (!submit) return;
+        submit.disabled = disabled;
+        submit.onclick = () => api.submitCurrentQuestion();
+        submit.setAttribute('aria-label', 'Nộp câu trả lời');
+        const label = document.getElementById('submit-ans-text');
+        if (label) label.textContent = 'Nộp câu trả lời';
+    }
+
+    function readLeaderAnswer(question, index) {
+        if (app.game?.state?.teamCompetition) return app.game.state.selectedAns;
+        return app.exam?.readQuestionAnswer?.(question, index);
+    }
+
     function renderLeaderLocked(message) {
+        const attempt = api.state.activeAttempt;
+        const competition = store.get(attempt?.competitionId);
+        const team = competition?.teams.find(item => String(item.id) === String(attempt?.teamId));
+        if (competition && team && typeof document !== 'undefined') {
+            openLeaderPracticeSurface(competition, team);
+            updateLeaderPracticeSidebar(competition, team, attempt);
+            const questionContainer = document.getElementById('game-question-container');
+            const optionsContainer = document.getElementById('game-options-container');
+            if (questionContainer) {
+                questionContainer.className = 'question-box team-leader-locked-panel';
+                questionContainer.innerHTML = '<div><strong>Lượt nhóm đã khóa</strong><p>Các câu đã nộp vẫn được tính điểm; câu chưa nộp tính 0. Không thể làm tiếp.</p></div>';
+            }
+            if (optionsContainer) optionsContainer.replaceChildren();
+            setLeaderSubmitButton(true);
+            const back = document.getElementById('game-btn-back');
+            if (back) {
+                back.onclick = () => { if (app.router) app.router.open('map-screen'); };
+                back.setAttribute('aria-label', 'Về bản đồ');
+            }
+            return;
+        }
         const container = typeof document !== 'undefined' ? document.getElementById('team-play-question-container') : null;
         const notice = typeof document !== 'undefined' ? document.getElementById('team-play-lock-notice') : null;
         const submit = typeof document !== 'undefined' ? document.getElementById('team-play-submit') : null;
@@ -856,6 +945,10 @@
     }
 
     function updatePlayHeader(competition, team, attempt, questionCount) {
+        if (typeof document !== 'undefined' && document.getElementById('game-play-view')?.classList.contains('team-competition-leader-mode')) {
+            updateLeaderPracticeSidebar(competition, team, attempt);
+            return;
+        }
         if (typeof document === 'undefined') return;
         const title = document.getElementById('team-play-title');
         const teamLabel = document.getElementById('team-play-team');
@@ -871,12 +964,15 @@
 
     function startPlayTimer(competition) {
         clearPlayTimer();
-        const timer = typeof document !== 'undefined' ? document.getElementById('team-play-timer') : null;
+        const timer = typeof document !== 'undefined'
+            ? (document.getElementById('hard-timer-display') || document.getElementById('team-play-timer'))
+            : null;
         if (!timer || competition.timeLimitMinutes === null) {
             if (timer) timer.hidden = true;
             return;
         }
         timer.hidden = false;
+        timer.style.display = 'inline';
         const deadline = Number(competition.startedAt || Date.now()) + Number(competition.timeLimitMinutes) * 60 * 1000;
         const tick = () => {
             const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -903,6 +999,29 @@
         }
         const index = attempt.currentIndex;
         const question = questions[index];
+        if (app.game?.loadQuestion) {
+            openLeaderPracticeSurface(competition, team);
+            app.game.state = {
+                ...app.game.state,
+                subject: getTeamSubject(competition, team),
+                difficulty: 'normal',
+                questions,
+                currentIdx: index,
+                score: Number(attempt.score || 0),
+                selectedAns: null,
+                multipleChoiceSelections: null,
+                trueFalseSelections: null,
+                answerSubmitted: false,
+                finished: false,
+                examName: '',
+                teamCompetition: true
+            };
+            app.game.loadQuestion();
+            updateLeaderPracticeSidebar(competition, team, attempt);
+            setLeaderSubmitButton(false);
+            startPlayTimer(competition);
+            return;
+        }
         const container = typeof document !== 'undefined' ? document.getElementById('team-play-question-container') : null;
         const notice = typeof document !== 'undefined' ? document.getElementById('team-play-lock-notice') : null;
         const submit = typeof document !== 'undefined' ? document.getElementById('team-play-submit') : null;
@@ -937,7 +1056,7 @@
                 alert('Lượt trước đã bị khóa vì rời/refresh trình duyệt giữa chừng. Các câu đã nộp vẫn được tính điểm.');
                 api.state.activeCompetitionId = competition.id;
                 api.state.activeAttempt = locked;
-                if (app.router) app.router.open('team-competition-play-screen');
+                openLeaderPracticeSurface(competition, team);
                 renderLeaderLocked('Lượt trước đã bị khóa do refresh/đóng tab. Không thể làm tiếp.');
                 return locked;
             }
@@ -954,7 +1073,7 @@
                     questModal.classList.remove('active');
                 }
             }
-            if (app.router) app.router.open('team-competition-play-screen');
+            openLeaderPracticeSurface(competition, team);
             if (attempt.status === ATTEMPT_STATUS.ACTIVE) renderLeaderQuestion();
             else renderLeaderLocked('Lượt của nhóm đã được khóa trước đó.');
             return attempt;
@@ -1042,8 +1161,8 @@
         const questions = getQuestionsForTeam(competition, team);
         const index = attempt.currentIndex;
         const question = questions[index];
-        if (!question || typeof app.exam?.readQuestionAnswer !== 'function') return;
-        const selected = app.exam.readQuestionAnswer(question, index);
+        const selected = readLeaderAnswer(question, index);
+        if (!question || selected === null || selected === undefined || selected === '') return;
         const scoreResult = typeof app.game?.calculateQuestionScore === 'function'
             ? app.game.calculateQuestionScore(question, selected)
             : { points: app.exam.isAnswerCorrect(question, selected) ? 1 : 0, isCorrect: app.exam.isAnswerCorrect(question, selected) };
@@ -1139,6 +1258,9 @@
         lockActiveAttempt,
         renderLeaderQuestion,
         renderLeaderLocked,
+        openLeaderPracticeSurface,
+        readLeaderAnswer,
+        setLeaderSubmitButton,
         installBeforeUnload,
         removeBeforeUnload,
         clearPlayTimer,
