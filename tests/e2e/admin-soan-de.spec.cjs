@@ -46,7 +46,7 @@ test('Admin mở Soạn Đề với quick start, thẻ thống kê và ngữ c�
   await expect(page.locator('#admin-compose-class')).toHaveCount(0);
   await expect(page.locator('#admin-compose-continue')).toHaveCount(0);
   await expect(page.locator('.admin-compose-quickstart-card')).toHaveCount(3);
-  await expect(page.getByRole('button', { name: /Soạn template/ }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Soạn Cấu hình Câu hỏi/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn câu hỏi/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn Đề/ }).first()).toBeVisible();
   await expect(page.locator('.admin-compose-card')).toHaveCount(3);
@@ -136,12 +136,15 @@ test('Kho template dùng thẻ trực quan, có tạo mới và Preview khung c�
   });
 
   await expect(page.locator('.template-library')).toBeVisible();
+  await expect(page.locator('#admin-compose-module-title')).toHaveText('Cấu hình Câu hỏi');
+  await expect(page.locator('#template-library-title')).toHaveText('Kho Cấu hình Câu hỏi');
+  await expect(page.locator('#btn-template-create')).toHaveText(/Tạo cấu hình câu hỏi mới/i);
   await expect(page.locator('.template-library-card')).toHaveCount(1);
   await expect(page.locator('#btn-template-create')).toBeVisible();
   await expect(page.locator('.template-library-card h4')).toHaveText('Nhận biết chữ số theo hàng');
 
   await page.locator('#btn-template-create').click();
-  await expect(page.locator('#template-editor-title')).toHaveText('Tạo template mới');
+  await expect(page.locator('#template-editor-title')).toHaveText('Tạo cấu hình câu hỏi mới');
   await expect(page.locator('#template-example')).not.toContainText('Giao diện khi học sinh làm bài');
   await expect(page.locator('.template-editor__preview-image')).toHaveCount(0);
   await expect(page.locator('#template-preview-open')).toBeVisible();
