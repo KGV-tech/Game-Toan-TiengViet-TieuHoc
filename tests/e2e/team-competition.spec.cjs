@@ -54,6 +54,7 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
   await expect(page.locator('.team-form-hero')).toBeVisible();
   await expect(page.locator('.team-form-step')).toHaveCount(3);
+  await expect(page.locator('#team-comp-common-exam')).toHaveCSS('background-color', 'rgb(5, 28, 48)');
   await page.locator('#team-comp-name').fill('Trận Toán khởi động');
   await page.locator('#team-comp-common-exam').selectOption('exam-team');
   await page.locator('.team-target-count').nth(0).fill('3');
@@ -81,6 +82,12 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-board-members__list').first()).toContainText('Học sinh 1');
   expect(await page.locator('.team-board-members__leader').first().evaluate(node => Number.parseFloat(getComputedStyle(node.querySelector('strong')).fontSize))).toBeGreaterThanOrEqual(16);
   await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
+  const preparedLayout = await page.locator('.team-competition-board').evaluate(board => {
+    const hero = board.querySelector('.team-board-hero').getBoundingClientRect();
+    const cards = [...board.querySelectorAll('.team-board-card')].map(card => card.getBoundingClientRect());
+    return cards.every(card => hero.bottom <= card.top || hero.top >= card.bottom);
+  });
+  expect(preparedLayout).toBe(true);
   const startDialogs = [];
   page.on('dialog', async dialog => {
     startDialogs.push(dialog.message());
@@ -173,8 +180,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
       };
     });
     expect(vehiclePosition.startLineOffset).toBeLessThanOrEqual(2);
-    expect(vehiclePosition.verticalOffset).toBeLessThan(-vehiclePosition.laneHeight * .8);
-    expect(vehiclePosition.verticalOffset).toBeGreaterThan(-vehiclePosition.laneHeight * 1.2);
+    expect(Math.abs(vehiclePosition.verticalOffset)).toBeLessThanOrEqual(2);
     const dimensions = await page.locator('.team-competition-board').evaluate(node => ({
       scrollHeight: node.scrollHeight,
       clientHeight: node.clientHeight
@@ -217,6 +223,8 @@ test('bảng xếp hạng đường đua hiển thị 8 cột và đổi hạng 
   expect(await entries.evaluateAll(nodes => nodes.map(node => node.querySelector('strong').textContent))).toEqual(['Đội B', 'Đội G', 'Đội C', 'Đội E', 'Đội A', 'Đội F', 'Đội H', 'Đội D']);
   expect(await entries.evaluateAll(nodes => nodes.map(node => node.dataset.rank))).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
   expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).getPropertyValue('--leaderboard-accent').trim()))).toEqual(['#fee732', '#2494fd', '#fe6b5e', '#35d063', '#25e1fc', '#fc78bc', '#fd8d2f', '#a963fa']);
+  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundImage))).toEqual(Array(8).fill('none'));
+  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor))).toEqual(['rgb(254, 231, 50)', 'rgb(36, 148, 253)', 'rgb(254, 107, 94)', 'rgb(53, 208, 99)', 'rgb(37, 225, 252)', 'rgb(252, 120, 188)', 'rgb(253, 141, 47)', 'rgb(169, 99, 250)']);
   expect(await page.locator('.team-race-scoreboard ol').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(8);
   await expect(entries.nth(0)).toHaveClass(/team-race-scoreboard__entry--yellow/);
 
@@ -541,15 +549,16 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
     await page.locator('#team-comp-name').fill('Trận thử lưu lại');
     await page.locator('#team-comp-common-exam').selectOption('exam-team');
-    await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(0);
-    await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('stadium-3d');
+    await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(10);
+    await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('speed-race');
+    await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(9);
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
     await expect.poll(() => dialogs.length).toBe(1);
     expect(dialogs[0]).toContain('20260915_team_competition_presentations.sql');
     await expect(page.locator('.team-form-hero')).toBeVisible();
     await expect(page.locator('#team-comp-name')).toHaveValue('Trận thử lưu lại');
     await expect.poll(() => page.evaluate(() => app.teamCompetition.store.list())).toMatchObject([
-      { name: 'Trận thử lưu lại', presentationTheme: 'stadium-3d' }
+      { name: 'Trận thử lưu lại', presentationTheme: 'speed-race' }
     ]);
     await page.evaluate(() => { window.saveTest.error = null; });
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
@@ -564,7 +573,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     expect(saved.status).toBe('ready');
     expect(saved.rows).toHaveLength(2);
     expect(saved.rows[1].id).toBe(saved.rows[0].id);
-    expect(saved.rows[1].presentation_theme).toBe('stadium-3d');
+    expect(saved.rows[1].presentation_theme).toBe('speed-race');
     expect(saved.matches).toHaveLength(1);
     expect(saved.matches[0].name).toBe('Trận thử lưu lại');
   });

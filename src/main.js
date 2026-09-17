@@ -7049,7 +7049,7 @@ const app = {
                 excludedStudentUsernames,
                 questionMode,
                 commonExamId: document.getElementById('team-comp-common-exam')?.value || draft.commonExamId || null,
-                presentationTheme: document.getElementById('team-comp-presentation-theme')?.value || draft.presentationTheme || 'stadium-3d',
+                presentationTheme: document.getElementById('team-comp-presentation-theme')?.value || draft.presentationTheme || 'speed-race',
                 timeLimitMinutes: hasTimer && Number.isInteger(minutes) && minutes > 0 ? minutes : null,
                 status: draft.status || app.teamCompetition.STATUS.DRAFT
             });
@@ -7129,6 +7129,8 @@ const app = {
             }).join('');
             const sameExam = draft.commonExamId || exams[0]?.id || '';
             const statusLabel = app.teamCompetition.STATUS_LABELS[draft.status] || 'Nháp';
+            const presentationTheme = app.teamCompetition.normalizePresentationTheme(draft.presentationTheme);
+            const presentationOptions = app.teamCompetition.PRESENTATION_THEME_OPTIONS.map(theme => `<option value="${esc(theme.id)}" ${theme.id === presentationTheme ? 'selected' : ''} ${theme.available ? '' : 'disabled'}>${esc(theme.label)}${theme.available ? '' : ' (đang xây dựng)'}</option>`).join('');
             box.innerHTML = `<section class="team-competition-form team-competition-form--new" aria-label="Soạn trận thi đua nhóm">
                 <div class="team-form-toolbar"><button type="button" class="btn-opt team-form-back" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><div class="team-form-toolbar__status"><span class="team-form-status">${statusLabel}</span><span class="team-form-toolbar__hint">Bản soạn chỉ mình cô nhìn thấy</span></div></div>
                 <header class="team-form-hero"><div class="team-form-hero__copy"><span class="team-dashboard-kicker">Soạn nhiệm vụ nhóm</span><h3>Tạo trận thi đua nhóm</h3><p>Mỗi nhóm dùng chung một tablet; chỉ trưởng nhóm đăng nhập và nộp bài. Cô có thể chia nhóm đều hoặc linh hoạt theo lớp.</p></div><div class="team-form-hero__metrics"><div><strong>${teamCount}</strong><span>nhóm</span></div><div><strong>${students.length}</strong><span>học sinh phù hợp</span></div><div><strong>${draft.questionMode === 'different' ? 'Riêng' : 'Chung'}</strong><span>cách giao bài</span></div></div></header>
@@ -7148,7 +7150,7 @@ const app = {
                   ${draft.questionMode !== 'different' ? `<label class="team-field-label"><span>Bộ đề chung</span><select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint team-form-hint--panel">Chọn bộ đề riêng trong từng ô nhóm. Tất cả bộ đề phải có cùng số câu.</p>'}
                 </div></section>
                 <section class="team-form-section team-form-section--timer"><div class="team-section-heading"><div><span class="team-section-kicker">Tuỳ chọn</span><h4>Thời gian làm bài</h4><p>Giới hạn thời gian giúp trận thi đua có nhịp độ rõ ràng.</p></div><span class="team-section-icon" aria-hidden="true">◷</span></div><div class="team-timer-fields"><label><input id="team-comp-has-timer" type="checkbox" ${draft.timeLimitMinutes !== null ? 'checked' : ''} onchange="document.getElementById('team-comp-time').disabled = !this.checked"> Có thời gian</label><input id="team-comp-time" class="form-input" type="number" min="1" max="180" value="${draft.timeLimitMinutes || 15}" ${draft.timeLimitMinutes === null ? 'disabled' : ''} aria-label="Số phút làm bài"><span>phút</span><span class="team-form-hint">Bỏ chọn để không giới hạn.</span></div></section>
-                <section class="team-form-section"><div class="team-section-heading"><div><span class="team-section-kicker">Trình chiếu lớp</span><h4>Giao diện thi đua</h4><p>Trận thi đua luôn dùng sân vận động 3D: xe chạy theo điểm, không theo số câu đã nộp.</p></div></div><input id="team-comp-presentation-theme" type="hidden" value="stadium-3d"><p class="team-form-hint team-form-hint--panel">Sân vận động 3D · 8 lane màu</p></section>
+                <section class="team-form-section"><div class="team-section-heading"><div><span class="team-section-kicker">Trình chiếu lớp</span><h4>Giao diện thi đua</h4><p>Chọn bộ asset trước khi chuẩn bị trận. Đường đua tốc độ đã hoàn thiện; các giao diện còn lại sẽ được mở khi có asset 3D riêng.</p></div></div><label class="team-field-label"><span>Giao diện đang dùng</span><select id="team-comp-presentation-theme" class="form-input">${presentationOptions}</select></label><p class="team-form-hint team-form-hint--panel">Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.</p></section>
                 <footer class="team-form-actions"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">Hủy</button><button type="button" class="btn-primary" onclick="app.admin.saveTeamCompetitionDraft(false)">Lưu Nháp</button><button type="button" class="btn-success" onclick="app.admin.saveTeamCompetitionDraft(true)">Đã chuẩn bị</button></footer>
             </section>`;
         },
@@ -7295,7 +7297,7 @@ const app = {
             const usersByName = new Map((app.data.users || []).map(user => [String(user.username), user]));
             const token = encodeURIComponent(String(match.id));
             const isLive = match.status === app.teamCompetition.STATUS.ACTIVE;
-            const presentationTheme = app.teamCompetition.PRESENTATION_THEMES.STADIUM_3D;
+            const presentationTheme = app.teamCompetition.normalizePresentationTheme(match.presentationTheme);
             const stadiumLanes = app.teamCompetition.getStadiumLaneAssignments(match.teams.length);
             const cards = match.teams.map((team, index) => {
                 const memberNames = team.memberUsernames.map(username => app.data.sanitizeHTML(usersByName.get(String(username))?.fullname || username));

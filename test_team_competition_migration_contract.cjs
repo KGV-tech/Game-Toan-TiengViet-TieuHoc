@@ -7,6 +7,7 @@ const lower = sql.toLowerCase();
 const classNameMigration = fs.readFileSync('supabase/migrations/20260907_team_competitions_class_name.sql', 'utf8').toLowerCase();
 const groupedAnswersMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_grouped_answers.sql', 'utf8').toLowerCase();
 const uuidDefaultsMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_uuid_defaults.sql', 'utf8').toLowerCase();
+const speedRaceMigration = fs.readFileSync('supabase/migrations/20260917_team_competition_speed_race.sql', 'utf8').toLowerCase();
 const groupedAnswersSql = groupedAnswersMigration.replace(/--.*$/gm, '');
 
 for (const table of [
@@ -86,5 +87,15 @@ for (const target of [
   assert.match(uuidDefaultsMigration.replace(/\s+/g, ' '), new RegExp(`alter table public\\.${target}`), `UUID default patch is missing: ${target}`);
 }
 assert.doesNotMatch(uuidDefaultsMigration, /uuid_generate_v4/, 'UUID patch must not require uuid-ossp.');
+assert.match(uuidDefaultsMigration, /create or replace function public\.team_competition_start_attempt/,
+  'UUID patch must replace the leader-attempt RPC that used the unavailable uuid-ossp function.');
+assert.match(uuidDefaultsMigration, /coalesce\(p_session_id, gen_random_uuid\(\)\)/,
+  'Leader attempts must generate their session UUID with the Supabase-supported generator.');
+assert.match(speedRaceMigration, /drop constraint if exists team_competitions_presentation_theme_check/,
+  'Speed-race migration must replace the accidental one-theme constraint.');
+assert.match(speedRaceMigration, /check \(presentation_theme in \('speed-race'\)\)/,
+  'Only the completed speed-race asset may be persisted until another asset is finished.');
+assert.match(speedRaceMigration, /set presentation_theme = 'speed-race'\s+where presentation_theme = 'stadium-3d'/,
+  'Existing temporary stadium records must become the completed speed-race theme.');
 
 console.log('team competition migration contract tests passed');
