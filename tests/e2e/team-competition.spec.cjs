@@ -406,6 +406,81 @@ test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủ
   await expect(page.locator('#map-screen')).toHaveClass(/active/);
 });
 
+test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn xác nhận lượt đang mở', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const dialogs = [];
+  page.on('dialog', async dialog => {
+    dialogs.push(dialog.message());
+    await dialog.accept();
+  });
+
+  await page.evaluate(({ users, exam }) => {
+    const ids = {
+      competition: '11111111-1111-4111-8111-111111111111',
+      team: '22222222-2222-4222-8222-222222222222',
+      attempt: '33333333-3333-4333-8333-333333333333'
+    };
+    const activeAttempt = {
+      id: ids.attempt, competition_id: ids.competition, team_id: ids.team, leader_username: 'hs1',
+      session_id: 'session-open', status: 'active', question_count: 2, current_index: 0,
+      submitted_count: 0, correct_count: 0, score: 0, started_at: new Date().toISOString(),
+      completed_at: null, locked_at: null, duration_seconds: null, updated_at: new Date().toISOString()
+    };
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.data.currentUser = { ...users[0] };
+    const match = app.teamCompetition.normalizeCompetition({
+      id: ids.competition, name: 'Trận không khóa nhầm', classlevel: '5', teamCount: 2,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: ids.team, name: 'Nhóm A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+        { id: '44444444-4444-4444-8444-444444444444', name: 'Nhóm B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+      ]
+    });
+    const rows = {
+      team_competitions: [{ id: ids.competition, name: match.name, classlevel: '5', class_name: null, participant_mode: 'manual', question_mode: 'same', common_exam_id: exam.id, time_limit_minutes: null, presentation_theme: 'speed-race', presentation_team_identity: {}, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), started_at: new Date().toISOString(), ended_at: null, version: 1 }],
+      team_competition_teams: [{ id: ids.team, competition_id: ids.competition, name: 'Nhóm A', position: 1, target_member_count: 2, leader_username: 'hs1', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null }],
+      team_competition_members: [{ competition_id: ids.competition, team_id: ids.team, username: 'hs1', position: 1 }, { competition_id: ids.competition, team_id: ids.team, username: 'hs2', position: 2 }],
+      team_competition_attempts: [], team_competition_answers: [], team_competition_results: [],
+      team_competition_questions: exam.questions.map((question, questionIndex) => ({
+        id: `question-${questionIndex}`, competition_id: ids.competition, team_id: ids.team,
+        question_index: questionIndex, question_payload: question, question_type: question.type,
+        answer_count: 1, part_answer_counts: null
+      }))
+    };
+    window.supabase = {};
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.teamCompetition.remote.configure({
+      from(table) {
+        return {
+          select() { return this; },
+          then(resolve) { return Promise.resolve({ data: rows[table] || [], error: null }).then(resolve); }
+        };
+      },
+      rpc(name) {
+        if (name === 'team_competition_start_attempt') {
+          rows.team_competition_attempts = [activeAttempt];
+          return Promise.resolve({ data: activeAttempt, error: null });
+        }
+        if (name === 'team_competition_submit_answer') return Promise.resolve({ data: null, error: { code: 'P0001', message: 'session token temporarily unavailable' } });
+        return Promise.resolve({ data: null, error: null });
+      },
+      channel() { return { on() { return this; }, subscribe() { return this; } }; }
+    });
+    return app.teamCompetition.remote.syncRemote({ silent: true })
+      .then(() => app.teamCompetition.remote.openLeaderAttempt(ids.competition));
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await page.locator('input[name="exam_q_0"][value="2"]').check();
+  await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await expect.poll(() => dialogs.length).toBe(1);
+  expect(dialogs[0]).toContain('Lượt của nhóm vẫn đang mở');
+  await expect.poll(() => page.evaluate(() => app.teamCompetition.state.activeAttempt?.status)).toBe('active');
+  await expect(page.locator('#team-play-question-container')).not.toContainText('Lượt nhóm đã khóa');
+  await expect(page.locator('#team-play-submit')).toBeEnabled();
+});
+
 test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên từng nhóm', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await openOfflineHomepage(page);
