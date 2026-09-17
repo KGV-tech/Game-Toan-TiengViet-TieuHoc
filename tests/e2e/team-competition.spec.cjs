@@ -180,7 +180,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
       };
     });
     expect(vehiclePosition.startLineOffset).toBeLessThanOrEqual(2);
-    expect(Math.abs(vehiclePosition.verticalOffset)).toBeLessThanOrEqual(2);
+    // Sprite artwork sits in the lower portion of its transparent cell. Anchor
+    // the cell one lane higher so the visible car is centered on its colour.
+    expect(vehiclePosition.verticalOffset).toBeLessThanOrEqual(-vehiclePosition.laneHeight * .9);
+    expect(vehiclePosition.verticalOffset).toBeGreaterThanOrEqual(-vehiclePosition.laneHeight * 1.1);
     const dimensions = await page.locator('.team-competition-board').evaluate(node => ({
       scrollHeight: node.scrollHeight,
       clientHeight: node.clientHeight
@@ -264,6 +267,21 @@ test('bảng xếp hạng đường đua hiển thị 8 cột và đổi hạng 
     return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map(vehicle => Math.abs(vehicle.getBoundingClientRect().right - startX));
   });
   expect(startLinePositions.every(offset => offset <= 2)).toBe(true);
+  const startGrid = await page.locator('.team-stadium-canvas').evaluate(canvas => {
+    const canvasRect = canvas.getBoundingClientRect();
+    const startX = canvasRect.left + canvasRect.width * .25;
+    const lanes = [...canvas.querySelectorAll('.team-stadium-lane')];
+    return [...canvas.querySelectorAll('.team-stadium-start-grid__lane')].map((line, index) => {
+      const lineRect = line.getBoundingClientRect();
+      const laneRect = lanes[index].getBoundingClientRect();
+      return {
+        horizontalOffset: Math.abs(lineRect.left + lineRect.width / 2 - startX),
+        verticalOffset: Math.abs(lineRect.top + lineRect.height / 2 - (laneRect.top + laneRect.height / 2))
+      };
+    });
+  });
+  expect(startGrid).toHaveLength(8);
+  expect(startGrid.every(line => line.horizontalOffset <= 2 && line.verticalOffset <= 2)).toBe(true);
 });
 
 test('mở form sau bảng trình chiếu vẫn cuộn được trong cửa sổ quản trị', async ({ page }) => {

@@ -5834,9 +5834,9 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-scoreboard { border: 1px solid rgba(89, 233, 255, .9); border-radius: clamp(12px, 1.35vw, 20px); background: linear-gradient(135deg, rgba(7, 77, 159, .94), rgba(3, 31, 91, .95)); box-shadow: inset 0 1px rgba(255, 255, 255, .28), 0 6px 17px rgba(0, 20, 68, .24); }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-title-card { display: grid; min-height: 96px; padding: 12px 24px; place-items: center; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-title-card h2 { margin: 0; color: #fff; font-size: clamp(1.35rem, 2.5vw, 3rem); line-height: 1.08; text-align: center; text-shadow: 0 3px 0 #064b85, 0 0 16px rgba(130, 240, 255, .38); }
-.team-stadium-canvas { position: relative; isolation: isolate; width: 100%; height: 100%; min-height: 0; overflow: hidden; border-radius: clamp(16px, 2vw, 30px); background: #59cfff url('assets/team-competition/stadium-3d-v1/stadium-8-lanes.png') center / 100% 100% no-repeat; box-shadow: inset 0 0 0 2px rgba(255,255,255,.38), 0 14px 30px rgba(0, 17, 54, .32); }
+.team-stadium-canvas { --stadium-start-x: 25%; --stadium-lane-height: 6.8%; position: relative; isolation: isolate; width: 100%; height: 100%; min-height: 0; overflow: hidden; border-radius: clamp(16px, 2vw, 30px); background: #59cfff url('assets/team-competition/stadium-3d-v1/stadium-8-lanes.png') center / 100% 100% no-repeat; box-shadow: inset 0 0 0 2px rgba(255,255,255,.38), 0 14px 30px rgba(0, 17, 54, .32); }
 .team-stadium-canvas__lanes { position: absolute; inset: 0; }
-.team-stadium-lane { position: absolute; left: 0; z-index: 2; width: 100%; height: 6.8%; transform: translateY(-50%); }
+.team-stadium-lane { position: absolute; left: 0; z-index: 2; width: 100%; height: var(--stadium-lane-height); transform: translateY(-50%); }
 .team-stadium-lane[data-stadium-lane="1"] { top: 40.5%; }
 .team-stadium-lane[data-stadium-lane="2"] { top: 47.2%; }
 .team-stadium-lane[data-stadium-lane="3"] { top: 54.1%; }
@@ -5859,7 +5859,26 @@ input[type="text"], input[type="password"], select, textarea {
 .team-stadium-lane--pink { --stadium-accent: #fc78bc; }
 .team-stadium-lane--blue { --stadium-accent: #2494fd; }
 .team-stadium-lane--orange { --stadium-accent: #fd8d2f; }
-.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: 50%; left: calc(25% + var(--race-progress)); width: clamp(92px, 9vw, 144px); aspect-ratio: 1; background-image: url('assets/team-competition/stadium-3d-v1/race-vehicles-sprite.png'); background-repeat: no-repeat; background-size: 400% 200%; background-position: calc(var(--vehicle-column) * 33.3333%) calc(var(--vehicle-row) * 100%); filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(-100%, -50%); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
+.team-stadium-start-grid { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.team-stadium-start-grid__lane { position: absolute; left: var(--stadium-start-x); width: 7.2%; height: var(--stadium-lane-height); transform: translate(-50%, -50%); border-inline: 2px solid rgba(98, 61, 0, .78); background: linear-gradient(90deg, color-mix(in srgb, var(--stadium-accent) 93%, #fff), var(--stadium-accent), color-mix(in srgb, var(--stadium-accent) 88%, #fff)); box-shadow: inset 0 1px rgba(255,255,255,.72), inset 0 -1px rgba(26, 44, 77, .18); }
+.team-stadium-start-grid__lane::after { position: absolute; top: 0; bottom: 0; left: 50%; width: clamp(3px, .32vw, 6px); background: repeating-linear-gradient(to bottom, #fff 0 13%, #f0c338 13% 26%); box-shadow: 0 0 0 1px rgba(91, 57, 0, .55); content: ''; transform: translateX(-50%); }
+.team-stadium-start-grid__lane[data-stadium-lane="1"] { top: 40.5%; }
+.team-stadium-start-grid__lane[data-stadium-lane="2"] { top: 47.2%; }
+.team-stadium-start-grid__lane[data-stadium-lane="3"] { top: 54.1%; }
+.team-stadium-start-grid__lane[data-stadium-lane="4"] { top: 60.9%; }
+.team-stadium-start-grid__lane[data-stadium-lane="5"] { top: 67.9%; }
+.team-stadium-start-grid__lane[data-stadium-lane="6"] { top: 75.6%; }
+.team-stadium-start-grid__lane[data-stadium-lane="7"] { top: 83.6%; }
+.team-stadium-start-grid__lane[data-stadium-lane="8"] { top: 91.9%; }
+.team-stadium-start-grid__lane--cyan { --stadium-accent: #25e1fc; }
+.team-stadium-start-grid__lane--yellow { --stadium-accent: #fee732; }
+.team-stadium-start-grid__lane--coral { --stadium-accent: #fe6b5e; }
+.team-stadium-start-grid__lane--violet { --stadium-accent: #a963fa; }
+.team-stadium-start-grid__lane--green { --stadium-accent: #35d063; }
+.team-stadium-start-grid__lane--pink { --stadium-accent: #fc78bc; }
+.team-stadium-start-grid__lane--blue { --stadium-accent: #2494fd; }
+.team-stadium-start-grid__lane--orange { --stadium-accent: #fd8d2f; }
+.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: -50%; left: calc(var(--stadium-start-x) + var(--race-progress)); width: clamp(92px, 9vw, 144px); aspect-ratio: 1; background-image: url('assets/team-competition/stadium-3d-v1/race-vehicles-sprite.png'); background-repeat: no-repeat; background-size: 400% 200%; background-position: calc(var(--vehicle-column) * 33.3333%) calc(var(--vehicle-row) * 100%); filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(-100%, -50%); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock { display: grid; min-height: 96px; padding: 12px 18px; align-content: center; gap: 4px; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock span { font-size: clamp(.48rem, .72vw, .76rem); line-height: 1.1; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock strong { font-size: clamp(1.05rem, 2.25vw, 2.55rem); line-height: 1; }
