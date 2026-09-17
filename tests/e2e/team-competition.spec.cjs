@@ -409,6 +409,54 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-btn-back')).toHaveAttribute('aria-label', 'Thoát lượt làm bài');
 });
 
+test('trưởng nhóm khôi phục lượt đang làm sau khi vào lại và chỉ khóa khi hủy tham gia', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const matchId = await page.evaluate(({ users, exam }) => {
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.data.currentUser = { ...users[0] };
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'resume-match', name: 'Trận khôi phục', classlevel: '5', teamCount: 2,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, timeLimitMinutes: 10,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: 'resume-team', name: 'Nhóm Xanh', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+        { id: 'resume-other', name: 'Nhóm Vàng', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    const attempt = app.teamCompetition.createAttempt(match, match.teams[0], 'hs1', exam.questions);
+    app.teamCompetition.recordAttemptAnswer(attempt, 0, '2', { points: 1, isCorrect: true });
+    app.teamCompetition.state.activeAttempt = null;
+    app.teamCompetition.openLeaderAttempt(match.id);
+    return match.id;
+  }, { users: demoUsers(), exam: demoExam('resume-exam') });
+
+  await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
+  await expect(page.locator('#team-leave-confirm-title')).toHaveText('Tiếp tục lượt thi đua?');
+  await expect(page.locator('#team-leave-confirm-message')).toContainText('Câu 2/2');
+  await expect(page.locator('#team-leave-confirm-message')).toContainText('5 điểm');
+  await expect(page.locator('.team-leave-confirm-actions button')).toHaveText(['Tiếp tục', 'Hủy tham gia']);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#team-leave-confirm-modal')).toBeHidden();
+  await expect.poll(() => page.evaluate(id => app.teamCompetition.attemptStore.get(id, 'resume-team')?.status, matchId)).toBe('active');
+  await page.evaluate(id => { app.teamCompetition.openLeaderAttempt(id); }, matchId);
+  await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await expect(page.locator('#game-play-view')).toHaveClass(/active/);
+  await expect(page.locator('#current-q-index')).toHaveText('2');
+  await expect(page.locator('#game-score')).toHaveText('5');
+
+  await page.evaluate(id => {
+    app.teamCompetition.state.activeAttempt = null;
+    app.teamCompetition.openLeaderAttempt(id);
+  }, matchId);
+  await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
+  await page.getByRole('button', { name: 'Hủy tham gia' }).click();
+  await expect.poll(() => page.evaluate(id => app.teamCompetition.attemptStore.get(id, 'resume-team')?.status, matchId)).toBe('locked');
+  await expect(page.locator('#map-screen')).toHaveClass(/active/);
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
   test(`khung luyện tập của trưởng nhóm vừa viewport ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -475,7 +523,7 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
       team_competitions: [{ id: ids.competition, name: match.name, classlevel: '5', class_name: null, participant_mode: 'manual', question_mode: 'same', common_exam_id: exam.id, time_limit_minutes: null, presentation_theme: 'speed-race', presentation_team_identity: {}, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), started_at: new Date().toISOString(), ended_at: null, version: 1 }],
       team_competition_teams: [{ id: ids.team, competition_id: ids.competition, name: 'Nhóm A', position: 1, target_member_count: 2, leader_username: 'hs1', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null }],
       team_competition_members: [{ competition_id: ids.competition, team_id: ids.team, username: 'hs1', position: 1 }, { competition_id: ids.competition, team_id: ids.team, username: 'hs2', position: 2 }],
-      team_competition_attempts: [], team_competition_answers: [], team_competition_results: [],
+      team_competition_attempts: [activeAttempt], team_competition_answers: [], team_competition_results: [],
       team_competition_questions: exam.questions.map((question, questionIndex) => ({
         id: `question-${questionIndex}`, competition_id: ids.competition, team_id: ids.team,
         question_index: questionIndex, question_payload: question, question_type: question.type,
@@ -503,8 +551,11 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
       channel() { return { on() { return this; }, subscribe() { return this; } }; }
     });
     return app.teamCompetition.remote.syncRemote({ silent: true })
-      .then(() => app.teamCompetition.remote.openLeaderAttempt(ids.competition));
+      .then(() => { app.teamCompetition.remote.openLeaderAttempt(ids.competition); });
   }, { users: demoUsers(), exam: demoExam() });
+
+  await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
 
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
