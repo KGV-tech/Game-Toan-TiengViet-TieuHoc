@@ -7926,9 +7926,12 @@ const app = {
         },
         getTemplateCardTone(template) {
             const type = String(template?.question_type || '').toLocaleLowerCase('vi-VN');
-            if (type.includes('kéo') || type.includes('đối chiếu')) return 'violet';
+            if (type.includes('đối chiếu')) return 'fuchsia';
+            if (type.includes('kéo')) return 'violet';
             if (type.includes('đúng')) return 'green';
             if (type.includes('điền')) return 'cyan';
+            if (type.includes('so sánh')) return 'coral';
+            if (type.includes('chuỗi')) return 'indigo';
             return 'amber';
         },
         renderTemplates(box) {
