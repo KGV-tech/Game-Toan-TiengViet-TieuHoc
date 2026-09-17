@@ -116,19 +116,19 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.deepEqual(competition.excludedStudentUsernames, ['hs3']);
   assert.equal(competition.teams[0].score, 5);
   assert.equal(api.getQuestionsForTeam(competition, competition.teams[0])[0].q, '1 + 1 = ?');
-  const draft = { ...competition, status: api.STATUS.DRAFT, presentationTheme: 'space-launch' };
+  const draft = { ...competition, status: api.STATUS.DRAFT, presentationTheme: 'stadium-3d' };
   writeError = { code: '42703', message: 'column presentation_theme does not exist' };
   api.store.upsert(draft);
   await api.remote.flush();
   assert.equal(api.remote.getStatus(), 'error');
-  assert.equal(api.store.get(draft.id).presentationTheme, 'space-launch', 'failed save must retain local draft');
+  assert.equal(api.store.get(draft.id).presentationTheme, 'stadium-3d', 'failed save must retain the stadium draft');
 
   writeError = null;
   api.store.upsert(draft);
   await api.remote.flush();
   assert.equal(api.remote.getStatus(), 'ready', 'successful retry must clear stale write failure');
   assert.equal(api.remote.getError(), null);
-  assert.equal(savedRows.at(-1).presentation_theme, 'space-launch');
+  assert.equal(savedRows.at(-1).presentation_theme, 'stadium-3d');
   assert.deepEqual(savedRows.at(-1).presentation_team_identity, api.store.get(draft.id).presentationTeamIdentity);
 
   prepareError = { code: 'P0001', message: 'Cannot prepare competition' };
