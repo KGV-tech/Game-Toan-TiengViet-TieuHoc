@@ -204,7 +204,7 @@
                 participantMode: row.participant_mode,
                 questionMode: row.question_mode,
                 commonExamId: row.common_exam_id || null,
-                presentationTheme: row.presentation_theme || 'speed-race',
+                presentationTheme: row.presentation_theme || 'stadium-3d',
                 presentationTeamIdentity: row.presentation_team_identity || {},
                 timeLimitMinutes: row.time_limit_minutes === null ? null : toNumber(row.time_limit_minutes),
                 status: row.status,

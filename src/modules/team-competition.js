@@ -17,7 +17,7 @@
     });
     const STATUS_ORDER = Object.freeze([STATUS.DRAFT, STATUS.PREPARED, STATUS.ACTIVE, STATUS.ENDED]);
     const ATTEMPT_STATUS = Object.freeze({ ACTIVE: 'active', COMPLETED: 'completed', LOCKED: 'locked' });
-    const PRESENTATION_THEMES = Object.freeze({ STADIUM_3D: 'stadium-3d', SPEED_RACE: 'speed-race', SPACE_LAUNCH: 'space-launch' });
+    const PRESENTATION_THEMES = Object.freeze({ STADIUM_3D: 'stadium-3d' });
     const STADIUM_LANES = Object.freeze([
         Object.freeze({ number: 1, color: 'cyan', vehicleSprite: 0 }),
         Object.freeze({ number: 2, color: 'yellow', vehicleSprite: 1 }),
@@ -359,7 +359,7 @@
             teamCount,
             teams,
             questionMode,
-            presentationTheme: Object.values(PRESENTATION_THEMES).includes(input.presentationTheme) ? input.presentationTheme : PRESENTATION_THEMES.STADIUM_3D,
+            presentationTheme: PRESENTATION_THEMES.STADIUM_3D,
             presentationTeamIdentity,
             commonExamId: input.commonExamId || (questionMode === 'same' ? input.examId || teams[0]?.examId || null : null),
             timeLimitMinutes,

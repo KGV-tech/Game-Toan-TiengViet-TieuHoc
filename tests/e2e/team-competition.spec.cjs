@@ -541,14 +541,15 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
     await page.locator('#team-comp-name').fill('Trận thử lưu lại');
     await page.locator('#team-comp-common-exam').selectOption('exam-team');
-    await page.locator('#team-comp-presentation-theme').selectOption('space-launch');
+    await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(0);
+    await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('stadium-3d');
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
     await expect.poll(() => dialogs.length).toBe(1);
     expect(dialogs[0]).toContain('20260915_team_competition_presentations.sql');
     await expect(page.locator('.team-form-hero')).toBeVisible();
     await expect(page.locator('#team-comp-name')).toHaveValue('Trận thử lưu lại');
     await expect.poll(() => page.evaluate(() => app.teamCompetition.store.list())).toMatchObject([
-      { name: 'Trận thử lưu lại', presentationTheme: 'space-launch' }
+      { name: 'Trận thử lưu lại', presentationTheme: 'stadium-3d' }
     ]);
     await page.evaluate(() => { window.saveTest.error = null; });
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
@@ -563,7 +564,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     expect(saved.status).toBe('ready');
     expect(saved.rows).toHaveLength(2);
     expect(saved.rows[1].id).toBe(saved.rows[0].id);
-    expect(saved.rows[1].presentation_theme).toBe('space-launch');
+    expect(saved.rows[1].presentation_theme).toBe('stadium-3d');
     expect(saved.matches).toHaveLength(1);
     expect(saved.matches[0].name).toBe('Trận thử lưu lại');
   });

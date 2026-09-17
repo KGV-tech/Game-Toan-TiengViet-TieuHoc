@@ -115,7 +115,8 @@ assert.deepEqual(team.getStadiumLaneAssignments(7).map(lane => lane.number), [1,
 assert.deepEqual(team.getStadiumLaneAssignments(8).map(lane => lane.number), [1, 2, 3, 4, 5, 6, 7, 8]);
 assert.deepEqual(team.getStadiumLaneAssignments(4).map(lane => lane.color), ['cyan', 'coral', 'green', 'blue']);
 assert.throws(() => team.getStadiumLaneAssignments(1), /between 2 and 8/);
-assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'space-launch', presentationTeamIdentity: { 'team-1': 'rocket-3' } }).presentationTheme, 'space-launch');
+assert.deepEqual(team.PRESENTATION_THEMES, { STADIUM_3D: 'stadium-3d' });
+assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'space-launch', presentationTeamIdentity: { 'team-1': 'rocket-3' } }).presentationTheme, 'stadium-3d');
 assert.ok(team.validateConfig({ ...validConfig, teamCount: 9 }, { students, exams }).errors.some(error => error.code === 'team_count_invalid'));
 
 const draft = team.normalizeCompetition({ ...validConfig, id: 'match-1' });
