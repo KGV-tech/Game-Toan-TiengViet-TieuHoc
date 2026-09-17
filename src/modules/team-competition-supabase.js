@@ -641,12 +641,24 @@
             } catch (error) {
                 if (error.code === 'team_competition_timeout' || /locked|timeout|session/i.test(error.message || '')) {
                     await this.syncRemote({ silent: true });
-                    const locked = api.attemptStore.get(attempt.competitionId, attempt.teamId) || { ...attempt, status: api.ATTEMPT_STATUS.LOCKED };
-                    api.state.activeAttempt = locked;
-                    markSession(locked, false);
-                    api.removeBeforeUnload();
-                    api.clearPlayTimer();
-                    api.renderLeaderLocked('Lượt đội đã bị khóa; các câu đã nộp vẫn được tính điểm.');
+                    const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
+                    const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
+                    if (isTerminal) {
+                        api.state.activeAttempt = refreshed;
+                        markSession(refreshed, false);
+                        api.removeBeforeUnload();
+                        api.clearPlayTimer();
+                        api.renderLeaderLocked(refreshed.status === api.ATTEMPT_STATUS.COMPLETED
+                            ? 'Nhóm đã nộp đủ bài; các câu đã nộp vẫn được tính điểm.'
+                            : 'Lượt đội đã bị khóa; các câu đã nộp vẫn được tính điểm.');
+                    } else {
+                        // A transient session/network response is not proof that the
+                        // server locked the attempt. Keep the last active attempt
+                        // usable and let the leader retry the same answer.
+                        api.state.activeAttempt = refreshed || attempt;
+                        api.renderLeaderQuestion();
+                        alert('Chưa thể lưu câu trả lời. Lượt của nhóm vẫn đang mở, hãy nộp lại.');
+                    }
                 } else {
                     alert(error.message || 'Không thể lưu câu trả lời trên máy chủ.');
                 }
