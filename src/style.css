@@ -2052,6 +2052,23 @@ input[type="text"], input[type="password"], select, textarea {
     align-self: center;
 }
 
+/* Trưởng nhóm dùng cùng một khung làm bài đã được kiểm chứng như Luyện tập. */
+#game-play-view.team-competition-leader-mode #skill-bar-container { display: none !important; }
+#game-play-view.team-competition-leader-mode .player-info-card {
+    display: grid;
+    gap: 7px;
+    min-height: 104px;
+    align-content: center;
+    text-align: center;
+}
+#game-play-view.team-competition-leader-mode .team-leader-match-name { color: #fff4bf; font-size: clamp(1rem, 1.6vw, 1.35rem); line-height: 1.25; }
+#game-play-view.team-competition-leader-mode .team-leader-team-name { color: #b9e8ff; font-size: clamp(.9rem, 1.35vw, 1.1rem); font-weight: 800; }
+#game-play-view.team-competition-leader-mode .game-practice-status { display: grid; gap: 4px; text-align: center; }
+#game-play-view.team-competition-leader-mode .game-practice-status small { color: #b9e8ff; font-size: clamp(.72rem, 1vw, .86rem); font-weight: 800; }
+#game-play-view.team-competition-leader-mode .team-leader-locked-panel { text-align: center; }
+#game-play-view.team-competition-leader-mode .team-leader-locked-panel strong { color: #7dd3fc; font-size: clamp(1.35rem, 2vw, 1.75rem); }
+#game-play-view.team-competition-leader-mode .team-leader-locked-panel p { margin: 14px 0 0; font-size: clamp(1rem, 1.4vw, 1.25rem); }
+
 /* Four subquestion multiple-choice rounds are designed to fit one landscape screen. */
 #game-play-view .play-center.play-center--four-part-mc {
     height: calc(100vh - 48px);

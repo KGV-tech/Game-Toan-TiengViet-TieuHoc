@@ -355,7 +355,7 @@ test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng
   await expect(page.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 4 · 5B');
 });
 
-test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủy thì ở lại', async ({ page }) => {
+test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi rời sẽ khóa lượt', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await openOfflineHomepage(page);
   const matchId = await page.evaluate(({ users, exam }) => {
@@ -376,22 +376,69 @@ test('trưởng nhóm lưu từng câu và OK khi rời sẽ khóa lượt, Hủ
     return match.id;
   }, { users: demoUsers(), exam: demoExam() });
 
-  await expect(page.locator('#team-competition-play-screen')).toHaveClass(/active/);
-  await page.locator('input[name="exam_q_0"][value="2"]').check();
+  await expect(page.locator('#game-screen')).toHaveClass(/active/);
+  await expect(page.locator('#game-play-view')).toHaveClass(/active/);
+  await expect(page.locator('#team-competition-play-screen')).not.toHaveClass(/active/);
+  await expect(page.locator('#game-player-info')).toContainText('Trận tablet');
+  await expect(page.locator('#game-player-info')).toContainText('Nhóm A');
+  await expect(page.locator('#game-practice-status')).toContainText('Các bạn đang tham gia');
+  await expect(page.locator('#game-practice-status')).toContainText('THI ĐUA NHÓM');
+  await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
+  await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
-  await expect(page.locator('#team-play-progress')).toHaveText('Câu 2/2');
+  await expect(page.locator('#current-q-index')).toHaveText('2');
 
-  await page.getByRole('button', { name: 'Thoát lượt' }).click();
+  await page.getByRole('button', { name: 'Thoát lượt đội nhóm' }).click();
   await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
   await expect(page.locator('.team-leave-confirm-actions button')).toHaveText(['OK', 'Hủy']);
   await page.getByRole('button', { name: 'Hủy' }).click();
-  await expect(page.locator('#team-competition-play-screen')).toHaveClass(/active/);
+  await expect(page.locator('#game-play-view')).toHaveClass(/active/);
 
-  await page.getByRole('button', { name: 'Thoát lượt' }).click();
+  await page.getByRole('button', { name: 'Thoát lượt đội nhóm' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
   await expect.poll(() => page.evaluate(id => app.teamCompetition.attemptStore.get(id, 'team-a'), matchId)).toMatchObject({ status: 'locked', submittedCount: 1, score: 5 });
   await expect(page.locator('#map-screen')).toHaveClass(/active/);
+
+  await page.evaluate(exam => {
+    app.game.state = { ...app.game.state, teamCompetition: false, subject: 'math', questions: exam.questions, currentIdx: 0, score: 0, finished: false };
+    app.router.open('game-screen');
+    app.router.openGameView('game-play-view');
+    app.game.loadQuestion();
+  }, demoExam('ordinary-practice'));
+  await expect(page.locator('#game-play-view')).not.toHaveClass(/team-competition-leader-mode/);
+  await expect(page.locator('#game-btn-back')).toHaveAttribute('aria-label', 'Thoát lượt làm bài');
 });
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
+  test(`khung luyện tập của trưởng nhóm vừa viewport ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await openOfflineHomepage(page);
+    await page.evaluate(({ users, exam }) => {
+      app.data.users = users;
+      app.data.exams = [exam];
+      app.data.currentUser = { ...users[0] };
+      const match = app.teamCompetition.normalizeCompetition({
+        id: `leader-practice-${window.innerWidth}`, name: 'Trận khung luyện tập', classlevel: '5', teamCount: 2,
+        participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, timeLimitMinutes: null,
+        status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+          { id: `leader-team-${window.innerWidth}`, name: 'Nhóm Xanh', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+          { id: `leader-other-${window.innerWidth}`, name: 'Nhóm Vàng', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+        ]
+      });
+      app.teamCompetition.store.clear();
+      app.teamCompetition.store.upsert(match);
+      app.teamCompetition.openLeaderAttempt(match.id);
+    }, { users: demoUsers(), exam: demoExam(`exam-leader-practice-${viewport.width}`) });
+
+    await expect(page.locator('#game-play-view')).toHaveClass(/team-competition-leader-mode/);
+    await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
+    const viewportFit = await page.evaluate(() => ({
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight
+    }));
+    expect(viewportFit.scrollHeight).toBeLessThanOrEqual(viewportFit.clientHeight + 2);
+  });
+}
 
 test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn xác nhận lượt đang mở', async ({ page }) => {
   await openOfflineHomepage(page);
@@ -459,13 +506,13 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
       .then(() => app.teamCompetition.remote.openLeaderAttempt(ids.competition));
   }, { users: demoUsers(), exam: demoExam() });
 
-  await page.locator('input[name="exam_q_0"][value="2"]').check();
+  await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
   await expect.poll(() => dialogs.length).toBe(1);
   expect(dialogs[0]).toContain('Lượt của nhóm vẫn đang mở');
   await expect.poll(() => page.evaluate(() => app.teamCompetition.state.activeAttempt?.status)).toBe('active');
-  await expect(page.locator('#team-play-question-container')).not.toContainText('Lượt nhóm đã khóa');
-  await expect(page.locator('#team-play-submit')).toBeEnabled();
+  await expect(page.locator('#game-question-container')).not.toContainText('Lượt nhóm đã khóa');
+  await expect(page.locator('#submit-ans-btn')).toBeEnabled();
 });
 
 test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên từng nhóm', async ({ page }) => {

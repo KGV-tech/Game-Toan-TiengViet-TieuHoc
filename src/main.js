@@ -1977,7 +1977,7 @@ const app = {
         saveAttemptDraft() {
             const user = app.data.currentUser;
             const questions = Array.isArray(this.state.questions) ? this.state.questions : [];
-            if (!this.isPersistableStudent(user) || !questions.length || this.state.finished) return false;
+            if (!this.isPersistableStudent(user) || !questions.length || this.state.finished || this.state.teamCompetition) return false;
             const kind = this.state.examName ? 'exam' : 'practice';
             const rawCurrentIdx = Number(this.state.currentIdx) || 0;
             const resumeIdx = this.state.answerSubmitted ? rawCurrentIdx + 1 : rawCurrentIdx;
@@ -2024,6 +2024,7 @@ const app = {
                 }
                 this.state = {
                     ...this.state,
+                    teamCompetition: false,
                     subject: payload.subject || this.state.subject,
                     topicMode: payload.topicMode || this.state.topicMode,
                     selectedTopics: Array.isArray(payload.selectedTopics) ? payload.selectedTopics : [],
@@ -3165,6 +3166,7 @@ const app = {
             this.state.score = 0;
             this.state.answerSubmitted = false;
             this.state.finished = false;
+            this.state.teamCompetition = false;
             this.state.historyDetails = [];
             this.state.historyDetails = [];
 
@@ -3519,6 +3521,15 @@ const app = {
         loadQuestion() {
             this.cleanupMatching();
             if (this.skills) this.skills.state.shieldActive = false;
+            if (!this.state.teamCompetition) {
+                const gameView = document.getElementById('game-play-view');
+                gameView?.classList.remove('team-competition-leader-mode');
+                const back = document.getElementById('game-btn-back');
+                if (back) {
+                    back.onclick = () => this.confirmExit();
+                    back.setAttribute('aria-label', 'Thoát lượt làm bài');
+                }
+            }
             
             const q = this.state.questions[this.state.currentIdx];
             this.bindProgressPanelListeners();
