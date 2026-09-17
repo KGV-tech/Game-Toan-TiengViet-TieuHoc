@@ -51,7 +51,7 @@ test('Kho Template tự gắn Bài học cho template cũ và phân biệt phạ
   expect(lessonFilterValues.slice(1)).not.toContain('');
 
   const propertyCard = page.locator('.template-library-card').filter({ hasText: 'Legacy tính chất phép cộng' });
-  await propertyCard.getByRole('button', { name: 'Sửa template' }).click();
+  await propertyCard.getByRole('button', { name: 'Sửa cấu hình câu hỏi' }).click();
   await expect(page.locator('#template-lesson-field')).toBeVisible();
   await expect(page.locator('#template-lesson')).toHaveValue('g4-math-hk1-b24');
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config.lesson)).toBe('g4-math-hk1-b24');
