@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 
 global.window = global;
 global.supabase = {};
@@ -18,6 +19,14 @@ const api = require('./src/modules/team-competition.js');
 const adapterPath = require.resolve('./src/modules/team-competition-supabase.js');
 delete require.cache[adapterPath];
 require(adapterPath);
+
+const adapterSource = fs.readFileSync('src/modules/team-competition-supabase.js', 'utf8');
+assert.match(adapterSource, /team_competition_get_answer_feedback/,
+  'Remote leader submission must request the post-submit answer feedback RPC.');
+assert.match(adapterSource, /api\.renderLeaderPracticeFeedback\(/,
+  'Remote leader submission must reuse the practice feedback surface.');
+assert.doesNotMatch(adapterSource, /renderLeaderAnswerFeedback/,
+  'Remote leader submission must not return to the old banner-only feedback.');
 
 const rows = {
   team_competitions: [{

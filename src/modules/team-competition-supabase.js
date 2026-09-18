@@ -593,6 +593,7 @@
             const question = questions[index];
             const selected = api.readLeaderAnswer?.(question, index);
             if (!question || selected === null || selected === undefined || selected === '') return;
+            const scoreBefore = Number(attempt.score || 0);
             state.submitPending = true;
             const button = document.getElementById('submit-ans-btn') || document.getElementById('team-play-submit');
             if (button) button.disabled = true;
@@ -605,19 +606,32 @@
                 });
                 const updated = mapAttemptRow(firstRow(data));
                 if (!updated) throw new Error('Máy chủ không trả về kết quả câu trả lời.');
+                const answerFeedback = firstRow(await invoke('team_competition_get_answer_feedback', {
+                    p_attempt_id: attempt.id,
+                    p_question_index: index,
+                    p_session_id: attempt.sessionId
+                }));
+                if (!answerFeedback?.answerKey) throw new Error('Máy chủ chưa trả về đáp án để hiển thị kết quả.');
                 await this.syncRemote({ silent: true });
                 const confirmed = api.attemptStore.get(updated.competitionId, updated.teamId) || updated;
                 api.state.activeAttempt = api.attemptStore.upsert(confirmed);
                 api.updateCompetitionTeamFromAttempt(confirmed);
                 if (confirmed.status === api.ATTEMPT_STATUS.COMPLETED) {
                     api.removeBeforeUnload();
-                    api.clearPlayTimer();
-                    api.renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(updated.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
+                    api.renderLeaderPracticeFeedback(competition, team, confirmed, question, {
+                        questionIndex: index,
+                        scoreBefore,
+                        answerKey: answerFeedback.answerKey,
+                        points: Number(answerFeedback.points || 0),
+                        isCorrect: Boolean(answerFeedback.isCorrect)
+                    });
                 } else {
-                    const detail = confirmed.details?.find(item => Number(item.questionIndex) === index);
-                    api.renderLeaderAnswerFeedback(competition, team, confirmed, question, {
-                        points: Number(detail?.points || 0),
-                        isCorrect: Boolean(detail?.isCorrect)
+                    api.renderLeaderPracticeFeedback(competition, team, confirmed, question, {
+                        questionIndex: index,
+                        scoreBefore,
+                        answerKey: answerFeedback.answerKey,
+                        points: Number(answerFeedback.points || 0),
+                        isCorrect: Boolean(answerFeedback.isCorrect)
                     });
                 }
                 return updated;
