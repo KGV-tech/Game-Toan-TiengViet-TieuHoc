@@ -9,6 +9,7 @@ const groupedAnswersMigration = fs.readFileSync('supabase/migrations/20260916_te
 const uuidDefaultsMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_uuid_defaults.sql', 'utf8').toLowerCase();
 const speedRaceMigration = fs.readFileSync('supabase/migrations/20260917_team_competition_speed_race.sql', 'utf8').toLowerCase();
 const submitAnswerFixMigration = fs.readFileSync('supabase/migrations/20260918_team_competition_submit_answer_question_id_fix.sql', 'utf8').toLowerCase();
+const answerFeedbackMigration = fs.readFileSync('supabase/migrations/20260918_team_competition_answer_feedback.sql', 'utf8').toLowerCase();
 const groupedAnswersSql = groupedAnswersMigration.replace(/--.*$/gm, '');
 
 for (const table of [
@@ -106,5 +107,22 @@ assert.match(submitAnswerFixMigration, /select answer_keys\.answer_key into answ
   'Submit-answer repair must qualify answer_key to avoid PL/pgSQL ambiguity.');
 assert.doesNotMatch(submitAnswerFixMigration, /create table|alter table|create policy|drop policy|grant |revoke /,
   'Submit-answer repair must not change schema, RLS, or permissions.');
+
+assert.match(answerFeedbackMigration, /create or replace function public\.team_competition_get_answer_feedback/,
+  'Answer-feedback RPC must be available after a recorded team answer.');
+assert.match(answerFeedbackMigration, /from public\.team_competition_answers/,
+  'Answer-feedback RPC must require the recorded answer row.');
+assert.match(answerFeedbackMigration, /attempt_session_mismatch/,
+  'Answer-feedback RPC must bind the reveal to the leader session.');
+assert.match(answerFeedbackMigration, /attempt_row\.current_index\s*<>\s*p_question_index\s*\+\s*1/,
+  'Answer-feedback RPC must reveal only the question that just advanced the sequential attempt.');
+assert.match(answerFeedbackMigration, /attempt_row\.submitted_count\s*<>\s*p_question_index\s*\+\s*1/,
+  'Answer-feedback RPC must not reveal a skipped future question.');
+assert.match(answerFeedbackMigration, /private\.team_competition_answer_keys/,
+  'Answer-feedback RPC must read answer keys only inside a secure function.');
+assert.match(answerFeedbackMigration, /revoke all on function public\.team_competition_get_answer_feedback\(uuid, integer, uuid\) from public, anon/,
+  'Answer-feedback RPC must not be executable by anonymous users.');
+assert.match(answerFeedbackMigration, /grant execute on function public\.team_competition_get_answer_feedback\(uuid, integer, uuid\) to authenticated/,
+  'Only authenticated users may request feedback for their own recorded answer.');
 
 console.log('team competition migration contract tests passed');

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 
 global.window = global;
 global.app = {};
@@ -137,5 +138,13 @@ assert.equal(team.lockAttempt({ status: 'active' }, 'leader_exit', 1700000000000
 assert.throws(() => team.resumeAttempt({ status: 'locked' }), /locked/);
 assert.equal(team.shouldOfferAttemptResume({ status: 'active' }), true);
 assert.equal(team.shouldOfferAttemptResume({ status: 'locked' }), false);
+
+const teamSource = fs.readFileSync('src/modules/team-competition.js', 'utf8');
+assert.match(teamSource, /function renderLeaderPracticeFeedback\(/,
+  'Leader answers must be rendered by the same feedback flow used in practice.');
+assert.match(teamSource, /app\.game\.submitAnswer\(\)/,
+  'Leader feedback must delegate answer marking and reveal to practice.');
+assert.doesNotMatch(teamSource, /function renderLeaderAnswerFeedback\(/,
+  'The former banner-only leader feedback must not remain active.');
 
 console.log('team competition contract tests passed');

@@ -434,14 +434,26 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-player-info .team-leader-team-card')).toContainText('Nhóm A');
   await expect(page.locator('#game-player-info .team-leader-team-vehicle')).toBeVisible();
   await expect(page.locator('#game-player-info .team-leader-team-card')).not.toContainText('Nhóm của bạn');
-  expect(await page.locator('#game-player-info').evaluate(node => getComputedStyle(node).gridTemplateColumns)).toContain('1fr');
+  const identityCards = await page.locator('#game-player-info').evaluate(node => {
+    const cards = [...node.children].map(card => card.getBoundingClientRect());
+    return {
+      childCount: node.children.length,
+      outerBackground: getComputedStyle(node).backgroundImage,
+      stacked: cards.length === 2 && cards[0].bottom <= cards[1].top
+    };
+  });
+  expect(identityCards.childCount).toBe(2);
+  expect(identityCards.outerBackground).toBe('none');
+  expect(identityCards.stacked).toBe(true);
   await expect(page.locator('#game-practice-status')).toContainText('Các bạn đang tham gia');
   await expect(page.locator('#game-practice-status')).toContainText('THI ĐUA NHÓM');
   await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
   await expect(page.locator('#current-q-index')).toHaveText('1');
-  await expect(page.locator('#team-leader-answer-feedback')).toContainText('Chính xác');
+  await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
+  await expect(page.locator('#team-leader-answer-feedback')).toHaveCount(0);
+  await expect(page.locator('#game-score')).toHaveText('5');
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
 
@@ -464,6 +476,42 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   }, demoExam('ordinary-practice'));
   await expect(page.locator('#game-play-view')).not.toHaveClass(/team-competition-leader-mode/);
   await expect(page.locator('#game-btn-back')).toHaveAttribute('aria-label', 'Thoát lượt làm bài');
+});
+
+test('trưởng nhóm dùng phản hồi Luyện tập: đánh dấu đúng sai, đáp án dưới bài và tiếp tục', async ({ page }) => {
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.users = users;
+    app.data.exams = [exam];
+    app.data.currentUser = { ...users[0] };
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'match-practice-feedback', name: 'Trận phản hồi', classlevel: '5', teamCount: 2,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id, timeLimitMinutes: null,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: 'feedback-a', name: 'Nhóm A', memberUsernames: ['hs1', 'hs2'], leaderUsername: 'hs1' },
+        { id: 'feedback-b', name: 'Nhóm B', memberUsernames: ['hs3', 'hs4'], leaderUsername: 'hs3' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.teamCompetition.openLeaderAttempt(match.id);
+  }, { users: demoUsers(), exam: demoExam('feedback-exam') });
+
+  await page.locator('#game-options-container .ans-btn').filter({ hasText: '3' }).click();
+  await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await expect(page.locator('#game-options-container .ans-btn.wrong')).toContainText('3');
+  await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
+  await expect(page.locator('.game-answer-reveal')).toContainText('2');
+  const positions = await page.evaluate(() => {
+    const options = document.getElementById('game-options-container').getBoundingClientRect();
+    const reveal = document.querySelector('.game-answer-reveal').getBoundingClientRect();
+    return { optionsBottom: options.bottom, revealTop: reveal.top };
+  });
+  expect(positions.revealTop).toBeGreaterThanOrEqual(positions.optionsBottom);
+  await expect(page.getByRole('button', { name: 'Tiếp tục' })).toBeEnabled();
+  await expect(page.locator('#game-score')).toHaveText('0');
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await expect(page.locator('#current-q-index')).toHaveText('2');
 });
 
 test('trưởng nhóm khôi phục lượt đang làm sau khi vào lại và chỉ khóa khi hủy tham gia', async ({ page }) => {

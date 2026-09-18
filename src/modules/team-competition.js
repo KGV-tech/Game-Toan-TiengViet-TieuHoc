@@ -51,6 +51,9 @@
         Object.freeze({ number: 7, color: 'blue', vehicleSprite: 6 }),
         Object.freeze({ number: 8, color: 'orange', vehicleSprite: 7 })
     ]);
+    const TEAM_VEHICLE_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
+        `assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
+    ));
     const STORAGE_KEY = 'team_competitions_v1';
     const ATTEMPT_STORAGE_KEY = 'team_competition_attempts_v1';
     const EVENT_NAME = 'team-competition-updated';
@@ -855,8 +858,7 @@
             const vehicle = document.createElement('span');
             vehicle.className = 'team-leader-team-vehicle';
             vehicle.setAttribute('aria-hidden', 'true');
-            vehicle.style.setProperty('--vehicle-column', String((lane?.vehicleSprite || 0) % 4));
-            vehicle.style.setProperty('--vehicle-row', String(Math.floor((lane?.vehicleSprite || 0) / 4)));
+            vehicle.style.setProperty('--team-vehicle-image', `url('${TEAM_VEHICLE_ASSETS[lane?.vehicleSprite || 0]}')`);
             const teamCopy = document.createElement('div');
             const teamName = document.createElement('span');
             teamName.className = 'team-leader-team-name';
@@ -889,31 +891,60 @@
         if (label) label.textContent = 'Nộp câu trả lời';
     }
 
-    function renderLeaderAnswerFeedback(competition, team, attempt, question, scoreResult = {}) {
-        if (typeof document === 'undefined') return;
+    function hydrateLeaderQuestion(question, answerKey = {}) {
+        const answerTokens = typeof app.game?.getAnsArr === 'function'
+            ? app.game.getAnsArr(String(answerKey?.ans || ''))
+            : String(answerKey?.ans || '').split(/[,|]/).map(value => value.trim()).filter(Boolean);
+        const hydrateParts = (parts, keyedParts = []) => Array.isArray(parts)
+            ? parts.map((part, index) => ({
+                ...part,
+                answer: keyedParts?.[index]?.answer ?? part?.answer ?? answerTokens[index] ?? ''
+            }))
+            : parts;
+        return {
+            ...question,
+            ans: answerKey?.ans ?? question?.ans,
+            partAnswerCounts: answerKey?.partAnswerCounts ?? question?.partAnswerCounts,
+            statements: hydrateParts(question?.statements, answerKey?.statements),
+            subquestions: hydrateParts(question?.subquestions, answerKey?.subquestions)
+        };
+    }
+
+    // Do not maintain another marking implementation for team competition.
+    // Once the server has recorded a response and safely released that answer
+    // key, delegate the entire visible feedback state to the practice engine.
+    function renderLeaderPracticeFeedback(competition, team, attempt, question, feedback = {}) {
+        if (typeof document === 'undefined' || !app.game?.submitAnswer) return;
+        const index = Number(feedback.questionIndex ?? app.game.state?.currentIdx ?? 0);
+        const questions = Array.isArray(app.game.state?.questions) ? app.game.state.questions.slice() : [];
+        const revealedQuestion = hydrateLeaderQuestion(question, feedback.answerKey);
+        questions[index] = revealedQuestion;
+        app.game.state = {
+            ...app.game.state,
+            questions,
+            currentIdx: index,
+            score: Number(feedback.scoreBefore ?? app.game.state?.score ?? 0),
+            answerSubmitted: false,
+            teamCompetition: true
+        };
+        app.game.submitAnswer();
+
+        // The server remains authoritative for the team total. Practice supplies
+        // the visual marking, reveal, speech bubble, and continue button only.
+        if (Number.isFinite(Number(attempt?.score))) app.game.state.score = Number(attempt.score);
         updateLeaderPracticeSidebar(competition, team, attempt);
-        const points = Number(scoreResult.points || 0);
-        const isCorrect = Boolean(scoreResult.isCorrect);
-        const feedback = document.createElement('div');
-        feedback.className = `team-leader-answer-feedback ${isCorrect ? 'is-correct' : points > 0 ? 'is-partial' : 'is-wrong'}`;
-        feedback.setAttribute('role', 'status');
-        feedback.textContent = isCorrect ? `✓ Chính xác! +${points.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm` : points > 0 ? `◐ Đúng một phần. +${points.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm` : '✕ Chưa đúng. Câu trả lời đã được ghi nhận.';
-        document.getElementById('team-leader-answer-feedback')?.remove();
-        feedback.id = 'team-leader-answer-feedback';
-        document.getElementById('game-question-container')?.append(feedback);
-        const bubble = document.getElementById('cat-speech-bubble');
-        if (bubble) {
-            bubble.style.display = 'flex';
-            bubble.textContent = isCorrect ? 'Hoan hô! Bạn làm đúng!' : points > 0 ? 'Bạn đã làm đúng một phần!' : 'Cố lên! Cùng làm câu tiếp theo nhé!';
-        }
-        document.querySelectorAll('#game-options-container button, #game-options-container input, #game-options-container select, #game-options-container textarea').forEach(control => { control.disabled = true; });
+
         const submit = document.getElementById('submit-ans-btn');
-        const label = document.getElementById('submit-ans-text');
-        if (label) label.textContent = 'Tiếp tục';
         if (submit) {
-            submit.disabled = false;
-            submit.setAttribute('aria-label', 'Tiếp tục');
-            submit.onclick = () => renderLeaderQuestion();
+            const isComplete = attempt?.status === ATTEMPT_STATUS.COMPLETED;
+            submit.onclick = () => {
+                if (isComplete) {
+                    clearPlayTimer();
+                    renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(attempt.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
+                } else {
+                    renderLeaderQuestion();
+                }
+            };
         }
     }
 
@@ -1204,6 +1235,7 @@
         const question = questions[index];
         const selected = readLeaderAnswer(question, index);
         if (!question || selected === null || selected === undefined || selected === '') return;
+        const scoreBefore = Number(attempt.score || 0);
         const scoreResult = typeof app.game?.calculateQuestionScore === 'function'
             ? app.game.calculateQuestionScore(question, selected)
             : { points: app.exam.isAnswerCorrect(question, selected) ? 1 : 0, isCorrect: app.exam.isAnswerCorrect(question, selected) };
@@ -1219,10 +1251,17 @@
                 api.state.activeAttempt = completed;
                 updateCompetitionTeamFromAttempt(completed);
                 removeBeforeUnload();
-                clearPlayTimer();
-                renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm nhóm: ${Number(completed.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
+                renderLeaderPracticeFeedback(competition, team, completed, question, {
+                    questionIndex: index,
+                    scoreBefore,
+                    answerKey: question
+                });
             } else {
-                renderLeaderAnswerFeedback(competition, team, updated, question, scoreResult);
+                renderLeaderPracticeFeedback(competition, team, updated, question, {
+                    questionIndex: index,
+                    scoreBefore,
+                    answerKey: question
+                });
             }
         } catch (exception) {
             alert(exception.message || 'Không thể lưu câu trả lời.');
@@ -1244,6 +1283,7 @@
         PRESENTATION_THEMES,
         PRESENTATION_THEME_OPTIONS,
         STADIUM_LANES,
+        TEAM_VEHICLE_ASSETS,
         STORAGE_KEY,
         ATTEMPT_STORAGE_KEY,
         normalizeClass,
@@ -1299,7 +1339,7 @@
         lockActiveAttempt,
         renderLeaderQuestion,
         renderLeaderLocked,
-        renderLeaderAnswerFeedback,
+        renderLeaderPracticeFeedback,
         openLeaderPracticeSurface,
         readLeaderAnswer,
         setLeaderSubmitButton,

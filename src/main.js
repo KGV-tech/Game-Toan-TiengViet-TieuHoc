@@ -7330,9 +7330,8 @@ const app = {
                 if (isLive) {
                     const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
                     const lane = stadiumLanes[index];
-                    const spriteColumn = lane.vehicleSprite % 4;
-                    const spriteRow = Math.floor(lane.vehicleSprite / 4);
-                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%;--vehicle-column:${spriteColumn};--vehicle-row:${spriteRow}" aria-label="${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><span class="team-stadium-lane__vehicle" aria-hidden="true"></span></article>`;
+                    const vehicleAsset = app.teamCompetition.TEAM_VEHICLE_ASSETS?.[lane.vehicleSprite] || '';
+                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%;--team-vehicle-image:url('${vehicleAsset}')" aria-label="${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><span class="team-stadium-lane__vehicle" aria-hidden="true"></span></article>`;
                 }
                 const leaderName = app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn');
                 const roster = !isLive && match.status !== app.teamCompetition.STATUS.ENDED
