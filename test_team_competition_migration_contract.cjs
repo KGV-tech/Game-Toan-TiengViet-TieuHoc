@@ -102,6 +102,8 @@ assert.match(submitAnswerFixMigration, /create or replace function public\.team_
   'Submit-answer repair must replace the deployed RPC.');
 assert.match(submitAnswerFixMigration, /p_attempt_id,\s*question_row\.id,\s*p_question_index/,
   'Submit-answer repair must save the question UUID, never the complete question record.');
+assert.match(submitAnswerFixMigration, /select answer_keys\.answer_key into answer_key/,
+  'Submit-answer repair must qualify answer_key to avoid PL/pgSQL ambiguity.');
 assert.doesNotMatch(submitAnswerFixMigration, /create table|alter table|create policy|drop policy|grant |revoke /,
   'Submit-answer repair must not change schema, RLS, or permissions.');
 

@@ -858,12 +858,10 @@
             vehicle.style.setProperty('--vehicle-column', String((lane?.vehicleSprite || 0) % 4));
             vehicle.style.setProperty('--vehicle-row', String(Math.floor((lane?.vehicleSprite || 0) / 4)));
             const teamCopy = document.createElement('div');
-            const teamLabel = document.createElement('span');
-            teamLabel.textContent = 'Nhóm của bạn';
             const teamName = document.createElement('span');
             teamName.className = 'team-leader-team-name';
             teamName.textContent = team?.name || 'Nhóm thi đua';
-            teamCopy.replaceChildren(teamLabel, teamName);
+            teamCopy.replaceChildren(teamName);
             teamCard.replaceChildren(vehicle, teamCopy);
             info.replaceChildren(matchCard, teamCard);
             info.setAttribute('aria-label', `Trận ${matchName.textContent}, ${teamName.textContent}`);
@@ -889,6 +887,34 @@
         submit.setAttribute('aria-label', 'Nộp câu trả lời');
         const label = document.getElementById('submit-ans-text');
         if (label) label.textContent = 'Nộp câu trả lời';
+    }
+
+    function renderLeaderAnswerFeedback(competition, team, attempt, question, scoreResult = {}) {
+        if (typeof document === 'undefined') return;
+        updateLeaderPracticeSidebar(competition, team, attempt);
+        const points = Number(scoreResult.points || 0);
+        const isCorrect = Boolean(scoreResult.isCorrect);
+        const feedback = document.createElement('div');
+        feedback.className = `team-leader-answer-feedback ${isCorrect ? 'is-correct' : points > 0 ? 'is-partial' : 'is-wrong'}`;
+        feedback.setAttribute('role', 'status');
+        feedback.textContent = isCorrect ? `✓ Chính xác! +${points.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm` : points > 0 ? `◐ Đúng một phần. +${points.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm` : '✕ Chưa đúng. Câu trả lời đã được ghi nhận.';
+        document.getElementById('team-leader-answer-feedback')?.remove();
+        feedback.id = 'team-leader-answer-feedback';
+        document.getElementById('game-question-container')?.append(feedback);
+        const bubble = document.getElementById('cat-speech-bubble');
+        if (bubble) {
+            bubble.style.display = 'flex';
+            bubble.textContent = isCorrect ? 'Hoan hô! Bạn làm đúng!' : points > 0 ? 'Bạn đã làm đúng một phần!' : 'Cố lên! Cùng làm câu tiếp theo nhé!';
+        }
+        document.querySelectorAll('#game-options-container button, #game-options-container input, #game-options-container select, #game-options-container textarea').forEach(control => { control.disabled = true; });
+        const submit = document.getElementById('submit-ans-btn');
+        const label = document.getElementById('submit-ans-text');
+        if (label) label.textContent = 'Tiếp tục';
+        if (submit) {
+            submit.disabled = false;
+            submit.setAttribute('aria-label', 'Tiếp tục');
+            submit.onclick = () => renderLeaderQuestion();
+        }
     }
 
     function readLeaderAnswer(question, index) {
@@ -1196,7 +1222,7 @@
                 clearPlayTimer();
                 renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm nhóm: ${Number(completed.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
             } else {
-                renderLeaderQuestion();
+                renderLeaderAnswerFeedback(competition, team, updated, question, scoreResult);
             }
         } catch (exception) {
             alert(exception.message || 'Không thể lưu câu trả lời.');
@@ -1273,6 +1299,7 @@
         lockActiveAttempt,
         renderLeaderQuestion,
         renderLeaderLocked,
+        renderLeaderAnswerFeedback,
         openLeaderPracticeSurface,
         readLeaderAnswer,
         setLeaderSubmitButton,

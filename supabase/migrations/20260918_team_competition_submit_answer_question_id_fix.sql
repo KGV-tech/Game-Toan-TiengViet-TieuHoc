@@ -48,9 +48,9 @@ BEGIN
     WHERE question.team_id = attempt_row.team_id AND question.question_index = p_question_index;
     IF question_row.id IS NULL THEN RAISE EXCEPTION 'question_not_found'; END IF;
 
-    SELECT answer_key INTO answer_key
-    FROM private.team_competition_answer_keys
-    WHERE question_id = question_row.id;
+    SELECT answer_keys.answer_key INTO answer_key
+    FROM private.team_competition_answer_keys AS answer_keys
+    WHERE answer_keys.question_id = question_row.id;
     IF answer_key IS NULL THEN RAISE EXCEPTION 'answer_key_not_found'; END IF;
     IF EXISTS (
         SELECT 1 FROM public.team_competition_answers
