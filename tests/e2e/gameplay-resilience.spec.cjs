@@ -30,7 +30,9 @@ test('sang câu mới xóa đáp án cũ và dựng lời giải cho dữ liệu
       q: 'Chọn Đúng/Sai?', type: 'Đúng/Sai', ans: 'Sai, Đúng',
       statements: [
         { label: 'A', text: '25 803 > 80 000', answer: 'Sai', leftText: '25 803', rightText: '80 000', leftValue: 25803, rightValue: 80000, operator: '>' },
-        { label: 'B', text: '65 741 − 25 308 > 25 803', answer: 'Đúng', leftText: '65 741 − 25 308', rightText: '25 803', leftValue: 40433, rightValue: 25803, operator: '>' }
+        { label: 'B', text: '65 741 − 25 308 > 25 803', answer: 'Đúng', leftText: '65 741 − 25 308', rightText: '25 803', leftValue: 40433, rightValue: 25803, operator: '>' },
+        { label: 'C', text: '25 803 > 88 025', answer: 'Sai', leftText: '25 803', rightText: '88 025', leftValue: 25803, rightValue: 88025, operator: '>' },
+        { label: 'D', text: '73 204 > 51 649', answer: 'Đúng', leftText: '73 204', rightText: '51 649', leftValue: 73204, rightValue: 51649, operator: '>' }
       ]
     };
     app.data.currentUser = { username: 'legacy-template-student', fullname: 'Học sinh thử nghiệm', role: 'student' };
@@ -53,8 +55,9 @@ test('sang câu mới xóa đáp án cũ và dựng lời giải cho dữ liệu
   expect(result.before).toBe(1);
   expect(result.after).toBe(0);
   const explanation = result.explanation.replace(/\u00a0/g, ' ');
-  expect(explanation).toContain('A) Sai: 25 803 = 25 803; 80 000 = 80 000');
-  expect(explanation).toContain('B) Đúng: 65 741 − 25 308 = 40 433');
+  expect(explanation).toContain('A) Sai: 25 803 > 80 000 là sai');
+  expect(explanation).toContain('B) Đúng: 65 741 − 25 308 = 40 433 > 25 803');
+  expect(explanation.length).toBeLessThan(300);
 });
 
 test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạo scrollbar ngoài viewport', async ({ page }, testInfo) => {
@@ -242,7 +245,11 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
     ringProgress: getComputedStyle(document.getElementById('game-progress-ring')).getPropertyValue('--ring-progress').trim(),
     actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label'),
     solutionText: document.getElementById('explanation-box').textContent,
-    solutionSlotVisible: getComputedStyle(document.getElementById('game-progress-content')).display !== 'none'
+    solutionSlotVisible: getComputedStyle(document.getElementById('game-progress-content')).display !== 'none',
+    solutionTitleVisible: getComputedStyle(document.querySelector('.game-solution-title')).display !== 'none',
+    solutionSlotHeight: document.getElementById('game-progress-content').getBoundingClientRect().height,
+    solutionTitleRect: document.querySelector('.game-solution-title').getBoundingClientRect().toJSON(),
+    rightRect: document.querySelector('#game-play-view .play-right').getBoundingClientRect().toJSON()
   }));
   expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
   expect(afterCheck.ringVisible).toBe(true);
@@ -250,6 +257,11 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
   expect(afterCheck.actionLabel).toBe('Tiếp tục');
   expect(afterCheck.solutionText).toContain('Lời giải');
   expect(afterCheck.solutionSlotVisible).toBe(true);
+  expect(afterCheck.solutionTitleVisible).toBe(true);
+  expect(afterCheck.solutionSlotHeight).toBeGreaterThanOrEqual(140);
+  expect(afterCheck.solutionTitleRect.height).toBeGreaterThan(0);
+  expect(afterCheck.solutionTitleRect.top).toBeGreaterThanOrEqual(afterCheck.rightRect.top);
+  expect(afterCheck.solutionTitleRect.bottom).toBeLessThanOrEqual(afterCheck.rightRect.bottom);
 
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('#current-q-index')).toHaveText('2');

@@ -431,9 +431,21 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-player-info')).toContainText('Trận tablet');
   await expect(page.locator('#game-player-info')).toContainText('Nhóm A');
   await expect(page.locator('#game-player-info .team-leader-match-card')).toContainText('Trận tablet');
+  await expect(page.locator('.team-leader-match-card')).toHaveCSS('text-align', 'center');
   await expect(page.locator('#game-player-info .team-leader-team-card')).toContainText('Nhóm A');
   await expect(page.locator('#game-player-info .team-leader-team-vehicle')).toHaveCount(0);
   await expect(page.locator('#play-cat-img')).toHaveAttribute('src', /team-competition\/stadium-3d-v1\/vehicles\/vehicle-\d+\.png$/);
+  await expect.poll(() => page.locator('#play-cat-img').evaluate(image => image.naturalWidth)).toBeGreaterThan(0);
+  const avatarAlignment = await page.evaluate(() => {
+    const avatar = document.getElementById('play-cat-img').getBoundingClientRect();
+    const wrapper = document.querySelector('#game-play-view .cat-wrapper').getBoundingClientRect();
+    return {
+      horizontalDelta: Math.abs((avatar.left + avatar.width / 2) - (wrapper.left + wrapper.width / 2)),
+      verticalDelta: Math.abs((avatar.top + avatar.height / 2) - (wrapper.top + wrapper.height * .52))
+    };
+  });
+  expect(avatarAlignment.horizontalDelta).toBeLessThanOrEqual(3);
+  expect(avatarAlignment.verticalDelta).toBeLessThanOrEqual(3);
   await expect(page.locator('#game-player-info .team-leader-team-card')).not.toContainText('Nhóm của bạn');
   const identityCards = await page.locator('#game-player-info').evaluate(node => {
     const cards = [...node.children].map(card => card.getBoundingClientRect());

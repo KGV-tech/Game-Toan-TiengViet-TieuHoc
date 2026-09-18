@@ -93,7 +93,7 @@
         left: 50%;
         width: min(80%, 228px);
         aspect-ratio: 1;
-        transform: translate(-50%, -47%);
+        transform: translate(-50%, -50%);
         border: 2px solid rgba(136, 145, 255, .5);
         border-radius: 50%;
         background: radial-gradient(circle, rgba(93, 112, 219, .24), rgba(20, 35, 72, .04) 64%, transparent 69%);
@@ -227,6 +227,10 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 10px 26px rgba(0, 0, 0, .25);
     }
 
+    #game-play-view .play-right:has(.game-progress-content:not([hidden])) {
+        grid-template-rows: minmax(0, .25fr) minmax(120px, 1.05fr) auto minmax(140px, 1.8fr) minmax(0, .1fr);
+    }
+
     #game-play-view .game-progress-panel {
         grid-row: 2;
         align-self: center;
@@ -247,7 +251,7 @@
         justify-items: stretch;
         gap: 8px;
         place-items: center;
-        overflow: hidden;
+        overflow: auto;
         scrollbar-width: thin;
         scrollbar-color: rgba(86, 217, 155, .72) rgba(7, 24, 40, .35);
     }
