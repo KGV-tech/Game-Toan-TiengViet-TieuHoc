@@ -577,8 +577,15 @@
         },
         async submitCurrentQuestion() {
             if (state.submitPending) return;
-            const attempt = api.state.activeAttempt;
+            let attempt = api.state.activeAttempt;
             if (!attempt || attempt.status !== api.ATTEMPT_STATUS.ACTIVE) return;
+            // Re-read the authoritative session before writing. This preserves a
+            // leader's turn across a reconnect or a delayed realtime update.
+            await this.syncRemote({ silent: true });
+            const canonicalAttempt = api.attemptStore.get(attempt.competitionId, attempt.teamId);
+            if (canonicalAttempt?.status !== api.ATTEMPT_STATUS.ACTIVE) return api.renderLeaderLocked('Lượt nhóm đã kết thúc.');
+            attempt = canonicalAttempt || attempt;
+            api.state.activeAttempt = attempt;
             const competition = api.store.get(attempt.competitionId);
             const team = competition?.teams.find(item => String(item.id) === String(attempt.teamId));
             const questions = api.getQuestionsForTeam(competition, team);
@@ -598,18 +605,19 @@
                 });
                 const updated = mapAttemptRow(firstRow(data));
                 if (!updated) throw new Error('Máy chủ không trả về kết quả câu trả lời.');
-                api.state.activeAttempt = api.attemptStore.upsert(updated);
-                api.updateCompetitionTeamFromAttempt(updated);
-                if (updated.status === api.ATTEMPT_STATUS.COMPLETED) {
+                await this.syncRemote({ silent: true });
+                const confirmed = api.attemptStore.get(updated.competitionId, updated.teamId) || updated;
+                api.state.activeAttempt = api.attemptStore.upsert(confirmed);
+                api.updateCompetitionTeamFromAttempt(confirmed);
+                if (confirmed.status === api.ATTEMPT_STATUS.COMPLETED) {
                     api.removeBeforeUnload();
                     api.clearPlayTimer();
                     api.renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(updated.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
                 } else {
-                    const questionPoints = Math.max(0, (Number(updated.score || 0) - Number(attempt.score || 0))
-                        * Math.max(1, Number(updated.questionCount || questions.length || 1)) / 10);
-                    api.renderLeaderAnswerFeedback(competition, team, updated, question, {
-                        points: questionPoints,
-                        isCorrect: Number(updated.correctCount || 0) > Number(attempt.correctCount || 0)
+                    const detail = confirmed.details?.find(item => Number(item.questionIndex) === index);
+                    api.renderLeaderAnswerFeedback(competition, team, confirmed, question, {
+                        points: Number(detail?.points || 0),
+                        isCorrect: Boolean(detail?.isCorrect)
                     });
                 }
                 return updated;
