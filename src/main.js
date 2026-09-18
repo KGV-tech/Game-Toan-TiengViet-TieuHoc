@@ -3388,7 +3388,9 @@ const app = {
                 answer.textContent = groups[0]?.answers.map(value => app.data.formatMathText(value)).join(', ') || '';
             }
             reveal.append(label, answer);
-            questionContainer.appendChild(reveal);
+            const optionsContainer = document.getElementById('game-options-container');
+            if (optionsContainer) optionsContainer.after(reveal);
+            else questionContainer.appendChild(reveal);
         },
         setAnswerState(element, isCorrect) {
             if (!element) return;
