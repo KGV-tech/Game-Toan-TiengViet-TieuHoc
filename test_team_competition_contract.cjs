@@ -135,8 +135,7 @@ assert.equal(team.transitionStatus(active, team.STATUS.ENDED, 1700000060000).end
 
 assert.equal(team.lockAttempt({ status: 'active' }, 'leader_exit', 1700000000000).status, 'locked');
 assert.throws(() => team.resumeAttempt({ status: 'locked' }), /locked/);
-assert.equal(team.shouldInvalidateAttemptOnReentry({ status: 'active' }, 'reload', true), true);
-assert.equal(team.shouldInvalidateAttemptOnReentry({ status: 'active' }, 'navigate', false), true);
-assert.equal(team.shouldInvalidateAttemptOnReentry({ status: 'active' }, 'navigate', true), false);
+assert.equal(team.shouldOfferAttemptResume({ status: 'active' }), true);
+assert.equal(team.shouldOfferAttemptResume({ status: 'locked' }), false);
 
 console.log('team competition contract tests passed');

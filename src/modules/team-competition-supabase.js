@@ -255,29 +255,6 @@
         return requireResult(state.client.rpc(name, args));
     }
 
-    function sessionStorageApi() {
-        try { return typeof root.sessionStorage === 'undefined' ? null : root.sessionStorage; } catch (_) { return null; }
-    }
-
-    function sessionKey(attempt) { return `team_attempt_session_${attempt?.id || ''}`; }
-    function readSessionId(attempt) {
-        const storage = sessionStorageApi();
-        if (!storage || !attempt?.id) return null;
-        try { return storage.getItem(sessionKey(attempt)) || null; } catch (_) { return null; }
-    }
-    function markSession(attempt, active) {
-        const storage = sessionStorageApi();
-        if (!storage || !attempt?.id) return;
-        try {
-            if (active && attempt.sessionId) storage.setItem(sessionKey(attempt), attempt.sessionId);
-            else storage.removeItem(sessionKey(attempt));
-        } catch (_) { /* private mode */ }
-    }
-    function hasSessionMarker(attempt) { return Boolean(readSessionId(attempt)); }
-    function navType() {
-        try { return root.performance?.getEntriesByType?.('navigation')?.[0]?.type || ''; } catch (_) { return ''; }
-    }
-
     function scheduleSync() {
         if (!state.enabled || state.syncTimer) return;
         state.syncTimer = setTimeout(() => {
@@ -556,17 +533,6 @@
             const team = competition.teams.find(item => String(item.leaderUsername) === String(user.username));
             if (!team) return alert('Tài khoản này không phải trưởng nhóm của trận.');
             let existing = api.attemptStore.get(competition.id, team.id);
-            if (existing?.status === api.ATTEMPT_STATUS.ACTIVE && (navType() === 'reload' || !hasSessionMarker(existing))) {
-                try {
-                    const locked = await this.lockAttempt(existing, 'refresh_or_close');
-                    api.state.activeAttempt = locked;
-                    api.renderLeaderLocked('Lượt trước đã bị khóa do refresh/đóng tab. Không thể làm tiếp.');
-                    alert('Lượt trước đã bị khóa vì rời/refresh trình duyệt giữa chừng. Các câu đã nộp vẫn được tính điểm.');
-                    return locked;
-                } catch (error) {
-                    return alert(error.message || 'Không thể khóa lượt trước trên máy chủ.');
-                }
-            }
             if (!api.getQuestionsForTeam(competition, team).length) {
                 try {
                     const rows = await fetchRows('team_competition_questions');
@@ -576,7 +542,13 @@
                     return alert(error.message || 'Không thể tải bộ câu hỏi của đội.');
                 }
             }
-            const sessionId = existing?.sessionId && hasSessionMarker(existing) ? readSessionId(existing) : null;
+            if (api.shouldOfferAttemptResume?.(existing)) {
+                api.state.activeCompetitionId = competition.id;
+                api.state.activeAttempt = existing;
+                const shouldContinue = await api.confirmLeaderResume(existing, api.getQuestionsForTeam(competition, team).length || existing.questionCount);
+                if (!shouldContinue) return api.state.activeAttempt;
+            }
+            const sessionId = existing?.sessionId || null;
             try {
                 const data = await invoke('team_competition_start_attempt', {
                     p_competition_id: competition.id,
@@ -588,7 +560,6 @@
                 api.state.activeCompetitionId = competition.id;
                 api.state.activeAttempt = api.attemptStore.upsert(attempt);
                 api.updateCompetitionTeamFromAttempt(attempt);
-                markSession(attempt, true);
                 api.installBeforeUnload();
                 const questModal = document.getElementById('quest-modal');
                 if (questModal) {
@@ -630,7 +601,6 @@
                 api.state.activeAttempt = api.attemptStore.upsert(updated);
                 api.updateCompetitionTeamFromAttempt(updated);
                 if (updated.status === api.ATTEMPT_STATUS.COMPLETED) {
-                    markSession(updated, false);
                     api.removeBeforeUnload();
                     api.clearPlayTimer();
                     api.renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(updated.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
@@ -645,7 +615,6 @@
                     const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
                     if (isTerminal) {
                         api.state.activeAttempt = refreshed;
-                        markSession(refreshed, false);
                         api.removeBeforeUnload();
                         api.clearPlayTimer();
                         api.renderLeaderLocked(refreshed.status === api.ATTEMPT_STATUS.COMPLETED
@@ -684,7 +653,6 @@
             if (!attempt || attempt.status !== api.ATTEMPT_STATUS.ACTIVE) return attempt;
             const locked = await this.lockAttempt(attempt, reason);
             api.state.activeAttempt = locked;
-            markSession(locked, false);
             api.clearPlayTimer();
             api.removeBeforeUnload();
             api.renderLeaderLocked(reason === 'timeout' ? 'Hết giờ — lượt đội đã tự động khóa.' : 'Lượt đội đã khóa và không thể làm tiếp.');

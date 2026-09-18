@@ -418,41 +418,8 @@
         return null;
     }
 
-    function sessionStorageApi() {
-        try {
-            if (typeof root.sessionStorage !== 'undefined') return root.sessionStorage;
-        } catch (_) { /* private mode */ }
-        return null;
-    }
-
-    function attemptSessionKey(attempt) {
-        return `team_attempt_session_${attempt?.id || ''}`;
-    }
-
-    function hasAttemptSessionMarker(attempt) {
-        const session = sessionStorageApi();
-        if (!session || !attempt?.id) return false;
-        try { return session.getItem(attemptSessionKey(attempt)) === 'active'; } catch (_) { return false; }
-    }
-
-    function setAttemptSessionMarker(attempt, active = true) {
-        const session = sessionStorageApi();
-        if (!session || !attempt?.id) return;
-        try {
-            if (active) session.setItem(attemptSessionKey(attempt), 'active');
-            else session.removeItem(attemptSessionKey(attempt));
-        } catch (_) { /* private mode */ }
-    }
-
-    function navigationType() {
-        try {
-            const entry = root.performance?.getEntriesByType?.('navigation')?.[0];
-            return entry?.type || '';
-        } catch (_) { return ''; }
-    }
-
-    function shouldInvalidateAttemptOnReentry(attempt, navType = '', hasSessionMarker = false) {
-        return attempt?.status === ATTEMPT_STATUS.ACTIVE && (navType === 'reload' || !hasSessionMarker);
+    function shouldOfferAttemptResume(attempt) {
+        return attempt?.status === ATTEMPT_STATUS.ACTIVE;
     }
 
     function readCollection(key, fallback) {
@@ -1035,7 +1002,7 @@
         startPlayTimer(competition);
     }
 
-    function openLeaderAttempt(competitionId) {
+    async function openLeaderAttempt(competitionId) {
         if (api.remote?.isReady?.() && api.remote.openLeaderAttempt && !api.remote._delegating) {
             return api.remote.openLeaderAttempt(competitionId);
         }
@@ -1049,19 +1016,13 @@
         if (!questions.length) return alert('Nhóm chưa có bộ câu hỏi hợp lệ.');
         try {
             const existing = attemptStore.get(competition.id, team.id);
-            if (shouldInvalidateAttemptOnReentry(existing, navigationType(), hasAttemptSessionMarker(existing))) {
-                const locked = lockAttempt(existing, 'refresh_or_close');
-                updateCompetitionTeamFromAttempt(locked);
-                setAttemptSessionMarker(existing, false);
-                alert('Lượt trước đã bị khóa vì rời/refresh trình duyệt giữa chừng. Các câu đã nộp vẫn được tính điểm.');
+            if (shouldOfferAttemptResume(existing)) {
                 api.state.activeCompetitionId = competition.id;
-                api.state.activeAttempt = locked;
-                openLeaderPracticeSurface(competition, team);
-                renderLeaderLocked('Lượt trước đã bị khóa do refresh/đóng tab. Không thể làm tiếp.');
-                return locked;
+                api.state.activeAttempt = existing;
+                const shouldContinue = await confirmLeaderResume(existing, questions.length);
+                if (!shouldContinue) return api.state.activeAttempt;
             }
             const attempt = createAttempt(competition, team, user.username, questions);
-            setAttemptSessionMarker(attempt, true);
             api.state.activeCompetitionId = competition.id;
             api.state.activeAttempt = attempt;
             installBeforeUnload();
@@ -1092,30 +1053,32 @@
         const locked = lockAttempt(attempt, reason);
         api.state.activeAttempt = locked;
         updateCompetitionTeamFromAttempt(locked);
-        setAttemptSessionMarker(locked, false);
         removeBeforeUnload();
         renderLeaderLocked(reason === 'timeout' ? 'Hết giờ — lượt nhóm đã tự động khóa.' : 'Lượt nhóm đã khóa và không thể làm tiếp.');
         return locked;
     }
 
-    function confirmLeaderExit(reason = 'leader_exit') {
-        if (!activeLeaderAttempt()) return Promise.resolve(true);
+    function openLeaderDecision({ title, copy, primaryLabel, secondaryLabel, primaryClass, secondaryClass, initialFocus }) {
         const modal = typeof document !== 'undefined' ? document.getElementById('team-leave-confirm-modal') : null;
         if (!modal) {
-            return Promise.resolve(typeof root.confirm === 'function' && root.confirm('Nếu rời bây giờ, lượt nhóm sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'));
+            return Promise.resolve(typeof root.confirm === 'function' && root.confirm(copy) ? 'primary' : 'dismiss');
         }
         const ok = document.getElementById('team-leave-confirm-ok');
         const cancel = document.getElementById('team-leave-confirm-cancel');
+        const heading = document.getElementById('team-leave-confirm-title');
         const message = document.getElementById('team-leave-confirm-message');
-        if (message) message.textContent = reason === 'timeout'
-            ? 'Hết giờ, lượt nhóm sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'
-            : 'Nếu rời bây giờ, lượt của nhóm sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.';
+        if (heading) heading.textContent = title;
+        if (message) message.textContent = copy;
+        if (ok) {
+            ok.textContent = primaryLabel;
+            ok.className = primaryClass;
+        }
+        if (cancel) {
+            cancel.textContent = secondaryLabel;
+            cancel.className = secondaryClass;
+        }
         modal.style.display = 'flex';
         modal.classList.add('active');
-        app.modal?.open(modal, {
-            initialFocus: '#team-leave-confirm-ok',
-            onEscape: () => cancel?.click()
-        });
         api.state.leaveConfirmationOpen = true;
         return new Promise(resolve => {
             const close = () => {
@@ -1124,24 +1087,56 @@
                 modal.classList.remove('active');
                 api.state.leaveConfirmationOpen = false;
             };
-            const onCancel = () => { cleanup(); close(); resolve(false); };
-            const onOk = async () => {
-                cleanup(); close();
-                try {
-                    await lockActiveAttempt(reason);
-                    resolve(true);
-                } catch (error) {
-                    alert(error?.message || 'Không thể khóa lượt thi đua trên máy chủ.');
-                    resolve(false);
-                }
-            };
+            const onCancel = () => { cleanup(); close(); resolve('secondary'); };
+            const onOk = () => { cleanup(); close(); resolve('primary'); };
+            const dismiss = () => { cleanup(); close(); resolve('dismiss'); };
             const cleanup = () => {
                 if (ok) ok.removeEventListener('click', onOk);
                 if (cancel) cancel.removeEventListener('click', onCancel);
             };
             if (ok) ok.addEventListener('click', onOk, { once: true });
             if (cancel) cancel.addEventListener('click', onCancel, { once: true });
+            app.modal?.open(modal, { initialFocus, onEscape: dismiss });
         });
+    }
+
+    async function confirmLeaderExit(reason = 'leader_exit') {
+        if (!activeLeaderAttempt()) return true;
+        const copy = reason === 'timeout'
+            ? 'Hết giờ, lượt nhóm sẽ bị khóa. Các câu đã nộp vẫn được tính điểm.'
+            : 'Nếu rời bây giờ, lượt của nhóm sẽ bị khóa và không thể làm tiếp. Các câu đã nộp vẫn được tính điểm.';
+        const decision = await openLeaderDecision({
+            title: 'Xác nhận rời lượt đội', copy, primaryLabel: 'OK', secondaryLabel: 'Hủy',
+            primaryClass: 'btn-danger', secondaryClass: 'btn-opt', initialFocus: '#team-leave-confirm-ok'
+        });
+        if (decision !== 'primary') return false;
+        try {
+            await lockActiveAttempt(reason);
+            return true;
+        } catch (error) {
+            alert(error?.message || 'Không thể khóa lượt thi đua trên máy chủ.');
+            return false;
+        }
+    }
+
+    async function confirmLeaderResume(attempt, questionCount) {
+        const currentQuestion = Math.min(Number(attempt?.currentIndex || 0) + 1, Number(questionCount) || 1);
+        const score = Number(attempt?.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+        const decision = await openLeaderDecision({
+            title: 'Tiếp tục lượt thi đua?',
+            copy: `Nhóm đang ở Câu ${currentQuestion}/${questionCount || '—'} và đã đạt ${score} điểm. Bạn có muốn tiếp tục? Thời gian (nếu có) vẫn theo đồng hồ chung của trận.`,
+            primaryLabel: 'Tiếp tục', secondaryLabel: 'Hủy tham gia',
+            primaryClass: 'btn-primary', secondaryClass: 'btn-danger', initialFocus: '#team-leave-confirm-ok'
+        });
+        if (decision === 'primary') return true;
+        if (decision !== 'secondary') return false;
+        try {
+            await lockActiveAttempt('leader_cancelled');
+            if (app.router) app.router.open('map-screen');
+        } catch (error) {
+            alert(error?.message || 'Không thể hủy tham gia thi đua trên máy chủ.');
+        }
+        return false;
     }
 
     function requestLeaderExit(reason = 'leader_exit') {
@@ -1177,7 +1172,6 @@
                 const completed = completeAttempt(updated);
                 api.state.activeAttempt = completed;
                 updateCompetitionTeamFromAttempt(completed);
-                setAttemptSessionMarker(completed, false);
                 removeBeforeUnload();
                 clearPlayTimer();
                 renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm nhóm: ${Number(completed.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
@@ -1247,7 +1241,7 @@
         clearRemoteQuestions() { remoteQuestionCache.clear(); },
         updateCompetitionTeamFromAttempt,
         remote: null,
-        shouldInvalidateAttemptOnReentry,
+        shouldOfferAttemptResume,
         getActiveForUser(username) {
             return listCompetitions().filter(item => item.status === STATUS.ACTIVE && getTeamsForUser(item, username).length > 0);
         },
@@ -1255,6 +1249,7 @@
         submitCurrentQuestion,
         requestLeaderExit,
         confirmLeaderExit,
+        confirmLeaderResume,
         lockActiveAttempt,
         renderLeaderQuestion,
         renderLeaderLocked,
