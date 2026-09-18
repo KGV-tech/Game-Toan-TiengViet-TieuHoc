@@ -3353,9 +3353,27 @@ const app = {
                         const right = app.data.formatMathText(statement.rightText ?? statement.rightValue);
                         const leftValue = app.data.formatMathText(statement.leftValue);
                         const rightValue = app.data.formatMathText(statement.rightValue);
-                        return `${label}) ${verdict}: ${left} = ${leftValue}; ${right} = ${rightValue}, nên đối chiếu hai giá trị để kiểm tra dấu ${statement.operator || 'so sánh'}.`;
+                        const operator = statement.operator || (statement.leftValue === statement.rightValue ? '=' : statement.leftValue > statement.rightValue ? '>' : '<');
+                        const correctOperator = statement.leftValue === statement.rightValue ? '=' : statement.leftValue > statement.rightValue ? '>' : '<';
+                        const leftResult = left === leftValue ? leftValue : `${left} = ${leftValue}`;
+                        const rightResult = right === rightValue ? rightValue : `${right} = ${rightValue}`;
+                        return verdict.toLocaleLowerCase('vi-VN') === 'đúng'
+                            ? `${label}) Đúng: ${leftResult} ${operator} ${rightResult}.`
+                            : `${label}) Sai: ${left} ${operator} ${right} là sai (${leftValue} ${correctOperator} ${rightValue}).`;
                     }
-                    return `${label}) ${verdict}: Xác định đúng hàng và giá trị của từng chữ số trong phát biểu rồi đối chiếu.`;
+                    const placeMatch = String(statement?.text || '').match(/Trong số ([\d\s.]+), chữ số (\d) ở (hàng [^.]+)\.?/i);
+                    if (placeMatch) {
+                        const number = Number(placeMatch[1].replace(/\D/g, ''));
+                        const claimedDigit = Number(placeMatch[2]);
+                        const placeName = placeMatch[3].toLocaleLowerCase('vi-VN');
+                        const placeDivisors = { 'hàng đơn vị': 1, 'hàng chục': 10, 'hàng trăm': 100, 'hàng nghìn': 1000, 'hàng chục nghìn': 10000, 'hàng trăm nghìn': 100000 };
+                        const actualDigit = Math.floor(number / (placeDivisors[placeName] || 1)) % 10;
+                        const formattedNumber = app.data.formatMathText(number);
+                        return actualDigit === claimedDigit
+                            ? `${label}) Đúng: ${placeName} của ${formattedNumber} là ${actualDigit}.`
+                            : `${label}) Sai: ${placeName} của ${formattedNumber} là ${actualDigit}, không phải ${claimedDigit}.`;
+                    }
+                    return `${label}) ${verdict}: Đối chiếu giá trị trong phát biểu.`;
                 }).join('\n');
             }
             const groups = this.getAnswerGroups(question);

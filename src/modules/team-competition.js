@@ -52,7 +52,7 @@
         Object.freeze({ number: 8, color: 'orange', vehicleSprite: 7 })
     ]);
     const TEAM_VEHICLE_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
-        `assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
+        `./src/assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
     ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
