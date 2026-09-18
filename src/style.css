@@ -2083,10 +2083,10 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view.team-competition-leader-mode .team-leader-match-card { display: grid; gap: 3px; padding: 10px 13px; }
 #game-play-view.team-competition-leader-mode .team-leader-match-card > span { color: #7dd3fc; font-size: clamp(.58rem, .9vw, .72rem); font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
 #game-play-view.team-competition-leader-mode .team-leader-match-name { color: #fff4bf; font-size: clamp(.94rem, 1.45vw, 1.22rem); line-height: 1.18; }
-#game-play-view.team-competition-leader-mode .team-leader-team-card { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 74px; padding: 7px 12px 7px 8px; }
+#game-play-view.team-competition-leader-mode .team-leader-team-card { display: grid; align-items: center; min-height: 74px; padding: 9px 16px; }
 #game-play-view.team-competition-leader-mode .team-leader-team-card > div { display: grid; gap: 1px; min-width: 0; }
-#game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(.86rem, 1.25vw, 1.06rem); font-weight: 800; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
-#game-play-view.team-competition-leader-mode .team-leader-team-vehicle { width: 68px; height: 58px; background-image: var(--team-vehicle-image); background-repeat: no-repeat; background-position: center; background-size: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .38)); }
+#game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(1rem, 1.55vw, 1.28rem); font-weight: 900; line-height: 1.15; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+#game-play-view.team-competition-leader-mode #play-cat-img.team-leader-theme-avatar { object-fit: contain; filter: drop-shadow(0 8px 7px rgba(0, 0, 0, .42)); }
 #game-play-view.team-competition-leader-mode .game-practice-status { display: grid; gap: 4px; text-align: center; }
 #game-play-view.team-competition-leader-mode .game-practice-status small { color: #b9e8ff; font-size: clamp(.72rem, 1vw, .86rem); font-weight: 800; }
 #game-play-view.team-competition-leader-mode .team-leader-locked-panel { text-align: center; }

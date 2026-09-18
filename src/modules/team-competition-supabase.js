@@ -637,7 +637,7 @@
                 return updated;
             } catch (error) {
                 const lifecycleError = error.code === 'team_competition_timeout'
-                    || /^(attempt_session_mismatch|competition_is_not_active|team_competition_timeout)$/i.test(String(error.message || '').trim());
+                    || /\b(attempt_session_mismatch|competition_is_not_active|team_competition_timeout)\b/i.test(String(error.message || '').trim());
                 if (lifecycleError) {
                     await this.syncRemote({ silent: true });
                     const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);

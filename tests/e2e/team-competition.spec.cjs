@@ -432,7 +432,8 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-player-info')).toContainText('Nhóm A');
   await expect(page.locator('#game-player-info .team-leader-match-card')).toContainText('Trận tablet');
   await expect(page.locator('#game-player-info .team-leader-team-card')).toContainText('Nhóm A');
-  await expect(page.locator('#game-player-info .team-leader-team-vehicle')).toBeVisible();
+  await expect(page.locator('#game-player-info .team-leader-team-vehicle')).toHaveCount(0);
+  await expect(page.locator('#play-cat-img')).toHaveAttribute('src', /team-competition\/stadium-3d-v1\/vehicles\/vehicle-\d+\.png$/);
   await expect(page.locator('#game-player-info .team-leader-team-card')).not.toContainText('Nhóm của bạn');
   const identityCards = await page.locator('#game-player-info').evaluate(node => {
     const cards = [...node.children].map(card => card.getBoundingClientRect());
@@ -449,13 +450,14 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-practice-status')).toContainText('THI ĐUA NHÓM');
   await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
-  await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await page.locator('#submit-ans-btn').click();
   await expect(page.locator('#current-q-index')).toHaveText('1');
   await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
   await expect(page.locator('#team-leader-answer-feedback')).toHaveCount(0);
   await expect(page.locator('#game-score')).toHaveText('5');
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Thoát lượt đội nhóm' }).click();
   await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
@@ -498,7 +500,7 @@ test('trưởng nhóm dùng phản hồi Luyện tập: đánh dấu đúng sai,
   }, { users: demoUsers(), exam: demoExam('feedback-exam') });
 
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '3' }).click();
-  await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await page.locator('#submit-ans-btn').click();
   await expect(page.locator('#game-options-container .ans-btn.wrong')).toContainText('3');
   await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
   await expect(page.locator('.game-answer-reveal')).toContainText('2');
@@ -585,6 +587,16 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
 
     await expect(page.locator('#game-play-view')).toHaveClass(/team-competition-leader-mode/);
     await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
+    await expect(page.locator('.team-leader-team-vehicle')).toHaveCount(0);
+    expect(await page.locator('.team-leader-team-name').evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
+    await expect(page.locator('#play-cat-img')).toHaveAttribute('src', /team-competition\/stadium-3d-v1\/vehicles\/vehicle-\d+\.png$/);
+    await expect(page.locator('#play-cat-img')).toHaveAttribute('alt', /Xe đua của Nhóm Xanh/);
+    const spaceshipAvatar = await page.evaluate(() => app.teamCompetition.resolvePresentationTeamAvatar(
+      app.teamCompetition.PRESENTATION_THEMES.SPACE_LAUNCH,
+      app.teamCompetition.STADIUM_LANES[0]
+    ));
+    expect(spaceshipAvatar.src).toMatch(/^data:image\/svg\+xml,/);
+    expect(spaceshipAvatar.label).toBe('Phi thuyền');
     const viewportFit = await page.evaluate(() => ({
       scrollHeight: document.documentElement.scrollHeight,
       clientHeight: document.documentElement.clientHeight
@@ -626,7 +638,10 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
     });
     const rows = {
       team_competitions: [{ id: ids.competition, name: match.name, classlevel: '5', class_name: null, participant_mode: 'manual', question_mode: 'same', common_exam_id: exam.id, time_limit_minutes: null, presentation_theme: 'speed-race', presentation_team_identity: {}, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), started_at: new Date().toISOString(), ended_at: null, version: 1 }],
-      team_competition_teams: [{ id: ids.team, competition_id: ids.competition, name: 'Nhóm A', position: 1, target_member_count: 2, leader_username: 'hs1', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null }],
+      team_competition_teams: [
+        { id: ids.team, competition_id: ids.competition, name: 'Nhóm A', position: 1, target_member_count: 2, leader_username: 'hs1', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null },
+        { id: '44444444-4444-4444-8444-444444444444', competition_id: ids.competition, name: 'Nhóm B', position: 2, target_member_count: 2, leader_username: 'hs3', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null }
+      ],
       team_competition_members: [{ competition_id: ids.competition, team_id: ids.team, username: 'hs1', position: 1 }, { competition_id: ids.competition, team_id: ids.team, username: 'hs2', position: 2 }],
       team_competition_attempts: [activeAttempt], team_competition_answers: [], team_competition_results: [],
       team_competition_questions: exam.questions.map((question, questionIndex) => ({
@@ -650,7 +665,7 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
           rows.team_competition_attempts = [activeAttempt];
           return Promise.resolve({ data: activeAttempt, error: null });
         }
-        if (name === 'team_competition_submit_answer') return Promise.resolve({ data: null, error: { code: 'P0001', message: 'session token temporarily unavailable' } });
+        if (name === 'team_competition_submit_answer') return Promise.resolve({ data: null, error: { code: 'P0001', message: 'attempt_session_mismatch' } });
         return Promise.resolve({ data: null, error: null });
       },
       channel() { return { on() { return this; }, subscribe() { return this; } }; }
@@ -663,7 +678,7 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
 
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
-  await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await page.locator('#submit-ans-btn').click();
   await expect.poll(() => dialogs.length).toBe(1);
   expect(dialogs[0]).toContain('Lượt của nhóm vẫn đang mở');
   await expect.poll(() => page.evaluate(() => app.teamCompetition.state.activeAttempt?.status)).toBe('active');
