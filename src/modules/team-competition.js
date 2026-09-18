@@ -839,13 +839,33 @@
         const subject = getTeamSubject(competition, team) === 'vietnamese' ? 'TIẾNG VIỆT' : 'TOÁN';
         const classLevel = String(competition?.classlevel || '').replace(/^Lớp\s*/i, '').trim() || '—';
         if (info) {
+            const lanes = getStadiumLaneAssignments(competition?.teams?.length || 1);
+            const teamIndex = Math.max(0, competition?.teams?.findIndex(item => String(item.id) === String(team?.id)) ?? 0);
+            const lane = lanes[teamIndex] || lanes[0];
+            const matchCard = document.createElement('section');
+            matchCard.className = 'team-leader-match-card';
+            const matchLabel = document.createElement('span');
+            matchLabel.textContent = 'Trận thi đua';
             const matchName = document.createElement('strong');
             matchName.className = 'team-leader-match-name';
             matchName.textContent = competition?.name || 'Trận thi đua';
+            matchCard.replaceChildren(matchLabel, matchName);
+            const teamCard = document.createElement('section');
+            teamCard.className = 'team-leader-team-card';
+            const vehicle = document.createElement('span');
+            vehicle.className = 'team-leader-team-vehicle';
+            vehicle.setAttribute('aria-hidden', 'true');
+            vehicle.style.setProperty('--vehicle-column', String((lane?.vehicleSprite || 0) % 4));
+            vehicle.style.setProperty('--vehicle-row', String(Math.floor((lane?.vehicleSprite || 0) / 4)));
+            const teamCopy = document.createElement('div');
+            const teamLabel = document.createElement('span');
+            teamLabel.textContent = 'Nhóm của bạn';
             const teamName = document.createElement('span');
             teamName.className = 'team-leader-team-name';
             teamName.textContent = team?.name || 'Nhóm thi đua';
-            info.replaceChildren(matchName, teamName);
+            teamCopy.replaceChildren(teamLabel, teamName);
+            teamCard.replaceChildren(vehicle, teamCopy);
+            info.replaceChildren(matchCard, teamCard);
             info.setAttribute('aria-label', `Trận ${matchName.textContent}, ${teamName.textContent}`);
         }
         if (status) {
