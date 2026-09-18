@@ -2056,6 +2056,8 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view.team-competition-leader-mode #skill-bar-container { display: none !important; }
 #game-play-view.team-competition-leader-mode .player-info-card {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
     gap: 8px;
     min-height: 132px;
     align-content: stretch;
@@ -2070,13 +2072,16 @@ input[type="text"], input[type="password"], select, textarea {
     box-shadow: inset 0 1px rgba(255, 255, 255, .16);
 }
 #game-play-view.team-competition-leader-mode .team-leader-match-card { display: grid; gap: 2px; padding: 8px 11px; }
-#game-play-view.team-competition-leader-mode .team-leader-match-card > span,
-#game-play-view.team-competition-leader-mode .team-leader-team-card > div > span:first-child { color: #7dd3fc; font-size: clamp(.58rem, .9vw, .72rem); font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+#game-play-view.team-competition-leader-mode .team-leader-match-card > span { color: #7dd3fc; font-size: clamp(.58rem, .9vw, .72rem); font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
 #game-play-view.team-competition-leader-mode .team-leader-match-name { color: #fff4bf; font-size: clamp(.94rem, 1.45vw, 1.22rem); line-height: 1.18; }
 #game-play-view.team-competition-leader-mode .team-leader-team-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 8px; padding: 6px 10px 6px 6px; }
 #game-play-view.team-competition-leader-mode .team-leader-team-card > div { display: grid; gap: 1px; min-width: 0; }
 #game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(.86rem, 1.25vw, 1.06rem); font-weight: 800; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
 #game-play-view.team-competition-leader-mode .team-leader-team-vehicle { width: 52px; aspect-ratio: 1; background: url('assets/team-competition/stadium-3d-v1/race-vehicles-sprite.png') calc(var(--vehicle-column) * 33.3333%) calc(var(--vehicle-row) * 100%) / 400% 200% no-repeat; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .38)); }
+#game-play-view.team-competition-leader-mode .team-leader-answer-feedback { margin-top: 14px; padding: 10px 14px; border: 2px solid currentColor; border-radius: 12px; font-size: clamp(.9rem, 1.3vw, 1.08rem); font-weight: 900; text-align: center; }
+#game-play-view.team-competition-leader-mode .team-leader-answer-feedback.is-correct { color: #15803d; background: #dcfce7; }
+#game-play-view.team-competition-leader-mode .team-leader-answer-feedback.is-partial { color: #b45309; background: #fef3c7; }
+#game-play-view.team-competition-leader-mode .team-leader-answer-feedback.is-wrong { color: #b91c1c; background: #fee2e2; }
 #game-play-view.team-competition-leader-mode .game-practice-status { display: grid; gap: 4px; text-align: center; }
 #game-play-view.team-competition-leader-mode .game-practice-status small { color: #b9e8ff; font-size: clamp(.72rem, 1vw, .86rem); font-weight: 800; }
 #game-play-view.team-competition-leader-mode .team-leader-locked-panel { text-align: center; }
