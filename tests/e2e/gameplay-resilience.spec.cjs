@@ -22,6 +22,41 @@ function makeSharedPromptQuestion() {
   };
 }
 
+test('sang câu mới xóa đáp án cũ và dựng lời giải cho dữ liệu template cũ', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const result = await page.evaluate(() => {
+    const oldQuestion = { q: 'Câu cũ', type: 'Trắc nghiệm', options: ['1', '2'], ans: '2' };
+    const currentQuestion = {
+      q: 'Chọn Đúng/Sai?', type: 'Đúng/Sai', ans: 'Sai, Đúng',
+      statements: [
+        { label: 'A', text: '25 803 > 80 000', answer: 'Sai', leftText: '25 803', rightText: '80 000', leftValue: 25803, rightValue: 80000, operator: '>' },
+        { label: 'B', text: '65 741 − 25 308 > 25 803', answer: 'Đúng', leftText: '65 741 − 25 308', rightText: '25 803', leftValue: 40433, rightValue: 25803, operator: '>' }
+      ]
+    };
+    app.data.currentUser = { username: 'legacy-template-student', fullname: 'Học sinh thử nghiệm', role: 'student' };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.state = { ...app.game.state, score: 0, currentIdx: 0, questions: [oldQuestion] };
+    app.game.loadQuestion();
+    app.game.showCorrectAnswerReveal(oldQuestion);
+    const before = document.querySelectorAll('.game-answer-reveal').length;
+    app.game.state = { ...app.game.state, currentIdx: 0, questions: [currentQuestion] };
+    app.game.loadQuestion();
+    return {
+      before,
+      after: document.querySelectorAll('.game-answer-reveal').length,
+      explanation: app.game.buildQuestionExplanation(currentQuestion)
+    };
+  });
+
+  expect(result.before).toBe(1);
+  expect(result.after).toBe(0);
+  const explanation = result.explanation.replace(/\u00a0/g, ' ');
+  expect(explanation).toContain('A) Sai: 25 803 = 25 803; 80 000 = 80 000');
+  expect(explanation).toContain('B) Đúng: 65 741 − 25 308 = 40 433');
+});
+
 test('màn làm bài dùng shell tối, gom hướng dẫn chung và không tạo scrollbar ngoài viewport', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);

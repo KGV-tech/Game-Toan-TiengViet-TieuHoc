@@ -2682,10 +2682,13 @@
         }
     }
 
-    /* Winter hub rebuild: 3D assets form the scenery while HTML keeps learning data live. */
+    /* Lightweight winter hub: CSS scenery keeps learning data live without large raster panels. */
     #game-config-view:has(.student-learning-shell--mockup) {
         padding: 14px !important;
-        background: #061743 url('assets/student-learning/winter-hub/winter-sky-background.png') center / cover no-repeat !important;
+        background:
+            radial-gradient(circle at 18% 16%, rgba(129, 230, 255, .22), transparent 24%),
+            radial-gradient(circle at 82% 12%, rgba(156, 124, 255, .2), transparent 26%),
+            linear-gradient(155deg, #071c4a, #061743 52%, #17145c) !important;
     }
 
     #game-config-view:has(.student-learning-shell--mockup) > .station-shell {
@@ -2725,10 +2728,10 @@
     #game-config-view .student-learning-hud__profile {
         min-width: min(380px, 42vw);
         padding: 9px 18px 9px 9px;
-        border: 0;
+        border: 1px solid rgba(183, 241, 255, .58);
         border-radius: 22px;
-        background: url('assets/student-learning/winter-hub/frost-panel.png') center / 100% 100% no-repeat;
-        box-shadow: 0 10px 22px rgba(1, 13, 48, .32);
+        background: linear-gradient(145deg, rgba(17, 75, 128, .94), rgba(21, 43, 100, .96));
+        box-shadow: inset 0 1px rgba(255, 255, 255, .18), 0 10px 22px rgba(1, 13, 48, .32);
     }
 
     #game-config-view .student-learning-screen--daily {
@@ -2742,10 +2745,10 @@
     #game-config-view .student-learning-shell--mockup .student-learning-path {
         position: relative;
         isolation: isolate;
-        border: 0;
-        border-radius: 0;
-        background: url('assets/student-learning/winter-hub/frost-panel.png') center / 100% 100% no-repeat;
-        box-shadow: none;
+        border: 1px solid rgba(183, 241, 255, .52);
+        border-radius: 24px;
+        background: linear-gradient(150deg, rgba(14, 73, 125, .95), rgba(18, 39, 94, .97));
+        box-shadow: inset 0 1px rgba(255, 255, 255, .16), 0 12px 28px rgba(1, 13, 48, .28);
     }
 
     #game-config-view .student-learning-shell--mockup .student-learning-hero {
@@ -2806,10 +2809,10 @@
         min-height: 48px;
         padding: 10px 28px;
         transform: translateX(50%);
-        border: 0;
-        border-radius: 0;
-        background: url('assets/student-learning/winter-hub/lesson-sign.png') center / 100% 100% no-repeat;
-        box-shadow: none;
+        border: 1px solid rgba(212, 248, 255, .72);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(32, 115, 170, .96), rgba(39, 57, 137, .97));
+        box-shadow: inset 0 1px rgba(255, 255, 255, .2), 0 8px 18px rgba(5, 21, 66, .3);
         color: #f6fbff;
         font-size: clamp(.8rem, 1.25vw, 1.08rem);
         font-weight: 950;

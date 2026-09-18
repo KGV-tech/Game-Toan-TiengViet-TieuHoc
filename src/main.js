@@ -3343,6 +3343,27 @@ const app = {
                 return { label, answers };
             });
         },
+        buildQuestionExplanation(question) {
+            if (Array.isArray(question?.statements) && question.statements.length) {
+                return question.statements.map((statement, index) => {
+                    const label = String(statement?.label || String.fromCharCode(65 + index)).replace(/[.)]$/, '');
+                    const verdict = String(statement?.answer || '').trim() || '—';
+                    if (Number.isFinite(Number(statement?.leftValue)) && Number.isFinite(Number(statement?.rightValue))) {
+                        const left = app.data.formatMathText(statement.leftText ?? statement.leftValue);
+                        const right = app.data.formatMathText(statement.rightText ?? statement.rightValue);
+                        const leftValue = app.data.formatMathText(statement.leftValue);
+                        const rightValue = app.data.formatMathText(statement.rightValue);
+                        return `${label}) ${verdict}: ${left} = ${leftValue}; ${right} = ${rightValue}, nên đối chiếu hai giá trị để kiểm tra dấu ${statement.operator || 'so sánh'}.`;
+                    }
+                    return `${label}) ${verdict}: Xác định đúng hàng và giá trị của từng chữ số trong phát biểu rồi đối chiếu.`;
+                }).join('\n');
+            }
+            const groups = this.getAnswerGroups(question);
+            return groups.map(group => {
+                const value = group.answers.map(answer => app.data.formatMathText(answer)).join(', ');
+                return `${group.label ? `${group.label}) ` : ''}${value}`;
+            }).join('\n');
+        },
         showInlineAnswerCorrection(element, correctAnswer) {
             if (!element || !String(correctAnswer ?? '').trim()) return;
             if (element._answerCorrection?.isConnected) element._answerCorrection.remove();
@@ -3361,7 +3382,7 @@ const app = {
             const questionContainer = document.getElementById('game-question-container');
             if (!questionContainer) return;
 
-            questionContainer.querySelector('.game-answer-reveal')?.remove();
+            document.querySelectorAll('#game-play-view .game-answer-reveal').forEach(item => item.remove());
             const reveal = document.createElement('section');
             reveal.className = 'game-answer-reveal';
             reveal.setAttribute('role', 'status');
@@ -3522,6 +3543,7 @@ const app = {
         },
         loadQuestion() {
             this.cleanupMatching();
+            document.querySelectorAll('#game-play-view .game-answer-reveal').forEach(item => item.remove());
             if (this.skills) this.skills.state.shieldActive = false;
             if (!this.state.teamCompetition) {
                 const gameView = document.getElementById('game-play-view');
@@ -3550,7 +3572,12 @@ const app = {
 
             const user = app.data.currentUser;
             let equipped = app.getEquippedPet(user);
-            document.getElementById('play-cat-img').src = './public/' + equipped;
+            const playAvatar = document.getElementById('play-cat-img');
+            playAvatar.src = './public/' + equipped;
+            if (!this.state.teamCompetition) {
+                playAvatar.alt = 'Thú cưng đồng hành';
+                playAvatar.classList.remove('team-leader-theme-avatar');
+            }
             app.auth.updateHeader();
 
             const practiceStatus = document.getElementById('game-practice-status');
@@ -4693,7 +4720,7 @@ const app = {
                     if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent' || basePet === 'robot_cat_normal') basePet = 'robot_cat';
                 }
                 const happyImage = basePet === 'robot_cat' ? 'robot_cat_happy.webp' : `${basePet}_happy.png`;
-                document.getElementById('play-cat-img').src = `./public/${happyImage}`;
+                if (!this.state.teamCompetition) document.getElementById('play-cat-img').src = `./public/${happyImage}`;
                 bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
             } else {
                 app.playSound('wrong');
@@ -4706,25 +4733,31 @@ const app = {
                     if (basePet === 'cat_normal' || basePet === 'robot_cat_normal_transparent' || basePet === 'robot_cat_normal') basePet = 'robot_cat';
                 }
                 const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad.webp' : `${basePet}_sad.png`;
-                document.getElementById('play-cat-img').src = `./public/${sadImage}`;
+                if (!this.state.teamCompetition) document.getElementById('play-cat-img').src = `./public/${sadImage}`;
                 bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
             }
 
-            const explanation = q.explanation || q.hint;
+            const explanation = Array.isArray(q.statements) && q.statements.length
+                ? this.buildQuestionExplanation(q)
+                : q.explanation || q.hint || this.buildQuestionExplanation(q);
             const explBox = document.getElementById('explanation-box');
             const progressCopy = document.getElementById('game-progress-copy');
             const progressContent = document.getElementById('game-progress-content');
             if (progressCopy) progressCopy.style.display = 'none';
             if (progressContent) progressContent.hidden = false;
             explBox.style.display = 'block';
-            explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanation || 'Đáp án đúng đã được đánh dấu trên bài.'}`;
+            const explanationHTML = app.data.formatQuestionDetailHTML(explanation || `Đáp án đúng là ${app.data.formatMathText(q.ans || '')}.`)
+                .replace(/\n/g, '<br>');
+            explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanationHTML}`;
 
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
                 this.state.score += 1 - scoreResult.points;
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true, ...scoreResult }));
                 bubble.innerHTML = `<span style="color:#3b82f6;">Lá Chắn kích hoạt!<br>Không bị trừ điểm!</span>`;
-                document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.webp', '_happy.webp').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.webp', '_happy.webp').replace('_normal.png', '_happy.png')}`;
+                if (!this.state.teamCompetition) {
+                    document.getElementById('play-cat-img').src = `./public/${document.getElementById('play-cat-img').src.split('/').pop().replace('_sad.webp', '_happy.webp').replace('_sad.png', '_happy.png').replace('_normal_transparent.png', '_happy_transparent.png').replace('_normal.webp', '_happy.webp').replace('_normal.png', '_happy.png')}`;
+                }
             } else {
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, isCorrect, scoreResult));
             }

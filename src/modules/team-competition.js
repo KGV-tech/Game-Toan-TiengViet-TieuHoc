@@ -54,6 +54,20 @@
     const TEAM_VEHICLE_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
     ));
+    const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
+
+    function createSpaceshipAvatar(color) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><filter id="g"><feGaussianBlur stdDeviation="3"/></filter></defs><path fill="#38bdf8" opacity=".65" filter="url(#g)" d="M46 137 25 164l38-14m71-13 21 27-38-14"/><path fill="${color}" stroke="#e0f2fe" stroke-width="6" d="M90 13c27 25 42 59 38 101l-38 30-38-30C48 72 63 38 90 13Z"/><path fill="#082f49" stroke="#fff" stroke-width="5" d="M90 50a22 22 0 1 1 0 44 22 22 0 0 1 0-44Z"/><path fill="#fef08a" d="m70 137 20 35 20-35-20 12Z"/></svg>`;
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    }
+
+    function resolvePresentationTeamAvatar(presentationTheme, lane = STADIUM_LANES[0]) {
+        const spriteIndex = Math.max(0, Math.min(TEAM_VEHICLE_ASSETS.length - 1, Number(lane?.vehicleSprite) || 0));
+        if (presentationTheme === PRESENTATION_THEMES.SPACE_LAUNCH) {
+            return { src: createSpaceshipAvatar(TEAM_IDENTITY_COLORS[spriteIndex]), label: 'Phi thuyền' };
+        }
+        return { src: TEAM_VEHICLE_ASSETS[spriteIndex], label: 'Xe đua' };
+    }
     const STORAGE_KEY = 'team_competitions_v1';
     const ATTEMPT_STORAGE_KEY = 'team_competition_attempts_v1';
     const EVENT_NAME = 'team-competition-updated';
@@ -855,18 +869,21 @@
             matchCard.replaceChildren(matchLabel, matchName);
             const teamCard = document.createElement('section');
             teamCard.className = 'team-leader-team-card';
-            const vehicle = document.createElement('span');
-            vehicle.className = 'team-leader-team-vehicle';
-            vehicle.setAttribute('aria-hidden', 'true');
-            vehicle.style.setProperty('--team-vehicle-image', `url('${TEAM_VEHICLE_ASSETS[lane?.vehicleSprite || 0]}')`);
             const teamCopy = document.createElement('div');
             const teamName = document.createElement('span');
             teamName.className = 'team-leader-team-name';
             teamName.textContent = team?.name || 'Nhóm thi đua';
             teamCopy.replaceChildren(teamName);
-            teamCard.replaceChildren(vehicle, teamCopy);
+            teamCard.replaceChildren(teamCopy);
             info.replaceChildren(matchCard, teamCard);
             info.setAttribute('aria-label', `Trận ${matchName.textContent}, ${teamName.textContent}`);
+            const avatar = document.getElementById('play-cat-img');
+            if (avatar) {
+                const themeAvatar = resolvePresentationTeamAvatar(competition?.presentationTheme, lane);
+                avatar.src = themeAvatar.src;
+                avatar.alt = `${themeAvatar.label} của ${teamName.textContent}`;
+                avatar.classList.add('team-leader-theme-avatar');
+            }
         }
         if (status) {
             const participants = document.createElement('span');
@@ -1284,6 +1301,7 @@
         PRESENTATION_THEME_OPTIONS,
         STADIUM_LANES,
         TEAM_VEHICLE_ASSETS,
+        resolvePresentationTeamAvatar,
         STORAGE_KEY,
         ATTEMPT_STORAGE_KEY,
         normalizeClass,
