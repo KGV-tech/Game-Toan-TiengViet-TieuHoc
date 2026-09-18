@@ -8,6 +8,7 @@ const classNameMigration = fs.readFileSync('supabase/migrations/20260907_team_co
 const groupedAnswersMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_grouped_answers.sql', 'utf8').toLowerCase();
 const uuidDefaultsMigration = fs.readFileSync('supabase/migrations/20260916_team_competition_uuid_defaults.sql', 'utf8').toLowerCase();
 const speedRaceMigration = fs.readFileSync('supabase/migrations/20260917_team_competition_speed_race.sql', 'utf8').toLowerCase();
+const submitAnswerFixMigration = fs.readFileSync('supabase/migrations/20260918_team_competition_submit_answer_question_id_fix.sql', 'utf8').toLowerCase();
 const groupedAnswersSql = groupedAnswersMigration.replace(/--.*$/gm, '');
 
 for (const table of [
@@ -97,5 +98,13 @@ assert.match(speedRaceMigration, /check \(presentation_theme in \('speed-race'\)
   'Only the completed speed-race asset may be persisted until another asset is finished.');
 assert.match(speedRaceMigration, /set presentation_theme = 'speed-race'\s+where presentation_theme = 'stadium-3d'/,
   'Existing temporary stadium records must become the completed speed-race theme.');
+assert.match(submitAnswerFixMigration, /create or replace function public\.team_competition_submit_answer/,
+  'Submit-answer repair must replace the deployed RPC.');
+assert.match(submitAnswerFixMigration, /p_attempt_id,\s*question_row\.id,\s*p_question_index/,
+  'Submit-answer repair must save the question UUID, never the complete question record.');
+assert.match(submitAnswerFixMigration, /select answer_keys\.answer_key into answer_key/,
+  'Submit-answer repair must qualify answer_key to avoid PL/pgSQL ambiguity.');
+assert.doesNotMatch(submitAnswerFixMigration, /create table|alter table|create policy|drop policy|grant |revoke /,
+  'Submit-answer repair must not change schema, RLS, or permissions.');
 
 console.log('team competition migration contract tests passed');

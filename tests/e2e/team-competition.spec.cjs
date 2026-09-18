@@ -80,6 +80,7 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-board-members__leader').first()).toContainText('Trưởng nhóm');
   await expect(page.locator('.team-board-members__leader').first()).toContainText('Học sinh 1');
   await expect(page.locator('.team-board-members__list').first()).toContainText('Học sinh 1');
+  expect(await page.locator('.team-race-stadium--speed-race').evaluate(node => getComputedStyle(node, '::before').display)).toBe('none');
   expect(await page.locator('.team-board-members__leader').first().evaluate(node => Number.parseFloat(getComputedStyle(node.querySelector('strong')).fontSize))).toBeGreaterThanOrEqual(16);
   await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
   const preparedLayout = await page.locator('.team-competition-board').evaluate(board => {
@@ -429,11 +430,19 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#team-competition-play-screen')).not.toHaveClass(/active/);
   await expect(page.locator('#game-player-info')).toContainText('Trận tablet');
   await expect(page.locator('#game-player-info')).toContainText('Nhóm A');
+  await expect(page.locator('#game-player-info .team-leader-match-card')).toContainText('Trận tablet');
+  await expect(page.locator('#game-player-info .team-leader-team-card')).toContainText('Nhóm A');
+  await expect(page.locator('#game-player-info .team-leader-team-vehicle')).toBeVisible();
+  await expect(page.locator('#game-player-info .team-leader-team-card')).not.toContainText('Nhóm của bạn');
+  expect(await page.locator('#game-player-info').evaluate(node => getComputedStyle(node).gridTemplateColumns)).toContain('1fr');
   await expect(page.locator('#game-practice-status')).toContainText('Các bạn đang tham gia');
   await expect(page.locator('#game-practice-status')).toContainText('THI ĐUA NHÓM');
   await expect(page.locator('#game-practice-status')).toContainText('MÔN TOÁN LỚP 5');
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.getByRole('button', { name: 'Nộp câu trả lời' }).click();
+  await expect(page.locator('#current-q-index')).toHaveText('1');
+  await expect(page.locator('#team-leader-answer-feedback')).toContainText('Chính xác');
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
 
   await page.getByRole('button', { name: 'Thoát lượt đội nhóm' }).click();

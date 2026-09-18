@@ -605,11 +605,18 @@
                     api.clearPlayTimer();
                     api.renderLeaderLocked(`Đã hoàn thành bài của ${team.name}. Điểm đội: ${Number(updated.score || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}/10.`);
                 } else {
-                    api.renderLeaderQuestion();
+                    const questionPoints = Math.max(0, (Number(updated.score || 0) - Number(attempt.score || 0))
+                        * Math.max(1, Number(updated.questionCount || questions.length || 1)) / 10);
+                    api.renderLeaderAnswerFeedback(competition, team, updated, question, {
+                        points: questionPoints,
+                        isCorrect: Number(updated.correctCount || 0) > Number(attempt.correctCount || 0)
+                    });
                 }
                 return updated;
             } catch (error) {
-                if (error.code === 'team_competition_timeout' || /locked|timeout|session/i.test(error.message || '')) {
+                const lifecycleError = error.code === 'team_competition_timeout'
+                    || /^(attempt_session_mismatch|competition_is_not_active|team_competition_timeout)$/i.test(String(error.message || '').trim());
+                if (lifecycleError) {
                     await this.syncRemote({ silent: true });
                     const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
                     const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
