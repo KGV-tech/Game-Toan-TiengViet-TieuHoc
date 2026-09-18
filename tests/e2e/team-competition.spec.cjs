@@ -332,6 +332,54 @@ test('trận đã kết thúc có thể chơi lại bằng một bản nháp m�
   expect(await page.evaluate(id => app.teamCompetition.store.get(id), snapshot.id)).toMatchObject({ status: 'ended', results: snapshot.results });
 });
 
+test('kết thúc trận vẫn mở bảng kết quả và cho đồng bộ lại khi Supabase lỗi tạm thời', async ({ page }) => {
+  await openOfflineHomepage(page);
+  const dialogMessages = [];
+  page.on('dialog', async dialog => {
+    dialogMessages.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'retry-ended-match', name: 'Trận mất kết nối', classlevel: '5', teamCount: 2,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.ACTIVE, startedAt: Date.now(), teams: [
+        { id: 'retry-team-a', name: 'Nhóm A', memberUsernames: ['hs1'], leaderUsername: 'hs1', score: 6, submittedCount: 2, status: 'active' },
+        { id: 'retry-team-b', name: 'Nhóm B', memberUsernames: ['hs2'], leaderUsername: 'hs2', score: 4, submittedCount: 2, status: 'active' }
+      ]
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    const originalUpsert = app.teamCompetition.store.upsert;
+    window.teamCompetitionEndRetry = { status: 'error', writes: 0 };
+    app.teamCompetition.store.upsert = input => {
+      window.teamCompetitionEndRetry.writes += 1;
+      return originalUpsert(input);
+    };
+    app.teamCompetition.remote = {
+      flush: async () => {},
+      getStatus: () => window.teamCompetitionEndRetry.status
+    };
+    app.admin.openAdmin();
+    return app.admin.endTeamCompetition(match.id, true);
+  }, { users: demoUsers(), exam: demoExam() });
+
+  await expect(page.locator('.team-competition-board')).toBeVisible();
+  await expect(page.locator('.team-board-ended-note')).toContainText('Kết quả đã được giữ trên thiết bị này');
+  await expect(page.getByRole('button', { name: 'Thử đồng bộ lại' })).toBeVisible();
+  expect(dialogMessages).toEqual([]);
+  expect(await page.evaluate(() => app.teamCompetition.store.get('retry-ended-match').status)).toBe('ended');
+
+  await page.evaluate(() => { window.teamCompetitionEndRetry.status = 'ready'; });
+  await page.getByRole('button', { name: 'Thử đồng bộ lại' }).click();
+  await expect(page.getByRole('button', { name: 'Thử đồng bộ lại' })).toHaveCount(0);
+  await expect(page.locator('.team-board-ended-note')).toContainText('Trận đã kết thúc');
+  expect(await page.evaluate(() => window.teamCompetitionEndRetry.writes)).toBe(2);
+});
+
 test('Admin có thể lọc danh sách nhóm thi đua theo lớp con trong cùng cấp lớp', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openOfflineHomepage(page);

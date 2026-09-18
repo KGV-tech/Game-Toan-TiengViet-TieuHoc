@@ -7338,9 +7338,10 @@ const app = {
                     : '';
                 return `<article class="team-board-card team-board-card--${teamStatusClass}"><header class="team-board-card__top"><div class="team-board-rank">${String(index + 1).padStart(2, '0')}</div><div><p class="team-board-card__kicker">Đội ${index + 1}</p><h3>${teamName}</h3></div><span class="team-board-score">${score}<small>/10</small></span></header><div class="team-board-card__status-row"><span>${isLive ? `${progress}/${total || '?'} câu đã nộp` : `${team.memberUsernames.length} thành viên`}</span><span>${teamStatus}</span></div><div class="team-board-card__progress" aria-label="Tiến độ ${teamName}"><span style="width:${total ? Math.min(100, progress / total * 100) : 0}%"></span></div><div class="team-board-card__meta"><span>${isLive || match.status === app.teamCompetition.STATUS.ENDED ? `Hạng ${rank}` : teamStatus}</span><span>${metaRight}</span></div>${roster}<div class="team-board-card__actions">${editAction}</div></article>`;
             }).join('');
+            const endSyncFailed = match.status === app.teamCompetition.STATUS.ENDED && app.teamCompetition.remote?.getStatus?.() === 'error';
             const globalAction = match.status === app.teamCompetition.STATUS.PREPARED
                 ? `<button type="button" class="btn-start-massive team-board-start" onclick="app.admin.startTeamCompetition(decodeURIComponent('${token}'))">Bắt đầu thi đua</button>`
-                : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : (match.status === app.teamCompetition.STATUS.ENDED ? `<button type="button" class="btn-success team-board-replay" onclick="app.admin.replayTeamCompetition(decodeURIComponent('${token}'))">Chơi lại</button>` : ''));
+                : (isLive ? `<button type="button" class="btn-danger team-board-end" onclick="app.admin.endTeamCompetition(decodeURIComponent('${token}'))">Kết thúc trận</button>` : (match.status === app.teamCompetition.STATUS.ENDED ? `${endSyncFailed ? `<button type="button" class="btn-primary team-board-retry-sync" onclick="app.admin.retryTeamCompetitionEndSync(decodeURIComponent('${token}'))">Thử đồng bộ lại</button>` : ''}<button type="button" class="btn-success team-board-replay" onclick="app.admin.replayTeamCompetition(decodeURIComponent('${token}'))">Chơi lại</button>` : ''));
             const statusClass = ['draft', 'prepared', 'active', 'ended'].includes(match.status) ? match.status : 'draft';
             const totalQuestions = match.teams.reduce((max, team) => Math.max(max, app.teamCompetition.getExamForTeam(match, team)?.questions?.length || 0), 0);
             const rankedTeams = [...match.teams].sort((left, right) => app.teamCompetition.getTeamRank(match, left.id) - app.teamCompetition.getTeamRank(match, right.id));
@@ -7352,7 +7353,10 @@ const app = {
             const raceSurface = isLive
                 ? `<div class="team-stadium-canvas" aria-label="Đường đua 8 lane"><div class="team-stadium-canvas__lanes">${cards}</div></div>`
                 : `<div class="team-board-grid">${cards}</div>`;
-            box.innerHTML = `<section class="team-competition-board ${isLive ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button><span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div></header><div class="team-board-actions">${globalAction}</div>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note">Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.</div>` : ''}</section>`;
+            const endedNote = endSyncFailed
+                ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
+                : 'Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.';
+            box.innerHTML = `<section class="team-competition-board ${isLive ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button><span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div></header><div class="team-board-actions">${globalAction}</div>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note" role="status">${endedNote}</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
                 if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { this.stopTeamCompetitionBoardTimer(); return; }
@@ -7395,8 +7399,15 @@ const app = {
             ended.results = app.teamCompetition.buildMemberResults(ended, scoreByTeam);
             app.teamCompetition.store.upsert(ended);
             if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
-            if (app.teamCompetition.remote?.getStatus?.() === 'error') return alert('Không thể kết thúc trận trên Supabase. Vui lòng kiểm tra kết nối.');
             this.openTeamCompetitionBoard(ended.id);
+        },
+        async retryTeamCompetitionEndSync(id) {
+            const match = app.teamCompetition?.store.get(id);
+            if (!match || match.status !== app.teamCompetition.STATUS.ENDED) return false;
+            app.teamCompetition.store.upsert(match);
+            if (app.teamCompetition.remote?.flush) await app.teamCompetition.remote.flush();
+            this.openTeamCompetitionBoard(match.id);
+            return app.teamCompetition.remote?.getStatus?.() !== 'error';
         },
         getQuestAssignableStudents(classlevel = document.getElementById('quest-target-classlevel')?.value || '') {
             const targetLevel = app.data.normalizeClassLevel(classlevel);
