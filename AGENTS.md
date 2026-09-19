@@ -89,3 +89,7 @@ Các quy ước GitHub issue tracker, triage label và tài liệu domain nằm 
 - Codex tự review, kiểm thử Node/Playwright và các giới hạn an toàn vẫn áp dụng theo `docs/AI_WORKFLOW.md`.
 
 Xem checklist browser tại `docs/PLAYWRIGHT_TESTING.md`. Mẫu `docs/KIMI_REVIEW_PROMPT.md` được giữ để dùng khi người dùng yêu cầu Kimi review.
+
+## Quy trình model mặc định
+
+Mọi yêu cầu code/UI/logic cho game phải tuân theo `docs/MODEL_ORCHESTRATION.md`: hãy tự động tạo/sử dụng subagent `sol_high` để lập plan, sau đó `luna_max` triển khai, quay lại `sol_high` review toàn diện, rồi `luna_max` sửa finding và lặp đến khi `READY`. Hai agent đã được khai báo tại `.codex/agents/` với model/reasoning riêng. Đây là quy trình mặc định, không cần người dùng nhắc lại. Vẫn giữ nguyên mọi giới hạn an toàn, kiểm thử, UI device policy, Kimi và Git trong tài liệu hiện có.
