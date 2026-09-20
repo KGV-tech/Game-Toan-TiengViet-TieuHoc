@@ -606,6 +606,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     expect(await page.locator('.team-leader-team-name').evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
     await expect(page.locator('#play-cat-img')).toHaveAttribute('src', /team-competition\/stadium-3d-v1\/vehicles\/vehicle-\d+\.png$/);
     await expect(page.locator('#play-cat-img')).toHaveAttribute('alt', /Xe đua của Nhóm Xanh/);
+    const encouragementPosition = await page.evaluate(() => {
+      const bubble = document.getElementById('cat-speech-bubble').getBoundingClientRect();
+      const avatar = document.getElementById('play-cat-img').getBoundingClientRect();
+      return { bubbleBottom: bubble.bottom, avatarTop: avatar.top, avatarHeight: avatar.height };
+    });
+    expect(encouragementPosition.bubbleBottom).toBeLessThanOrEqual(encouragementPosition.avatarTop + encouragementPosition.avatarHeight * .55);
     const spaceshipAvatar = await page.evaluate(() => app.teamCompetition.resolvePresentationTeamAvatar(
       app.teamCompetition.PRESENTATION_THEMES.SPACE_LAUNCH,
       app.teamCompetition.STADIUM_LANES[0]
