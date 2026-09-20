@@ -14,18 +14,103 @@
   <link rel="stylesheet" href="./src/map-layout.css">
   <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1">
   <link rel="stylesheet" href="./src/student-learning.css?v=learning-deck-v2">
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
-  <script defer>
-    window.addEventListener('DOMContentLoaded', () => {
-      if (window.MobileDragDrop) {
-        MobileDragDrop.polyfill({
-          dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+  <script>
+    (() => {
+      const defaultTimeoutMs = 4000;
+      const requestedTimeoutMs = Number(window.__GAME_DEPENDENCY_TIMEOUT_MS);
+      const timeoutMs = Number.isFinite(requestedTimeoutMs) && requestedTimeoutMs > 0
+        ? Math.min(requestedTimeoutMs, defaultTimeoutMs)
+        : defaultTimeoutMs;
+
+      function loadOptionalScript(src, globalName) {
+        return new Promise(resolve => {
+          const script = document.createElement('script');
+          let settled = false;
+          const finish = (dependency, error) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeoutId);
+            if (!dependency) script.remove();
+            resolve({ available: Boolean(dependency), sdk: dependency || null, error: error || null });
+          };
+          const timeoutId = window.setTimeout(() => finish(null, 'timeout'), timeoutMs);
+          script.async = true;
+          script.src = src;
+          script.addEventListener('load', () => {
+            const dependency = window[globalName];
+            finish(dependency, dependency ? null : 'missing-global');
+          }, { once: true });
+          script.addEventListener('error', () => finish(null, 'network-error'), { once: true });
+          document.head.appendChild(script);
         });
       }
-    });
-    window.addEventListener('touchmove', function () { }, { passive: false });
+
+      function loadMobileDragDropStyles() {
+        if (document.getElementById('mobile-drag-drop-styles')) return;
+        const stylesheet = document.createElement('link');
+        stylesheet.id = 'mobile-drag-drop-styles';
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = 'https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css';
+        stylesheet.addEventListener('error', () => {
+          console.warn('Không tải được kiểu kéo thả trên cảm ứng; các thao tác kéo thả vẫn có thể tiếp tục.');
+        }, { once: true });
+        document.head.appendChild(stylesheet);
+      }
+
+      function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent)
+          || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      }
+
+      const supabase = loadOptionalScript(
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+        'supabase'
+      ).then(result => {
+        if (!result.available) {
+          console.warn(`Dịch vụ đăng nhập chưa tải được (${result.error}); màn hình vẫn mở và đăng nhập sẽ báo trạng thái kết nối.`);
+        }
+        return result;
+      });
+
+      const mobileDragDrop = loadOptionalScript(
+        'https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js',
+        'MobileDragDrop'
+      ).then(result => new Promise(resolve => {
+        const initialize = () => {
+          if (!result.available || typeof result.sdk.polyfill !== 'function') {
+            result.available = false;
+            result.error = result.error || 'missing-polyfill';
+            console.warn(`Polyfill kéo thả trên cảm ứng chưa sẵn sàng (${result.error}).`);
+            resolve({ ...result, applied: false });
+            return;
+          }
+
+          try {
+            const polyfillApplied = result.sdk.polyfill({
+              dragImageTranslateOverride: result.sdk.scrollBehaviourDragImageTranslateOverride
+            }) === true;
+            if (polyfillApplied) {
+              loadMobileDragDropStyles();
+              if (isIOSDevice()) {
+                window.addEventListener('touchmove', function () { }, { passive: false });
+              }
+            }
+            resolve({ ...result, applied: polyfillApplied });
+          } catch (error) {
+            console.warn('Không thể khởi tạo polyfill kéo thả trên cảm ứng:', error);
+            resolve({ ...result, applied: false, error: 'initialization-error' });
+          }
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initialize, { once: true });
+        } else {
+          initialize();
+        }
+      }));
+
+      window.__gameDependencies = { timeoutMs, supabase, mobileDragDrop };
+    })();
   </script>
 </head>
 
@@ -88,11 +173,11 @@
 
     <!-- Màn hình Đăng ký -->
     <div id="register-screen" class="screen auth-screen">
-      <img src="./public/login_reference_bg.webp" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img">
+      <img src="./public/login_reference_bg.webp" alt="Kim tự tháp Toán và rừng Tiếng Việt tương lai" class="bg-img" loading="lazy" decoding="async">
       <div class="register-artwork-anchor">
-        <img src="./public/login_logo.webp" class="register-logo" alt="Hành trình: Kết Nối Tri Thức">
+        <img src="./public/login_logo.webp" class="register-logo" alt="Hành trình: Kết Nối Tri Thức" loading="lazy" decoding="async">
         <div class="glass-container register-panel register-panel--wide">
-          <img src="./public/register_frame_wide.png" class="register-panel-frame" alt="">
+          <img src="./public/register_frame_wide.png" class="register-panel-frame" alt="" loading="lazy" decoding="async">
           <h2 class="register-heading">Đăng ký tài khoản</h2>
           <form id="register-form" class="auth-form" novalidate aria-describedby="register-error">
           <div class="register-form-grid">
@@ -164,14 +249,14 @@
             </div>
           </fieldset>
           <button id="register-btn" type="submit" class="register-action asset-button asset-button--auth" aria-label="Đăng ký">
-            <img src="./public/ui/buttons/group1/register.png" alt="" aria-hidden="true">
+            <img src="./public/ui/buttons/group1/register.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </button>
           <p id="register-error" class="auth-feedback" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
           </form>
           <a href="#" id="link-to-login" class="link-glass register-back-link">← Quay lại đăng nhập</a>
         </div>
       </div>
-      <img src="./public/login_robot_transparent.webp" alt="Robot mèo hướng dẫn" class="login-mascot">
+      <img src="./public/login_robot_transparent.webp" alt="Robot mèo hướng dẫn" class="login-mascot" loading="lazy" decoding="async">
     </div>
 
     <!-- Bản đồ -->
@@ -191,7 +276,7 @@
       </div>
 
       <div class="map-container map-v2">
-        <img src="./public/map_scifi_adventure_v2.webp" alt="Bản đồ hành trình kết nối tri thức" class="map-bg" decoding="async">
+        <img src="./public/map_scifi_adventure_v2.webp" alt="Bản đồ hành trình kết nối tri thức" class="map-bg" loading="lazy" decoding="async">
 
         <!-- Nút Hướng dẫn (Gắn liền với Map, co giãn theo tỷ lệ Map) -->
         <div class="station station-guide" style="top: 82%; left: 6%; z-index: 50;">
@@ -253,7 +338,7 @@
 
         <div id="map-cat-wrapper"
           style="position:absolute; top: 50%; left: 50%; margin-left: -75px; margin-top: -75px; width: 150px; z-index: 15; pointer-events: none; transition: top 0.8s linear, left 0.8s linear;">
-          <img id="map-cat" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="floating-cat"
+          <img id="map-cat" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="floating-cat" loading="lazy" decoding="async"
             style="width: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));">
         </div>
       </div>
@@ -546,10 +631,10 @@
             <div class="config-top">
               <div class="config-left">
                 <div class="student-learning-mascot-bubble" aria-hidden="true">Cùng khám phá!</div>
-                <img src="./public/robot_cat_normal.webp" alt="Robot mèo thám hiểm" class="cat-avatar heartbeat" style="width: 170px;">
+                <img src="./public/robot_cat_normal.webp" alt="Robot mèo thám hiểm" class="cat-avatar heartbeat" loading="lazy" decoding="async" style="width: 170px;">
                 <button id="game-start-btn" class="btn-start-adventure asset-button asset-button--wide"
                   onclick="app.game.startPlay()" aria-label="Bắt đầu khám phá">
-                  <img src="./public/ui/buttons/group1/start-adventure.png" alt="" aria-hidden="true">
+                  <img src="./public/ui/buttons/group1/start-adventure.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
                 </button>
               </div>
 
@@ -613,7 +698,7 @@
               <div class="cat-wrapper"
                 style="position: relative; display: flex; justify-content: center; align-items: center; margin-top: 60px;">
                 <div id="cat-speech-bubble" class="speech-bubble" style="display:none;"></div>
-                <img id="play-cat-img" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="cat-avatar-large">
+                <img id="play-cat-img" src="./public/robot_cat_normal.webp" alt="Robot mèo" class="cat-avatar-large" loading="lazy" decoding="async">
               </div>
 
               <div id="game-practice-status" class="game-practice-status">
@@ -654,7 +739,7 @@
               </div>
 
               <button id="submit-ans-btn" class="btn-action btn-check asset-button asset-button--wide" onclick="app.game.submitAnswer()" disabled style="margin-top: 15px; width: 100%;" aria-label="Kiểm tra">
-                <img id="submit-ans-img" src="./public/ui/buttons/group1/check.png" alt="" aria-hidden="true">
+                <img id="submit-ans-img" src="./public/ui/buttons/group1/check.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1024" height="368">
                 <span id="submit-ans-text" class="sr-only">Kiểm tra</span>
               </button>
 
@@ -692,13 +777,13 @@
 
         <div class="exam-select-layout">
           <button type="button" class="subject-box" aria-pressed="false" onclick="app.exam.setFilter('subject', 'math', this)">
-            <img src="./public/subject_math_explorer.webp" alt="Toán">
+            <img src="./public/subject_math_explorer.webp" alt="Toán" loading="lazy" decoding="async">
             <h3>Toán Học</h3>
           </button>
           <img src="./public/robot_cat_subject_select.png" alt="Robot mèo thám hiểm giới thiệu môn học"
-            class="exam-guide-mascot">
+            class="exam-guide-mascot" loading="lazy" decoding="async">
           <button type="button" class="subject-box" aria-pressed="false" onclick="app.exam.setFilter('subject', 'vietnamese', this)">
-            <img src="./public/subject_vietnamese_explorer.webp" alt="Tiếng Việt">
+            <img src="./public/subject_vietnamese_explorer.webp" alt="Tiếng Việt" loading="lazy" decoding="async">
             <h3>Tiếng Việt</h3>
           </button>
         </div>
@@ -716,7 +801,7 @@
         </div>
 
         <button class="btn-start-massive asset-button asset-button--wide" style="margin-top:20px;" onclick="app.exam.start()" aria-label="Bắt đầu làm bài">
-          <img src="./public/ui/buttons/group1/start-exam.png" alt="" aria-hidden="true">
+          <img src="./public/ui/buttons/group1/start-exam.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
         </button>
       </div>
     </div>
@@ -735,7 +820,7 @@
         <div id="exam-questions-container" class="exam-scroll-area"></div>
         <div style="text-align:center; margin-top: 30px;">
           <button class="asset-button asset-button--score" onclick="app.exam.submit()" aria-label="Chấm điểm">
-            <img src="./public/ui/buttons/group1/score.png" alt="" aria-hidden="true">
+            <img src="./public/ui/buttons/group1/score.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </button>
         </div>
       </div>
@@ -780,7 +865,7 @@
           <button id="bonus-candies-container" type="button" class="bonus-reward-button" aria-label="Nhận sao thưởng" style="display:none; margin: 15px auto; flex-wrap: wrap;" onclick="app.game.claimBonus()"></button>
           <br>
           <button type="button" class="btn-exit-gray asset-button asset-button--exit" onclick="app.game.closeResult()" aria-label="Thoát">
-            <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true">
+            <img src="./public/ui/buttons/group1/exit.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </button>
         </div>
         <div class="result-right">
@@ -861,13 +946,13 @@
       <!-- Notebook Tabs (Left) -->
       <div class="admin-tabs shop-tabs">
         <button class="notebook-tab active asset-button asset-button--shop-tab" data-shop-tab="pets" onclick="app.shop.switchTab('pets', this)" aria-label="Trạm Thú Cưng">
-          <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true">
+          <img src="./public/ui/buttons/group2/shop-pets-tab.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
         </button>
         <button class="notebook-tab asset-button asset-button--shop-tab" data-shop-tab="mypets" onclick="app.shop.switchTab('mypets', this)" aria-label="Thú Cưng Của Tôi">
-          <img src="./public/ui/buttons/group2/shop-my-pets-tab.png" alt="" aria-hidden="true">
+          <img src="./public/ui/buttons/group2/shop-my-pets-tab.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
         </button>
         <button class="notebook-tab asset-button asset-button--shop-tab" data-shop-tab="lucky" onclick="app.shop.switchTab('lucky', this)" aria-label="Trạm May Mắn">
-          <img src="./public/ui/buttons/group2/shop-lucky-tab.png" alt="" aria-hidden="true">
+          <img src="./public/ui/buttons/group2/shop-lucky-tab.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
         </button>
       </div>
 
@@ -931,7 +1016,7 @@
   <!-- Hộp Quà Hằng Ngày -->
   <div id="daily-gift-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="daily-gift-title" aria-describedby="daily-gift-text" aria-hidden="true" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.72); z-index:1001; justify-content:center; align-items:center;">
     <div class="daily-gift-card">
-      <img src="./public/star-gold-3d.svg" alt="Sao vàng" class="daily-gift-star">
+      <img src="./public/star-gold-3d.svg" alt="Sao vàng" class="daily-gift-star" loading="lazy" decoding="async">
       <h2 id="daily-gift-title" class="daily-gift-title">Hộp Quà Hằng Ngày 🎁</h2>
       <p id="daily-gift-text" class="daily-gift-text">Chào mừng bạn quay lại! Nhận ngay phần quà hôm nay nhé!</p>
       <button type="button" class="daily-gift-claim" onclick="app.daily.claimDailyGift()" aria-label="Nhận quà hôm nay">Nhận Quà 🎁</button>

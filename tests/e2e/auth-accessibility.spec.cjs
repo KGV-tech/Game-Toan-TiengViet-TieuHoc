@@ -3,9 +3,16 @@ const { test, expect } = require('@playwright/test');
 async function openOfflineHomepage(page) {
   const consoleProblems = [];
   const supabaseRequests = [];
+  const expectedDependencyWarnings = new Set([
+    'Dịch vụ đăng nhập chưa tải được (missing-global); màn hình vẫn mở và đăng nhập sẽ báo trạng thái kết nối.',
+    'Polyfill kéo thả trên cảm ứng chưa sẵn sàng (missing-global).'
+  ]);
+  const observedDependencyWarnings = [];
   page.on('console', message => {
-    if ((message.type() === 'error' || message.type() === 'warning')
-      && !message.text().includes('Supabase SDK not loaded')) {
+    if (message.type() !== 'error' && message.type() !== 'warning') return;
+    if (expectedDependencyWarnings.has(message.text())) {
+      observedDependencyWarnings.push(message.text());
+    } else {
       consoleProblems.push(message.text());
     }
   });
@@ -16,6 +23,12 @@ async function openOfflineHomepage(page) {
     route.fulfill({ contentType: 'application/javascript', body: '' })
   );
   await page.goto('/');
+  await page.evaluate(() => Promise.all([
+    window.__gameDependencies.supabase,
+    window.__gameDependencies.mobileDragDrop
+  ]));
+  expect(observedDependencyWarnings).toHaveLength(expectedDependencyWarnings.size);
+  expect(new Set(observedDependencyWarnings)).toEqual(expectedDependencyWarnings);
   return { consoleProblems, supabaseRequests };
 }
 

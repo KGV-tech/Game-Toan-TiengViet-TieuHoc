@@ -7,12 +7,12 @@ const main = fs.readFileSync('src/main.js', 'utf8');
 const ui = fs.readFileSync('src/modules/ui.js', 'utf8');
 
 const groupOneAssets = [
-  'login-start.png', 'register.png', 'logout.png', 'back.png', 'check.png',
+  'login-start.png', 'register.png', 'check.png',
   'continue.png', 'score.png', 'exit.png', 'start-adventure.png', 'start-exam.png',
 ];
 const groupTwoAssets = [
-  'claim-candy.png', 'start-mission-exam.png', 'activate-pet.png',
-  'deactivate-pet.png', 'return-pet.png', 'exchange-pet.png',
+  'start-mission-exam.png', 'activate-pet.png',
+  'deactivate-pet.png',
   'shop-pets-tab.png', 'shop-my-pets-tab.png', 'shop-lucky-tab.png', 'spin-lucky.png',
 ];
 
@@ -41,6 +41,7 @@ assert.match(html, /group2\/shop-lucky-tab\.png/, 'Lucky-shop tab must use its a
 assert.match(html, /utility-close-button/, 'Treasure, quest, and shop panels must use lightweight X close buttons.');
 assert.match(main, /group2\/spin-lucky\.png/, 'Lucky spin must use the approved image asset.');
 assert.match(ui, /compactAction\(label, onClick/, 'Admin utilities must use compact CSS buttons.');
+assert.doesNotMatch(ui, /assetButton\s*\(/, 'The unused image-button helper must be removed.');
 assert.match(main, /question-library__action--primary[^>]*onclick="app\.admin\.addToExamPrompt/, 'Add-to-exam actions must use the question-library card action style.');
 assert.match(css, /\.quest-empty-state/, 'Empty quest state must be centered.');
 assert.match(html, /utility-close-button/, 'Close and return controls must use the lightweight X button.');
