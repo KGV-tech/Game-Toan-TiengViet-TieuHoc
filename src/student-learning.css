@@ -3684,7 +3684,7 @@
 
 #game-config-view .student-learning-achievements {
     top: clamp(112px, 15vh, 160px);
-    background-image: url('../public/student-learning-achievements-frame-transparent.png');
+    background-image: url('../public/student-learning-frame-transparent.png');
 }
 
 /* Stable right-hand rail for the daily learning screen. */
@@ -3793,7 +3793,7 @@
 
 #game-config-view .student-learning-achievements {
     top: clamp(112px, 15vh, 160px);
-    background-image: url('../public/student-learning-achievements-frame-transparent.png');
+    background-image: url('../public/student-learning-frame-transparent.png');
 }
 
 @keyframes student-learning-current-icon-glow-tight {

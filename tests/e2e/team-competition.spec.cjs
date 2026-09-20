@@ -656,7 +656,12 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
         { id: ids.team, competition_id: ids.competition, name: 'Nhóm A', position: 1, target_member_count: 2, leader_username: 'hs1', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null },
         { id: '44444444-4444-4444-8444-444444444444', competition_id: ids.competition, name: 'Nhóm B', position: 2, target_member_count: 2, leader_username: 'hs3', exam_id: exam.id, status: 'active', score: 0, submitted_count: 0, correct_count: 0, started_at: activeAttempt.started_at, completed_at: null, locked_at: null, duration_seconds: null }
       ],
-      team_competition_members: [{ competition_id: ids.competition, team_id: ids.team, username: 'hs1', position: 1 }, { competition_id: ids.competition, team_id: ids.team, username: 'hs2', position: 2 }],
+      team_competition_members: [
+        { competition_id: ids.competition, team_id: ids.team, username: 'hs1', position: 1 },
+        { competition_id: ids.competition, team_id: ids.team, username: 'hs2', position: 2 },
+        { competition_id: ids.competition, team_id: '44444444-4444-4444-8444-444444444444', username: 'hs3', position: 1 },
+        { competition_id: ids.competition, team_id: '44444444-4444-4444-8444-444444444444', username: 'hs4', position: 2 }
+      ],
       team_competition_attempts: [activeAttempt], team_competition_answers: [], team_competition_results: [],
       team_competition_questions: exam.questions.map((question, questionIndex) => ({
         id: `question-${questionIndex}`, competition_id: ids.competition, team_id: ids.team,
@@ -691,6 +696,10 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
   await expect(page.locator('#team-leave-confirm-modal')).toBeVisible();
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
 
+  await expect(page.locator('#game-play-view')).toHaveClass(/team-competition-leader-mode/);
+  await expect(page.locator('#game-question-container')).toContainText('1 + 1');
+  await expect(page.getByRole('button', { name: 'Nộp câu trả lời' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nộp câu trả lời' })).toBeEnabled();
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.locator('#submit-ans-btn').click();
   await expect.poll(() => dialogs.length).toBe(1);

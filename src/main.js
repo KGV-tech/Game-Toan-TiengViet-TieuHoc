@@ -31,9 +31,8 @@ const dummySupabase = {
 let supabaseClient = dummySupabase;
 if (window.supabase) {
     supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-} else {
-    console.warn("Supabase SDK not loaded. Chạy ở chế độ Offline (Local) hoàn toàn.");
 }
+let supabaseClientReady = Promise.resolve(supabaseClient !== dummySupabase);
 const defaultUsers = [];
 const defaultLibraryQuestions = [];
 const defaultExams = [];
@@ -43,7 +42,7 @@ const defaultExams = [];
 // travel inside their existing JSON columns, but the query itself is explicit
 // so a new column cannot silently inflate every login and admin request.
 const SUPABASE_LIST_PROJECTIONS = Object.freeze({
-    game_users: 'id,username,fullname,password,role,approved,classlevel,class_name,gender,history,totalscore,stars,energy,energy_date,daily_gift_date,daily_gift_streak,total_stars_earned,last_practice_date,practice_streak,lucky_spin_date,lucky_spin_count,avatar_key,auth_user_id',
+    game_users: 'id,username,fullname,role,approved,classlevel,class_name,gender,history,totalscore,stars,energy,energy_date,daily_gift_date,daily_gift_streak,total_stars_earned,last_practice_date,practice_streak,lucky_spin_date,lucky_spin_count,avatar_key,auth_user_id',
     // Keep this list aligned with the legacy production table. Structured
     // template fields are stored in question_templates and generated in the
     // browser; game_questions only has the original flat question columns.
@@ -273,6 +272,9 @@ const app = {
         adminDataLoadPromise: null,
         settings: { hardTimeLimit: 10, examTimeLimit: 30, lessonMetadata: { questions: {}, quests: {} } },
         currentUser: null,
+        waitForSupabaseClient() {
+            return supabaseClientReady;
+        },
         getSupabaseProjection(table, columns = '') {
             return String(columns || '').trim() || SUPABASE_LIST_PROJECTIONS[table] || 'id';
         },
@@ -1569,6 +1571,9 @@ const app = {
             this.changePasswordPending = true;
             app.ui.setButtonLoading('change-password-submit', true, 'Đang cập nhật…');
             try {
+                if (!await app.data.waitForSupabaseClient()) {
+                    return this.showAuthFeedback('change-password-error', 'Không thể tải dịch vụ đăng nhập. Vui lòng kiểm tra kết nối mạng rồi thử lại.');
+                }
                 const { data: authData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password: oldPassword });
                 if (signInError || !authData?.user) {
                     return this.showAuthFeedback('change-password-error', 'Tên đăng nhập/email hoặc mật khẩu cũ không đúng.', ['change-password-username', 'change-password-old']);
@@ -1611,6 +1616,10 @@ const app = {
             let authenticatedProfile = false;
             try {
 
+            if (!await app.data.waitForSupabaseClient()) {
+                return this.showAuthFeedback('login-error', 'Không thể tải dịch vụ đăng nhập. Vui lòng kiểm tra kết nối mạng rồi thử lại.', []);
+            }
+
             const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: p });
             if (authError || !authData?.user) return this.showAuthFeedback('login-error', 'Sai tên đăng nhập hoặc mật khẩu!', ['username', 'password']);
 
@@ -1633,6 +1642,7 @@ const app = {
 
                 // These reads are protected by RLS, so they must happen after Supabase Auth succeeds.
                 loginStage = 'load-shared-data';
+                if (user.role?.toLowerCase() !== 'admin') app.router.prefetch('map-screen');
                 const localExams = app.data.loadLocalExams();
                 const pendingExamSnapshot = app.data.loadPendingExamSnapshot();
                 const [exams, settingsData] = await Promise.all([
@@ -1777,6 +1787,9 @@ const app = {
             this.registerPending = true;
             app.ui.setButtonLoading('register-btn', true, 'Vui lòng chờ…');
             try {
+            if (!await app.data.waitForSupabaseClient()) {
+                return this.showAuthFeedback('register-error', 'Không thể tải dịch vụ đăng ký. Vui lòng kiểm tra kết nối mạng rồi thử lại.', []);
+            }
             const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                 email, password: pw, options: { data: { username: un } }
             });
@@ -2324,6 +2337,12 @@ const app = {
         init() {
             document.querySelectorAll('.station[data-subject]').forEach(el => {
                 el.onclick = () => {
+                    const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
+                    if (el.dataset.subject === 'exam') {
+                        if (!isAdmin) app.router.prefetch('exam-select-screen');
+                    } else {
+                        app.router.prefetch('game-config-view');
+                    }
                     app.router.animateCatTo(el, () => {
                         if (el.dataset.subject === 'exam') {
                             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
@@ -2359,7 +2378,10 @@ const app = {
             if (questSt) questSt.onclick = () => app.router.animateCatTo(questSt, () => app.quest.open()); // Will implement app.quest
 
             const shopSt = document.getElementById('shop-station');
-            if (shopSt) shopSt.onclick = () => app.router.animateCatTo(shopSt, () => app.shop.open()); // Will implement app.shop
+            if (shopSt) shopSt.onclick = () => {
+                app.router.prefetch('shop-modal');
+                app.router.animateCatTo(shopSt, () => app.shop.open());
+            }; // Will implement app.shop
         },
         openConfig(subject) {
             this.state.subject = subject;
@@ -12518,6 +12540,7 @@ const app = {
         init() { },
         open() {
             const modal = document.getElementById('shop-modal');
+            app.router?.prepareAssets?.('shop-modal');
             modal.dataset.uiContext = 'student';
             modal.style.display = 'flex';
             modal.classList.add('active');
@@ -13075,19 +13098,35 @@ window.app = app;
 // already-created client injectable without exposing another copy of the key or
 // creating a second Supabase connection.
 app.data.supabaseClient = supabaseClient;
-
-window.onload = async () => {
-    try {
-        await app.data.init();
-    } catch (e) {
-        console.error("Error during app init:", e);
+supabaseClientReady = Promise.resolve(window.__gameDependencies?.supabase || {
+    available: Boolean(window.supabase),
+    sdk: window.supabase || null
+}).then(dependency => {
+    const sdk = dependency?.sdk || (dependency?.createClient ? dependency : null);
+    if (dependency?.available && sdk && supabaseClient === dummySupabase) {
+        try {
+            supabaseClient = sdk.createClient(supabaseUrl, supabaseKey);
+        } catch (error) {
+            console.warn('Không thể khởi tạo dịch vụ đăng nhập:', error);
+        }
     }
+    app.data.supabaseClient = supabaseClient;
+    return supabaseClient !== dummySupabase;
+});
+
+// Bind the shell before waiting on optional CDN dependencies. The remote data
+// layer initializes after its bounded SDK load attempt has settled.
+window.addEventListener('DOMContentLoaded', () => {
     try {
         app.auth.init();
         app.game.init();
     } catch (e) {
         console.error("Error binding UI:", e);
     }
+
+    supabaseClientReady.then(() => app.data.init()).catch(e => {
+        console.error("Error during app init:", e);
+    });
 
     const handleNetworkChange = () => {
         const isOnline = navigator.onLine;
@@ -13124,5 +13163,5 @@ window.onload = async () => {
         }
     });
     handleNetworkChange();
-};
+});
 

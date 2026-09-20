@@ -22,11 +22,6 @@
                 delete button.dataset.originalLabel;
             }
         },
-        assetButton(group, asset, label, onClick, className = '') {
-            return `<button class="asset-button asset-button--utility ${className}" onclick="${onClick}" aria-label="${label}">
-                <img src="./public/ui/buttons/${group}/${asset}.png" alt="" aria-hidden="true">
-            </button>`;
-        },
         compactAction(label, onClick, variant = '', id = '') {
             const buttonId = id ? ` id="${id}"` : '';
             return `<button type="button"${buttonId} class="action-btn compact-admin-action ${variant}" onclick="${onClick}">${label}</button>`;

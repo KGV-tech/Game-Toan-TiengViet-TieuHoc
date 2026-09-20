@@ -10,8 +10,12 @@ const html = fs.readFileSync('index.html', 'utf8');
 const classMigration = fs.readFileSync('supabase/migrations/20260906_game_users_class_name.sql', 'utf8');
 const genderMigration = fs.readFileSync('supabase/migrations/20260907_game_users_gender.sql', 'utf8');
 
+const gameUsersProjection = source.match(/game_users:\s*'([^']+)'/i)?.[1] || '';
+
 assert.match(source, /auth\.signInWithPassword/, 'Login must use Supabase Auth.');
 assert.match(source, /auth_user_id/, 'Profiles must be linked to an Auth identity.');
+assert.ok(gameUsersProjection, 'The game_users projection must remain explicit.');
+assert.doesNotMatch(gameUsersProjection, /(^|,)\s*password\s*(,|$)/i, 'The browser must not project legacy plaintext password data.');
 assert.doesNotMatch(source, /u === 'admin' && p === '123'/, 'The default admin backdoor must be removed.');
 assert.match(migration, /REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon/, 'Anonymous database access must be revoked.');
 assert.match(migration, /private\.is_admin\(\)/, 'RLS must use a server-side admin check.');
