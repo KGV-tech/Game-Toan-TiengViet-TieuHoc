@@ -48,7 +48,6 @@ const swappedFromChangedDom = team.swapTeamMembers([
 ], 0, 0, 'hs3', 'hs1');
 assert.deepEqual(swappedFromChangedDom.map(group => group.memberUsernames), [['hs3', 'hs2'], ['hs1', 'hs4']]);
 assert.deepEqual(team.removeExcludedStudentsFromTeams(swappedTeams, ['hs2']).map(group => group.memberUsernames), [['hs3'], ['hs1', 'hs4']]);
-
 const validConfig = {
   name: 'Trận khởi động',
   classlevel: '5',
@@ -61,6 +60,10 @@ const validConfig = {
     { id: 'team-2', name: 'Mặt Trăng', memberUsernames: ['hs3'], leaderUsername: 'hs3' }
   ]
 };
+assert.equal(team.normalizeCompetition({
+  ...validConfig,
+  teams: validConfig.teams.map((item, index) => index === 0 ? { ...item, leaderUsername: '' } : item)
+}).teams[0].leaderUsername, '', 'clearing a leader must not silently select another member');
 assert.deepEqual(team.validateConfig(validConfig, { students, exams }), { valid: true, errors: [] });
 const excludedConfig = team.normalizeCompetition({ ...validConfig, excludedStudentUsernames: ['hs5'] });
 assert.deepEqual(excludedConfig.excludedStudentUsernames, ['hs5']);
