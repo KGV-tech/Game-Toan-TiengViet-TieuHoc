@@ -103,6 +103,7 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-stadium-canvas')).toBeVisible();
   await expect(page.locator('.team-stadium-lane')).toHaveCount(2);
   await expect(page.locator('.team-stadium-lane__vehicle')).toHaveCount(2);
+  await expect(page.locator('.team-stadium-lane__vehicle').first()).toHaveAttribute('src', /vehicle-\d+\.png$/);
   expect(await page.locator('.team-stadium-lane').evaluateAll(nodes => nodes.map(node => node.dataset.stadiumLane))).toEqual(['3', '6']);
   await expect(page.locator('.team-stadium-lane').first()).toContainText('0 điểm');
   await expect(page.locator('.team-stadium-canvas')).toHaveCSS('background-image', /stadium-8-lanes-v2\.png/);
