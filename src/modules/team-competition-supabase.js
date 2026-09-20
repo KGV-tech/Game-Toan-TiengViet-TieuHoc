@@ -7,6 +7,7 @@
     if (!app || !api) return;
 
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const DRAFT_LEADER_PREFIX = '__draft__';
     const TEAM_COMPETITION_PROJECTIONS = Object.freeze({
         team_competitions: 'id,name,classlevel,class_name,participant_mode,question_mode,common_exam_id,time_limit_minutes,presentation_theme,presentation_team_identity,status,created_at,updated_at,started_at,ended_at,version',
         team_competition_teams: 'id,competition_id,name,position,target_member_count,leader_username,exam_id,status,score,submitted_count,correct_count,started_at,completed_at,locked_at,duration_seconds',
@@ -86,6 +87,10 @@
         try { return JSON.parse(JSON.stringify(value)); } catch (_) { return value; }
     }
 
+    function draftLeaderUsername(teamId) {
+        return `${DRAFT_LEADER_PREFIX}${String(teamId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100)}`;
+    }
+
     function normalizeForRemote(input) {
         const normalized = api.normalizeCompetition(input);
         return {
@@ -158,12 +163,15 @@
             const key = String(row.competition_id);
             if (!teamsByCompetition.has(key)) teamsByCompetition.set(key, []);
             const members = (membersByTeam.get(String(row.id)) || []).sort((a, b) => toNumber(a.position) - toNumber(b.position));
+            const memberUsernames = members.map(member => String(member.username));
             const attempt = attemptsByTeam.get(String(row.id));
             teamsByCompetition.get(key).push({
                 id: String(row.id),
                 name: row.name,
-                memberUsernames: members.map(member => String(member.username)),
-                leaderUsername: row.leader_username,
+                memberUsernames,
+                // Draft rows use an internal placeholder because the current
+                // schema requires leader_username even before a roster is complete.
+                leaderUsername: memberUsernames.includes(String(row.leader_username || '')) ? String(row.leader_username) : '',
                 examId: row.exam_id || null,
                 targetMemberCount: row.target_member_count === null ? null : toNumber(row.target_member_count),
                 status: row.status || 'pending',
@@ -326,6 +334,8 @@
         getError() { return state.error; },
         getSaveErrorMessage() {
             const error = state.error;
+            const errorCode = String(error?.code || '').trim();
+            const codeNote = errorCode ? ` (mã ${errorCode})` : '';
             const detail = [error?.message, error?.details, error?.cause?.hint].filter(Boolean).join(' ');
             const missingPresentation = ['42703', 'PGRST204'].includes(error?.code)
                 && /\bpresentation_(theme|team_identity)\b/.test(detail);
@@ -345,9 +355,9 @@
                 return 'Không thể lưu trận thi đua vì Supabase chưa có cấu hình UUID cần thiết. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260916_team_competition_uuid_defaults.sql vào đúng dự án Supabase, rồi thử lưu lại.';
             }
             if (permissionDenied) {
-                return 'Không thể lưu trận thi đua vì phiên đăng nhập Admin hoặc quyền RLS trên Supabase không hợp lệ. Bản nháp vẫn được giữ trên máy. Hãy đăng nhập lại bằng tài khoản Admin và kiểm tra policy của đúng dự án Supabase.';
+                return `Không thể lưu trận thi đua vì phiên đăng nhập Admin hoặc quyền RLS trên Supabase không hợp lệ${codeNote}. Bản nháp vẫn được giữ trên máy. Hãy đăng nhập lại bằng tài khoản Admin và kiểm tra policy của đúng dự án Supabase.`;
             }
-            return 'Không thể lưu trận thi đua lên Supabase. Bản nháp vẫn được giữ trên máy; hãy kiểm tra kết nối và cấu hình Supabase rồi thử lại.';
+            return `Không thể lưu trận thi đua lên Supabase${codeNote}. Bản nháp vẫn được giữ trên máy; hãy kiểm tra kết nối và cấu hình Supabase rồi thử lại.`;
         },
         configure(client) {
             if (state.client === client && state.enabled) {
@@ -473,7 +483,7 @@
                 name: team.name,
                 position: index + 1,
                 target_member_count: team.targetMemberCount,
-                leader_username: team.leaderUsername,
+                leader_username: team.leaderUsername || draftLeaderUsername(team.id),
                 exam_id: candidate.questionMode === 'same' ? candidate.commonExamId : team.examId,
                 status: 'pending'
             }));

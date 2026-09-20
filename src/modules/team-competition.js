@@ -362,11 +362,14 @@
         const snapshotMembers = hasSnapshot
             ? team.memberSelectionSnapshot.memberUsernames.map(studentKey).filter(Boolean)
             : [];
+        const requestedLeader = team?.leaderUsername !== undefined
+            ? team.leaderUsername
+            : (team?.leader || members[0]);
         return {
             id: String(team?.id || makeId(`team${index + 1}`)),
             name: String(team?.name || `Nhóm ${index + 1}`).trim() || `Nhóm ${index + 1}`,
             memberUsernames: Array.from(new Set(members)),
-            leaderUsername: studentKey(team?.leaderUsername || team?.leader || members[0]),
+            leaderUsername: studentKey(requestedLeader),
             memberSelectionState: team?.memberSelectionState === 'saved' ? 'saved' : 'editing',
             memberSelectionSnapshot: {
                 memberUsernames: Array.from(new Set(snapshotMembers)),

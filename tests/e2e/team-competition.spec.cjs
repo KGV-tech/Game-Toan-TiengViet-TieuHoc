@@ -739,10 +739,16 @@ test('Admin chọn ngẫu nhiên gần đều và hiển thị số thành viên
 
   const beforeSwap = await page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames.slice()));
   const firstTeamStudent = beforeSwap[0][0];
-  const secondTeamStudent = beforeSwap[1][0];
-  await page.locator('.team-member-slot-select').nth(0).selectOption(secondTeamStudent);
+  const firstGroup = page.locator('.team-config-card').first();
+  const secondGroup = page.locator('.team-config-card').nth(1);
+  await firstGroup.getByRole('button', { name: 'Xóa thành viên 1 khỏi Nhóm 1' }).click();
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([
+    [beforeSwap[0][1]],
+    beforeSwap[1]
+  ]);
+  await secondGroup.locator('.team-member-slot-select').first().selectOption(firstTeamStudent);
   const expectedAfterSwap = [
-    [secondTeamStudent, beforeSwap[0][1]],
+    [beforeSwap[0][1]],
     [firstTeamStudent, beforeSwap[1][1]]
   ];
   await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual(expectedAfterSwap);
@@ -817,18 +823,28 @@ test('Admin lưu từng Nhóm, không trùng thành viên và chỉ chọn trư�
   const secondGroup = page.locator('.team-config-card').nth(1);
   await secondGroup.locator('.team-target-count').fill('1');
   await secondGroup.locator('.team-target-count').press('Tab');
-  await expect(secondGroup.locator('.team-member-slot-select').first()).toContainText('Học sinh 1');
-  await expect(secondGroup.locator('.team-member-slot-select').first()).toContainText('Học sinh 2');
-  await secondGroup.locator('.team-member-slot-select').first().selectOption('hs3');
-  await secondGroup.locator('.team-leader-select').selectOption('hs3');
-  await secondGroup.getByRole('button', { name: 'Lưu' }).click();
+  await expect(secondGroup.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 1');
+  await expect(secondGroup.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 2');
 
   await firstGroup.getByRole('button', { name: 'Sửa' }).click();
+  await firstGroup.getByRole('button', { name: 'Xóa thành viên 2 khỏi Nhóm 1' }).click();
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([['hs1'], []]);
+  await expect(firstGroup.locator('.team-member-slot-select').nth(0)).toHaveValue('hs1');
+  await expect(firstGroup.locator('.team-member-slot-select').nth(1)).toHaveValue('');
+  await expect(firstGroup.locator('.team-leader-select')).toHaveValue('');
+  await expect(secondGroup.locator('.team-member-slot-select').first()).toContainText('Học sinh 2');
+  await expect(secondGroup.locator('.team-member-slot-select').first()).not.toContainText('Học sinh 1');
+  await secondGroup.locator('.team-member-slot-select').first().selectOption('hs2');
+  await secondGroup.locator('.team-leader-select').selectOption('hs2');
+  await secondGroup.getByRole('button', { name: 'Lưu' }).click();
+
   await expect(firstGroup.getByRole('button', { name: 'Cập nhật' })).toBeVisible();
   await expect(firstGroup.getByRole('button', { name: 'Hủy' })).toBeVisible();
   await expect(firstGroup.locator('.team-member-slot-select').first()).not.toBeDisabled();
-  await firstGroup.locator('.team-member-slot-select').first().selectOption('hs3');
-  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([['hs3', 'hs2'], ['hs1']]);
+  await firstGroup.locator('.team-member-slot-select').nth(1).selectOption('hs3');
+  await firstGroup.locator('.team-leader-select').selectOption('hs1');
+  await firstGroup.getByRole('button', { name: 'Cập nhật' }).click();
+  await expect.poll(() => page.evaluate(() => app.admin.teamCompetitionDraft.teams.map(team => team.memberUsernames))).toEqual([['hs1', 'hs3'], ['hs2']]);
 });
 
 for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
@@ -861,7 +877,12 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
               }
               return this;
             },
-            insert() { return this; }, delete() { return this; },
+            insert(rowsToInsert) {
+              if (table === 'team_competition_teams' && (Array.isArray(rowsToInsert) ? rowsToInsert : [rowsToInsert]).some(row => !String(row?.leader_username || '').trim())) {
+                result.error = { code: '23514', message: 'new row violates check constraint team_competition_teams_leader_username_check' };
+              }
+              return this;
+            }, delete() { return this; },
             then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); }
           };
         },

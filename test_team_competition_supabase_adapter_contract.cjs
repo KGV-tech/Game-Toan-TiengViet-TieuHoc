@@ -63,7 +63,9 @@ let groupedAnswerError = null;
 let uuidError = null;
 let realtimeStatus = null;
 const savedRows = [];
+const savedTeamRows = [];
 const rpcCalls = [];
+let rejectBlankTeamLeader = false;
 
 function builder(table) {
   const result = { data: rows[table] || [], error: null };
@@ -78,7 +80,15 @@ function builder(table) {
       }
       return this;
     },
-    insert() { return this; },
+    insert(rowsToInsert) {
+      if (table === 'team_competition_teams') {
+        savedTeamRows.push(...(Array.isArray(rowsToInsert) ? rowsToInsert : [rowsToInsert]));
+        if (rejectBlankTeamLeader && (Array.isArray(rowsToInsert) ? rowsToInsert : [rowsToInsert]).some(row => !String(row?.leader_username || '').trim())) {
+          result.error = { code: '23514', message: 'new row violates check constraint team_competition_teams_leader_username_check' };
+        }
+      }
+      return this;
+    },
     delete() { return this; },
     single() { return this; },
     then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); }
@@ -150,6 +160,19 @@ assert.equal(api.remote.getStatus(), 'pending');
   assert.equal(api.remote.getStatus(), 'ready');
   assert.equal(api.remote.getError(), null);
 
+  rejectBlankTeamLeader = true;
+  const incompleteDraft = api.store.upsert({
+    ...draft,
+    id: 'incomplete-draft',
+    teams: draft.teams.map(team => ({ ...team, memberUsernames: [], leaderUsername: '', targetMemberCount: null }))
+  });
+  await api.remote.flush();
+  assert.equal(api.remote.getStatus(), 'ready', 'an incomplete local draft must still be persisted without violating the team leader check');
+  assert.equal(api.store.get(incompleteDraft.id).teams.every(team => !team.leaderUsername), true);
+  assert.ok(savedTeamRows.slice(-incompleteDraft.teams.length).every(row => String(row.leader_username).startsWith('__draft__')),
+    'incomplete draft team rows need an internal placeholder until a leader is selected');
+  rejectBlankTeamLeader = false;
+
   for (const column of ['presentation_theme', 'presentation_team_identity']) {
     for (const code of ['42703', 'PGRST204']) {
       writeError = { code, message: 'Missing column ' + column };
@@ -169,7 +192,10 @@ assert.equal(api.remote.getStatus(), 'pending');
     await api.remote.flush();
     assert.doesNotMatch(api.remote.getSaveErrorMessage(), /20260915/);
     assert.match(api.remote.getSaveErrorMessage(), /Bản nháp/);
-    if (error.code === '42501') assert.match(api.remote.getSaveErrorMessage(), /quyền|phiên đăng nhập/i);
+    if (error.code === '42501') {
+      assert.match(api.remote.getSaveErrorMessage(), /quyền|phiên đăng nhập/i);
+      assert.match(api.remote.getSaveErrorMessage(), /42501/);
+    }
   }
 
   app.data.exams = [{

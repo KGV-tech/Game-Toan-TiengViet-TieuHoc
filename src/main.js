@@ -6986,12 +6986,8 @@ const app = {
             const reserved = new Set();
             (teams || []).forEach((team, index) => {
                 if (index === activeIndex) return;
-                const snapshot = team?.memberSelectionSnapshot?.memberUsernames;
-                const hasSnapshot = Array.isArray(snapshot) && snapshot.length > 0;
-                const members = team?.memberSelectionState === 'saved'
-                    ? (hasSnapshot ? snapshot : (team?.memberUsernames || []))
-                    : (hasSnapshot ? snapshot : []);
-                members.forEach(username => reserved.add(String(username)));
+                (Array.isArray(team?.memberUsernames) ? team.memberUsernames : [])
+                    .forEach(username => reserved.add(String(username)));
             });
             return reserved;
         },
@@ -7024,6 +7020,18 @@ const app = {
                 team.targetMemberCount = team.memberUsernames.length || null;
                 if (!team.memberUsernames.includes(team.leaderUsername)) team.leaderUsername = team.memberUsernames[0] || '';
             }
+            draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
+            this.teamCompetitionDraft = draft;
+            this.renderTeamCompetitionForm();
+        },
+        removeTeamMemberSlot(index, slotIndex = 0) {
+            const draft = this.collectTeamCompetitionForm();
+            const team = draft.teams[index];
+            if (!team || team.memberSelectionState === 'saved') return;
+            const removedUsername = String(team.memberUsernames[slotIndex] || '');
+            if (!removedUsername) return;
+            team.memberUsernames = team.memberUsernames.filter((username, memberIndex) => memberIndex !== slotIndex);
+            if (String(team.leaderUsername) === removedUsername) team.leaderUsername = '';
             draft.selectedStudentUsernames = draft.teams.flatMap(item => item.memberUsernames || []);
             this.teamCompetitionDraft = draft;
             this.renderTeamCompetitionForm();
@@ -7184,11 +7192,14 @@ const app = {
                     ? Array.from({ length: targetCount }, (_, slotIndex) => {
                         const selectedUsername = String(selectedMembers[slotIndex] || '');
                         const selectedInOtherSlots = new Set(selectedMembers.filter((username, selectedIndex) => selectedIndex !== slotIndex).map(String));
+                        const reservedByOtherTeams = this.getReservedTeamMemberUsernames(teams, index);
                         const options = students.filter(student => {
                             const username = String(student.username);
-                            return username === selectedUsername || !selectedInOtherSlots.has(username);
+                            return username === selectedUsername
+                                || (!selectedInOtherSlots.has(username) && !reservedByOtherTeams.has(username));
                         }).map(student => `<option value="${esc(student.username)}" ${selectedUsername === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
-                        return `<label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index}, ${slotIndex}, this.value)"><option value="">-- Chọn học sinh --</option>${options}</select></label>`;
+                        const removeDisabled = isSaved || !selectedUsername ? 'disabled' : '';
+                        return `<div class="team-member-slot"><label class="team-member-slot-label"><span>Thành viên ${slotIndex + 1}</span><select class="form-input team-member-slot-select" ${isSaved ? 'disabled' : ''} onchange="app.admin.changeTeamMemberSlot(${index}, ${slotIndex}, this.value)"><option value="">-- Chọn học sinh --</option>${options}</select></label><button type="button" class="team-member-slot-remove" aria-label="Xóa thành viên ${slotIndex + 1} khỏi Nhóm ${index + 1}" title="${isSaved ? 'Bấm Sửa nhóm trước khi xóa' : 'Xóa thành viên khỏi nhóm'}" ${removeDisabled} onclick="app.admin.removeTeamMemberSlot(${index}, ${slotIndex})">Xóa</button></div>`;
                     }).join('')
                     : '<p class="team-member-selection-hint">Nhập số thành viên trong nhóm để hiện các ô chọn học sinh.</p>';
                 const leaderOptions = students.filter(student => selectedMembers.includes(String(student.username))).map(student => `<option value="${esc(student.username)}" ${String(team.leaderUsername) === String(student.username) ? 'selected' : ''}>${esc(studentLabel(student))}</option>`).join('');
@@ -7229,7 +7240,7 @@ const app = {
                   <label class="team-field-label"><span>Cách chọn học sinh</span><select id="team-comp-mode" class="form-input" onchange="app.admin.switchTeamCompetitionMode()"><option value="manual" ${draft.participantMode === 'manual' ? 'selected' : ''}>Giáo viên chỉ định</option><option value="random" ${draft.participantMode === 'random' ? 'selected' : ''}>Game chọn ngẫu nhiên</option></select></label>
                   <label class="team-field-label team-field-label--wide team-field-label--multiselect"><span>Danh sách học sinh không tham gia</span><select id="team-comp-excluded-students" class="form-input" multiple size="${Math.min(6, Math.max(3, allStudents.length))}" aria-label="Danh sách học sinh không tham gia" onchange="app.admin.changeTeamCompetitionExcludedStudents()">${excludedOptions}</select><small>Giữ Ctrl/Cmd để chọn nhiều học sinh vắng mặt hoặc không thể tham gia.</small></label>
                 </div></section>
-                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm; khi chưa lưu hoặc đang sửa, chọn bạn ở nhóm khác để hoán đổi.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
+                <section class="team-form-section team-form-section--teams"><div class="team-section-heading"><div><span class="team-section-kicker">02 · Thành viên</span><h4>Chọn nhóm</h4><p>Lưu từng nhóm để một học sinh không bị gắn vào hai nhóm; muốn đổi nhanh, bấm Xóa rồi chọn lại ở nhóm khác.</p></div><button type="button" class="btn-opt team-section-action" onclick="app.admin.randomizeTeamCompetition()"><span aria-hidden="true">✦</span> Chọn ngẫu nhiên</button></div><div id="team-comp-teams" class="team-config-grid">${teamCards}</div></section>
                 <section class="team-membership-summary" aria-live="polite"><div class="team-section-heading"><div><span class="team-section-kicker">Đã lưu</span><h4>Sơ đồ thành viên</h4><p>Kiểm tra nhanh trước khi chuyển sang bước giao bài.</p></div><span class="team-summary-mark" aria-hidden="true">✓</span></div><div class="team-membership-summary__grid">${memberSummary}</div></section>
                 <section class="team-form-section team-form-section--delivery"><div class="team-section-heading"><div><span class="team-section-kicker">03 · Nội dung</span><h4>Giao bài cho nhóm</h4><p>Dùng một đề chung để thi đua công bằng hoặc giao đề riêng cho từng nhóm.</p></div><span class="team-section-icon" aria-hidden="true">◈</span></div><div class="team-form-grid team-form-grid--compact">
                   <label class="team-field-label"><span>Cách giao bài</span><select id="team-comp-question-mode" class="form-input" onchange="app.admin.syncTeamCompetitionDraftFromDom(); app.admin.renderTeamCompetitionForm()"><option value="same" ${draft.questionMode !== 'different' ? 'selected' : ''}>Một bài giống nhau cho các nhóm</option><option value="different" ${draft.questionMode === 'different' ? 'selected' : ''}>Mỗi nhóm một bài khác nhau</option></select></label>
