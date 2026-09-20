@@ -7415,7 +7415,7 @@ const app = {
             const titleCard = `<div class="team-stadium-title-card"><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2></div>`;
             const raceSurface = isLive
                 ? `<div class="team-stadium-canvas" aria-label="Đường đua 8 lane"><div class="team-stadium-canvas__lanes">${cards}</div></div>`
-                : `<div class="team-board-grid">${cards}</div>`;
+                : `<div class="team-board-grid ${match.teams.length >= 6 ? 'team-board-grid--compact' : ''}">${cards}</div>`;
             const endedNote = endSyncFailed
                 ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
                 : 'Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.';

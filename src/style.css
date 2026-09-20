@@ -5868,6 +5868,30 @@ input[type="text"], input[type="password"], select, textarea {
 
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race { display: grid; grid-template-rows: auto auto minmax(0, 1fr); padding: 0; border: 0; background: transparent; box-shadow: none; }
 #treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-summary { display: none; }
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-grid {
+    min-height: 0;
+    height: 100%;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-grid--compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+}
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card {
+    gap: 5px;
+    min-height: 0;
+    padding: 10px;
+}
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card__top h3 { font-size: .86rem; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card__status-row { font-size: .6rem; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card__meta,
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-members__list { display: none; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-members--roster { gap: 0; margin-top: 2px; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-members__leader { padding: 5px 7px; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-members__leader span { font-size: .58rem; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-members__leader strong { margin-top: 1px; font-size: .8rem; line-height: 1.15; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card__actions { min-height: 22px; }
+#treasure-modal.team-board-fullscreen .team-board-grid--compact .team-board-card__actions button { padding: 4px 7px; font-size: .58rem; }
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race::before,
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race::after { display: none; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-board-hero { position: absolute; inset: 1.4% 2.2% auto; z-index: 5; grid-template-columns: minmax(260px, 1fr) minmax(170px, .52fr) minmax(510px, 1.9fr); padding: 0; }
@@ -5905,7 +5929,17 @@ input[type="text"], input[type="password"], select, textarea {
 .team-stadium-lane--pink { --stadium-accent: #fc78bc; }
 .team-stadium-lane--blue { --stadium-accent: #2494fd; }
 .team-stadium-lane--orange { --stadium-accent: #fd8d2f; }
-.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: -50%; left: calc(var(--stadium-start-x) + var(--race-progress)); display: block; width: clamp(92px, 9vw, 144px); height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(-100%, -50%); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
+/* Vehicle PNGs have different transparent margins. Align their visible nose
+   to the start line and their visible centre to the coloured lane. */
+.team-stadium-lane[data-stadium-lane="1"] { --vehicle-front-offset: 0%; --vehicle-center-offset: -7.8%; }
+.team-stadium-lane[data-stadium-lane="2"] { --vehicle-front-offset: 2.2%; --vehicle-center-offset: -3.5%; }
+.team-stadium-lane[data-stadium-lane="3"] { --vehicle-front-offset: 0%; --vehicle-center-offset: -6.5%; }
+.team-stadium-lane[data-stadium-lane="4"] { --vehicle-front-offset: 6.5%; --vehicle-center-offset: -3.8%; }
+.team-stadium-lane[data-stadium-lane="5"] { --vehicle-front-offset: 1.6%; --vehicle-center-offset: -4.3%; }
+.team-stadium-lane[data-stadium-lane="6"] { --vehicle-front-offset: 3.1%; --vehicle-center-offset: 2%; }
+.team-stadium-lane[data-stadium-lane="7"] { --vehicle-front-offset: 3.2%; --vehicle-center-offset: -1.2%; }
+.team-stadium-lane[data-stadium-lane="8"] { --vehicle-front-offset: 6.7%; --vehicle-center-offset: -.2%; }
+.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: 50%; left: calc(var(--stadium-start-x) + var(--race-progress)); display: block; width: clamp(92px, 9vw, 144px); height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(calc(-100% + var(--vehicle-front-offset)), calc(-50% + var(--vehicle-center-offset))); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock { display: grid; min-height: 96px; padding: 12px 18px; align-content: center; gap: 4px; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock span { font-size: clamp(.48rem, .72vw, .76rem); line-height: 1.1; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock strong { font-size: clamp(1.05rem, 2.25vw, 2.55rem); line-height: 1; }
