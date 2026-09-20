@@ -19,6 +19,7 @@ tasks/
 tmp/
 output/
 .worktrees/
+.codex-remote-attachments/
 supabase/.temp/
 *.tmp
 *.bak

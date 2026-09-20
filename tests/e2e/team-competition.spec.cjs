@@ -33,6 +33,19 @@ function demoExam(id = 'exam-team') {
   };
 }
 
+// Each source image has a small transparent border. These normalized bounds
+// keep its visible nose and visual centre aligned, rather than its PNG box.
+const vehicleAlphaBounds = {
+  '1': { right: 1, centerY: 234 / 405 },
+  '2': { right: 440 / 451, centerY: 219.5 / 410 },
+  '3': { right: 1, centerY: 229 / 405 },
+  '4': { right: 419 / 449, centerY: 215 / 400 },
+  '5': { right: 440 / 448, centerY: 225 / 414 },
+  '6': { right: 438 / 453, centerY: 202 / 421 },
+  '7': { right: 429 / 444, centerY: 210 / 410 },
+  '8': { right: 417 / 448, centerY: 209 / 416 }
+};
+
 test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openOfflineHomepage(page);
@@ -111,6 +124,50 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
   await expect(page.locator('.team-race-lane__finish')).toHaveCount(0);
 });
 
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
+test(`bảng đã chuẩn bị hiển thị đủ 8 đội và vẫn bắt đầu được trận ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  await openOfflineHomepage(page);
+  await page.evaluate(({ users, exam }) => {
+    app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+    app.data.users = users;
+    app.data.exams = [exam];
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'prepared-eight-teams', name: 'Trận đủ tám đội', classlevel: '5', teamCount: 8,
+      participantMode: 'manual', questionMode: 'same', commonExamId: exam.id,
+      status: app.teamCompetition.STATUS.PREPARED, timeLimitMinutes: null,
+      teams: Array.from({ length: 8 }, (_, index) => ({
+        id: `team-${index + 1}`, name: `Nhóm ${index + 1}`,
+        memberUsernames: [`hs${(index % 4) + 1}`], leaderUsername: `hs${(index % 4) + 1}`,
+        score: 0, status: 'pending'
+      }))
+    });
+    app.teamCompetition.store.clear();
+    app.teamCompetition.store.upsert(match);
+    app.admin.openAdmin();
+    app.admin.openTeamCompetitionBoard(match.id);
+  }, { users: demoUsers(), exam: demoExam() });
+
+  const cards = page.locator('.team-board-card');
+  await expect(cards).toHaveCount(8);
+  await expect(page.getByRole('button', { name: 'Bắt đầu thi đua' })).toBeVisible();
+  const preparedGeometry = await page.locator('.team-competition-board').evaluate(board => {
+    const grid = board.querySelector('.team-board-grid').getBoundingClientRect();
+    const action = board.querySelector('.team-board-actions').getBoundingClientRect();
+    const cards = [...board.querySelectorAll('.team-board-card')].map(card => card.getBoundingClientRect());
+    return {
+      actionAboveGrid: action.bottom <= grid.top + 1,
+      everyCardInsideGrid: cards.every(card => card.top >= grid.top - 1 && card.bottom <= grid.bottom + 1)
+    };
+  });
+  expect(preparedGeometry).toEqual({ actionAboveGrid: true, everyCardInsideGrid: true });
+
+  await page.getByRole('button', { name: 'Bắt đầu thi đua' }).click();
+  await expect(page.locator('.team-status-pill--active')).toBeVisible();
+  await expect(page.locator('.team-stadium-lane')).toHaveCount(8);
+});
+}
+
 test('lỗi Realtime không chặn REST và được báo đúng trên dashboard', async ({ page }) => {
   await openOfflineHomepage(page);
   await page.evaluate(() => {
@@ -169,24 +226,17 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     await expect(page.locator('.team-stadium-lane')).toHaveCount(2);
     expect(await page.locator('.team-stadium-lane').evaluateAll(nodes => nodes.map(node => node.dataset.stadiumLane))).toEqual(['3', '6']);
     expect(await page.locator('.team-stadium-lane__vehicle').first().evaluate(node => Number.parseFloat(getComputedStyle(node).width))).toBeGreaterThanOrEqual(72);
-    const vehiclePosition = await page.locator('.team-stadium-canvas').evaluate(canvas => {
+    const vehiclePosition = await page.locator('.team-stadium-canvas').evaluate((canvas, alphaBounds) => {
       const vehicle = canvas.querySelector('.team-stadium-lane__vehicle');
       const lane = vehicle.closest('.team-stadium-lane');
-      const canvasRect = canvas.getBoundingClientRect();
       const vehicleRect = vehicle.getBoundingClientRect();
       const laneRect = lane.getBoundingClientRect();
-      const progress = Number.parseFloat(getComputedStyle(vehicle).getPropertyValue('--race-progress')) || 0;
+      const alpha = alphaBounds[lane.dataset.stadiumLane];
       return {
-        startLineOffset: Math.abs(vehicleRect.right - (canvasRect.left + canvasRect.width * (.25 + progress / 100))),
-        verticalOffset: (vehicleRect.top + vehicleRect.height / 2) - (laneRect.top + laneRect.height / 2),
-        laneHeight: laneRect.height
+        alphaCenterOffset: (vehicleRect.top + vehicleRect.height * alpha.centerY) - (laneRect.top + laneRect.height / 2)
       };
-    });
-    expect(vehiclePosition.startLineOffset).toBeLessThanOrEqual(2);
-    // Sprite artwork sits in the lower portion of its transparent cell. Anchor
-    // the cell one lane higher so the visible car is centered on its colour.
-    expect(vehiclePosition.verticalOffset).toBeLessThanOrEqual(-vehiclePosition.laneHeight * .9);
-    expect(vehiclePosition.verticalOffset).toBeGreaterThanOrEqual(-vehiclePosition.laneHeight * 1.1);
+    }, vehicleAlphaBounds);
+    expect(Math.abs(vehiclePosition.alphaCenterOffset)).toBeLessThanOrEqual(2);
     const dimensions = await page.locator('.team-competition-board').evaluate(node => ({
       scrollHeight: node.scrollHeight,
       clientHeight: node.clientHeight
@@ -253,23 +303,37 @@ test('bảng xếp hạng đường đua hiển thị 8 cột và đổi hạng 
     app.teamCompetition.store.upsert(readyToStart);
     app.admin.renderTeamCompetitionBoard(document.querySelector('#treasure-content-area'), readyToStart.id);
   });
-  expect(await page.locator('.team-stadium-canvas').evaluate(canvas => {
+  expect(await page.locator('.team-stadium-canvas').evaluate((canvas, alphaBounds) => {
     const canvasRect = canvas.getBoundingClientRect();
     const startX = canvasRect.left + canvasRect.width * .25;
-    const labels = [...canvas.querySelectorAll('.team-stadium-lane__info')].map(node => node.getBoundingClientRect());
-    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map((vehicle, index) => {
+    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map(vehicle => {
       const rect = vehicle.getBoundingClientRect();
-      const label = labels[index];
-      const intersectsLabel = rect.left < label.right && rect.right > label.left && rect.top < label.bottom && rect.bottom > label.top;
-      return { startLineOffset: Math.abs(rect.right - startX), intersectsLabel };
+      const lane = vehicle.closest('.team-stadium-lane');
+      const laneRect = lane.getBoundingClientRect();
+      const alpha = alphaBounds[lane.dataset.stadiumLane];
+      return {
+        alphaStartLineOffset: Math.abs(rect.left + rect.width * alpha.right - startX),
+        alphaCenterOffset: (rect.top + rect.height * alpha.centerY) - (laneRect.top + laneRect.height / 2)
+      };
     });
-  })).toEqual(Array.from({ length: 8 }, () => ({ startLineOffset: expect.any(Number), intersectsLabel: false })));
-  const startLinePositions = await page.locator('.team-stadium-canvas').evaluate(canvas => {
+  }, vehicleAlphaBounds)).toEqual(Array.from({ length: 8 }, () => ({ alphaStartLineOffset: expect.any(Number), alphaCenterOffset: expect.any(Number) })));
+  const vehicleAlignment = await page.locator('.team-stadium-canvas').evaluate((canvas, alphaBounds) => {
     const canvasRect = canvas.getBoundingClientRect();
     const startX = canvasRect.left + canvasRect.width * .25;
-    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map(vehicle => Math.abs(vehicle.getBoundingClientRect().right - startX));
-  });
-  expect(startLinePositions.every(offset => offset <= 2)).toBe(true);
+    return [...canvas.querySelectorAll('.team-stadium-lane__vehicle')].map(vehicle => {
+      const rect = vehicle.getBoundingClientRect();
+      const lane = vehicle.closest('.team-stadium-lane');
+      const laneRect = lane.getBoundingClientRect();
+      const labelRect = lane.querySelector('.team-stadium-lane__info').getBoundingClientRect();
+      const alpha = alphaBounds[lane.dataset.stadiumLane];
+      return {
+        alphaStartLineOffset: Math.abs(rect.left + rect.width * alpha.right - startX),
+        alphaCenterOffset: Math.abs((rect.top + rect.height * alpha.centerY) - (laneRect.top + laneRect.height / 2)),
+        labelCenterOffset: Math.abs((labelRect.top + labelRect.height / 2) - (laneRect.top + laneRect.height / 2))
+      };
+    });
+  }, vehicleAlphaBounds);
+  expect(vehicleAlignment.every(({ alphaStartLineOffset, alphaCenterOffset, labelCenterOffset }) => alphaStartLineOffset <= 2 && alphaCenterOffset <= 2 && labelCenterOffset <= 2)).toBe(true);
   await expect(page.locator('.team-stadium-start-grid')).toHaveCount(0);
 });
 
