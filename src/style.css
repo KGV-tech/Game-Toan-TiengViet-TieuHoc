@@ -2138,7 +2138,8 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view.team-competition-leader-mode .team-leader-team-card { display: grid; align-items: center; min-height: 74px; padding: 9px 16px; }
 #game-play-view.team-competition-leader-mode .team-leader-team-card > div { display: grid; gap: 1px; min-width: 0; }
 #game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(1rem, 1.55vw, 1.28rem); font-weight: 900; line-height: 1.15; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-#game-play-view.team-competition-leader-mode #play-cat-img.team-leader-theme-avatar { position: absolute; top: 52%; left: 50%; z-index: 3; width: min(94%, 248px) !important; height: min(94%, 248px) !important; object-fit: contain; filter: drop-shadow(0 8px 7px rgba(0, 0, 0, .42)); transform: translate(-50%, -50%); }
+#game-play-view.team-competition-leader-mode #cat-speech-bubble { top: 8%; bottom: auto; z-index: 4; }
+#game-play-view.team-competition-leader-mode #play-cat-img.team-leader-theme-avatar { position: absolute; top: 52%; left: 50%; z-index: 3; width: min(180%, 380px) !important; height: min(180%, 380px) !important; object-fit: contain; filter: drop-shadow(0 8px 7px rgba(0, 0, 0, .42)); transform: translate(-50%, -50%); }
 #game-play-view.team-competition-leader-mode .game-practice-status { display: grid; gap: 4px; text-align: center; }
 #game-play-view.team-competition-leader-mode .game-practice-status small { color: #b9e8ff; font-size: clamp(.72rem, 1vw, .86rem); font-weight: 800; }
 #game-play-view.team-competition-leader-mode .team-leader-locked-panel { text-align: center; }
@@ -5952,7 +5953,7 @@ input[type="text"], input[type="password"], select, textarea {
 .team-stadium-lane--pink { --stadium-accent: #fc78bc; }
 .team-stadium-lane--blue { --stadium-accent: #2494fd; }
 .team-stadium-lane--orange { --stadium-accent: #fd8d2f; }
-.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: -50%; left: calc(var(--stadium-start-x) + var(--race-progress)); width: clamp(92px, 9vw, 144px); aspect-ratio: 1; background-image: var(--team-vehicle-image); background-repeat: no-repeat; background-size: contain; background-position: center; filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(-100%, -50%); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
+.team-stadium-lane__vehicle { position: absolute; z-index: 3; top: -50%; left: calc(var(--stadium-start-x) + var(--race-progress)); display: block; width: clamp(92px, 9vw, 144px); height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(0,0,0,.38)); transform: translate(-100%, -50%); transition: left .75s cubic-bezier(.18,.85,.25,1.08); }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock { display: grid; min-height: 96px; padding: 12px 18px; align-content: center; gap: 4px; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock span { font-size: clamp(.48rem, .72vw, .76rem); line-height: 1.1; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock strong { font-size: clamp(1.05rem, 2.25vw, 2.55rem); line-height: 1; }

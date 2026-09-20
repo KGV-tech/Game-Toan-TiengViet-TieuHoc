@@ -7404,7 +7404,7 @@ const app = {
                     const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
                     const lane = stadiumLanes[index];
                     const vehicleAsset = app.teamCompetition.TEAM_VEHICLE_ASSETS?.[lane.vehicleSprite] || '';
-                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%;--team-vehicle-image:url('${vehicleAsset}')" aria-label="${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><span class="team-stadium-lane__vehicle" aria-hidden="true"></span></article>`;
+                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%" aria-label="${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="Xe đua của ${teamName}" loading="eager" decoding="async" /></article>`;
                 }
                 const leaderName = app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn');
                 const roster = !isLive && match.status !== app.teamCompetition.STATUS.ENDED
