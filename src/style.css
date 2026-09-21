@@ -1490,7 +1490,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .num-btn:active { transform: translateY(3px); border-bottom-width: 3px; }
 .num-btn.zero { grid-column: span 2; }
 .num-btn.del { background: linear-gradient(180deg, #f87171, #dc2626); border-color: #fca5a5; border-bottom-color: #7f1d1d; }
-.magic-input { background: rgba(255,255,255,0.9); border: none; border-bottom: 4px dashed #cbd5e1; color: #7e22ce; font-size: 2rem; font-weight: bold; text-align: center; width: 100px; outline: none; transition: all 0.3s; margin: 0 10px; font-family: 'Courier New', Courier, monospace; border-radius: 8px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); padding: 5px; }
+.magic-input { background: rgba(255,255,255,0.9); border: none; border-bottom: 4px dashed #cbd5e1; color: #7e22ce; font-size: 2rem; font-weight: bold; text-align: center; width: 100px; outline: none; transition: all 0.3s; margin: 0 10px; font-family: 'Nunito', 'Quicksand', sans-serif; border-radius: 8px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); padding: 5px; }
 .magic-input:focus { border-bottom-style: none; text-shadow: none; box-shadow: 0 0 10px #a855f7; background: #ffffff; }
 
 /* T/F Selected Orange */
@@ -4419,8 +4419,8 @@ input[type="text"], input[type="password"], select, textarea {
 }
 #game-play-view :is(.magic-input.wrong, .fill-input.wrong, .answer-state-wrong, .ans-btn.wrong, .tf-card.wrong-fill, .multi-choice-subquestion__option.wrong, .tf-statement__choices button.wrong-fill) {
     text-decoration-line: line-through;
-    text-decoration-color: #ff7182;
-    text-decoration-thickness: 1px;
+    text-decoration-color: #ef4444;
+    text-decoration-thickness: 2.5px;
     text-decoration-skip-ink: none;
 }
 #game-play-view :is(.magic-input.wrong, .fill-input.wrong) { color: #ffd1d7 !important; }
@@ -6621,14 +6621,21 @@ html[data-theme="light"] #game-play-view .tf-statement__choices button.wrong-fil
 /* Inputs, sequences, drag slots in light mode */
 html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot) {
     background: #ffffff !important;
-    border-color: #38bdf8 !important;
+    border: 2.5px dashed #0284c7 !important;
     color: #0f172a !important;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    font-family: 'Nunito', 'Quicksand', sans-serif !important;
+    font-size: clamp(1.15rem, 1.55vw, 1.4rem) !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+    box-shadow: inset 0 2px 4px rgba(2, 132, 199, 0.08) !important;
 }
 html[data-theme="light"] #game-play-view :is(.template-fill-row, .template-compose-row, .comparison-drag-row) {
     background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    color: #1e293b !important;
+    font-size: clamp(1.1rem, 1.45vw, 1.35rem) !important;
+    font-weight: 700 !important;
 }
 
 /* Sequence train nodes & slots */

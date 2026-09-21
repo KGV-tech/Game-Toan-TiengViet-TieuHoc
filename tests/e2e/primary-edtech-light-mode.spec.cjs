@@ -102,5 +102,49 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     // 5. Điểm số hiển thị rõ nét màu Navy đậm (#0f172a)
     const scoreColor = await page.locator('#game-progress-ring strong').evaluate(el => window.getComputedStyle(el).color);
     expect(scoreColor).toBe('rgb(15, 23, 42)');
+
+    // 6. Nhãn nút nộp bài hiển thị "Kiểm Tra" (hoặc "Kiểm tra") thay vì "Nộp câu trả lời"
+    const submitLabel = await page.locator('#submit-ans-text').evaluate(el => el.textContent.trim());
+    expect(submitLabel).toMatch(/Kiểm [tT]ra/);
+
+    // 7. Kiểm tra font chữ khung giữa và ô nhập số dùng font Nunito/Quicksand
+    const centerFont = await page.locator('#game-play-view .play-center').evaluate(el => window.getComputedStyle(el).fontFamily);
+    expect(centerFont).toMatch(/Nunito|Quicksand/i);
+
+    // 8. Chụp ảnh màn hình và kiểm tra phản hồi đúng/sai trên câu điền số
+    await page.evaluate(() => {
+      app.game.state = {
+        ...app.game.state,
+        currentIdx: 0,
+        questions: [{
+          type: 'Điền khuyết',
+          q: 'Hãy điền số thích hợp vào chỗ trống:<br>a) 74 524 = ___ + 4 000 + 500 + 20 + 4<br>b) 51 720 = ___ + 1 000 + 700 + 20<br>c) 11 987 = 10 000 + 1 000 + 900 + 80 + ___<br>d) 52 921 = 50 000 + 2 000 + 900 + ___ + 1',
+          ans: '70 000, 50 000, 4, 3'
+        }],
+        answerSubmitted: false
+      };
+      app.game.loadQuestion();
+    });
+
+    // Chụp ảnh giao diện câu hỏi trước khi nộp
+    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_font_check.png' });
+
+    // Điền câu a, b đúng, câu c, d sai
+    await page.fill('#fill-input-0', '70 000');
+    await page.fill('#fill-input-1', '50 000');
+    await page.fill('#fill-input-2', '99');
+    await page.fill('#fill-input-3', '88');
+    await page.click('#submit-ans-btn');
+
+    // Chụp ảnh phản hồi đúng/sai sau khi nộp
+    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_feedback_ticks.png' });
+
+    // 9. Kiểm tra nét gạch đỏ gấp đôi size (2.5px) trên ô sai
+    const strikeThickness = await page.locator('#fill-input-2').evaluate(el => window.getComputedStyle(el).textDecorationThickness);
+    expect(['2.5px', '3px']).toContain(strikeThickness);
+
+    // 10. Kiểm tra ô đúng có dấu tick SVG (background-image chứa SVG checkmark)
+    const correctBgImage = await page.locator('#fill-input-0').evaluate(el => window.getComputedStyle(el).backgroundImage);
+    expect(correctBgImage).toContain('svg');
   });
 });

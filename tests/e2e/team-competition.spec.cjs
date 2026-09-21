@@ -765,8 +765,8 @@ test('lỗi phiên khi nộp câu không khóa lượt nếu máy chủ vẫn x�
 
   await expect(page.locator('#game-play-view')).toHaveClass(/team-competition-leader-mode/);
   await expect(page.locator('#game-question-container')).toContainText('1 + 1');
-  await expect(page.getByRole('button', { name: 'Nộp câu trả lời' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Nộp câu trả lời' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /Kiểm [tT]ra/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Kiểm [tT]ra/ })).toBeEnabled();
   await page.locator('#game-options-container .ans-btn').filter({ hasText: '2' }).click();
   await page.locator('#submit-ans-btn').click();
   await expect.poll(() => dialogs.length).toBe(1);

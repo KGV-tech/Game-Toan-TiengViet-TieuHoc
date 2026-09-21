@@ -1022,10 +1022,11 @@ const app = {
                             app.auth.updateHeader();
                         }
 
-                        // Auto-refresh admin panel if open
-                        if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
-                            if (document.querySelector('.tab-btn.active').textContent.includes('Học Sinh')) {
-                                app.admin.renderPlayersList(document.getElementById('admin-subcontent-area').innerHTML.includes('chờ duyệt'));
+                        // Auto-refresh admin panel if open in admin-settings mode
+                        if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
+                            const activeTab = document.querySelector('.tab-btn.active');
+                            if (activeTab && activeTab.textContent.includes('Học Sinh')) {
+                                app.admin.renderPlayersList(document.getElementById('admin-subcontent-area')?.innerHTML.includes('chờ duyệt') || false);
                             }
                         }
                     })
@@ -1041,8 +1042,9 @@ const app = {
                         } else if (payload.eventType === 'DELETE') {
                             this.libraryQuestions = this.libraryQuestions.filter(q => q.id !== payload.old.id);
                         }
-                        if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
-                            if (document.querySelector('.tab-btn.active').textContent.includes('Kho Câu hỏi')) {
+                        if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
+                            const activeTab = document.querySelector('.tab-btn.active');
+                            if (activeTab && activeTab.textContent.includes('Kho Câu hỏi')) {
                                 app.admin.renderLibrary();
                             }
                         }
@@ -1050,8 +1052,9 @@ const app = {
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_exams' }, async (payload) => {
                         console.log('Realtime DB Change received (Exams)!', payload);
                         this.applyExamRealtimeChange(payload);
-                        if (app.admin && document.getElementById('admin-station').style.display === 'flex') {
-                            if (document.querySelector('.tab-btn.active').textContent.includes('Kho Đề')) {
+                        if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
+                            const activeTab = document.querySelector('.tab-btn.active');
+                            if (activeTab && activeTab.textContent.includes('Kho Đề')) {
                                 app.admin.renderExams();
                             }
                         }
@@ -1065,7 +1068,7 @@ const app = {
                                 app.game.renderTopics();
                             }
                             // Auto-refresh settings UI if admin is viewing it
-                            if (app.admin && document.getElementById('treasure-modal').classList.contains('active')) {
+                            if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
                                 const activeTab = document.querySelector('.tab-btn.active');
                                 if (activeTab && activeTab.textContent.includes('Điều chỉnh')) {
                                     const timeHard = document.getElementById('setting-hard-time');
@@ -3569,6 +3572,20 @@ const app = {
             element._answerCorrection = correction;
             return true;
         },
+        showInlineAnswerCorrectTick(element) {
+            if (!element) return;
+            if (element._answerTick?.isConnected) element._answerTick.remove();
+            if (element._answerCorrection?.isConnected) element._answerCorrection.remove();
+
+            const tick = document.createElement('span');
+            tick.className = 'answer-correct-tick';
+            tick.setAttribute('role', 'status');
+            tick.setAttribute('aria-label', 'Đúng');
+            tick.textContent = '✓';
+            element.after(tick);
+            element._answerTick = tick;
+            return true;
+        },
         showCorrectAnswerReveal(question) {
             const questionContainer = document.getElementById('game-question-container');
             if (!questionContainer) return;
@@ -4617,8 +4634,10 @@ const app = {
                             inp.classList.remove('correct', 'wrong');
                             if (inputIsCorrect) {
                                 inp.classList.add('correct');
+                                this.showInlineAnswerCorrectTick(inp);
                             } else {
                                 inp.classList.add('wrong');
+                                if (inp._answerTick?.isConnected) inp._answerTick.remove();
                                 this.showInlineAnswerCorrection(inp, ansArr[i]);
                             }
                         }
@@ -4627,9 +4646,12 @@ const app = {
                     const inp = document.querySelector('.fill-input, .magic-input');
                     if (inp) {
                         inp.classList.remove('correct', 'wrong');
-                        if (isCorrect) inp.classList.add('correct');
-                        else {
+                        if (isCorrect) {
+                            inp.classList.add('correct');
+                            this.showInlineAnswerCorrectTick(inp);
+                        } else {
                             inp.classList.add('wrong');
+                            if (inp._answerTick?.isConnected) inp._answerTick.remove();
                             this.showInlineAnswerCorrection(inp, ansArr[0]);
                         }
                     }
@@ -6867,9 +6889,12 @@ const app = {
         },
         openAdmin() {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
+            this.currentContext = 'admin-settings';
             document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
+            if (!modal) return;
             modal.dataset.uiContext = 'admin';
+            modal.dataset.adminMode = 'settings';
             modal.style.display = 'flex';
             modal.classList.add('active');
             app.modal?.open(modal, {
@@ -6884,10 +6909,13 @@ const app = {
         },
         openLearningPath(subject = 'math') {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
+            this.currentContext = 'learning-path';
+            this.currentLearningPathSubject = subject;
             document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
             if (!modal) return;
             modal.dataset.uiContext = 'admin';
+            modal.dataset.adminMode = 'learning-path';
             modal.style.display = 'flex';
             modal.classList.add('active');
             modal.classList.remove('team-board-fullscreen');
@@ -6908,15 +6936,19 @@ const app = {
             this.renderLearningPath(box, subject);
         },
         switchTab(tab) {
+            this.currentContext = 'admin-settings';
             const module = tab;
             const composerModules = module === 'templates' || module === 'questions' || module === 'exams';
             if (composerModules && this.isAdminUser()) {
                 return this.openComposerModule(module);
             }
             const adminModal = document.getElementById('treasure-modal');
-            if (adminModal && this.isAdminUser()) adminModal.dataset.uiContext = 'admin';
-            document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen');
-            document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen-mode');
+            if (adminModal) {
+                if (this.isAdminUser()) adminModal.dataset.uiContext = 'admin';
+                adminModal.dataset.adminMode = 'settings';
+                adminModal.classList.remove('team-board-fullscreen');
+                adminModal.classList.remove('team-board-fullscreen-mode');
+            }
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
                 { id: 'quests', label: 'Quản lý Nhiệm vụ' },
@@ -6934,7 +6966,7 @@ const app = {
                     box.innerHTML = `<div class="admin-loading-state" role="status" aria-live="polite"><span class="admin-loading-state__icon" aria-hidden="true">◌</span><div><strong>Đang mở kho dữ liệu</strong><p>Đang tải đúng phần cần dùng, các màn khác không bị tải theo.</p></div></div>`;
                 }
                 void app.data.ensureAdminDataLoaded().then(loaded => {
-                    if (loaded && document.getElementById('treasure-modal')?.classList.contains('active')) this.switchTab(tab);
+                    if (loaded && document.getElementById('treasure-modal')?.classList.contains('active') && this.currentContext === 'admin-settings') this.switchTab(tab);
                     else if (box && !loaded) {
                         box.setAttribute('aria-busy', 'false');
                         box.innerHTML = `<div class="admin-error-state" role="alert"><strong>Chưa tải được dữ liệu</strong><p>Vui lòng thử lại khi kết nối ổn định.</p><button type="button" class="action-btn" onclick="app.admin.switchTab('${tab}')">Thử lại</button></div>`;
@@ -8070,11 +8102,11 @@ const app = {
                 <div class="learning-release-dashboard">
                 <aside class="learning-release-control-rail" aria-labelledby="learning-release-title">
                     <header class="learning-release-header">
-                        <div><span class="settings-workspace__kicker">Cài đặt lớp học</span><h3 id="learning-release-title">Quản lý lộ trình học</h3><p>Chọn lớp, môn và thời gian để xem đúng danh sách Bài học. Mốc đã lưu sẽ giới hạn nội dung học sinh có thể học mới.</p></div>
+                        <div><span class="settings-workspace__kicker">Cài đặt lớp học</span><h3 id="learning-release-title">Quản lý lộ trình học</h3><p>Chọn lớp và thời gian để xem đúng danh sách Bài học. Mốc đã lưu sẽ giới hạn nội dung học sinh có thể học mới.</p></div>
                     </header>
                     <div class="learning-release-controls" aria-label="Phạm vi lớp học">
+                        <input type="hidden" id="learning-release-subject" value="${isVietnamese ? 'vietnamese' : 'math'}">
                         <label><span>Lớp</span><select id="learning-release-class" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4" selected>Lớp 4</option><option value="5">Lớp 5</option></select></label>
-                        <label><span>Môn</span><select id="learning-release-subject" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="math"${!isVietnamese ? ' selected' : ''}>Toán</option><option value="vietnamese"${isVietnamese ? ' selected' : ''}>Tiếng Việt</option></select></label>
                         <label for="learning-release-semester"><span>Thời gian</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
                     </div>
                 </aside>
@@ -11950,12 +11982,14 @@ const app = {
             }
         },
         close() {
+            if (app.admin) app.admin.currentContext = null;
             const modal = document.getElementById('treasure-modal');
             if (!modal) return;
             app.modal?.close(modal);
             modal.style.display = 'none';
             modal.classList.remove('active');
             modal.classList.remove('team-board-fullscreen');
+            delete modal.dataset.adminMode;
         },
         switchTab(tab) {
             const u = app.data.currentUser;

@@ -430,7 +430,7 @@
                     state.error = null;
                     remote.status = state.status;
                     if (!options.silent) {
-                        if (isAdmin() && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin?.questMode === 'team') {
+                        if (isAdmin() && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin?.currentContext === 'admin-settings' && app.admin?.questMode === 'team') {
                             app.admin.renderQuests(document.getElementById('treasure-content-area'));
                         }
                         if (!isAdmin() && document.getElementById('quest-modal')?.classList.contains('active')) app.quest?.render();

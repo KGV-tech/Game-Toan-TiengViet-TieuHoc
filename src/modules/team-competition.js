@@ -906,9 +906,9 @@
         if (!submit) return;
         submit.disabled = disabled;
         submit.onclick = () => api.submitCurrentQuestion();
-        submit.setAttribute('aria-label', 'Nộp câu trả lời');
+        submit.setAttribute('aria-label', 'Kiểm tra');
         const label = document.getElementById('submit-ans-text');
-        if (label) label.textContent = 'Nộp câu trả lời';
+        if (label) label.textContent = 'Kiểm Tra';
     }
 
     function hydrateLeaderQuestion(question, answerKey = {}) {
