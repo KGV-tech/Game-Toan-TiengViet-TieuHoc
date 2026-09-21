@@ -133,8 +133,10 @@ test('các dạng nhiều ý khác cũng hiện bảng đáp án có nhãn sau k
   await page.locator('#submit-ans-btn').click();
 
   await expect(page.locator('.multi-choice-subquestion__option.wrong')).toHaveCount(4);
+  await expect(page.locator('.multi-choice-subquestion__option.correct')).toHaveCount(4);
   await expect(page.locator('.multi-choice-subquestion__option.wrong').first()).toHaveCSS('text-decoration-line', 'line-through');
-  await expect(page.locator('.game-answer-reveal__part')).toHaveText(['a) 2', 'b) 4', 'c) 6', 'd) 8']);
+  await expect(page.locator('.multi-choice-subquestion__option.wrong').first()).toHaveCSS('text-decoration-thickness', '1px');
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
 });
 
 test('dạng điền một ô cũng ghi đáp án đúng cạnh câu trả lời sai', async ({ page }) => {

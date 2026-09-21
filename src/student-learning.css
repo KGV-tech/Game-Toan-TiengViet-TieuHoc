@@ -4332,3 +4332,319 @@
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard { grid-template-columns: 1fr; overflow: auto; }
     #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-list-panel { min-height: 320px; }
 }
+
+/* ==========================================================================
+   Comprehensive Light Mode (Chế độ Ban ngày) Overrides
+   ========================================================================== */
+html[data-theme="light"] {
+    --template-text: #0f172a;
+    --template-surface: #ffffff;
+    --template-surface-input: #f8fafc;
+    --template-border: #cbd5e1;
+}
+
+html[data-theme="light"] body {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #f1f5f9 100%) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] #game-play-view {
+    background: transparent !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] #game-play-view .glass-container-xl {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 12px 36px rgba(14, 116, 144, 0.08) !important;
+}
+
+/* Left panel & components in light mode */
+html[data-theme="light"] #game-play-view .play-left {
+    background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 60%, #f8fafc 100%) !important;
+    border-color: #bae6fd !important;
+    box-shadow: inset 0 1px 0 #ffffff, 0 8px 22px rgba(14, 116, 144, 0.08) !important;
+}
+
+html[data-theme="light"] #game-play-view .player-info-card--game {
+    background: #ffffff !important;
+    border: 1px solid #bae6fd !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.06) !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game strong { color: #0369a1 !important; }
+html[data-theme="light"] #game-play-view .player-info-card--game small { color: #475569 !important; }
+
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-card {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    border: 1.5px solid #38bdf8 !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.22) !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-card > span {
+    color: #e0f2fe !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-name {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-team-card {
+    background: #ffffff !important;
+    border: 2px solid #38bdf8 !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1) !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-team-name {
+    color: #0369a1 !important;
+    font-weight: 900 !important;
+}
+
+html[data-theme="light"] #game-play-view .cat-wrapper::before {
+    border-color: rgba(56, 189, 248, 0.45) !important;
+    background: radial-gradient(circle, rgba(186, 230, 253, 0.6), rgba(240, 249, 255, 0.15) 64%, transparent 70%) !important;
+    box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.12), 0 0 24px rgba(56, 189, 248, 0.25) !important;
+}
+
+html[data-theme="light"] #game-play-view .speech-bubble {
+    background: #ffffff !important;
+    border: 2px solid #38bdf8 !important;
+    color: #0f172a !important;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12) !important;
+}
+html[data-theme="light"] #game-play-view .speech-bubble::after {
+    border-color: #38bdf8 transparent transparent transparent !important;
+}
+
+html[data-theme="light"] #game-play-view .game-practice-status {
+    background: #ffffff !important;
+    border: 1px solid #bae6fd !important;
+    border-bottom: 3px solid #0284c7 !important;
+    color: #334155 !important;
+    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.08) !important;
+}
+html[data-theme="light"] #game-play-view .game-practice-status strong { color: #0284c7 !important; }
+html[data-theme="light"] #game-play-view .game-practice-status span { color: #64748b !important; }
+html[data-theme="light"] #game-play-view .game-practice-status small { color: #0369a1 !important; }
+
+/* Center panel & question rows in light mode */
+html[data-theme="light"] #game-play-view .game-header .question-progress {
+    color: #0369a1 !important;
+    background: #e0f2fe !important;
+    border-color: #7dd3fc !important;
+}
+
+html[data-theme="light"] #game-play-view .game-question-progress {
+    background: rgba(203, 213, 225, 0.5) !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] #game-play-view .question-box {
+    background: #ffffff !important;
+    border: 2px solid #bae6fd !important;
+    border-bottom: 4px solid #38bdf8 !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 16px rgba(14, 116, 144, 0.06) !important;
+}
+html[data-theme="light"] #game-play-view .question-box * {
+    color: #0f172a;
+}
+html[data-theme="light"] #game-play-view :is(.tf-template-number, .tf-template-instruction, .template-question-copy, .four-operations-expression-title) {
+    color: #0f172a !important;
+}
+
+/* Multi-choice subquestions in light mode */
+html[data-theme="light"] #game-play-view .multi-choice-subquestion {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 {
+    border-color: #fdba74 !important;
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 {
+    border-color: #93c5fd !important;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%) !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 {
+    border-color: #86efac !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 {
+    border-color: #d8b4fe !important;
+    background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%) !important;
+}
+
+html[data-theme="light"] #game-play-view .multi-choice-subquestion h3 {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 h3 span,
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 .multi-choice-subquestion__label-only { color: #ea580c !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 h3 span,
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 .multi-choice-subquestion__label-only { color: #0284c7 !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 h3 span,
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 .multi-choice-subquestion__label-only { color: #16a34a !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 h3 span,
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 .multi-choice-subquestion__label-only { color: #9333ea !important; }
+
+/* Subquestion option buttons & ans-btn in light mode */
+html[data-theme="light"] #game-play-view .multi-choice-subquestion__option,
+html[data-theme="light"] #game-play-view .ans-btn {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion__option:hover,
+html[data-theme="light"] #game-play-view .ans-btn:hover {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+    color: #0369a1 !important;
+}
+html[data-theme="light"] #game-play-view .ans-badge {
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 .ans-badge { background: linear-gradient(180deg, #fef08a, #f59e0b) !important; color: #78350f !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 .ans-badge { background: linear-gradient(180deg, #bae6fd, #3b82f6) !important; color: #1e3a8a !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 .ans-badge { background: linear-gradient(180deg, #bbf7d0, #10b981) !important; color: #064e3b !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 .ans-badge { background: linear-gradient(180deg, #ddd6fe, #8b5cf6) !important; color: #4c1d95 !important; }
+
+html[data-theme="light"] #game-play-view :is(.multi-choice-subquestion__option.selected, .ans-btn.selected) {
+    background: linear-gradient(180deg, #fef08a, #f59e0b) !important;
+    border-color: #d97706 !important;
+    color: #451a03 !important;
+    font-weight: 900 !important;
+}
+html[data-theme="light"] #game-play-view :is(.multi-choice-subquestion__option.correct, .ans-btn.correct) {
+    background: linear-gradient(180deg, #bbf7d0, #16a34a) !important;
+    border-color: #15803d !important;
+    color: #ffffff !important;
+}
+html[data-theme="light"] #game-play-view :is(.multi-choice-subquestion__option.wrong, .ans-btn.wrong) {
+    background: linear-gradient(180deg, #fecdd3, #e11d48) !important;
+    border-color: #be123c !important;
+    color: #ffffff !important;
+}
+
+/* True / False statements in light mode */
+html[data-theme="light"] #game-play-view .tf-statement {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] #game-play-view .tf-statement--tone-0 { border-color: #fdba74 !important; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-1 { border-color: #93c5fd !important; background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%) !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-2 { border-color: #86efac !important; background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-3 { border-color: #d8b4fe !important; background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%) !important; }
+html[data-theme="light"] #game-play-view .tf-statement__text { color: #0f172a !important; }
+html[data-theme="light"] #game-play-view .tf-statement__label { color: #0284c7 !important; }
+
+html[data-theme="light"] #game-play-view .tf-statement__choices button {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+html[data-theme="light"] #game-play-view .tf-statement__choices button:hover {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+    color: #0369a1 !important;
+}
+html[data-theme="light"] #game-play-view .tf-statement__choices button.selected {
+    background: linear-gradient(180deg, #fef08a, #f59e0b) !important;
+    border-color: #d97706 !important;
+    color: #451a03 !important;
+}
+html[data-theme="light"] #game-play-view .tf-statement__choices button.correct-fill {
+    background: linear-gradient(180deg, #bbf7d0, #16a34a) !important;
+    border-color: #15803d !important;
+    color: #ffffff !important;
+}
+html[data-theme="light"] #game-play-view .tf-statement__choices button.wrong-fill {
+    background: linear-gradient(180deg, #fecdd3, #e11d48) !important;
+    border-color: #be123c !important;
+    color: #ffffff !important;
+}
+
+/* Inputs, sequences, drag slots in light mode */
+html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot) {
+    background: #ffffff !important;
+    border-color: #38bdf8 !important;
+    color: #0f172a !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] #game-play-view :is(.template-fill-row, .template-compose-row, .comparison-drag-row) {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* Sequence train nodes & slots */
+html[data-theme="light"] #game-play-view .template-sequence-title {
+    background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%) !important;
+    border-color: #7dd3fc !important;
+    color: #0369a1 !important;
+}
+html[data-theme="light"] #game-play-view .template-sequence-row--tone-0 { background: #fff7ed !important; border-color: #fdba74 !important; }
+html[data-theme="light"] #game-play-view .template-sequence-row--tone-1 { background: #eff6ff !important; border-color: #93c5fd !important; }
+html[data-theme="light"] #game-play-view .template-sequence-row--tone-2 { background: #f0fdf4 !important; border-color: #86efac !important; }
+html[data-theme="light"] #game-play-view .template-sequence-row--tone-3 { background: #faf5ff !important; border-color: #d8b4fe !important; }
+html[data-theme="light"] #game-play-view .template-sequence-round-label { color: #1e293b !important; }
+html[data-theme="light"] #game-play-view .template-sequence-row .train-node {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] #game-play-view .template-sequence-row .train-slot {
+    background: #ffffff !important;
+    border-color: #0284c7 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] #game-play-view .template-sequence-row .train-arrow {
+    color: #0284c7 !important;
+}
+
+/* Right panel in light mode */
+html[data-theme="light"] #game-play-view .play-right {
+    background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 60%, #f8fafc 100%) !important;
+    border-color: #bae6fd !important;
+    box-shadow: inset 0 1px 0 #ffffff, 0 8px 22px rgba(14, 116, 144, 0.08) !important;
+}
+
+/* Seamless progress panel (no more jarring white block!) */
+html[data-theme="light"] #game-play-view .game-progress-panel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+html[data-theme="light"] #game-play-view .game-progress-ring__content strong {
+    color: #0f172a !important;
+}
+html[data-theme="light"] #game-play-view .game-progress-ring__content small {
+    color: #64748b !important;
+}
+html[data-theme="light"] #game-play-view .game-progress-copy {
+    color: #334155 !important;
+}
+html[data-theme="light"] #game-play-view .game-progress-copy strong {
+    color: #0284c7 !important;
+}
+html[data-theme="light"] #game-play-view .game-solution-title {
+    color: #0369a1 !important;
+    font-weight: 800 !important;
+}
+html[data-theme="light"] #game-play-view .explanation-box {
+    background: #ffffff !important;
+    border: 1.5px solid #bae6fd !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.06) !important;
+}
+html[data-theme="light"] #game-play-view .game-theme-toggle {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: #bae6fd !important;
+    color: #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(14, 116, 144, 0.12) !important;
+}
+
