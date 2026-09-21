@@ -8,7 +8,7 @@
   <link rel="preload" as="image" href="./public/login_reference_bg.webp" fetchpriority="high">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css?v=unified-station-shell-v1">
   <link rel="stylesheet" href="./src/login-layout.css">
   <link rel="stylesheet" href="./src/map-layout.css">
@@ -689,6 +689,9 @@
 
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
+        <button id="game-theme-toggle" class="game-theme-toggle" onclick="app.ui.toggleTheme()" aria-label="Đổi giao diện Sáng / Tối" title="Chuyển chế độ Sáng / Tối">
+          <span class="theme-icon" aria-hidden="true">☀️</span>
+        </button>
         <button id="game-btn-back" class="utility-close-button" onclick="app.game.confirmExit()" aria-label="Thoát lượt làm bài">×</button>
 
         <div class="glass-container-xl">

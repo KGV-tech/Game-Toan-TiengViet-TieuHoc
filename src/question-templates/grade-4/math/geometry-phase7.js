@@ -207,16 +207,17 @@ function generateQuadrilateralQuestion(config = {}, random = Math.random) {
     return question;
 }
 
-function reviewPart(skill, random) {
+function reviewPart(skill, random, index = 0) {
+    const relation = RELATIONS[index % RELATIONS.length];
     const source = skill === 'b27'
-        ? relationPart('perpendicular', pick(RELATIONS, random), 'line', random)
+        ? relationPart('perpendicular', relation, 'line', random, index)
         : skill === 'b28'
-            ? relationPart('perpendicular', pick(RELATIONS, random), 'grid', random)
+            ? relationPart('perpendicular', relation, 'grid', random, index)
             : skill === 'b29'
-                ? relationPart('parallel', pick(RELATIONS, random), 'line', random)
+                ? relationPart('parallel', relation, 'line', random, index)
                 : skill === 'b30'
-                    ? relationPart('parallel', pick(RELATIONS, random), 'grid', random)
-                    : shapePart(pick(SHAPES, random), random);
+                    ? relationPart('parallel', relation, 'grid', random, index)
+                    : shapePart(SHAPES[index % SHAPES.length], random, index);
     return {
         ...source,
         skill,
@@ -229,7 +230,7 @@ function reviewPart(skill, random) {
 function generateReview(config = {}, random = Math.random) {
     const skills = configuredValues(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
     const selectedSkill = chooseConfiguredValue(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, random, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
-    const subquestions = labels.map(label => ({ label, ...reviewPart(selectedSkill, random) }));
+    const subquestions = labels.map((label, index) => ({ label, ...reviewPart(selectedSkill, random, index) }));
     const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'geometry.hk1_review_b27_b31',

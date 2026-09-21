@@ -591,9 +591,41 @@
             if (!attempt || attempt.status !== api.ATTEMPT_STATUS.ACTIVE) return;
             // Re-read the authoritative session before writing. This preserves a
             // leader's turn across a reconnect or a delayed realtime update.
+            // Best-effort: if sync fails or the attempt is not yet in DB (e.g. local
+            // ID not yet mapped), we continue with the local attempt instead of
+            // locking the user out unnecessarily.
             await this.syncRemote({ silent: true });
             const canonicalAttempt = api.attemptStore.get(attempt.competitionId, attempt.teamId);
-            if (canonicalAttempt?.status !== api.ATTEMPT_STATUS.ACTIVE) return api.renderLeaderLocked('Lượt nhóm đã kết thúc.');
+            // Only lock if the server explicitly confirms a terminal status.
+            // A null/undefined canonical means the DB doesn't have this attempt yet
+            // (common when offline or during the first submit), so we continue locally.
+            if (canonicalAttempt && canonicalAttempt.status !== api.ATTEMPT_STATUS.ACTIVE) {
+                // Special case: server marks the attempt as 'completed' but the local
+                // questions suggest there are more remaining. This can happen when
+                // team_competition_questions had a wrong question_count (e.g. only 1
+                // question was saved due to unsupported_question_answer_count during
+                // team_competition_save_questions). Continue locally if the leader
+                // clearly has more questions to answer.
+                const localQuestions = (() => {
+                    try {
+                        const comp = api.store.get(canonicalAttempt.competitionId);
+                        const t = comp?.teams.find(item => String(item.id) === String(canonicalAttempt.teamId));
+                        return api.getQuestionsForTeam?.(comp, t) || [];
+                    } catch (_) { return []; }
+                })();
+                if (canonicalAttempt.status === api.ATTEMPT_STATUS.COMPLETED
+                    && localQuestions.length > canonicalAttempt.questionCount
+                    && attempt.currentIndex < localQuestions.length) {
+                    console.warn(
+                        '[TÊN NHÓM][team-competition] Phát hiện lỗi question_count trên máy chủ: ' +
+                        `DB có ${canonicalAttempt.questionCount} câu, local có ${localQuestions.length} câu. ` +
+                        'Tiếp tục chấm điểm local. Hãy gọi lại team_competition_save_questions để sửa.'
+                    );
+                    // Use the local attempt to continue
+                } else {
+                    return api.renderLeaderLocked('Lượt nhóm đã kết thúc.');
+                }
+            }
             attempt = canonicalAttempt || attempt;
             api.state.activeAttempt = attempt;
             const competition = api.store.get(attempt.competitionId);
