@@ -226,7 +226,8 @@ test('sequence legacy text chấm sai theo đủ các ô và hiện đáp án th
 
     return {
       wrongSlots: document.querySelectorAll('.seq-slot.answer-state-wrong').length,
-      corrections: document.querySelectorAll('.seq-slot + .answer-correction').length,
+      corrections: document.querySelectorAll('.seq-slot-wrap .answer-correction').length,
+      correctionTexts: [...document.querySelectorAll('.seq-slot-wrap .answer-correction')].map(node => node.textContent),
       revealParts: document.querySelectorAll('.game-answer-reveal__part').length,
       revealText: document.querySelector('.game-answer-reveal')?.textContent || ''
     };
@@ -234,9 +235,65 @@ test('sequence legacy text chấm sai theo đủ các ô và hiện đáp án th
 
   expect(result.wrongSlots).toBe(8);
   expect(result.corrections).toBe(8);
-  expect(result.revealParts).toBe(4);
-  expect(result.revealText).toContain('a)');
-  expect(result.revealText).toContain('d)');
+  expect(result.correctionTexts.every(text => !text.includes('Đúng:'))).toBe(true);
+  expect(result.revealParts).toBe(0);
+  expect(result.revealText).toBe('');
+});
+
+test('chuỗi có nghìn cách nhóm vẫn tính 0,25 cho một dãy đúng và 1 điểm khi đúng hết', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openOfflineHomepage(page);
+
+  const result = await page.evaluate(() => {
+    const question = {
+      type: 'Chuỗi Quy luật',
+      templateId: 'number.natural_sequence',
+      q: 'Điền số thích hợp vào mỗi dãy:<br>a) 58 000, ___, 60 000, ___, 62 000<br>b) 70 000, ___, 72 000, ___, 74 000<br>c) 81 000, ___, 83 000, ___, 85 000<br>d) 91 000, ___, 93 000, ___, 95 000',
+      ans: '59 000, 61 000, 71 000, 73 000, 82 000, 84 000, 92 000, 94 000',
+      sequenceRounds: [
+        { label: 'a', display: '58 000, ___, 60 000, ___, 62 000', blankIndexes: [1, 3] },
+        { label: 'b', display: '70 000, ___, 72 000, ___, 74 000', blankIndexes: [1, 3] },
+        { label: 'c', display: '81 000, ___, 83 000, ___, 85 000', blankIndexes: [1, 3] },
+        { label: 'd', display: '91 000, ___, 93 000, ___, 95 000', blankIndexes: [1, 3] }
+      ],
+      explanation: 'Mỗi dãy tăng 1 000 đơn vị.'
+    };
+    app.data.currentUser = { username: 'sequence-score-student', role: 'student' };
+    app.game.state = { score: 0, currentIdx: 0, questions: [question], historyDetails: [] };
+    document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+    document.getElementById('game-screen').classList.add('active');
+    document.getElementById('game-play-view').classList.add('active');
+    app.game.loadQuestion();
+
+    const answers = app.game.getAnsArr(question.ans);
+    const partial = answers.map((answer, index) => index < 2 ? answer.replace(/\\s/g, '') : '0');
+    app.game.state.seqAnswers = partial;
+    app.game.state.selectedAns = partial.join(', ');
+    document.querySelectorAll('.seq-slot').forEach((slot, index) => { slot.value = partial[index]; });
+    app.game.submitAnswer();
+    const partialScore = app.game.state.score;
+    const partialDisplay = document.getElementById('game-score').textContent;
+    const allCorrectScore = app.game.calculateQuestionScore(question, answers).points;
+    const correctionTexts = [...document.querySelectorAll('.answer-correction')].map(node => node.textContent);
+    const explanation = document.getElementById('explanation-box').textContent;
+    return {
+      partialScore,
+      partialDisplay,
+      allCorrectScore,
+      correctionTexts,
+      hasReveal: Boolean(document.querySelector('.game-answer-reveal')),
+      explanation
+    };
+  });
+
+  expect(result.partialScore).toBe(0.25);
+  expect(result.partialDisplay).toBe('0.25');
+  expect(result.allCorrectScore).toBe(1);
+  expect(result.correctionTexts.map(text => text.replace(/\s+/g, ' ')))
+    .toEqual(['71 000', '73 000', '82 000', '84 000', '92 000', '94 000']);
+  expect(result.hasReveal).toBe(false);
+  expect(result.explanation.replace(/\u00a0/g, ' ')).toContain('Mỗi dãy tăng 1 000 đơn vị.');
+  expect(result.explanation).not.toContain('59 000');
 });
 
 test('sequence answer reveal keeps each round in a readable row', async ({ page }) => {

@@ -18,7 +18,7 @@ async function openQuestion(page, question) {
   }, question);
 }
 
-test('đáp án dài tự xuống dòng trong khối tối và ô nhập giữ font giao diện', async ({ page }, testInfo) => {
+test('đáp án dài hiện ngay dưới từng ô sai và ô nhập giữ font giao diện', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
   await openQuestion(page, {
@@ -31,44 +31,43 @@ test('đáp án dài tự xuống dòng trong khối tối và ô nhập giữ f
     await page.locator(`#fill-input-${index}`).fill('0');
   }
   await page.locator('#submit-ans-btn').click();
-  await expect(page.locator('.game-answer-reveal')).toBeVisible();
+  await expect(page.locator('.answer-correction')).toHaveCount(8);
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
 
-  const layout = await page.locator('.game-answer-reveal').evaluate(panel => {
-    const input = document.querySelector('.magic-input');
-    const panelStyle = getComputedStyle(panel);
+  const layout = await page.locator('.answer-correction').first().evaluate(correction => {
+    const input = correction.previousElementSibling;
+    const inputRect = input.getBoundingClientRect();
+    const correctionRect = correction.getBoundingClientRect();
+    const question = document.getElementById('game-question-container');
     const inputStyle = getComputedStyle(input);
-    const panelRect = panel.getBoundingClientRect();
-    const hostRect = document.getElementById('game-question-container').getBoundingClientRect();
     return {
-      fitsWidth: panel.scrollWidth <= panel.clientWidth,
-      fitsHost: panelRect.right <= hostRect.right + 1,
-      panelBackground: panelStyle.backgroundColor,
-      panelGradient: panelStyle.backgroundImage,
+      belowInput: correctionRect.top >= inputRect.bottom - 1,
+      centered: Math.abs((correctionRect.left + correctionRect.width / 2) - (inputRect.left + inputRect.width / 2)) <= 1,
+      fitsQuestion: question.scrollWidth <= question.clientWidth,
       inputFont: inputStyle.fontFamily,
       inputColor: inputStyle.color
     };
   });
 
-  expect(layout.fitsWidth).toBe(true);
-  expect(layout.fitsHost).toBe(true);
-  expect(layout.panelBackground).not.toBe('rgb(255, 255, 255)');
-  expect(layout.panelGradient).toContain('linear-gradient');
+  expect(layout.belowInput).toBe(true);
+  expect(layout.centered).toBe(true);
+  expect(layout.fitsQuestion).toBe(true);
   expect(layout.inputFont.toLowerCase()).toContain('quicksand');
   expect(layout.inputColor).not.toBe('rgb(126, 34, 206)');
   await page.screenshot({ path: testInfo.outputPath('long-answer-reveal.png'), fullPage: true });
 
   await page.setViewportSize({ width: 1024, height: 768 });
-  const tabletLayout = await page.locator('.game-answer-reveal').evaluate(panel => {
-    const rect = panel.getBoundingClientRect();
-    const host = document.getElementById('game-question-container').getBoundingClientRect();
+  const tabletLayout = await page.locator('.answer-correction').first().evaluate(correction => {
+    const input = correction.previousElementSibling;
+    const correctionRect = correction.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
     const question = document.getElementById('game-question-container');
     return {
-      fitsWidth: panel.scrollWidth <= panel.clientWidth,
-      fitsHost: rect.right <= host.right + 1,
+      belowInput: correctionRect.top >= inputRect.bottom - 1,
       questionFits: question.scrollWidth <= question.clientWidth
     };
   });
-  expect(tabletLayout).toEqual({ fitsWidth: true, fitsHost: true, questionFits: true });
+  expect(tabletLayout).toEqual({ belowInput: true, questionFits: true });
 });
 
 test('chấm sai ô điền bằng gạch đỏ, hiện đáp án kế bên và gắn nhãn từng ý', async ({ page }) => {
@@ -87,7 +86,22 @@ test('chấm sai ô điền bằng gạch đỏ, hiện đáp án kế bên và 
 
   await expect(page.locator('.magic-input.wrong')).toHaveCount(4);
   await expect(page.locator('.answer-correction')).toHaveCount(4);
-  await expect(page.locator('.answer-correction')).toHaveText(['Đúng: 97', 'Đúng: 83', 'Đúng: 96', 'Đúng: 86']);
+  await expect(page.locator('.answer-correction')).toHaveText(['97', '83', '96', '86']);
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
+
+  const correctionLayout = await page.locator('.answer-correction').first().evaluate(correction => {
+    const input = correction.previousElementSibling;
+    const inputRect = input.getBoundingClientRect();
+    const correctionRect = correction.getBoundingClientRect();
+    return {
+      wrapper: correction.parentElement.className,
+      belowInput: correctionRect.top >= inputRect.bottom - 1,
+      centered: Math.abs((correctionRect.left + correctionRect.width / 2) - (inputRect.left + inputRect.width / 2)) <= 1
+    };
+  });
+  expect(correctionLayout.wrapper).toContain('answer-field-wrap');
+  expect(correctionLayout.belowInput).toBe(true);
+  expect(correctionLayout.centered).toBe(true);
 
   const wrongInputStyle = await page.locator('.magic-input.wrong').first().evaluate(input => ({
     decoration: getComputedStyle(input).textDecorationLine,
@@ -95,8 +109,6 @@ test('chấm sai ô điền bằng gạch đỏ, hiện đáp án kế bên và 
   }));
   expect(wrongInputStyle.decoration).toContain('line-through');
   expect(wrongInputStyle.color).not.toBe('rgb(30, 41, 59)');
-
-  await expect(page.locator('.game-answer-reveal__part')).toHaveText(['a) 97', 'b) 83', 'c) 96', 'd) 86']);
 });
 
 test('các dạng nhiều ý khác cũng hiện bảng đáp án có nhãn sau khi chấm sai', async ({ page }) => {
@@ -132,8 +144,10 @@ test('dạng điền một ô cũng ghi đáp án đúng cạnh câu trả lời
   await page.locator('#submit-ans-btn').click();
 
   await expect(page.locator('.magic-input.wrong')).toHaveCount(1);
-  await expect(page.locator('.answer-correction')).toHaveText('Đúng: 9');
-  await expect(page.locator('.game-answer-reveal__value')).toHaveText('9');
+  await expect(page.locator('.answer-correction')).toHaveText('9');
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
+  await expect(page.locator('#explanation-box')).toBeHidden();
+  await expect(page.locator('#explanation-box')).toHaveText('');
 });
 
 test('ô dấu dùng dạng vuông tối và vẫn giữ bề mặt tối khi chấm sai', async ({ page }) => {
@@ -162,6 +176,8 @@ test('ô dấu dùng dạng vuông tối và vẫn giữ bề mặt tối khi ch
   for (const slot of await page.locator('.comparison-drag-slot').all()) await slot.click();
   await page.locator('#submit-ans-btn').click();
 
+  await expect(page.locator('.answer-correction')).toHaveText(['<', '<', '<', '<']);
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
   const checkedCell = await page.locator('.comparison-drag-slot').first().evaluate(cell => ({
     state: cell.className,
     background: getComputedStyle(cell).backgroundColor,
@@ -206,6 +222,8 @@ test('dạng kéo thả góc vẫn đặt đáp án sửa bài cạnh ô mà kh�
   });
 
   await expect(page.locator('.answer-correction')).toHaveCount(3);
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
+  await expect(page.locator('.answer-correction')).toHaveText(['Góc vuông', 'Góc tù', 'Góc bẹt']);
   const rowsFit = await page.locator('.angle-drag-row').evaluateAll(rows => rows.map(row => {
     const rect = row.getBoundingClientRect();
     const host = document.getElementById('game-question-container').getBoundingClientRect();

@@ -939,6 +939,15 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
   .template-compose-heading { text-align: center; font-size: clamp(1.25rem, 2vw, 1.85rem); line-height: 1.3; margin-bottom: 2px; }
   .template-compose-row { min-height: 42px; text-align: left; font-size: clamp(1.05rem, 1.65vw, 1.42rem); line-height: 1.35; }
 .template-compose-answer { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+#game-play-view .answer-field-wrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  vertical-align: middle;
+}
 .template-compose-row .magic-input { width: min(132px, 16vw); margin: 0; font-size: clamp(1.05rem, 1.55vw, 1.35rem); }
 .question-box--four-part-fill { padding: clamp(14px, 1.5vw, 20px); }
 .question-box--four-part-fill .template-fill-layout,
@@ -947,7 +956,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .question-box--four-part-fill .template-compose-row {
   box-sizing: border-box;
   width: 100%;
-  min-height: 52px;
+  min-height: 68px;
   padding: 8px 14px;
   border: 2px solid transparent;
   border-radius: 14px;
@@ -4158,6 +4167,7 @@ input[type="text"], input[type="password"], select, textarea {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
+    min-height: 68px;
     margin: 0 0 7px;
     padding: 6px 9px;
     border: 2px solid transparent;
@@ -4229,8 +4239,9 @@ input[type="text"], input[type="password"], select, textarea {
     box-shadow: 0 0 0 3px rgba(249, 216, 107, .22);
 }
 #game-play-view .template-sequence-row .seq-slot-wrap.has-answer-correction {
-    flex-wrap: wrap;
-    gap: 3px 5px;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
 }
 #game-play-view .template-sequence-row .seq-slot-wrap .answer-correction {
     flex: 0 0 auto;
@@ -4385,24 +4396,23 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view .game-answer-reveal__parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 4px 14px; width: 100%; }
 #game-play-view .game-answer-reveal__part { display: block; min-width: 0; }
 
-/* Kiểu cô giáo sửa bài: gạch đỏ đáp án học sinh sai và ghi đáp án đúng ngay cạnh ô. */
+/* Đáp án đúng hiện thẳng dưới ô sai - kiểu cô giáo sửa bài */
 #game-play-view .answer-correction {
     display: inline-flex;
     align-items: center;
-    min-width: max-content;
-    margin-inline: 4px;
-    color: #ff7182;
-    font-size: .92em;
+    justify-content: center;
+    max-width: 100%;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(22, 101, 52, .82);
+    color: #86efac;
+    font-size: .88em;
     font-weight: 900;
-    line-height: 1.2;
-    white-space: nowrap;
-}
-#game-play-view .answer-correction::before { content: '→'; margin-right: 4px; color: #ff7182; }
-#game-play-view .question-box--angle-drag .angle-drag-row.has-answer-correction {
-    grid-template-columns: auto 96px minmax(0, 1fr) max-content;
-}
-#game-play-view .play-center--four-comparisons .comparison-drag-row.has-answer-correction {
-    grid-template-columns: auto minmax(0, 1fr) auto max-content minmax(0, 1fr);
+    line-height: 1.3;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
 #game-play-view :is(.magic-input.wrong, .fill-input.wrong, .answer-state-wrong, .ans-btn.wrong, .tf-card.wrong-fill, .multi-choice-subquestion__option.wrong, .tf-statement__choices button.wrong-fill) {
     text-decoration-line: line-through;

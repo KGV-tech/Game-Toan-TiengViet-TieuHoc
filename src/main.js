@@ -3246,13 +3246,28 @@ const app = {
             const answerCount = expected.length;
             const questionType = String(q?.type || '').normalize('NFC');
             const isMatching = questionType.includes('Đối chiếu');
-            const isFill = questionType.includes('Điền');
+            const isFill = questionType.includes('Điền')
+                || questionType.includes('Chuỗi')
+                || q?.templateId === 'number.natural_sequence';
             const normalize = value => isMatching
                 ? String(value || '').trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN')
                 : (isFill ? this.normalizeFillAnswer(value) : String(value || '').trim());
             const expectedAnswers = expected.map(normalize);
             const chosenAnswers = selectedAnswers.map(normalize);
-            const partAnswerCounts = app.data.getValidPartAnswerCounts(q, expectedAnswers.length);
+            let partAnswerCounts = app.data.getValidPartAnswerCounts(q, expectedAnswers.length);
+            if (!partAnswerCounts && Array.isArray(q?.sequenceRounds) && q.sequenceRounds.length) {
+                const inferredCounts = q.sequenceRounds.map(round => {
+                    if (Array.isArray(round?.blankIndexes)) return round.blankIndexes.length;
+                    if (Array.isArray(round?.answers)) return round.answers.length;
+                    return (String(round?.display || '').match(/___/g) || []).length;
+                });
+                const inferredTotal = inferredCounts.reduce((total, count) => total + count, 0);
+                const validCounts = inferredCounts.length > 0
+                    && app.data.isSupportedPartCount(inferredCounts.length)
+                    && inferredCounts.every(count => Number.isInteger(count) && count > 0)
+                    && inferredTotal === expectedAnswers.length;
+                if (validCounts) partAnswerCounts = inferredCounts;
+            }
             if (partAnswerCounts) {
                 let offset = 0;
                 const correctCount = partAnswerCounts.reduce((total, count) => {
@@ -3398,11 +3413,7 @@ const app = {
                     return `${label}) ${verdict}: Đối chiếu giá trị trong phát biểu.`;
                 }).join('\n');
             }
-            const groups = this.getAnswerGroups(question);
-            return groups.map(group => {
-                const value = group.answers.map(answer => app.data.formatMathText(answer)).join(', ');
-                return `${group.label ? `${group.label}) ` : ''}${value}`;
-            }).join('\n');
+            return '';
         },
         showInlineAnswerCorrection(element, correctAnswer) {
             if (!element || !String(correctAnswer ?? '').trim()) return;
@@ -3413,10 +3424,24 @@ const app = {
             correction.setAttribute('role', 'note');
             const formattedAnswer = app.data.formatMathText(correctAnswer);
             correction.setAttribute('aria-label', `Đáp án đúng: ${formattedAnswer}`);
-            correction.textContent = `Đúng: ${formattedAnswer}`;
-            element.parentElement?.classList.add('has-answer-correction');
-            element.after(correction);
+            // Chỉ hiện đáp án đúng (không có tiền tố "Đúng:") để gọn.
+            correction.textContent = formattedAnswer;
+            let host = element.parentElement;
+            if (host && !host.classList.contains('seq-slot-wrap') && !host.classList.contains('answer-field-wrap')) {
+                const fieldWrap = document.createElement('span');
+                fieldWrap.className = 'answer-field-wrap';
+                element.replaceWith(fieldWrap);
+                fieldWrap.appendChild(element);
+                host = fieldWrap;
+            }
+            if (host) {
+                host.classList.add('has-answer-correction');
+                host.appendChild(correction);
+            } else {
+                element.after(correction);
+            }
             element._answerCorrection = correction;
+            return true;
         },
         showCorrectAnswerReveal(question) {
             const questionContainer = document.getElementById('game-question-container');
@@ -4728,9 +4753,8 @@ const app = {
             isCorrect = scoreResult.isCorrect;
             this.state.score += scoreResult.points;
 
-            // Mọi loại câu đều có cùng một vùng đáp án sau khi chấm sai,
-            // kể cả trắc nghiệm/Đúng-Sai/matching vốn trước đây chỉ tô màu lựa chọn.
-            if (!isCorrect) this.showCorrectAnswerReveal(q);
+            const hasInlineCorrections = document.querySelectorAll('#game-play-view .answer-correction').length > 0;
+            if (!isCorrect && !hasInlineCorrections) this.showCorrectAnswerReveal(q);
 
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
                 document.querySelectorAll('.safe-password-illustration').forEach(safeImage => {
@@ -4777,18 +4801,20 @@ const app = {
                 bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
             }
 
-            const explanation = Array.isArray(q.statements) && q.statements.length
-                ? this.buildQuestionExplanation(q)
-                : q.explanation || q.hint || this.buildQuestionExplanation(q);
+            const explanation = String(q.explanation || q.hint || '').trim()
+                || (Array.isArray(q.statements) && q.statements.length ? this.buildQuestionExplanation(q) : '');
             const explBox = document.getElementById('explanation-box');
             const progressCopy = document.getElementById('game-progress-copy');
             const progressContent = document.getElementById('game-progress-content');
             if (progressCopy) progressCopy.style.display = 'none';
             if (progressContent) progressContent.hidden = false;
-            explBox.style.display = 'block';
-            const explanationHTML = app.data.formatQuestionDetailHTML(explanation || `Đáp án đúng là ${app.data.formatMathText(q.ans || '')}.`)
-                .replace(/\n/g, '<br>');
-            explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${explanationHTML}`;
+            if (explanation) {
+                explBox.style.display = 'block';
+                explBox.innerHTML = `🌟 <b>Lời giải:</b><br>${app.data.formatQuestionDetailHTML(explanation).replace(/\n/g, '<br>')}`;
+            } else {
+                explBox.style.display = 'none';
+                explBox.innerHTML = '';
+            }
 
             if (!isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
