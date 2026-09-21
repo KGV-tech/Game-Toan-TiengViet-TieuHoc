@@ -155,6 +155,42 @@
                 callback(json);
             };
             reader.readAsArrayBuffer(file);
+        },
+        toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            this.setTheme(next);
+        },
+        setTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            if (app.safeStorage) {
+                app.safeStorage.setItem('game_theme', theme);
+            } else {
+                try { localStorage.setItem('game_theme', theme); } catch (_) {}
+            }
+            const icons = document.querySelectorAll('.theme-icon');
+            icons.forEach(icon => {
+                icon.textContent = theme === 'light' ? '🌙' : '☀️';
+            });
+            const toggles = document.querySelectorAll('#game-theme-toggle');
+            toggles.forEach(btn => {
+                const label = theme === 'light' ? 'Chuyển sang giao diện Tối' : 'Chuyển sang giao diện Sáng';
+                btn.setAttribute('aria-label', label);
+                btn.setAttribute('title', label);
+            });
+        },
+        initTheme() {
+            let saved = 'dark';
+            if (app.safeStorage) {
+                saved = app.safeStorage.getItem('game_theme') || 'dark';
+            } else {
+                try { saved = localStorage.getItem('game_theme') || 'dark'; } catch (_) {}
+            }
+            this.setTheme(saved);
         }
     };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

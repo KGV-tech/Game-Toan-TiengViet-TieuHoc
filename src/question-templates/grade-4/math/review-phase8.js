@@ -140,15 +140,15 @@ function makeSumDifference(random) {
 
 const addSubBuilders = { b22: makeAddition, b23: makeSubtraction, b24: makeProperty, b25: makeSumDifference };
 
-function makeMeasurementPart(skill, random) {
+function makeMeasurementPart(skill, random, index = 0) {
     if (skill === 'b17') {
-        const tons = randomInt(1, 4, random);
-        const ta = randomInt(1, 9, random);
+        const tons = ((index + randomInt(1, 2, random)) % 4) + 1;
+        const ta = ((index * 2 + randomInt(1, 3, random)) % 9) + 1;
         const answerNumber = tons * 1000 + ta * 100;
         return row('mass', `${tons} tấn ${ta} tạ bằng bao nhiêu ki-lô-gam?`, formatNumber(answerNumber), numericOptions(answerNumber, 100, 10000, random, [10, 100, 500, 1000, 2000]), `1 tấn = 1 000 kg và 1 tạ = 100 kg nên được ${formatNumber(answerNumber)} kg.`, { tons, ta, answerNumber });
     }
     if (skill === 'b18') {
-        const squareMeters = randomInt(2, 9, random);
+        const squareMeters = ((index * 2 + randomInt(2, 4, random)) % 8) + 2;
         const answerNumber = squareMeters * 100;
         return row('area', `${squareMeters} m² bằng bao nhiêu dm²?`, formatNumber(answerNumber), numericOptions(answerNumber, 100, 3000, random, [100, 200, 300, 500, 1000]), `1 m² = 100 dm² nên ${squareMeters} m² = ${formatNumber(answerNumber)} dm².`, { squareMeters, answerNumber });
     }
@@ -173,10 +173,12 @@ const geometryKeys = {
     b30: 'g4-m-parallel-grid-practice'
 };
 
-function makeGeometryPart(skill, random) {
+function makeGeometryPart(skill, random, index = 0) {
     const generator = available[geometryKeys[skill]];
     if (typeof generator !== 'function') throw new Error(`Thiếu generator hình học cho ${skill}.`);
-    const source = generator({}, random)?.subquestions?.[0];
+    const generated = generator({}, random);
+    const subquestions = Array.isArray(generated?.subquestions) ? generated.subquestions : [];
+    const source = subquestions[index % Math.max(1, subquestions.length)] || subquestions[0];
     if (!source) throw new Error(`Không thể sinh câu hình học cho ${skill}.`);
     return {
         ...source,
@@ -224,7 +226,7 @@ function generateAddSubReview(config = {}, random = Math.random) {
 function generateGeometryReview(config = {}, random = Math.random) {
     const skills = configuredValues(config, 'skills', B35_SKILLS, B35_SKILLS, 'Bài 35 cần ít nhất một kỹ năng hình học hợp lệ.');
     const selectedSkill = chooseConfiguredValue(config, 'skills', B35_SKILLS, B35_SKILLS, random, 'Bài 35 cần ít nhất một kỹ năng hình học hợp lệ.');
-    const parts = labels.map(() => makeGeometryPart(selectedSkill, random));
+    const parts = labels.map((_, index) => makeGeometryPart(selectedSkill, random, index));
     const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
     return reviewQuestion('geometry.hk1_review_b35', prompt, parts, `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, skills: skills.join(', '), selectedSkill });
 }
@@ -232,8 +234,8 @@ function generateGeometryReview(config = {}, random = Math.random) {
 function generateMeasurementReview(config = {}, random = Math.random) {
     const skills = configuredValues(config, 'skills', B36_SKILLS, B36_SKILLS, 'Bài 36 cần ít nhất một kỹ năng đo lường hợp lệ.');
     const selectedSkill = chooseConfiguredValue(config, 'skills', B36_SKILLS, B36_SKILLS, random, 'Bài 36 cần ít nhất một kỹ năng đo lường hợp lệ.');
-    const parts = labels.map(() => {
-        const source = makeMeasurementPart(selectedSkill, random);
+    const parts = labels.map((_, index) => {
+        const source = makeMeasurementPart(selectedSkill, random, index);
         return { ...source, skill: selectedSkill, skillLabel: SKILL_LABELS[selectedSkill], lesson: LESSONS[selectedSkill], prompt: `${SKILL_LABELS[selectedSkill]} · ${source.prompt}` };
     });
     const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
@@ -244,12 +246,12 @@ function generateFullReview(config = {}, random = Math.random) {
     const groups = configuredValues(config, 'groups', REVIEW_GROUPS, REVIEW_GROUPS, 'Bài 37 cần ít nhất một nhóm review HK1 hợp lệ.');
     const selectedGroup = chooseConfiguredValue(config, 'groups', REVIEW_GROUPS, REVIEW_GROUPS, random, 'Bài 37 cần ít nhất một nhóm review HK1 hợp lệ.');
     const builders = {
-        numbers: () => { const source = makeNumberPart('b10', random); return { ...source, skillGroup: 'numbers', sourceLesson: 'g4-math-hk1-b33', prompt: `${GROUP_LABELS.numbers} · ${source.prompt}` }; },
-        addSub: () => { const source = makeAddition(random); return { ...source, skillGroup: 'addSub', sourceLesson: 'g4-math-hk1-b34', prompt: `${GROUP_LABELS.addSub} · ${source.prompt}` }; },
-        geometry: () => { const source = makeGeometryPart('b27', random); return { ...source, skillGroup: 'geometry', sourceLesson: 'g4-math-hk1-b35', lesson: 'g4-math-hk1-b35', prompt: `${GROUP_LABELS.geometry} · ${source.prompt}` }; },
-        measurement: () => { const source = makeMeasurementPart('b17', random); return { ...source, skillGroup: 'measurement', sourceLesson: 'g4-math-hk1-b36', prompt: `${GROUP_LABELS.measurement} · ${source.prompt}` }; }
+        numbers: index => { const source = makeNumberPart('b10', random); return { ...source, skillGroup: 'numbers', sourceLesson: 'g4-math-hk1-b33', prompt: `${GROUP_LABELS.numbers} · ${source.prompt}` }; },
+        addSub: index => { const source = makeAddition(random); return { ...source, skillGroup: 'addSub', sourceLesson: 'g4-math-hk1-b34', prompt: `${GROUP_LABELS.addSub} · ${source.prompt}` }; },
+        geometry: index => { const source = makeGeometryPart('b27', random, index); return { ...source, skillGroup: 'geometry', sourceLesson: 'g4-math-hk1-b35', lesson: 'g4-math-hk1-b35', prompt: `${GROUP_LABELS.geometry} · ${source.prompt}` }; },
+        measurement: index => { const source = makeMeasurementPart('b17', random, index); return { ...source, skillGroup: 'measurement', sourceLesson: 'g4-math-hk1-b36', prompt: `${GROUP_LABELS.measurement} · ${source.prompt}` }; }
     };
-    const parts = labels.map(() => builders[selectedGroup]());
+    const parts = labels.map((_, index) => builders[selectedGroup](index));
     const prompt = `Luyện tập ${GROUP_LABELS[selectedGroup]}:`;
     return reviewQuestion('number.hk1_review_b37_full', prompt, parts, `Bốn ý cùng luyện ${GROUP_LABELS[selectedGroup].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`, { question: prompt, groups: groups.join(', '), selectedGroup });
 }

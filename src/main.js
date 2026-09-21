@@ -655,7 +655,9 @@ const app = {
                 const optionKey = Array.isArray(part?.options) && part.options.length
                     ? JSON.stringify({ options: part.options.map(normalize).sort() })
                     : '';
-                const key = semanticKey || optionKey;
+                const key = semanticKey && optionKey
+                    ? JSON.stringify({ semanticKey, optionKey })
+                    : (semanticKey || optionKey);
                 if (!key) return;
                 if (seen.has(key)) duplicates.push([seen.get(key), index]);
                 else seen.set(key, index);
@@ -766,14 +768,103 @@ const app = {
             return [1, 2, 4].includes(Number(count));
         },
         getValidPartAnswerCounts(question, answerCount = this.getQuestionAnswerCount(question)) {
-            const partAnswerCounts = Array.isArray(question?.partAnswerCounts)
+            const explicit = Array.isArray(question?.partAnswerCounts)
                 ? question.partAnswerCounts.map(Number)
                 : [];
-            const isValid = partAnswerCounts.length > 0
-                && this.isSupportedPartCount(partAnswerCounts.length)
-                && partAnswerCounts.every(partCount => Number.isInteger(partCount) && partCount > 0)
-                && partAnswerCounts.reduce((total, partCount) => total + partCount, 0) === answerCount;
-            return isValid ? partAnswerCounts : null;
+            if (explicit.length > 0
+                && this.isSupportedPartCount(explicit.length)
+                && explicit.every(partCount => Number.isInteger(partCount) && partCount > 0)
+                && explicit.reduce((total, partCount) => total + partCount, 0) === answerCount) {
+                return explicit;
+            }
+
+            if (Array.isArray(question?.sequenceRounds) && question.sequenceRounds.length) {
+                const inferred = question.sequenceRounds.map(round => {
+                    if (Array.isArray(round?.blankIndexes)) return round.blankIndexes.length;
+                    if (Array.isArray(round?.answers)) return round.answers.length;
+                    return (String(round?.display || '').match(/___/g) || []).length || 1;
+                });
+                if (this.isSupportedPartCount(inferred.length)
+                    && inferred.every(count => Number.isInteger(count) && count > 0)
+                    && inferred.reduce((sum, c) => sum + c, 0) === answerCount) {
+                    return inferred;
+                }
+            }
+
+            if (Array.isArray(question?.subquestions) && question.subquestions.length) {
+                const inferred = question.subquestions.map(sub => {
+                    if (Array.isArray(sub?.answers)) return sub.answers.length;
+                    if (Array.isArray(sub?.blankIndexes)) return sub.blankIndexes.length;
+                    return (String(sub?.q || sub?.prompt || '').match(/___|\.\.\./g) || []).length || 1;
+                });
+                if (this.isSupportedPartCount(inferred.length)
+                    && inferred.every(count => Number.isInteger(count) && count > 0)
+                    && inferred.reduce((sum, c) => sum + c, 0) === answerCount) {
+                    return inferred;
+                }
+                if (this.isSupportedPartCount(question.subquestions.length) && question.subquestions.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            if (Array.isArray(question?.practiceRows) && question.practiceRows.length) {
+                const inferred = question.practiceRows.map(row => {
+                    if (Array.isArray(row?.answers)) return row.answers.length;
+                    return (String(row?.display || row?.expression || '').match(/___|\.\.\./g) || []).length || 1;
+                });
+                if (this.isSupportedPartCount(inferred.length)
+                    && inferred.every(count => Number.isInteger(count) && count > 0)
+                    && inferred.reduce((sum, c) => sum + c, 0) === answerCount) {
+                    return inferred;
+                }
+                if (this.isSupportedPartCount(question.practiceRows.length) && question.practiceRows.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            if (Array.isArray(question?.statements) && question.statements.length) {
+                if (this.isSupportedPartCount(question.statements.length) && question.statements.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) {
+                if (this.isSupportedPartCount(question.comparisonRows.length) && question.comparisonRows.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            if (Array.isArray(question?.angleItems) && question.angleItems.length) {
+                if (this.isSupportedPartCount(question.angleItems.length) && question.angleItems.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            if (Array.isArray(question?.angleCountRows) && question.angleCountRows.length) {
+                if (this.isSupportedPartCount(question.angleCountRows.length) && question.angleCountRows.length === answerCount) {
+                    return new Array(answerCount).fill(1);
+                }
+            }
+
+            const promptText = String(question?.q || '');
+            const labeledLines = promptText.split(/<br\s*\/?\s*>/i)
+                .map(line => line.trim())
+                .filter(line => /^\s*[a-dA-D][.)]\s*/.test(line));
+            if (this.isSupportedPartCount(labeledLines.length)) {
+                const inferred = labeledLines.map(line => {
+                    const blanks = (line.match(/___|\.\.\./g) || []).length;
+                    return blanks || 1;
+                });
+                if (inferred.reduce((sum, c) => sum + c, 0) === answerCount) {
+                    return inferred;
+                }
+            }
+
+            if (this.isSupportedPartCount(answerCount)) {
+                return new Array(answerCount).fill(1);
+            }
+
+            return null;
         },
         validateQuestionScoring(question) {
             const duplicateError = this.validateQuestionSubquestions(question);
@@ -1936,6 +2027,36 @@ const app = {
     },
 
     game: {
+        isPedagogicalExplanation(explanation, ans) {
+            if (!explanation) return false;
+            const exp = String(explanation).trim();
+            if (!exp) return false;
+            const textOnly = exp
+                .replace(/^[a-dA-D][.)]\s*/gm, '')
+                .replace(/[\d\s,.;:=+\-*/><()_]/g, '');
+            if (textOnly.length < 3) return false;
+            const cleanExp = exp.replace(/^[a-dA-D][.)]\s*/gm, '').replace(/\s+/g, ' ').trim();
+            const cleanAns = String(ans || '').replace(/\s+/g, ' ').trim();
+            if (cleanExp === cleanAns) return false;
+            return true;
+        },
+        animateScorePoints(points) {
+            const ring = document.getElementById('game-progress-ring');
+            if (ring) {
+                ring.classList.remove('ring-pulse');
+                void ring.offsetWidth;
+                ring.classList.add('ring-pulse');
+            }
+            const panel = document.getElementById('game-progress-panel');
+            if (!panel) return;
+            const badge = document.createElement('div');
+            badge.className = 'score-float-badge';
+            const formatted = points % 1 === 0 ? points : points.toFixed(2).replace('.', ',');
+            badge.textContent = `+${formatted}đ`;
+            badge.setAttribute('aria-hidden', 'true');
+            panel.appendChild(badge);
+            setTimeout(() => { if (badge.isConnected) badge.remove(); }, 1200);
+        },
         questionsPerRound: 10,
         templateGeneratorsByTopic: {
             '2. Góc và đơn vị đo góc': new Set([
@@ -3282,8 +3403,8 @@ const app = {
                 ? Math.min(answerCount, new Set(chosenAnswers.filter(answer => expectedAnswers.includes(answer))).size)
                 : expectedAnswers.reduce((total, answer, index) => total + (chosenAnswers[index] === answer ? 1 : 0), 0);
             const isSupported = [1, 2, 4].includes(answerCount);
-            const points = isSupported ? correctCount / answerCount : 0;
-            return { answerCount, correctCount, points, isCorrect: isSupported && correctCount === answerCount };
+            const points = isSupported ? correctCount / answerCount : (correctCount === answerCount ? 1 : 0);
+            return { answerCount, correctCount, points, isCorrect: correctCount === answerCount };
         },
         normalizePromptText(value) {
             return String(value || '')
@@ -4574,24 +4695,11 @@ const app = {
                 const slot = document.querySelector('.compare-slot');
                 if (slot) {
                     this.setAnswerState(slot, isCorrect);
-                    if (isCorrect) {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-v';
-                        icon.textContent = '✔️';
-                        slot.appendChild(icon);
-                    } else {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-x';
-                        icon.textContent = '❌';
-                        slot.appendChild(icon);
+                    if (!isCorrect) {
                         const btns = document.querySelectorAll('.cmp-btn');
                         btns.forEach(b => {
                             if (b.childNodes[0].textContent.trim() === q.ans) {
                                 this.setAnswerState(b, true);
-                                const correctIcon = document.createElement('div');
-                                correctIcon.className = 'result-icon icon-v';
-                                correctIcon.textContent = '✔️';
-                                b.appendChild(correctIcon);
                             }
                         });
                     }
@@ -4604,16 +4712,7 @@ const app = {
                 slots.forEach((slot, i) => {
                     const slotIsCorrect = slot.textContent === ansArr[i];
                     this.setAnswerState(slot, slotIsCorrect);
-                    if (slotIsCorrect) {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-v';
-                        icon.textContent = '✔️';
-                        slot.appendChild(icon);
-                    } else {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-x';
-                        icon.textContent = '❌';
-                        slot.appendChild(icon);
+                    if (!slotIsCorrect) {
                         this.showInlineAnswerCorrection(slot, ansArr[i]);
                     }
                 });
@@ -4627,17 +4726,7 @@ const app = {
                     const enteredValue = typeof slot.value === 'string' ? slot.value : slot.textContent;
                     const slotIsCorrect = this.normalizeFillAnswer(enteredValue) === this.normalizeFillAnswer(ansArr[i]);
                     this.setAnswerState(slot, slotIsCorrect);
-                    const resultHost = slot.parentElement || slot;
-                    if (slotIsCorrect) {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-v';
-                        icon.textContent = '✔️';
-                        resultHost.appendChild(icon);
-                    } else {
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-x';
-                        icon.textContent = '❌';
-                        resultHost.appendChild(icon);
+                    if (!slotIsCorrect) {
                         this.showInlineAnswerCorrection(slot, ansArr[i]);
                     }
                 });
@@ -4798,11 +4887,14 @@ const app = {
                 }
                 const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad.webp' : `${basePet}_sad.png`;
                 if (!this.state.teamCompetition) document.getElementById('play-cat-img').src = `./public/${sadImage}`;
-                bubble.innerHTML = `<span style="color:#dc2626;">Tiếc quá!<br>Bạn sai rồi!</span>`;
+                bubble.innerHTML = `<span style="color:#f87171;">Cố lên nhé!<br>Xem lại bài nào!</span>`;
             }
 
-            const explanation = String(q.explanation || q.hint || '').trim()
+            let explanation = String(q.explanation || q.hint || '').trim()
                 || (Array.isArray(q.statements) && q.statements.length ? this.buildQuestionExplanation(q) : '');
+            if (explanation && !this.isPedagogicalExplanation(explanation, q.ans)) {
+                explanation = '';
+            }
             const explBox = document.getElementById('explanation-box');
             const progressCopy = document.getElementById('game-progress-copy');
             const progressContent = document.getElementById('game-progress-content');
@@ -4833,6 +4925,9 @@ const app = {
 
             document.getElementById('game-score').textContent = this.state.score;
             this.updateProgressPanel();
+            if (scoreResult.points > 0) {
+                this.animateScorePoints(scoreResult.points);
+            }
 
             const btnCheck = document.getElementById('submit-ans-btn');
 
@@ -5192,7 +5287,10 @@ const app = {
             }
 
             const blanks = (String(question.q || '').match(/___|\.\.\./g) || []).length;
-            const inputCount = Math.max(1, blanks);
+            const ansCount = Array.isArray(question.statements)
+                ? question.statements.length
+                : app.game.getAnsArr(String(question.ans || '')).length;
+            const inputCount = Math.max(1, blanks, ansCount);
             if (type === 'Kéo thả') {
                 if (Array.isArray(question.comparisonRows)) {
                     return question.comparisonRows.map((row, part) => `<label style="display:flex; gap:10px; align-items:center; margin:8px 0;"><span>${app.data.sanitizeHTML(`${row.label || String.fromCharCode(97 + part)}) ${row.leftText} ___ ${row.rightText}`)}</span><select class="form-input" data-exam-part="${index}" data-part="${part}" style="max-width:180px;"><option value="">-- Chọn dấu --</option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select></label>`).join('');
@@ -6282,9 +6380,10 @@ const app = {
             if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) return 'comparisonRows';
             const answerCount = app.data.getQuestionAnswerCount(question);
             const isSupportedAnswerGroup = app.data.getValidPartAnswerCounts(question, answerCount);
+            const hasMultipleAnswerParts = Array.isArray(isSupportedAnswerGroup) && isSupportedAnswerGroup.length > 1;
             const type = String(question?.type || '').trim().normalize('NFC');
             const supportsGenericAnswerParts = ['Điền khuyết', 'Kéo thả', 'So sánh', 'Trắc nghiệm', 'Đúng/Sai', 'Chuỗi Quy luật'].includes(type);
-            if ((isSupportedAnswerGroup || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
+            if ((hasMultipleAnswerParts || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
             return '';
         },
         isFourPartExamQuestion(question) {
@@ -13164,6 +13263,7 @@ supabaseClientReady = Promise.resolve(window.__gameDependencies?.supabase || {
 // layer initializes after its bounded SDK load attempt has settled.
 window.addEventListener('DOMContentLoaded', () => {
     try {
+        if (app.ui?.initTheme) app.ui.initTheme();
         app.auth.init();
         app.game.init();
     } catch (e) {

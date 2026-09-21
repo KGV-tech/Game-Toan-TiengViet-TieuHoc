@@ -1037,7 +1037,10 @@
         }
         timer.hidden = false;
         timer.style.display = 'inline';
-        const deadline = Number(competition.startedAt || Date.now()) + Number(competition.timeLimitMinutes) * 60 * 1000;
+        const startedAtMs = typeof competition.startedAt === 'string'
+            ? Date.parse(competition.startedAt)
+            : Number(competition.startedAt);
+        const deadline = (Number.isFinite(startedAtMs) ? startedAtMs : Date.now()) + Number(competition.timeLimitMinutes) * 60 * 1000;
         const tick = () => {
             const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
             timer.textContent = `Còn ${formatRemaining(seconds)}`;
