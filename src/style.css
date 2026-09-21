@@ -6692,8 +6692,93 @@ html[data-theme="light"] #game-play-view .explanation-box {
     box-shadow: 0 4px 12px rgba(14, 116, 144, 0.06) !important;
 }
 html[data-theme="light"] #game-play-view .game-theme-toggle {
-    background: rgba(255, 255, 255, 0.92) !important;
-    border-color: #bae6fd !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1.5px solid #bae6fd !important;
     color: #0284c7 !important;
     box-shadow: 0 2px 8px rgba(14, 116, 144, 0.12) !important;
 }
+
+html[data-theme="light"] #game-play-view .play-center {
+    background: #ffffff !important;
+    border: 1.5px solid #dbeafe !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.05) !important;
+    border-radius: 24px !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn {
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 250px !important;
+    min-height: 52px !important;
+    margin: 10px auto !important;
+    padding: 12px 24px !important;
+    border: none !important;
+    border-radius: 18px !important;
+    background: linear-gradient(180deg, #ffc93c 0%, #f59e0b 100%) !important;
+    box-shadow: 0 5px 0 #d97706, 0 8px 20px rgba(245, 158, 11, 0.35) !important;
+    color: #0f2e42 !important;
+    cursor: pointer !important;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease !important;
+    line-height: normal !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn img,
+html[data-theme="light"] #game-play-view #submit-ans-img {
+    display: none !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn #submit-ans-text {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    color: #0f2e42 !important;
+    font-size: clamp(1.05rem, 1.35vw, 1.25rem) !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn #submit-ans-text::after {
+    content: "➔";
+    font-size: 1.15em;
+    font-weight: 900;
+    transition: transform 0.15s ease;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn:not(:disabled):hover {
+    background: linear-gradient(180deg, #ffd45e 0%, #fbbf24 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 7px 0 #d97706, 0 10px 24px rgba(245, 158, 11, 0.4) !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn:not(:disabled):active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 2px 0 #d97706, 0 4px 10px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="light"] #game-play-view #submit-ans-btn:disabled {
+    opacity: 0.55 !important;
+    box-shadow: 0 3px 0 #d97706 !important;
+    color: #475569 !important;
+    cursor: not-allowed !important;
+    filter: saturate(0.7) !important;
+}
+html[data-theme="light"] #game-play-view #submit-ans-btn:disabled #submit-ans-text {
+    color: #475569 !important;
+}
+html[data-theme="light"] #game-play-view #submit-ans-btn:disabled #submit-ans-text::after {
+    display: none !important;
+}
+

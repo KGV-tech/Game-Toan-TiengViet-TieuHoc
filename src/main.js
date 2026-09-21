@@ -2465,28 +2465,27 @@ const app = {
             document.querySelectorAll('.station[data-subject]').forEach(el => {
                 el.onclick = () => {
                     const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
+                    if (isAdmin) {
+                        if (el.dataset.subject === 'math') {
+                            app.router.animateCatTo(el, () => app.admin.openLearningPath('math'));
+                            return;
+                        }
+                        if (el.dataset.subject === 'vietnamese') {
+                            app.router.animateCatTo(el, () => app.admin.openLearningPath('vietnamese'));
+                            return;
+                        }
+                        if (el.dataset.subject === 'exam') {
+                            app.router.animateCatTo(el, () => app.admin.openComposer('exams'));
+                            return;
+                        }
+                    }
                     if (el.dataset.subject === 'exam') {
-                        if (!isAdmin) app.router.prefetch('exam-select-screen');
+                        app.router.prefetch('exam-select-screen');
                     } else {
                         app.router.prefetch('game-config-view');
                     }
                     app.router.animateCatTo(el, () => {
                         if (el.dataset.subject === 'exam') {
-                            const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
-                            if (isAdmin) {
-                                app.admin.openComposer('exams');
-                                return;
-                            }
-                            const examAdminSelector = document.getElementById('exam-admin-class-selector');
-                            if (examAdminSelector) examAdminSelector.style.display = isAdmin ? 'block' : 'none';
-                            if (isAdmin && !app.exam.state.adminclasslevel) {
-                                app.exam.state.adminclasslevel = '5';
-                            }
-                            if (isAdmin) {
-                                document.querySelectorAll('#exam-admin-class-btns .btn-opt').forEach(b => {
-                                    b.classList.toggle('active', b.textContent.trim() === app.exam.state.adminclasslevel);
-                                });
-                            }
                             app.router.open('exam-select-screen');
                         }
                         else this.openConfig(el.dataset.subject);
@@ -6879,7 +6878,34 @@ const app = {
             });
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
             document.getElementById('treasure-close-button')?.setAttribute('aria-label', 'Đóng Cài đặt');
+            const adminTabs = document.getElementById('admin-tabs');
+            if (adminTabs) adminTabs.style.display = 'flex';
             this.switchTab('players');
+        },
+        openLearningPath(subject = 'math') {
+            if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
+            document.getElementById('admin-compose-screen')?.classList.remove('active');
+            const modal = document.getElementById('treasure-modal');
+            if (!modal) return;
+            modal.dataset.uiContext = 'admin';
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+            modal.classList.remove('team-board-fullscreen');
+            modal.classList.remove('team-board-fullscreen-mode');
+            app.modal?.open(modal, {
+                initialFocus: '.utility-close-button',
+                onEscape: () => app.treasure.close()
+            });
+            const isVietnamese = subject === 'vietnamese';
+            const treasureTitle = document.getElementById('treasure-title');
+            if (treasureTitle) treasureTitle.textContent = isVietnamese ? 'Quản lý lộ trình học · Môn Tiếng Việt' : 'Quản lý lộ trình học · Môn Toán';
+            document.getElementById('treasure-close-button')?.setAttribute('aria-label', 'Đóng Quản lý lộ trình');
+            const adminTabs = document.getElementById('admin-tabs');
+            if (adminTabs) adminTabs.style.display = 'none';
+
+            const box = document.getElementById('treasure-content-area');
+            if (box) box.setAttribute('aria-busy', 'false');
+            this.renderLearningPath(box, subject);
         },
         switchTab(tab) {
             const module = tab;
@@ -6893,9 +6919,8 @@ const app = {
             document.getElementById('treasure-modal')?.classList.remove('team-board-fullscreen-mode');
             const tabs = [
                 { id: 'players', label: 'Quản Lý Học Sinh' },
-                { id: 'learning-path', label: 'Quản lý lộ trình học' },
-                { id: 'settings', label: 'Điều chỉnh' },
-                { id: 'quests', label: 'Quản lý Nhiệm vụ' }
+                { id: 'quests', label: 'Quản lý Nhiệm vụ' },
+                { id: 'settings', label: 'Điều chỉnh' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
             const treasureTitle = document.getElementById('treasure-title');
@@ -8038,8 +8063,9 @@ const app = {
             this.renderLessonReleaseEditor();
             alert(draft.lesson ? 'Đã lưu mốc học tập cho lớp.' : 'Đã bỏ mốc Bài học; lớp quay về phạm vi hiện có.');
         },
-        renderLearningPath(box) {
+        renderLearningPath(box, defaultSubject = 'math') {
             if (!box) return;
+            const isVietnamese = defaultSubject === 'vietnamese';
             box.innerHTML = `
                 <div class="learning-release-dashboard">
                 <aside class="learning-release-control-rail" aria-labelledby="learning-release-title">
@@ -8048,7 +8074,7 @@ const app = {
                     </header>
                     <div class="learning-release-controls" aria-label="Phạm vi lớp học">
                         <label><span>Lớp</span><select id="learning-release-class" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4" selected>Lớp 4</option><option value="5">Lớp 5</option></select></label>
-                        <label><span>Môn</span><select id="learning-release-subject" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="math" selected>Toán</option><option value="vietnamese">Tiếng Việt</option></select></label>
+                        <label><span>Môn</span><select id="learning-release-subject" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="math"${!isVietnamese ? ' selected' : ''}>Toán</option><option value="vietnamese"${isVietnamese ? ' selected' : ''}>Tiếng Việt</option></select></label>
                         <label for="learning-release-semester"><span>Thời gian</span><select id="learning-release-semester" class="form-input" onchange="app.admin.renderLessonReleaseEditor()"><option value="all" selected>Cả năm</option><option value="hk1">Học kỳ 1</option><option value="hk2">Học kỳ 2</option></select></label>
                     </div>
                 </aside>
