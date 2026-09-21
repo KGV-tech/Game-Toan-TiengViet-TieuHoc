@@ -4484,32 +4484,36 @@
    ========================================================================== */
 html[data-theme="light"] {
     --template-text: #0f172a;
-    --template-surface: #ffffff;
-    --template-surface-input: #f8fafc;
-    --template-border: #cbd5e1;
+    --template-surface: #dcf4fc;
+    --template-surface-input: #ffffff;
+    --template-border: #6cb6d6;
 }
 
 html[data-theme="light"] body {
-    background: linear-gradient(180deg, #eff6ff 0%, #f0f7fd 50%, #f8fafc 100%) !important;
+    background: #81c4de !important;
     color: #0f172a !important;
 }
 
+html[data-theme="light"] #game-screen {
+    background: #81c4de !important;
+}
+
 html[data-theme="light"] #game-play-view {
-    background: transparent !important;
+    background: #99d2e7 !important;
     color: #0f172a !important;
 }
 
 html[data-theme="light"] #game-play-view .glass-container-xl {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border: 1.5px solid #dbeafe !important;
-    box-shadow: 0 12px 36px rgba(37, 99, 235, 0.06) !important;
+    background: #99d2e7 !important;
+    border: 1.5px solid #6bb2cf !important;
+    box-shadow: 0 12px 36px rgba(10, 70, 95, 0.12) !important;
 }
 
 /* Cột trái (Play Left) */
 html[data-theme="light"] #game-play-view .play-left {
-    background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%) !important;
-    border: 1.5px solid #dbeafe !important;
-    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.05) !important;
+    background: #b5e1f2 !important;
+    border: 1.5px solid #6bb2cf !important;
+    box-shadow: 0 4px 16px rgba(10, 70, 95, 0.12) !important;
 }
 
 /* Khung thông tin học sinh: Giữ nguyên màu cũ theo yêu cầu người dùng (xanh đậm neon tương phản cao, dễ nhìn) */
@@ -4547,7 +4551,7 @@ html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-lead
 }
 
 html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-team-card {
-    background: #ffffff !important;
+    background: #dcf4fc !important;
     border: 2px solid #38bdf8 !important;
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1) !important;
 }
@@ -4558,56 +4562,56 @@ html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-lead
 
 html[data-theme="light"] #game-play-view .cat-wrapper::before {
     border-color: rgba(56, 189, 248, 0.45) !important;
-    background: radial-gradient(circle, rgba(186, 230, 253, 0.6), rgba(240, 249, 255, 0.15) 64%, transparent 70%) !important;
+    background: radial-gradient(circle, rgba(181, 225, 242, 0.7), rgba(153, 210, 231, 0.2) 64%, transparent 70%) !important;
     box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.12), 0 0 24px rgba(56, 189, 248, 0.25) !important;
 }
 
 html[data-theme="light"] #game-play-view .speech-bubble {
-    background: #ffffff !important;
-    border: 2px solid #38bdf8 !important;
-    color: #0f172a !important;
+    background: #dcf4fc !important;
+    border: 2px solid #0891b2 !important;
+    color: #052c3c !important;
     box-shadow: 0 6px 16px rgba(56, 189, 248, 0.15) !important;
 }
 html[data-theme="light"] #game-play-view .speech-bubble::after {
-    border-color: #38bdf8 transparent transparent transparent !important;
+    border-color: #0891b2 transparent transparent transparent !important;
 }
 
 html[data-theme="light"] #game-play-view .game-practice-status {
-    background: #ffffff !important;
-    border: 1px solid #bae6fd !important;
+    background: #dcf4fc !important;
+    border: 1px solid #6bb2cf !important;
     border-bottom: 3px solid #0284c7 !important;
-    color: #334155 !important;
+    color: #12516a !important;
     box-shadow: 0 4px 12px rgba(14, 116, 144, 0.08) !important;
 }
 html[data-theme="light"] #game-play-view .game-practice-status strong { color: #0284c7 !important; }
-html[data-theme="light"] #game-play-view .game-practice-status span { color: #64748b !important; }
+html[data-theme="light"] #game-play-view .game-practice-status span { color: #2e667c !important; }
 html[data-theme="light"] #game-play-view .game-practice-status small { color: #0369a1 !important; }
 
-/* Khu vực trung tâm (Play Center) - XÓA BỎ HOÀN TOÀN NỀN ĐEN VÀ BÓNG ĐEN */
+/* Khu vực trung tâm (Play Center) - Tone 6B Xanh Ngọc Mây 70/30 Dịu Mắt */
 html[data-theme="light"] #game-play-view .play-center {
-    background: #ffffff !important;
-    border: 1.5px solid #dbeafe !important;
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.05) !important;
+    background: #c6ebf8 !important;
+    border: 1.5px solid #6bb2cf !important;
+    box-shadow: 0 6px 20px rgba(10, 70, 95, 0.12) !important;
     border-radius: 24px !important;
 }
 
 html[data-theme="light"] #game-play-view .game-header .question-progress {
-    color: #0369a1 !important;
-    background: #e0f2fe !important;
-    border: 1.5px solid #7dd3fc !important;
+    color: #026084 !important;
+    background: #c6ebf8 !important;
+    border: 1.5px solid #6bb2cf !important;
     font-weight: 800 !important;
     border-radius: 999px !important;
 }
 
 /* Thanh tiến trình dạng kẹo dẻo tròn mềm mại */
 html[data-theme="light"] #game-play-view .game-question-progress {
-    background: #e2e8f0 !important;
-    border: 1px solid #cbd5e1 !important;
+    background: rgba(107, 178, 207, 0.4) !important;
+    border: 1px solid #6bb2cf !important;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08) !important;
     border-radius: 999px !important;
 }
 html[data-theme="light"] #game-play-view .game-question-progress > span {
-    background: #cbd5e1 !important;
+    background: #a4cfee !important;
     box-shadow: none !important;
     border-radius: 999px !important;
 }
@@ -4621,43 +4625,43 @@ html[data-theme="light"] #game-play-view .game-question-progress > span.is-curre
 
 /* Thẻ câu hỏi trung tâm */
 html[data-theme="light"] #game-play-view .question-box {
-    background: #ffffff !important;
-    border: 1.5px solid #dbeafe !important;
-    border-bottom: 3px solid #38bdf8 !important;
+    background: #dcf4fc !important;
+    border: 2px solid #6cb6d6 !important;
+    border-bottom: 4px solid #3c93b7 !important;
     color: #0f172a !important;
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.04) !important;
+    box-shadow: 0 4px 16px rgba(10, 70, 95, 0.08) !important;
     border-radius: 20px !important;
 }
 html[data-theme="light"] #game-play-view .question-box * {
     color: #0f172a;
 }
 html[data-theme="light"] #game-play-view :is(.tf-template-number, .tf-template-instruction, .template-question-copy, .four-operations-expression-title) {
-    color: #0f172a !important;
+    color: #026084 !important;
     font-weight: 800 !important;
 }
 
-/* Multi-choice subquestions */
+/* Multi-choice subquestions (Tone 6B: Cerulean Azure 70/30) */
 html[data-theme="light"] #game-play-view .multi-choice-subquestion {
-    background: #ffffff !important;
-    border: 1.5px solid #e2e8f0 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    background: #dcf4fc !important;
+    border: 1.5px solid #82c4de !important;
+    box-shadow: 0 2px 8px rgba(10, 70, 95, 0.06) !important;
     border-radius: 16px !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 {
-    border-color: #fdba74 !important;
-    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important;
+    border-color: #e6a769 !important;
+    background: #fef5e9 !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 {
-    border-color: #93c5fd !important;
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%) !important;
+    border-color: #5bbdf0 !important;
+    background: #e3f4fd !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 {
-    border-color: #86efac !important;
-    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+    border-color: #59cb8e !important;
+    background: #e4f7ee !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 {
-    border-color: #d8b4fe !important;
-    background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%) !important;
+    border-color: #b796ed !important;
+    background: #f2eafd !important;
 }
 
 html[data-theme="light"] #game-play-view .multi-choice-subquestion h3 {
@@ -4665,33 +4669,33 @@ html[data-theme="light"] #game-play-view .multi-choice-subquestion h3 {
     font-weight: 800 !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 h3 span,
-html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 .multi-choice-subquestion__label-only { color: #ea580c !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 .multi-choice-subquestion__label-only { color: #b85400 !important; font-weight: 800 !important; }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 h3 span,
-html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 .multi-choice-subquestion__label-only { color: #0284c7 !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 .multi-choice-subquestion__label-only { color: #0265a6 !important; font-weight: 800 !important; }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 h3 span,
-html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 .multi-choice-subquestion__label-only { color: #16a34a !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-2 .multi-choice-subquestion__label-only { color: #0c773b !important; font-weight: 800 !important; }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 h3 span,
-html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 .multi-choice-subquestion__label-only { color: #9333ea !important; }
+html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-3 .multi-choice-subquestion__label-only { color: #6e27b6 !important; font-weight: 800 !important; }
 
 /* Lựa chọn đáp án A, B, C, D */
 html[data-theme="light"] #game-play-view .multi-choice-subquestion__option,
 html[data-theme="light"] #game-play-view .ans-btn {
-    background: #f8fafc !important;
-    border: 1.5px solid #cbd5e1 !important;
-    color: #1e293b !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+    background: #b5e1f2 !important;
+    border: 1.5px solid #71b4d0 !important;
+    color: #063143 !important;
+    box-shadow: 0 1px 3px rgba(10, 70, 95, 0.06) !important;
     border-radius: 12px !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion__option:hover,
 html[data-theme="light"] #game-play-view .ans-btn:hover {
-    background: #e0f2fe !important;
-    border-color: #38bdf8 !important;
-    color: #0369a1 !important;
+    background: #99d2e7 !important;
+    border-color: #0284c7 !important;
+    color: #026084 !important;
 }
 html[data-theme="light"] #game-play-view .ans-badge {
-    background: #e2e8f0 !important;
-    color: #334155 !important;
-    border-color: #cbd5e1 !important;
+    background: #99d2e7 !important;
+    color: #063143 !important;
+    border-color: #71b4d0 !important;
 }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-0 .ans-badge { background: linear-gradient(180deg, #fef08a, #f59e0b) !important; color: #78350f !important; }
 html[data-theme="light"] #game-play-view .multi-choice-subquestion--tone-1 .ans-badge { background: linear-gradient(180deg, #bae6fd, #3b82f6) !important; color: #1e3a8a !important; }
@@ -4717,29 +4721,29 @@ html[data-theme="light"] #game-play-view :is(.multi-choice-subquestion__option.w
 
 /* Đúng / Sai */
 html[data-theme="light"] #game-play-view .tf-statement {
-    background: #ffffff !important;
-    border: 1.5px solid #e2e8f0 !important;
+    background: #d2eef8 !important;
+    border: 1.5px solid #82c4de !important;
     color: #0f172a !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 2px 8px rgba(10, 70, 95, 0.05) !important;
     border-radius: 14px !important;
     min-height: 52px !important;
     padding: 8px 16px !important;
 }
-html[data-theme="light"] #game-play-view .tf-statement--tone-0 { border-color: #fdba74 !important; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-1 { border-color: #93c5fd !important; background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%) !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-2 { border-color: #86efac !important; background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-3 { border-color: #d8b4fe !important; background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%) !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-0 { border-color: #e6a769 !important; background: #fef5e9 !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-1 { border-color: #5bbdf0 !important; background: #e3f4fd !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-2 { border-color: #59cb8e !important; background: #e4f7ee !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-3 { border-color: #b796ed !important; background: #f2eafd !important; }
 
 html[data-theme="light"] #game-play-view .tf-statement__text {
-    color: #0f172a !important;
+    color: #052c3c !important;
     font-size: clamp(1.05rem, 1.3vw, 1.22rem) !important;
     font-weight: 700 !important;
     line-height: 1.45 !important;
 }
-html[data-theme="light"] #game-play-view .tf-statement--tone-0 .tf-statement__label { color: #ea580c !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-1 .tf-statement__label { color: #0284c7 !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-2 .tf-statement__label { color: #16a34a !important; }
-html[data-theme="light"] #game-play-view .tf-statement--tone-3 .tf-statement__label { color: #9333ea !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-0 .tf-statement__label { color: #b85400 !important; font-weight: 800 !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-1 .tf-statement__label { color: #0265a6 !important; font-weight: 800 !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-2 .tf-statement__label { color: #0c773b !important; font-weight: 800 !important; }
+html[data-theme="light"] #game-play-view .tf-statement--tone-3 .tf-statement__label { color: #6e27b6 !important; font-weight: 800 !important; }
 html[data-theme="light"] #game-play-view .tf-statement__label {
     font-size: clamp(1.1rem, 1.35vw, 1.25rem) !important;
     font-weight: 800 !important;
@@ -4751,9 +4755,9 @@ html[data-theme="light"] #game-play-view .tf-statement__choices {
     align-items: center !important;
 }
 html[data-theme="light"] #game-play-view .tf-statement__choices button {
-    background: #f8fafc !important;
-    border: 1.5px solid #cbd5e1 !important;
-    color: #334155 !important;
+    background: #b5e1f2 !important;
+    border: 1.5px solid #71b4d0 !important;
+    color: #063143 !important;
     border-radius: 10px !important;
     min-width: 68px !important;
     min-height: 38px !important;
@@ -4765,9 +4769,9 @@ html[data-theme="light"] #game-play-view .tf-statement__choices button {
     transition: all 0.18s ease !important;
 }
 html[data-theme="light"] #game-play-view .tf-statement__choices button:hover {
-    background: #e0f2fe !important;
-    border-color: #38bdf8 !important;
-    color: #0369a1 !important;
+    background: #99d2e7 !important;
+    border-color: #0284c7 !important;
+    color: #026084 !important;
 }
 html[data-theme="light"] #game-play-view .tf-statement__choices button.selected {
     background: linear-gradient(180deg, #fef08a, #f59e0b) !important;
@@ -4803,7 +4807,7 @@ html[data-theme="light"] #game-play-view .question-box {
 html[data-theme="light"] #game-play-view :is(.tf-template-number, .tf-template-instruction, .template-fill-row:first-child, .template-question-copy, .template-compose-heading, .four-operations-expression-title) {
     font-size: clamp(1.2rem, 1.6vw, 1.45rem) !important;
     font-weight: 800 !important;
-    color: #0f2e42 !important;
+    color: #026084 !important;
     letter-spacing: -0.01em !important;
     text-align: center !important;
     margin-bottom: 14px !important;
@@ -4812,10 +4816,10 @@ html[data-theme="light"] #game-play-view :is(.tf-template-number, .tf-template-i
 
 /* Hàng biểu thức bài tập (a, b, c, d) & Đúng/Sai & Trắc nghiệm: đồng bộ chiều cao và cỡ chữ */
 html[data-theme="light"] #game-play-view :is(.template-fill-row, .template-compose-row, .comparison-drag-row) {
-    background: #ffffff !important;
-    border: 2px solid #e2e8f0 !important;
+    background: #dcf4fc !important;
+    border: 2px solid #82c4de !important;
     border-radius: 14px !important;
-    color: #1e293b !important;
+    color: #0f172a !important;
     font-size: clamp(1.05rem, 1.3vw, 1.22rem) !important;
     font-weight: 700 !important;
     line-height: 1.45 !important;
@@ -4971,25 +4975,26 @@ html[data-theme="light"] #game-play-view .template-sequence-row .train-arrow {
     color: #0284c7 !important;
 }
 
-/* Cột phải (Play Right) */
-html[data-theme="light"] #game-play-view .play-right {
-    background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%) !important;
-    border: 1.5px solid #dbeafe !important;
-    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.05) !important;
+/* Cột phải (Play Right) & Card tiến độ */
+html[data-theme="light"] #game-play-view .play-right,
+html[data-theme="light"] #game-play-view .game-board-card {
+    background: #b5e1f2 !important;
+    border: 1.5px solid #6cb6d6 !important;
+    box-shadow: 0 8px 22px rgba(2, 96, 132, 0.1) !important;
 }
 
-/* Vòng tròn tính điểm (Donut Meter) - Lõi trắng tinh tươm */
+/* Vòng tròn tính điểm (Donut Meter) - Lõi ngọc mây Tone 6B */
 html[data-theme="light"] #game-play-view .game-progress-panel {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 html[data-theme="light"] #game-play-view .game-progress-ring {
-    background: conic-gradient(from -38deg, #0284c7 0 var(--ring-progress, 0%), #38bdf8 var(--ring-progress, 0%) calc(var(--ring-progress, 0%) + 11%), #e2e8f0 calc(var(--ring-progress, 0%) + 11%) 100%) !important;
-    box-shadow: 0 0 0 1px #cbd5e1, 0 4px 16px rgba(37, 99, 235, 0.08) !important;
+    background: conic-gradient(from -38deg, #0284c7 0 var(--ring-progress, 0%), #38bdf8 var(--ring-progress, 0%) calc(var(--ring-progress, 0%) + 11%), #99d2e7 calc(var(--ring-progress, 0%) + 11%) 100%) !important;
+    box-shadow: 0 0 0 1px #6cb6d6, 0 4px 16px rgba(2, 96, 132, 0.12) !important;
 }
 html[data-theme="light"] #game-play-view .game-progress-ring::before {
-    background: #ffffff !important;
+    background: #b5e1f2 !important;
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05) !important;
 }
 html[data-theme="light"] #game-play-view .game-progress-ring__content strong {
@@ -4997,31 +5002,31 @@ html[data-theme="light"] #game-play-view .game-progress-ring__content strong {
     font-weight: 900 !important;
 }
 html[data-theme="light"] #game-play-view .game-progress-ring__content small {
-    color: #64748b !important;
+    color: #2e667c !important;
     font-weight: 800 !important;
 }
 
 html[data-theme="light"] #game-play-view .game-progress-copy {
-    color: #334155 !important;
+    color: #12516a !important;
 }
 html[data-theme="light"] #game-play-view .game-progress-copy strong {
-    color: #0284c7 !important;
+    color: #026084 !important;
 }
 html[data-theme="light"] #game-play-view .game-solution-title {
-    color: #0369a1 !important;
+    color: #026084 !important;
     font-weight: 800 !important;
 }
 html[data-theme="light"] #game-play-view .explanation-box {
-    background: #ffffff !important;
-    border: 1.5px solid #bae6fd !important;
+    background: #dcf4fc !important;
+    border: 1.5px solid #6cb6d6 !important;
     color: #0f172a !important;
-    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.06) !important;
+    box-shadow: 0 4px 12px rgba(2, 96, 132, 0.08) !important;
 }
 html[data-theme="light"] #game-play-view .game-theme-toggle {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border: 1.5px solid #bae6fd !important;
-    color: #0284c7 !important;
-    box-shadow: 0 2px 8px rgba(14, 116, 144, 0.12) !important;
+    background: rgba(220, 244, 252, 0.94) !important;
+    border: 1.5px solid #6cb6d6 !important;
+    color: #026084 !important;
+    box-shadow: 0 2px 8px rgba(2, 96, 132, 0.12) !important;
 }
 
 /* ==========================================================================
