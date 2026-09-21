@@ -585,8 +585,8 @@
                 return alert(error.message || 'Không thể mở lượt thi đua đội.');
             }
         },
-        async submitCurrentQuestion() {
-            if (state.submitPending) return;
+        async submitCurrentQuestion(isRetry = false) {
+            if (state.submitPending && !isRetry) return;
             let attempt = api.state.activeAttempt;
             if (!attempt || attempt.status !== api.ATTEMPT_STATUS.ACTIVE) return;
             // Re-read the authoritative session before writing. This preserves a
@@ -594,7 +594,9 @@
             // Best-effort: if sync fails or the attempt is not yet in DB (e.g. local
             // ID not yet mapped), we continue with the local attempt instead of
             // locking the user out unnecessarily.
-            await this.syncRemote({ silent: true });
+            if (!isRetry) {
+                await this.syncRemote({ silent: true });
+            }
             const canonicalAttempt = api.attemptStore.get(attempt.competitionId, attempt.teamId);
             // Only lock if the server explicitly confirms a terminal status.
             // A null/undefined canonical means the DB doesn't have this attempt yet
@@ -637,7 +639,9 @@
             if (!question || selected === null || selected === undefined || selected === '') return;
             const scoreBefore = Number(attempt.score || 0);
             state.submitPending = true;
-            const button = document.getElementById('submit-ans-btn') || document.getElementById('team-play-submit');
+            const button = (typeof document !== 'undefined')
+                ? (document.getElementById('submit-ans-btn') || document.getElementById('team-play-submit'))
+                : null;
             if (button) button.disabled = true;
             try {
                 const data = await invoke('team_competition_submit_answer', {
@@ -658,24 +662,14 @@
                 const confirmed = api.attemptStore.get(updated.competitionId, updated.teamId) || updated;
                 api.state.activeAttempt = api.attemptStore.upsert(confirmed);
                 api.updateCompetitionTeamFromAttempt(confirmed);
-                if (confirmed.status === api.ATTEMPT_STATUS.COMPLETED) {
-                    api.removeBeforeUnload();
-                    api.renderLeaderPracticeFeedback(competition, team, confirmed, question, {
-                        questionIndex: index,
-                        scoreBefore,
-                        answerKey: answerFeedback.answerKey,
-                        points: Number(answerFeedback.points || 0),
-                        isCorrect: Boolean(answerFeedback.isCorrect)
-                    });
-                } else {
-                    api.renderLeaderPracticeFeedback(competition, team, confirmed, question, {
-                        questionIndex: index,
-                        scoreBefore,
-                        answerKey: answerFeedback.answerKey,
-                        points: Number(answerFeedback.points || 0),
-                        isCorrect: Boolean(answerFeedback.isCorrect)
-                    });
-                }
+                api.removeBeforeUnload?.();
+                api.renderLeaderPracticeFeedback(competition, team, confirmed, question, {
+                    questionIndex: index,
+                    scoreBefore,
+                    answerKey: answerFeedback.answerKey,
+                    points: Number(answerFeedback.points || 0),
+                    isCorrect: Boolean(answerFeedback.isCorrect)
+                });
                 return updated;
             } catch (error) {
                 const errCode = String(error.code || '').trim();
@@ -685,41 +679,72 @@
                 const isSessionMismatch = /attempt_session_mismatch/i.test(errCode) || /attempt_session_mismatch/i.test(errMsg);
 
                 if (isTimeout) {
+                    // 1. Nếu hết giờ (timeout): Tự động thông báo rõ ràng và đóng bài nộp, không bắt học sinh nhấn nộp lại vô ích.
                     await this.syncRemote({ silent: true });
                     const locked = { ...attempt, status: api.ATTEMPT_STATUS.LOCKED, lockReason: 'timeout' };
                     api.attemptStore.upsert(locked);
                     api.state.activeAttempt = locked;
-                    api.removeBeforeUnload();
-                    api.clearPlayTimer();
-                    api.renderLeaderLocked('Thời gian làm bài đã hết — lượt đội đã tự động khóa; các câu đã nộp vẫn được tính điểm.');
+                    api.removeBeforeUnload?.();
+                    api.clearPlayTimer?.();
+                    const timeoutMsg = 'Hết giờ làm bài! Hệ thống đã ghi nhận đầy đủ điểm các câu nhóm đã hoàn thành.';
+                    api.renderLeaderLocked(timeoutMsg);
+                    if (typeof alert === 'function') alert(timeoutMsg);
+                    return;
                 } else if (isInactive) {
+                    // 2. Nếu trận đã dừng bởi Admin: Thông báo rõ "Trận thi đua đã kết thúc bởi Giáo viên".
                     await this.syncRemote({ silent: true });
                     const locked = { ...attempt, status: api.ATTEMPT_STATUS.LOCKED, lockReason: 'competition_closed' };
                     api.attemptStore.upsert(locked);
                     api.state.activeAttempt = locked;
-                    api.removeBeforeUnload();
-                    api.clearPlayTimer();
-                    api.renderLeaderLocked('Trận thi đấu đã kết thúc; các câu đã nộp vẫn được tính điểm.');
-                } else if (isSessionMismatch) {
+                    api.removeBeforeUnload?.();
+                    api.clearPlayTimer?.();
+                    const closedMsg = 'Trận thi đua đã kết thúc bởi Giáo viên.';
+                    api.renderLeaderLocked(closedMsg);
+                    if (typeof alert === 'function') alert(closedMsg);
+                    return;
+                } else if (isSessionMismatch && !isRetry) {
+                    // 3. Nếu lệch phiên: Tự động đồng bộ lại Session ID từ máy chủ và thử gửi lại 1 lần cho học sinh.
                     await this.syncRemote({ silent: true });
-                    api.removeBeforeUnload();
-                    api.clearPlayTimer();
-                    alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
+                    const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
+                    if (refreshed && refreshed.status === api.ATTEMPT_STATUS.ACTIVE && refreshed.sessionId) {
+                        api.state.activeAttempt = refreshed;
+                        state.submitPending = false;
+                        return await this.submitCurrentQuestion(true);
+                    }
+                    const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
+                    if (isTerminal) {
+                        api.state.activeAttempt = refreshed;
+                        api.removeBeforeUnload?.();
+                        api.clearPlayTimer?.();
+                        api.renderLeaderLocked(refreshed.status === api.ATTEMPT_STATUS.COMPLETED
+                            ? 'Nhóm đã nộp đủ bài; các câu đã nộp vẫn được tính điểm.'
+                            : 'Lượt đội đã bị khóa từ thiết bị khác; các câu đã nộp vẫn được tính điểm.');
+                        return;
+                    }
+                    api.removeBeforeUnload?.();
+                    api.clearPlayTimer?.();
+                    if (typeof alert === 'function') alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
+                    return;
+                } else if (isSessionMismatch) {
+                    api.removeBeforeUnload?.();
+                    api.clearPlayTimer?.();
+                    if (typeof alert === 'function') alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
+                    return;
                 } else {
                     await this.syncRemote({ silent: true });
                     const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
                     const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
                     if (isTerminal) {
                         api.state.activeAttempt = refreshed;
-                        api.removeBeforeUnload();
-                        api.clearPlayTimer();
+                        api.removeBeforeUnload?.();
+                        api.clearPlayTimer?.();
                         api.renderLeaderLocked(refreshed.status === api.ATTEMPT_STATUS.COMPLETED
                             ? 'Nhóm đã nộp đủ bài; các câu đã nộp vẫn được tính điểm.'
                             : 'Lượt đội đã bị khóa; các câu đã nộp vẫn được tính điểm.');
                     } else {
                         api.state.activeAttempt = refreshed || attempt;
-                        api.renderLeaderQuestion();
-                        alert(error.message || 'Chưa thể lưu câu trả lời trên máy chủ. Hãy thử nộp lại.');
+                        api.renderLeaderQuestion?.();
+                        if (typeof alert === 'function') alert(error.message || 'Chưa thể lưu câu trả lời trên máy chủ. Hãy thử nộp lại.');
                     }
                 }
             } finally {
