@@ -34,16 +34,17 @@ function demoExam(id = 'exam-team') {
 }
 
 // Each source image has a small transparent border. These normalized bounds
-// keep its visible nose and visual centre aligned, rather than its PNG box.
+// keep its visible nose aligned to the start line and its driving wheels/chassis
+// aligned to the center of each coloured track lane.
 const vehicleAlphaBounds = {
-  '1': { right: 1, centerY: 234 / 405 },
-  '2': { right: 440 / 451, centerY: 219.5 / 410 },
-  '3': { right: 1, centerY: 229 / 405 },
-  '4': { right: 419 / 449, centerY: 215 / 400 },
-  '5': { right: 440 / 448, centerY: 225 / 414 },
-  '6': { right: 438 / 453, centerY: 202 / 421 },
-  '7': { right: 429 / 444, centerY: 210 / 410 },
-  '8': { right: 417 / 448, centerY: 209 / 416 }
+  '1': { right: 1, centerY: 0.81 },
+  '2': { right: 440 / 451, centerY: 0.81 },
+  '3': { right: 1, centerY: 0.81 },
+  '4': { right: 419 / 449, centerY: 0.80 },
+  '5': { right: 440 / 448, centerY: 0.77 },
+  '6': { right: 438 / 453, centerY: 0.78 },
+  '7': { right: 429 / 444, centerY: 0.76 },
+  '8': { right: 417 / 448, centerY: 0.76 }
 };
 
 test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async ({ page }) => {
