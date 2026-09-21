@@ -513,7 +513,8 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   });
   expect(avatarAlignment.horizontalDelta).toBeLessThanOrEqual(3);
   expect(avatarAlignment.verticalDelta).toBeLessThanOrEqual(3);
-  expect(avatarAlignment.widthRatio).toBeGreaterThanOrEqual(.9);
+  expect(avatarAlignment.widthRatio).toBeGreaterThanOrEqual(.65);
+  expect(avatarAlignment.widthRatio).toBeLessThanOrEqual(.95);
   await expect(page.locator('#game-player-info .team-leader-team-card')).not.toContainText('Nhóm của bạn');
   const identityCards = await page.locator('#game-player-info').evaluate(node => {
     const cards = [...node.children].map(card => card.getBoundingClientRect());

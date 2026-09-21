@@ -2138,8 +2138,143 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view.team-competition-leader-mode .team-leader-team-card { display: grid; align-items: center; min-height: 74px; padding: 9px 16px; }
 #game-play-view.team-competition-leader-mode .team-leader-team-card > div { display: grid; gap: 1px; min-width: 0; }
 #game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(1rem, 1.55vw, 1.28rem); font-weight: 900; line-height: 1.15; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-#game-play-view.team-competition-leader-mode #cat-speech-bubble { top: -40%; bottom: auto; z-index: 4; }
-#game-play-view.team-competition-leader-mode #play-cat-img.team-leader-theme-avatar { position: absolute; top: 52%; left: 50%; z-index: 3; width: min(180%, 380px) !important; height: min(180%, 380px) !important; object-fit: contain; filter: drop-shadow(0 8px 7px rgba(0, 0, 0, .42)); transform: translate(-50%, -50%); }
+#game-play-view.team-competition-leader-mode .play-left {
+    grid-template-rows: auto 1fr auto !important;
+    gap: 10px !important;
+}
+#game-play-view.team-competition-leader-mode .cat-wrapper {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 250px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+#game-play-view.team-competition-leader-mode .cat-wrapper::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 52% !important;
+    left: 50% !important;
+    width: clamp(170px, 18vw, 196px) !important;
+    height: clamp(170px, 18vw, 196px) !important;
+    aspect-ratio: 1 / 1 !important;
+    transform: translate(-50%, -50%) !important;
+    border: 2px solid rgba(125, 211, 252, .9) !important;
+    border-radius: 50% !important;
+    background:
+        radial-gradient(circle at 50% 50%,
+            #ffffff 0%,
+            rgba(224, 242, 254, .98) 12%,
+            rgba(125, 211, 252, .9) 24%,
+            rgba(56, 189, 248, .65) 40%,
+            rgba(14, 116, 144, .4) 55%,
+            rgba(8, 32, 78, .85) 75%,
+            rgba(2, 12, 36, .98) 100%) !important;
+    box-shadow:
+        0 0 0 5px rgba(56, 189, 248, .25),
+        0 0 35px rgba(56, 189, 248, .65),
+        0 0 60px rgba(37, 99, 235, .4),
+        inset 0 0 25px rgba(255, 255, 255, .45),
+        inset 0 0 45px rgba(56, 189, 248, .5) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+#game-play-view.team-competition-leader-mode .cat-wrapper::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 52% !important;
+    left: 50% !important;
+    width: clamp(170px, 18vw, 196px) !important;
+    height: clamp(170px, 18vw, 196px) !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 50% !important;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .6) 0%, rgba(125, 211, 252, .35) 30%, transparent 68%),
+        conic-gradient(from 0deg at 50% 50%,
+            rgba(125, 211, 252, .22) 0deg,
+            transparent 30deg,
+            rgba(125, 211, 252, .22) 60deg,
+            transparent 90deg,
+            rgba(125, 211, 252, .22) 120deg,
+            transparent 150deg,
+            rgba(125, 211, 252, .22) 180deg,
+            transparent 210deg,
+            rgba(125, 211, 252, .22) 240deg,
+            transparent 270deg,
+            rgba(125, 211, 252, .22) 300deg,
+            transparent 330deg,
+            rgba(125, 211, 252, .22) 360deg) !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    animation: teamGlowRotate 20s linear infinite !important;
+}
+@keyframes teamGlowRotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+#game-play-view.team-competition-leader-mode #play-cat-img.team-leader-theme-avatar {
+    position: absolute !important;
+    top: 52% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: clamp(124px, 14vw, 146px) !important;
+    height: auto !important;
+    max-height: clamp(94px, 11vw, 114px) !important;
+    object-fit: contain !important;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .55)) drop-shadow(0 0 8px rgba(56, 189, 248, .45)) !important;
+    z-index: 3 !important;
+}
+#game-play-view.team-competition-leader-mode #cat-speech-bubble {
+    position: absolute !important;
+    top: 4px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 124px !important;
+    max-width: 154px !important;
+    padding: 10px 18px !important;
+    border-radius: 50px !important;
+    border: 2px solid rgba(125, 211, 252, .95) !important;
+    background: linear-gradient(145deg, #15396b, #1d2a63) !important;
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, .45),
+        0 0 16px rgba(56, 189, 248, .45),
+        inset 0 1px 2px rgba(255, 255, 255, .4) !important;
+    color: #ffffff !important;
+    font-size: .82rem !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    z-index: 5 !important;
+}
+#game-play-view.team-competition-leader-mode #cat-speech-bubble > span {
+    display: block !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .8) !important;
+    letter-spacing: .02em !important;
+}
+#game-play-view.team-competition-leader-mode #cat-speech-bubble::after {
+    content: "" !important;
+    position: absolute !important;
+    bottom: -9px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-left: 8px solid transparent !important;
+    border-right: 8px solid transparent !important;
+    border-top: 9px solid #1d2a63 !important;
+    filter: drop-shadow(0 2px 0 rgba(125, 211, 252, .95)) !important;
+}
 #game-play-view.team-competition-leader-mode .game-practice-status { display: grid; gap: 4px; text-align: center; }
 #game-play-view.team-competition-leader-mode .game-practice-status small { color: #b9e8ff; font-size: clamp(.72rem, 1vw, .86rem); font-weight: 800; }
 #game-play-view.team-competition-leader-mode .team-leader-locked-panel { text-align: center; }
