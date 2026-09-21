@@ -146,5 +146,33 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     // 10. Kiểm tra ô đúng có dấu tick SVG (background-image chứa SVG checkmark)
     const correctBgImage = await page.locator('#fill-input-0').evaluate(el => window.getComputedStyle(el).backgroundImage);
     expect(correctBgImage).toContain('svg');
+
+    // 11. Yêu cầu mới: Khung thông tin học sinh GIỮ LẠI THEO MÀU CŨ (nền xanh navy gradient, viền cyan sáng, không bị đổi thành trắng)
+    const playerCardBg = await page.locator('#game-player-info').evaluate(el => window.getComputedStyle(el).backgroundImage);
+    expect(playerCardBg).toContain('gradient');
+    const playerCardColor = await page.locator('#game-player-info').evaluate(el => window.getComputedStyle(el).color);
+    expect(playerCardColor).toBe('rgb(231, 249, 255)');
+
+    // 12. Kiểm tra câu Đúng/Sai: font chữ tiêu đề hài hòa, không nhảy to khổng lồ
+    await page.evaluate(() => {
+      app.game.state = {
+        ...app.game.state,
+        currentIdx: 0,
+        questions: [{
+          type: 'Đúng/Sai',
+          q: '<div class="tf-template-number">Chọn Đúng/Sai?</div><div class="tf-statements"><div class="tf-statement tf-statement--tone-0"><span class="tf-statement__label">A)</span><span class="tf-statement__text">Trong số 57 239, chữ số 9 ở hàng đơn vị.</span><div class="tf-statement__choices"><button class="btn-tf-true">ĐÚNG</button><button class="btn-tf-false">SAI</button></div></div></div>',
+          ans: 'Đ'
+        }],
+        answerSubmitted: false
+      };
+      app.game.loadQuestion();
+    });
+
+    const tfTitleFontSize = await page.locator('#game-play-view .tf-template-number').evaluate(el => parseFloat(window.getComputedStyle(el).fontSize));
+    // Trước đây font-size vọt lên 43.2px (2.7rem), bây giờ được chuẩn hóa về mức hài hòa ~19-24px
+    expect(tfTitleFontSize).toBeLessThan(28);
+
+    // Chụp ảnh màn hình câu Đúng/Sai
+    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_tf_harmonized.png' });
   });
 });

@@ -678,9 +678,34 @@
                 }
                 return updated;
             } catch (error) {
-                const lifecycleError = /^(attempt_session_mismatch|competition_is_not_active|team_competition_timeout)$/i.test(String(error.code || '').trim())
-                    || /\b(attempt_session_mismatch|competition_is_not_active|team_competition_timeout)\b/i.test(String(error.message || '').trim());
-                if (lifecycleError) {
+                const errCode = String(error.code || '').trim();
+                const errMsg = String(error.message || '').trim();
+                const isTimeout = /team_competition_timeout/i.test(errCode) || /team_competition_timeout/i.test(errMsg);
+                const isInactive = /competition_is_not_active/i.test(errCode) || /competition_is_not_active/i.test(errMsg);
+                const isSessionMismatch = /attempt_session_mismatch/i.test(errCode) || /attempt_session_mismatch/i.test(errMsg);
+
+                if (isTimeout) {
+                    await this.syncRemote({ silent: true });
+                    const locked = { ...attempt, status: api.ATTEMPT_STATUS.LOCKED, lockReason: 'timeout' };
+                    api.attemptStore.upsert(locked);
+                    api.state.activeAttempt = locked;
+                    api.removeBeforeUnload();
+                    api.clearPlayTimer();
+                    api.renderLeaderLocked('Thời gian làm bài đã hết — lượt đội đã tự động khóa; các câu đã nộp vẫn được tính điểm.');
+                } else if (isInactive) {
+                    await this.syncRemote({ silent: true });
+                    const locked = { ...attempt, status: api.ATTEMPT_STATUS.LOCKED, lockReason: 'competition_closed' };
+                    api.attemptStore.upsert(locked);
+                    api.state.activeAttempt = locked;
+                    api.removeBeforeUnload();
+                    api.clearPlayTimer();
+                    api.renderLeaderLocked('Trận thi đấu đã kết thúc; các câu đã nộp vẫn được tính điểm.');
+                } else if (isSessionMismatch) {
+                    await this.syncRemote({ silent: true });
+                    api.removeBeforeUnload();
+                    api.clearPlayTimer();
+                    alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
+                } else {
                     await this.syncRemote({ silent: true });
                     const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
                     const isTerminal = refreshed && [api.ATTEMPT_STATUS.LOCKED, api.ATTEMPT_STATUS.COMPLETED].includes(refreshed.status);
@@ -692,15 +717,10 @@
                             ? 'Nhóm đã nộp đủ bài; các câu đã nộp vẫn được tính điểm.'
                             : 'Lượt đội đã bị khóa; các câu đã nộp vẫn được tính điểm.');
                     } else {
-                        // A transient session/network response is not proof that the
-                        // server locked the attempt. Keep the last active attempt
-                        // usable and let the leader retry the same answer.
                         api.state.activeAttempt = refreshed || attempt;
                         api.renderLeaderQuestion();
-                        alert('Chưa thể lưu câu trả lời. Lượt của nhóm vẫn đang mở, hãy nộp lại.');
+                        alert(error.message || 'Chưa thể lưu câu trả lời trên máy chủ. Hãy thử nộp lại.');
                     }
-                } else {
-                    alert(error.message || 'Không thể lưu câu trả lời trên máy chủ.');
                 }
             } finally {
                 state.submitPending = false;
