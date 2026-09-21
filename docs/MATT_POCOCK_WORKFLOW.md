@@ -18,21 +18,22 @@ phù hợp với rủi ro và phạm vi của task, không chạy cả 37 skill 
 | Triển khai | `implement` hoặc `implement-spec` | Một lát thay đổi nhỏ, có thể kiểm thử và rollback |
 | Test trước/sau code | `tdd` | Test bao phủ hành vi mới hoặc lỗi đã sửa |
 | Debug | `diagnosing-bugs`, `triage` | Nguyên nhân có bằng chứng, không sửa theo phỏng đoán |
-| UI/UX | `frontend-design`, `frontend-ui-engineering`, browser testing | Giao diện đúng mockup, responsive, focus và trạng thái tương tác |
+| UI/UX | `ui-ux-pro-max`, `frontend-design`, `frontend-ui-engineering`, browser testing | Tra cứu design system (79 styles, 192 palettes, 74 font pairings, 119 UX guidelines), giao diện đúng mockup, responsive, focus và trạng thái tương tác |
 | Review | `code-review`, `code-review-and-quality` | Finding có mức độ, file, bằng chứng và trạng thái xử lý |
 | Bảo mật | `security-and-hardening` | Kiểm tra auth, Supabase, input, secret và quyền truy cập |
 | Git | `git-workflow-and-versioning` | Commit nguyên tử, message rõ, staged diff đúng phạm vi |
 
-`frontend-design`, `frontend-ui-engineering`, `browser-testing-with-devtools`,
+`ui-ux-pro-max`, `frontend-design`, `frontend-ui-engineering`, `browser-testing-with-devtools`,
 `test-driven-development`, `security-and-hardening`, `performance-optimization`,
 `code-simplification`, `code-review-and-quality`, `documentation-and-adrs` và Git
-workflow là các skill bổ sung của môi trường Codex; chúng được dùng cùng bộ Matt
+workflow là các skill bổ sung của môi trường; chúng được dùng song song cùng bộ Matt
 Pocock khi task cần, không phải bản sao của nhau.
 
 ## Cổng bổ trợ của môi trường Codex
 
 | Rủi ro/phạm vi | Skill bổ trợ | Khi nào bắt buộc | Bằng chứng cần lưu |
 | --- | --- | --- | --- |
+| UI/UX Intelligence | `ui-ux-pro-max` | Tạo/đổi visual direction, palette, typography, micro-interactions, layout | Chạy python `.agents/skills/ui-ux-pro-max/scripts/search.py` tra cứu tri thức thiết kế và áp dụng UX guidelines |
 | UI/UX | `frontend-design` | Tạo hoặc đổi visual direction, palette, typography, layout | Token/plan, screenshot và lý do lựa chọn |
 | UI production | `frontend-ui-engineering` | Đổi HTML/CSS/JS tương tác, responsive hoặc accessibility | Keyboard/focus, empty/error/loading và breakpoint check |
 | Runtime browser | `browser-testing-with-devtools` | Mọi thay đổi render trong browser hoặc lỗi UI | DOM, console, network, accessibility tree và screenshot |

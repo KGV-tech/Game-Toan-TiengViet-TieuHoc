@@ -73,9 +73,9 @@ phù hợp với phạm vi thay đổi, không gọi toàn bộ bộ skill theo 
 - Lỗi/test: `tdd`, `diagnosing-bugs`, `triage` khi phù hợp.
 - Review trước commit: `code-review`, `code-review-and-quality`, `code-simplification`,
   cùng review bảo mật/UI/performance nếu thay đổi chạm các phạm vi đó.
-- Skill bổ trợ của môi trường Codex: `frontend-design`, `frontend-ui-engineering`,
-  `browser-testing-with-devtools`, `security-and-hardening`, `performance-optimization`
-  và `documentation-and-adrs`; xem cách kết hợp trong workflow.
+- Skill bổ trợ của môi trường Codex: `ui-ux-pro-max` (tri thức UI/UX, palette, typography, micro-interactions),
+  `frontend-design`, `frontend-ui-engineering`, `browser-testing-with-devtools`,
+  `security-and-hardening`, `performance-optimization` và `documentation-and-adrs`; xem cách kết hợp trong workflow.
 - Git: `git-workflow-and-versioning`; chỉ stage đúng tệp thuộc phạm vi và không tự merge
   `main` nếu chưa có yêu cầu rõ ràng.
 
