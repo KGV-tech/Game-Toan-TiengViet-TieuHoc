@@ -5962,17 +5962,17 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-scoreboard { border: 1px solid rgba(89, 233, 255, .9); border-radius: clamp(12px, 1.35vw, 20px); background: linear-gradient(135deg, rgba(7, 77, 159, .94), rgba(3, 31, 91, .95)); box-shadow: inset 0 1px rgba(255, 255, 255, .28), 0 6px 17px rgba(0, 20, 68, .24); }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-title-card { display: grid; min-height: 96px; padding: 12px 24px; place-items: center; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-title-card h2 { margin: 0; color: #fff; font-size: clamp(1.35rem, 2.5vw, 3rem); line-height: 1.08; text-align: center; text-shadow: 0 3px 0 #064b85, 0 0 16px rgba(130, 240, 255, .38); }
-.team-stadium-canvas { --stadium-start-x: 25%; --stadium-lane-height: 6.8%; position: relative; isolation: isolate; width: 100%; height: 100%; min-height: 0; overflow: hidden; border-radius: clamp(16px, 2vw, 30px); background: #59cfff url('assets/team-competition/stadium-3d-v1/stadium-8-lanes-v2.png') center / 100% 100% no-repeat; box-shadow: inset 0 0 0 2px rgba(255,255,255,.38), 0 14px 30px rgba(0, 17, 54, .32); }
+.team-stadium-canvas { --stadium-start-x: 25%; --stadium-lane-height: 7.26%; position: relative; isolation: isolate; width: 100%; height: 100%; min-height: 0; overflow: hidden; border-radius: clamp(16px, 2vw, 30px); background: #59cfff url('assets/team-competition/stadium-3d-v1/stadium-8-lanes-v2.png') center / 100% 100% no-repeat; box-shadow: inset 0 0 0 2px rgba(255,255,255,.38), 0 14px 30px rgba(0, 17, 54, .32); }
 .team-stadium-canvas__lanes { position: absolute; inset: 0; }
 .team-stadium-lane { position: absolute; left: 0; z-index: 2; width: 100%; height: var(--stadium-lane-height); transform: translateY(-50%); }
-.team-stadium-lane[data-stadium-lane="1"] { top: 42.3%; --vehicle-front-offset: 0%; --vehicle-center-offset: -31%; }
-.team-stadium-lane[data-stadium-lane="2"] { top: 48.7%; --vehicle-front-offset: 2.2%; --vehicle-center-offset: -31%; }
-.team-stadium-lane[data-stadium-lane="3"] { top: 55.4%; --vehicle-front-offset: 0%; --vehicle-center-offset: -31%; }
-.team-stadium-lane[data-stadium-lane="4"] { top: 62.3%; --vehicle-front-offset: 6.5%; --vehicle-center-offset: -30%; }
-.team-stadium-lane[data-stadium-lane="5"] { top: 69.4%; --vehicle-front-offset: 1.6%; --vehicle-center-offset: -27%; }
-.team-stadium-lane[data-stadium-lane="6"] { top: 76.7%; --vehicle-front-offset: 3.1%; --vehicle-center-offset: -28%; }
-.team-stadium-lane[data-stadium-lane="7"] { top: 84.3%; --vehicle-front-offset: 3.2%; --vehicle-center-offset: -26%; }
-.team-stadium-lane[data-stadium-lane="8"] { top: 92.5%; --vehicle-front-offset: 6.7%; --vehicle-center-offset: -26%; }
+.team-stadium-lane[data-stadium-lane="1"] { top: 42.34%; --vehicle-front-offset: 0%; --vehicle-center-offset: -31%; }
+.team-stadium-lane[data-stadium-lane="2"] { top: 49.60%; --vehicle-front-offset: 2.2%; --vehicle-center-offset: -31%; }
+.team-stadium-lane[data-stadium-lane="3"] { top: 56.85%; --vehicle-front-offset: 0%; --vehicle-center-offset: -31%; }
+.team-stadium-lane[data-stadium-lane="4"] { top: 64.11%; --vehicle-front-offset: 6.5%; --vehicle-center-offset: -30%; }
+.team-stadium-lane[data-stadium-lane="5"] { top: 71.37%; --vehicle-front-offset: 1.6%; --vehicle-center-offset: -27%; }
+.team-stadium-lane[data-stadium-lane="6"] { top: 78.63%; --vehicle-front-offset: 3.1%; --vehicle-center-offset: -28%; }
+.team-stadium-lane[data-stadium-lane="7"] { top: 85.89%; --vehicle-front-offset: 3.2%; --vehicle-center-offset: -26%; }
+.team-stadium-lane[data-stadium-lane="8"] { top: 93.15%; --vehicle-front-offset: 6.7%; --vehicle-center-offset: -26%; }
 .team-stadium-lane__info { position: absolute; top: 50%; left: 1.5%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; width: min(12%, 166px); max-height: 96%; padding: clamp(2px, .3vw, 5px) clamp(6px, .6vw, 12px); border: 1px solid color-mix(in srgb, var(--stadium-accent) 75%, white); border-radius: clamp(9px, 1vw, 16px); background: linear-gradient(105deg, color-mix(in srgb, var(--stadium-accent) 82%, #042852), rgba(1, 20, 56, .87)); box-shadow: 0 5px 13px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.26); color: #fff; transform: translateY(-50%); }
 .team-stadium-lane__info span { grid-column: 1; color: rgba(255,255,255,.82); font-size: clamp(.45rem, .65vw, .78rem); font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
 .team-stadium-lane__info strong { grid-column: 1; overflow: hidden; font-size: clamp(.74rem, 1.25vw, 1.45rem); line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; }
