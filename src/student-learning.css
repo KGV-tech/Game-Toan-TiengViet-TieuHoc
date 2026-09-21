@@ -4223,6 +4223,15 @@
     padding: 6px clamp(14px, 1.8vw, 24px);
 }
 
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row,
+#treasure-modal[data-admin-mode="learning-path"] .station-shell__title-row {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    justify-self: center !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+}
+
 #treasure-modal[data-ui-context="admin"] .station-shell__title-row .title-glow {
     font-size: clamp(1.2rem, 2vw, 1.85rem) !important;
 }
@@ -4253,11 +4262,17 @@
 }
 
 /* Learning path: left filters, central lesson list, right release controls. */
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
-    grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(240px, 285px);
-    grid-template-rows: minmax(0, 1fr);
-    gap: 14px;
-    overflow: hidden;
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-dashboard {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 215px) minmax(320px, 1fr) minmax(340px, 395px) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
 }
 
 #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) :is(.learning-release-control-rail, .learning-release-release-rail) {
@@ -4288,37 +4303,167 @@
     background: #031524;
     color: #ebf8ff;
     color-scheme: dark;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail {
-    grid-template-rows: auto auto auto;
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-release-rail {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto 1fr !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header {
-    display: grid;
-    align-items: start;
-    gap: 10px;
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-release-rail .learning-release-main-panel__header {
+    display: grid !important;
+    align-items: start !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header p {
-    max-width: none;
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header h3,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-release-rail .learning-release-main-panel__header h3 {
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: clamp(1.05rem, 1.3vw, 1.3rem) !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
 }
 
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-boundary {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    border-color: rgba(250, 204, 21, .62);
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-card-boundary,
+#treasure-modal[data-admin-mode="learning-path"] #learning-release-card-boundary {
+    display: block !important;
+    color: #ffe88b !important;
+    font-size: clamp(0.92rem, 1.15vw, 1.12rem) !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    margin-top: 4px !important;
 }
 
-#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button {
-    width: 100%;
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header p,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-release-rail .learning-release-main-panel__header p {
+    max-width: 100% !important;
+    margin: 0 !important;
+    color: #c8eaf5 !important;
+    font-size: 0.76rem !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-boundary,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-release-rail .learning-release-boundary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-color: rgba(250, 204, 21, .62) !important;
+    padding: 12px 14px !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-lesson,
+#treasure-modal[data-admin-mode="learning-path"] #learning-release-lesson {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    font-size: 0.88rem !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button,
+#treasure-modal[data-admin-mode="learning-path"] #learning-release-save-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 0.95rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    border-radius: 11px !important;
+    background: linear-gradient(180deg, #ffc93c 0%, #f59e0b 100%) !important;
+    color: #1e293b !important;
+    border: none !important;
+    box-shadow: 0 4px 0 #d97706, 0 8px 16px rgba(245, 158, 11, 0.25) !important;
+    cursor: pointer !important;
+    transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button:hover,
+#treasure-modal[data-admin-mode="learning-path"] #learning-release-save-button:hover {
+    filter: brightness(1.05) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 #d97706, 0 10px 20px rgba(245, 158, 11, 0.35) !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-save-button:active,
+#treasure-modal[data-admin-mode="learning-path"] #learning-release-save-button:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #d97706 !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-summary {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    font-size: 0.78rem !important;
+    line-height: 1.45 !important;
+    padding: 10px 14px !important;
+}
+
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary strong,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-summary strong,
+#treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary span,
+#treasure-modal[data-admin-mode="learning-path"] .learning-release-summary span {
+    display: block !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: visible !important;
 }
 
 @media (max-width: 1120px) {
     #treasure-modal[data-ui-context="admin"] .station-shell__title-row { margin-right: 52px; }
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .station-shell__title-row,
+    #treasure-modal[data-admin-mode="learning-path"] .station-shell__title-row { margin: 0 auto !important; }
     #treasure-modal[data-ui-context="admin"] #admin-tabs .tab-btn { min-width: 118px; padding-right: 9px; padding-left: 9px; }
-    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard {
-        grid-template-columns: minmax(180px, 210px) minmax(0, 1fr) minmax(205px, 235px);
+    #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-dashboard,
+    #treasure-modal[data-admin-mode="learning-path"] .learning-release-dashboard {
+        grid-template-columns: minmax(170px, 195px) minmax(280px, 1fr) minmax(290px, 340px) !important;
     }
 }
 
@@ -4600,18 +4745,159 @@ html[data-theme="light"] #game-play-view .tf-statement__choices button.wrong-fil
     color: #ffffff !important;
 }
 
-/* Ô nhập số & kéo thả */
-html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot) {
-    background: #ffffff !important;
-    border: 2px dashed #0284c7 !important;
-    color: #0f172a !important;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06) !important;
-    border-radius: 10px !important;
+/* ==========================================================================
+   Play Center Typography & Question Layout (Tiểu Học EdTech Chuẩn Mực)
+   ========================================================================== */
+html[data-theme="light"] #game-play-view .play-center,
+html[data-theme="light"] #game-play-view .question-box,
+html[data-theme="light"] #game-play-view .template-fill-layout,
+html[data-theme="light"] #game-play-view .template-fill-row,
+html[data-theme="light"] #game-play-view .template-compose-layout,
+html[data-theme="light"] #game-play-view .template-compose-row,
+html[data-theme="light"] #game-play-view .four-operations-expression-row,
+html[data-theme="light"] #game-play-view .angle-count-row,
+html[data-theme="light"] #game-play-view .measurement-word-problem-row,
+html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot, .train-slot, .train-node) {
+    font-family: 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif !important;
 }
+
+html[data-theme="light"] #game-play-view .question-box {
+    font-size: clamp(1.1rem, 1.45vw, 1.3rem) !important;
+    line-height: 1.6 !important;
+}
+
+/* Tiêu đề đề bài: to rõ, đậm đà, màu sắc chuẩn giáo dục */
+html[data-theme="light"] #game-play-view :is(.template-fill-row:first-child, .template-question-copy, .template-compose-heading, .four-operations-expression-title) {
+    font-size: clamp(1.25rem, 1.8vw, 1.55rem) !important;
+    font-weight: 800 !important;
+    color: #0f2e42 !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 14px !important;
+}
+
+/* Hàng biểu thức bài tập (a, b, c, d): rộng rãi, bo góc 14px, viền sáng sủa */
 html[data-theme="light"] #game-play-view :is(.template-fill-row, .template-compose-row, .comparison-drag-row) {
     background: #ffffff !important;
-    border-color: #cbd5e1 !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    color: #1e293b !important;
+    font-size: clamp(1.1rem, 1.45vw, 1.35rem) !important;
+    font-weight: 700 !important;
+    padding: 10px 18px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="light"] #game-play-view :is(.template-fill-row, .template-compose-row):hover {
+    border-color: #7dd3fc !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08) !important;
+}
+
+/* Nhãn a), b), c), d) nổi bật bắt mắt */
+html[data-theme="light"] #game-play-view .template-fill-row--tone-0,
+html[data-theme="light"] #game-play-view .template-compose-row--tone-0 { border-left: 5px solid #f59e0b !important; }
+html[data-theme="light"] #game-play-view .template-fill-row--tone-1,
+html[data-theme="light"] #game-play-view .template-compose-row--tone-1 { border-left: 5px solid #0284c7 !important; }
+html[data-theme="light"] #game-play-view .template-fill-row--tone-2,
+html[data-theme="light"] #game-play-view .template-compose-row--tone-2 { border-left: 5px solid #16a34a !important; }
+html[data-theme="light"] #game-play-view .template-fill-row--tone-3,
+html[data-theme="light"] #game-play-view .template-compose-row--tone-3 { border-left: 5px solid #8b5cf6 !important; }
+
+/* Ô nhập số làm bài: font tròn, chữ đậm rõ ràng, viền đứt nét sinh động */
+html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot) {
+    background: #ffffff !important;
+    border: 2.5px dashed #0284c7 !important;
     color: #0f172a !important;
+    font-family: 'Nunito', 'Quicksand', sans-serif !important;
+    font-size: clamp(1.15rem, 1.55vw, 1.4rem) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: inset 0 2px 4px rgba(2, 132, 199, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 6px 14px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="light"] #game-play-view :is(.fill-input, .magic-input, .form-input, .seq-slot):focus {
+    border-color: #0284c7 !important;
+    border-style: solid !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+    outline: none !important;
+}
+
+/* ==========================================================================
+   Yêu cầu 2: Nét gạch đỏ trên câu sai TĂNG GẤP ĐÔI SIZE (2.5px - 3px)
+   ========================================================================== */
+html[data-theme="light"] #game-play-view :is(.magic-input.wrong, .fill-input.wrong, .answer-state-wrong, .ans-btn.wrong, .tf-card.wrong-fill, .multi-choice-subquestion__option.wrong, .tf-statement__choices button.wrong-fill) {
+    text-decoration-line: line-through !important;
+    text-decoration-color: #ef4444 !important;
+    text-decoration-thickness: 2.5px !important;
+    text-decoration-skip-ink: none !important;
+    color: #dc2626 !important;
+    border-color: #f87171 !important;
+    border-style: solid !important;
+    background-color: #fef2f2 !important;
+}
+
+/* ==========================================================================
+   Yêu cầu 3: Dấu tick đúng (✓) để ghi nhận và dễ nhận biết đáp án đúng
+   ========================================================================== */
+/* 3.1 Dấu tick trên ô điền số: huy hiệu SVG xanh lá sắc nét góc phải */
+html[data-theme="light"] #game-play-view :is(.magic-input.correct, .fill-input.correct, .answer-state-correct) {
+    border-color: #16a34a !important;
+    border-style: solid !important;
+    border-width: 2.5px !important;
+    background-color: #f0fdf4 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2316a34a'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z' clip-rule='evenodd'/%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 22px 22px !important;
+    padding-right: 36px !important;
+    color: #15803d !important;
+}
+
+/* 3.2 Dấu tick trên trắc nghiệm câu con và đúng/sai */
+html[data-theme="light"] #game-play-view .multi-choice-subquestion__option.correct::after,
+html[data-theme="light"] #game-play-view .tf-statement__choices button.correct-fill::after {
+    content: " ✔️" !important;
+    font-size: 1.05em !important;
+    font-weight: 900 !important;
+    margin-left: 6px !important;
+    display: inline-block !important;
+}
+
+/* 3.3 Badge dấu tick xanh (✓) nổi bật ghi nhận bên cạnh ô đáp án đúng */
+#game-play-view .answer-correct-tick {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 26px !important;
+    height: 26px !important;
+    margin: 0 6px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(180deg, #22c55e, #16a34a) !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 0.95rem !important;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4) !important;
+    vertical-align: middle !important;
+    animation: soft-pulse-correct 0.35s ease-out !important;
+}
+@keyframes soft-pulse-correct {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* Hiển thị đáp án sửa đúng dưới ô sai */
+html[data-theme="light"] #game-play-view .answer-correction {
+    background: #15803d !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-family: 'Nunito', 'Quicksand', sans-serif !important;
+    box-shadow: 0 2px 6px rgba(21, 128, 61, 0.3) !important;
+    border-radius: 6px !important;
 }
 
 /* Dãy số (Sequence train nodes & slots) */
