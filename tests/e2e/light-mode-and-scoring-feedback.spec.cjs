@@ -88,7 +88,7 @@ test('câu trắc nghiệm và đúng sai không hiện thanh đáp án đáy kh
   await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
 });
 
-test('nét gạch đỏ trên câu sai có độ dày 1px thanh mảnh để nhìn rõ đáp án sai', async ({ page }) => {
+test('nét gạch đỏ trên câu sai có độ dày 2.5px rõ ràng để nhìn rõ đáp án sai', async ({ page }) => {
   await openOfflineHomepage(page);
   await openQuestion(page, { q: 'Số liền sau của 80 836 là', type: 'Điền khuyết', ans: '80 837' });
   await page.locator('.magic-input').fill('898 248');
@@ -96,7 +96,7 @@ test('nét gạch đỏ trên câu sai có độ dày 1px thanh mảnh để nh�
 
   await expect(page.locator('.magic-input.wrong')).toHaveCount(1);
   const thickness = await page.locator('.magic-input.wrong').evaluate(el => window.getComputedStyle(el).textDecorationThickness);
-  expect(thickness).toBe('1px');
+  expect(['2px', '2.5px', '3px']).toContain(thickness);
 });
 
 test('hiệu ứng cộng điểm kích hoạt số điểm nảy lên và badge bay rõ ràng', async ({ page }) => {

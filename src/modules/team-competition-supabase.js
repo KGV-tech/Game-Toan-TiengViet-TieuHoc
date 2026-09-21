@@ -702,11 +702,11 @@
                     api.renderLeaderLocked(closedMsg);
                     if (typeof alert === 'function') alert(closedMsg);
                     return;
-                } else if (isSessionMismatch && !isRetry) {
-                    // 3. Nếu lệch phiên: Tự động đồng bộ lại Session ID từ máy chủ và thử gửi lại 1 lần cho học sinh.
+                } else if (isSessionMismatch) {
+                    // 3. Nếu lệch phiên: Tự động đồng bộ lại Session ID từ máy chủ và thử gửi lại 1 lần cho học sinh
                     await this.syncRemote({ silent: true });
                     const refreshed = api.attemptStore.get(attempt.competitionId, attempt.teamId);
-                    if (refreshed && refreshed.status === api.ATTEMPT_STATUS.ACTIVE && refreshed.sessionId) {
+                    if (!isRetry && refreshed && refreshed.status === api.ATTEMPT_STATUS.ACTIVE && refreshed.sessionId && refreshed.sessionId !== attempt.sessionId) {
                         api.state.activeAttempt = refreshed;
                         state.submitPending = false;
                         return await this.submitCurrentQuestion(true);
@@ -721,14 +721,10 @@
                             : 'Lượt đội đã bị khóa từ thiết bị khác; các câu đã nộp vẫn được tính điểm.');
                         return;
                     }
-                    api.removeBeforeUnload?.();
-                    api.clearPlayTimer?.();
-                    if (typeof alert === 'function') alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
-                    return;
-                } else if (isSessionMismatch) {
-                    api.removeBeforeUnload?.();
-                    api.clearPlayTimer?.();
-                    if (typeof alert === 'function') alert('Phiên làm bài đã được mở ở một tab hoặc thiết bị khác. Vui lòng tải lại trang.');
+                    // Nếu máy chủ vẫn xác nhận lượt đang mở: không khóa nhầm, cho phép nộp lại
+                    api.state.activeAttempt = refreshed || attempt;
+                    api.renderLeaderQuestion?.();
+                    if (typeof alert === 'function') alert('Phiên làm bài có sự thay đổi. Lượt của nhóm vẫn đang mở, hãy nộp lại.');
                     return;
                 } else {
                     await this.syncRemote({ silent: true });

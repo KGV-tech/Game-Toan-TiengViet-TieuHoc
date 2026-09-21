@@ -76,9 +76,9 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
       app.game.loadQuestion();
     });
 
-    // 1. Kiểm tra khung trung tâm (.play-center) không còn nền đen mà là nền trắng sáng
+    // 1. Kiểm tra khung trung tâm (.play-center) dùng tone 6B xanh ngọc mây (Cerulean Azure) 70/30 dịu mắt
     const playCenterBg = await page.locator('#game-play-view .play-center').evaluate(el => window.getComputedStyle(el).backgroundColor);
-    expect(playCenterBg).toBe('rgb(255, 255, 255)');
+    expect(playCenterBg).toBe('rgb(198, 235, 248)');
 
     // 2. Kiểm tra nút submit: ảnh PNG bị ẩn hoàn toàn, text to rõ ràng
     const imgDisplay = await page.locator('#submit-ans-img').evaluate(el => window.getComputedStyle(el).display);
@@ -92,12 +92,12 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     const btnBg = await page.locator('#submit-ans-btn').evaluate(el => window.getComputedStyle(el).backgroundImage);
     expect(btnBg).toContain('gradient');
 
-    // 4. Lõi vòng tròn tính điểm có nền trắng kem, không còn bị đen sì
+    // 4. Lõi vòng tròn tính điểm dùng tone xanh ngọc nhạt 70/30 dịu mắt (#b5e1f2)
     const ringInnerBg = await page.locator('#game-play-view .game-progress-ring').evaluate(el => {
       const beforeStyle = window.getComputedStyle(el, '::before');
       return beforeStyle.backgroundColor;
     });
-    expect(ringInnerBg).toBe('rgb(255, 255, 255)');
+    expect(ringInnerBg).toBe('rgb(181, 225, 242)');
 
     // 5. Điểm số hiển thị rõ nét màu Navy đậm (#0f172a)
     const scoreColor = await page.locator('#game-progress-ring strong').evaluate(el => window.getComputedStyle(el).color);
