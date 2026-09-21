@@ -2047,15 +2047,21 @@ const app = {
                 void ring.offsetWidth;
                 ring.classList.add('ring-pulse');
             }
+            const valueEl = document.getElementById('game-progress-value');
+            if (valueEl) {
+                valueEl.classList.remove('score-value-bump');
+                void valueEl.offsetWidth;
+                valueEl.classList.add('score-value-bump');
+            }
             const panel = document.getElementById('game-progress-panel');
             if (!panel) return;
             const badge = document.createElement('div');
             badge.className = 'score-float-badge';
             const formatted = points % 1 === 0 ? points : points.toFixed(2).replace('.', ',');
-            badge.textContent = `+${formatted}đ`;
+            badge.textContent = `+${formatted} điểm`;
             badge.setAttribute('aria-hidden', 'true');
             panel.appendChild(badge);
-            setTimeout(() => { if (badge.isConnected) badge.remove(); }, 1200);
+            setTimeout(() => { if (badge.isConnected) badge.remove(); }, 1400);
         },
         questionsPerRound: 10,
         templateGeneratorsByTopic: {
@@ -4843,7 +4849,8 @@ const app = {
             this.state.score += scoreResult.points;
 
             const hasInlineCorrections = document.querySelectorAll('#game-play-view .answer-correction').length > 0;
-            if (!isCorrect && !hasInlineCorrections) this.showCorrectAnswerReveal(q);
+            const isOptionBased = qType === 'Trắc nghiệm' || qType === 'Đúng/Sai';
+            if (!isCorrect && !hasInlineCorrections && !isOptionBased) this.showCorrectAnswerReveal(q);
 
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
                 document.querySelectorAll('.safe-password-illustration').forEach(safeImage => {
@@ -4945,16 +4952,8 @@ const app = {
             };
         },
         animateScoreGain(points) {
-            const scoreEl = document.getElementById('game-score');
-            if (!scoreEl || !points) return;
-            const rect = scoreEl.getBoundingClientRect();
-            const float = document.createElement('div');
-            float.className = 'score-float';
-            float.textContent = `+${points} điểm`;
-            float.style.left = `${rect.left + rect.width / 2}px`;
-            float.style.top = `${rect.top}px`;
-            document.body.appendChild(float);
-            setTimeout(() => float.remove(), 950);
+            if (!points) return;
+            this.animateScorePoints(points);
         },
         async finishPlay() {
             if (this.state.finished) return;

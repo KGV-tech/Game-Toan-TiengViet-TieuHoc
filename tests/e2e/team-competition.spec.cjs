@@ -584,13 +584,7 @@ test('trưởng nhóm dùng phản hồi Luyện tập: đánh dấu đúng sai,
   await page.locator('#submit-ans-btn').click();
   await expect(page.locator('#game-options-container .ans-btn.wrong')).toContainText('3');
   await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
-  await expect(page.locator('.game-answer-reveal')).toContainText('2');
-  const positions = await page.evaluate(() => {
-    const options = document.getElementById('game-options-container').getBoundingClientRect();
-    const reveal = document.querySelector('.game-answer-reveal').getBoundingClientRect();
-    return { optionsBottom: options.bottom, revealTop: reveal.top };
-  });
-  expect(positions.revealTop).toBeGreaterThanOrEqual(positions.optionsBottom);
+  await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tiếp tục' })).toBeEnabled();
   await expect(page.locator('#game-score')).toHaveText('0');
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
