@@ -9334,6 +9334,9 @@ const app = {
                 return frame(choices(question.options), 'template-preview--multiple-choice');
             }
             const promptLines = String(question.q || '').split(/<br\s*\/?\s*>/i).map(line => line.trim()).filter(Boolean);
+            if (question.type === 'Điền khuyết' && /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_fill$/.test(question.templateId || '') && promptLines.length > 1) {
+                return frame(`<p class="template-preview__answer-line">${content(promptLines.slice(1).join('<br>'))}</p>`);
+            }
             const labeledLines = promptLines.filter(line => /^[a-dA-D][.)]\s*/.test(plain(line)));
             if (labeledLines.length >= 2) {
                 const rows = labeledLines.slice(0, 4).map((line, index) => {

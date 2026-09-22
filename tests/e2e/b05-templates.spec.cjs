@@ -27,6 +27,29 @@ test('Bài 5 có đủ 14 generator và trình soạn hiển thị dạng một 
   expect(registrySummary.lessons).toEqual(['g4-math-hk1-b05']);
   expect(registrySummary.answerCounts).toEqual(['1']);
 
+  const fillPreviews = await page.evaluate(() =>
+    window.Grade4MathTemplates.templateIds
+      .filter(key => key.startsWith('word.three_steps_') && key.endsWith('_fill'))
+      .map(key => {
+        const question = window.Grade4MathTemplates.generateQuestion(key, {});
+        const preview = document.createElement('div');
+        preview.innerHTML = app.admin.renderGeneratedTemplatePreview(question);
+        return {
+          answerLine: preview.querySelector('.template-preview__answer-line').textContent,
+          expected: question.q.split('<br>')[1].split('___').map(part => part.trim()).join(''),
+          blanks: preview.querySelectorAll('.template-preview__blank').length,
+          hasPrompt: preview.textContent.replace(/\s/g, '').includes(question.q.split('<br>')[0].replace(/\s/g, ''))
+        };
+      })
+  );
+  expect(fillPreviews).toHaveLength(7);
+  for (const preview of fillPreviews) {
+    expect(preview.answerLine).toBe(preview.expected);
+    expect(preview.answerLine).toMatch(/^Điền đáp số:/);
+    expect(preview.blanks).toBe(1);
+    expect(preview.hasPrompt).toBe(true);
+  }
+
   await page.evaluate(() => {
     app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
     app.data.questionTemplates = [{
@@ -51,6 +74,15 @@ test('Bài 5 có đủ 14 generator và trình soạn hiển thị dạng một 
 
   const config = await page.evaluate(() => app.admin.collectTemplateForm().config);
   expect(config).toMatchObject({ difficulty: 'core', minimum: 1, maximum: 10000 });
+
+  await page.locator('#template-preview-open').click();
+  await expect(page.locator('#template-preview-content .template-preview__answer-line')).toHaveText(/^Điền đáp số:.+/);
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
+    await page.setViewportSize(viewport);
+    await expect(page.locator('#template-preview-content .template-preview__blank')).toBeVisible();
+    await page.screenshot({ path: `test-results/ui-review/b05-fill-${viewport.width}.png` });
+  }
+  await page.locator('.template-preview-dialog__close').click();
 
   await page.locator('#template-generator').selectOption('word.three_steps_relation_total_mcq');
   await expect(page.locator('#template-question-type')).toHaveValue('Trắc nghiệm');
