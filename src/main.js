@@ -79,7 +79,7 @@ const PLAYER_TITLES = [
     { stars: 18, name: 'Học Trò Xuất Sắc' },
     { stars: 8, name: 'Học Trò Gương Mẫu' },
     { stars: 3, name: 'Học Trò Chăm Chỉ' },
-    { stars: 0, name: 'Học Trò Tò Mò' }
+    { stars: 0, name: 'Học sinh tò mò' }
 ];
 
 // D2: bộ nhớ đệm getElementById để giảm truy vấn DOM lặp lại ở các hàm hot.
@@ -1970,7 +1970,7 @@ const app = {
             const starCount = Number(user.stars || 0).toLocaleString('vi-VN');
             const titleLine = isAdmin
                 ? ''
-                : `<span class="player-info-card__stats"><i aria-hidden="true">🏅</i> Danh hiệu: <b>${app.auth.getPlayerTitle(user)}</b></span>`;
+                : `<span class="player-info-card__stats player-info-card__title"><span class="player-info-card__title-label"><i aria-hidden="true">🏅</i> Danh Hiệu:</span><b class="player-info-card__title-value">${app.auth.getPlayerTitle(user)}</b></span>`;
             const progress = app.auth.getPlayerProgress(user);
             const progressLine = isAdmin
                 ? ''
