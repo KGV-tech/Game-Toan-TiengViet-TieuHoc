@@ -30,6 +30,7 @@
         'number.hk1_review_b22_b25': require('./review-b22-b25'),
         ...require('./geometry-phase7'),
         ...require('./review-phase8'),
+        ...require('./three-step-word-problems'),
         'g4-m-angle-count-in-polygon': require('./angle-count-in-polygon'),
         'angle.count_in_polygon': require('./angle-count-in-polygon'),
         'g4-m-angle-drag-classify': require('./angle-drag-classify'),

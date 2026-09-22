@@ -9330,6 +9330,9 @@ const app = {
                 const columns = (question.options || []).map(column => String(column || '').split(',').map(item => item.trim()).filter(Boolean));
                 return frame(`<div class="template-preview__matching">${columns.map(column => `<div>${column.slice(0, Math.max(4, partCount)).map(item => `<span>${text(item)}</span>`).join('')}</div>`).join('')}</div>`, 'template-preview--matching');
             }
+            if (question.type === 'Trắc nghiệm' && Array.isArray(question.options) && question.options.length) {
+                return frame(choices(question.options), 'template-preview--multiple-choice');
+            }
             const promptLines = String(question.q || '').split(/<br\s*\/?\s*>/i).map(line => line.trim()).filter(Boolean);
             const labeledLines = promptLines.filter(line => /^[a-dA-D][.)]\s*/.test(plain(line)));
             if (labeledLines.length >= 2) {
