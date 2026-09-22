@@ -6439,25 +6439,50 @@ html[data-theme="light"] #game-play-view .play-left {
     box-shadow: 0 4px 16px rgba(10, 70, 95, 0.12) !important;
 }
 
-/* Khung thông tin học sinh: Giữ nguyên màu cũ theo yêu cầu người dùng (xanh đậm neon tương phản cao, dễ nhìn) */
-#game-play-view .player-info-card--game,
-html[data-theme="light"] #game-play-view .player-info-card--game {
+/* Khung thông tin học sinh Dark Mode: xanh đậm neon tương phản cao */
+#game-play-view .player-info-card--game {
     background: linear-gradient(135deg, rgba(3, 26, 51, .98), rgba(5, 75, 116, .94)) !important;
     border: 2px solid rgba(71, 201, 255, .85) !important;
     color: #e7f9ff !important;
     box-shadow: 0 0 0 2px rgba(7, 39, 70, .88), 0 8px 20px rgba(0, 0, 0, .35), inset 0 0 20px rgba(34, 211, 238, .2) !important;
 }
-#game-play-view .player-info-card--game strong,
-html[data-theme="light"] #game-play-view .player-info-card--game strong {
+#game-play-view .player-info-card--game strong {
     color: #38bdf8 !important;
 }
-#game-play-view .player-info-card--game small,
-html[data-theme="light"] #game-play-view .player-info-card--game small {
+#game-play-view .player-info-card--game small {
     color: #bae6fd !important;
 }
-#game-play-view .player-info-card--game .player-info-card__stats,
-html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats {
+#game-play-view .player-info-card--game .player-info-card__stats {
     color: #fde047 !important;
+}
+
+/* Khung thông tin học sinh Light Mode: Vàng kem nắng ấm, danh hiệu & tên danh hiệu nổi bật đồng bộ không chìm */
+html[data-theme="light"] #game-play-view .player-info-card--game {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+    border: 2px solid #fcd34d !important;
+    color: #78350f !important;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.14), inset 0 0 10px rgba(255, 255, 255, 0.8) !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game::before {
+    background: #fbbf24 !important;
+    box-shadow: 0 0 8px #f59e0b !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game::after {
+    border-top-color: #fcd34d !important;
+    border-bottom-color: rgba(252, 211, 77, 0.5) !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game strong {
+    color: #78350f !important;
+    font-weight: 800 !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game small {
+    color: #a16207 !important;
+    font-weight: 700 !important;
+}
+html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats,
+html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats b {
+    color: #b45309 !important;
+    font-weight: 800 !important;
 }
 
 html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-card {
@@ -6756,14 +6781,18 @@ html[data-theme="light"] #game-play-view .game-progress-copy strong {
     color: #026084 !important;
 }
 html[data-theme="light"] #game-play-view .game-solution-title {
-    color: #026084 !important;
+    color: #166534 !important;
     font-weight: 800 !important;
 }
+html[data-theme="light"] #game-play-view .play-right #explanation-box,
 html[data-theme="light"] #game-play-view .explanation-box {
-    background: #dcf4fc !important;
-    border: 1.5px solid #6cb6d6 !important;
-    color: #0f172a !important;
-    box-shadow: 0 4px 12px rgba(10, 70, 95, 0.08) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #dcfce7 100%) !important;
+    border: 2px solid #86efac !important;
+    color: #14532d !important;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.12) !important;
+}
+html[data-theme="light"] #game-play-view .play-right #explanation-box b {
+    color: #15803d !important;
 }
 html[data-theme="light"] #game-play-view .game-theme-toggle {
     background: #dcf4fc !important;
