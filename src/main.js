@@ -3321,9 +3321,9 @@ const app = {
             this.state.historyDetails = [];
             this.state.historyDetails = [];
 
-            // Ẩn nút Trở về
+            // Đảm bảo nút Thoát hiển thị sẵn sàng
             const btnBack = document.getElementById('game-btn-back');
-            if (btnBack) btnBack.style.display = 'none';
+            if (btnBack) btnBack.style.display = '';
 
             // Reset skill state
             if (this.skills) {
@@ -3760,6 +3760,7 @@ const app = {
                 if (back) {
                     back.onclick = () => this.confirmExit();
                     back.setAttribute('aria-label', 'Thoát lượt làm bài');
+                    back.style.display = '';
                 }
             }
             
@@ -3921,7 +3922,8 @@ const app = {
                 q.statements.forEach((statement, index) => {
                     const row = document.createElement('div');
                     row.className = `tf-statement tf-statement--tone-${index % 4}`;
-                    row.innerHTML = `<span class="tf-statement__label">${statement.label})</span><span class="tf-statement__text">${app.data.formatMathText(statement.text)}</span><span class="tf-statement__choices"><button type="button" data-choice="Đúng">ĐÚNG</button><button type="button" data-choice="Sai">SAI</button></span>`;
+                    const statementLabel = statement.label || ['A', 'B', 'C', 'D'][index] || '';
+                    row.innerHTML = `<span class="tf-statement__label">${statementLabel})</span><span class="tf-statement__text">${app.data.formatMathText(statement.text)}</span><span class="tf-statement__choices"><button type="button" data-choice="Đúng">ĐÚNG</button><button type="button" data-choice="Sai">SAI</button></span>`;
                     row.querySelectorAll('button').forEach(button => {
                         button.onclick = () => {
                             row.querySelectorAll('button').forEach(item => item.classList.remove('selected'));
@@ -4677,10 +4679,12 @@ const app = {
                     const text = btn.querySelector('.ans-text').textContent;
                     if (text === app.data.formatMathText(q.ans)) {
                         btn.classList.add('correct');
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-v';
-                        icon.textContent = '✔️';
-                        btn.appendChild(icon);
+                        if (btn.classList.contains('selected')) {
+                            const icon = document.createElement('div');
+                            icon.className = 'result-icon icon-v';
+                            icon.textContent = '✔️';
+                            btn.appendChild(icon);
+                        }
                     } else if (btn.classList.contains('selected')) {
                         btn.classList.add('wrong');
                         const icon = document.createElement('div');
@@ -4707,10 +4711,12 @@ const app = {
                     const text = btn.querySelector('.ans-text').textContent;
                     if (text === q.ans) {
                         btn.classList.add('correct-fill');
-                        const icon = document.createElement('div');
-                        icon.className = 'result-icon icon-v';
-                        icon.textContent = '✔️';
-                        btn.appendChild(icon);
+                        if (btn.classList.contains('selected')) {
+                            const icon = document.createElement('div');
+                            icon.className = 'result-icon icon-v';
+                            icon.textContent = '✔️';
+                            btn.appendChild(icon);
+                        }
                     } else if (btn.classList.contains('selected')) {
                         btn.classList.add('wrong-fill');
                         const icon = document.createElement('div');
@@ -8365,9 +8371,33 @@ const app = {
                 ? 'Bài 1 không dùng khái niệm “lớp”. Hai lựa chọn dưới đây là cố định và chỉ mang tính mô tả; game tự sinh đủ bốn kiểu theo đúng thứ tự.'
                 : 'Có thể chọn các dạng để đa dạng giữa các lượt; game không trộn các dạng trong cùng một lượt.';
         },
+        getTemplatePreset(generatorKey) {
+            const match = /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.exec(String(generatorKey || ''));
+            if (match) {
+                const labels = {
+                    relation_total: 'Quan hệ hơn/kém rồi tính tổng',
+                    purchase_total: 'Mua hàng và tính tổng',
+                    divide_compare: 'Chia nhóm rồi so sánh',
+                    remaining: 'Tìm phần còn lại',
+                    ratio_total: 'Quan hệ gấp lên/chia ra rồi tính tổng',
+                    legs_constraint: 'Suy luận số con vật từ tổng số chân',
+                    animal_total: 'Hơn/kém rồi gấp lên và tính tổng'
+                };
+                const interaction = match[2] === 'mcq' ? 'Trắc nghiệm' : 'Điền khuyết';
+                return {
+                    defaultPrompt: '{question}',
+                    guide: `Bài 5 · ${labels[match[1]]}. Mỗi lượt sinh một bài toán có đúng ba bước suy luận và một đáp án cuối cùng.`,
+                    hint: 'Giữ <code>{question}</code> để hiển thị trọn đề bài và phần trả lời động do game sinh.',
+                    preview: 'live',
+                    type: interaction,
+                    variables: [['{question}', 'đề bài, ô trả lời hoặc bốn lựa chọn do game sinh']]
+                };
+            }
+            return this.templatePresets?.[generatorKey] || this.templatePresets?.['number.digit_at_place'];
+        },
         getNewTemplateDraft() {
             const generatorKey = 'number.digit_at_place';
-            const preset = this.templatePresets?.[generatorKey];
+            const preset = this.getTemplatePreset(generatorKey);
             const topic = this.getTemplateTopics('Lớp 4', 'Toán', 'Học kỳ 1')[0] || '';
             return {
                 name: 'Cấu hình câu hỏi mới',
@@ -8456,6 +8486,10 @@ const app = {
             const measurementCenturyEnd = Number(config.centuryEnd ?? 21);
             const measurementScenarioKinds = Array.isArray(config.scenarioKinds) && config.scenarioKinds.length ? config.scenarioKinds : ['mass', 'area', 'time'];
             const topic5Operation = config.operation === '−' ? '-' : (['+', '-'].includes(config.operation) ? config.operation : '');
+            const b05Difficulty = ['easy', 'core', 'challenge'].includes(config.difficulty) ? config.difficulty : 'core';
+            const b05Minimum = Number(config.minimum ?? 1);
+            const b05Maximum = Number(config.maximum ?? 10000);
+            const b05Contexts = Array.isArray(config.contextPool) ? config.contextPool.join(', ') : '';
             const safePasswordMinLength = Math.max(2, Math.min(12, Number(config.minimumCodeLength ?? config.codeLength ?? 9)));
             const safePasswordMaxLength = Math.max(safePasswordMinLength, Math.min(12, Number(config.maximumCodeLength ?? config.codeLength ?? 9)));
             const selectedPlaces = config.allowedPlaces || ['tens', 'hundreds', 'thousands', 'tenThousands'];
@@ -8570,6 +8604,25 @@ const app = {
             topic5TemplateOptions.forEach(([value, label]) => {
                 if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
             });
+            const b05TemplateOptions = [
+                ['word.three_steps_relation_total_mcq', 'Bài 5 · Quan hệ hơn/kém rồi tính tổng — Trắc nghiệm'],
+                ['word.three_steps_relation_total_fill', 'Bài 5 · Quan hệ hơn/kém rồi tính tổng — Điền khuyết'],
+                ['word.three_steps_purchase_total_mcq', 'Bài 5 · Mua hàng và tính tổng — Trắc nghiệm'],
+                ['word.three_steps_purchase_total_fill', 'Bài 5 · Mua hàng và tính tổng — Điền khuyết'],
+                ['word.three_steps_divide_compare_mcq', 'Bài 5 · Chia nhóm rồi so sánh — Trắc nghiệm'],
+                ['word.three_steps_divide_compare_fill', 'Bài 5 · Chia nhóm rồi so sánh — Điền khuyết'],
+                ['word.three_steps_remaining_mcq', 'Bài 5 · Tìm phần còn lại — Trắc nghiệm'],
+                ['word.three_steps_remaining_fill', 'Bài 5 · Tìm phần còn lại — Điền khuyết'],
+                ['word.three_steps_ratio_total_mcq', 'Bài 5 · Gấp lên/chia ra rồi tính tổng — Trắc nghiệm'],
+                ['word.three_steps_ratio_total_fill', 'Bài 5 · Gấp lên/chia ra rồi tính tổng — Điền khuyết'],
+                ['word.three_steps_legs_constraint_mcq', 'Bài 5 · Tổng số chân — Trắc nghiệm'],
+                ['word.three_steps_legs_constraint_fill', 'Bài 5 · Tổng số chân — Điền khuyết'],
+                ['word.three_steps_animal_total_mcq', 'Bài 5 · Hơn/kém rồi gấp lên — Trắc nghiệm'],
+                ['word.three_steps_animal_total_fill', 'Bài 5 · Hơn/kém rồi gấp lên — Điền khuyết']
+            ];
+            b05TemplateOptions.forEach(([value, label]) => {
+                if (generatorControl && !generatorControl.querySelector(`option[value="${value}"]`)) generatorControl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+            });
             const phase2TemplateOptions = [
                 ['number.even_odd_classify', 'Bài 3 · Nhận biết số chẵn, số lẻ'],
                 ['number.even_odd_count', 'Bài 3 · Đếm số chẵn, số lẻ trong dãy'],
@@ -8666,6 +8719,7 @@ const app = {
             if (generatorControl && phase6TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && phase7TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             if (generatorControl && phase8TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            if (generatorControl && b05TemplateOptions.some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             const naturalSequenceRule = `<div class="template-editor__rule template-editor__rule--natural-sequence-controls"><h5>Dãy số theo quy luật</h5><p>Mặc định mỗi dãy có 6 số và từ 1 đến 3 ô trống. Cô có thể chỉnh các giới hạn này, phạm vi số và bước nhảy trước khi lưu template.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Số nhỏ nhất</span><input id="template-natural-sequence-minimum" class="form-input" type="number" min="0" value="${Number(config.minimum ?? 10000)}"></label><label class="template-editor__field"><span>Số lớn nhất</span><input id="template-natural-sequence-maximum" class="form-input" type="number" min="1" value="${Number(config.maximum ?? 9999999)}"></label><label class="template-editor__field template-editor__field--wide"><span>Bước nhảy được phép</span><input id="template-natural-sequence-steps" class="form-input" value="${app.data.sanitizeHTML(naturalSteps)}" placeholder="5, 6, -1000"></label><label class="template-editor__field"><span>Số hạng ít nhất</span><input id="template-natural-sequence-length-min" class="form-input" type="number" min="5" value="${naturalLengthMin}"></label><label class="template-editor__field"><span>Số hạng nhiều nhất</span><input id="template-natural-sequence-length-max" class="form-input" type="number" min="5" value="${naturalLengthMax}"></label><label class="template-editor__field"><span>Ô trống ít nhất</span><input id="template-natural-sequence-blank-min" class="form-input" type="number" min="1" value="${naturalBlankMin}"></label><label class="template-editor__field"><span>Ô trống nhiều nhất</span><input id="template-natural-sequence-blank-max" class="form-input" type="number" min="1" value="${naturalBlankMax}"></label></div></div>`;
             box.querySelector('.template-editor__rule--matching-controls')?.insertAdjacentHTML('beforebegin', naturalSequenceRule);
             const roundingRule = `<div class="template-editor__rule template-editor__rule--rounding-controls"><h5>Làm tròn số theo hàng</h5><p>Chọn các hàng được phép hỏi. Với Bài 1, nên giữ đủ bốn hàng để mỗi lượt có một câu về chục, trăm, nghìn và chục nghìn.</p><div class="template-editor__checks template-editor__checks--rounding-places" aria-label="Hàng được phép làm tròn">${roundingPlaceChoices.map(([value, label]) => checkbox(value, label, selectedRoundingPlaces, 'rounding-places')).join('')}</div></div>`;
@@ -8674,11 +8728,13 @@ const app = {
             box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', topic5OperationRule);
             const topic5OperationControl = document.getElementById('template-topic5-operation');
             if (topic5OperationControl) topic5OperationControl.value = topic5Operation;
-            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions, ...phase6TemplateOptions, ...phase7TemplateOptions, ...phase8TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
+            const b05Rule = `<div class="template-editor__rule template-editor__rule--b05-controls" hidden><h5>Bài 5 · Bài toán ba bước</h5><p>Mỗi lượt chỉ sinh một bài toán, một đáp án cuối cùng và lời giải đủ ba bước. Để trống ngữ cảnh để dùng toàn bộ pool đã duyệt.</p><div class="template-editor__fields"><label class="template-editor__field"><span>Độ khó</span><select id="template-b05-difficulty" class="form-input"><option value="easy" ${b05Difficulty === 'easy' ? 'selected' : ''}>Cơ bản nhẹ</option><option value="core" ${b05Difficulty === 'core' ? 'selected' : ''}>Chuẩn Bài 5</option><option value="challenge" ${b05Difficulty === 'challenge' ? 'selected' : ''}>Mở rộng</option></select></label><label class="template-editor__field"><span>Đáp số nhỏ nhất</span><input id="template-b05-minimum" class="form-input" type="number" min="1" max="100000" value="${b05Minimum}"></label><label class="template-editor__field"><span>Đáp số lớn nhất</span><input id="template-b05-maximum" class="form-input" type="number" min="1" max="100000" value="${b05Maximum}"></label><label class="template-editor__field template-editor__field--wide"><span>Pool ngữ cảnh (tùy chọn)</span><input id="template-b05-contexts" class="form-input" value="${app.data.sanitizeHTML(b05Contexts)}" placeholder="trees, notebooks, fruits"></label></div></div>`;
+            box.querySelector('.template-editor__rules')?.insertAdjacentHTML('beforeend', b05Rule);
+            if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...b05TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions, ...phase6TemplateOptions, ...phase7TemplateOptions, ...phase8TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.renderTemplateContentBlocks();
             this.showTemplateExample();
             this.syncTemplatePartSelectionUI();
-            const configurableGenerator = ['number.min_max_of_four', 'number.round_number', 'number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
+            const configurableGenerator = ['number.min_max_of_four', 'number.round_number', 'number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value), ...b05TemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
             if (configurableGenerator) {
                 if (existing?.generator_key === 'number.safe_password_by_place_value') {
                     document.querySelectorAll('.template-editor__rule--safe-password-controls, .template-editor__rule--safe-password-class-controls').forEach(rule => { rule.hidden = false; });
@@ -9470,7 +9526,7 @@ const app = {
                 this.templateContentPresentation = window.TemplateContentBuilder.normalize(this.templateContentPresentation, generator);
                 this.renderTemplateContentBlocks();
             }
-            const preset = this.templatePresets[generator] || this.templatePresets['number.digit_at_place'];
+            const preset = this.getTemplatePreset(generator);
             const isB01PlaceValueTrueFalse = generator === 'number.place_value_true_false'
                 && this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '') === 'g4-math-hk1-b01';
             const target = document.getElementById('template-example');
@@ -9491,6 +9547,7 @@ const app = {
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
             const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression', 'g4-m-add-sub-true-false'];
             const isTopic5Template = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'].includes(generator);
+            const isB05Template = /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.test(generator);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
             const isPhase2Template = phase2TemplateKeys.includes(generator);
             const isPhase2B03 = generator.startsWith('number.even_odd_');
@@ -9511,7 +9568,13 @@ const app = {
             const isPhase7Quad = generator === 'g4-m-quad-classify';
             const isPhase8Template = phase8TemplateKeys.includes(generator);
             const isPhase8FullReview = generator === 'number.hk1_review_b37_full';
-            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || isPhase4Review || isMeasurementTemplate || isPhase5Template || isPhase7Template || isPhase8Template || (isTopic5Template && !topic5DigitRange); });
+            document.querySelectorAll('.template-editor__rule--range-controls').forEach(rule => { rule.hidden = generator === 'number.match_number_words' || isFourArithmetic || generator === 'number.safe_password_by_place_value' || isAngleTemplate || isPhase2Template || isPhase4Review || isMeasurementTemplate || isPhase5Template || isPhase7Template || isPhase8Template || isB05Template || (isTopic5Template && !topic5DigitRange); });
+            document.querySelectorAll('.template-editor__rule--b05-controls').forEach(rule => { rule.hidden = !isB05Template; });
+            const displayIntro = document.querySelector('.template-editor__section--display .template-editor__section-intro');
+            if (displayIntro) displayIntro.textContent = isB05Template
+                ? 'Bài 5 sinh một đề bài duy nhất, một đáp án cuối cùng và lời giải hiển thị đủ ba bước; không dùng các câu con a–d.'
+                : 'Câu hỏi chung chỉ hiện một lần. Công thức câu con sẽ lặp lại cho 4 ý; thẻ Biến là dữ kiện game sinh, còn Ô trống là chỗ học sinh nhập đáp án.';
+            document.querySelectorAll('.template-editor__part-selection, .template-content-builder').forEach(element => { element.hidden = isB05Template; });
             const phase4DigitDefaults = {
                 'number.six_digit_numbers': [6, 6],
                 'number.million_class': [7, 9],
@@ -9573,6 +9636,7 @@ const app = {
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'];
             const topic5OperationKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression', 'g4-m-add-sub-true-false'];
             const isTopic5Template = topic5TemplateKeys.includes(generatorKey);
+            const isB05Template = /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.test(generatorKey);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generatorKey);
             const phase2TemplateKeys = ['number.even_odd_classify', 'number.even_odd_count', 'number.even_odd_sequence', 'number.even_odd_form', 'number.variable_expression_value', 'number.variable_expression_choice', 'number.hk1_review_b01_b04'];
             const isPhase2Template = phase2TemplateKeys.includes(generatorKey);
@@ -9637,6 +9701,10 @@ const app = {
             const measurementTimeKinds = selectedSafeValues('measurement-time-kinds');
             const measurementScenarioKinds = selectedSafeValues('measurement-scenario-kinds');
             const topic5Operation = document.getElementById('template-topic5-operation')?.value.trim() || '';
+            const b05Difficulty = value('template-b05-difficulty');
+            const b05Minimum = Number(value('template-b05-minimum'));
+            const b05Maximum = Number(value('template-b05-maximum'));
+            const b05Contexts = value('template-b05-contexts').split(',').map(item => item.trim()).filter(Boolean);
             const angleDegreesInput = document.getElementById('template-angle-degrees')?.value.trim() || '';
             const angleDegrees = angleDegreesInput ? angleDegreesInput.split(',').map(item => Number(item.trim())) : [];
             const measurementCenturyStart = Number(document.getElementById('template-measurement-century-start')?.value || 18);
@@ -9655,7 +9723,7 @@ const app = {
             const effectiveStatementKinds = isB01PlaceValueTrueFalse
                 ? ['place', 'comparison']
                 : statementKinds;
-            const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && !isPhase5Template && !isPhase7Template && !isPhase8Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
+            const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isB05Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
             const genericConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds: effectiveStatementKinds, ...(isB01PlaceValueTrueFalse ? { statementLayout: 'b01-four-types' } : {}), minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
             const roundingConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces: roundingPlaces };
             const topic5Config = generatorKey === 'g4-m-addition-property-fill'
@@ -9678,6 +9746,7 @@ const app = {
                 'measurement.hk1_review_b36': ['b17', 'b18', 'b19', 'b20']
             };
             const phase8Config = isPhase8FullReview ? { groups: phase8ReviewGroups } : (phase8SkillDefaults[generatorKey] ? { skills: phase8SkillDefaults[generatorKey] } : {});
+            const b05Config = { difficulty: b05Difficulty, minimum: b05Minimum, maximum: b05Maximum, ...(b05Contexts.length ? { contextPool: b05Contexts } : {}) };
             const measurementConfig = generatorKey === 'measurement.mass_unit_convert'
                 ? { allowedKinds: measurementMassKinds }
                 : generatorKey === 'measurement.area_unit_convert'
@@ -9689,9 +9758,13 @@ const app = {
                             : generatorKey === 'measurement.word_problem_units'
                                 ? { scenarioKinds: measurementScenarioKinds }
                                 : genericConfig;
-            const templateConfig = isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : (generatorKey === 'number.round_number' ? roundingConfig : genericConfig)))))))));
+            const templateConfig = isB05Template ? b05Config : (isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : (generatorKey === 'number.round_number' ? roundingConfig : genericConfig))))))))));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: '{question}', config: templateConfig, is_active: true };
             if (!template.name) throw new Error('Hãy nhập tên cấu hình câu hỏi.');
+            if (isB05Template) {
+                if (!['easy', 'core', 'challenge'].includes(b05Difficulty)) throw new Error('Độ khó Bài 5 chỉ nhận easy, core hoặc challenge.');
+                if (!Number.isSafeInteger(b05Minimum) || !Number.isSafeInteger(b05Maximum) || b05Minimum < 1 || b05Maximum > 100000 || b05Minimum > b05Maximum) throw new Error('Phạm vi đáp số Bài 5 phải là số nguyên từ 1 đến 100 000 và số nhỏ nhất không vượt số lớn nhất.');
+            }
             if (template.generator_key === 'number.digit_at_place' && (!allowedPlaces.length || !allowedDigits.length)) throw new Error('Hãy chọn ít nhất một hàng cùng một chữ số.');
             if (template.generator_key === 'number.round_number' && (!roundingPlaces.length || roundingPlaces.some(place => !roundingPlaceKeys.includes(place)))) throw new Error('Hãy chọn ít nhất một hàng hợp lệ để làm tròn.');
             if (template.generator_key === 'number.min_max_of_four' && enteredMaximum - enteredMinimum + 1 < 4) throw new Error('Phạm vi tìm số bé nhất/lớn nhất phải có ít nhất bốn số khác nhau.');
@@ -9805,15 +9878,16 @@ const app = {
                 template.config = { shapes, digits: [...new Set(digits)], digitStrategy: value('template-match-strategy'), digitWeights: weightText ? Object.fromEntries(weightText.split(',').map(item => item.split(':').map(part => Number(part.trim())))) : null, prefixWords, seed: seedText === '' ? null : Number(seedText) };
             }
             const presentation = this.getTemplateContentPresentation();
-            if (presentation) template.config.presentation = presentation;
+            if (presentation && !isB05Template) template.config.presentation = presentation;
             const selectedPartIndexes = this.readTemplatePartSelection();
-            if (selectedPartIndexes.length !== 4) template.config.selectedParts = selectedPartIndexes;
+            if (!isB05Template && selectedPartIndexes.length !== 4) template.config.selectedParts = selectedPartIndexes;
             else delete template.config.selectedParts;
             if (selectedLesson) template.config.lesson = selectedLesson;
             else delete template.config.lesson;
             const registry = template.subject === 'Tiếng Việt' ? window.Grade4VietnameseTemplates : window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template.generator_key)) throw new Error('Cấu hình câu hỏi này chưa được cài trong mã nguồn game.');
-            if (!isAngleTemplate && !isPhase2Template && !isTopic5Template && !isPhase4Review && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isMeasurementTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if (isB05Template) registry.generateQuestion(template.generator_key, template.config);
+            if (!isAngleTemplate && !isPhase2Template && !isB05Template && !isTopic5Template && !isPhase4Review && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isMeasurementTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;

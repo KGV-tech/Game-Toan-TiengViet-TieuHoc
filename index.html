@@ -689,11 +689,6 @@
 
       <!-- Play View -->
       <div id="game-play-view" class="game-view">
-        <button id="game-theme-toggle" class="game-theme-toggle" onclick="app.ui.toggleTheme()" aria-label="Đổi giao diện Sáng / Tối" title="Chuyển chế độ Sáng / Tối">
-          <span class="theme-icon" aria-hidden="true">☀️</span>
-        </button>
-        <button id="game-btn-back" class="utility-close-button" onclick="app.game.confirmExit()" aria-label="Thoát lượt làm bài">×</button>
-
         <div class="glass-container-xl">
           <div class="play-layout">
             <div class="play-left">
@@ -753,6 +748,15 @@
                 </div>
                 <h3 class="game-solution-title">Lời giải</h3>
                 <div id="explanation-box" class="explanation-box" style="display:none; margin-top: 15px;"></div>
+              </div>
+
+              <div id="play-right-footer" class="play-right-footer">
+                <button id="game-theme-toggle" class="game-theme-toggle" onclick="app.ui.toggleTheme()" aria-label="Đổi giao diện Sáng / Tối" title="Chuyển chế độ Sáng / Tối">
+                  <span class="theme-icon" aria-hidden="true">☀️</span>
+                </button>
+                <button id="game-btn-back" class="btn-exit-chunky" onclick="app.game.confirmExit()" aria-label="Thoát lượt làm bài">
+                  <span>Thoát</span>
+                </button>
               </div>
             </aside>
           </div>
@@ -1058,6 +1062,7 @@
   <script defer src="./src/question-templates/grade-4/math/review-b22-b25.js"></script>
   <script defer src="./src/question-templates/grade-4/math/geometry-phase7.js"></script>
   <script defer src="./src/question-templates/grade-4/math/review-phase8.js"></script>
+  <script defer src="./src/question-templates/grade-4/math/three-step-word-problems.js"></script>
   <script defer src="./src/question-templates/grade-4/math/angle-shared.js"></script>
   <script defer src="./src/question-templates/grade-4/math/angle-count-in-polygon.js"></script>
   <script defer src="./src/question-templates/grade-4/math/angle-drag-classify.js"></script>

@@ -228,7 +228,106 @@
     }
 
     #game-play-view .play-right:has(.game-progress-content:not([hidden])) {
-        grid-template-rows: minmax(0, .25fr) minmax(120px, 1.05fr) auto minmax(140px, 1.8fr) minmax(0, .1fr);
+        grid-template-rows: minmax(0, .25fr) minmax(120px, 1.05fr) auto minmax(130px, 1.8fr) auto;
+    }
+
+    #game-play-view .play-right-footer {
+        grid-row: 5;
+        align-self: end;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: auto;
+        padding-top: 4px;
+        z-index: 10;
+    }
+
+    /* Nút Thoát CSS Chunky 3D - Màu sắc đồng bộ ô thông tin học sinh (Navy Đậm Neon) */
+    #game-play-view .btn-exit-chunky {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        min-height: 40px;
+        padding: 0 16px;
+        background: linear-gradient(135deg, rgba(3, 26, 51, .98), rgba(5, 75, 116, .94)) !important;
+        border: 2px solid rgba(71, 201, 255, .85) !important;
+        border-radius: 12px !important;
+        color: #e7f9ff !important;
+        font-family: 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif !important;
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px !important;
+        cursor: pointer !important;
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        box-shadow: 0 4px 0 #021222, 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 0 12px rgba(34, 211, 238, .25) !important;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease !important;
+        user-select: none !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    #game-play-view .btn-exit-chunky:hover {
+        filter: brightness(1.15) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 0 #021222, 0 8px 18px rgba(56, 189, 248, 0.35), inset 0 0 16px rgba(34, 211, 238, .35) !important;
+    }
+
+    #game-play-view .btn-exit-chunky:active {
+        transform: translateY(3px) !important;
+        box-shadow: 0 1px 0 #021222, 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 0 8px rgba(34, 211, 238, .2) !important;
+    }
+
+    /* Nút Đổi giao diện trong play-right-footer */
+    #game-play-view .play-right-footer .game-theme-toggle {
+        position: static !important;
+        width: 40px !important;
+        height: 40px !important;
+        flex: 0 0 40px !important;
+        border-radius: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: linear-gradient(135deg, rgba(3, 26, 51, .98), rgba(5, 75, 116, .94)) !important;
+        border: 2px solid rgba(71, 201, 255, .85) !important;
+        box-shadow: 0 4px 0 #021222, 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 0 12px rgba(34, 211, 238, .25) !important;
+        color: #f8fafc !important;
+        font-size: 1.15rem !important;
+        cursor: pointer !important;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease !important;
+    }
+
+    #game-play-view .play-right-footer .game-theme-toggle:hover {
+        filter: brightness(1.15) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 0 #021222, 0 8px 18px rgba(56, 189, 248, 0.35), inset 0 0 16px rgba(34, 211, 238, .35) !important;
+    }
+
+    #game-play-view .play-right-footer .game-theme-toggle:active {
+        transform: translateY(3px) !important;
+        box-shadow: 0 1px 0 #021222, 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    html[data-theme="light"] #game-play-view .play-right-footer .game-theme-toggle {
+        background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%) !important;
+        border: 2px solid #38bdf8 !important;
+        box-shadow: 0 4px 0 #0284c7, 0 6px 14px rgba(2, 132, 199, 0.2) !important;
+        color: #0369a1 !important;
+    }
+
+    html[data-theme="light"] #game-play-view .play-right-footer .game-theme-toggle:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 0 #0284c7, 0 8px 18px rgba(2, 132, 199, 0.3) !important;
+    }
+
+    html[data-theme="light"] #game-play-view .play-right-footer .game-theme-toggle:active {
+        transform: translateY(3px) !important;
+        box-shadow: 0 1px 0 #0284c7, 0 2px 6px rgba(2, 132, 199, 0.2) !important;
     }
 
     #game-play-view .game-progress-panel {
@@ -4977,14 +5076,43 @@ html[data-theme="light"] #game-play-view :is(.magic-input.correct, .fill-input.c
     color: #15803d !important;
 }
 
-/* 3.2 Dấu tick trên trắc nghiệm câu con và đúng/sai */
-html[data-theme="light"] #game-play-view .multi-choice-subquestion__option.correct::after,
-html[data-theme="light"] #game-play-view .tf-statement__choices button.correct-fill::after {
+/* 3.2 Quy tắc chấm bài (Stick V/X) đồng bộ cho cả Dark Mode và Light Mode:
+   - Học sinh làm đúng: gán stick V (✔️)
+   - Học sinh làm sai: gán stick X (❌)
+   - Đáp án đúng của hệ thống hiện ra (để học sinh biết mình sai thế nào): TUYỆT ĐỐI KHÔNG GÁN STICK
+*/
+#game-play-view :is(
+    .multi-choice-subquestion__option.selected.correct,
+    .tf-statement__choices button.selected.correct-fill
+)::after {
     content: " ✔️" !important;
     font-size: 1.05em !important;
     font-weight: 900 !important;
     margin-left: 6px !important;
     display: inline-block !important;
+    vertical-align: middle !important;
+    text-decoration: none !important;
+}
+
+#game-play-view :is(
+    .multi-choice-subquestion__option.selected.wrong,
+    .tf-statement__choices button.selected.wrong-fill
+)::after {
+    content: " ❌" !important;
+    font-size: 1.05em !important;
+    font-weight: 900 !important;
+    margin-left: 6px !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    text-decoration: none !important;
+}
+
+#game-play-view :is(
+    .multi-choice-subquestion__option:not(.selected).correct,
+    .tf-statement__choices button:not(.selected).correct-fill
+)::after {
+    content: none !important;
+    display: none !important;
 }
 
 /* 3.3 Badge dấu tick xanh (✓) nổi bật ghi nhận bên cạnh ô đáp án đúng */
