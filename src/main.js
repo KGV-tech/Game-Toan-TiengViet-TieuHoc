@@ -5837,8 +5837,14 @@ const app = {
             // memory. Do not schedule a microtask that re-renders the workspace
             // after a test/user has opened a detail form in the same turn.
             if (window.supabase && !app.data.adminDataLoaded) {
+                const moduleContent = document.getElementById('admin-compose-module-content');
+                const initialSubArea = document.getElementById('admin-e-subarea');
+                const initialSubAreaRoot = initialSubArea?.firstElementChild;
                 void app.data.ensureAdminDataLoaded().then(loaded => {
-                    if (loaded && document.getElementById('admin-compose-screen')?.classList.contains('active')) {
+                    const stillShowingInitialLibrary = moduleContent?.isConnected
+                        && initialSubArea?.isConnected
+                        && initialSubArea.firstElementChild === initialSubAreaRoot;
+                    if (loaded && document.getElementById('admin-compose-screen')?.classList.contains('active') && stillShowingInitialLibrary) {
                         this.renderComposer();
                     }
                 });
@@ -11701,10 +11707,9 @@ const app = {
         renderExamPrintQuestion(question, index) {
             const number = index + 1;
             const numberText = String(number);
-            const numberClass = numberText.length > 1 ? ' exam-print__question-number--wide' : '';
             const printableQuestion = this.normalizeExamQuestionStructure(question);
             return `<article class="exam-print__question" data-print-question="${number}">
-                <h3 class="exam-print__question-heading"><span class="exam-print__question-number${numberClass}" aria-label="Câu ${number}">${numberText}</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span></h3>
+                <h3 class="exam-print__question-heading"><span class="exam-print__question-number" aria-label="Câu ${number}">${numberText}</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span></h3>
                 ${this.renderExamPrintQuestionParts(printableQuestion)}
             </article>`;
         },
