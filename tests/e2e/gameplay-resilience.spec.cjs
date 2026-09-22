@@ -211,7 +211,7 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
     };
   }, makeSharedPromptQuestion());
 
-  expect(initial.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
+  expect(initial.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content', 'play-right-footer']);
   expect(initial.ringVisible).toBe(true);
   expect(initial.ringLabel).toContain('hoàn thành 0 trên 4 ý');
   expect(initial.progressText).toContain('Hoàn thành 0/4 ý');
@@ -251,7 +251,7 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
     solutionTitleRect: document.querySelector('.game-solution-title').getBoundingClientRect().toJSON(),
     rightRect: document.querySelector('#game-play-view .play-right').getBoundingClientRect().toJSON()
   }));
-  expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
+  expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content', 'play-right-footer']);
   expect(afterCheck.ringVisible).toBe(true);
   expect(afterCheck.ringProgress).toBe('100%');
   expect(['Tiếp theo', 'Tiếp tục']).toContain(afterCheck.actionLabel);
