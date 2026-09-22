@@ -11362,6 +11362,28 @@ const app = {
             const lines = this.getExamPrintRawText(question?.q).split('\n').map(line => line.trim()).filter(Boolean);
             return this.getExamPrintText(lines[0] || 'Nội dung câu hỏi');
         },
+        isB05ThreeStepFillQuestion(question) {
+            return String(question?.type || '').trim() === 'Điền khuyết'
+                && /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_fill$/.test(String(question?.templateId || ''));
+        },
+        getExamPrintThreeStepAnswerUnit(question) {
+            const answerLine = this.getExamPrintRawText(question?.q)
+                .split('\n')
+                .map(line => line.trim())
+                .find(line => /^Điền đáp (?:số|án)\s*:/i.test(line));
+            const match = answerLine?.match(/^Điền đáp (?:số|án)\s*:\s*_{3,}\s*(.*)$/i);
+            return String(match?.[1] || '').trim();
+        },
+        renderExamPrintThreeStepFill(question) {
+            const unit = this.getExamPrintThreeStepAnswerUnit(question);
+            const solutionLine = '................................................................................................';
+            const solutionLines = Array.from({ length: 6 }, () => `<div class="exam-print__solution-line">${solutionLine}</div>`).join('');
+            const answerSuffix = unit ? ` ${this.getExamPrintText(unit)}` : '';
+            return `<div class="exam-print__parts exam-print__parts--three-step-fill">
+                <div class="exam-print__solution-lines" aria-label="Sáu dòng để ghi lời giải và phép tính">${solutionLines}</div>
+                <div class="exam-print__final-answer">Điền đáp án: <span class="exam-print__answer-placeholder">.....</span>${answerSuffix}</div>
+            </div>`;
+        },
         getExamPrintSafeSvg(value) {
             const raw = String(value || '').trim();
             if (!/^<svg\b/i.test(raw)) return '';
@@ -11475,6 +11497,7 @@ const app = {
         },
         renderExamPrintQuestionParts(question) {
             const printableQuestion = this.normalizeExamQuestionStructure(question);
+            if (this.isB05ThreeStepFillQuestion(printableQuestion)) return this.renderExamPrintThreeStepFill(printableQuestion);
             const kind = this.getExamQuestionStructureKind(printableQuestion);
             if (kind === 'subquestions') return this.renderExamPrintSubquestions(printableQuestion);
             if (kind === 'statements') return this.renderExamPrintStatements(printableQuestion);
