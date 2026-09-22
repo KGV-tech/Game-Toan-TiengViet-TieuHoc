@@ -57,6 +57,39 @@ test('Kho Template tự gắn Bài học cho template cũ và phân biệt phạ
   await expect.poll(() => page.evaluate(() => app.admin.collectTemplateForm().config.lesson)).toBe('g4-math-hk1-b24');
 });
 
+test('bộ lọc Chủ đề chỉ hiện chủ đề thuộc môn học đã chọn', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openAdmin(page);
+
+  const topics = await page.evaluate(() => ({
+    math: app.constants.topics['4'].math.hk1[0],
+    vietnamese: app.constants.topics['4'].vietnamese.hk1[0]
+  }));
+  await page.evaluate(({ math, vietnamese }) => {
+    app.data.questionTemplates = [
+      { id: 'math-template', name: 'Mẫu Toán', classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: math, question_type: 'Trắc nghiệm', generator_key: 'math.example', prompt_template: '{question}', config: {}, is_active: true },
+      { id: 'vietnamese-template', name: 'Mẫu Tiếng Việt', classlevel: 'Lớp 4', subject: 'Tiếng Việt', semester: 'Học kỳ 1', topic: vietnamese, question_type: 'Trắc nghiệm', generator_key: 'vietnamese.example', prompt_template: '{question}', config: {}, is_active: true }
+    ];
+    app.admin.templateFilters = { classlevel: 'Lớp 4', subject: 'Toán', topic: '', lesson: '', questionType: '', generatorKey: '' };
+    app.admin.switchTab('templates');
+  }, topics);
+
+  const topicValues = await page.getByLabel('Lọc chủ đề').locator('option').evaluateAll(options => options.map(option => option.value));
+  expect(topicValues).toEqual(['', topics.math]);
+  await page.getByLabel('Lọc chủ đề').selectOption(topics.math);
+  await page.getByLabel('Lọc môn học').selectOption('Tiếng Việt');
+  await expect(page.getByLabel('Lọc chủ đề')).toHaveValue('');
+  expect(await page.getByLabel('Lọc chủ đề').locator('option').evaluateAll(options => options.map(option => option.value))).toEqual(['', topics.vietnamese]);
+  await expect(page.locator('.template-library-card')).toHaveCount(1);
+  await expect(page.locator('.template-library-card')).toContainText('Mẫu Tiếng Việt');
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.getByLabel('Lọc môn học').selectOption('');
+  expect(await page.getByLabel('Lọc chủ đề').locator('option').evaluateAll(options => options.map(option => option.value))).toEqual(expect.arrayContaining(['', topics.math, topics.vietnamese]));
+  await page.getByLabel('Lọc cấp lớp').selectOption('Lớp 5');
+  await expect(page.getByLabel('Lọc chủ đề').locator('option')).toHaveCount(1);
+  await expect(page.locator('.template-library__empty')).toBeVisible();
+});
+
 test('Soạn đề Toán lớp 4 lọc và sinh template cũ theo Bài học đã chọn', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openAdmin(page);

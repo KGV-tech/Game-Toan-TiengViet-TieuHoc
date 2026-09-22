@@ -8251,7 +8251,16 @@ const app = {
             const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
             const filters = this.templateFilters;
-            const templateLessonIds = [...new Set(templates.map(item => this.getTemplateLesson(item)).filter(Boolean))].sort();
+            const scopedTemplates = templates.filter(item =>
+                (!filters.classlevel || item.classlevel === filters.classlevel) &&
+                (!filters.subject || item.subject === filters.subject)
+            );
+            const topicOptions = [...new Set(scopedTemplates.map(item => item.topic).filter(Boolean))].sort();
+            if (filters.topic && !topicOptions.includes(filters.topic)) filters.topic = '';
+            const templateLessonIds = [...new Set(scopedTemplates
+                .filter(item => !filters.topic || item.topic === filters.topic)
+                .map(item => this.getTemplateLesson(item)).filter(Boolean))].sort();
+            if (filters.lesson && !templateLessonIds.includes(filters.lesson)) filters.lesson = '';
             const lessonFilterOptions = `<option value="">Bài học: tất cả</option>${templateLessonIds.map(id => `<option value="${app.data.sanitizeHTML(id)}" ${id === filters.lesson ? 'selected' : ''}>${app.data.sanitizeHTML(this.lessonLabel(id) || id)}</option>`).join('')}`;
             const visible = templates.map((item, index) => ({ item, index })).filter(({ item }) =>
                 (!filters.classlevel || item.classlevel === filters.classlevel) &&
@@ -8295,7 +8304,7 @@ const app = {
                 <div class="template-library__filters" aria-label="Bộ lọc kho cấu hình câu hỏi">
                   <label><span>Cấp lớp</span><select class="filter-input template-library__select" aria-label="Lọc cấp lớp" onchange="app.admin.setTemplateFilter('classlevel', this.value)">${optionList(['Lớp 1','Lớp 2','Lớp 3','Lớp 4','Lớp 5'], filters.classlevel, 'Tất cả cấp lớp')}</select></label>
                   <label><span>Môn học</span><select class="filter-input template-library__select" aria-label="Lọc môn học" onchange="app.admin.setTemplateFilter('subject', this.value)">${optionList(['Toán','Tiếng Việt'], filters.subject, 'Tất cả môn học')}</select></label>
-                  <label><span>Chủ đề</span><select class="filter-input template-library__select" aria-label="Lọc chủ đề" onchange="app.admin.setTemplateFilter('topic', this.value)">${optionList(unique('topic'), filters.topic, 'Tất cả chủ đề')}</select></label>
+                  <label><span>Chủ đề</span><select class="filter-input template-library__select" aria-label="Lọc chủ đề" onchange="app.admin.setTemplateFilter('topic', this.value)">${optionList(topicOptions, filters.topic, 'Tất cả chủ đề')}</select></label>
                   <label><span>Bài học</span><select class="filter-input template-library__select" aria-label="Lọc Bài học" onchange="app.admin.setTemplateFilter('lesson', this.value)">${lessonFilterOptions}</select></label>
                   <label><span>Loại câu hỏi</span><select class="filter-input template-library__select" aria-label="Lọc loại câu hỏi" onchange="app.admin.setTemplateFilter('questionType', this.value)">${optionList(unique('question_type'), filters.questionType, 'Tất cả loại câu')}</select></label>
                   <label><span>Generator</span><select class="filter-input template-library__select" aria-label="Lọc cấu hình câu hỏi" onchange="app.admin.setTemplateFilter('generatorKey', this.value)">${optionList(unique('generator_key'), filters.generatorKey, 'Tất cả generator')}</select></label>
