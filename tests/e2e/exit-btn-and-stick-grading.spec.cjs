@@ -213,7 +213,7 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
         id: 'test-match-ui',
         name: 'Test giao diện trận · Lượt 3',
         classlevel: '4',
-        teamCount: 2,
+        teamCount: 4,
         participantMode: 'manual',
         questionMode: 'same',
         commonExamId: 'exam-1',
@@ -221,7 +221,9 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
         startedAt: Date.now(),
         teams: [
           { id: 'team-1', name: 'Nhóm 1', memberUsernames: ['leader-1'], leaderUsername: 'leader-1' },
-          { id: 'team-2', name: 'Nhóm 2', memberUsernames: ['member-2'], leaderUsername: 'member-2' }
+          { id: 'team-2', name: 'Nhóm 2', memberUsernames: ['m-2'], leaderUsername: 'm-2' },
+          { id: 'team-3', name: 'Nhóm 3', memberUsernames: ['m-3'], leaderUsername: 'm-3' },
+          { id: 'team-4', name: 'Nhóm 4', memberUsernames: ['m-4'], leaderUsername: 'm-4' }
         ]
       });
       app.teamCompetition.store.clear();
@@ -251,6 +253,26 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
     const carImg = page.locator('#play-cat-img');
     await expect(carImg).toBeVisible();
     const carWidth = await carImg.evaluate(el => el.getBoundingClientRect().width);
+    expect(carWidth).toBeGreaterThanOrEqual(150);
+
+    // Kiểm tra xe nằm đúng tâm vòng tròn (độ lệch < 2px)
+    const offsets = await page.evaluate(() => {
+      const wrapper = document.querySelector('.cat-wrapper');
+      const img = document.getElementById('play-cat-img');
+      const imgRect = img.getBoundingClientRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const circleCenterY = wrapperRect.top + wrapperRect.height * 0.52;
+      const circleCenterX = wrapperRect.left + wrapperRect.width * 0.50;
+      const visualCenterX = imgRect.left + imgRect.width * 0.519;
+      const visualCenterY = imgRect.top + imgRect.height * 0.578;
+      return {
+        diffX: Math.abs(visualCenterX - circleCenterX),
+        diffY: Math.abs(visualCenterY - circleCenterY)
+      };
+    });
+    expect(offsets.diffX).toBeLessThan(3);
+    expect(offsets.diffY).toBeLessThan(3);
+
     await playLeft.screenshot({ path: 'artifacts/actual_team_leader_play_left_light.png' });
 
     // Chụp thêm Dark Mode để nghiệm thu

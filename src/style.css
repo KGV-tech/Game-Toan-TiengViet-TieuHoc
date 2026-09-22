@@ -2243,7 +2243,7 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute !important;
     top: 52% !important;
     left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translate(-52%, -57.8%) !important;
     width: clamp(160px, 18vw, 190px) !important;
     height: auto !important;
     max-height: clamp(122px, 14vw, 148px) !important;
