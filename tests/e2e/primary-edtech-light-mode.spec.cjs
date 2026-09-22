@@ -147,11 +147,11 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     const correctBgImage = await page.locator('#fill-input-0').evaluate(el => window.getComputedStyle(el).backgroundImage);
     expect(correctBgImage).toContain('svg');
 
-    // 11. Yêu cầu mới: Khung thông tin học sinh GIỮ LẠI THEO MÀU CŨ (nền xanh navy gradient, viền cyan sáng, không bị đổi thành trắng)
+    // 11. Khung thông tin học sinh Light Mode: Nền Vàng kem nắng ấm, chữ màu nâu hổ phách không bị chìm
     const playerCardBg = await page.locator('#game-player-info').evaluate(el => window.getComputedStyle(el).backgroundImage);
     expect(playerCardBg).toContain('gradient');
     const playerCardColor = await page.locator('#game-player-info').evaluate(el => window.getComputedStyle(el).color);
-    expect(playerCardColor).toBe('rgb(231, 249, 255)');
+    expect(playerCardColor).toBe('rgb(120, 53, 15)'); // #78350f tương phản cao trên nền vàng kem
 
     // 12. Kiểm tra câu Đúng/Sai: font chữ tiêu đề hài hòa, không nhảy to khổng lồ
     await page.evaluate(() => {
