@@ -2121,23 +2121,29 @@ input[type="text"], input[type="password"], select, textarea {
 
 /* Trưởng nhóm dùng cùng một khung làm bài đã được kiểm chứng như Luyện tập. */
 #game-play-view.team-competition-leader-mode #skill-bar-container { display: none !important; }
-#game-play-view.team-competition-leader-mode .player-info-card {
+#game-play-view.team-competition-leader-mode .player-info-card,
+#game-play-view.team-competition-leader-mode .player-info-card--game {
     display: flex !important;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    min-width: 0;
-    min-height: 0;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    border: 0 !important;
+    border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    text-align: left;
+    text-align: left !important;
 }
 #game-play-view.team-competition-leader-mode .player-info-card::before,
-#game-play-view.team-competition-leader-mode .player-info-card::after { content: none !important; }
+#game-play-view.team-competition-leader-mode .player-info-card::after,
+#game-play-view.team-competition-leader-mode .player-info-card--game::before,
+#game-play-view.team-competition-leader-mode .player-info-card--game::after {
+    display: none !important;
+    content: none !important;
+}
 #game-play-view.team-competition-leader-mode .team-leader-match-card,
 #game-play-view.team-competition-leader-mode .team-leader-team-card {
     width: 100%;
@@ -2154,8 +2160,9 @@ input[type="text"], input[type="password"], select, textarea {
 #game-play-view.team-competition-leader-mode .team-leader-team-card > div { display: grid; gap: 1px; min-width: 0; }
 #game-play-view.team-competition-leader-mode .team-leader-team-name { overflow: hidden; color: #b9e8ff; font-size: clamp(1rem, 1.55vw, 1.28rem); font-weight: 900; line-height: 1.15; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 #game-play-view.team-competition-leader-mode .play-left {
+    position: relative !important;
+    gap: clamp(8px, 1.2vw, 14px) !important;
     grid-template-rows: auto 1fr auto !important;
-    gap: 10px !important;
 }
 #game-play-view.team-competition-leader-mode .cat-wrapper {
     position: relative !important;
@@ -2175,8 +2182,8 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute !important;
     top: 52% !important;
     left: 50% !important;
-    width: clamp(170px, 18vw, 196px) !important;
-    height: clamp(170px, 18vw, 196px) !important;
+    width: clamp(195px, 21vw, 225px) !important;
+    height: clamp(195px, 21vw, 225px) !important;
     aspect-ratio: 1 / 1 !important;
     transform: translate(-50%, -50%) !important;
     border: 2px solid rgba(125, 211, 252, .9) !important;
@@ -2204,8 +2211,8 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute !important;
     top: 52% !important;
     left: 50% !important;
-    width: clamp(170px, 18vw, 196px) !important;
-    height: clamp(170px, 18vw, 196px) !important;
+    width: clamp(195px, 21vw, 225px) !important;
+    height: clamp(195px, 21vw, 225px) !important;
     transform: translate(-50%, -50%) !important;
     border-radius: 50% !important;
     background:
@@ -2237,9 +2244,9 @@ input[type="text"], input[type="password"], select, textarea {
     top: 52% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: clamp(124px, 14vw, 146px) !important;
+    width: clamp(160px, 18vw, 190px) !important;
     height: auto !important;
-    max-height: clamp(94px, 11vw, 114px) !important;
+    max-height: clamp(122px, 14vw, 148px) !important;
     object-fit: contain !important;
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .55)) drop-shadow(0 0 8px rgba(56, 189, 248, .45)) !important;
     z-index: 3 !important;
@@ -6487,6 +6494,39 @@ html[data-theme="light"] #game-play-view .player-info-card--game .player-info-ca
 html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats b {
     color: #d97706 !important;
     font-weight: 800 !important;
+}
+
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card::before,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card::after,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game::before,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game::after {
+    display: none !important;
+    content: none !important;
+}
+
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble {
+    background: #dcf4fc !important;
+    border: 2px solid #0891b2 !important;
+    color: #0284c7 !important;
+    box-shadow: 0 6px 16px rgba(56, 189, 248, 0.15) !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble > span,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble .cat-bubble-text {
+    color: #0284c7 !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble::after {
+    border-top: 9px solid #0891b2 !important;
+    border-left: 8px solid transparent !important;
+    border-right: 8px solid transparent !important;
+    filter: none !important;
 }
 
 html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-card {
