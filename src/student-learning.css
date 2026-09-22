@@ -157,7 +157,7 @@
     #game-play-view .player-info-card--game .player-info-card__title {
         display: flex !important;
         flex-direction: column !important;
-        align-items: flex-start !important;
+        align-items: stretch !important;
         line-height: 1.25 !important;
         margin: 1px 0 !important;
     }
@@ -169,6 +169,8 @@
     }
     #game-play-view .player-info-card--game .player-info-card__title-value {
         display: block !important;
+        width: 100% !important;
+        text-align: center !important;
         white-space: nowrap !important;
     }
 
