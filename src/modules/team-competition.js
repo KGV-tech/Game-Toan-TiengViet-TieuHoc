@@ -22,8 +22,8 @@
     // visible in the teacher UI as an honest "đang xây dựng" roadmap.
     const PRESENTATION_THEMES = Object.freeze({
         SPEED_RACE: 'speed-race',
+        BALLOON_FESTIVAL: 'balloon-festival',
         SPACE_LAUNCH: 'space-launch',
-        THEME_3: 'theme-3',
         THEME_4: 'theme-4',
         THEME_5: 'theme-5',
         THEME_6: 'theme-6',
@@ -34,10 +34,11 @@
     });
     const PRESENTATION_THEME_OPTIONS = Object.freeze([
         Object.freeze({ id: PRESENTATION_THEMES.SPEED_RACE, label: 'Đường đua tốc độ', available: true }),
+        Object.freeze({ id: PRESENTATION_THEMES.BALLOON_FESTIVAL, label: 'Lễ hội khinh khí cầu', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Phóng phi thuyền', available: false }),
-        ...Array.from({ length: 8 }, (_, index) => Object.freeze({
-            id: PRESENTATION_THEMES[`THEME_${index + 3}`],
-            label: `Giao diện số ${index + 3}`,
+        ...Array.from({ length: 7 }, (_, index) => Object.freeze({
+            id: PRESENTATION_THEMES[`THEME_${index + 4}`],
+            label: `Giao diện số ${index + 4}`,
             available: false
         }))
     ]);
@@ -54,6 +55,9 @@
     const TEAM_VEHICLE_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
     ));
+    const TEAM_BALLOON_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
+        `./src/assets/team-competition/Ballons/vehicles/balloon-${index + 1}.png`
+    ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
     function createSpaceshipAvatar(color) {
@@ -65,6 +69,9 @@
         const spriteIndex = Math.max(0, Math.min(TEAM_VEHICLE_ASSETS.length - 1, Number(lane?.vehicleSprite) || 0));
         if (presentationTheme === PRESENTATION_THEMES.SPACE_LAUNCH) {
             return { src: createSpaceshipAvatar(TEAM_IDENTITY_COLORS[spriteIndex]), label: 'Phi thuyền' };
+        }
+        if (presentationTheme === PRESENTATION_THEMES.BALLOON_FESTIVAL) {
+            return { src: TEAM_BALLOON_ASSETS[spriteIndex], label: 'Khinh khí cầu' };
         }
         return { src: TEAM_VEHICLE_ASSETS[spriteIndex], label: 'Xe đua' };
     }
@@ -1307,6 +1314,7 @@
         PRESENTATION_THEME_OPTIONS,
         STADIUM_LANES,
         TEAM_VEHICLE_ASSETS,
+        TEAM_BALLOON_ASSETS,
         resolvePresentationTeamAvatar,
         STORAGE_KEY,
         ATTEMPT_STORAGE_KEY,

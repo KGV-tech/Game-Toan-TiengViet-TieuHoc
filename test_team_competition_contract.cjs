@@ -120,8 +120,11 @@ assert.deepEqual(team.getStadiumLaneAssignments(8).map(lane => lane.number), [1,
 assert.deepEqual(team.getStadiumLaneAssignments(4).map(lane => lane.color), ['cyan', 'coral', 'green', 'blue']);
 assert.throws(() => team.getStadiumLaneAssignments(1), /between 2 and 8/);
 assert.equal(team.PRESENTATION_THEME_OPTIONS.length, 10);
-assert.deepEqual(team.PRESENTATION_THEME_OPTIONS.filter(item => item.available).map(item => item.id), ['speed-race']);
+assert.deepEqual(team.PRESENTATION_THEME_OPTIONS.filter(item => item.available).map(item => item.id), ['speed-race', 'balloon-festival']);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'speed-race' }).presentationTheme, 'speed-race');
+assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'balloon-festival' }).presentationTheme, 'balloon-festival');
+assert.equal(team.resolvePresentationTeamAvatar('balloon-festival').label, 'Khinh khí cầu');
+assert.match(team.resolvePresentationTeamAvatar('balloon-festival').src, /balloon-1\.png$/);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'stadium-3d' }).presentationTheme, 'speed-race');
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'space-launch', presentationTeamIdentity: { 'team-1': 'rocket-3' } }).presentationTheme, 'speed-race');
 assert.ok(team.validateConfig({ ...validConfig, teamCount: 9 }, { students, exams }).errors.some(error => error.code === 'team_count_invalid'));
