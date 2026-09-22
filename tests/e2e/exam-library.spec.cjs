@@ -145,6 +145,28 @@ test('xem và chỉnh sửa từ thẻ mở đúng đề, bỏ bản nháp cũ v
   await expect(page.locator('#add-e-name')).toHaveValue('');
 });
 
+test('xem đề lần đầu không bị đóng khi tải dữ liệu admin hoàn tất', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    app.data.exams = [{
+      name: 'Đề kiểm tra lần đầu', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1',
+      questions: [{ type: 'Trắc nghiệm', q: 'Chọn đáp án đúng.', options: ['1', '2', '3', '4'], ans: '1' }]
+    }];
+    app.data.adminDataLoaded = false;
+    window.supabase = {};
+    app.data.ensureAdminDataLoaded = () => new Promise(resolve => {
+      window.resolveAdminDataLoad = () => resolve(true);
+    });
+    app.admin.openComposer('exams');
+  });
+  await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Chi tiết đề: Đề kiểm tra lần đầu' })).toBeVisible();
+  await page.evaluate(() => window.resolveAdminDataLoad());
+  await page.waitForTimeout(50);
+  await expect(page.getByRole('heading', { name: 'Chi tiết đề: Đề kiểm tra lần đầu' })).toBeVisible();
+  await expect(page.locator('#print-area')).toBeVisible();
+});
+
 test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nội dung A4', async ({ page }, testInfo) => {
   await openLibrary(page);
   await page.evaluate(() => {
@@ -207,7 +229,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
     const style = getComputedStyle(element);
     return { fontFamily: style.fontFamily, borderRadius: style.borderRadius };
   });
-  expect(previewTitleStyle.fontFamily).toContain('Arial');
+  expect(previewTitleStyle.fontFamily).toContain('Coiny');
   expect(previewTitleStyle.borderRadius).toBe('12px');
   await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
@@ -231,7 +253,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__question-number')).toHaveCount(10);
   await expect(page.locator('#print-area .exam-print__question-number').first()).toHaveText('1');
   await expect(page.locator('#print-area .exam-print__question-number').nth(9)).toHaveText('10');
-  await expect(page.locator('#print-area .exam-print__question-number').nth(9)).toHaveClass(/exam-print__question-number--wide/);
+  await expect(page.locator('#print-area .exam-print__question-number').nth(9)).not.toHaveClass(/exam-print__question-number--wide/);
   await expect(page.locator('#print-area .exam-print__question-lead').first()).toHaveText('Chọn đáp án đúng cho mỗi ý sau.');
   const questionTypography = await page.locator('#print-area .exam-print__question-heading').first().evaluate(element => {
     const number = element.querySelector('.exam-print__question-number');
@@ -253,11 +275,11 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   expect(questionTypography.numberColor).toBe('rgb(255, 255, 255)');
   expect(questionTypography.leadFontFamily).toContain('Arial');
   expect(questionTypography.leadFontWeight).toBe('400');
-  const wideQuestionNumber = await page.locator('#print-area .exam-print__question-number').nth(9).evaluate(element => {
+  const tenQuestionNumber = await page.locator('#print-area .exam-print__question-number').nth(9).evaluate(element => {
     const box = element.getBoundingClientRect();
     return { width: box.width, height: box.height };
   });
-  expect(wideQuestionNumber.width).toBeGreaterThan(wideQuestionNumber.height);
+  expect(Math.abs(tenQuestionNumber.width - tenQuestionNumber.height)).toBeLessThanOrEqual(1);
   await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__subquestion-options--4')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
@@ -291,7 +313,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(printPage.locator('#print-document .exam-print__exam-heading')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__kicker')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__question-number')).toHaveCount(10);
-  await expect(printPage.locator('#print-document .exam-print__question-number').nth(9)).toHaveClass(/exam-print__question-number--wide/);
+  await expect(printPage.locator('#print-document .exam-print__question-number').nth(9)).not.toHaveClass(/exam-print__question-number--wide/);
   await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(10);
   await expect(printPage.locator('#print-document .exam-print__subquestion')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
@@ -320,7 +342,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
       webkitScrollbarDisplay: getComputedStyle(element, '::-webkit-scrollbar').display
     };
   });
-  expect(printChrome.fontFamily).toContain('Arial');
+  expect(printChrome.fontFamily).toContain('Coiny');
   expect(printChrome.borderRadius).toBe('12px');
   expect(printChrome.controls).toBe(0);
   expect(printChrome.scrollbarWidth).toBe('none');
@@ -451,6 +473,17 @@ test('bản in Bài 5 điền khuyết có sáu dòng trình bày và dòng đá
     await expect(b05Question.locator('.exam-print__solution-line')).toHaveCount(6);
     await expect(b05Question.locator('.exam-print__solution-line').first()).toContainText('....');
     await expect(b05Question.locator('.exam-print__final-answer')).toHaveText(/^Điền đáp án: .*\S+/);
+    const alignment = await b05Question.evaluate(element => {
+      const lead = element.querySelector('.exam-print__question-lead').getBoundingClientRect();
+      const parts = element.querySelector('.exam-print__parts--three-step-fill').getBoundingClientRect();
+      const line = element.querySelector('.exam-print__solution-line').getBoundingClientRect();
+      const answer = element.querySelector('.exam-print__final-answer').getBoundingClientRect();
+      return { leadLeft: lead.left, partsLeft: parts.left, lineLeft: line.left, lineRight: line.right, partsRight: parts.right, answerLeft: answer.left };
+    });
+    expect(Math.abs(alignment.partsLeft - alignment.leadLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.lineLeft - alignment.partsLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.lineRight - alignment.partsRight)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.answerLeft - alignment.partsLeft)).toBeLessThanOrEqual(1);
   }
   await expect(b05Questions.nth(7).locator('.exam-print__solution-line')).toHaveCount(0);
 
@@ -485,6 +518,17 @@ test('bản in 7 template trắc nghiệm Bài 5 đặt đáp án trước sáu 
     await expect(b05Question.locator('.exam-print__generic-options > span')).toHaveCount(4);
     await expect(b05Question.locator('.exam-print__solution-line')).toHaveCount(6);
     await expect(b05Question.locator('.exam-print__choice-box')).toHaveCount(0);
+    const alignment = await b05Question.evaluate(element => {
+      const lead = element.querySelector('.exam-print__question-lead').getBoundingClientRect();
+      const parts = element.querySelector('.exam-print__parts--three-step-mcq').getBoundingClientRect();
+      const options = element.querySelector('.exam-print__generic-options').getBoundingClientRect();
+      const line = element.querySelector('.exam-print__solution-line').getBoundingClientRect();
+      return { leadLeft: lead.left, partsLeft: parts.left, optionsLeft: options.left, lineLeft: line.left, lineRight: line.right, partsRight: parts.right };
+    });
+    expect(Math.abs(alignment.partsLeft - alignment.leadLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.optionsLeft - alignment.partsLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.lineLeft - alignment.partsLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.lineRight - alignment.partsRight)).toBeLessThanOrEqual(1);
   }
 
   const popupPromise = page.waitForEvent('popup');
