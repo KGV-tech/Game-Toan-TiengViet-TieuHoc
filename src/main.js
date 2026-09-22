@@ -7437,6 +7437,11 @@ const app = {
             const sameExam = draft.commonExamId || exams[0]?.id || '';
             const statusLabel = app.teamCompetition.STATUS_LABELS[draft.status] || 'Nháp';
             const presentationTheme = app.teamCompetition.normalizePresentationTheme(draft.presentationTheme);
+            const currentPreview = app.teamCompetition?.getPresentationThemePreview?.(presentationTheme) || {
+                src: presentationTheme === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png',
+                label: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : 'Đường đua tốc độ',
+                hint: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.'
+            };
             const presentationOptions = app.teamCompetition.PRESENTATION_THEME_OPTIONS.map(theme => `<option value="${esc(theme.id)}" ${theme.id === presentationTheme ? 'selected' : ''} ${theme.available ? '' : 'disabled'}>${esc(theme.label)}${theme.available ? '' : ' (đang xây dựng)'}</option>`).join('');
             box.innerHTML = `<section class="team-competition-form team-competition-form--new" aria-label="Soạn trận thi đua nhóm">
                 <div class="team-form-toolbar"><button type="button" class="btn-opt team-form-back" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><div class="team-form-toolbar__status"><span class="team-form-status">${statusLabel}</span><span class="team-form-toolbar__hint">Bản soạn chỉ mình cô nhìn thấy</span></div></div>
@@ -7457,9 +7462,56 @@ const app = {
                   ${draft.questionMode !== 'different' ? `<label class="team-field-label"><span>Bộ đề chung</span><select id="team-comp-common-exam" class="form-input"><option value="">-- Chọn bộ đề --</option>${exams.map(exam => `<option value="${esc(exam.id)}" ${String(sameExam) === String(exam.id) ? 'selected' : ''}>${esc(`${exam.subject || ''} · ${exam.period || ''} · ${exam.name || 'Đề'} (${exam.questions.length} câu)` )}</option>`).join('')}</select></label>` : '<p class="team-form-hint team-form-hint--panel">Chọn bộ đề riêng trong từng ô nhóm. Tất cả bộ đề phải có cùng số câu.</p>'}
                 </div></section>
                 <section class="team-form-section team-form-section--timer"><div class="team-section-heading"><div><span class="team-section-kicker">Tuỳ chọn</span><h4>Thời gian làm bài</h4><p>Giới hạn thời gian giúp trận thi đua có nhịp độ rõ ràng.</p></div><span class="team-section-icon" aria-hidden="true">◷</span></div><div class="team-timer-fields"><label><input id="team-comp-has-timer" type="checkbox" ${draft.timeLimitMinutes !== null ? 'checked' : ''} onchange="document.getElementById('team-comp-time').disabled = !this.checked"> Có thời gian</label><input id="team-comp-time" class="form-input" type="number" min="1" max="180" value="${draft.timeLimitMinutes || 15}" ${draft.timeLimitMinutes === null ? 'disabled' : ''} aria-label="Số phút làm bài"><span>phút</span><span class="team-form-hint">Bỏ chọn để không giới hạn.</span></div></section>
-                <section class="team-form-section"><div class="team-section-heading"><div><span class="team-section-kicker">Trình chiếu lớp</span><h4>Giao diện thi đua</h4><p>Chọn bộ asset trước khi chuẩn bị trận. Đường đua tốc độ đã hoàn thiện; các giao diện còn lại sẽ được mở khi có asset 3D riêng.</p></div></div><label class="team-field-label"><span>Giao diện đang dùng</span><select id="team-comp-presentation-theme" class="form-input">${presentationOptions}</select></label><p class="team-form-hint team-form-hint--panel">Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.</p></section>
+                <section class="team-form-section team-form-section--presentation">
+                  <div class="team-presentation-layout">
+                    <div class="team-presentation-layout__left">
+                      <div class="team-section-heading">
+                        <div>
+                          <span class="team-section-kicker">Trình chiếu lớp</span>
+                          <h4>Giao diện thi đua</h4>
+                          <p>Chọn bộ asset trước khi chuẩn bị trận. Đường đua tốc độ và Lễ hội khinh khí cầu đã sẵn sàng thi đấu.</p>
+                        </div>
+                      </div>
+                      <label class="team-field-label">
+                        <span>Giao diện đang dùng</span>
+                        <select id="team-comp-presentation-theme" class="form-input" onchange="app.admin.updateTeamCompetitionPresentationPreview()">${presentationOptions}</select>
+                      </label>
+                      <p id="team-comp-presentation-hint" class="team-form-hint team-form-hint--panel">${esc(currentPreview.hint)}</p>
+                    </div>
+                    <div class="team-presentation-layout__right">
+                      <div class="team-presentation-preview-card">
+                        <div class="team-presentation-preview-card__head">
+                          <span>Minh họa xuất phát (8 đội)</span>
+                          <strong id="team-comp-presentation-preview-badge">${esc(currentPreview.label)}</strong>
+                        </div>
+                        <div class="team-presentation-preview-card__frame">
+                          <img id="team-comp-presentation-preview-img" src="${currentPreview.src}" alt="Vạch xuất phát 8 đội: ${esc(currentPreview.label)}" loading="lazy" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
                 <footer class="team-form-actions"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')">Hủy</button><button type="button" class="btn-primary" onclick="app.admin.saveTeamCompetitionDraft(false)">Lưu Nháp</button><button type="button" class="btn-success" onclick="app.admin.saveTeamCompetitionDraft(true)">Đã chuẩn bị</button></footer>
             </section>`;
+        },
+        updateTeamCompetitionPresentationPreview() {
+            const select = document.getElementById('team-comp-presentation-theme');
+            const themeId = select ? select.value : 'speed-race';
+            const preview = app.teamCompetition?.getPresentationThemePreview?.(themeId) || {
+                src: themeId === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png',
+                label: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : 'Đường đua tốc độ',
+                hint: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.'
+            };
+            const img = document.getElementById('team-comp-presentation-preview-img');
+            const badge = document.getElementById('team-comp-presentation-preview-badge');
+            const hint = document.getElementById('team-comp-presentation-hint');
+            if (img) {
+                img.src = preview.src;
+                img.alt = `Vạch xuất phát 8 đội: ${preview.label}`;
+            }
+            if (badge) badge.textContent = preview.label;
+            if (hint) hint.textContent = preview.hint;
+            this.syncTeamCompetitionDraftFromDom();
         },
         showAddTeamCompetitionForm(editId = null) {
             this.exitTeamCompetitionPresentation();

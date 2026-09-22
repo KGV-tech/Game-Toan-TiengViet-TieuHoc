@@ -89,6 +89,23 @@
         return isPresentationThemeAvailable(value) ? value : PRESENTATION_THEMES.SPEED_RACE;
     }
 
+    function getPresentationThemePreview(themeId) {
+        if (themeId === PRESENTATION_THEMES.BALLOON_FESTIVAL) {
+            return {
+                id: PRESENTATION_THEMES.BALLOON_FESTIVAL,
+                src: './src/assets/team-competition/Ballons/preview-start.png',
+                label: 'Lễ hội khinh khí cầu',
+                hint: 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.'
+            };
+        }
+        return {
+            id: PRESENTATION_THEMES.SPEED_RACE,
+            src: './src/assets/team-competition/stadium-3d-v1/preview-start.png',
+            label: 'Đường đua tốc độ',
+            hint: 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.'
+        };
+    }
+
     const memory = {
         competitions: [],
         attempts: []
@@ -1321,6 +1338,7 @@
         normalizeClass,
         normalizePresentationTheme,
         isPresentationThemeAvailable,
+        getPresentationThemePreview,
         studentKey,
         distributeStudents,
         buildTeams,
