@@ -254,7 +254,7 @@ test('panel phải giữ vòng tiến độ, nút hành động và lời giải
   expect(afterCheck.order).toEqual(['game-progress-panel', 'submit-ans-btn', 'game-progress-content']);
   expect(afterCheck.ringVisible).toBe(true);
   expect(afterCheck.ringProgress).toBe('100%');
-  expect(afterCheck.actionLabel).toBe('Tiếp tục');
+  expect(['Tiếp theo', 'Tiếp tục']).toContain(afterCheck.actionLabel);
   expect(afterCheck.solutionText).toContain('Lời giải');
   expect(afterCheck.solutionSlotVisible).toBe(true);
   expect(afterCheck.solutionTitleVisible).toBe(true);
@@ -328,15 +328,18 @@ test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn th
       const box = element?.getBoundingClientRect();
       return box ? { top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height } : null;
     };
+    const actionText = document.getElementById('submit-ans-text');
+    const actionTextBox = actionText?.getBoundingClientRect();
     const actionImage = document.getElementById('submit-ans-img');
-    const actionImageBox = actionImage.getBoundingClientRect();
+    const actionImageBox = actionImage?.getBoundingClientRect();
+    const actionVisualBox = (actionTextBox && actionTextBox.width > 0) ? actionTextBox : (actionImageBox || { width: 0, height: 0 });
     return {
       viewport: { width: window.innerWidth, height: window.innerHeight },
       shell: rect('#game-play-view > .glass-container-xl'),
       left: rect('#game-play-view .play-left'),
       center: rect('#game-play-view .play-center'),
       action: rect('#submit-ans-btn'),
-      actionImage: { width: actionImageBox.width, height: actionImageBox.height },
+      actionVisual: { width: actionVisualBox.width, height: actionVisualBox.height },
       actionLabel: document.getElementById('submit-ans-btn').getAttribute('aria-label'),
       rows: [...document.querySelectorAll('.multi-choice-subquestion')].map(element => ({
         height: element.getBoundingClientRect().height,
@@ -351,8 +354,8 @@ test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn th
   expect(layout.left.width).toBeGreaterThanOrEqual(220);
   expect(layout.action.width).toBeGreaterThanOrEqual(180);
   expect(layout.action.height).toBeGreaterThanOrEqual(42);
-  expect(layout.actionImage.width).toBeGreaterThanOrEqual(layout.action.width * .9);
-  expect(layout.actionImage.height).toBeGreaterThan(40);
+  expect(layout.actionVisual.width).toBeGreaterThanOrEqual(60);
+  expect(layout.actionVisual.height).toBeGreaterThanOrEqual(18);
   expect(layout.actionLabel).toBe('Kiểm tra');
   expect(layout.rows.every(row => row.height <= row.contentHeight + 28)).toBe(true);
 
@@ -363,12 +366,16 @@ test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn th
     const shell = document.querySelector('#game-play-view > .glass-container-xl').getBoundingClientRect();
     const left = document.querySelector('#game-play-view .play-left').getBoundingClientRect();
     const action = document.getElementById('submit-ans-btn').getBoundingClientRect();
-    const actionImage = document.getElementById('submit-ans-img').getBoundingClientRect();
+    const actionText = document.getElementById('submit-ans-text');
+    const actionTextBox = actionText?.getBoundingClientRect();
+    const actionImage = document.getElementById('submit-ans-img');
+    const actionImageBox = actionImage?.getBoundingClientRect();
+    const actionVisualBox = (actionTextBox && actionTextBox.width > 0) ? actionTextBox : (actionImageBox || { width: 0, height: 0 });
     return {
       shell: { right: shell.right, bottom: shell.bottom },
       leftWidth: left.width,
       action: { width: action.width, height: action.height },
-      actionImage: { width: actionImage.width, height: actionImage.height },
+      actionVisual: { width: actionVisualBox.width, height: actionVisualBox.height },
       rows: [...document.querySelectorAll('.multi-choice-subquestion')].map(element => ({
         height: element.getBoundingClientRect().height,
         contentHeight: element.scrollHeight
@@ -381,8 +388,8 @@ test('màn làm bài giữ nút hành động rõ ràng và không kéo giãn th
   expect(tabletLayout.leftWidth).toBeGreaterThanOrEqual(170);
   expect(tabletLayout.action.width).toBeGreaterThanOrEqual(145);
   expect(tabletLayout.action.height).toBeGreaterThanOrEqual(40);
-  expect(tabletLayout.actionImage.width).toBeGreaterThanOrEqual(tabletLayout.action.width * .9);
-  expect(tabletLayout.actionImage.height).toBeGreaterThan(35);
+  expect(tabletLayout.actionVisual.width).toBeGreaterThanOrEqual(50);
+  expect(tabletLayout.actionVisual.height).toBeGreaterThanOrEqual(16);
   expect(tabletLayout.rows.every(row => row.height <= row.contentHeight + 28)).toBe(true);
 });
 

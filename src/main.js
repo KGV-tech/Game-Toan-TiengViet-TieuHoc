@@ -3829,6 +3829,8 @@ const app = {
 
             const btnCheck = document.getElementById('submit-ans-btn');
             btnCheck.disabled = true;
+            btnCheck.classList.remove('is-next');
+            btnCheck.classList.add('is-check');
             document.getElementById('submit-ans-text').textContent = 'Kiểm Tra';
             document.getElementById('submit-ans-img').src = './public/ui/buttons/group1/check.png';
             btnCheck.setAttribute('aria-label', 'Kiểm tra');
@@ -4961,7 +4963,9 @@ const app = {
 
             const isLast = this.state.currentIdx === this.state.questions.length - 1;
             const isAdmin = app.data.currentUser && app.data.currentUser.role?.toLowerCase() === 'admin';
-            const nextActionLabel = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp tục';
+            const nextActionLabel = isLast ? (isAdmin ? 'Kết thúc' : 'Kết quả') : 'Tiếp theo';
+            btnCheck.classList.remove('is-check');
+            btnCheck.classList.add('is-next');
             document.getElementById('submit-ans-text').textContent = nextActionLabel;
             document.getElementById('submit-ans-img').src = './public/ui/buttons/group1/continue.png';
             btnCheck.setAttribute('aria-label', nextActionLabel);

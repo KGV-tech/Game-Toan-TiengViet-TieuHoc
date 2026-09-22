@@ -330,33 +330,105 @@
     #game-play-view .game-progress-copy strong { color: #d7eaf3; font-size: .76rem; }
     #game-play-view .game-progress-copy span { color: #91b6c9; }
 
+    /* Nút Kiểm tra / Tiếp theo Chunky 3D - Dark Mode Style mới */
     #game-play-view #submit-ans-btn {
-        box-sizing: border-box;
-        display: inline-grid !important;
-        place-items: center;
+        box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         width: calc(100% - 4px) !important;
-        max-width: 260px;
-        min-height: 0;
-        margin: 0 auto !important;
-        padding: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        color: transparent !important;
-        line-height: 0;
-        box-shadow: none !important;
+        max-width: 260px !important;
+        min-height: 52px !important;
+        margin: 12px auto 8px !important;
+        padding: 12px 24px !important;
+        border: none !important;
+        border-radius: 18px !important;
+        cursor: pointer !important;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease !important;
+        line-height: normal !important;
         grid-row: 3;
         align-self: center;
     }
 
     #game-play-view #submit-ans-btn img,
-    #game-play-view #submit-ans-img { display: block; width: 100% !important; height: auto !important; object-fit: contain; }
-    #game-play-view #submit-ans-btn:not(:disabled):hover {
-        background: transparent !important;
-        box-shadow: none !important;
-        filter: brightness(1.12) drop-shadow(0 0 9px rgba(98, 221, 236, .24));
+    #game-play-view #submit-ans-img {
+        display: none !important;
     }
-    #game-play-view #submit-ans-btn:disabled { opacity: .72; filter: grayscale(.12); }
+
+    #game-play-view #submit-ans-btn #submit-ans-text {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        clip: auto !important;
+        white-space: normal !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        color: #ffffff !important;
+        font-family: 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif !important;
+        font-size: clamp(1.05rem, 1.3vw, 1.25rem) !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #game-play-view #submit-ans-btn #submit-ans-text::after {
+        content: "➔";
+        font-size: 1.15em;
+        font-weight: 900;
+        transition: transform 0.15s ease;
+    }
+
+    /* Trạng thái 1: "Kiểm tra" - Xanh Ngọc Lục Bảo (Emerald / Mint 3D) */
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn,
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-check {
+        background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
+        box-shadow: 0 5px 0 #047857, 0 8px 20px rgba(16, 185, 129, 0.3) !important;
+        color: #ffffff !important;
+    }
+
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn:not(:disabled):hover,
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-check:not(:disabled):hover {
+        background: linear-gradient(180deg, #34d399 0%, #059669 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 7px 0 #047857, 0 10px 24px rgba(16, 185, 129, 0.4) !important;
+    }
+
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn:not(:disabled):active,
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-check:not(:disabled):active {
+        transform: translateY(3px) !important;
+        box-shadow: 0 2px 0 #047857, 0 4px 10px rgba(16, 185, 129, 0.2) !important;
+    }
+
+    /* Trạng thái 2: "Tiếp theo" - Xanh Biển Aqua / Cyan Neon Dịu (Cyan Marine 3D) */
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-next {
+        background: linear-gradient(180deg, #06b6d4 0%, #0891b2 100%) !important;
+        box-shadow: 0 5px 0 #0e7490, 0 8px 20px rgba(6, 182, 212, 0.3) !important;
+        color: #ffffff !important;
+    }
+
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-next:not(:disabled):hover {
+        background: linear-gradient(180deg, #22d3ee 0%, #0891b2 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 7px 0 #0e7490, 0 10px 24px rgba(6, 182, 212, 0.4) !important;
+    }
+
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn.is-next:not(:disabled):active {
+        transform: translateY(3px) !important;
+        box-shadow: 0 2px 0 #0e7490, 0 4px 10px rgba(6, 182, 212, 0.2) !important;
+    }
+
+    html:not([data-theme="light"]) #game-play-view #submit-ans-btn:disabled {
+        opacity: 0.55 !important;
+        box-shadow: 0 3px 0 #047857 !important;
+        cursor: not-allowed !important;
+        filter: saturate(0.6) !important;
+    }
 
     #game-play-view .play-right #explanation-box {
         box-sizing: border-box;
