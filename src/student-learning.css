@@ -4725,7 +4725,7 @@ html[data-theme="light"] #game-play-view .play-left {
     color: #fde047 !important;
 }
 
-/* Khung thông tin học sinh Light Mode: Phương án 1 chuẩn, nền Vàng kem nắng ấm, 'Học Trò Tò Mò' đồng màu cam hổ phách với 'Danh hiệu:' */
+/* Khung thông tin học sinh Light Mode: Theo Phương án 1 (viền cyan, chữ xanh), nền Vàng kem nắng ấm, danh hiệu & tên danh hiệu cùng màu cam hổ phách không bị chìm */
 html[data-theme="light"] #game-play-view .player-info-card--game {
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
     border: 2px solid #38bdf8 !important;
@@ -4733,12 +4733,12 @@ html[data-theme="light"] #game-play-view .player-info-card--game {
     box-shadow: 0 4px 14px rgba(2, 132, 199, 0.15), inset 0 0 12px rgba(255, 255, 255, 0.8) !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game::before {
-    background: #7ee9ff !important;
-    box-shadow: 0 0 12px #38bdf8 !important;
+    background: #38bdf8 !important;
+    box-shadow: 0 0 8px #38bdf8 !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game::after {
-    border-top: 1px solid rgba(125, 211, 252, .72) !important;
-    border-bottom: 1px solid rgba(125, 211, 252, .42) !important;
+    border-top-color: #38bdf8 !important;
+    border-bottom-color: rgba(56, 189, 248, 0.5) !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game strong {
     color: #0284c7 !important;
@@ -5257,6 +5257,7 @@ html[data-theme="light"] #game-play-view .game-progress-copy {
 }
 html[data-theme="light"] #game-play-view .game-progress-copy strong {
     color: #026084 !important;
+}
 html[data-theme="light"] #game-play-view .game-solution-title {
     color: #0e7490 !important;
     font-weight: 800 !important;
