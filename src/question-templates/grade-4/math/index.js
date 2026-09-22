@@ -82,14 +82,36 @@ function filterLabeledLines(value, selectedIndexes) {
     }).join('<br>');
 }
 
+function collapseToSinglePart(value, selectedIndex, partCount) {
+    const raw = String(value || '');
+    const lines = raw.split(/<br\s*\/?\s*>/i);
+    const labeledIndexes = lines.reduce((indexes, line, index) => {
+        if (/^[a-dA-D][.)]\s*/.test(line.trim())) indexes.push(index);
+        return indexes;
+    }, []);
+    if (labeledIndexes.length !== Number(partCount)) return value;
+    const selectedLineIndex = labeledIndexes[selectedIndex] ?? labeledIndexes[0];
+    const selectedLine = String(lines[selectedLineIndex] || '').replace(/^[a-dA-D][.)]\s*/, '').trim();
+    const commonLines = lines.filter((_, index) => !labeledIndexes.includes(index));
+    return [...commonLines, selectedLine].filter(Boolean).join('<br>');
+}
+
 function filterGeneratedParts(question, config) {
-    const rawSelection = config?.selectedParts;
+    const rawSelection = Array.isArray(config?.selectedParts)
+        ? config.selectedParts
+        : (config?.answerMode === 'single' ? [0] : undefined);
+    const answerMode = config?.answerMode === 'single'
+        || (!config?.answerMode && Array.isArray(rawSelection) && rawSelection.length === 1)
+        ? 'single'
+        : 'subquestions';
     if (!Array.isArray(rawSelection)) return question;
 
-    const partKey = STRUCTURED_PART_KEYS.find(key => Array.isArray(question?.[key]) && question[key].length === 4);
+    const partKey = STRUCTURED_PART_KEYS.find(key => Array.isArray(question?.[key]) && question[key].length > 0);
     if (partKey) {
         const sourceParts = question[partKey];
-        const selectedIndexes = normalizePartIndexes(rawSelection, sourceParts.length);
+        const selectedIndexes = answerMode === 'single'
+            ? [normalizePartIndexes(rawSelection, sourceParts.length)[0] ?? 0]
+            : normalizePartIndexes(rawSelection, sourceParts.length);
         const sourceCounts = Array.isArray(question.partAnswerCounts) && question.partAnswerCounts.length === sourceParts.length
             ? question.partAnswerCounts.map(Number)
             : sourceParts.map(() => 1);
@@ -100,6 +122,24 @@ function filterGeneratedParts(question, config) {
             answerOffset += Number.isInteger(count) && count > 0 ? count : 1;
             return group;
         });
+
+        if (answerMode === 'single') {
+            const selectedIndex = selectedIndexes[0];
+            question.ans = (answerGroups[selectedIndex] || []).join(', ');
+            question.q = collapseToSinglePart(question.q, selectedIndex, sourceParts.length);
+            if (question.templateVariables && typeof question.templateVariables === 'object') {
+                Object.keys(question.templateVariables).forEach(key => {
+                    if (typeof question.templateVariables[key] === 'string') {
+                        question.templateVariables[key] = collapseToSinglePart(question.templateVariables[key], selectedIndex, sourceParts.length);
+                    }
+                });
+            }
+            STRUCTURED_PART_KEYS.forEach(key => { delete question[key]; });
+            question.partAnswerCounts = [sourceCounts[selectedIndex] || 1];
+            question.answerMode = 'single';
+            delete question.selectedParts;
+            return question;
+        }
 
         question[partKey] = selectedIndexes.map(index => sourceParts[index]);
         if (partKey === 'subquestions' && Array.isArray(question.practiceRows) && question.practiceRows.length === 4) {
@@ -118,12 +158,30 @@ function filterGeneratedParts(question, config) {
         question.selectedParts = selectedIndexes.length === 4
             ? undefined
             : selectedIndexes.map((_, index) => index);
+        question.answerMode = 'subquestions';
         return question;
     }
 
     const sourceAnswers = splitAnswerTokens(question.ans);
     if (sourceAnswers.length === 4) {
-        const selectedIndexes = normalizePartIndexes(rawSelection, sourceAnswers.length);
+        const selectedIndexes = answerMode === 'single'
+            ? [normalizePartIndexes(rawSelection, sourceAnswers.length)[0] ?? 0]
+            : normalizePartIndexes(rawSelection, sourceAnswers.length);
+        if (answerMode === 'single') {
+            question.ans = sourceAnswers[selectedIndexes[0]] || '';
+            question.q = collapseToSinglePart(question.q, selectedIndexes[0], sourceAnswers.length);
+            if (question.templateVariables && typeof question.templateVariables === 'object') {
+                Object.keys(question.templateVariables).forEach(key => {
+                    if (typeof question.templateVariables[key] === 'string') {
+                        question.templateVariables[key] = collapseToSinglePart(question.templateVariables[key], selectedIndexes[0], sourceAnswers.length);
+                    }
+                });
+            }
+            question.partAnswerCounts = [1];
+            question.answerMode = 'single';
+            delete question.selectedParts;
+            return question;
+        }
         question.ans = selectedIndexes.map(index => sourceAnswers[index]).join(', ');
         question.partAnswerCounts = selectedIndexes.map(() => 1);
         question.q = filterLabeledLines(question.q, selectedIndexes);
@@ -137,6 +195,14 @@ function filterGeneratedParts(question, config) {
         question.selectedParts = selectedIndexes.length === 4
             ? undefined
             : selectedIndexes.map((_, index) => index);
+        question.answerMode = 'subquestions';
+    }
+    if (answerMode === 'single') {
+        question.answerMode = 'single';
+        question.partAnswerCounts = Array.isArray(question.partAnswerCounts) && question.partAnswerCounts.length
+            ? [Number(question.partAnswerCounts[0]) || 1]
+            : [1];
+        delete question.selectedParts;
     }
     return question;
 }

@@ -4046,6 +4046,9 @@ input[type="text"], input[type="password"], select, textarea {
 .template-editor__preview-button:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
 .template-editor .form-input { min-height: 46px; border-radius: 11px; }
 .template-editor__part-selection[hidden], .template-content-builder[hidden] { display: none !important; }
+.template-editor__answer-mode { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(220px, .6fr); gap: 14px; margin-bottom: 15px; padding: 14px; border: 1px solid rgba(103, 232, 249, .3); border-radius: 13px; background: linear-gradient(135deg, rgba(8, 55, 73, .42), rgba(7, 27, 43, .62)); }
+.template-editor__answer-mode small { color: #9fc4d4; font-size: .7rem; line-height: 1.4; }
+.template-editor__answer-mode [hidden] { display: none !important; }
 .template-editor__part-selection { display: grid; gap: 12px; margin-top: 15px; padding: 13px 14px; border: 1px solid rgba(255, 209, 90, .3); border-radius: 13px; background: linear-gradient(135deg, rgba(79, 56, 18, .3), rgba(8, 31, 46, .58)); }
 .template-editor__part-selection.has-selection-error { border-color: rgba(255, 143, 156, .8); background: linear-gradient(135deg, rgba(111, 35, 60, .28), rgba(45, 22, 48, .5)); }
 .template-editor__part-selection-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
@@ -4573,7 +4576,7 @@ input[type="text"], input[type="password"], select, textarea {
     .admin-compose-quickstart-card { min-height: 50px; }
     .template-library__filters { grid-template-columns: 1fr; }
     .template-library__result-heading, .template-editor__section-heading, .template-preview-dialog__footer { align-items: stretch; flex-direction: column; }
-    .exam-structured-selection, .template-editor__part-selection-heading { align-items: stretch; grid-template-columns: 1fr; flex-direction: column; }
+    .exam-structured-selection, .template-editor__part-selection-heading, .template-editor__answer-mode { align-items: stretch; grid-template-columns: 1fr; flex-direction: column; }
     .exam-structured-selection__count, .template-editor__part-selection-heading > label { width: 100%; }
     .template-editor__part-options { grid-template-columns: 1fr 1fr; }
     .template-library__hint { display: none; }

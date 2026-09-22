@@ -205,6 +205,22 @@ test('Template lập số dùng câu hỏi chung và công thức câu con trự
 
   await expect(page.getByLabel('Nội dung chữ 2')).toHaveValue('. Số đó là: ');
   await expect(page.locator('.template-content-block')).toHaveCount(3);
+  await expect(page.locator('#template-answer-mode')).toHaveValue('subquestions');
+  await page.locator('#template-answer-mode').selectOption('single');
+  await expect(page.locator('.template-editor__part-selection')).toBeHidden();
+  const singleMode = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(singleMode.answerMode).toBe('single');
+  expect(singleMode.selectedParts).toEqual([0]);
+  await page.getByRole('button', { name: /Preview/ }).click();
+  await expect(page.locator('#template-preview-dialog [aria-label="Ô điền đáp án"]')).toHaveCount(1);
+  await page.locator('.template-preview-dialog__close').click();
+  await page.locator('#template-answer-mode').selectOption('subquestions');
+  await page.locator('#template-part-count').selectOption('2');
+  await expect(page.locator('.template-editor__part-selection')).toBeVisible();
+  const twoPartMode = await page.evaluate(() => app.admin.collectTemplateForm().config);
+  expect(twoPartMode.answerMode).toBe('subquestions');
+  expect(twoPartMode.subquestionCount).toBe(2);
+  await page.locator('#template-part-count').selectOption('4');
   await expect(page.locator('#template-prompt')).toHaveCount(0);
   await page.locator('#template-common-question').fill('Hãy viết số vào ô trống, biết số đó gồm:');
   await page.getByRole('button', { name: /Preview/ }).click();

@@ -6347,6 +6347,7 @@ const app = {
         normalizeExamQuestionStructure(question) {
             if (!question || typeof question !== 'object') return question;
             const copy = JSON.parse(JSON.stringify(question));
+            if (copy.answerMode === 'single') return copy;
             const structuredKeys = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows'];
             if (structuredKeys.some(key => Array.isArray(copy[key]) && copy[key].length)) return copy;
 
@@ -6397,6 +6398,10 @@ const app = {
             return copy;
         },
         getExamQuestionStructureKind(question) {
+            if (question?.answerMode === 'single') return '';
+            const hasSingleStructuredPart = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows']
+                .some(key => Array.isArray(question?.[key]) && question[key].length === 1 && question?.answerMode !== 'subquestions');
+            if (hasSingleStructuredPart) return '';
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) {
                 const hasChoiceFields = question.subquestions.some(part => Array.isArray(part?.options) && part.options.length)
@@ -6409,38 +6414,51 @@ const app = {
             if (Array.isArray(question?.practiceRows) && question.practiceRows.length) return 'practiceRows';
             if (Array.isArray(question?.comparisonRows) && question.comparisonRows.length) return 'comparisonRows';
             const answerCount = app.data.getQuestionAnswerCount(question);
-            const isSupportedAnswerGroup = app.data.getValidPartAnswerCounts(question, answerCount);
-            const hasMultipleAnswerParts = Array.isArray(isSupportedAnswerGroup) && isSupportedAnswerGroup.length > 1;
+            const supportedAnswerParts = app.data.getValidPartAnswerCounts(question, answerCount);
+            const hasExplicitSingleAnswerGroup = Array.isArray(question?.partAnswerCounts)
+                && question.partAnswerCounts.length === 1
+                && Array.isArray(supportedAnswerParts)
+                && supportedAnswerParts.length === 1
+                && question?.answerMode !== 'subquestions';
+            if (hasExplicitSingleAnswerGroup) return '';
+            const hasExplicitAnswerParts = Array.isArray(question?.partAnswerCounts)
+                && question.partAnswerCounts.length > 0
+                && Array.isArray(supportedAnswerParts)
+                && supportedAnswerParts.length === question.partAnswerCounts.length;
             const type = String(question?.type || '').trim().normalize('NFC');
             const supportsGenericAnswerParts = ['Điền khuyết', 'Kéo thả', 'So sánh', 'Trắc nghiệm', 'Đúng/Sai', 'Chuỗi Quy luật'].includes(type);
-            if ((hasMultipleAnswerParts || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
+            if ((hasExplicitAnswerParts || answerCount === 4) && supportsGenericAnswerParts) return 'answerParts';
             return '';
         },
-        isFourPartExamQuestion(question) {
+        hasSupportedExamPartStructure(question) {
+            const answerCount = app.data.getQuestionAnswerCount(question);
+            const groupedParts = app.data.getValidPartAnswerCounts(question, answerCount);
+            const structuredPartCount = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows']
+                .map(key => Array.isArray(question?.[key]) ? question[key].length : 0)
+                .find(Boolean) || 0;
+            const isExplicitSingleAnswerGroup = Array.isArray(question?.partAnswerCounts)
+                && question.partAnswerCounts.length === 1
+                && Array.isArray(groupedParts)
+                && groupedParts.length === 1
+                && question?.answerMode !== 'subquestions';
+            const isSingleQuestion = question?.answerMode === 'single'
+                || isExplicitSingleAnswerGroup
+                || (structuredPartCount === 1 && question?.answerMode !== 'subquestions');
+            if (isSingleQuestion) {
+                return Array.isArray(groupedParts)
+                    && groupedParts.length === 1
+                    && !app.data.validateQuestionScoring(question);
+            }
             const kind = this.getExamQuestionStructureKind(question);
             if (!kind) return false;
             const parts = kind === 'answerParts'
                 ? null
                 : question?.[kind] || (kind === 'practiceRows' ? question?.subquestions : null);
             if (parts && (!Array.isArray(parts) || !this.getSupportedPartCounts(parts.length).includes(parts.length))) return false;
-            const answerCount = app.data.getQuestionAnswerCount(question);
-            const hasGroupedParts = app.data.getValidPartAnswerCounts(question, answerCount);
-            const partCount = parts ? parts.length : (hasGroupedParts?.length || answerCount);
+            const partCount = parts ? parts.length : (groupedParts?.length || answerCount);
             if (!this.getSupportedPartCounts(partCount).includes(partCount)) return false;
-            if (!hasGroupedParts && answerCount !== partCount) return false;
+            if (!groupedParts && answerCount !== partCount) return false;
             return !app.data.validateQuestionScoring(question);
-        },
-        getExamQuestionPartCount(question) {
-            const kind = this.getExamQuestionStructureKind(question);
-            if (!kind) return 0;
-            if (kind === 'answerParts') {
-                const groupedParts = app.data.getValidPartAnswerCounts(question);
-                return groupedParts?.length || app.data.getQuestionAnswerCount(question);
-            }
-            return Array.isArray(question?.[kind]) ? question[kind].length : 0;
-        },
-        isExactlyFourPartExamQuestion(question) {
-            return this.getExamQuestionPartCount(question) === 4 && this.isFourPartExamQuestion(question);
         },
         renderExamQuestionStructure(question, index) {
             const kind = this.getExamQuestionStructureKind(question);
@@ -8232,6 +8250,13 @@ const app = {
             const lesson = this.getTemplateLesson(template);
             return this.lessonLabel(lesson) || (lesson ? lesson : 'Toàn chủ đề');
         },
+        getTemplateAnswerMode(template) {
+            if (/^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.test(String(template?.generator_key || ''))) return 'single';
+            const configured = String(template?.config?.answerMode || '').trim();
+            if (configured === 'single' || configured === 'subquestions') return configured;
+            const selectedParts = template?.config?.selectedParts;
+            return Array.isArray(selectedParts) && selectedParts.length === 1 ? 'single' : 'subquestions';
+        },
         getTemplateCardTone(template) {
             const type = String(template?.question_type || '').toLocaleLowerCase('vi-VN');
             if (type.includes('đối chiếu')) return 'fuchsia';
@@ -8418,7 +8443,7 @@ const app = {
                 question_type: preset?.type || 'Trắc nghiệm',
                 generator_key: generatorKey,
                 prompt_template: preset?.defaultPrompt || 'Số nào dưới đây có chữ số hàng {place} là {digit}?',
-                config: { minimum: 10000, maximum: 99999, minimumDigits: 5, maximumDigits: 5, allowedPlaces: ['tens', 'hundreds'], allowedDigits: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+                config: { minimum: 10000, maximum: 99999, minimumDigits: 5, maximumDigits: 5, allowedPlaces: ['tens', 'hundreds'], allowedDigits: [1, 2, 3, 4, 5, 6, 7, 8, 9], answerMode: 'subquestions', subquestionCount: 4 },
                 is_active: true
             };
         },
@@ -8432,7 +8457,11 @@ const app = {
             }
             document.getElementById('treasure-title').textContent = 'Soạn Đề';
             const config = existing?.config || {};
-            const selectedTemplatePartIndexes = this.getSelectedPartIndexes(existing, 4);
+            const selectedTemplateAnswerMode = this.getTemplateAnswerMode(existing);
+            const selectedTemplatePartIndexes = selectedTemplateAnswerMode === 'single'
+                ? [0]
+                : this.getSelectedPartIndexes(existing, 4);
+            this.templateAnswerMode = selectedTemplateAnswerMode;
             this.templatePartSelection = selectedTemplatePartIndexes;
             const selectedTemplateLesson = this.getTemplateLesson(existing);
             const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
@@ -8544,7 +8573,7 @@ const app = {
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Cấu hình Câu hỏi</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về vị trí chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
-              <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · NỘI DUNG HIỂN THỊ</p><h4 id="template-display-title">2. Câu hỏi chung và câu con</h4></div><span class="template-editor__section-note">Soạn theo đúng thứ học sinh sẽ nhìn thấy</span></div><p class="template-editor__section-intro">Câu hỏi chung chỉ hiện một lần. Công thức câu con sẽ lặp lại cho 4 ý; thẻ <b>Biến</b> là dữ kiện game sinh, còn <b>Ô trống</b> là chỗ học sinh nhập đáp án.</p><label class="template-editor__field template-editor__prompt-field"><span>1. Câu hỏi chung</span><textarea id="template-common-question" class="form-input" placeholder="Ví dụ: Hãy viết số vào ô trống, biết số đó gồm:" oninput="app.admin.updateTemplateCommonQuestion(this.value)">${app.data.sanitizeHTML(this.templateContentPresentation?.common || '')}</textarea><small>Thường chỉ cần gõ câu chữ, không cần chèn biến.</small></label><div class="template-content-builder" aria-labelledby="template-content-builder-title"><div class="template-content-builder__heading"><div><strong id="template-content-builder-title">2. Công thức cho mỗi câu con</strong><span>Một công thức được áp dụng tự động cho a, b, c, d.</span></div><div class="template-content-builder__actions"><button type="button" onclick="app.admin.addTemplateContentBlock('text')">＋ Chữ</button><button type="button" onclick="app.admin.addTemplateContentBlock('variable')">＋ Biến</button><button type="button" onclick="app.admin.addTemplateContentBlock('cell')">＋ Ô trống</button></div></div><div id="template-content-blocks" class="template-content-builder__blocks"></div></div><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu con mặc định</strong><span>Cấu hình câu hỏi sinh 4 câu con. Cô có thể chọn 1, 2 hoặc 4 câu; mỗi câu được chia đều điểm.</span></div><label><span>Số câu con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu con mặc định">${[1, 2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select></label></div><div class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu con ${label}</strong><small>Ý ${partIndex + 1} của cấu hình câu hỏi</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div></section>
+              <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · NỘI DUNG HIỂN THỊ</p><h4 id="template-display-title">2. Cấu trúc câu hỏi</h4></div><span class="template-editor__section-note">Chọn đúng dạng học sinh sẽ trả lời</span></div><p class="template-editor__section-intro">Chọn <b>Câu 1 ý</b> khi chỉ có một câu hỏi chung và một phần trả lời chung. Chọn <b>Câu có câu hỏi con</b> khi bài gồm 2 hoặc 4 ý nhỏ; cách chia điểm không thay đổi.</p><div class="template-editor__answer-mode"><label class="template-editor__field"><span>Dạng câu hỏi</span><select id="template-answer-mode" class="form-input" onchange="app.admin.setTemplateAnswerMode(this.value)"><option value="single" ${selectedTemplateAnswerMode === 'single' ? 'selected' : ''}>Lựa chọn 1 · Câu 1 ý</option><option value="subquestions" ${selectedTemplateAnswerMode === 'subquestions' ? 'selected' : ''}>Lựa chọn 2 · Câu có câu hỏi con</option></select><small id="template-answer-mode-help">Câu 1 ý dùng câu hỏi chung và câu trả lời chung, không tạo câu con.</small></label><label id="template-subquestion-count-field" class="template-editor__field"><span>Số câu hỏi con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu hỏi con mặc định">${[2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select><small>Chỉ nhận 2 hoặc 4 câu hỏi con.</small></label></div><label class="template-editor__field template-editor__prompt-field"><span>1. Câu hỏi chung</span><textarea id="template-common-question" class="form-input" placeholder="Ví dụ: Hãy viết số vào ô trống, biết số đó gồm:" oninput="app.admin.updateTemplateCommonQuestion(this.value)">${app.data.sanitizeHTML(this.templateContentPresentation?.common || '')}</textarea><small>Câu 1 ý dùng nội dung này làm câu hỏi chính; câu nhiều ý chỉ hiển thị nội dung này một lần.</small></label><div class="template-content-builder" aria-labelledby="template-content-builder-title"><div class="template-content-builder__heading"><div><strong id="template-content-builder-title">2. Công thức phần trả lời</strong><span>Câu 1 ý dùng một lần; câu có câu hỏi con áp dụng cho từng ý a–d.</span></div><div class="template-content-builder__actions"><button type="button" onclick="app.admin.addTemplateContentBlock('text')">＋ Chữ</button><button type="button" onclick="app.admin.addTemplateContentBlock('variable')">＋ Biến</button><button type="button" onclick="app.admin.addTemplateContentBlock('cell')">＋ Ô trống</button></div></div><div id="template-content-blocks" class="template-content-builder__blocks"></div></div><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu hỏi con</strong><span>Chỉ áp dụng cho Lựa chọn 2. Chọn đúng 2 hoặc 4 câu; điểm được chia đều như hiện tại.</span></div></div><div id="template-subquestion-options" class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu hỏi con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu hỏi con ${label}</strong><small>Ý ${partIndex + 1} của cấu hình câu hỏi</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div></section>
               <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
                 <div class="template-editor__rule template-editor__rule--range-controls" aria-label="Số lượng chữ số"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-minimum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-maximum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMaximumDigits}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
@@ -8742,6 +8771,7 @@ const app = {
             if (generatorControl && [...arithmeticTemplateOptions, ...angleTemplateOptions, ...topic5TemplateOptions, ...b05TemplateOptions, ...phase2TemplateOptions, ...phase4TemplateOptions, ...phase5TemplateOptions, ...phase6TemplateOptions, ...phase7TemplateOptions, ...phase8TemplateOptions].some(([value]) => value === existing?.generator_key)) generatorControl.value = existing.generator_key;
             this.renderTemplateContentBlocks();
             this.showTemplateExample();
+            this.syncTemplateAnswerModeUI();
             this.syncTemplatePartSelectionUI();
             const configurableGenerator = ['number.min_max_of_four', 'number.round_number', 'number.safe_password_by_place_value', 'number.place_value_true_false', 'number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons', ...phase2TemplateKeys, ...phase4TemplateOptions.map(([value]) => value), ...phase5TemplateOptions.map(([value]) => value), ...phase6TemplateOptions.map(([value]) => value), ...phase7TemplateOptions.map(([value]) => value), ...phase8TemplateOptions.map(([value]) => value), ...measurementTemplateOptions.map(([value]) => value), ...b05TemplateOptions.map(([value]) => value)].includes(existing?.generator_key);
             if (configurableGenerator) {
@@ -9356,7 +9386,32 @@ const app = {
             }
             return frame(`<p class="template-preview__answer-line">${content(question.q || 'Nội dung câu hỏi')}</p>`);
         },
+        setTemplateAnswerMode(mode) {
+            this.templateAnswerMode = mode === 'single' ? 'single' : 'subquestions';
+            if (this.templateAnswerMode === 'single') {
+                document.querySelectorAll('.template-part-checkbox').forEach(input => { input.checked = Number(input.dataset.partIndex) === 0; });
+                this.templatePartSelection = [0];
+            } else if (!Array.isArray(this.templatePartSelection) || ![2, 4].includes(this.templatePartSelection.length)) {
+                this.setTemplatePartCount(4);
+                return;
+            }
+            this.syncTemplateAnswerModeUI();
+            this.syncTemplatePartSelectionUI();
+        },
+        syncTemplateAnswerModeUI() {
+            const mode = this.templateAnswerMode || document.getElementById('template-answer-mode')?.value || 'subquestions';
+            const countField = document.getElementById('template-subquestion-count-field');
+            const help = document.getElementById('template-answer-mode-help');
+            const partSelection = document.querySelector('.template-editor__part-selection');
+            const isSingle = mode === 'single';
+            if (countField) countField.hidden = isSingle;
+            if (help) help.textContent = isSingle
+                ? 'Câu 1 ý dùng câu hỏi chung và câu trả lời chung, không tạo câu con.'
+                : 'Câu có câu hỏi con gồm 2 hoặc 4 ý; mỗi ý được chia điểm như hiện tại.';
+            if (partSelection) partSelection.hidden = isSingle;
+        },
         readTemplatePartSelection() {
+            if ((this.templateAnswerMode || document.getElementById('template-answer-mode')?.value) === 'single') return [0];
             const checkboxes = [...document.querySelectorAll('.template-part-checkbox')];
             if (!checkboxes.length) return this.normalizePartIndexes(this.templatePartSelection, 4);
             return this.normalizePartIndexes(checkboxes.filter(input => input.checked).map(input => Number(input.dataset.partIndex)), 4);
@@ -9366,17 +9421,24 @@ const app = {
             const selected = checkboxes.filter(input => input.checked);
             const status = document.getElementById('template-part-selection-status');
             const pointText = selected.length ? (1 / selected.length).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '—';
-            if (status) status.textContent = message || `${selected.length}/4 câu con đang chọn · ${pointText} điểm/câu`;
+            const mode = this.templateAnswerMode || document.getElementById('template-answer-mode')?.value || 'subquestions';
+            if (status) status.textContent = message || (mode === 'single'
+                ? 'Câu 1 ý chung · 1 điểm cho câu trả lời chung'
+                : `${selected.length}/4 câu hỏi con đang chọn · ${pointText} điểm/câu`);
             const countSelect = document.getElementById('template-part-count');
-            if (countSelect && this.getSupportedPartCounts(4).includes(selected.length)) countSelect.value = String(selected.length);
+            if (countSelect && [2, 4].includes(selected.length)) countSelect.value = String(selected.length);
             document.querySelector('.template-editor__part-selection')?.classList.toggle('has-selection-error', Boolean(message));
         },
         updateTemplatePartSelection() {
+            if ((this.templateAnswerMode || document.getElementById('template-answer-mode')?.value) === 'single') {
+                this.setTemplateAnswerMode('single');
+                return;
+            }
             const previous = this.templatePartSelection?.length ? this.templatePartSelection : [0, 1, 2, 3];
             const selected = [...document.querySelectorAll('.template-part-checkbox')].filter(input => input.checked).map(input => Number(input.dataset.partIndex));
-            if (!this.getSupportedPartCounts(4).includes(selected.length)) {
+            if (![2, 4].includes(selected.length)) {
                 document.querySelectorAll('.template-part-checkbox').forEach(input => { input.checked = previous.includes(Number(input.dataset.partIndex)); });
-                this.syncTemplatePartSelectionUI('Hãy chọn đúng 1, 2 hoặc 4 câu con để điểm chia đều.');
+                this.syncTemplatePartSelectionUI('Lựa chọn 2 chỉ nhận 2 hoặc 4 câu hỏi con.');
                 return;
             }
             this.templatePartSelection = selected.sort((left, right) => left - right);
@@ -9384,7 +9446,7 @@ const app = {
         },
         setTemplatePartCount(count) {
             const targetCount = Number(count);
-            if (!this.getSupportedPartCounts(4).includes(targetCount)) return;
+            if (![2, 4].includes(targetCount)) return;
             const checkboxes = [...document.querySelectorAll('.template-part-checkbox')];
             const current = checkboxes.filter(input => input.checked);
             const chosen = current.slice(0, targetCount);
@@ -9392,6 +9454,10 @@ const app = {
             const selected = new Set(chosen);
             checkboxes.forEach(input => { input.checked = selected.has(input); });
             this.templatePartSelection = checkboxes.filter(input => input.checked).map(input => Number(input.dataset.partIndex));
+            this.templateAnswerMode = 'subquestions';
+            const modeSelect = document.getElementById('template-answer-mode');
+            if (modeSelect) modeSelect.value = 'subquestions';
+            this.syncTemplateAnswerModeUI();
             this.syncTemplatePartSelectionUI();
         },
         openTemplatePreview() {
@@ -9639,6 +9705,15 @@ const app = {
             document.querySelectorAll('#template-phase2-variable-minimum, #template-phase2-variable-maximum, #template-phase2-constant-minimum, #template-phase2-constant-maximum').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-operations input').forEach(input => { input.disabled = !isPhase2B04; });
             document.querySelectorAll('#template-phase2-parities input').forEach(input => { input.disabled = !isPhase2B03; });
+            const answerModeControl = document.getElementById('template-answer-mode');
+            if (answerModeControl) {
+                answerModeControl.disabled = isB05Template;
+                if (isB05Template) {
+                    answerModeControl.value = 'single';
+                    this.templateAnswerMode = 'single';
+                }
+            }
+            this.syncTemplateAnswerModeUI();
             this.syncTemplateTrueFalseControls();
         },
         collectTemplateForm() {
@@ -9646,6 +9721,7 @@ const app = {
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'places' && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'digits' && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
+            const answerMode = (this.templateAnswerMode || document.getElementById('template-answer-mode')?.value || 'subquestions') === 'single' ? 'single' : 'subquestions';
             const roundingPlaceKeys = ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
             const topic5TemplateKeys = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-word-problem', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-addition-property-fill', 'g4-m-add-sub-expression', 'g4-m-sum-difference-direct', 'g4-m-sum-difference-context', 'g4-m-add-sub-true-false', 'number.hk1_review_b22_b25'];
@@ -9775,6 +9851,7 @@ const app = {
                                 : genericConfig;
             const templateConfig = isB05Template ? b05Config : (isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : (generatorKey === 'number.round_number' ? roundingConfig : genericConfig))))))))));
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: '{question}', config: templateConfig, is_active: true };
+            template.config.answerMode = isB05Template ? 'single' : answerMode;
             if (!template.name) throw new Error('Hãy nhập tên cấu hình câu hỏi.');
             if (isB05Template) {
                 if (!['easy', 'core', 'challenge'].includes(b05Difficulty)) throw new Error('Độ khó Bài 5 chỉ nhận easy, core hoặc challenge.');
@@ -9895,8 +9972,15 @@ const app = {
             const presentation = this.getTemplateContentPresentation();
             if (presentation && !isB05Template) template.config.presentation = presentation;
             const selectedPartIndexes = this.readTemplatePartSelection();
-            if (!isB05Template && selectedPartIndexes.length !== 4) template.config.selectedParts = selectedPartIndexes;
-            else delete template.config.selectedParts;
+            if (!isB05Template && answerMode === 'single') {
+                template.config.selectedParts = [0];
+            } else if (!isB05Template && selectedPartIndexes.length !== 4) {
+                template.config.selectedParts = selectedPartIndexes;
+            } else {
+                delete template.config.selectedParts;
+            }
+            if (!isB05Template && answerMode === 'subquestions') template.config.subquestionCount = selectedPartIndexes.length;
+            else delete template.config.subquestionCount;
             if (selectedLesson) template.config.lesson = selectedLesson;
             else delete template.config.lesson;
             const registry = template.subject === 'Tiếng Việt' ? window.Grade4VietnameseTemplates : window.Grade4MathTemplates;
@@ -11014,7 +11098,7 @@ const app = {
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const lessonFilters = this.getSelectedExamLessons();
             const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
-            const requiresFourPartStructure = same(classlevel, 'Lớp 4') && same(subject, 'Toán');
+            const requiresSupportedPartStructure = same(classlevel, 'Lớp 4') && same(subject, 'Toán');
             const eligible = item => {
                 if (!item || !same(item.classlevel, classlevel) || !same(item.subject, subject)) return false;
                 if (!topics.some(topic => same(item.topic, topic))) return false;
@@ -11026,14 +11110,14 @@ const app = {
                 return lessonFilters.some(lesson => same(itemLesson, lesson));
             };
             const used = new Set();
-            let skippedSinglePartQuestions = false;
+            let skippedUnsupportedStructure = false;
             const addUnique = question => {
                  if (!question || typeof question !== 'object') return false;
                  let copy = JSON.parse(JSON.stringify(question));
-                 if (requiresFourPartStructure) copy = this.normalizeExamQuestionStructure(copy);
-                 // Đề Toán lớp 4 cần đúng bốn câu con để đề tự động hiển thị đồng nhất.
-                 if (requiresFourPartStructure && !this.isExactlyFourPartExamQuestion(copy)) {
-                     skippedSinglePartQuestions = true;
+                 if (requiresSupportedPartStructure) copy = this.normalizeExamQuestionStructure(copy);
+                 // Đề Toán lớp 4 chỉ nhận một ý chung hoặc 2/4 câu hỏi con.
+                 if (requiresSupportedPartStructure && !this.hasSupportedExamPartStructure(copy)) {
+                     skippedUnsupportedStructure = true;
                      return false;
                  }
                 if (app.data.validateQuestionScoring(copy)) return false;
@@ -11077,17 +11161,17 @@ const app = {
                     if (takeNextFromPool(pool)) madeProgress = true;
                 }
             }
-            const missingTopics = requiresFourPartStructure
+            const missingTopics = requiresSupportedPartStructure
                 ? topics.filter(topic => !questions.some(question => same(question.topic, topic)))
                 : [];
             if (missingTopics.length) {
-                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn có cấu trúc 1, 2 hoặc 4 ý phù hợp (Toán lớp 4 cần đủ 4 ý để hiển thị đồng nhất): ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template có đủ bốn ý hoặc bỏ chọn chủ đề đó.`);
+                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn dạng 1 ý chung hoặc 2/4 câu hỏi con phù hợp: ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template đúng một trong các dạng đó, hoặc bỏ chọn chủ đề đó.`);
             }
             if (questions.length < app.game.questionsPerRound) {
-                const structureHint = skippedSinglePartQuestions
-                    ? ' Các câu không có cấu trúc 1, 2 hoặc 4 ý đã được bỏ qua; với Toán lớp 4, mỗi câu tự động cần đủ 4 ý và nguồn cũ có đủ 4 dòng sẽ được chuẩn hóa.'
+                const structureHint = skippedUnsupportedStructure
+                    ? ' Các câu không có dạng 1 ý chung hoặc 2/4 câu hỏi con đã được bỏ qua.'
                     : '';
-                return alert(`Chưa đủ 10 câu có cấu trúc 1, 2 hoặc 4 ý phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu).${structureHint}`);
+                return alert(`Chưa đủ 10 câu dạng 1 ý chung hoặc 2/4 câu hỏi con phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu).${structureHint}`);
             }
             this.examComposerDraft = {
                 classlevel, subject, period,
@@ -11157,7 +11241,7 @@ const app = {
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
                     if (newQ.selectedParts === null) delete newQ.selectedParts;
-                    if (structureKind && !this.isFourPartExamQuestion(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần có 1, 2 hoặc 4 ý và đáp án riêng cho từng ý trước khi lưu.`, `add-e-q-q-${i}`);
+                    if (structureKind && !this.hasSupportedExamPartStructure(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần là 1 ý chung hoặc có 2/4 câu hỏi con, cùng đáp án riêng cho từng ý.`, `add-e-q-q-${i}`);
                     if (newQ.lesson) {
                         const metadataError = app.data.validateQuestionMetadata(newQ);
                         if (metadataError) return this.showExamComposerError(`Câu ${i + 1}: ${metadataError}`, `add-e-q-q-${i}`);

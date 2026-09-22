@@ -294,7 +294,7 @@ function createQuestion(key, family, interaction, config = {}, random = Math.ran
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC, lesson: LESSON,
         type: interaction === 'mcq' ? 'Trắc nghiệm' : 'Điền khuyết', templateId: key,
         q, options: interaction === 'mcq' ? makeOptions(problem.answer, random, resolved.cap) : [], ans: answer,
-        explanation: problem.explanation, partAnswerCounts: [1], threeStepData,
+        explanation: problem.explanation, partAnswerCounts: [1], answerMode: 'single', threeStepData,
         templateVariables: {
             question: q,
             family,

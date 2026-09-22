@@ -164,9 +164,11 @@ assert.deepEqual(selectedDigitParts.selectedParts, [0, 1], 'Selected part indexe
 const selectedNeighborPart = generateQuestion('number.neighbor_numbers', {
     minimum: 10000, maximum: 99999, selectedParts: [2]
 }, seededRandom(802));
-assert.equal(selectedNeighborPart.practiceRows.length, 1, 'Selecting one part must keep one neighbor row.');
+assert.equal(selectedNeighborPart.answerMode, 'single', 'Selecting one part must produce a single common-answer question.');
+assert.equal(selectedNeighborPart.practiceRows, undefined, 'A single common-answer question must not retain a subquestion array.');
 assert.deepEqual(selectedNeighborPart.partAnswerCounts, [2], 'A neighbor row keeps its two blanks as one scoring group.');
 assert.equal(selectedNeighborPart.ans.split(', ').length, 2, 'A selected neighbor row must keep both adjacent-number answers.');
+assert.equal(selectedNeighborPart.q.split('<br>').some(line => /^[a-d]\)/.test(line)), false, 'A single common-answer question must not retain a subquestion label.');
 
 const selectedExpandedPart = generateQuestion('number.missing_expanded_addend', {
     minimum: 10000, maximum: 99999, selectedParts: [1, 3]
