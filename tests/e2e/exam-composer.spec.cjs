@@ -492,9 +492,89 @@ test('Tạo đề tự động không đưa câu một ý vào đề', async ({ 
     page.getByRole('button', { name: 'Tạo đề tự động' }).click()
   ]);
   const dialogMessage = await dialogPromise;
-  expect(dialogMessage).toContain('cấu trúc 1, 2 hoặc 4 ý');
+  expect(dialogMessage).toContain('dạng 1 ý chung hoặc 2/4 câu hỏi con');
   await expect(page.locator('[data-structured-kind]')).toHaveCount(10);
   await expect(page.locator('[data-structured-kind="subquestions"] .exam-structured-part')).toHaveCount(40);
+});
+
+test('Tạo đề Toán lớp 4 chấp nhận đúng số câu con 1, 2 hoặc 4', async ({ page }) => {
+  for (const partCount of [1, 2, 4]) {
+    const testPage = partCount === 1 ? page : await page.context().newPage();
+    await testPage.setViewportSize({ width: 1280, height: 800 });
+    await openExamComposer(testPage);
+    await testPage.locator('#add-e-class').selectOption('Lớp 4');
+    await expect.poll(() => testPage.locator('#add-e-topics input').count()).toBeGreaterThan(2);
+    const counts = await testPage.evaluate(partCount => {
+      const topic = app.constants.topics['4'].math.hk1[2];
+      const makeQuestion = index => {
+        if (partCount === 1) {
+          const question = window.Grade4MathTemplates.generateQuestion('word.three_steps_relation_total_fill', {});
+          return { ...question, topic, q: `${question.q}<span hidden>${index + 1}</span>` };
+        }
+        return {
+          classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic,
+          type: 'Điền khuyết', q: `Câu ${partCount} ý ${index + 1}`, options: [],
+          ans: Array.from({ length: partCount }, (_, answerIndex) => String(answerIndex + 1)).join(', '),
+          explanation: '',
+          practiceRows: Array.from({ length: partCount }, (_, partIndex) => ({
+            label: String.fromCharCode(97 + partIndex), display: `Ý ${partIndex + 1}`, answer: String(partIndex + 1)
+          })),
+          partAnswerCounts: Array.from({ length: partCount }, () => 1)
+        };
+      };
+      const input = document.querySelectorAll('#add-e-topics input')[2];
+      input.checked = true;
+      app.admin.updateExamTopics();
+      app.data.libraryQuestions = Array.from({ length: 10 }, (_, index) => makeQuestion(index));
+      app.data.questionTemplates = [];
+      app.admin.autoGenerateExam();
+      return app.admin.examComposerDraft.questions.map(question => ({
+        kind: app.admin.getExamQuestionStructureKind(question),
+        partCount: app.data.getValidPartAnswerCounts(question)?.length || 0,
+        isB05: partCount !== 1 || question.templateId === 'word.three_steps_relation_total_fill'
+      }));
+    }, partCount);
+    expect(counts).toEqual(Array.from({ length: 10 }, () => ({
+      kind: partCount === 1 ? '' : 'practiceRows',
+      partCount,
+      isB05: true
+    })));
+    if (partCount === 1) {
+      await expect(testPage.locator('[data-structured-kind]')).toHaveCount(0);
+      await expect(testPage.locator('input[id^="add-e-q-ans-"]')).toHaveCount(10);
+    }
+    if (testPage !== page) await testPage.close();
+  }
+});
+
+test('Bộ kiểm tra cấu trúc chỉ nhận 1, 2 hoặc 4 câu con và loại mọi số khác', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(() => {
+    const single = window.Grade4MathTemplates.generateQuestion('number.digit_at_place', { answerMode: 'single' });
+    const two = window.Grade4MathTemplates.generateQuestion('number.digit_at_place', { answerMode: 'subquestions', selectedParts: [0, 1] });
+    const makeQuestion = partCount => ({
+      type: 'Điền khuyết',
+      ans: Array.from({ length: partCount }, (_, index) => String(index + 1)).join(', '),
+      practiceRows: Array.from({ length: partCount }, (_, index) => ({
+        label: String.fromCharCode(97 + index), display: `Ý ${index + 1}`, answer: String(index + 1)
+      })),
+      partAnswerCounts: Array.from({ length: partCount }, () => 1)
+    });
+    return {
+      single: { answerMode: single.answerMode, hasSubquestions: Array.isArray(single.subquestions), partCount: app.data.getValidPartAnswerCounts(single)?.length || 0 },
+      two: { answerMode: two.answerMode, subquestionCount: two.subquestions?.length || 0, partCount: app.data.getValidPartAnswerCounts(two)?.length || 0 },
+      counts: Object.fromEntries(Array.from({ length: 11 }, (_, partCount) => [
+      partCount,
+      app.admin.hasSupportedExamPartStructure(makeQuestion(partCount))
+      ]))
+    };
+  });
+  expect(result.single).toEqual({ answerMode: 'single', hasSubquestions: false, partCount: 1 });
+  expect(result.two).toEqual({ answerMode: 'subquestions', subquestionCount: 2, partCount: 2 });
+  expect(result.counts).toEqual({
+    0: false, 1: true, 2: true, 3: false, 4: true,
+    5: false, 6: false, 7: false, 8: false, 9: false, 10: false
+  });
 });
 
 test('Tạo đề tự động báo rõ chủ đề chưa có nguồn bốn ý', async ({ page }) => {
@@ -533,7 +613,7 @@ test('Tạo đề tự động báo rõ chủ đề chưa có nguồn bốn ý',
     page.getByRole('button', { name: 'Tạo đề tự động' }).click()
   ]);
   const dialogMessage = await dialogPromise;
-  expect(dialogMessage).toContain('cấu trúc 1, 2 hoặc 4 ý');
+  expect(dialogMessage).toContain('dạng 1 ý chung hoặc 2/4 câu hỏi con');
   expect(dialogMessage).toContain(missingTopic);
 });
 

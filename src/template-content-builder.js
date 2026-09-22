@@ -55,6 +55,20 @@
                 templateVariables: { ...(generated.templateVariables || {}), question: q || generated.q }
             };
         }
+        if (generated.answerMode === 'single') {
+            const common = escapeHtml(normalized.common).replace(/\r?\n/g, '<br>');
+            const content = renderParts(normalized.parts, {
+                place_values: generated.templateVariables?.place_values || generated.templateVariables?.generated || generated.q,
+                generated: generated.q,
+                answer: generated.ans
+            });
+            const q = [common, content].filter(Boolean).join('<br>');
+            return {
+                ...generated,
+                q: q || generated.q,
+                templateVariables: { ...(generated.templateVariables || {}), question: q || generated.q }
+            };
+        }
         const rows = Array.isArray(generated.subquestions) ? generated.subquestions : [];
         if (rows.length !== 4) return generated;
         const common = escapeHtml(normalized.common).replace(/\r?\n/g, '<br>');
