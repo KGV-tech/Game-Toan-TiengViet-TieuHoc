@@ -397,3 +397,36 @@ test('bản in dùng nhãn lớp cụ thể và không hiển thị tùy chọn 
   await expect(page.getByRole('button', { name: 'Xuất PDF / A4', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Xuất PNG / A4', exact: true })).toHaveCount(0);
 });
+
+test('bản in Bài 5 điền khuyết có sáu dòng trình bày và dòng đáp án cuối', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    const questions = window.Grade4MathTemplates.templateIds
+      .filter(key => key.startsWith('word.three_steps_') && key.endsWith('_fill'))
+      .map(key => window.Grade4MathTemplates.generateQuestion(key, { difficulty: 'core', minimum: 1, maximum: 10000 }));
+    app.data.exams = [{
+      name: 'Bài 5 · Trình bày lời giải', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1',
+      questions: [...questions, { type: 'Điền khuyết', q: 'Tính 12 + 3 = ___', ans: '15' }]
+    }];
+    app.admin.renderESubTab('lib');
+  });
+
+  await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
+  const b05Questions = page.locator('#print-area .exam-print__question');
+  await expect(b05Questions).toHaveCount(8);
+  for (let index = 0; index < 7; index += 1) {
+    const b05Question = b05Questions.nth(index);
+    await expect(b05Question.locator('.exam-print__solution-line')).toHaveCount(6);
+    await expect(b05Question.locator('.exam-print__solution-line').first()).toContainText('....');
+    await expect(b05Question.locator('.exam-print__final-answer')).toHaveText(/^Điền đáp án: .*\S+/);
+  }
+  await expect(b05Questions.nth(7).locator('.exam-print__solution-line')).toHaveCount(0);
+
+  const popupPromise = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Xuất PDF / A4', exact: true }).click();
+  const printPage = await popupPromise;
+  await printPage.waitForLoadState('domcontentloaded');
+  await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(8);
+  await expect(printPage.locator('#print-document .exam-print__solution-line')).toHaveCount(42);
+  await expect(printPage.locator('#print-document .exam-print__final-answer')).toHaveCount(7);
+});

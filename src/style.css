@@ -5640,6 +5640,30 @@ input[type="text"], input[type="password"], select, textarea {
     margin-top: 3px;
     color: #40545a;
 }
+.exam-print__solution-lines {
+    display: grid;
+    gap: 0;
+    margin-top: 2px;
+}
+.exam-print__solution-line {
+    min-width: 0;
+    overflow: hidden;
+    color: #52666b;
+    letter-spacing: .08em;
+    line-height: 1.28;
+    white-space: nowrap;
+}
+.exam-print__final-answer {
+    margin-top: 4px;
+    color: #263238;
+    font-weight: 700;
+    line-height: 1.28;
+}
+.exam-print__answer-placeholder {
+    margin: 0 3px;
+    letter-spacing: .12em;
+    white-space: nowrap;
+}
 .exam-print__statement,
 .exam-print__practice-row,
 .exam-print__angle-count-row,
@@ -5848,7 +5872,9 @@ input[type="text"], input[type="password"], select, textarea {
     .exam-print__sequence-round,
     .exam-print__answer-part,
     .exam-print__generic-line,
-    .exam-print__generic-options { line-height: 1.24; }
+    .exam-print__generic-options,
+    .exam-print__solution-line,
+    .exam-print__final-answer { line-height: 1.24; }
     .exam-print__subquestion-options,
     .exam-print__generic-options { gap: 2px 12px; margin-top: 2px; }
     .exam-print__subquestion-options--1,
@@ -5876,7 +5902,8 @@ input[type="text"], input[type="password"], select, textarea {
     .exam-print__parts--subquestions,
     .exam-print__parts--comparison,
     .exam-print__parts--practice,
-    .exam-print__parts--answer-parts { break-before: avoid; page-break-before: avoid; }
+    .exam-print__parts--answer-parts,
+    .exam-print__parts--three-step-fill { break-before: avoid; page-break-before: avoid; }
 
     #print-document,
     #print-document * {
