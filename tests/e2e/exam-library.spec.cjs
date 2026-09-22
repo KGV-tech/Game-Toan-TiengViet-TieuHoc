@@ -228,9 +228,36 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__angle-count-row')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__sequence-round')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__answer-part')).toHaveCount(4);
-  await expect(page.locator('#print-area .exam-print__question-number')).toHaveCount(0);
-  await expect(page.locator('#print-area .exam-print__question-heading').first()).toContainText('Câu 1:');
+  await expect(page.locator('#print-area .exam-print__question-number')).toHaveCount(10);
+  await expect(page.locator('#print-area .exam-print__question-number').first()).toHaveText('1');
+  await expect(page.locator('#print-area .exam-print__question-number').nth(9)).toHaveText('10');
+  await expect(page.locator('#print-area .exam-print__question-number').nth(9)).toHaveClass(/exam-print__question-number--wide/);
   await expect(page.locator('#print-area .exam-print__question-lead').first()).toHaveText('Chọn đáp án đúng cho mỗi ý sau.');
+  const questionTypography = await page.locator('#print-area .exam-print__question-heading').first().evaluate(element => {
+    const number = element.querySelector('.exam-print__question-number');
+    const lead = element.querySelector('.exam-print__question-lead');
+    const numberBox = number.getBoundingClientRect();
+    const numberStyle = getComputedStyle(number);
+    const leadStyle = getComputedStyle(lead);
+    return {
+      numberWidth: numberBox.width,
+      numberHeight: numberBox.height,
+      numberBackground: numberStyle.backgroundColor,
+      numberColor: numberStyle.color,
+      leadFontFamily: leadStyle.fontFamily,
+      leadFontWeight: leadStyle.fontWeight
+    };
+  });
+  expect(Math.abs(questionTypography.numberWidth - questionTypography.numberHeight)).toBeLessThanOrEqual(1);
+  expect(questionTypography.numberBackground).toBe('rgb(8, 168, 226)');
+  expect(questionTypography.numberColor).toBe('rgb(255, 255, 255)');
+  expect(questionTypography.leadFontFamily).toContain('Arial');
+  expect(questionTypography.leadFontWeight).toBe('400');
+  const wideQuestionNumber = await page.locator('#print-area .exam-print__question-number').nth(9).evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { width: box.width, height: box.height };
+  });
+  expect(wideQuestionNumber.width).toBeGreaterThan(wideQuestionNumber.height);
   await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__subquestion-options--4')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
@@ -263,7 +290,8 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(printPage.locator('#print-document .exam-print__title')).toHaveText('Toán lớp 4 · Ôn tập cuối kỳ');
   await expect(printPage.locator('#print-document .exam-print__exam-heading')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__kicker')).toHaveCount(0);
-  await expect(printPage.locator('#print-document .exam-print__question-number')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__question-number')).toHaveCount(10);
+  await expect(printPage.locator('#print-document .exam-print__question-number').nth(9)).toHaveClass(/exam-print__question-number--wide/);
   await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(10);
   await expect(printPage.locator('#print-document .exam-print__subquestion')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__statement')).toHaveCount(4);
@@ -363,7 +391,7 @@ test('bản in làm nổi bật câu dẫn, thu gọn câu chung và không thê
   await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
   const firstHeading = page.locator('#print-area .exam-print__question-heading').first();
   await expect(firstHeading.locator('.exam-print__question-lead')).toHaveText('Điền dấu thích hợp:');
-  await expect(firstHeading.locator('.exam-print__question-lead')).toHaveCSS('font-weight', /^(7|8|9)/);
+  await expect(firstHeading.locator('.exam-print__question-lead')).toHaveCSS('font-weight', '400');
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__comparison-fallback')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__comparison-row').first().locator('.exam-print__comparison-side').nth(1)).toHaveText('10 000');
