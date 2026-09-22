@@ -5565,19 +5565,43 @@ input[type="text"], input[type="password"], select, textarea {
 }
 .exam-print__question-heading {
     display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 3px 6px;
+    align-items: flex-start;
+    gap: 8px;
     margin: 0 0 4px;
     color: #263238;
     font-size: 1.05rem;
-    font-weight: 800;
+    font-weight: 400;
     line-height: 1.24;
+}
+.exam-print__question-number {
+    display: inline-flex;
+    width: 2em;
+    height: 2em;
+    min-width: 2em;
+    flex: 0 0 2em;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid #77d2f2;
+    border-radius: 50%;
+    background: #08a8e2;
+    color: #fff;
+    font-size: .95em;
+    font-weight: 700;
+    line-height: 1;
+}
+.exam-print__question-number--wide {
+    width: auto;
+    min-width: 2.4em;
+    flex-basis: auto;
+    padding: 0 .55em;
+    border-radius: .72em;
 }
 .exam-print__question-lead {
     min-width: 0;
-    flex: 0 1 auto;
-    font-weight: 800;
+    flex: 1 1 auto;
+    padding-top: .28em;
+    font-weight: 400;
 }
 .exam-print__parts {
     display: grid;
@@ -5864,6 +5888,9 @@ input[type="text"], input[type="password"], select, textarea {
     .exam-print__question-heading {
         margin-bottom: 3px;
         line-height: 1.2;
+    }
+    .exam-print__question-number {
+        border-width: 1.5px;
     }
     .exam-print__parts { gap: 3px; }
     .exam-print__parts--two-columns {

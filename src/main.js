@@ -11648,9 +11648,11 @@ const app = {
         },
         renderExamPrintQuestion(question, index) {
             const number = index + 1;
+            const numberText = String(number);
+            const numberClass = numberText.length > 1 ? ' exam-print__question-number--wide' : '';
             const printableQuestion = this.normalizeExamQuestionStructure(question);
             return `<article class="exam-print__question" data-print-question="${number}">
-                <h3 class="exam-print__question-heading"><span>Câu ${number}:</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span></h3>
+                <h3 class="exam-print__question-heading"><span class="exam-print__question-number${numberClass}" aria-label="Câu ${number}">${numberText}</span><span class="exam-print__question-lead">${this.getExamPrintLead(printableQuestion)}</span></h3>
                 ${this.renderExamPrintQuestionParts(printableQuestion)}
             </article>`;
         },
