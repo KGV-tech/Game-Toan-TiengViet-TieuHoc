@@ -591,19 +591,21 @@
     }
 
     #treasure-modal #admin-tabs .tab-btn {
-        min-width: 150px;
+        min-width: 140px;
         min-height: 42px;
-        padding: 10px 15px;
-        border: 1px solid rgba(132, 173, 193, .42);
-        border-bottom-width: 3px;
+        padding: 10px 18px;
+        border: 1px solid rgba(132, 173, 193, .38);
         border-radius: 10px;
         background: rgba(11, 35, 52, .78);
         color: #cfe7ef;
-        font-size: .78rem;
-        letter-spacing: .01em;
+        font-size: .86rem;
+        font-weight: 800;
+        letter-spacing: .02em;
         text-transform: none;
         text-shadow: none;
         box-shadow: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
     }
 
     #treasure-modal #admin-tabs .tab-btn:hover {
@@ -617,7 +619,7 @@
         border-color: var(--station-cyan);
         background: linear-gradient(145deg, #1689a5, #1554a3 78%);
         color: #fff;
-        box-shadow: 0 0 0 1px rgba(84, 215, 239, .2), 0 0 16px rgba(84, 215, 239, .16);
+        box-shadow: 0 0 0 1px rgba(84, 215, 239, .2), 0 0 16px rgba(84, 215, 239, .18);
     }
 
     #treasure-modal .admin-content {
@@ -644,6 +646,329 @@
         background: rgba(5, 20, 33, .56);
     }
 
+    /* Kho Báu: Thanh điều khiển bộ lọc (Admin Control Panel) */
+    #treasure-modal .admin-control-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        background: linear-gradient(145deg, rgba(14, 38, 58, .88), rgba(7, 22, 36, .94));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--station-line);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        gap: 16px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .08);
+    }
+
+    #treasure-modal .acp-btn:not(.btn-success) {
+        width: 130px;
+        font-weight: 800;
+        font-size: 1.05rem;
+        border-radius: 12px;
+        border: 1px solid rgba(111, 214, 240, .45);
+        cursor: pointer;
+        background: linear-gradient(145deg, rgba(21, 62, 85, .9), rgba(10, 32, 48, .95));
+        color: var(--station-cyan);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .1);
+    }
+
+    #treasure-modal .acp-btn:not(.btn-success):hover {
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%);
+        border-color: var(--station-cyan);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, .38), 0 0 16px rgba(84, 215, 239, .25);
+    }
+
+    #treasure-modal .acp-btn.btn-success {
+        width: 130px;
+        font-weight: 800;
+        font-size: .95rem;
+        border-radius: 12px;
+        border: 1px solid rgba(110, 231, 183, .45);
+        cursor: pointer;
+        background: linear-gradient(145deg, #10b981, #059669);
+        color: #fff;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        box-shadow: 0 6px 16px rgba(16, 185, 129, .25), inset 0 1px 0 rgba(255, 255, 255, .2);
+    }
+
+    #treasure-modal .acp-btn.btn-success:hover {
+        background: linear-gradient(145deg, #34d399, #10b981);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(16, 185, 129, .4), 0 0 16px rgba(52, 211, 153, .3);
+    }
+
+    #treasure-modal .acp-center {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    #treasure-modal .acp-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    #treasure-modal .acp-row button {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 800;
+        border-radius: 10px;
+        background: rgba(11, 35, 52, .78);
+        border: 1px solid rgba(132, 173, 193, .38);
+        color: #cfe7ef;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
+    }
+
+    #treasure-modal .acp-row button:hover {
+        border-color: var(--station-cyan);
+        background: rgba(21, 81, 104, .9);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    #treasure-modal .acp-row button.btn-primary {
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%);
+        border-color: var(--station-cyan);
+        color: #fff;
+        box-shadow: 0 0 0 1px rgba(84, 215, 239, .25), 0 4px 14px rgba(84, 215, 239, .2);
+        text-shadow: none;
+    }
+
+    #treasure-modal .acp-row label {
+        font-weight: 800;
+        color: var(--station-muted);
+        text-transform: uppercase;
+        font-size: .78rem;
+        letter-spacing: .05em;
+        text-shadow: none;
+    }
+
+    #treasure-modal .acp-row .form-input,
+    #treasure-modal .acp-row input[type="date"],
+    #treasure-modal #admin-hist-student,
+    #treasure-modal #student-profile-select {
+        background: rgba(5, 18, 30, .85) !important;
+        border: 1px solid rgba(111, 214, 240, .32) !important;
+        border-radius: 9px;
+        color: #e9f5fb;
+        font-weight: 700;
+        font-family: inherit;
+        font-size: .85rem;
+        padding: 7px 12px;
+        color-scheme: dark;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25);
+        transition: all 0.2s ease;
+    }
+
+    #treasure-modal .acp-row .form-input:focus-visible,
+    #treasure-modal .acp-row input[type="date"]:focus-visible,
+    #treasure-modal #admin-hist-student:focus-visible,
+    #treasure-modal #student-profile-select:focus-visible {
+        border-color: var(--station-cyan) !important;
+        box-shadow: 0 0 0 2px rgba(84, 215, 239, .25);
+        outline: none;
+    }
+
+    /* Kho Báu: Bảng dữ liệu đồng bộ (Data Table) */
+    #treasure-modal .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--station-line-soft) !important;
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(5, 20, 33, .72) !important;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .28);
+    }
+
+    #treasure-modal .data-table th {
+        background: linear-gradient(180deg, rgba(19, 53, 76, .95), rgba(11, 35, 52, .98)) !important;
+        color: #e9f5fb !important;
+        font-size: .82rem !important;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        padding: 13px 16px;
+        border: none !important;
+        border-bottom: 2px solid rgba(111, 214, 240, .35) !important;
+        text-align: center;
+    }
+
+    #treasure-modal .data-table td {
+        padding: 12px 16px;
+        border: none !important;
+        border-bottom: 1px solid rgba(111, 214, 240, .1) !important;
+        color: #dbeef5;
+        font-size: .88rem;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    #treasure-modal .data-table tbody tr:nth-child(even) {
+        background: rgba(84, 215, 239, .02);
+    }
+
+    #treasure-modal .data-table tbody tr:hover {
+        background: rgba(84, 215, 239, .07);
+    }
+
+    /* Vinh danh Top 1-2-3 trong Bảng thành tích */
+    #treasure-modal #admin-lb-table-container tbody tr:nth-child(1) td:first-child {
+        color: var(--station-gold);
+        font-weight: 900;
+        font-size: 1.05rem;
+        text-shadow: 0 0 12px rgba(247, 200, 93, .5);
+    }
+
+    #treasure-modal #admin-lb-table-container tbody tr:nth-child(2) td:first-child {
+        color: #e2e8f0;
+        font-weight: 900;
+        font-size: 1.02rem;
+        text-shadow: 0 0 8px rgba(226, 232, 240, .35);
+    }
+
+    #treasure-modal #admin-lb-table-container tbody tr:nth-child(3) td:first-child {
+        color: #fb923c;
+        font-weight: 900;
+        font-size: 1rem;
+        text-shadow: 0 0 8px rgba(251, 146, 60, .35);
+    }
+
+    /* Ô lọc tìm kiếm trong header ở tab Lịch sử học sinh */
+    #treasure-modal .filter-input {
+        background: rgba(4, 16, 26, .85) !important;
+        border: 1px solid rgba(111, 214, 240, .3) !important;
+        border-radius: 8px;
+        color: #e9f5fb !important;
+        font-size: .8rem;
+        padding: 6px 10px;
+        width: 100%;
+        box-sizing: border-box;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    #treasure-modal .filter-input:focus-visible {
+        border-color: var(--station-cyan) !important;
+        box-shadow: 0 0 0 2px rgba(84, 215, 239, .25);
+    }
+
+    /* Nút "Xem" chi tiết bài làm trong bảng */
+    #treasure-modal .data-table .action-btn,
+    #treasure-modal .data-table .btn-success {
+        background: linear-gradient(145deg, #10b981, #059669) !important;
+        border: 1px solid rgba(110, 231, 183, .4) !important;
+        border-radius: 8px !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: .82rem !important;
+        padding: 6px 14px !important;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, .25);
+        transition: all 0.2s ease;
+    }
+
+    #treasure-modal .data-table .action-btn:hover,
+    #treasure-modal .data-table .btn-success:hover {
+        background: linear-gradient(145deg, #34d399, #10b981) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, .4);
+    }
+
+    /* Kho Báu: Tab Hồ sơ học sinh */
+    #treasure-modal #student-profile-select {
+        width: 100%;
+        margin-top: 8px;
+        cursor: pointer;
+    }
+
+    #treasure-modal #student-profile-detail h3 {
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    #treasure-modal #student-profile-detail .glass-container {
+        background: linear-gradient(145deg, rgba(14, 38, 58, .8), rgba(7, 22, 36, .9)) !important;
+        border: 1px solid var(--station-line-soft) !important;
+        border-radius: 14px !important;
+        padding: 16px 18px !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .22) !important;
+    }
+
+    #treasure-modal #student-profile-detail h4 {
+        color: var(--station-cyan) !important;
+        font-size: .85rem !important;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        margin: 0 0 10px !important;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(111, 214, 240, .15);
+    }
+
+    #treasure-modal #student-profile-detail p {
+        color: var(--station-text);
+        font-size: .88rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    #treasure-modal #student-profile-detail b {
+        color: var(--station-gold);
+        font-weight: 700;
+    }
+
+    #treasure-modal #student-profile-detail ul li {
+        color: var(--station-text);
+        font-size: .88rem;
+        padding: 3px 0;
+    }
+
+    #treasure-modal .compact-admin-action--save {
+        background: linear-gradient(145deg, #10b981, #059669);
+        border: 1px solid rgba(110, 231, 183, .45);
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 800;
+        padding: 8px 16px;
+        font-size: .85rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, .25);
+        transition: all 0.2s ease;
+    }
+
+    #treasure-modal .compact-admin-action--save:hover {
+        background: linear-gradient(145deg, #34d399, #10b981);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, .4);
+    }
+
+    /* Kho Báu: Tab Thành tích học sinh */
     .station-kicker,
     .student-treasure-overview__heading .station-kicker {
         display: block;
@@ -663,27 +988,32 @@
     }
 
     .student-treasure-overview__heading {
-        padding: 22px;
-        border: 1px solid rgba(191, 154, 255, .34);
-        border-radius: 16px;
-        background: linear-gradient(145deg, rgba(66, 48, 112, .52), rgba(21, 27, 56, .74));
+        padding: 26px 28px;
+        border: 1px solid rgba(191, 154, 255, .4);
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(38, 28, 74, .85), rgba(12, 22, 48, .92));
+        box-shadow: 0 12px 32px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .1);
     }
 
     .student-treasure-overview__heading h3 {
-        margin: 8px 0;
-        color: #f1eaff;
-        font-size: clamp(1.2rem, 2vw, 1.7rem);
+        margin: 10px 0 12px;
+        color: #f5eeff;
+        font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+        font-weight: 900;
         line-height: 1.2;
+        text-shadow: 0 0 18px rgba(191, 154, 255, .3);
     }
 
     .student-treasure-overview__heading p {
         margin: 0;
         color: var(--station-muted);
+        font-size: 1rem;
     }
 
     .student-treasure-overview__heading strong {
         color: var(--station-gold);
-        font-size: 1.3rem;
+        font-size: 1.5rem;
+        text-shadow: 0 0 12px rgba(247, 200, 93, .4);
     }
 
     .student-treasure-stars {
@@ -691,44 +1021,308 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        min-height: 190px;
-        padding: 24px;
-        border: 1px dashed rgba(247, 200, 93, .42);
-        border-radius: 16px;
-        background: radial-gradient(circle at 50% 35%, rgba(247, 200, 93, .13), transparent 62%), rgba(11, 35, 52, .56);
+        gap: 8px;
+        min-height: 220px;
+        padding: 28px;
+        border: 1.5px dashed rgba(247, 200, 93, .45);
+        border-radius: 18px;
+        background: radial-gradient(circle at 50% 40%, rgba(247, 200, 93, .14), transparent 65%), rgba(11, 35, 52, .68);
+        box-shadow: inset 0 0 30px rgba(247, 200, 93, .06), 0 10px 28px rgba(0, 0, 0, .28);
     }
 
     .student-treasure-stars img {
-        width: clamp(38px, 5vw, 58px) !important;
+        width: clamp(42px, 5.5vw, 62px) !important;
         margin: 0 !important;
-        filter: drop-shadow(0 0 10px rgba(247, 200, 93, .5));
+        filter: drop-shadow(0 0 14px rgba(247, 200, 93, .6));
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .student-treasure-stars img:hover {
+        transform: scale(1.2) rotate(6deg);
     }
 
     .student-treasure-stars__empty {
         max-width: 360px;
         color: var(--station-muted);
-        font-size: .9rem;
-        line-height: 1.5;
+        font-size: .95rem;
+        line-height: 1.6;
         text-align: center;
     }
 
-    #treasure-modal[data-ui-context="student"] .data-table,
-    #treasure-modal[data-ui-context="admin"] .data-table {
-        overflow: hidden;
-        border: 1px solid rgba(111, 214, 240, .24);
+    /* Màn hình xem chi tiết bài làm */
+    #treasure-modal #treasure-content-area > div:has(h3[style*="Chi"]) h3,
+    #treasure-modal #treasure-content-area h3:has(+ p > strong) {
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    #treasure-modal #treasure-content-area .scroll-box > div[style*="border-left"] {
+        background: linear-gradient(145deg, rgba(14, 38, 58, .75), rgba(7, 22, 36, .85)) !important;
+        border: 1px solid var(--station-line-soft) !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 14px !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .2) !important;
+    }
+
+    #treasure-modal #treasure-content-area .btn-primary:has(+ br, button) {
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%);
+        border: 1px solid var(--station-cyan);
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 800;
+        padding: 10px 24px;
+        font-size: .9rem;
+        cursor: pointer;
+    }
+
+    /* Modal in ấn danh sách */
+    #print-modal .modal-content {
+        border: 1px solid var(--station-line) !important;
+        border-radius: 20px !important;
+        background: linear-gradient(145deg, rgba(14, 38, 58, .96), rgba(6, 19, 31, .98)) !important;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .1) !important;
+        color: #e9f5fb;
+    }
+
+    #print-modal label {
+        display: block;
+        margin-bottom: 14px;
+        padding: 14px 18px;
+        border: 1px solid var(--station-line-soft);
         border-radius: 12px;
-        background: rgba(4, 17, 29, .74);
+        background: rgba(5, 18, 30, .6);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #e9f5fb;
     }
 
-    #treasure-modal .data-table th {
-        background: rgba(21, 81, 104, .7);
-        color: #e6fbff;
+    #print-modal label:hover {
+        border-color: var(--station-cyan);
+        background: rgba(21, 81, 104, .3);
     }
 
-    #treasure-modal .data-table th,
-    #treasure-modal .data-table td {
-        border-color: rgba(132, 173, 193, .2);
+    #print-modal .btn-primary {
+        background: linear-gradient(145deg, #10b981, #059669) !important;
+        border: 1px solid rgba(110, 231, 183, .45);
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    #print-modal .btn-danger {
+        background: linear-gradient(145deg, #ef4444, #dc2626) !important;
+        border: 1px solid rgba(248, 113, 113, .45);
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    /* =========================================================================
+       CHẾ ĐỘ LIGHT MODE VÀ QUY TẮC AN TOÀN DARK CHO ADMIN
+       - Admin Kho Báu: LUÔN giữ style Dark Mode trạm không gian sang trọng
+       - Học sinh Kho Báu: Thêm giao diện Light Mode sáng sủa, sắc nét chuẩn EdTech
+       ========================================================================= */
+
+    /* 1. Đảm bảo Admin Kho Báu LUÔN ở Dark Mode dù html bật data-theme="light" */
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell {
+        border: 1px solid var(--station-line) !important;
+        background: linear-gradient(145deg, rgba(20, 54, 73, .32), rgba(8, 20, 34, .2) 58%, rgba(48, 35, 81, .2)), var(--station-panel) !important;
+        color: var(--station-text) !important;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 255, 255, .08) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell__title-row {
+        background: rgba(5, 20, 33, .78) !important;
+        border: 1px solid rgba(126, 224, 244, .46) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell__title-row .title-glow {
+        color: var(--station-text) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) #admin-tabs .tab-btn {
+        background: rgba(11, 35, 52, .78) !important;
+        color: #cfe7ef !important;
+        border: 1px solid rgba(132, 173, 193, .38) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) #admin-tabs .tab-btn.active {
+        background: linear-gradient(145deg, #1689a5, #1554a3 78%) !important;
+        color: #fff !important;
+        border-color: var(--station-cyan) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table {
+        background: rgba(5, 20, 33, .72) !important;
+        color: #dbeef5 !important;
+        border: 1px solid var(--station-line-soft) !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table th {
+        background: linear-gradient(180deg, rgba(19, 53, 76, .95), rgba(11, 35, 52, .98)) !important;
+        color: #e9f5fb !important;
+    }
+
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table td {
+        color: #dbeef5 !important;
+        border-bottom: 1px solid rgba(111, 214, 240, .1) !important;
+    }
+
+    /* 2. Giao diện Light Mode dành riêng cho Học sinh trong Kho Báu */
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell {
+        border: 1px solid #7dd3fc !important;
+        background: linear-gradient(145deg, #ffffff, #f0f9ff 58%, #e0f2fe) !important;
+        color: #0f172a !important;
+        box-shadow: 0 24px 60px rgba(12, 74, 110, 0.18), inset 0 1px 0 #ffffff !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell::before {
+        border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell__title-row {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid #7dd3fc !important;
+        box-shadow: 0 6px 18px rgba(14, 165, 233, 0.15) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell__title-row .title-glow {
+        color: #0369a1 !important;
+        text-shadow: 0 0 12px rgba(14, 165, 233, 0.25) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs {
+        border-bottom-color: rgba(14, 165, 233, 0.25) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn:hover {
+        background: #e0f2fe !important;
+        color: #0284c7 !important;
+        border-color: #38bdf8 !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn.active {
+        background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+        border-color: #0284c7 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .admin-content {
+        background: rgba(255, 255, 255, 0.75) !important;
+        border: 1px solid #bae6fd !important;
+        color: #0f172a !important;
+    }
+
+    /* Light Mode: Tab Thành tích học sinh */
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading {
+        background: linear-gradient(145deg, #fdf4ff, #fae8ff) !important;
+        border: 1px solid #d8b4fe !important;
+        box-shadow: 0 8px 24px rgba(168, 85, 247, 0.12) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading .station-kicker {
+        color: #7c3aed !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading h3 {
+        color: #581c87 !important;
+        text-shadow: none !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading p {
+        color: #64748b !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading strong {
+        color: #d97706 !important;
+        text-shadow: none !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars {
+        background: radial-gradient(circle at 50% 40%, rgba(254, 243, 199, 0.8), transparent 70%), #fffbeb !important;
+        border: 1.5px dashed #f59e0b !important;
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars img {
+        filter: drop-shadow(0 4px 10px rgba(217, 119, 6, 0.4)) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars__empty {
+        color: #78716c !important;
+    }
+
+    /* Light Mode: Tab Lịch sử làm bài học sinh */
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table th {
+        background: linear-gradient(180deg, #f0f9ff, #e0f2fe) !important;
+        color: #0369a1 !important;
+        border-bottom: 2px solid #38bdf8 !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table td {
+        color: #0f172a !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table tbody tr:nth-child(even) {
+        background: rgba(240, 249, 255, 0.6) !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table tbody tr:hover {
+        background: #e0f2fe !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .filter-input {
+        background: #ffffff !important;
+        border: 1px solid #94a3b8 !important;
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .filter-input:focus-visible {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+    }
+
+    /* Light Mode: Màn hình chi tiết bài làm học sinh */
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area h3 {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area p {
+        color: #64748b !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .scroll-box > div[style*="border-left"] {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .scroll-box > div[style*="border-left"] * {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .btn-primary {
+        background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+        border: 1px solid #0284c7 !important;
+        color: #ffffff !important;
     }
 
     #treasure-modal .station-shell > .utility-close-button,
