@@ -536,7 +536,7 @@ test('trưởng nhóm dùng khung luyện tập, lưu từng câu và OK khi r�
   await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
   await expect(page.locator('#team-leader-answer-feedback')).toHaveCount(0);
   await expect(page.locator('#game-score')).toHaveText('5');
-  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await page.getByRole('button', { name: /Tiếp theo|Tiếp tục/ }).click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
   await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
 
@@ -585,9 +585,9 @@ test('trưởng nhóm dùng phản hồi Luyện tập: đánh dấu đúng sai,
   await expect(page.locator('#game-options-container .ans-btn.wrong')).toContainText('3');
   await expect(page.locator('#game-options-container .ans-btn.correct')).toContainText('2');
   await expect(page.locator('.game-answer-reveal')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Tiếp tục' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /Tiếp theo|Tiếp tục/ })).toBeEnabled();
   await expect(page.locator('#game-score')).toHaveText('0');
-  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await page.getByRole('button', { name: /Tiếp theo|Tiếp tục/ }).click();
   await expect(page.locator('#current-q-index')).toHaveText('2');
 });
 
