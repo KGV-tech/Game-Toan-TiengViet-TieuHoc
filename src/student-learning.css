@@ -4725,32 +4725,32 @@ html[data-theme="light"] #game-play-view .play-left {
     color: #fde047 !important;
 }
 
-/* Khung thông tin học sinh Light Mode: Vàng kem nắng ấm, danh hiệu & tên danh hiệu nổi bật đồng bộ không chìm */
+/* Khung thông tin học sinh Light Mode: Theo Phương án 1 (viền cyan, chữ xanh), nền Vàng kem nắng ấm, danh hiệu & tên danh hiệu cùng màu cam hổ phách không bị chìm */
 html[data-theme="light"] #game-play-view .player-info-card--game {
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
-    border: 2px solid #fcd34d !important;
-    color: #78350f !important;
-    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.14), inset 0 0 10px rgba(255, 255, 255, 0.8) !important;
+    border: 2px solid #38bdf8 !important;
+    color: #0369a1 !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.15), inset 0 0 12px rgba(255, 255, 255, 0.8) !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game::before {
-    background: #fbbf24 !important;
-    box-shadow: 0 0 8px #f59e0b !important;
+    background: #38bdf8 !important;
+    box-shadow: 0 0 8px #38bdf8 !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game::after {
-    border-top-color: #fcd34d !important;
-    border-bottom-color: rgba(252, 211, 77, 0.5) !important;
+    border-top-color: #38bdf8 !important;
+    border-bottom-color: rgba(56, 189, 248, 0.5) !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game strong {
-    color: #78350f !important;
+    color: #0284c7 !important;
     font-weight: 800 !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game small {
-    color: #a16207 !important;
+    color: #0369a1 !important;
     font-weight: 700 !important;
 }
 html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats,
 html[data-theme="light"] #game-play-view .player-info-card--game .player-info-card__stats b {
-    color: #b45309 !important;
+    color: #d97706 !important;
     font-weight: 800 !important;
 }
 
@@ -5259,18 +5259,18 @@ html[data-theme="light"] #game-play-view .game-progress-copy strong {
     color: #026084 !important;
 }
 html[data-theme="light"] #game-play-view .game-solution-title {
-    color: #166534 !important;
+    color: #0e7490 !important;
     font-weight: 800 !important;
 }
 html[data-theme="light"] #game-play-view .play-right #explanation-box,
 html[data-theme="light"] #game-play-view .explanation-box {
     background: linear-gradient(135deg, #ffffff 0%, #dcfce7 100%) !important;
-    border: 2px solid #86efac !important;
-    color: #14532d !important;
-    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.12) !important;
+    border: 2px solid #67e8f9 !important;
+    color: #155e75 !important;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.12) !important;
 }
 html[data-theme="light"] #game-play-view .play-right #explanation-box b {
-    color: #15803d !important;
+    color: #0e7490 !important;
 }
 html[data-theme="light"] #game-play-view .game-theme-toggle {
     background: rgba(220, 244, 252, 0.94) !important;
