@@ -217,3 +217,136 @@ test('giao diện Lễ hội khinh khí cầu khi có 4 đội tự chia đều 
     console.log('Saved 4-teams balloon festival match screenshot!');
 });
 
+test('chụp và cập nhật ảnh preview bắt đầu 8 đội cho Đường đua tốc độ và Lễ hội khinh khí cầu', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openOfflineHomepage(page);
+
+    const balloonPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Ballons', 'preview-start.png');
+    const speedRacePreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'stadium-3d-v1', 'preview-start.png');
+
+    // 1. Balloon Festival preview (8 teams score 0)
+    await page.evaluate(({ users, exam }) => {
+        window.app.data.users = users;
+        window.app.data.currentUser = { username: 'admin', role: 'admin' };
+        window.app.data.exams = [exam];
+
+        const match = {
+            id: 'match-balloon-preview-gen',
+            name: 'Lễ Hội Khinh Khí Cầu',
+            classlevel: '5',
+            className: '5A',
+            participantMode: 'manual',
+            questionMode: 'same',
+            commonExamId: exam.id,
+            timeLimitMinutes: 15,
+            presentationTheme: 'balloon-festival',
+            presentationTeamIdentity: {},
+            status: 'active',
+            startedAt: Date.now() - 1000,
+            teams: Array.from({ length: 8 }, (_, i) => ({
+                id: `t${i + 1}`,
+                name: `Đội ${i + 1}`,
+                memberUsernames: [`hs${i + 1}`],
+                leaderUsername: `hs${i + 1}`,
+                score: 0,
+                submittedCount: 0,
+                status: 'active'
+            }))
+        };
+        window.app.teamCompetition.store.upsert(match);
+        window.app.admin.openAdmin();
+        const modal = document.getElementById('treasure-modal');
+        modal.classList.add('active', 'team-board-fullscreen', 'team-board-fullscreen-mode');
+        const box = document.getElementById('treasure-content-area');
+        window.app.admin.renderTeamCompetitionBoard(box, match.id);
+    }, { users: demoUsers(), exam: demoExam() });
+
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: balloonPreviewPath });
+    console.log('Saved balloon preview to ' + balloonPreviewPath);
+
+    // 2. Speed Race preview (8 teams score 0)
+    await page.evaluate(({ exam }) => {
+        const match = {
+            id: 'match-speed-race-preview-gen',
+            name: 'Đường Đua Tốc Độ',
+            classlevel: '5',
+            className: '5A',
+            participantMode: 'manual',
+            questionMode: 'same',
+            commonExamId: exam.id,
+            timeLimitMinutes: 15,
+            presentationTheme: 'speed-race',
+            presentationTeamIdentity: {},
+            status: 'active',
+            startedAt: Date.now() - 1000,
+            teams: Array.from({ length: 8 }, (_, i) => ({
+                id: `t${i + 1}`,
+                name: `Đội ${i + 1}`,
+                memberUsernames: [`hs${i + 1}`],
+                leaderUsername: `hs${i + 1}`,
+                score: 0,
+                submittedCount: 0,
+                status: 'active'
+            }))
+        };
+        window.app.teamCompetition.store.upsert(match);
+        const box = document.getElementById('treasure-content-area');
+        window.app.admin.renderTeamCompetitionBoard(box, match.id);
+    }, { exam: demoExam() });
+
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: speedRacePreviewPath });
+    console.log('Saved speed race preview to ' + speedRacePreviewPath);
+});
+
+test('khung Trình chiếu lớp chia 2 cột với ảnh minh họa vạch xuất phát 8 đội tự động cập nhật', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openOfflineHomepage(page);
+
+    await page.evaluate(({ users, exam }) => {
+        window.app.data.users = users;
+        window.app.data.currentUser = { username: 'admin', role: 'admin' };
+        window.app.data.exams = [exam];
+
+        window.app.admin.openAdmin();
+        window.app.admin.showAddTeamCompetitionForm();
+    }, { users: demoUsers(), exam: demoExam() });
+
+    const layout = page.locator('.team-presentation-layout');
+    await expect(layout).toBeVisible();
+
+    const leftCol = page.locator('.team-presentation-layout__left');
+    await expect(leftCol).toBeVisible();
+    await expect(leftCol.locator('.team-section-kicker')).toHaveText('Trình chiếu lớp');
+    await expect(leftCol.locator('#team-comp-presentation-theme')).toBeVisible();
+
+    const rightCol = page.locator('.team-presentation-layout__right');
+    await expect(rightCol).toBeVisible();
+    const previewImg = rightCol.locator('#team-comp-presentation-preview-img');
+    await expect(previewImg).toBeVisible();
+
+    // Default theme is speed-race
+    await expect(previewImg).toHaveAttribute('src', /stadium-3d-v1\/preview-start\.png$/);
+    await expect(rightCol.locator('#team-comp-presentation-preview-badge')).toHaveText('Đường đua tốc độ');
+
+    // Switch to balloon-festival
+    await leftCol.locator('#team-comp-presentation-theme').selectOption('balloon-festival');
+    await expect(previewImg).toHaveAttribute('src', /Ballons\/preview-start\.png$/);
+    await expect(rightCol.locator('#team-comp-presentation-preview-badge')).toHaveText('Lễ hội khinh khí cầu');
+
+    // Capture screenshot of the 2-column presentation section
+    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/9133abc4-a491-4658-9a45-482da714db3a';
+    const presentationSection = page.locator('.team-form-section--presentation');
+    await presentationSection.screenshot({ path: path.join(brainDir, 'team_presentation_2col_balloon.png') });
+    console.log('Saved team presentation 2-column screenshot with balloon festival!');
+
+    // Switch back to speed-race and screenshot
+    await leftCol.locator('#team-comp-presentation-theme').selectOption('speed-race');
+    await expect(previewImg).toHaveAttribute('src', /stadium-3d-v1\/preview-start\.png$/);
+    await presentationSection.screenshot({ path: path.join(brainDir, 'team_presentation_2col_speed_race.png') });
+    console.log('Saved team presentation 2-column screenshot with speed race!');
+});
+
+
+
