@@ -7624,10 +7624,26 @@ const app = {
                 const teamStatus = team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : (isLive ? 'Đang làm' : 'Sẵn sàng'));
                 const teamStatusClass = ['pending', 'active', 'completed', 'locked'].includes(team.status) ? team.status : 'pending';
                 if (isLive) {
+                    const isBalloonTheme = presentationTheme === 'balloon-festival';
                     const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
-                    const lane = stadiumLanes[index];
-                    const vehicleAsset = app.teamCompetition.TEAM_VEHICLE_ASSETS?.[lane.vehicleSprite] || '';
-                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%" aria-label="${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="Xe đua của ${teamName}" loading="eager" decoding="async" /></article>`;
+                    const lane = isBalloonTheme
+                        ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || { number: index + 1, color: 'cyan', vehicleSprite: index })
+                        : stadiumLanes[index];
+                    const vehicleInfo = app.teamCompetition.resolvePresentationTeamAvatar(presentationTheme, lane);
+                    const vehicleAsset = vehicleInfo.src;
+                    const vehicleAlt = `${vehicleInfo.label} của ${teamName}`;
+                    const laneCount = match.teams.length;
+                    const laneWidthPct = 100 / laneCount;
+                    const laneLeftPct = index * laneWidthPct;
+                    const minCenterPct = 6.5;
+                    const maxCenterPct = 93.5;
+                    const balloonCenterPct = laneCount <= 1
+                        ? 50
+                        : minCenterPct + (index / (laneCount - 1)) * (maxCenterPct - minCenterPct);
+                    const ariaDesc = isBalloonTheme
+                        ? `${teamName}: ${score} trên 10, hạng tạm thời ${rank}`
+                        : `${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}`;
+                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" /></article>`;
                 }
                 const leaderName = app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn');
                 const roster = !isLive && match.status !== app.teamCompetition.STATUS.ENDED
@@ -7642,13 +7658,19 @@ const app = {
             const statusClass = ['draft', 'prepared', 'active', 'ended'].includes(match.status) ? match.status : 'draft';
             const totalQuestions = match.teams.reduce((max, team) => Math.max(max, app.teamCompetition.getExamForTeam(match, team)?.questions?.length || 0), 0);
             const rankedTeams = [...match.teams].sort((left, right) => app.teamCompetition.getTeamRank(match, left.id) - app.teamCompetition.getTeamRank(match, right.id));
-            const stadiumLaneByTeamId = new Map(match.teams.map((team, index) => [String(team.id), stadiumLanes[index] || null]));
+            const stadiumLaneByTeamId = new Map(match.teams.map((team, index) => [
+                String(team.id),
+                presentationTheme === 'balloon-festival'
+                    ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || null)
+                    : (stadiumLanes[index] || null)
+            ]));
             const leaderboard = isLive ? `<aside class="team-race-scoreboard" aria-label="Bảng xếp hạng tạm thời"><p>Bảng xếp hạng tạm thời</p><ol>${rankedTeams.map(team => { const lane = stadiumLaneByTeamId.get(String(team.id)); const rank = app.teamCompetition.getTeamRank(match, team.id); return `<li class="team-race-scoreboard__entry ${lane ? `team-race-scoreboard__entry--${lane.color}` : ''}" data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong><b>${Number(team.score || 0).toLocaleString('vi-VN')}</b></li>`; }).join('')}</ol></aside>` : '';
             const liveTimer = isLive && match.timeLimitMinutes !== null && match.startedAt ? Math.max(0, Number(match.timeLimitMinutes) * 60 - Math.floor((Date.now() - Number(match.startedAt)) / 1000)) : null;
             const timerLabel = liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`;
             const titleCard = `<div class="team-stadium-title-card"><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2></div>`;
+            const maxProgress = isLive && match.teams.length ? Math.max(0, ...match.teams.map(t => app.teamCompetition.getRaceProgress(t.score))) : 0;
             const raceSurface = isLive
-                ? `<div class="team-stadium-canvas" aria-label="Đường đua 8 lane"><div class="team-stadium-canvas__lanes">${cards}</div></div>`
+                ? `<div class="team-stadium-canvas" style="--max-score-progress:${maxProgress.toFixed(2)}" aria-label="${presentationTheme === 'balloon-festival' ? 'Sân bay khinh khí cầu' : 'Đường đua 8 lane'}"><div class="team-stadium-canvas__lanes">${cards}</div></div>`
                 : `<div class="team-board-grid ${match.teams.length >= 6 ? 'team-board-grid--compact' : ''}">${cards}</div>`;
             const endedNote = endSyncFailed
                 ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
