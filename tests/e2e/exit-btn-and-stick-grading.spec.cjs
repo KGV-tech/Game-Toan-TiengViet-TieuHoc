@@ -191,4 +191,70 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
     // Chụp ảnh Light Mode
     await page.screenshot({ path: 'artifacts/actual_grading_sticks_light_mode.png', fullPage: true });
   });
+
+  test('Thi Đua Nhóm: bỏ khung vuông ngoài và nền vàng cát, câu động viên chuẩn luyện tập, ảnh xe +30%', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('http://127.0.0.1:4173');
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('data-theme', 'light');
+      const user = { username: 'leader-1', fullname: 'Nguyễn Văn An', role: 'student', classlevel: '4', class_name: '4/1' };
+      const exam = {
+        id: 'exam-1',
+        name: 'Đề thi đua Toán',
+        classlevel: '4',
+        subject: 'Toán',
+        period: 'Học kỳ 1',
+        questions: [{ q: '1 + 1 = ?', type: 'Trắc nghiệm', options: ['2', '3'], ans: '2' }]
+      };
+      app.data.currentUser = user;
+      app.data.users = [user];
+      app.data.exams = [exam];
+      const match = app.teamCompetition.normalizeCompetition({
+        id: 'test-match-ui',
+        name: 'Test giao diện trận · Lượt 3',
+        classlevel: '4',
+        teamCount: 2,
+        participantMode: 'manual',
+        questionMode: 'same',
+        commonExamId: 'exam-1',
+        status: app.teamCompetition.STATUS.ACTIVE,
+        startedAt: Date.now(),
+        teams: [
+          { id: 'team-1', name: 'Nhóm 1', memberUsernames: ['leader-1'], leaderUsername: 'leader-1' },
+          { id: 'team-2', name: 'Nhóm 2', memberUsernames: ['member-2'], leaderUsername: 'member-2' }
+        ]
+      });
+      app.teamCompetition.store.clear();
+      app.teamCompetition.store.upsert(match);
+      app.teamCompetition.openLeaderAttempt(match.id);
+    });
+
+    const playLeft = page.locator('#game-play-view .play-left');
+    await expect(playLeft).toBeVisible();
+
+    const infoCard = page.locator('#game-player-info');
+    const infoBg = await infoCard.evaluate(el => getComputedStyle(el).backgroundColor);
+    const infoBorder = await infoCard.evaluate(el => getComputedStyle(el).borderStyle);
+    expect(infoBg).toBe('rgba(0, 0, 0, 0)');
+    expect(infoBorder).toBe('none');
+
+    const speechBubble = page.locator('#cat-speech-bubble');
+    await expect(speechBubble).toBeVisible();
+    const bubbleBg = await speechBubble.evaluate(el => getComputedStyle(el).backgroundColor);
+    const bubbleBorder = await speechBubble.evaluate(el => getComputedStyle(el).borderColor);
+    const bubbleText = page.locator('#cat-speech-bubble > span, #cat-speech-bubble .cat-bubble-text').first();
+    const bubbleTextColor = await bubbleText.evaluate(el => getComputedStyle(el).color);
+    expect(bubbleBg).toBe('rgb(220, 244, 252)');
+    expect(bubbleBorder).toBe('rgb(8, 145, 178)');
+    expect(bubbleTextColor).toBe('rgb(2, 132, 199)');
+
+    const carImg = page.locator('#play-cat-img');
+    await expect(carImg).toBeVisible();
+    const carWidth = await carImg.evaluate(el => el.getBoundingClientRect().width);
+    await playLeft.screenshot({ path: 'artifacts/actual_team_leader_play_left_light.png' });
+
+    // Chụp thêm Dark Mode để nghiệm thu
+    await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
+    await playLeft.screenshot({ path: 'artifacts/actual_team_leader_play_left_dark.png' });
+  });
 });

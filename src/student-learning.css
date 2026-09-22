@@ -4771,6 +4771,39 @@ html[data-theme="light"] #game-play-view .player-info-card--game .player-info-ca
     font-weight: 800 !important;
 }
 
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card::before,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card::after,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game::before,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode .player-info-card--game::after {
+    display: none !important;
+    content: none !important;
+}
+
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble {
+    background: #dcf4fc !important;
+    border: 2px solid #0891b2 !important;
+    color: #0284c7 !important;
+    box-shadow: 0 6px 16px rgba(56, 189, 248, 0.15) !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble > span,
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble .cat-bubble-text {
+    color: #0284c7 !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] #game-play-view.team-competition-leader-mode #cat-speech-bubble::after {
+    border-top: 9px solid #0891b2 !important;
+    border-left: 8px solid transparent !important;
+    border-right: 8px solid transparent !important;
+    filter: none !important;
+}
+
 html[data-theme="light"] #game-play-view.team-competition-leader-mode .team-leader-match-card {
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     border: 1.5px solid #38bdf8 !important;
