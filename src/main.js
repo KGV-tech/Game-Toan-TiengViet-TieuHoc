@@ -11450,6 +11450,10 @@ const app = {
             return String(question?.type || '').trim() === 'Điền khuyết'
                 && /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_fill$/.test(String(question?.templateId || ''));
         },
+        isB05ThreeStepMcqQuestion(question) {
+            return String(question?.type || '').trim() === 'Trắc nghiệm'
+                && /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_mcq$/.test(String(question?.templateId || ''));
+        },
         getExamPrintThreeStepAnswerUnit(question) {
             const answerLine = this.getExamPrintRawText(question?.q)
                 .split('\n')
@@ -11458,14 +11462,26 @@ const app = {
             const match = answerLine?.match(/^Điền đáp (?:số|án)\s*:\s*_{3,}\s*(.*)$/i);
             return String(match?.[1] || '').trim();
         },
-        renderExamPrintThreeStepFill(question) {
-            const unit = this.getExamPrintThreeStepAnswerUnit(question);
+        renderExamPrintThreeStepSolutionLines() {
             const solutionLine = '................................................................................................';
             const solutionLines = Array.from({ length: 6 }, () => `<div class="exam-print__solution-line">${solutionLine}</div>`).join('');
+            return `<div class="exam-print__solution-lines" aria-label="Sáu dòng để ghi lời giải và phép tính">${solutionLines}</div>`;
+        },
+        renderExamPrintThreeStepFill(question) {
+            const unit = this.getExamPrintThreeStepAnswerUnit(question);
             const answerSuffix = unit ? ` ${this.getExamPrintText(unit)}` : '';
             return `<div class="exam-print__parts exam-print__parts--three-step-fill">
-                <div class="exam-print__solution-lines" aria-label="Sáu dòng để ghi lời giải và phép tính">${solutionLines}</div>
+                ${this.renderExamPrintThreeStepSolutionLines()}
                 <div class="exam-print__final-answer">Điền đáp án: <span class="exam-print__answer-placeholder">.....</span>${answerSuffix}</div>
+            </div>`;
+        },
+        renderExamPrintThreeStepMcq(question) {
+            const options = Array.isArray(question?.options) ? question.options.filter(option => String(option ?? '').trim()) : [];
+            const optionColumns = this.getExamPrintOptionColumns(options);
+            const optionsMarkup = `<div class="exam-print__generic-options exam-print__generic-options--${optionColumns}">${options.map((option, optionIndex) => `<span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>`;
+            return `<div class="exam-print__parts exam-print__parts--three-step-mcq">
+                ${optionsMarkup}
+                ${this.renderExamPrintThreeStepSolutionLines()}
             </div>`;
         },
         getExamPrintSafeSvg(value) {
@@ -11485,6 +11501,9 @@ const app = {
         },
         renderExamPrintSubquestions(question) {
             const parts = Array.isArray(question?.subquestions) ? question.subquestions : [];
+            const choiceBoxMarkup = String(question?.type || '').trim() === 'Trắc nghiệm'
+                ? ''
+                : '<span class="exam-print__choice-box" aria-hidden="true"></span>';
             const hasSharedPrompt = question?.sharedPrompt === true || parts.length > 0 && parts.every(part => !String(part?.prompt || part?.text || '').trim());
             const markup = parts.map((part, partIndex) => {
                 const label = this.getExamPrintLabel(part?.label, partIndex);
@@ -11492,7 +11511,7 @@ const app = {
                 const options = Array.isArray(part?.options) ? part.options.filter(option => String(option ?? '').trim()) : [];
                 const optionColumns = this.getExamPrintOptionColumns(options);
                 const optionsMarkup = options.length
-                    ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box" aria-hidden="true"></span><span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>`
+                    ? `<div class="exam-print__subquestion-options exam-print__subquestion-options--${optionColumns}">${options.map((option, optionIndex) => `<span class="exam-print__subquestion-option">${choiceBoxMarkup}<span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span></span>`).join('')}</div>`
                     : '<div class="exam-print__subquestion-empty">Viết đáp án: <span class="exam-print__answer-line"></span></div>';
                 return `<article class="exam-print__subquestion${hasSharedPrompt ? ' exam-print__subquestion--shared' : ''}">
                     <div class="exam-print__subquestion-prompt${hasSharedPrompt ? ' exam-print__subquestion-prompt--shared' : ''}"><strong>${label})</strong>${hasSharedPrompt ? optionsMarkup : (prompt ? ` <span>${prompt}</span>` : '')}</div>
@@ -11582,6 +11601,7 @@ const app = {
         renderExamPrintQuestionParts(question) {
             const printableQuestion = this.normalizeExamQuestionStructure(question);
             if (this.isB05ThreeStepFillQuestion(printableQuestion)) return this.renderExamPrintThreeStepFill(printableQuestion);
+            if (this.isB05ThreeStepMcqQuestion(printableQuestion)) return this.renderExamPrintThreeStepMcq(printableQuestion);
             const kind = this.getExamQuestionStructureKind(printableQuestion);
             if (kind === 'subquestions') return this.renderExamPrintSubquestions(printableQuestion);
             if (kind === 'statements') return this.renderExamPrintStatements(printableQuestion);
@@ -11593,12 +11613,15 @@ const app = {
             if (kind === 'answerParts') return this.renderExamPrintAnswerParts(printableQuestion);
 
             const options = Array.isArray(printableQuestion?.options) ? printableQuestion.options.filter(option => String(option ?? '').trim()) : [];
+            const choiceBoxMarkup = String(printableQuestion?.type || '').trim() === 'Trắc nghiệm'
+                ? ''
+                : '<span class="exam-print__choice-box" aria-hidden="true"></span>';
             const optionColumns = this.getExamPrintOptionColumns(options);
             const rawLines = this.getExamPrintRawText(printableQuestion?.q).split('\n').map(line => line.trim()).filter(Boolean);
             const extraLines = rawLines.slice(1);
             return `<div class="exam-print__parts exam-print__parts--generic">
                 ${extraLines.length ? extraLines.map(line => `<div class="exam-print__generic-line">${this.getExamPrintTextWithBlanks(line)}</div>`).join('') : ''}
-                ${options.length ? `<div class="exam-print__generic-options exam-print__generic-options--${optionColumns}">${options.map((option, optionIndex) => `<span><span class="exam-print__choice-box" aria-hidden="true"></span><strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>` : `<div class="exam-print__generic-answer"><span class="exam-print__answer-line"></span></div>`}
+                ${options.length ? `<div class="exam-print__generic-options exam-print__generic-options--${optionColumns}">${options.map((option, optionIndex) => `<span>${choiceBoxMarkup}<strong>${String.fromCharCode(65 + optionIndex)}.</strong> ${this.getExamPrintText(option)}</span>`).join('')}</div>` : `<div class="exam-print__generic-answer"><span class="exam-print__answer-line"></span></div>`}
             </div>`;
         },
         renderExamPrintQuestion(question, index) {

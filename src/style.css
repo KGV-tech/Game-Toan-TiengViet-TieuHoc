@@ -5465,7 +5465,7 @@ input[type="text"], input[type="password"], select, textarea {
     border-radius: 3px;
     background: #fff;
     color: #263238;
-    font-family: "Times New Roman", Times, serif;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     font-size: 15px;
     line-height: 1.28;
     text-align: left;
@@ -5476,7 +5476,7 @@ input[type="text"], input[type="password"], select, textarea {
 }
 .exam-print,
 .exam-print * {
-    font-family: "Times New Roman", Times, serif;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
 .exam-print__header {
     padding-bottom: 9px;
@@ -5827,7 +5827,7 @@ input[type="text"], input[type="password"], select, textarea {
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        font-family: "Times New Roman", Times, serif;
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
         font-size: 11pt;
         line-height: 1.24;
     }
@@ -5903,7 +5903,8 @@ input[type="text"], input[type="password"], select, textarea {
     .exam-print__parts--comparison,
     .exam-print__parts--practice,
     .exam-print__parts--answer-parts,
-    .exam-print__parts--three-step-fill { break-before: avoid; page-break-before: avoid; }
+    .exam-print__parts--three-step-fill,
+    .exam-print__parts--three-step-mcq { break-before: avoid; page-break-before: avoid; }
 
     #print-document,
     #print-document * {

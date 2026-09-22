@@ -207,7 +207,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
     const style = getComputedStyle(element);
     return { fontFamily: style.fontFamily, borderRadius: style.borderRadius };
   });
-  expect(previewTitleStyle.fontFamily).toContain('Times New Roman');
+  expect(previewTitleStyle.fontFamily).toContain('Arial');
   expect(previewTitleStyle.borderRadius).toBe('12px');
   await expect(page.locator('#print-area .exam-print__exam-heading')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__kicker')).toHaveCount(0);
@@ -234,6 +234,8 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(page.locator('#print-area .exam-print__question-heading small')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__subquestion-options--4')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__generic-options--4')).toHaveCount(1);
+  await expect(page.locator('#print-area .exam-print__subquestion-options .exam-print__choice-box')).toHaveCount(0);
+  await expect(page.locator('#print-area .exam-print__generic-options .exam-print__choice-box')).toHaveCount(0);
   await expect(page.locator('#print-area .exam-print__parts--two-columns')).toHaveCount(2);
   await expect(page.locator('#print-area .exam-print__comparison-slot')).toHaveCount(4);
   await expect(page.locator('#print-area .exam-print__comparison-choices')).toHaveCount(0);
@@ -269,6 +271,8 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
   await expect(printPage.locator('#print-document .exam-print__comparison-slot')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__comparison-choices')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__comparison-row .exam-print__answer-line')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__subquestion-options .exam-print__choice-box')).toHaveCount(0);
+  await expect(printPage.locator('#print-document .exam-print__generic-options .exam-print__choice-box')).toHaveCount(0);
   await expect(printPage.locator('#print-document .exam-print__angle-item')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__angle-count-row')).toHaveCount(4);
   await expect(printPage.locator('#print-document .exam-print__sequence-round')).toHaveCount(4);
@@ -288,7 +292,7 @@ test('xem đề hiển thị đủ câu con, dùng tên đề và in riêng nộ
       webkitScrollbarDisplay: getComputedStyle(element, '::-webkit-scrollbar').display
     };
   });
-  expect(printChrome.fontFamily).toContain('Times New Roman');
+  expect(printChrome.fontFamily).toContain('Arial');
   expect(printChrome.borderRadius).toBe('12px');
   expect(printChrome.controls).toBe(0);
   expect(printChrome.scrollbarWidth).toBe('none');
@@ -429,4 +433,36 @@ test('bản in Bài 5 điền khuyết có sáu dòng trình bày và dòng đá
   await expect(printPage.locator('#print-document .exam-print__question')).toHaveCount(8);
   await expect(printPage.locator('#print-document .exam-print__solution-line')).toHaveCount(42);
   await expect(printPage.locator('#print-document .exam-print__final-answer')).toHaveCount(7);
+});
+
+test('bản in 7 template trắc nghiệm Bài 5 đặt đáp án trước sáu dòng chấm và bỏ ô vuông', async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => {
+    const questions = window.Grade4MathTemplates.templateIds
+      .filter(key => key.startsWith('word.three_steps_') && key.endsWith('_mcq'))
+      .map(key => window.Grade4MathTemplates.generateQuestion(key, { difficulty: 'core', minimum: 1, maximum: 10000 }));
+    app.data.exams = [{
+      name: 'Bài 5 · Trắc nghiệm in giấy', classlevel: 'Lớp 4', subject: 'Toán', period: 'Học Kỳ 1',
+      questions
+    }];
+    app.admin.renderESubTab('lib');
+  });
+
+  await page.getByRole('button', { name: 'Xem đề', exact: true }).click();
+  const b05Questions = page.locator('#print-area .exam-print__question');
+  await expect(b05Questions).toHaveCount(7);
+  for (let index = 0; index < 7; index += 1) {
+    const b05Question = b05Questions.nth(index);
+    await expect(b05Question.locator('.exam-print__generic-options')).toHaveCount(1);
+    await expect(b05Question.locator('.exam-print__generic-options > span')).toHaveCount(4);
+    await expect(b05Question.locator('.exam-print__solution-line')).toHaveCount(6);
+    await expect(b05Question.locator('.exam-print__choice-box')).toHaveCount(0);
+  }
+
+  const popupPromise = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Xuất PDF / A4', exact: true }).click();
+  const printPage = await popupPromise;
+  await printPage.waitForLoadState('domcontentloaded');
+  await expect(printPage.locator('#print-document .exam-print__solution-line')).toHaveCount(42);
+  await expect(printPage.locator('#print-document .exam-print__choice-box')).toHaveCount(0);
 });
