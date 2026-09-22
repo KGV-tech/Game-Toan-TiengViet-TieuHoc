@@ -294,7 +294,10 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .player-info-card__content small { color: #b9e8ff; font-size: .76rem; font-weight: 700; }
 .player-info-card__stats { color: #d7f6ff; font-size: .75rem; font-weight: 700; }
 .player-info-card__stats b { color: #fde68a; }
-.player-info-card__stats i { margin-left: 5px; font-style: normal; }
+.player-info-card__stats i { margin-left: 0; margin-right: 4px; font-style: normal; }
+.player-info-card__title { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+.player-info-card__title-label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.player-info-card__title-value { display: block; white-space: nowrap; }
 .admin-pet-preview { width: min(100%, 940px); padding: 28px; border: 2px solid #c4b5fd; border-radius: 24px; background: linear-gradient(135deg, #f8fafc, #eef2ff); color: #1e293b; text-align: center; box-shadow: 0 12px 30px rgba(67, 56, 202, .18); }
 .admin-pet-preview h3 { margin: 0; color: #5b21b6; font-size: 1.6rem; }
 .admin-pet-preview p { margin: 8px 0 22px; color: #475569; font-size: 1rem; }

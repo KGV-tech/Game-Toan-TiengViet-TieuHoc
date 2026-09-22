@@ -154,6 +154,23 @@
     #game-play-view .player-info-card--game .player-info-card__content strong { font-size: clamp(.76rem, 1vw, .94rem); }
     #game-play-view .player-info-card--game .player-info-card__content small,
     #game-play-view .player-info-card--game .player-info-card__stats { font-size: clamp(.62rem, .8vw, .72rem); }
+    #game-play-view .player-info-card--game .player-info-card__title {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        line-height: 1.25 !important;
+        margin: 1px 0 !important;
+    }
+    #game-play-view .player-info-card--game .player-info-card__title-label {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        white-space: nowrap !important;
+    }
+    #game-play-view .player-info-card--game .player-info-card__title-value {
+        display: block !important;
+        white-space: nowrap !important;
+    }
 
     #game-play-view .game-practice-status {
         box-sizing: border-box;

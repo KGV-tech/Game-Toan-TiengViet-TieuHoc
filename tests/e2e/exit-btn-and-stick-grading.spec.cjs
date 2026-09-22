@@ -34,6 +34,44 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
     }
   });
 
+  test('Khung học sinh hiển thị danh hiệu 2 dòng: Line 1 Danh Hiệu:, Line 2 Học sinh tò mò', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('http://127.0.0.1:4173');
+    await page.evaluate(() => {
+      app.data.currentUser = { username: 'test-student', fullname: 'L4', role: 'student', classlevel: '4', class_name: 'Cấp lớp 4', stars: 0 };
+      app.auth.updateHeader();
+      document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
+      document.getElementById('game-screen')?.classList.add('active');
+      document.getElementById('game-play-view')?.classList.add('active');
+    });
+
+    const playerCard = page.locator('#game-player-info');
+    await expect(playerCard).toBeVisible();
+
+    const titleLabel = playerCard.locator('.player-info-card__title-label');
+    const titleValue = playerCard.locator('.player-info-card__title-value');
+    await expect(titleLabel).toBeVisible();
+    await expect(titleLabel).toContainText('Danh Hiệu:');
+    await expect(titleValue).toBeVisible();
+    await expect(titleValue).toHaveText('Học sinh tò mò');
+
+    const labelBox = await titleLabel.boundingBox();
+    const valueBox = await titleValue.boundingBox();
+    expect(labelBox).toBeTruthy();
+    expect(valueBox).toBeTruthy();
+    if (labelBox && valueBox) {
+      expect(valueBox.y).toBeGreaterThanOrEqual(labelBox.y + labelBox.height - 2);
+    }
+
+    // Dark Mode screenshot
+    await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
+    await playerCard.screenshot({ path: 'artifacts/actual_player_card_dark.png' });
+
+    // Light Mode screenshot
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    await playerCard.screenshot({ path: 'artifacts/actual_player_card_light.png' });
+  });
+
   test('Quy tắc stick V/X chuẩn chấm bài trên Đúng/Sai trong Dark Mode và Light Mode', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('http://127.0.0.1:4173');

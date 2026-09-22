@@ -12,7 +12,7 @@ const titleCount = (titlesMatch[1].match(/name:/g) || []).length;
 assert.equal(titleCount, 20, `PLAYER_TITLES must have 20 ranks, found ${titleCount}.`);
 
 const expectedTitles = [
-  'Học Trò Tò Mò', 'Học Trò Chăm Chỉ', 'Học Trò Gương Mẫu', 'Học Trò Xuất Sắc',
+  'Học sinh tò mò', 'Học Trò Chăm Chỉ', 'Học Trò Gương Mẫu', 'Học Trò Xuất Sắc',
   'Đội Trưởng Sáng Tạo', 'Đội Trưởng Thiên Tài', 'Đội Trưởng Siêu Việt', 'Đội Trưởng Bậc Thầy',
   'Nhà Nghiên Cứu Nhí', 'Nhà Nghiên Cứu', 'Nhà Nghiên Cứu Tài Ba', 'Nhà Nghiên Cứu Đại Tài',
   'Nhà Phát Minh Nhí', 'Nhà Phát Minh', 'Nhà Phát Minh Tài Năng', 'Nhà Phát Minh Uyên Bác',
