@@ -4035,6 +4035,7 @@ input[type="text"], input[type="password"], select, textarea {
 .template-editor__preview-button:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 7px 18px rgba(173, 138, 234, .24); }
 .template-editor__preview-button:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
 .template-editor .form-input { min-height: 46px; border-radius: 11px; }
+.template-editor__part-selection[hidden], .template-content-builder[hidden] { display: none !important; }
 .template-editor__part-selection { display: grid; gap: 12px; margin-top: 15px; padding: 13px 14px; border: 1px solid rgba(255, 209, 90, .3); border-radius: 13px; background: linear-gradient(135deg, rgba(79, 56, 18, .3), rgba(8, 31, 46, .58)); }
 .template-editor__part-selection.has-selection-error { border-color: rgba(255, 143, 156, .8); background: linear-gradient(135deg, rgba(111, 35, 60, .28), rgba(45, 22, 48, .5)); }
 .template-editor__part-selection-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
