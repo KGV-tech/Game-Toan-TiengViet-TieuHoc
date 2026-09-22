@@ -3772,7 +3772,7 @@ const app = {
 
             const speechBubble = document.getElementById('cat-speech-bubble');
             speechBubble.style.display = 'flex';
-            speechBubble.innerHTML = '<span>Cố lên!<br>Bạn làm được!</span>';
+            speechBubble.innerHTML = '<span class="cat-bubble-text cat-bubble-text--start">Cố lên!<br>Bạn làm được!</span>';
             const progressCopy = document.getElementById('game-progress-copy');
             if (progressCopy) progressCopy.style.display = 'grid';
             document.getElementById('explanation-box').style.display = 'none';
@@ -4910,7 +4910,7 @@ const app = {
                 }
                 const happyImage = basePet === 'robot_cat' ? 'robot_cat_happy.webp' : `${basePet}_happy.png`;
                 if (!this.state.teamCompetition) document.getElementById('play-cat-img').src = `./public/${happyImage}`;
-                bubble.innerHTML = `<span style="color:#16a34a;">Hoan hô!<br>Bạn giỏi quá!</span>`;
+                bubble.innerHTML = `<span class="cat-bubble-text cat-bubble-text--correct">Hoan hô!<br>Bạn giỏi quá!</span>`;
             } else {
                 app.playSound('wrong');
 
@@ -4923,7 +4923,7 @@ const app = {
                 }
                 const sadImage = basePet === 'robot_cat' ? 'robot_cat_sad.webp' : `${basePet}_sad.png`;
                 if (!this.state.teamCompetition) document.getElementById('play-cat-img').src = `./public/${sadImage}`;
-                bubble.innerHTML = `<span style="color:#f87171;">Cố lên nhé!<br>Xem lại bài nào!</span>`;
+                bubble.innerHTML = `<span class="cat-bubble-text cat-bubble-text--encourage">Cố lên nhé!<br>Xem lại bài nào!</span>`;
             }
 
             let explanation = String(q.explanation || q.hint || '').trim()
