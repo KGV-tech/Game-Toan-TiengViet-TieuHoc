@@ -6671,7 +6671,7 @@ input[type="text"], input[type="password"], select, textarea {
     overflow: hidden;
     border-radius: 0 !important;
     border: 0 !important;
-    background: #3388e4 url('assets/team-competition/Ballons/balloon-bg-open-sky%20abcd.png') center calc(100% - var(--max-score-progress, 0) * 100%) / 100% auto no-repeat;
+    background: #3388e4 url('assets/team-competition/Ballons/balloon-bg-future-castle.png') center calc(100% - var(--max-score-progress, 0) * 100%) / 100% auto no-repeat;
     transition: background-position 1.2s cubic-bezier(0.25, 1, 0.5, 1);
     box-shadow: none !important;
 }
