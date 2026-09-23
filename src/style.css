@@ -7251,7 +7251,356 @@ input[type="text"], input[type="password"], select, textarea {
     }
 }
 
+/* ==========================================================================
+   Space Launch Presentation Theme: "Bay Lên Không Gian"
+   Vertical ascent from launch pad to space citadel with Sci-Fi Deep Space HUD
+   ========================================================================== */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch::before,
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch::after {
+    display: none;
+}
 
+/* Sci-Fi Deep Space HUD Column on the left */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-board-hero {
+    position: absolute;
+    top: clamp(10px, 1.4vh, 18px);
+    bottom: clamp(10px, 1.4vh, 18px);
+    left: clamp(8px, 0.8vw, 14px);
+    width: clamp(170px, 14.5vw, 225px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: clamp(6px, 0.9vh, 12px);
+    padding: 0;
+    margin: 0;
+    min-height: 0;
+    box-sizing: border-box;
+    pointer-events: auto;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-board-summary {
+    display: none;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-title-card,
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock,
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    border-radius: clamp(12px, 1.2vw, 16px);
+    background: linear-gradient(135deg, rgba(6, 26, 68, 0.92) 0%, rgba(2, 14, 42, 0.96) 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    color: #fff;
+}
+
+/* HUD 1: Title Card with Neon Cyan Glow */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-title-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(52px, 7vh, 68px);
+    padding: clamp(6px, 0.9vh, 10px) clamp(8px, 1vw, 14px);
+    border: 1.5px solid #00f0ff;
+    box-shadow: 0 6px 20px rgba(0, 240, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-align: center;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-title-card h2 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(0.95rem, 1.25vw, 1.4rem);
+    font-weight: 900;
+    line-height: 1.25;
+    text-align: center;
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    letter-spacing: 0.02em;
+    word-break: break-word;
+}
+
+/* HUD 2: Space Clock with Solar Gold Glow */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(48px, 6.5vh, 64px);
+    padding: 6px 12px;
+    gap: 2px;
+    border: 1.5px solid #ffd700;
+    box-shadow: 0 6px 18px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-align: center;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock span {
+    font-size: clamp(0.48rem, 0.62vw, 0.7rem);
+    color: #ffe57f;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock strong {
+    font-size: clamp(1.15rem, 1.7vw, 1.85rem);
+    color: #fff;
+    line-height: 1.05;
+    font-weight: 900;
+    text-shadow: 0 0 10px #ffe57f;
+}
+
+/* HUD 3: Scoreboard */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(8px, 1vh, 12px) clamp(8px, 0.9vw, 12px);
+    border: 1.5px solid rgba(100, 220, 255, 0.45);
+    overflow: hidden;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard p {
+    margin: 0 0 clamp(4px, 0.7vh, 8px);
+    color: #67e8f9;
+    font-size: clamp(0.55rem, 0.68vw, 0.75rem);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard ol {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.5vh, 6px);
+    overflow-y: auto;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 7px;
+    padding: clamp(4px, 0.5vh, 7px) clamp(6px, 0.6vw, 10px);
+    border-radius: 9px;
+    background: rgba(2, 18, 48, 0.6);
+    border: 1px solid rgba(100, 200, 255, 0.15);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="1"] {
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.22), rgba(2, 16, 42, 0.7));
+    border-color: rgba(255, 215, 0, 0.55);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry span {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    font-weight: 900;
+    font-size: 11px;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="1"] span {
+    background: #ffd700;
+    color: #0f172a;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="2"] span {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="3"] span {
+    background: #f97316;
+    color: #fff;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry strong {
+    color: #fff;
+    font-size: clamp(0.68rem, 0.8vw, 0.85rem);
+    font-weight: 800;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry b {
+    color: #67e8f9;
+    font-size: clamp(0.78rem, 0.95vw, 1.05rem);
+    font-weight: 900;
+}
+
+/* Arena Canvas: Scrolling Background from Launch Pad to Space Citadel */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-canvas {
+    position: absolute;
+    inset: 0;
+    isolation: isolate;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0 !important;
+    border: 0 !important;
+    background: #020b1e url('assets/team-competition/Rockets/BG.png') center calc(100% - var(--max-score-progress, 0) * 100%) / 100% auto no-repeat;
+    transition: background-position 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: none !important;
+}
+
+/* Lanes Container */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-canvas__lanes {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: clamp(185px, 15.5vw, 245px);
+    right: clamp(12px, 1.2vw, 24px);
+    overflow: visible;
+    z-index: 3;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--rocket-center-x, var(--lane-left, 0%));
+    width: 0;
+    height: 100%;
+    transform: none;
+    z-index: 3;
+    --rocket-w: clamp(96px, 9.5vw, 140px);
+    --rocket-h: calc(var(--rocket-w) * 540 / 340);
+}
+
+/* Rocket Vehicle Sprite */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__vehicle {
+    position: absolute;
+    z-index: 4;
+    top: auto;
+    left: 0;
+    bottom: calc(3% + var(--rocket-altitude, 0%));
+    transform: translateX(-50%);
+    transform-origin: 50% 30%;
+    display: block;
+    width: var(--rocket-w);
+    height: var(--rocket-h);
+    aspect-ratio: 340 / 540;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+    transition: bottom 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: rocket-flame-pulse 1.8s ease-in-out infinite alternate;
+}
+
+/* Floating Team Info Badge above Rocket */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info {
+    position: absolute;
+    top: auto;
+    left: 0;
+    bottom: calc(3% + var(--rocket-altitude, 0%) + var(--rocket-h) + 6px);
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: max-content;
+    max-width: min(180px, 85vw);
+    padding: clamp(3px, 0.4vw, 6px) clamp(8px, 0.8vw, 14px);
+    border: 1.5px solid color-mix(in srgb, var(--stadium-accent, #00f0ff) 80%, white);
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(6, 24, 60, 0.92), rgba(2, 10, 30, 0.96));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: #fff;
+    white-space: nowrap;
+    transition: bottom 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 5;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info strong {
+    font-size: clamp(0.66rem, 0.82vw, 0.94rem);
+    line-height: 1;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: clamp(75px, 8vw, 115px);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info b {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    font-size: clamp(0.76rem, 0.95vw, 1.1rem);
+    font-weight: 900;
+    color: #fff4a4;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info em {
+    font-size: 0.65em;
+    color: #67e8f9;
+    font-style: normal;
+    font-weight: 700;
+}
+
+/* 10 Points Finish Badge: Reached Space Citadel */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-rocket-finish-badge {
+    position: absolute;
+    top: auto;
+    left: 0;
+    bottom: calc(3% + var(--rocket-altitude, 0%) - 14px);
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #051329;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 0 12px #ffd700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 6;
+    animation: rocket-badge-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes rocket-flame-pulse {
+    0% { transform: translateX(-50%) scale(0.98); }
+    100% { transform: translateX(-50%) scale(1.02); }
+}
+
+@keyframes rocket-badge-glow {
+    0% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+    100% { box-shadow: 0 0 18px rgba(255, 215, 0, 1); }
+}
+
+@media (max-width: 900px) {
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-board-hero {
+        width: clamp(140px, 17vw, 175px);
+    }
+    #treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-canvas__lanes {
+        left: clamp(155px, 18.5vw, 195px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__vehicle,
+    #treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info {
+        transition: none;
+        animation: none;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-canvas {
+        transition: none;
+    }
+}
 
 /* ==========================================================================
    UI/UX IMPROVEMENTS: Micro-interactions, Feedback polish & Light Mode
