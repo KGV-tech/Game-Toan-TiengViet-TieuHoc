@@ -7724,7 +7724,7 @@ const app = {
                     const rocketFinishBadge = (isSpaceLaunch && score >= 10)
                         ? `<span class="team-rocket-finish-badge">⭐ ĐẾN TRẠM!</span>`
                         : '';
-                    const laneInfoHtml = isSpaceLaunch ? '' : `<div class="team-stadium-lane__info">${infoContent}</div>`;
+                    const laneInfoHtml = (isSpaceLaunch || isBalloonTheme) ? '' : `<div class="team-stadium-lane__info">${infoContent}</div>`;
 
                     return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --boat-progress:${boatProgress}%; --boat-lane-top:${boatLaneTop.toFixed(2)}%; --boat-width:${boatWidth}px; --lane-z:${10 + index}; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --rocket-altitude:${Math.round(scoreProgress * 44)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --rocket-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}">${laneInfoHtml}<img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" />${rocketFinishBadge}</article>`;
                 }
