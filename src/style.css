@@ -6144,10 +6144,19 @@ input[type="text"], input[type="password"], select, textarea {
     z-index: 2;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 7px;
     min-height: 32px;
     margin: 0 0 5px;
+}
+#treasure-modal.team-board-fullscreen .team-board-toolbar .team-board-actions {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 8px;
+}
+#treasure-modal.team-board-fullscreen .team-board-toolbar:not(:has(.team-board-actions)) .team-status-pill {
+    margin-left: auto;
 }
 #treasure-modal.team-board-fullscreen .team-board-toolbar button {
     padding: 6px 10px;
@@ -6156,26 +6165,31 @@ input[type="text"], input[type="password"], select, textarea {
     color: #e7fbff;
     font-size: .7rem;
 }
-#treasure-modal.team-board-fullscreen .team-board-toolbar .team-board-actions {
-    display: inline-flex;
-    align-items: center;
-    margin: 0;
-}
 #treasure-modal.team-board-fullscreen .team-board-toolbar .team-board-end {
-    padding: 6px 12px;
+    padding: 6px 14px;
     border: 1px solid #ff7878 !important;
     border-radius: clamp(8px, 1vw, 12px);
     background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
     box-shadow: 0 2px 8px rgba(210, 20, 20, .45);
     color: #fff !important;
-    font-size: .72rem;
+    font-size: .75rem;
     font-weight: 800;
     cursor: pointer;
-    transition: transform .1s, background .2s;
+    text-transform: none;
+    transition: transform .1s, background .2s, box-shadow .2s;
 }
 #treasure-modal.team-board-fullscreen .team-board-toolbar .team-board-end:hover {
     background: linear-gradient(135deg, #f87171, #dc2626) !important;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(210, 20, 20, .6);
+}
+#treasure-modal.team-board-fullscreen .team-board-toolbar :is(.team-board-replay, .team-board-retry-sync) {
+    padding: 6px 14px;
+    font-size: .75rem;
+    font-weight: 800;
+    border-radius: clamp(8px, 1vw, 12px);
+    cursor: pointer;
+    text-transform: none;
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium {
     position: relative;
@@ -6377,6 +6391,7 @@ input[type="text"], input[type="password"], select, textarea {
     border-radius: 0 !important;
     box-shadow: none !important;
 }
+/* Fullscreen Exit Button */
 .team-board-exit-fullscreen {
     display: none;
 }
@@ -6384,7 +6399,7 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute;
     top: 14px;
     right: 18px;
-    z-index: 25;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6398,7 +6413,7 @@ input[type="text"], input[type="password"], select, textarea {
     font-size: 1.15rem;
     font-weight: 700;
     cursor: pointer;
-    opacity: 0;
+    opacity: 0.75;
     transition: opacity .25s ease, background .2s ease, transform .15s ease;
     backdrop-filter: blur(8px);
 }
@@ -6407,6 +6422,96 @@ input[type="text"], input[type="password"], select, textarea {
     background: rgba(3, 21, 61, .92);
     border-color: rgba(255, 255, 255, .85);
     transform: scale(1.08);
+}
+
+/* Prepared / Non-live Team Board Hero: Perfectly balanced 3-column flex layout */
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-hero {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: clamp(16px, 2.5vw, 36px);
+    padding: 0 0 clamp(10px, 1.4vh, 18px);
+    width: 100%;
+}
+:is(#treasure-modal.team-board-fullscreen-mode, .admin-panel:fullscreen) .team-competition-board:not(.team-competition-board--live) .team-board-hero {
+    padding-right: clamp(52px, 4.5vw, 68px);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-stadium-title-card {
+    flex: 1 1 0;
+    min-width: 0;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-stadium-title-card h2 {
+    margin: 2px 0 4px;
+    font-size: clamp(1.4rem, 2.5vw, 2.6rem);
+    line-height: 1.15;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-stadium-title-card p {
+    margin: 0;
+    color: #c6f4ff;
+    font-size: clamp(0.72rem, 0.95vw, 0.95rem);
+    font-weight: 700;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-race-clock {
+    flex: 0 0 auto;
+    margin: 0 auto;
+    min-width: clamp(150px, 16vw, 210px);
+    padding: clamp(8px, 1.1vh, 12px) clamp(16px, 1.8vw, 26px);
+    border: 2px solid #5aeaff;
+    border-radius: clamp(14px, 1.6vw, 20px);
+    background: linear-gradient(135deg, #073b88, #041b55);
+    box-shadow: 0 0 20px rgba(54, 236, 255, 0.35);
+    text-align: center;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-race-clock span {
+    display: block;
+    color: #bdefff;
+    font-size: clamp(0.6rem, 0.8vw, 0.78rem);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-race-clock strong {
+    display: block;
+    color: #fff;
+    font-size: clamp(1.35rem, 2.4vw, 2.6rem);
+    line-height: 1.05;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 14px #41e7ff;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-actions {
+    flex: 1 1 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-start {
+    margin: 0;
+    padding: clamp(11px, 1.4vh, 16px) clamp(24px, 2.5vw, 42px);
+    font-size: clamp(0.98rem, 1.25vw, 1.3rem);
+    font-weight: 900;
+    border: 2px solid #fff0a0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    box-shadow: 0 5px 20px rgba(239, 68, 68, 0.45), 0 0 18px rgba(253, 224, 71, 0.6);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    line-height: 1.2;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-start:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.08);
+    box-shadow: 0 7px 25px rgba(239, 68, 68, 0.6), 0 0 24px rgba(253, 224, 71, 0.85);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-start:active {
+    transform: translateY(0) scale(0.98);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-title-card,
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-race-clock,
@@ -6812,7 +6917,7 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute;
     top: clamp(8px, 1.2vh, 16px);
     left: clamp(12px, 1.5vw, 24px);
-    right: clamp(12px, 1.5vw, 24px);
+    right: clamp(56px, 4.5vw, 68px);
     z-index: 25;
     display: grid;
     grid-template-columns: minmax(230px, 1.15fr) minmax(160px, 0.62fr) minmax(380px, 1.9fr);
@@ -7009,26 +7114,19 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-content {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    justify-content: center;
     min-width: 0;
 }
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-lane {
-    font-size: 10px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--lane-accent-color, #67e8f9);
-}
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-content strong {
-    font-size: clamp(11px, 0.95vw, 14px);
+    font-size: clamp(12px, 1.05vw, 15px);
     color: #fff;
     text-shadow: 0 1px 2px #000;
     font-weight: 900;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 86px;
-    line-height: 1.1;
+    max-width: 96px;
+    line-height: 1.2;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-score {
     display: flex;
