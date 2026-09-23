@@ -304,6 +304,42 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
         await page.screenshot({ path: 'src/assets/team-competition/Sea/live-game-treasure-island.png' });
         const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
         await page.screenshot({ path: path.join(brainDir, 'live-game-treasure-island.png') });
+
+        // Chụp cập nhật preview-start.png cho Đảo Kho Báu với 8 đội ở vạch xuất phát
+        await page.evaluate(({ exam }) => {
+            const startMatch = {
+                id: 'match-sea-preview-gen',
+                name: 'Đảo Kho Báu - Lớp 5A',
+                classlevel: '5',
+                className: '5A',
+                participantMode: 'manual',
+                questionMode: 'same',
+                commonExamId: exam.id,
+                timeLimitMinutes: 15,
+                presentationTheme: 'treasure-island',
+                presentationTeamIdentity: {},
+                status: 'active',
+                startedAt: Date.now() - 1000,
+                teams: [
+                    { id: 't1', name: 'Đội 1 (Sóc)', memberUsernames: ['hs1'], leaderUsername: 'hs1', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't2', name: 'Đội 2 (Koala)', memberUsernames: ['hs2'], leaderUsername: 'hs2', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't3', name: 'Đội 3 (Khỉ)', memberUsernames: ['hs3'], leaderUsername: 'hs3', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't4', name: 'Đội 4 (Nhím)', memberUsernames: ['hs4'], leaderUsername: 'hs4', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't5', name: 'Đội 5 (Gà)', memberUsernames: ['hs5'], leaderUsername: 'hs5', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't6', name: 'Đội 6 (Hươu)', memberUsernames: ['hs6'], leaderUsername: 'hs6', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't7', name: 'Đội 7 (Cánh Cụt)', memberUsernames: ['hs7'], leaderUsername: 'hs7', score: 0, submittedCount: 0, status: 'active' },
+                    { id: 't8', name: 'Đội 8 (Gấu Mèo)', memberUsernames: ['hs8'], leaderUsername: 'hs8', score: 0, submittedCount: 0, status: 'active' }
+                ]
+            };
+            window.app.teamCompetition.store.upsert(startMatch);
+            const box = document.getElementById('treasure-content-area');
+            window.app.admin.renderTeamCompetitionBoard(box, startMatch.id);
+        }, { exam: demoExam() });
+
+        await page.waitForTimeout(1000);
+        const seaPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Sea', 'preview-start.png');
+        await page.screenshot({ path: seaPreviewPath });
+        await page.screenshot({ path: path.join(brainDir, 'preview-treasure-island-start.png') });
     });
 
     test('nút Bắt đầu thi đua đặt ở góc phải trên khung thi đấu và vẫn hiển thị khi mở full màn hình', async ({ page }) => {
