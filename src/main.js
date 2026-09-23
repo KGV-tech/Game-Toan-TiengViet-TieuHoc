@@ -7722,8 +7722,9 @@ const app = {
                     const rocketFinishBadge = (isSpaceLaunch && score >= 10)
                         ? `<span class="team-rocket-finish-badge">⭐ ĐẾN TRẠM!</span>`
                         : '';
+                    const laneInfoHtml = isSpaceLaunch ? '' : `<div class="team-stadium-lane__info">${infoContent}</div>`;
 
-                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --boat-progress:${boatProgress}%; --boat-lane-top:${boatLaneTop.toFixed(2)}%; --boat-width:${boatWidth}px; --lane-z:${10 + index}; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --rocket-altitude:${Math.round(scoreProgress * 44)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --rocket-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}"><div class="team-stadium-lane__info">${infoContent}</div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" />${rocketFinishBadge}</article>`;
+                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --boat-progress:${boatProgress}%; --boat-lane-top:${boatLaneTop.toFixed(2)}%; --boat-width:${boatWidth}px; --lane-z:${10 + index}; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --rocket-altitude:${Math.round(scoreProgress * 44)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --rocket-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}">${laneInfoHtml}<img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" />${rocketFinishBadge}</article>`;
                 }
                 const leaderName = app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn');
                 const roster = !isLive && match.status !== app.teamCompetition.STATUS.ENDED
@@ -7749,7 +7750,20 @@ const app = {
                     ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || null)
                     : (stadiumLanes[index] || null)
             ]));
-            const leaderboard = isLive ? `<aside class="team-race-scoreboard" aria-label="Bảng xếp hạng tạm thời"><p>Bảng xếp hạng tạm thời</p><ol>${rankedTeams.map(team => { const lane = stadiumLaneByTeamId.get(String(team.id)); const rank = app.teamCompetition.getTeamRank(match, team.id); return `<li class="team-race-scoreboard__entry ${lane ? `team-race-scoreboard__entry--${lane.color}` : ''}" data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong><b>${Number(team.score || 0).toLocaleString('vi-VN')}</b></li>`; }).join('')}</ol></aside>` : '';
+            const isSpaceLaunch = presentationTheme === 'space-launch';
+            const rocketThemeColors = ['#c27a42', '#2f74e6', '#f59e0b', '#22c55e', '#f97316', '#a855f7', '#06b6d4', '#ec4899'];
+            const leaderboard = isLive ? `<aside class="team-race-scoreboard" aria-label="Bảng xếp hạng tạm thời"><p>Bảng xếp hạng tạm thời</p><ol>${rankedTeams.map(team => {
+                const lane = stadiumLaneByTeamId.get(String(team.id));
+                const rank = app.teamCompetition.getTeamRank(match, team.id);
+                const origIndex = match.teams.findIndex(t => String(t.id) === String(team.id));
+                const rocketIndex = origIndex >= 0 ? origIndex % rocketThemeColors.length : 0;
+                const rocketColor = rocketThemeColors[rocketIndex];
+                const entryClass = isSpaceLaunch
+                    ? `team-race-scoreboard__entry--rocket-${rocketIndex + 1} ${lane ? `team-race-scoreboard__entry--${lane.color}` : ''}`
+                    : (lane ? `team-race-scoreboard__entry--${lane.color}` : '');
+                const entryStyle = isSpaceLaunch ? `style="--rocket-color:${rocketColor};"` : '';
+                return `<li class="team-race-scoreboard__entry ${entryClass}" ${entryStyle} data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong><b>${Number(team.score || 0).toLocaleString('vi-VN')}</b></li>`;
+            }).join('')}</ol></aside>` : '';
             const liveTimer = isLive && match.timeLimitMinutes !== null && match.startedAt ? Math.max(0, Number(match.timeLimitMinutes) * 60 - Math.floor((Date.now() - Number(match.startedAt)) / 1000)) : null;
             const timerLabel = liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`;
             const titleCard = `<div class="team-stadium-title-card"><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2></div>`;

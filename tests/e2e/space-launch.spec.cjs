@@ -113,6 +113,10 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
         await expect(titleCard).toBeVisible();
         await expect(titleCard).toContainText('Bay Vào Không Gian Lớp 5A');
 
+        // Check title card has doubled height (>= 95px)
+        const titleHeight = await titleCard.evaluate(el => el.getBoundingClientRect().height);
+        expect(titleHeight).toBeGreaterThanOrEqual(95);
+
         const clockCard = stadium.locator('.team-race-clock');
         await expect(clockCard).toBeVisible();
 
@@ -120,15 +124,28 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
         await expect(scoreboard).toBeVisible();
         await expect(scoreboard.locator('.team-race-scoreboard__entry')).toHaveCount(8);
 
+        // Check scoreboard entries have doubled height (>= 44px) and rocket color binding
+        const firstEntry = scoreboard.locator('.team-race-scoreboard__entry').first();
+        const entryHeight = await firstEntry.evaluate(el => el.getBoundingClientRect().height);
+        expect(entryHeight).toBeGreaterThanOrEqual(44);
+        const entryRocketColor = await firstEntry.evaluate(el => el.style.getPropertyValue('--rocket-color') || window.getComputedStyle(el).getPropertyValue('--rocket-color'));
+        expect(entryRocketColor).toBeTruthy();
+
         // Verify 8 stadium lanes
         const lanes = stadium.locator('.team-stadium-lane');
         await expect(lanes).toHaveCount(8);
 
-        // Verify rocket vehicle images are loaded with rocket-*.png
+        // Floating team info badge above rockets is removed
+        const floatingInfo = stadium.locator('.team-stadium-lane__info');
+        await expect(floatingInfo).toHaveCount(0);
+
+        // Verify rocket vehicle images are loaded with rocket-*.png and NO pulsing scale animation
         const firstRocket = lanes.first().locator('.team-stadium-lane__vehicle');
         await expect(firstRocket).toBeVisible();
         const rocketSrc = await firstRocket.getAttribute('src');
         expect(rocketSrc).toMatch(/rocket-1\.png$/);
+        const animName = await firstRocket.evaluate(el => window.getComputedStyle(el).animationName);
+        expect(animName === 'none' || animName === '').toBeTruthy();
 
         // Team 3 has reached 10 points and completed: check finish badge
         const team3Lane = lanes.nth(2);
@@ -327,5 +344,40 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
         await page.waitForTimeout(1000);
         const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
         await page.screenshot({ path: path.join(brainDir, 'live-game-space-launch.png') });
+
+        // Also capture updated preview-start.png with 8 teams at score 0
+        await page.evaluate(({ users, exam }) => {
+            const startMatch = {
+                id: 'match-space-preview-start',
+                name: 'Chuyến Bay Vào Không Gian',
+                classlevel: '5',
+                className: '5A',
+                participantMode: 'manual',
+                questionMode: 'same',
+                commonExamId: exam.id,
+                timeLimitMinutes: 15,
+                presentationTheme: 'space-launch',
+                status: 'active',
+                startedAt: Date.now() - 1000,
+                teams: Array.from({ length: 8 }, (_, i) => ({
+                    id: `t${i + 1}`,
+                    name: `Nhóm ${i + 1}`,
+                    memberUsernames: [`hs${i + 1}`],
+                    leaderUsername: `hs${i + 1}`,
+                    score: 0,
+                    submittedCount: 0,
+                    status: 'active'
+                }))
+            };
+            window.app.teamCompetition.store.upsert(startMatch);
+            const box = document.getElementById('treasure-content-area');
+            window.app.admin.renderTeamCompetitionBoard(box, startMatch.id);
+        }, { users: demoUsers(), exam: demoExam() });
+
+        await page.waitForTimeout(1000);
+        const rocketPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Rockets', 'preview-start.png');
+        await page.screenshot({ path: rocketPreviewPath });
+        await page.screenshot({ path: path.join(brainDir, 'preview-start.png') });
     });
 });
+
