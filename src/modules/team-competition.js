@@ -36,7 +36,7 @@
         Object.freeze({ id: PRESENTATION_THEMES.SPEED_RACE, label: 'Đường đua tốc độ', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.BALLOON_FESTIVAL, label: 'Lễ hội khinh khí cầu', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.TREASURE_ISLAND, label: 'Đảo Kho Báu', available: true }),
-        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Phóng phi thuyền', available: false }),
+        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Bay Lên Không Gian', available: true }),
         ...Array.from({ length: 6 }, (_, index) => Object.freeze({
             id: PRESENTATION_THEMES[`THEME_${index + 5}`],
             label: `Giao diện số ${index + 5}`,
@@ -62,6 +62,9 @@
     const TEAM_BOAT_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/Sea/vehicles/boat-${index + 1}.png`
     ));
+    const TEAM_ROCKET_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
+        `./src/assets/team-competition/Rockets/vehicles/rocket-${index + 1}.png`
+    ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
     function createSpaceshipAvatar(color) {
@@ -72,7 +75,7 @@
     function resolvePresentationTeamAvatar(presentationTheme, lane = STADIUM_LANES[0]) {
         const spriteIndex = Math.max(0, Math.min(TEAM_VEHICLE_ASSETS.length - 1, Number(lane?.vehicleSprite) || 0));
         if (presentationTheme === PRESENTATION_THEMES.SPACE_LAUNCH) {
-            return { src: createSpaceshipAvatar(TEAM_IDENTITY_COLORS[spriteIndex]), label: 'Phi thuyền' };
+            return { src: TEAM_ROCKET_ASSETS[spriteIndex], label: 'Phi thuyền' };
         }
         if (presentationTheme === PRESENTATION_THEMES.BALLOON_FESTIVAL) {
             return { src: TEAM_BALLOON_ASSETS[spriteIndex], label: 'Khinh khí cầu' };
@@ -97,6 +100,14 @@
     }
 
     function getPresentationThemePreview(themeId) {
+        if (themeId === PRESENTATION_THEMES.SPACE_LAUNCH) {
+            return {
+                id: PRESENTATION_THEMES.SPACE_LAUNCH,
+                src: './src/assets/team-competition/Rockets/preview-start.png',
+                label: 'Bay Lên Không Gian',
+                hint: 'Bay Lên Không Gian · 8 phi thuyền tên lửa 3D · Phóng thẳng đứng từ bệ phóng lên trạm không gian · Tự chia đều vị trí theo số đội.'
+            };
+        }
         if (themeId === PRESENTATION_THEMES.BALLOON_FESTIVAL) {
             return {
                 id: PRESENTATION_THEMES.BALLOON_FESTIVAL,
