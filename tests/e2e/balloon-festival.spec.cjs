@@ -87,7 +87,7 @@ test('giao diện Lễ hội khinh khí cầu hiển thị chuẩn 3 khung bên 
     await expect(stadium).toBeVisible();
 
     // Verify 3 panels on the left hero
-    const hero = page.locator('.team-board-hero');
+    const hero = board.locator('.team-board-hero');
     await expect(hero).toBeVisible();
     await expect(hero.locator('.team-stadium-title-card')).toContainText('Hội Thi Khinh Khí Cầu Lớp 5A');
     await expect(hero.locator('.team-race-clock strong')).toBeVisible();
@@ -97,10 +97,13 @@ test('giao diện Lễ hội khinh khí cầu hiển thị chuẩn 3 khung bên 
     const scoreboardEntries = hero.locator('.team-race-scoreboard__entry');
     await expect(scoreboardEntries).toHaveCount(8);
 
-    // Check hero board width is compacted by 20% (around 15.6vw, <= 250px at 1440px)
-    const heroBox = await hero.boundingBox();
-    expect(heroBox.width).toBeLessThanOrEqual(250);
-    expect(heroBox.x).toBeLessThanOrEqual(15);
+    // Check hero board width is compacted (<= 250px at 1440px)
+    await expect(async () => {
+        const heroBox = await hero.boundingBox();
+        expect(heroBox).not.toBeNull();
+        expect(heroBox.width).toBeLessThanOrEqual(250);
+        expect(heroBox.x).toBeLessThanOrEqual(15);
+    }).toPass();
 
     // Verify 8 balloons in canvas and their distributed positions
     const canvas = page.locator('.team-stadium-canvas');
