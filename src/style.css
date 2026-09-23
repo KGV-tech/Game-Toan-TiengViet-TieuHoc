@@ -7277,7 +7277,7 @@ input[type="text"], input[type="password"], select, textarea {
     top: clamp(10px, 1.4vh, 18px);
     bottom: clamp(10px, 1.4vh, 18px);
     left: clamp(8px, 0.8vw, 14px);
-    width: clamp(170px, 14.5vw, 225px);
+    width: clamp(210px, 17.5vw, 275px);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -7307,13 +7307,13 @@ input[type="text"], input[type="password"], select, textarea {
     color: #fff;
 }
 
-/* HUD 1: Title Card with Neon Cyan Glow */
+/* HUD 1: Title Card with Neon Cyan Glow (Gấp đôi chiều cao) */
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-title-card {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: clamp(52px, 7vh, 68px);
-    padding: clamp(6px, 0.9vh, 10px) clamp(8px, 1vw, 14px);
+    min-height: clamp(104px, 13.5vh, 136px);
+    padding: clamp(10px, 1.4vh, 16px) clamp(10px, 1.1vw, 16px);
     border: 1.5px solid #00f0ff;
     box-shadow: 0 6px 20px rgba(0, 240, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     text-align: center;
@@ -7321,11 +7321,11 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-title-card h2 {
     margin: 0;
     color: #fff;
-    font-size: clamp(0.95rem, 1.25vw, 1.4rem);
+    font-size: clamp(1.1rem, 1.45vw, 1.6rem);
     font-weight: 900;
-    line-height: 1.25;
+    line-height: 1.35;
     text-align: center;
-    text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    text-shadow: 0 0 14px rgba(0, 240, 255, 0.7);
     letter-spacing: 0.02em;
     word-break: break-word;
 }
@@ -7358,7 +7358,7 @@ input[type="text"], input[type="password"], select, textarea {
     text-shadow: 0 0 10px #ffe57f;
 }
 
-/* HUD 3: Scoreboard */
+/* HUD 3: Scoreboard (Tăng chiều cao bảng tên lên gấp đôi & gán màu phi thuyền) */
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard {
     flex: 1;
     min-height: 0;
@@ -7371,7 +7371,7 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard p {
     margin: 0 0 clamp(4px, 0.7vh, 8px);
     color: #67e8f9;
-    font-size: clamp(0.55rem, 0.68vw, 0.75rem);
+    font-size: clamp(0.6rem, 0.72vw, 0.82rem);
     font-weight: 900;
     letter-spacing: 0.06em;
     text-align: center;
@@ -7385,61 +7385,64 @@ input[type="text"], input[type="password"], select, textarea {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: clamp(3px, 0.5vh, 6px);
+    gap: clamp(6px, 0.8vh, 10px);
     overflow-y: auto;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry {
     display: grid;
-    grid-template-columns: 22px 1fr auto;
+    grid-template-columns: clamp(28px, 2.2vw, 36px) 1fr auto;
     align-items: center;
-    gap: 7px;
-    padding: clamp(4px, 0.5vh, 7px) clamp(6px, 0.6vw, 10px);
-    border-radius: 9px;
-    background: rgba(2, 18, 48, 0.6);
-    border: 1px solid rgba(100, 200, 255, 0.15);
-    transition: background 0.3s ease, border-color 0.3s ease;
+    gap: 10px;
+    min-height: clamp(48px, 5.8vh, 60px);
+    padding: clamp(6px, 0.8vh, 10px) clamp(10px, 0.8vw, 14px);
+    border-radius: 12px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--rocket-color, #00f0ff) 26%, rgba(3, 14, 40, 0.95)), rgba(2, 8, 26, 0.92));
+    border: 1.5px solid color-mix(in srgb, var(--rocket-color, #00f0ff) 65%, rgba(255, 255, 255, 0.15));
+    border-left: 6px solid var(--rocket-color, #00f0ff);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: all 0.3s ease;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="1"] {
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.22), rgba(2, 16, 42, 0.7));
-    border-color: rgba(255, 215, 0, 0.55);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--rocket-color, #ffd700) 60%, transparent), inset 0 1px rgba(255, 255, 255, 0.4);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry span {
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: clamp(28px, 2.2vw, 36px);
+    height: clamp(28px, 2.2vw, 36px);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    color: #94a3b8;
-    font-weight: 900;
-    font-size: 11px;
-}
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="1"] span {
-    background: #ffd700;
-    color: #0f172a;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-}
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="2"] span {
-    background: #e2e8f0;
-    color: #0f172a;
-}
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry[data-rank="3"] span {
-    background: #f97316;
+    background: var(--rocket-color, #00f0ff);
     color: #fff;
+    font-weight: 900;
+    font-size: clamp(13px, 1.1vw, 16px);
+    box-shadow: 0 0 10px var(--rocket-color, #00f0ff);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry strong {
     color: #fff;
-    font-size: clamp(0.68rem, 0.8vw, 0.85rem);
-    font-weight: 800;
+    font-size: clamp(0.92rem, 1.1vw, 1.25rem);
+    font-weight: 850;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry b {
-    color: #67e8f9;
-    font-size: clamp(0.78rem, 0.95vw, 1.05rem);
+    color: #fff4a4;
+    font-size: clamp(1.15rem, 1.45vw, 1.6rem);
     font-weight: 900;
+    text-shadow: 0 0 12px rgba(255, 244, 164, 0.7);
 }
+
+/* Gán màu chuẩn xác cho 8 phi thuyền */
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-1 { --rocket-color: #c27a42; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-2 { --rocket-color: #2f74e6; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-3 { --rocket-color: #f59e0b; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-4 { --rocket-color: #22c55e; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-5 { --rocket-color: #f97316; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-6 { --rocket-color: #a855f7; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-7 { --rocket-color: #06b6d4; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-race-scoreboard__entry--rocket-8 { --rocket-color: #ec4899; }
 
 /* Arena Canvas: Scrolling Background from Launch Pad to Space Citadel */
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-stadium-canvas {
@@ -7462,7 +7465,7 @@ input[type="text"], input[type="password"], select, textarea {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: clamp(185px, 15.5vw, 245px);
+    left: clamp(225px, 18.5vw, 295px);
     right: clamp(12px, 1.2vw, 24px);
     overflow: visible;
     z-index: 3;
@@ -7480,7 +7483,7 @@ input[type="text"], input[type="password"], select, textarea {
     --rocket-h: calc(var(--rocket-w) * 540 / 340);
 }
 
-/* Rocket Vehicle Sprite */
+/* Rocket Vehicle Sprite - Bỏ hoàn toàn hiệu ứng phình to */
 #treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__vehicle {
     position: absolute;
     z-index: 4;
@@ -7496,59 +7499,12 @@ input[type="text"], input[type="password"], select, textarea {
     object-fit: contain;
     filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
     transition: bottom 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
-    animation: rocket-flame-pulse 1.8s ease-in-out infinite alternate;
+    animation: none !important;
 }
 
-/* Floating Team Info Badge above Rocket */
+/* Bỏ ô tên nhóm và điểm trước đầu phi thuyền */
 #treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info {
-    position: absolute;
-    top: auto;
-    left: 0;
-    bottom: calc(3% + var(--rocket-altitude, 0%) + var(--rocket-h) + 6px);
-    transform: translateX(-50%);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: max-content;
-    max-width: min(180px, 85vw);
-    padding: clamp(3px, 0.4vw, 6px) clamp(8px, 0.8vw, 14px);
-    border: 1.5px solid color-mix(in srgb, var(--stadium-accent, #00f0ff) 80%, white);
-    border-radius: 999px;
-    background: linear-gradient(135deg, rgba(6, 24, 60, 0.92), rgba(2, 10, 30, 0.96));
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    color: #fff;
-    white-space: nowrap;
-    transition: bottom 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 5;
-    pointer-events: none;
-    backdrop-filter: blur(6px);
-}
-#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info strong {
-    font-size: clamp(0.66rem, 0.82vw, 0.94rem);
-    line-height: 1;
-    font-weight: 800;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: clamp(75px, 8vw, 115px);
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-}
-#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info b {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 2px;
-    font-size: clamp(0.76rem, 0.95vw, 1.1rem);
-    font-weight: 900;
-    color: #fff4a4;
-    line-height: 1;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-}
-#treasure-modal.team-board-fullscreen .team-race-stadium--space-launch .team-stadium-lane__info em {
-    font-size: 0.65em;
-    color: #67e8f9;
-    font-style: normal;
-    font-weight: 700;
+    display: none !important;
 }
 
 /* 10 Points Finish Badge: Reached Space Citadel */
@@ -7570,11 +7526,6 @@ input[type="text"], input[type="password"], select, textarea {
     white-space: nowrap;
     z-index: 6;
     animation: rocket-badge-glow 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes rocket-flame-pulse {
-    0% { transform: translateX(-50%) scale(0.98); }
-    100% { transform: translateX(-50%) scale(1.02); }
 }
 
 @keyframes rocket-badge-glow {
