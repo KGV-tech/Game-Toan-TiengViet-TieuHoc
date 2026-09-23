@@ -24,7 +24,7 @@ assert.equal(lessonOf(template(topic('hk1', 0), 'number.four_operations_expressi
 
 assert.equal(lessonOf(template(topic('hk1', 2), 'number.digit_at_place')), 'g4-math-hk1-b11');
 assert.equal(lessonOf(template(topic('hk1', 2), 'number.place_value_true_false')), 'g4-math-hk1-b11');
-assert.equal(lessonOf(template(topic('hk1', 2), 'number.safe_password_by_place_value')), 'g4-math-hk1-b11');
+assert.equal(lessonOf(template(topic('hk1', 2), 'number.safe_password_by_place_value')), 'g4-math-hk1-b12');
 assert.equal(lessonOf(template(topic('hk1', 2), 'number.compose_from_places')), 'g4-math-hk1-b11');
 assert.equal(lessonOf(template(topic('hk1', 2), 'number.missing_expanded_addend')), 'g4-math-hk1-b11');
 assert.equal(lessonOf(template(topic('hk1', 2), 'number.smallest_of_four')), 'g4-math-hk1-b14');

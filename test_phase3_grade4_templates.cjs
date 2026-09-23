@@ -46,7 +46,8 @@ for (let seed = 0; seed < 24; seed += 1) {
   assert.equal(question.topic, '2. Góc và đơn vị đo góc');
   assert.equal(question.subquestions.length, 4);
   assert.deepEqual(question.partAnswerCounts, [1, 1, 1, 1]);
-  assert.equal(new Set(question.subquestions.map(item => item.mode)).size, 1);
+  assert(new Set(question.subquestions.map(item => item.mode)).size > 1,
+    'B09 review must mix measuring and classifying angles.');
   assert(['measure', 'classify'].includes(question.subquestions[0].mode));
   assert(question.subquestions.every(item => /^<svg\b/i.test(item.visual)));
   assert(question.subquestions.every(item => item.options.length === 4));

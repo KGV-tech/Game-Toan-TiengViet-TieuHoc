@@ -50,10 +50,10 @@ const homogeneousCases = [
     ['number.million_class', { modes: ['read', 'write', 'digit', 'expanded'] }, 'mode'],
     ['number.round_hundred_thousands', { modes: ['round', 'round', 'round', 'rule'] }, 'mode'],
     ['number.place_value_true_false', {}, 'kind'],
-    ['number.hk1_review_b01_b04', { skills: ['b01', 'b02', 'b03', 'b04'] }, 'skill'],
-    ['number.hk1_review_b10_b15', { skills: ['b10', 'b11', 'b12', 'b13'] }, 'skill'],
+    ['number.hk1_review_b01_b04', { skills: ['b01', 'b02', 'b03', 'b04'], reviewMode: 'single' }, 'skill'],
+    ['number.hk1_review_b10_b15', { skills: ['b10', 'b11', 'b12', 'b13'], reviewMode: 'single' }, 'skill'],
     ['measurement.practice_cards', { allowedKinds: ['mass', 'area', 'time', 'century'] }, 'kind'],
-    ['measurement.hk1_review_b17_b20', { skills: ['b17', 'b18', 'b19', 'b20'] }, 'skill'],
+    ['measurement.hk1_review_b17_b20', { skills: ['b17', 'b18', 'b19', 'b20'], reviewMode: 'single' }, 'skill'],
     ['measurement.mass_unit_convert', {}, 'practiceRows', 'kind'],
     ['measurement.area_unit_convert', {}, 'practiceRows', 'kind'],
     ['measurement.time_unit_convert', {}, 'practiceRows', 'kind'],
@@ -61,14 +61,14 @@ const homogeneousCases = [
     ['measurement.match_equivalences', {}, 'matchingRows', 'kind'],
     ['measurement.unit_true_false', {}, 'statements', 'kind'],
     ['measurement.word_problem_units', { scenarioKinds: ['mass', 'area', 'time'] }, 'practiceRows', 'kind'],
-    ['number.hk1_review_b22_b25', { skills: ['b22', 'b23', 'b24', 'b25'] }, 'skill'],
-    ['geometry.hk1_review_b27_b31', { skills: ['b27', 'b28', 'b29', 'b30'] }, 'skill'],
-    ['number.hk1_review_b33_numbers', { skills: ['b10', 'b11', 'b12', 'b13'] }, 'skill'],
-    ['number.hk1_review_b34_add_sub', { skills: ['b22', 'b23', 'b24', 'b25'] }, 'skill'],
-    ['geometry.hk1_review_b35', { skills: ['b27', 'b28', 'b29', 'b30'] }, 'skill'],
-    ['measurement.hk1_review_b36', { skills: ['b17', 'b18', 'b19', 'b20'] }, 'skill'],
-    ['number.hk1_review_b37_full', { groups: ['numbers', 'addSub', 'geometry', 'measurement'] }, 'skillGroup'],
-    ['g4-m-angle-review', {}, 'mode']
+    ['number.hk1_review_b22_b25', { skills: ['b22', 'b23', 'b24', 'b25'], reviewMode: 'single' }, 'skill'],
+    ['geometry.hk1_review_b27_b31', { skills: ['b27', 'b28', 'b29', 'b30'], reviewMode: 'single' }, 'skill'],
+    ['number.hk1_review_b33_numbers', { skills: ['b10', 'b11', 'b12', 'b13'], reviewMode: 'single' }, 'skill'],
+    ['number.hk1_review_b34_add_sub', { skills: ['b22', 'b23', 'b24', 'b25'], reviewMode: 'single' }, 'skill'],
+    ['geometry.hk1_review_b35', { skills: ['b27', 'b28', 'b29', 'b30'], reviewMode: 'single' }, 'skill'],
+    ['measurement.hk1_review_b36', { skills: ['b17', 'b18', 'b19', 'b20'], reviewMode: 'single' }, 'skill'],
+    ['number.hk1_review_b37_full', { groups: ['numbers', 'addSub', 'geometry', 'measurement'], reviewMode: 'single' }, 'skillGroup'],
+    ['g4-m-angle-review', { reviewMode: 'single' }, 'mode']
 ];
 
 homogeneousCases.forEach(([templateId, config, collectionOrField, maybeField], index) => {
@@ -92,14 +92,14 @@ homogeneousCases.forEach(([templateId, config, collectionOrField, maybeField], i
 });
 
 ['number.hk1_review_b22_b25', 'number.hk1_review_b34_add_sub'].forEach((templateId, index) => {
-    const question = generateQuestion(templateId, { skills: ['b24'] }, seededRandom(9400 + index));
+    const question = generateQuestion(templateId, { skills: ['b24'], reviewMode: 'single' }, seededRandom(9400 + index));
     assertCollectionCohesion(question, 'subquestions', 'property', templateId);
 });
 
 [
-    ['number.hk1_review_b01_b04', { skills: ['b02'] }, 'operation'],
-    ['number.hk1_review_b01_b04', { skills: ['b03'] }, 'targetParity'],
-    ['number.hk1_review_b01_b04', { skills: ['b04'] }, 'operation']
+    ['number.hk1_review_b01_b04', { skills: ['b02'], reviewMode: 'single' }, 'operation'],
+    ['number.hk1_review_b01_b04', { skills: ['b03'], reviewMode: 'single' }, 'targetParity'],
+    ['number.hk1_review_b01_b04', { skills: ['b04'], reviewMode: 'single' }, 'operation']
 ].forEach(([templateId, config, field], index) => {
     const question = generateQuestion(templateId, config, seededRandom(9500 + index));
     if (field === 'targetParity') assertBalancedParity(question, `${templateId} ${field}`);

@@ -69,7 +69,7 @@ test('Phase 6 Bài 22 giữ riêng phạm vi phép cộng trong editor và gamep
   ]);
 });
 
-test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và gameplay thống nhất', async ({ page }) => {
+test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và gameplay trộn', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -115,9 +115,9 @@ test('Phase 6 Bài 24 và Bài 26 có cấu hình chuyên biệt, Preview và ga
     return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson, options: item.options.length }));
   }, reviewTemplate);
   expect(gameplay).toHaveLength(4);
-  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
-  expect(['b22', 'b23', 'b24', 'b25']).toContain(gameplay[0].skill);
-  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(4);
+  expect(gameplay.every(item => ['b22', 'b23', 'b24', 'b25'].includes(item.skill))).toBe(true);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${item.skill}`)).toBe(true);
   expect(gameplay.every(item => item.options === 4)).toBe(true);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);

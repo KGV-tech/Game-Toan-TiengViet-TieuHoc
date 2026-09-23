@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, numericOptions, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, numericOptions, configuredValues, chooseConfiguredValue, configuredReviewSequence, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '4. Một số đơn vị đo Đại lượng';
 const labels = ['a', 'b', 'c', 'd'];
@@ -115,28 +115,34 @@ function makeReviewPart(skill, random, selectedKind) {
         skill,
         skillLabel: SKILL_LABELS[skill],
         lesson: LESSONS[skill],
+        family: 'measurement',
         prompt: `${SKILL_LABELS[skill]} · ${source.prompt}`
     };
 }
 
 function makeReviewQuestion(config = {}, random) {
-    const skills = configuredValues(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, 'Bộ ôn tập Bài 17 đến Bài 20 cần ít nhất một kỹ năng hợp lệ.');
-    const selectedSkill = chooseConfiguredValue(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, random, 'Bộ ôn tập Bài 17 đến Bài 20 cần ít nhất một kỹ năng hợp lệ.');
-    const selectedKind = selectedSkill === 'b17'
-        ? 'mass'
-        : selectedSkill === 'b18'
-            ? 'area'
-            : selectedSkill === 'b19'
-                ? (randomInt(0, 1, random) === 0 ? 'time' : 'century')
-                : chooseConfiguredValue({}, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, random, 'Bài 20 cần một nhóm thực hành hợp lệ.');
-    const subquestions = labels.map(label => ({ label, ...makeReviewPart(selectedSkill, random, selectedKind) }));
-    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]} · ${PRACTICE_KIND_LABELS[selectedKind]}:`;
+    const review = configuredReviewSequence(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, random, 'Bộ ôn tập Bài 17 đến Bài 20 cần ít nhất một kỹ năng hợp lệ.');
+    const subquestions = review.sequence.map((skill, index) => {
+        const selectedKind = skill === 'b17'
+            ? 'mass'
+            : skill === 'b18'
+                ? 'area'
+                : skill === 'b19'
+                    ? (index % 2 === 0 ? 'time' : 'century')
+                    : PRACTICE_KINDS[index % PRACTICE_KINDS.length];
+        return { label: labels[index], ...makeReviewPart(skill, random, selectedKind) };
+    });
+    const prompt = review.reviewMode === 'single'
+        ? `Luyện tập ${SKILL_LABELS[review.sequence[0]]}:`
+        : 'Ôn tập trộn Bài 17 đến Bài 20:';
     const question = createFourPartMultipleChoiceQuestion(
         'measurement.hk1_review_b17_b20',
         prompt,
         subquestions,
-        `Bốn ý cùng luyện ${PRACTICE_KIND_LABELS[selectedKind]}.`,
-        { question: prompt, skills: skills.join(', '), selectedSkill, selectedKind }
+        review.reviewMode === 'single'
+            ? `Bốn ý cùng luyện các nội dung của ${SKILL_LABELS[review.sequence[0]]}.`
+            : 'Bốn ý trộn đổi đơn vị khối lượng, diện tích, thời gian và thực hành.',
+        { question: prompt, skills: review.values.join(', '), reviewMode: review.reviewMode, selectedSkills: review.sequence.join(', '), ...(review.selected ? { selectedSkill: review.selected } : {}) }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];

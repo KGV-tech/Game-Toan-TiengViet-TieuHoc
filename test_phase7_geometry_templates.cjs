@@ -66,10 +66,10 @@ assert.throws(
 const reviewSkills = ['b27', 'b28', 'b29', 'b31'];
 const review = generateQuestion('geometry.hk1_review_b27_b31', { skills: reviewSkills }, seededRandom(7210));
 assertFourChoiceQuestion(review, '6. Đường thẳng vuông góc. Đường thẳng song song');
-assert.equal(new Set(review.subquestions.map(item => item.skill)).size, 1);
-assert(reviewSkills.includes(review.subquestions[0].skill));
-assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${review.subquestions[0].skill}`));
-assert.equal(review.templateVariables.selectedSkill, review.subquestions[0].skill);
+assert(new Set(review.subquestions.map(item => item.skill)).size > 1);
+assert(review.subquestions.every(item => reviewSkills.includes(item.skill)));
+assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${item.skill}`));
+assert.equal(review.templateVariables.reviewMode, 'mixed');
 assert.equal(review.templateVariables.skills, reviewSkills.join(', '));
 assert.throws(
     () => generateQuestion('geometry.hk1_review_b27_b31', { skills: [] }, seededRandom(7211)),

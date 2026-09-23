@@ -87,6 +87,29 @@ function chooseConfiguredValue(config, key, defaults, allowed, random, message) 
     return values[randomInt(0, values.length - 1, random)];
 }
 
+/**
+ * Resolve the four-part review policy used by HK1 review templates.
+ *
+ * Reviews are mixed by default so a review card revisits several lessons.
+ * Authors can opt into the previous focused behaviour with reviewMode: 'single'.
+ * A one-item pool is intentionally allowed and simply repeats that lesson.
+ */
+function configuredReviewSequence(config, key, defaults, allowed, random, message, length = 4) {
+    const values = configuredValues(config, key, defaults, allowed, message);
+    const reviewMode = config && config.reviewMode !== undefined ? config.reviewMode : 'mixed';
+    if (!['mixed', 'single'].includes(reviewMode)) {
+        throw new Error('reviewMode phải là mixed hoặc single.');
+    }
+    if (!Number.isInteger(length) || length < 1) throw new Error('Số lượng ý review phải là số nguyên dương.');
+    if (reviewMode === 'single') {
+        const selected = values[randomInt(0, values.length - 1, random)];
+        return { reviewMode, values, sequence: Array.from({ length }, () => selected), selected };
+    }
+    const order = shuffle(values, random);
+    const sequence = Array.from({ length }, (_, index) => order[index % order.length]);
+    return { reviewMode, values, sequence, selected: order.length === 1 ? order[0] : undefined };
+}
+
 function digitOptions(correct, random) {
     const candidates = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(digit => digit !== correct), random).slice(0, 3);
     return shuffle([correct, ...candidates], random).map(String);
@@ -202,5 +225,5 @@ function expandedTerms(value) {
     }, []);
 }
 
-return { randomInt, shuffle, formatNumber, readNumber, numericOptions, configuredValues, chooseConfiguredValue, digitOptions, expandedForm, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
+return { randomInt, shuffle, formatNumber, readNumber, numericOptions, configuredValues, chooseConfiguredValue, configuredReviewSequence, digitOptions, expandedForm, createQuestion, createFourPartMultipleChoiceQuestion, createFillBlankQuestion, createComparisonQuestion, randomNumberMatching, expandedTerms };
 }));

@@ -146,10 +146,10 @@ const reviewSkillSets = [
 reviewSkillSets.forEach((skills, index) => {
     const question = generateQuestion('measurement.hk1_review_b17_b20', { skills }, seededRandom(5240 + index));
     assertFourPartChoice(question, 'measurement.hk1_review_b17_b20');
-    assert.equal(new Set(question.subquestions.map(part => part.skill)).size, 1);
-    assert(skills.includes(question.subquestions[0].skill));
-    assert(question.subquestions.every(part => part.lesson === `g4-math-hk1-${question.subquestions[0].skill}`));
-    assert.equal(question.templateVariables.selectedSkill, question.subquestions[0].skill);
+    assert(new Set(question.subquestions.map(part => part.skill)).size > 1);
+    assert(question.subquestions.every(part => skills.includes(part.skill)));
+    assert(question.subquestions.every(part => part.lesson === `g4-math-hk1-${part.skill}`));
+    assert.equal(question.templateVariables.reviewMode, 'mixed');
     assert.equal(question.templateVariables.skills, skills.join(', '));
 });
 assert.throws(
@@ -162,7 +162,7 @@ assert.throws(
 );
 
 const defaultReview = generateQuestion('measurement.hk1_review_b17_b20', {}, seededRandom(5252));
-assert.equal(new Set(defaultReview.subquestions.map(part => part.skill)).size, 1);
+assert(new Set(defaultReview.subquestions.map(part => part.skill)).size > 1);
 assert(defaultReview.subquestions.every(part => part.lesson && part.skillLabel));
 assert(defaultReview.subquestions.flatMap(part => part.options).every(option => Number.isFinite(numericValue(option)) || /XVIII|XIX|XX|XXI/.test(option)));
 

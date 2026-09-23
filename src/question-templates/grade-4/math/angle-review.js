@@ -1,54 +1,66 @@
 ;(function (root, factory) {
     const shared = typeof module !== 'undefined' && module.exports ? require('./angle-shared') : root.Grade4MathAngleShared;
-    const generate = factory(shared);
+    const reviewShared = typeof module !== 'undefined' && module.exports ? require('./shared') : root.Grade4MathTemplateShared;
+    const generate = factory(shared, reviewShared);
     if (typeof module !== 'undefined' && module.exports) module.exports = generate;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     root.Grade4MathTemplateGenerators['g4-m-angle-review'] = generate;
     root.Grade4MathTemplateGenerators['angle.review'] = generate;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ ANGLE_TYPE_KEYS, angleTypeOf, classificationOptions, degreeForType, measureOptions, pickDistinctDegrees, renderAngleSVG, renderProtractorSVG, validateDegreePool, shuffle }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ ANGLE_TYPE_KEYS, angleTypeOf, classificationOptions, degreeForType, measureOptions, pickDistinctDegrees, renderAngleSVG, renderProtractorSVG, validateDegreePool, shuffle }, { configuredReviewSequence }) {
 
 const MODE_KEYS = ['measure', 'classify'];
 const MODE_LABELS = { measure: 'đọc số đo góc', classify: 'phân loại góc' };
 
-function configuredModes(config) {
-    const source = Array.isArray(config.modes)
-        ? config.modes
-        : config.mode !== undefined
-            ? [config.mode]
-            : MODE_KEYS;
-    if (!source.length || new Set(source).size !== source.length || source.some(mode => !MODE_KEYS.includes(mode))) {
-        throw new Error('Bộ ôn tập góc cần ít nhất một dạng hợp lệ: đọc số đo hoặc phân loại góc.');
-    }
-    return [...source];
-}
-
 function generateAngleReview(config = {}, random = Math.random) {
     const degreePool = validateDegreePool(config.allowedDegrees);
-    const modes = configuredModes(config);
-    const selectedMode = shuffle(modes, random)[0];
-    const subquestions = selectedMode === 'measure'
-        ? pickDistinctDegrees(degreePool, 4, random).map((degrees, index) => ({
+    const modeConfig = { ...config, modes: Array.isArray(config.modes) ? config.modes : (config.mode !== undefined ? [config.mode] : MODE_KEYS) };
+    const review = configuredReviewSequence(
+        modeConfig,
+        'modes',
+        MODE_KEYS,
+        MODE_KEYS,
+        random,
+        'Bộ ôn tập góc cần ít nhất một dạng hợp lệ: đọc số đo hoặc phân loại góc.'
+    );
+    const measureDegrees = pickDistinctDegrees(degreePool, 4, random);
+    let measureIndex = 0;
+    const subquestions = review.sequence.map((mode, index) => mode === 'measure'
+        ? (() => {
+            const degrees = measureDegrees[measureIndex++ % measureDegrees.length];
+            return {
             label: String.fromCharCode(97 + index),
-            mode: selectedMode,
+            mode,
+            skill: 'b07',
+            skillLabel: 'Bài 7 · Góc và đơn vị đo góc',
+            lesson: 'g4-math-hk1-b07',
+            family: 'angle-measure',
             degrees,
             visual: renderProtractorSVG(degrees),
             prompt: 'Đọc số đo góc trên thước đo góc và chọn đáp án đúng (độ).',
             options: measureOptions(degrees, random),
             answer: `${degrees}°`
-        }))
-        : shuffle(ANGLE_TYPE_KEYS, random).map((key, index) => {
+            };
+        })()
+        : (() => {
+            const key = ANGLE_TYPE_KEYS[index % ANGLE_TYPE_KEYS.length];
             const degrees = degreeForType(key, random);
             return {
                 label: String.fromCharCode(97 + index),
-                mode: selectedMode,
+                mode,
+                skill: 'b08',
+                skillLabel: 'Bài 8 · Nhận biết góc nhọn, góc tù, góc bẹt',
+                lesson: 'g4-math-hk1-b08',
+                family: 'angle-classify',
                 degrees,
                 visual: renderAngleSVG(degrees),
                 prompt: 'Quan sát hình và chọn tên loại góc đúng.',
                 options: classificationOptions(random),
                 answer: angleTypeOf(degrees)
             };
-        });
-    const prompt = `Ôn tập dạng ${MODE_LABELS[selectedMode]}:`;
+        })());
+    const prompt = review.reviewMode === 'single'
+        ? `Ôn tập dạng ${MODE_LABELS[review.sequence[0]]}:`
+        : 'Ôn tập trộn các dạng góc:';
     return {
         classlevel: 'Lớp 4',
         subject: 'Toán',
@@ -62,14 +74,14 @@ function generateAngleReview(config = {}, random = Math.random) {
         subquestions,
         partAnswerCounts: [1, 1, 1, 1],
         ans: subquestions.map(item => item.answer).join(', '),
-        explanation: selectedMode === 'measure'
-            ? 'Đọc hai tia của góc trên thước đo góc và xác định số đo theo đơn vị độ.'
-            : 'Góc nhọn bé hơn 90°, góc vuông bằng 90°, góc tù lớn hơn 90° và bé hơn 180°, còn góc bẹt bằng 180°.',
+        explanation: 'Kết hợp đọc số đo góc và phân loại góc theo số đo.',
         templateVariables: {
             question: prompt,
             skills: 'đo góc, phân loại góc',
-            modes: modes.join(', '),
-            selectedMode
+            modes: review.values.join(', '),
+            reviewMode: review.reviewMode,
+            selectedModes: review.sequence.join(', '),
+            ...(review.selected ? { selectedMode: review.selected } : {})
         }
     };
 }

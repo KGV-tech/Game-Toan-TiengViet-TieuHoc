@@ -35,7 +35,7 @@ assert.match(main, /template-phase2-variable-minimum/,
   'B04 variable-expression settings must be editable.');
 assert.match(main, /isPhase2Template/,
   'Template collection must preserve Phase 2 config instead of generic config.');
-assert.match(main, /number\.hk1_review_b01_b04[\s\S]*?Bài 1–4/,
+assert.match(main, /number\.hk1_review_b01_b04[\s\S]*?Bài 1–5/,
   'B06 editor copy must identify its exact review scope.');
 
 assert.doesNotMatch(main, /number\.even_odd_.*b05|variable_expression.*b05|hk1_review_b01_b05/i,

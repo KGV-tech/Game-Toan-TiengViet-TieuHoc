@@ -46,10 +46,10 @@ assert.equal(review.topic, '5. Phép cộng và phép trừ');
 assert.equal(review.type, 'Trắc nghiệm');
 assert.equal(review.subquestions.length, 4);
 assert.deepEqual(review.partAnswerCounts, [1, 1, 1, 1]);
-assert.equal(new Set(review.subquestions.map(item => item.skill)).size, 1);
-assert(skills.includes(review.subquestions[0].skill));
-assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${review.subquestions[0].skill}`));
-assert.equal(review.templateVariables.selectedSkill, review.subquestions[0].skill);
+assert(new Set(review.subquestions.map(item => item.skill)).size > 1);
+assert(review.subquestions.every(item => skills.includes(item.skill)));
+assert(review.subquestions.every(item => item.lesson === `g4-math-hk1-${item.skill}`));
+assert.equal(review.templateVariables.reviewMode, 'mixed');
 assert.equal(review.templateVariables.skills, skills.join(', '));
 assert.equal(review.ans.split(', ').length, 4);
 review.subquestions.forEach(item => {

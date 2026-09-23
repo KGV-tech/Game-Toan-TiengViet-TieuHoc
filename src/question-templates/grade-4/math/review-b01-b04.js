@@ -4,21 +4,23 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, configuredValues, chooseConfiguredValue }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, formatNumber, configuredReviewSequence }) {
 
 const TOPIC = '1. Ôn tập và bổ sung';
-const SKILLS = ['b01', 'b02', 'b03', 'b04'];
+const SKILLS = ['b01', 'b02', 'b03', 'b04', 'b05'];
 const SKILL_LABELS = {
     b01: 'Bài 1 · Nhận biết chữ số theo hàng',
     b02: 'Bài 2 · Thực hiện phép tính',
     b03: 'Bài 3 · Nhận biết số chẵn, số lẻ',
-    b04: 'Bài 4 · Tính giá trị biểu thức chứa chữ'
+    b04: 'Bài 4 · Tính giá trị biểu thức chứa chữ',
+    b05: 'Bài 5 · Bài toán có ba bước tính'
 };
 const LESSONS = {
     b01: 'g4-math-hk1-b01',
     b02: 'g4-math-hk1-b02',
     b03: 'g4-math-hk1-b03',
-    b04: 'g4-math-hk1-b04'
+    b04: 'g4-math-hk1-b04',
+    b05: 'g4-math-hk1-b05'
 };
 const PLACE_NAMES = ['chục nghìn', 'nghìn', 'trăm', 'chục'];
 const PLACE_VALUES = [10000, 1000, 100, 10];
@@ -151,46 +153,71 @@ function makeB04(random, operation = (random() >= 0.5 ? 'subtract' : 'add')) {
     );
 }
 
-function generateReview(config = {}, random = Math.random) {
-    const requestedSkills = configuredValues(
-        config,
-        'skills',
-        SKILLS,
-        SKILLS,
-        'Bộ ôn tập Bài 6 cần ít nhất một kỹ năng hợp lệ trong Bài 1 đến Bài 4.'
+function makeB05(random) {
+    const erasers = randomInt(2, 5, random);
+    const eraserPrice = randomInt(4, 9, random) * 1000;
+    const pencils = randomInt(3, 8, random);
+    const pencilPrice = randomInt(5, 9, random) * 1000;
+    const discount = randomInt(1, 4, random) * 1000;
+    const answer = erasers * eraserPrice + pencils * pencilPrice - discount;
+    return row(
+        'b05',
+        `Một bạn mua ${erasers} cục tẩy giá ${formatNumber(eraserPrice)} đồng/cục và ${pencils} bút chì giá ${formatNumber(pencilPrice)} đồng/cái. Cửa hàng giảm ${formatNumber(discount)} đồng. Bạn phải trả bao nhiêu tiền?`,
+        answer,
+        numericOptions(answer, random, 0, 999999),
+        `Tính tiền từng loại rồi cộng lại, sau đó trừ ${formatNumber(discount)} đồng: ${formatNumber(answer)} đồng.`,
+        { erasers, eraserPrice, pencils, pencilPrice, discount, steps: 3 }
     );
-    const selectedSkill = chooseConfiguredValue(
+}
+
+function generateReview(config = {}, random = Math.random) {
+    const review = configuredReviewSequence(
         config,
         'skills',
         SKILLS,
         SKILLS,
         random,
-        'Bộ ôn tập Bài 6 cần ít nhất một kỹ năng hợp lệ trong Bài 1 đến Bài 4.'
+        'Bộ ôn tập Bài 6 cần ít nhất một kỹ năng hợp lệ trong Bài 1 đến Bài 5.'
     );
-    const selectedOperation = selectedSkill === 'b02'
+    const allParity = review.sequence.every(skill => skill === 'b03');
+    const parityTargets = allParity ? balancedParities(random) : null;
+    let parityIndex = 0;
+    const selectedOperation = review.reviewMode === 'single' && review.sequence[0] === 'b02'
         ? OPERATIONS[randomInt(0, OPERATIONS.length - 1, random)]
-        : selectedSkill === 'b04'
+        : review.reviewMode === 'single' && review.sequence[0] === 'b04'
             ? (random() >= 0.5 ? 'subtract' : 'add')
             : null;
-    const targetParities = selectedSkill === 'b03' ? balancedParities(random) : null;
     const builders = {
         b01: makeB01,
-        b02: randomValue => makeB02(randomValue, selectedOperation),
-        b03: (randomValue, index) => makeB03(randomValue, targetParities[index]),
-        b04: randomValue => makeB04(randomValue, selectedOperation)
+        b02: randomValue => makeB02(randomValue, selectedOperation || undefined),
+        b03: randomValue => makeB03(randomValue, parityTargets ? parityTargets[parityIndex++] : (parityIndex++ % 2 ? 'odd' : 'even')),
+        b04: randomValue => makeB04(randomValue, selectedOperation || undefined),
+        b05: makeB05
     };
-    const subquestions = Array.from({ length: 4 }, (_, index) => ({
-        label: String.fromCharCode(97 + index),
-        ...builders[selectedSkill](random, index)
-    }));
-    const title = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    const subquestions = review.sequence.map((skill, index) => {
+        const source = builders[skill](random);
+        return {
+            label: String.fromCharCode(97 + index),
+            ...source,
+            skill,
+            skillLabel: SKILL_LABELS[skill],
+            lesson: LESSONS[skill],
+            family: skill === 'b05' ? 'word-problem' : 'number-and-operations',
+            prompt: `${SKILL_LABELS[skill]} · ${source.prompt}`
+        };
+    });
+    const title = review.reviewMode === 'single'
+        ? `Luyện tập ${SKILL_LABELS[review.sequence[0]]}:`
+        : 'Ôn tập trộn Bài 1 đến Bài 5:';
     return {
         classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: TOPIC,
         type: 'Trắc nghiệm', templateId: 'number.hk1_review_b01_b04', q: title, options: [],
         ans: subquestions.map(part => part.answer).join(', '),
-        explanation: `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
+        explanation: review.reviewMode === 'single'
+            ? `Bốn ý cùng luyện ${SKILL_LABELS[review.sequence[0]].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`
+            : 'Bốn ý trộn các dạng số, phép tính, biểu thức và bài toán có lời văn trong Bài 1 đến Bài 5.',
         subquestions, partAnswerCounts: [1, 1, 1, 1],
-        templateVariables: { question: title, skills: requestedSkills.join(', '), selectedSkill, ...(selectedOperation ? { selectedOperation } : {}), ...(targetParities ? { targetParities: targetParities.join(', ') } : {}) }
+        templateVariables: { question: title, skills: review.values.join(', '), reviewMode: review.reviewMode, selectedSkills: review.sequence.join(', '), ...(review.selected ? { selectedSkill: review.selected } : {}), ...(parityTargets ? { targetParities: parityTargets.join(', ') } : {}) }
     };
 }
 
