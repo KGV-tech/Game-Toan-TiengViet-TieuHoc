@@ -79,7 +79,7 @@ test('Phase 4 B10 hiển thị Preview và gameplay bốn câu lập/đọc số
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');
 });
 
-test('Phase 4 B13 và B16 giữ một dạng review, Preview và bố cục tablet ngang', async ({ page }) => {
+test('Phase 4 B13 và B16 trộn nhiều dạng review, Preview và bố cục tablet ngang', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -122,9 +122,9 @@ test('Phase 4 B13 và B16 giữ một dạng review, Preview và bố cục tabl
     return question.subquestions.map(item => ({ skill: item.skill, lesson: item.lesson }));
   }, reviewTemplate);
   expect(gameplay).toHaveLength(4);
-  expect(new Set(gameplay.map(item => item.skill)).size).toBe(1);
-  expect(['b10', 'b11', 'b12', 'b13']).toContain(gameplay[0].skill);
-  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${gameplay[0].skill}`)).toBe(true);
+  expect(new Set(gameplay.map(item => item.skill)).size).toBe(4);
+  expect(gameplay.every(item => ['b10', 'b11', 'b12', 'b13'].includes(item.skill))).toBe(true);
+  expect(gameplay.every(item => item.lesson === `g4-math-hk1-${item.skill}`)).toBe(true);
   await expect(page.locator('#game-options-container .multi-choice-subquestion')).toHaveCount(4);
   await expect(page.locator('#game-options-container .multi-choice-subquestion__option')).toHaveCount(16);
   await expect(page.locator('#game-options-container')).not.toContainText('undefined');

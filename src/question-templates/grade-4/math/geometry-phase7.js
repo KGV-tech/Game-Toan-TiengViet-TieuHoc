@@ -4,7 +4,7 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = generators;
     root.Grade4MathTemplateGenerators = root.Grade4MathTemplateGenerators || {};
     Object.assign(root.Grade4MathTemplateGenerators, generators);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, configuredValues, chooseConfiguredValue, createFourPartMultipleChoiceQuestion }) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function ({ randomInt, shuffle, configuredValues, configuredReviewSequence, createFourPartMultipleChoiceQuestion }) {
 
 const TOPIC = '6. Đường thẳng vuông góc. Đường thẳng song song';
 const labels = ['a', 'b', 'c', 'd'];
@@ -95,7 +95,9 @@ function gridLine([x1, y1, x2, y2], scale = 18, offsetX = 38, offsetY = 18) {
 
 function renderGridSVG(relation, variant = 0) {
     const definition = gridCoordinates(relation);
-    const grid = [0, 1, 2, 3, 4, 5, 6, 7].map(index => `<line x1="${38 + index * 18}" y1="18" x2="${38 + index * 18}" y2="144" class="geometry-visual__grid-line"/><line x1="38" y1="${18 + index * 18}" x2="236" y2="${18 + index * 18}" class="geometry-visual__grid-line"/>`).join('');
+    const verticalGrid = Array.from({ length: 12 }, (_, index) => `<line x1="${38 + index * 18}" y1="18" x2="${38 + index * 18}" y2="144" class="geometry-visual__grid-line"/>`).join('');
+    const horizontalGrid = Array.from({ length: 8 }, (_, index) => `<line x1="38" y1="${18 + index * 18}" x2="236" y2="${18 + index * 18}" class="geometry-visual__grid-line"/>`).join('');
+    const grid = `${verticalGrid}${horizontalGrid}`;
     const first = gridLine(definition.first);
     const second = gridLine(definition.second);
     const rightAngle = relation === 'perpendicular' ? '<path d="M 146 90 L 158 90 L 158 78 L 146 78" class="geometry-visual__right-angle"/>' : '';
@@ -119,6 +121,10 @@ function relationPart(focus, relation, mode, random, variant = 0) {
             ? `Hai đường thẳng ${RELATION_LABELS[relation]}; ${asksPerpendicular ? 'góc tạo thành là 90°' : 'chúng không gặp nhau và luôn cách đều nhau'}.`
             : `Hai đường thẳng ${RELATION_LABELS[relation]}, nên không thể kết luận là ${asksPerpendicular ? 'vuông góc' : 'song song'}.`,
         visual,
+        interaction: mode === 'grid' ? 'construction-choice' : 'recognition-choice',
+        construction: mode === 'grid'
+            ? (focus === 'perpendicular' ? 'Chọn cặp đường thẳng vuông góc trên lưới ô vuông.' : 'Chọn cặp đường thẳng song song trên lưới ô vuông.')
+            : undefined,
         geometry: {
             mode,
             relation,
@@ -223,21 +229,25 @@ function reviewPart(skill, random, index = 0) {
         skill,
         skillLabel: SKILL_LABELS[skill],
         lesson: LESSONS[skill],
+        family: skill === 'b31' ? 'quadrilateral' : skill === 'b28' || skill === 'b30' ? 'grid-construction' : 'line-relation',
         prompt: `${SKILL_LABELS[skill]} · ${source.prompt}`
     };
 }
 
 function generateReview(config = {}, random = Math.random) {
-    const skills = configuredValues(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
-    const selectedSkill = chooseConfiguredValue(config, 'skills', REVIEW_SKILLS.slice(0, 4), REVIEW_SKILLS, random, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
-    const subquestions = labels.map((label, index) => ({ label, ...reviewPart(selectedSkill, random, index) }));
-    const prompt = `Luyện tập ${SKILL_LABELS[selectedSkill]}:`;
+    const review = configuredReviewSequence(config, 'skills', REVIEW_SKILLS, REVIEW_SKILLS, random, 'Bộ ôn tập Bài 27 đến Bài 31 cần ít nhất một kỹ năng hợp lệ.');
+    const subquestions = review.sequence.map((skill, index) => ({ label: labels[index], ...reviewPart(skill, random, index) }));
+    const prompt = review.reviewMode === 'single'
+        ? `Luyện tập ${SKILL_LABELS[review.sequence[0]]}:`
+        : 'Ôn tập trộn Bài 27 đến Bài 31:';
     const question = createFourPartMultipleChoiceQuestion(
         'geometry.hk1_review_b27_b31',
         prompt,
         subquestions,
-        `Bốn ý cùng luyện ${SKILL_LABELS[selectedSkill].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`,
-        { question: prompt, skills: skills.join(', '), selectedSkill }
+        review.reviewMode === 'single'
+            ? `Bốn ý cùng luyện ${SKILL_LABELS[review.sequence[0]].replace(/^Bài \d+ · /, '').toLocaleLowerCase('vi-VN')}.`
+            : 'Bốn ý trộn vuông góc, song song, thực hành trên lưới và hình bình hành - hình thoi.',
+        { question: prompt, skills: review.values.join(', '), reviewMode: review.reviewMode, selectedSkills: review.sequence.join(', '), ...(review.selected ? { selectedSkill: review.selected } : {}) }
     );
     question.topic = TOPIC;
     question.partAnswerCounts = [1, 1, 1, 1];

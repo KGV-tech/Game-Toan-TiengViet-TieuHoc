@@ -122,8 +122,8 @@ reviewSkillSets.forEach((skills, setIndex) => {
     for (let seed = 0; seed < 12; seed += 1) {
         const question = generateQuestion('number.hk1_review_b10_b15', { skills }, seededRandom(9400 + setIndex * 100 + seed));
         assertFourPartQuestion(question, 'number.hk1_review_b10_b15');
-        assert.equal(new Set(question.subquestions.map(item => item.skill)).size, 1);
-        assert(skills.includes(question.subquestions[0].skill));
+        assert(new Set(question.subquestions.map(item => item.skill)).size > 1);
+        assert(question.subquestions.every(item => skills.includes(item.skill)));
         assert.deepEqual(question.subquestions.map(item => item.label), ['a', 'b', 'c', 'd']);
         assert.equal(question.templateVariables.skills, skills.join(', '));
         assert(question.subquestions.every(item => item.prompt && item.explanation));

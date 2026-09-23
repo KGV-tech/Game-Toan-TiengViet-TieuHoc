@@ -33,11 +33,11 @@ async function showTemplate(page, data) {
   }, data);
 }
 
-test('Phase 8 Bài 37 chọn phạm vi nhóm review và giữ một nhóm trong bốn ý', async ({ page }) => {
+test('Phase 8 Bài 37 chọn phạm vi và trộn nhiều nhóm review trong bốn ý', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
-  const groups = ['numbers', 'addSub', 'geometry', 'measurement'];
+  const groups = ['numbers', 'geometry', 'statistics', 'wordProblem'];
   const data = template('number.hk1_review_b37_full', 'g4-math-hk1-b37', 'Bài 37 · Ôn tập chung', { groups });
   await showTemplate(page, data);
 
@@ -56,9 +56,15 @@ test('Phase 8 Bài 37 chọn phạm vi nhóm review và giữ một nhóm trong 
     return question.subquestions.map(item => ({ group: item.skillGroup, sourceLesson: item.sourceLesson, options: item.options.length }));
   }, data);
   expect(gameplay).toHaveLength(4);
-  expect(new Set(gameplay.map(item => item.group)).size).toBe(1);
-  expect(groups).toContain(gameplay[0].group);
-  expect(gameplay.every(item => item.sourceLesson === `g4-math-hk1-b${{ numbers: 33, addSub: 34, geometry: 35, measurement: 36 }[gameplay[0].group]}`)).toBe(true);
+  expect(new Set(gameplay.map(item => item.group)).size).toBe(4);
+  expect(gameplay.every(item => groups.includes(item.group))).toBe(true);
+  const sourceLessonByGroup = {
+    numbers: 'g4-math-hk1-b33',
+    geometry: 'g4-math-hk1-b35',
+    statistics: 'g4-math-hk1-b37',
+    wordProblem: 'g4-math-hk1-b37'
+  };
+  expect(gameplay.every(item => item.sourceLesson === sourceLessonByGroup[item.group])).toBe(true);
   expect(gameplay.every(item => item.options >= 2)).toBe(true);
 });
 

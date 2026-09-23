@@ -74,7 +74,7 @@ test('Phase 3 B07 hiển thị thước đo trong Preview và khi học sinh là
   expect(visualWidth.visual).toBeLessThanOrEqual(visualWidth.container);
 });
 
-test('Phase 3 B09 giữ một dạng góc thống nhất trên tablet ngang và reduced motion', async ({ page }) => {
+test('Phase 3 B09 trộn hai dạng góc trên tablet ngang và reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openOfflineHomepage(page);
@@ -93,6 +93,8 @@ test('Phase 3 B09 giữ một dạng góc thống nhất trên tablet ngang và 
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
   const measureVisuals = await page.locator('#template-preview-dialog svg[aria-label="Hình góc trên thước đo góc"]').count();
   const classifyVisuals = await page.locator('#template-preview-dialog svg[aria-label="Hình góc cần phân loại"]').count();
-  expect([measureVisuals, classifyVisuals].sort((a, b) => a - b)).toEqual([0, 4]);
+  expect(measureVisuals).toBeGreaterThan(0);
+  expect(classifyVisuals).toBeGreaterThan(0);
+  expect(measureVisuals + classifyVisuals).toBe(4);
   await expect(page.locator('#template-preview-dialog .template-preview__choices')).toHaveCount(4);
 });

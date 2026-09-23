@@ -129,16 +129,12 @@ choice.subquestions.forEach(part => {
 
 const review = templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(17));
 assertFourPartQuestion(review, 'number.hk1_review_b01_b04');
-assert.equal(new Set(review.subquestions.map(part => part.skill)).size, 1,
-  'B06 review must keep one skill across all four parts.');
-assert(['b01', 'b02', 'b03', 'b04'].includes(review.subquestions[0].skill),
-  'B06 review must select a skill from B01–B04.');
-assert.equal(new Set(review.subquestions.map(part => part.lesson)).size, 1,
-  'B06 review must keep one lesson metadata value across all four parts.');
-assert.equal(review.subquestions[0].lesson, `g4-math-hk1-${review.subquestions[0].skill}`,
-  'B06 review must trace each part to the selected lesson.');
-assert.equal(review.subquestions.some(part => /b05/i.test(part.skill || part.prompt)), false,
-  'B06 review must not include deferred B05 content.');
+assert(new Set(review.subquestions.map(part => part.skill)).size > 1,
+  'B06 review must mix multiple skills across the four parts.');
+assert(review.subquestions.every(part => ['b01', 'b02', 'b03', 'b04', 'b05'].includes(part.skill)),
+  'B06 review must stay within B01–B05.');
+assert(review.subquestions.every(part => part.lesson === `g4-math-hk1-${part.skill}`),
+  'B06 review must trace every part to its own lesson.');
 
 const parityReview = templates.generateQuestion('number.hk1_review_b01_b04', { skills: ['b03'] }, seededRandom(18));
 assertBalancedParities(parityReview, 'number.hk1_review_b01_b04 / b03');
@@ -152,7 +148,7 @@ for (let seed = 30; seed < 80; seed++) {
   assertFourPartQuestion(templates.generateQuestion('number.variable_expression_choice', {}, seededRandom(seed)), 'number.variable_expression_choice');
   const reviewQuestion = templates.generateQuestion('number.hk1_review_b01_b04', {}, seededRandom(seed));
   assertFourPartQuestion(reviewQuestion, 'number.hk1_review_b01_b04');
-  assert.equal(new Set(reviewQuestion.subquestions.map(part => part.skill)).size, 1);
+  assert(new Set(reviewQuestion.subquestions.map(part => part.skill)).size > 1);
 }
 
 function assertBalancedParities(question, key) {

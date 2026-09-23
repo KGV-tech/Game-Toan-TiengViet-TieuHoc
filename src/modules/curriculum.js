@@ -66,7 +66,7 @@
             '3. Số có nhiều chữ số': Object.freeze({
                 'number.six_digit_numbers': 'g4-math-hk1-b10',
                 'number.digit_at_place': 'g4-math-hk1-b11',
-                'number.safe_password_by_place_value': 'g4-math-hk1-b11',
+                'number.safe_password_by_place_value': 'g4-math-hk1-b12',
                 'number.compose_from_places': 'g4-math-hk1-b11',
                 'number.missing_expanded_addend': 'g4-math-hk1-b11',
                 'number.million_class': 'g4-math-hk1-b12',
