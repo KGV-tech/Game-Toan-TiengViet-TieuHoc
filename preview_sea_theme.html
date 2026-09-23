@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Xem Trước Giao Diện: Đảo Kho Báu (Thuyền v2 Mới Nhất)</title>
+  <style>
+    :root {
+      --bg: #03132e;
+      --card-bg: rgba(7, 35, 78, 0.85);
+      --border: #38bdf8;
+      --gold: #fbbf24;
+      --text: #f0f9ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 30px 20px 80px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      color: #e0f2fe;
+    }
+    h1 {
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      color: #fff;
+      text-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      margin-bottom: 10px;
+    }
+    .desc {
+      font-size: 1.1rem;
+      color: #bae6fd;
+      max-width: 850px;
+      margin: 0 auto;
+    }
+    .rules-card {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.6), rgba(15, 23, 42, 0.8));
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 20px 25px;
+      margin-bottom: 35px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .rules-card h3 {
+      color: var(--gold);
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rules-card ul {
+      margin-left: 20px;
+      color: #f1f5f9;
+    }
+    .rules-card li {
+      margin-bottom: 10px;
+    }
+    .rules-card strong {
+      color: #ffd700;
+    }
+    .section-title {
+      font-size: 1.6rem;
+      color: var(--gold);
+      margin: 45px 0 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-desc {
+      color: #94a3b8;
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    .preview-card {
+      background: var(--card-bg);
+      border: 1.5px solid rgba(56, 189, 248, 0.5);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 40px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    .preview-card__header {
+      padding: 16px 24px;
+      background: rgba(3, 19, 46, 0.9);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .preview-card__header h3 {
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    .tag {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tag--success { background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }
+    .tag--info { background: #0c4a6e; color: #7dd3fc; border: 1px solid #0284c7; }
+    .tag--warn { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
+    .preview-card__body {
+      padding: 15px;
+      background: #020917;
+      text-align: center;
+    }
+    .preview-card__body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Thi Đua Nhóm · Trình Chiếu</span>
+      <h1>Giao Diện: Đảo Kho Báu (Thuyền v2 Mới)</h1>
+      <p class="desc">Đã cập nhật toàn bộ 4 điểm chỉnh sửa: sử dụng bộ thuyền v2, bảng tên cầu tàu cao gấp đôi, thuyền 10 điểm áp sát bãi cát đảo kho báu, và tự động co giãn kích thước theo số đội.</p>
+    </header>
+
+    <div class="rules-card">
+      <h3>⭐ Các cải tiến quan trọng vừa hoàn thành:</h3>
+      <ul>
+        <li><strong>1. Sử dụng ảnh thuyền v2:</strong> Đã chuyển sang <code>Boats v2.png</code> (cờ buồm hạ thấp về sau, tỉ lệ thuyền vuông vắn ~335x372 thay vì 335x535). Nhờ đó chiều cao thuyền giảm 30%, triệt tiêu hoàn toàn nguy cơ cờ buồm che thú ở làn trên!</li>
+        <li><strong>2. Bảng tên cầu tàu tăng chiều cao gấp đôi:</strong> Ô bảng tên mỗi đội trên bến tàu tăng từ 26px lên <strong>52px</strong>, bố cục 2 dòng sang trọng (Làn + Tên đội bên trái, Điểm số lớn màu vàng bên phải).</li>
+        <li><strong>3. Thuyền 10 điểm áp sát bãi cát:</strong> Điểm đích 10 điểm đã được kéo sát vào mép bãi cát (<code>left: 87.5%</code>), rương kho báu đặt trên bãi cát ngay trước mũi thuyền (<code>left: 94.5%</code>), không còn bị cách xa đảo như trước.</li>
+        <li><strong>4. Kích thước thuyền linh hoạt theo số đội:</strong>
+          <ul>
+            <li><strong>6 – 8 đội:</strong> Size chuẩn (78px).</li>
+            <li><strong>5 đội:</strong> Tăng size 1.5 lần (117px).</li>
+            <li><strong>2 – 4 đội:</strong> Tăng size gấp đôi (156px).</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 1 -->
+    <h2 class="section-title">1. Bộ 8 Thuyền Buồm v2 (Đã Cắt Nền Trong Suốt)</h2>
+    <p class="section-desc">Cắt nền trong suốt pixel-perfect từ <code>Boats v2.png</code> vào thư mục <code>src/assets/team-competition/Sea/vehicles/boat-1.png</code> đến <code>boat-8.png</code>:</p>
+
+    <div class="preview-card">
+      <div class="preview-card__header">
+        <h3>Bộ 8 Thuyền Buồm v2 — Cờ buồm thấp gọn, tỉ lệ vuông đẹp mắt</h3>
+        <span class="tag tag-success">Boats v2 mới</span>
+      </div>
+      <div class="preview-card__body">
+        <img src="src/assets/team-competition/Sea/boats-showcase.png" alt="8 mẫu thuyền buồm v2" />
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <h2 class="section-title">2. Giao Diện Xuất Phát (8 Đội - Thuyền v2 & Bảng Tên Cầu Tàu Cao Gấp Đôi)</h2>
+    <p class="section-desc">Bảng tên cầu tàu cao 52px, thuyền v2 kích thước 78px neo dọc bến tàu, toàn bộ 8 con thú lộ diện 100% không bị che khuất:</p>
+
+    <div class="preview-card">
+      <div class="preview-card__header">
+        <h3>8 Đội xuất phát — Bảng tên cầu tàu cao 52px, thuyền v2 không che khuất, bãi biển không có rương</h3>
+        <span class="tag tag-info">8 Đội / Size 78px</span>
+      </div>
+      <div class="preview-card__body">
+        <img src="src/assets/team-competition/Sea/preview-start.png" alt="8 đội xuất phát thuyền v2" />
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <h2 class="section-title">3. Giao Diện Khi Có Đội Đạt 10 Điểm (Thuyền Áp Sát Bãi Cát & Rương Mở Ra)</h2>
+    <p class="section-desc">Đội 3 (Khỉ Con) đạt 10 điểm đầu tiên cập bến sát mép bãi cát (87.5%), rương kho báu xuất hiện trên bãi cát ngay trước mũi thuyền (94.5%):</p>
+
+    <div class="preview-card">
+      <div class="preview-card__header">
+        <h3>Đội 3 (10 điểm) cập sát bãi cát — Rương kho báu mở ra trên đảo ngay trước mũi thuyền</h3>
+        <span class="tag tag-success">Thuyền sát bãi cát + Rương kho báu</span>
+      </div>
+      <div class="preview-card__body">
+        <img src="src/assets/team-competition/Sea/preview-finish-10pts.png" alt="Thuyền 10 điểm sát bãi cát đảo kho báu" />
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <h2 class="section-title">4. Giao Diện 5 Đội (Size Tăng 1.5 Lần: 117px)</h2>
+    <p class="section-desc">Với 5 đội, thuyền v2 tăng 1.5 lần (117px), khoảng cách giữa các làn cực kỳ thoáng mát, thuyền to đẹp rực rỡ:</p>
+
+    <div class="preview-card">
+      <div class="preview-card__header">
+        <h3>5 Đội — Thuyền v2 tăng size 1.5 lần (117px), bảng tên cầu tàu cao 52px</h3>
+        <span class="tag tag-info">5 Đội / Size 117px (1.5x)</span>
+      </div>
+      <div class="preview-card__body">
+        <img src="src/assets/team-competition/Sea/preview-5-teams.png" alt="5 đội thuyền tăng 1.5 lần" />
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <h2 class="section-title">5. Giao Diện 2 – 4 Đội (Ví Dụ 3 Đội: Size Gấp Đôi 156px)</h2>
+    <p class="section-desc">Với 2 – 4 đội, thuyền tăng gấp đôi (156px), khoảng cách làn trên 210px cực kỳ rộng rãi, hoành tráng:</p>
+
+    <div class="preview-card">
+      <div class="preview-card__header">
+        <h3>3 Đội — Thuyền v2 tăng size gấp đôi (156px), khoảng cách làn biển thênh thang</h3>
+        <span class="tag tag-info">3 Đội / Size 156px (2x)</span>
+      </div>
+      <div class="preview-card__body">
+        <img src="src/assets/team-competition/Sea/preview-3-teams.png" alt="3 đội thuyền gấp đôi" />
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -960,7 +960,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     await page.locator('#team-comp-common-exam').selectOption('exam-team');
     await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(10);
     await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('speed-race');
-    await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(8);
+    await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(7);
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
     await expect.poll(() => dialogs.length).toBe(1);
     expect(dialogs[0]).toContain('20260915_team_competition_presentations.sql');

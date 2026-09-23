@@ -6270,7 +6270,7 @@ input[type="text"], input[type="password"], select, textarea {
 .team-board-members__leader span { color: #ffe28b; }
 .team-board-members__list { padding: 0 2px; }
 
-#treasure-modal.team-board-fullscreen .team-race-stadium--speed-race { display: grid; grid-template-rows: auto auto minmax(0, 1fr); padding: 0; border: 0; background: transparent; box-shadow: none; }
+#treasure-modal.team-board-fullscreen :is(.team-race-stadium--speed-race, .team-race-stadium--treasure-island) { display: grid; grid-template-rows: auto auto minmax(0, 1fr); padding: 0; border: 0; background: transparent; box-shadow: none; position: relative; width: 100%; height: 100%; }
 #treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-summary { display: none; }
 #treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-board-grid {
     min-height: 0;
@@ -6300,8 +6300,8 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race::after { display: none; }
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race::after { display: none; }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-board-hero { position: absolute; inset: 1.4% 2.2% auto; z-index: 5; grid-template-columns: minmax(260px, 1fr) minmax(170px, .52fr) minmax(510px, 1.9fr); padding: 0; }
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-stadium-canvas { grid-row: 1 / -1; }
-#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--speed-race .team-board-summary { display: none; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live :is(.team-race-stadium--speed-race, .team-race-stadium--treasure-island) .team-stadium-canvas { grid-row: 1 / -1; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live :is(.team-race-stadium--speed-race, .team-race-stadium--treasure-island) .team-board-summary { display: none; }
 .team-stadium-title-card { min-width: 0; }
 
 /* True fullscreen mode: full-bleed stadium without tabs, toolbars, or modal borders */
@@ -6783,6 +6783,373 @@ input[type="text"], input[type="password"], select, textarea {
     }
     #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--balloon-festival .team-stadium-canvas {
         transition: none;
+    }
+}
+
+/* ==========================================================================
+   TEAM COMPETITION: TREASURE ISLAND THEME (ĐẢO KHO BÁU - BIỂN NGỌC & VÀNG KIM)
+   ========================================================================== */
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island::before,
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island::after {
+    display: none;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-canvas {
+    position: absolute;
+    inset: 0;
+    isolation: isolate;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0 !important;
+    border: 0 !important;
+    background: #064466 url('assets/team-competition/Sea/Sea.png') center / 100% 100% no-repeat;
+    box-shadow: none !important;
+}
+
+/* 3 thanh thông tin HUD phối màu biển ngọc và vàng kim */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-board-hero {
+    position: absolute;
+    top: clamp(8px, 1.2vh, 16px);
+    left: clamp(12px, 1.5vw, 24px);
+    right: clamp(12px, 1.5vw, 24px);
+    z-index: 25;
+    display: grid;
+    grid-template-columns: minmax(230px, 1.15fr) minmax(160px, 0.62fr) minmax(380px, 1.9fr);
+    gap: clamp(8px, 1vw, 16px);
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-title-card,
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-clock,
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-scoreboard {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    border: 1.5px solid #f59e0b;
+    border-radius: clamp(10px, 1.1vw, 16px);
+    background: linear-gradient(135deg, rgba(6, 68, 102, 0.94) 0%, rgba(2, 38, 70, 0.96) 60%, rgba(3, 22, 48, 0.98) 100%);
+    box-shadow: inset 0 1px 1px rgba(125, 237, 255, 0.4), 0 0 14px rgba(245, 158, 11, 0.25), 0 8px 20px rgba(0, 14, 38, 0.45);
+    backdrop-filter: blur(10px);
+    color: #fff;
+}
+
+/* HUD 1: Title Card */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-title-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(56px, 7.5vh, 74px);
+    padding: clamp(6px, 1vh, 12px) clamp(10px, 1.2vw, 18px);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-title-card h2 {
+    margin: 0;
+    color: #fffbeb;
+    font-size: clamp(1.05rem, 1.4vw, 1.6rem);
+    font-weight: 900;
+    line-height: 1.2;
+    text-align: center;
+    text-shadow: 0 2px 0 #78350f, 0 0 16px rgba(251, 191, 36, 0.55);
+    letter-spacing: 0.03em;
+    word-break: break-word;
+}
+
+/* HUD 2: Clock */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(56px, 7.5vh, 74px);
+    padding: 6px 12px;
+    gap: 2px;
+    text-align: center;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-clock span {
+    font-size: clamp(0.48rem, 0.62vw, 0.7rem);
+    color: #67e8f9;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-clock strong {
+    font-size: clamp(1.2rem, 1.85vw, 2.2rem);
+    line-height: 1;
+    color: #fef08a;
+    text-shadow: 0 2px 0 #78350f, 0 0 14px rgba(251, 191, 36, 0.7);
+}
+
+/* HUD 3: Scoreboard */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-scoreboard {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: clamp(56px, 7.5vh, 74px);
+    padding: clamp(6px, 0.8vh, 10px) clamp(10px, 1vw, 18px);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-race-scoreboard p {
+    margin: 0 0 4px;
+    font-size: clamp(0.52rem, 0.68vw, 0.75rem) !important;
+    color: #fde68a !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+    gap: clamp(3px, 0.45vw, 8px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 2px;
+    min-width: 0;
+    min-height: clamp(38px, 4.8vw, 62px);
+    padding: clamp(2px, 0.35vw, 5px) clamp(2px, 0.3vw, 5px);
+    border: 1px solid color-mix(in srgb, var(--leaderboard-accent) 72%, white);
+    border-radius: clamp(6px, 0.7vw, 10px);
+    background: var(--leaderboard-accent);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.28), 0 3px 7px rgba(0, 12, 46, 0.2);
+    color: #061d50;
+    text-align: center;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry span {
+    justify-self: center;
+    width: clamp(14px, 1.35vw, 20px);
+    height: clamp(14px, 1.35vw, 20px);
+    background: #fff4b0;
+    color: #5e3900;
+    font-size: clamp(0.48rem, 0.65vw, 0.72rem);
+    font-weight: 900;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry strong {
+    align-self: center;
+    color: #061d50;
+    font-size: clamp(0.42rem, 0.64vw, 0.74rem);
+    font-weight: 950;
+    line-height: 1.08;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry b {
+    color: #061d50;
+    font-size: clamp(0.54rem, 0.85vw, 0.95rem);
+    line-height: 1;
+    text-shadow: none;
+}
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry[data-rank="1"] {
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.45), 0 0 12px color-mix(in srgb, var(--leaderboard-accent) 58%, transparent);
+    border-color: #ffd700;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--cyan { --leaderboard-accent: #25e1fc; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--yellow { --leaderboard-accent: #fee732; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--coral { --leaderboard-accent: #fe6b5e; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--violet { --leaderboard-accent: #a963fa; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--green { --leaderboard-accent: #35d063; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--pink { --leaderboard-accent: #fc78bc; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--blue { --leaderboard-accent: #2494fd; }
+#treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry--orange { --leaderboard-accent: #fd8d2f; }
+
+/* Lanes & Ocean Arena */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-canvas__lanes {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--boat-lane-top);
+    height: 0;
+    z-index: var(--lane-z, 10);
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Dock Team Badge - Height doubled (52px), 2-row layout */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info {
+    position: absolute;
+    left: 0.8%;
+    top: 0;
+    transform: translateY(-50%);
+    width: clamp(134px, 10.5vw, 158px);
+    min-height: clamp(48px, 6vh, 54px);
+    padding: 6px 12px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(6px);
+    z-index: 2;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--lane-accent-color, #0284c7) 70%, #032d4a), rgba(1, 28, 48, 0.95));
+    border: 2px solid var(--lane-accent-color, #0284c7);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color: #fff;
+    box-sizing: border-box;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-lane {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--lane-accent-color, #67e8f9);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-content strong {
+    font-size: clamp(11px, 0.95vw, 14px);
+    color: #fff;
+    text-shadow: 0 1px 2px #000;
+    font-weight: 900;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 86px;
+    line-height: 1.1;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-score b {
+    font-size: clamp(16px, 1.45vw, 21px);
+    color: #fff4a4;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__info-score em {
+    font-style: normal;
+    font-size: 9px;
+    color: #67e8f9;
+    font-weight: 800;
+    opacity: 0.95;
+    line-height: 1;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--cyan { --lane-accent-color: #25e1fc; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--yellow { --lane-accent-color: #fee732; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--coral { --lane-accent-color: #fe6b5e; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--violet { --lane-accent-color: #a963fa; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--green { --lane-accent-color: #35d063; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--pink { --lane-accent-color: #fc78bc; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--blue { --lane-accent-color: #2494fd; }
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane--orange { --lane-accent-color: #fd8d2f; }
+
+/* Boat Sprite */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__vehicle {
+    position: absolute;
+    left: calc(15% + var(--boat-progress, 0%));
+    top: 0;
+    transform: translate(-50%, -50%);
+    width: var(--boat-width, 78px);
+    height: auto;
+    z-index: 15;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+    transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+    animation: boat-bobbing 3s ease-in-out infinite;
+}
+
+@keyframes boat-bobbing {
+    0%, 100% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    50% {
+        transform: translate(-50%, -53%) rotate(1.2deg);
+    }
+}
+
+/* Treasure Chest - 50% size (76px) on sandy beach at 94.5% */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-sea-treasure {
+    position: absolute;
+    left: 94.5%;
+    top: var(--treasure-top, 50%);
+    transform: translate(-50%, -50%);
+    z-index: 35;
+    text-align: center;
+    pointer-events: none;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-sea-treasure__glow {
+    position: absolute;
+    inset: -14px;
+    background: radial-gradient(circle, rgba(255, 235, 120, 0.95) 0%, rgba(255, 180, 0, 0) 72%);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: treasure-pulse 2s ease-in-out infinite;
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-sea-treasure img {
+    position: relative;
+    width: 76px;
+    height: auto;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6));
+}
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-sea-treasure__badge {
+    position: relative;
+    display: inline-block;
+    margin-top: -3px;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #431c00;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+@keyframes treasure-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 900px) {
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-board-hero {
+        grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.6fr) minmax(280px, 1.6fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-stadium-lane__vehicle {
+        animation: none;
+        transition: none;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--treasure-island .team-sea-treasure__glow {
+        animation: none;
     }
 }
 

@@ -23,8 +23,8 @@
     const PRESENTATION_THEMES = Object.freeze({
         SPEED_RACE: 'speed-race',
         BALLOON_FESTIVAL: 'balloon-festival',
+        TREASURE_ISLAND: 'treasure-island',
         SPACE_LAUNCH: 'space-launch',
-        THEME_4: 'theme-4',
         THEME_5: 'theme-5',
         THEME_6: 'theme-6',
         THEME_7: 'theme-7',
@@ -35,10 +35,11 @@
     const PRESENTATION_THEME_OPTIONS = Object.freeze([
         Object.freeze({ id: PRESENTATION_THEMES.SPEED_RACE, label: 'Đường đua tốc độ', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.BALLOON_FESTIVAL, label: 'Lễ hội khinh khí cầu', available: true }),
+        Object.freeze({ id: PRESENTATION_THEMES.TREASURE_ISLAND, label: 'Đảo Kho Báu', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Phóng phi thuyền', available: false }),
-        ...Array.from({ length: 7 }, (_, index) => Object.freeze({
-            id: PRESENTATION_THEMES[`THEME_${index + 4}`],
-            label: `Giao diện số ${index + 4}`,
+        ...Array.from({ length: 6 }, (_, index) => Object.freeze({
+            id: PRESENTATION_THEMES[`THEME_${index + 5}`],
+            label: `Giao diện số ${index + 5}`,
             available: false
         }))
     ]);
@@ -58,6 +59,9 @@
     const TEAM_BALLOON_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/Ballons/vehicles/balloon-${index + 1}.png`
     ));
+    const TEAM_BOAT_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
+        `./src/assets/team-competition/Sea/vehicles/boat-${index + 1}.png`
+    ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
     function createSpaceshipAvatar(color) {
@@ -72,6 +76,9 @@
         }
         if (presentationTheme === PRESENTATION_THEMES.BALLOON_FESTIVAL) {
             return { src: TEAM_BALLOON_ASSETS[spriteIndex], label: 'Khinh khí cầu' };
+        }
+        if (presentationTheme === PRESENTATION_THEMES.TREASURE_ISLAND) {
+            return { src: TEAM_BOAT_ASSETS[spriteIndex], label: 'Thuyền buồm' };
         }
         return { src: TEAM_VEHICLE_ASSETS[spriteIndex], label: 'Xe đua' };
     }
@@ -96,6 +103,14 @@
                 src: './src/assets/team-competition/Ballons/preview-start.png',
                 label: 'Lễ hội khinh khí cầu',
                 hint: 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.'
+            };
+        }
+        if (themeId === PRESENTATION_THEMES.TREASURE_ISLAND) {
+            return {
+                id: PRESENTATION_THEMES.TREASURE_ISLAND,
+                src: './src/assets/team-competition/Sea/preview-start.png',
+                label: 'Đảo Kho Báu',
+                hint: 'Đảo Kho Báu · Thuyền buồm rẽ sóng vượt biển · Chạy ngang · Tự chia đều vị trí theo số đội.'
             };
         }
         return {
