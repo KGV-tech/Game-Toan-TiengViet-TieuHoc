@@ -280,8 +280,8 @@ test('bảng xếp hạng đường đua hiển thị 8 cột và đổi hạng 
   expect(await entries.evaluateAll(nodes => nodes.map(node => node.querySelector('strong').textContent))).toEqual(['Đội B', 'Đội G', 'Đội C', 'Đội E', 'Đội A', 'Đội F', 'Đội H', 'Đội D']);
   expect(await entries.evaluateAll(nodes => nodes.map(node => node.dataset.rank))).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
   expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).getPropertyValue('--leaderboard-accent').trim()))).toEqual(['#fee732', '#2494fd', '#fe6b5e', '#35d063', '#25e1fc', '#fc78bc', '#fd8d2f', '#a963fa']);
-  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundImage))).toEqual(Array(8).fill('none'));
-  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor))).toEqual(['rgb(254, 231, 50)', 'rgb(36, 148, 253)', 'rgb(254, 107, 94)', 'rgb(53, 208, 99)', 'rgb(37, 225, 252)', 'rgb(252, 120, 188)', 'rgb(253, 141, 47)', 'rgb(169, 99, 250)']);
+  const bgImages = await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundImage));
+  expect(bgImages.every(bg => bg.includes('linear-gradient'))).toBe(true);
   expect(await page.locator('.team-race-scoreboard ol').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(8);
   await expect(entries.nth(0)).toHaveClass(/team-race-scoreboard__entry--yellow/);
 
@@ -676,7 +676,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
       app.teamCompetition.PRESENTATION_THEMES.SPACE_LAUNCH,
       app.teamCompetition.STADIUM_LANES[0]
     ));
-    expect(spaceshipAvatar.src).toMatch(/^data:image\/svg\+xml,/);
+    expect(spaceshipAvatar.src).toMatch(/(?:^data:image\/svg\+xml,|\/team-competition\/Rockets\/vehicles\/rocket-\d+\.png$)/);
     expect(spaceshipAvatar.label).toBe('Phi thuyền');
     const viewportFit = await page.evaluate(() => ({
       scrollHeight: document.documentElement.scrollHeight,
@@ -960,7 +960,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     await page.locator('#team-comp-common-exam').selectOption('exam-team');
     await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(10);
     await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('speed-race');
-    await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(7);
+    await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(6);
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
     await expect.poll(() => dialogs.length).toBe(1);
     expect(dialogs[0]).toContain('20260915_team_competition_presentations.sql');

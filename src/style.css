@@ -6131,6 +6131,10 @@ input[type="text"], input[type="password"], select, textarea {
         radial-gradient(circle at 88% 88%, rgba(255, 180, 64, .18), transparent 26%),
         linear-gradient(160deg, #06214b 0%, #073c72 46%, #06234d 100%);
 }
+#treasure-modal.team-board-fullscreen #treasure-close-button,
+#treasure-modal:has(.team-competition-board) #treasure-close-button {
+    display: none !important;
+}
 #treasure-modal.team-board-fullscreen #treasure-content-area { height: 100%; overflow: hidden; }
 #treasure-modal.team-board-fullscreen .team-competition-board {
     display: grid;
@@ -6334,9 +6338,9 @@ input[type="text"], input[type="password"], select, textarea {
     z-index: 99999 !important;
     overflow: hidden !important;
 }
-:is(#treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen)) #admin-tabs,
-:is(#treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen)) .station-shell__title-row,
-:is(#treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen)) #treasure-close-button,
+:is(#treasure-modal.team-board-fullscreen, #treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen), #treasure-modal:has(.team-competition-board)) #admin-tabs,
+:is(#treasure-modal.team-board-fullscreen, #treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen), #treasure-modal:has(.team-competition-board)) .station-shell__title-row,
+:is(#treasure-modal.team-board-fullscreen, #treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen), #treasure-modal:has(.team-competition-board)) #treasure-close-button,
 :is(#treasure-modal.team-board-fullscreen-mode, #treasure-modal:has(:fullscreen)) .team-board-toolbar {
     display: none !important;
 }
@@ -6391,37 +6395,10 @@ input[type="text"], input[type="password"], select, textarea {
     border-radius: 0 !important;
     box-shadow: none !important;
 }
-/* Fullscreen Exit Button */
-.team-board-exit-fullscreen {
-    display: none;
-}
+/* Fullscreen Exit Button - Đã có thanh điều khiển float ở giữa của trình duyệt hoặc phím ESC nên ẩn nút góc */
+.team-board-exit-fullscreen,
 :is(#treasure-modal.team-board-fullscreen-mode, .admin-panel:fullscreen) .team-board-exit-fullscreen {
-    position: absolute;
-    top: 14px;
-    right: 18px;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, .35);
-    border-radius: 50%;
-    background: rgba(3, 21, 61, .65);
-    color: #fff;
-    font-size: 1.15rem;
-    font-weight: 700;
-    cursor: pointer;
-    opacity: 0.75;
-    transition: opacity .25s ease, background .2s ease, transform .15s ease;
-    backdrop-filter: blur(8px);
-}
-:is(#treasure-modal.team-board-fullscreen-mode, .admin-panel:fullscreen) .team-board-exit-fullscreen:hover {
-    opacity: 1;
-    background: rgba(3, 21, 61, .92);
-    border-color: rgba(255, 255, 255, .85);
-    transform: scale(1.08);
+    display: none !important;
 }
 
 /* Prepared / Non-live Team Board Hero: Perfectly balanced 3-column flex layout */
@@ -6434,9 +6411,6 @@ input[type="text"], input[type="password"], select, textarea {
     gap: clamp(16px, 2.5vw, 36px);
     padding: 0 0 clamp(10px, 1.4vh, 18px);
     width: 100%;
-}
-:is(#treasure-modal.team-board-fullscreen-mode, .admin-panel:fullscreen) .team-competition-board:not(.team-competition-board--live) .team-board-hero {
-    padding-right: clamp(52px, 4.5vw, 68px);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board:not(.team-competition-board--live) .team-stadium-title-card {
     flex: 1 1 0;
@@ -6697,24 +6671,25 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--balloon-festival .team-race-clock {
     flex-shrink: 0;
     display: grid;
-    min-height: clamp(56px, 7.5vh, 74px);
-    padding: 6px 12px;
+    min-height: clamp(108px, 14vh, 144px);
+    padding: clamp(10px, 1.4vh, 16px) clamp(10px, 1vw, 16px);
     align-content: center;
-    gap: 2px;
+    gap: clamp(4px, 0.6vh, 8px);
     text-align: center;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--balloon-festival .team-race-clock span {
-    font-size: clamp(.48rem, .62vw, .7rem);
+    font-size: clamp(.52rem, .72vw, .82rem);
     color: #bdefff;
     font-weight: 900;
     letter-spacing: .06em;
     text-transform: uppercase;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--balloon-festival .team-race-clock strong {
-    font-size: clamp(1.25rem, 1.85vw, 2.2rem);
-    line-height: 1;
+    font-size: clamp(1.4rem, 2.1vw, 2.6rem);
+    line-height: 1.1;
     color: #fff;
-    text-shadow: 0 0 12px #41e7ff;
+    text-shadow: 0 0 14px #41e7ff;
+    white-space: nowrap;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--balloon-festival .team-race-scoreboard {
     flex: 1;
@@ -7392,26 +7367,27 @@ input[type="text"], input[type="password"], select, textarea {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: clamp(48px, 6.5vh, 64px);
-    padding: 6px 12px;
-    gap: 2px;
+    min-height: clamp(104px, 13.5vh, 136px);
+    padding: clamp(10px, 1.4vh, 16px) clamp(10px, 1.1vw, 16px);
+    gap: clamp(4px, 0.6vh, 8px);
     border: 1.5px solid #ffd700;
     box-shadow: 0 6px 18px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     text-align: center;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock span {
-    font-size: clamp(0.48rem, 0.62vw, 0.7rem);
+    font-size: clamp(0.52rem, 0.72vw, 0.82rem);
     color: #ffe57f;
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-clock strong {
-    font-size: clamp(1.15rem, 1.7vw, 1.85rem);
+    font-size: clamp(1.4rem, 2.1vw, 2.6rem);
     color: #fff;
-    line-height: 1.05;
+    line-height: 1.1;
     font-weight: 900;
-    text-shadow: 0 0 10px #ffe57f;
+    text-shadow: 0 0 12px #ffe57f;
+    white-space: nowrap;
 }
 
 /* HUD 3: Scoreboard (Tăng chiều cao bảng tên lên gấp đôi & gán màu phi thuyền) */
