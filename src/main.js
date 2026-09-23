@@ -7444,9 +7444,9 @@ const app = {
             const statusLabel = app.teamCompetition.STATUS_LABELS[draft.status] || 'Nháp';
             const presentationTheme = app.teamCompetition.normalizePresentationTheme(draft.presentationTheme);
             const currentPreview = app.teamCompetition?.getPresentationThemePreview?.(presentationTheme) || {
-                src: presentationTheme === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png',
-                label: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : 'Đường đua tốc độ',
-                hint: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.'
+                src: presentationTheme === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : (presentationTheme === 'treasure-island' ? './src/assets/team-competition/Sea/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png'),
+                label: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : (presentationTheme === 'treasure-island' ? 'Đảo Kho Báu' : 'Đường đua tốc độ'),
+                hint: presentationTheme === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : (presentationTheme === 'treasure-island' ? 'Đảo Kho Báu · Thuyền buồm rẽ sóng vượt biển · Chạy ngang · Tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.')
             };
             const presentationOptions = app.teamCompetition.PRESENTATION_THEME_OPTIONS.map(theme => `<option value="${esc(theme.id)}" ${theme.id === presentationTheme ? 'selected' : ''} ${theme.available ? '' : 'disabled'}>${esc(theme.label)}${theme.available ? '' : ' (đang xây dựng)'}</option>`).join('');
             box.innerHTML = `<section class="team-competition-form team-competition-form--new" aria-label="Soạn trận thi đua nhóm">
@@ -7475,7 +7475,7 @@ const app = {
                         <div>
                           <span class="team-section-kicker">Trình chiếu lớp</span>
                           <h4>Giao diện thi đua</h4>
-                          <p>Chọn bộ asset trước khi chuẩn bị trận. Đường đua tốc độ và Lễ hội khinh khí cầu đã sẵn sàng thi đấu.</p>
+                          <p>Chọn bộ asset trước khi chuẩn bị trận. Đường đua tốc độ, Lễ hội khinh khí cầu và Đảo Kho Báu đã sẵn sàng thi đấu.</p>
                         </div>
                       </div>
                       <label class="team-field-label">
@@ -7504,9 +7504,9 @@ const app = {
             const select = document.getElementById('team-comp-presentation-theme');
             const themeId = select ? select.value : 'speed-race';
             const preview = app.teamCompetition?.getPresentationThemePreview?.(themeId) || {
-                src: themeId === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png',
-                label: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : 'Đường đua tốc độ',
-                hint: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.'
+                src: themeId === 'balloon-festival' ? './src/assets/team-competition/Ballons/preview-start.png' : (themeId === 'treasure-island' ? './src/assets/team-competition/Sea/preview-start.png' : './src/assets/team-competition/stadium-3d-v1/preview-start.png'),
+                label: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu' : (themeId === 'treasure-island' ? 'Đảo Kho Báu' : 'Đường đua tốc độ'),
+                hint: themeId === 'balloon-festival' ? 'Lễ hội khinh khí cầu · 8 khinh khí cầu 3D · bay thẳng đứng lên lâu đài trên mây · tự chia đều vị trí theo số đội.' : (themeId === 'treasure-island' ? 'Đảo Kho Báu · Thuyền buồm rẽ sóng vượt biển · Chạy ngang · Tự chia đều vị trí theo số đội.' : 'Đường đua tốc độ · sân vận động 3D · 8 lane màu · xe chạy theo điểm.')
             };
             const img = document.getElementById('team-comp-presentation-preview-img');
             const badge = document.getElementById('team-comp-presentation-preview-badge');
@@ -7683,8 +7683,9 @@ const app = {
                 const teamStatusClass = ['pending', 'active', 'completed', 'locked'].includes(team.status) ? team.status : 'pending';
                 if (isLive) {
                     const isBalloonTheme = presentationTheme === 'balloon-festival';
+                    const isTreasureIsland = presentationTheme === 'treasure-island';
                     const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
-                    const lane = isBalloonTheme
+                    const lane = (isBalloonTheme || isTreasureIsland)
                         ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || { number: index + 1, color: 'cyan', vehicleSprite: index })
                         : stadiumLanes[index];
                     const vehicleInfo = app.teamCompetition.resolvePresentationTeamAvatar(presentationTheme, lane);
@@ -7698,10 +7699,28 @@ const app = {
                     const balloonCenterPct = laneCount <= 1
                         ? 50
                         : minCenterPct + (index / (laneCount - 1)) * (maxCenterPct - minCenterPct);
+
+                    // Sizing and positioning for Treasure Island (sea theme)
+                    // 6-8 teams: 78px; 5 teams: 117px; 2-4 teams: 156px
+                    const boatWidth = laneCount <= 4 ? 156 : (laneCount === 5 ? 117 : 78);
+                    const seaMinY = 23;
+                    const seaMaxY = 94;
+                    const seaStep = (seaMaxY - seaMinY) / Math.max(1, laneCount);
+                    const boatLaneTop = seaMinY + (index + 0.5) * seaStep;
+                    // Pier: 15%, Beach: 87.5% -> travel distance: 72.5%
+                    const boatProgress = Math.round(scoreProgress * 72.5);
+
                     const ariaDesc = isBalloonTheme
                         ? `${teamName}: ${score} trên 10, hạng tạm thời ${rank}`
-                        : `${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}`;
-                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}"><div class="team-stadium-lane__info"><strong>${teamName}</strong><b>${score}<em> điểm</em></b></div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" /></article>`;
+                        : (isTreasureIsland
+                            ? `${teamName}: thuyền làn ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}`
+                            : `${teamName}: lane ${lane.number}, ${score} trên 10, hạng tạm thời ${rank}`);
+
+                    const infoContent = isTreasureIsland
+                        ? `<div class="team-stadium-lane__info-content"><span class="team-stadium-lane__info-lane">Làn ${lane.number}</span><strong>${teamName}</strong></div><div class="team-stadium-lane__info-score"><b>${score}</b><em>điểm</em></div>`
+                        : `<strong>${teamName}</strong><b>${score}<em> điểm</em></b>`;
+
+                    return `<article class="team-stadium-lane team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--race-progress:${Math.round(scoreProgress * 66)}%; --boat-progress:${boatProgress}%; --boat-lane-top:${boatLaneTop.toFixed(2)}%; --boat-width:${boatWidth}px; --lane-z:${10 + index}; --balloon-altitude:${Math.round(scoreProgress * 36)}%; --balloon-center-x:${balloonCenterPct.toFixed(2)}%; --lane-left:${laneLeftPct.toFixed(2)}%; --lane-width:${laneWidthPct.toFixed(2)}%" aria-label="${ariaDesc}"><div class="team-stadium-lane__info">${infoContent}</div><img class="team-stadium-lane__vehicle" src="${vehicleAsset}" alt="${vehicleAlt}" loading="eager" decoding="async" /></article>`;
                 }
                 const leaderName = app.data.sanitizeHTML(usersByName.get(String(team.leaderUsername))?.fullname || team.leaderUsername || 'Chưa chọn');
                 const roster = !isLive && match.status !== app.teamCompetition.STATUS.ENDED
@@ -7718,7 +7737,7 @@ const app = {
             const rankedTeams = [...match.teams].sort((left, right) => app.teamCompetition.getTeamRank(match, left.id) - app.teamCompetition.getTeamRank(match, right.id));
             const stadiumLaneByTeamId = new Map(match.teams.map((team, index) => [
                 String(team.id),
-                presentationTheme === 'balloon-festival'
+                (presentationTheme === 'balloon-festival' || presentationTheme === 'treasure-island')
                     ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || null)
                     : (stadiumLanes[index] || null)
             ]));
@@ -7727,8 +7746,30 @@ const app = {
             const timerLabel = liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`;
             const titleCard = `<div class="team-stadium-title-card"><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2></div>`;
             const maxProgress = isLive && match.teams.length ? Math.max(0, ...match.teams.map(t => app.teamCompetition.getRaceProgress(t.score))) : 0;
+
+            // For treasure island: chest only appears on beach (left: 94.5%) in front of the team reaching 10 points first!
+            let seaTreasureHtml = '';
+            if (isLive && presentationTheme === 'treasure-island') {
+                const eligible10 = match.teams
+                    .map((t, idx) => ({ team: t, index: idx, score: Number(t.score || 0), time: Number(t.completedAt || t.startedAt || Infinity) }))
+                    .filter(item => item.score >= 10);
+                if (eligible10.length > 0) {
+                    eligible10.sort((a, b) => a.time - b.time);
+                    const winner10 = eligible10[0];
+                    const seaMinY = 23;
+                    const seaMaxY = 94;
+                    const seaStep = (seaMaxY - seaMinY) / Math.max(1, match.teams.length);
+                    const winnerTop = (seaMinY + (winner10.index + 0.5) * seaStep).toFixed(2);
+                    seaTreasureHtml = `<div class="team-sea-treasure" style="--treasure-top:${winnerTop}%" aria-label="Rương Kho Báu của ${app.data.sanitizeHTML(winner10.team.name)}"><div class="team-sea-treasure__glow"></div><img src="./src/assets/team-competition/Sea/Treasure.png" alt="Rương Kho Báu" /><span class="team-sea-treasure__badge">Kho Báu!</span></div>`;
+                }
+            }
+
+            const canvasLabel = presentationTheme === 'balloon-festival'
+                ? 'Sân bay khinh khí cầu'
+                : (presentationTheme === 'treasure-island' ? 'Vùng biển Đảo Kho Báu' : 'Đường đua 8 lane');
+
             const raceSurface = isLive
-                ? `<div class="team-stadium-canvas" style="--max-score-progress:${maxProgress.toFixed(2)}" aria-label="${presentationTheme === 'balloon-festival' ? 'Sân bay khinh khí cầu' : 'Đường đua 8 lane'}"><div class="team-stadium-canvas__lanes">${cards}</div></div>`
+                ? `<div class="team-stadium-canvas" style="--max-score-progress:${maxProgress.toFixed(2)}" aria-label="${canvasLabel}"><div class="team-stadium-canvas__lanes">${cards}</div>${seaTreasureHtml}</div>`
                 : `<div class="team-board-grid ${match.teams.length >= 6 ? 'team-board-grid--compact' : ''}">${cards}</div>`;
             const endedNote = endSyncFailed
                 ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
