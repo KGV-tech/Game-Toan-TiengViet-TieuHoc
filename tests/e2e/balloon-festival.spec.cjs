@@ -125,7 +125,7 @@ test('giao diện Lễ hội khinh khí cầu hiển thị chuẩn 3 khung bên 
     }
 
     // Take screenshot of live match (8 teams)
-    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/9133abc4-a491-4658-9a45-482da714db3a';
+    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
     await page.screenshot({ path: path.join(brainDir, 'live_balloon_festival_match.png') });
     console.log('Saved live balloon festival match screenshot (8 teams)!');
 
@@ -215,7 +215,7 @@ test('giao diện Lễ hội khinh khí cầu khi có 4 đội tự chia đều 
     await expect(scoreboardEntries.filter({ hasText: 'Đội Họa Mi' })).toHaveClass(/team-race-scoreboard__entry--violet/);
 
     // Screenshot 4 teams
-    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/9133abc4-a491-4658-9a45-482da714db3a';
+    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
     await page.screenshot({ path: path.join(brainDir, 'live_balloon_festival_4teams.png') });
     console.log('Saved 4-teams balloon festival match screenshot!');
 });
@@ -339,7 +339,7 @@ test('khung Trình chiếu lớp chia 2 cột với ảnh minh họa vạch xu�
     await expect(rightCol.locator('#team-comp-presentation-preview-badge')).toHaveText('Lễ hội khinh khí cầu');
 
     // Capture screenshot of the 2-column presentation section
-    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/9133abc4-a491-4658-9a45-482da714db3a';
+    const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
     const presentationSection = page.locator('.team-form-section--presentation');
     await presentationSection.screenshot({ path: path.join(brainDir, 'team_presentation_2col_balloon.png') });
     console.log('Saved team presentation 2-column screenshot with balloon festival!');
