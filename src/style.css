@@ -6561,7 +6561,7 @@ input[type="text"], input[type="password"], select, textarea {
     border: 1.5px solid color-mix(in srgb, var(--leaderboard-accent) 65%, rgba(255, 255, 255, 0.15));
     border-top: 4px solid var(--leaderboard-accent);
     border-radius: clamp(8px, .8vw, 12px);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--leaderboard-accent) 26%, rgba(6, 24, 60, 0.95)), rgba(2, 10, 32, 0.92));
+    background: linear-gradient(180deg, rgba(4, 18, 48, 0.96) 0%, color-mix(in srgb, var(--leaderboard-accent) 35%, rgba(6, 24, 60, 0.95)) 45%, var(--leaderboard-accent) 100%);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     color: #fff;
     text-align: center;
@@ -6587,17 +6587,17 @@ input[type="text"], input[type="password"], select, textarea {
     font-size: clamp(.52rem, .74vw, .86rem);
     font-weight: 850;
     line-height: 1.15;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.8);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race .team-race-scoreboard__entry b {
-    color: #fff4a4;
-    font-size: clamp(.72rem, 1.1vw, 1.25rem);
-    font-weight: 900;
+    color: #04163a;
+    font-size: clamp(.75rem, 1.15vw, 1.3rem);
+    font-weight: 950;
     line-height: 1;
-    text-shadow: 0 0 10px rgba(255, 244, 164, 0.6);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--speed-race .team-race-scoreboard__entry[data-rank="1"] {
     box-shadow: 0 0 14px color-mix(in srgb, var(--leaderboard-accent) 65%, transparent), inset 0 1px rgba(255, 255, 255, 0.4);
@@ -6767,7 +6767,7 @@ input[type="text"], input[type="password"], select, textarea {
     border: 1.5px solid color-mix(in srgb, var(--leaderboard-accent) 65%, rgba(255, 255, 255, 0.15));
     border-left: 6px solid var(--leaderboard-accent);
     border-radius: clamp(10px, 1.1vw, 16px);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--leaderboard-accent) 26%, rgba(6, 24, 60, 0.95)), rgba(2, 10, 32, 0.92));
+    background: linear-gradient(90deg, rgba(6, 20, 50, 0.96) 0%, color-mix(in srgb, var(--leaderboard-accent) 35%, rgba(6, 20, 50, 0.95)) 40%, var(--leaderboard-accent) 100%);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     color: #fff;
     text-align: left;
@@ -6794,14 +6794,14 @@ input[type="text"], input[type="password"], select, textarea {
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.8);
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--balloon-festival .team-race-scoreboard__entry b {
-    color: #fff4a4;
+    color: #04163a;
     font-size: clamp(1.15rem, 1.45vw, 1.65rem);
-    font-weight: 900;
+    font-weight: 950;
     line-height: 1;
-    text-shadow: 0 0 12px rgba(255, 244, 164, 0.6);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--balloon-festival .team-race-scoreboard__entry[data-rank="1"] {
     box-shadow: 0 0 16px color-mix(in srgb, var(--leaderboard-accent) 60%, transparent), inset 0 1px rgba(255, 255, 255, 0.4);
@@ -7075,7 +7075,7 @@ input[type="text"], input[type="password"], select, textarea {
     border: 1.5px solid color-mix(in srgb, var(--leaderboard-accent) 65%, rgba(255, 255, 255, 0.15));
     border-top: 4px solid var(--leaderboard-accent);
     border-radius: clamp(8px, 0.8vw, 12px);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--leaderboard-accent) 26%, rgba(6, 24, 60, 0.95)), rgba(2, 10, 32, 0.92));
+    background: linear-gradient(180deg, rgba(4, 18, 48, 0.96) 0%, color-mix(in srgb, var(--leaderboard-accent) 35%, rgba(6, 24, 60, 0.95)) 45%, var(--leaderboard-accent) 100%);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     color: #fff;
     text-align: center;
@@ -7101,17 +7101,17 @@ input[type="text"], input[type="password"], select, textarea {
     font-size: clamp(0.52rem, 0.72vw, 0.85rem);
     font-weight: 850;
     line-height: 1.15;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.8);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry b {
-    color: #fff4a4;
-    font-size: clamp(0.72rem, 1.05vw, 1.25rem);
-    font-weight: 900;
+    color: #04163a;
+    font-size: clamp(0.75rem, 1.1vw, 1.3rem);
+    font-weight: 950;
     line-height: 1;
-    text-shadow: 0 0 10px rgba(255, 244, 164, 0.6);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 #treasure-modal.team-board-fullscreen .team-race-stadium--treasure-island .team-race-scoreboard__entry[data-rank="1"] {
     box-shadow: 0 0 14px color-mix(in srgb, var(--leaderboard-accent) 65%, transparent), inset 0 1px rgba(255, 255, 255, 0.4);
@@ -7452,7 +7452,7 @@ input[type="text"], input[type="password"], select, textarea {
     min-height: clamp(48px, 5.8vh, 60px);
     padding: clamp(6px, 0.8vh, 10px) clamp(10px, 0.8vw, 14px);
     border-radius: 12px;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--rocket-color, #00f0ff) 26%, rgba(3, 14, 40, 0.95)), rgba(2, 8, 26, 0.92));
+    background: linear-gradient(90deg, rgba(3, 14, 40, 0.96) 0%, color-mix(in srgb, var(--rocket-color, #00f0ff) 35%, rgba(3, 14, 40, 0.95)) 40%, var(--rocket-color, #00f0ff) 100%);
     border: 1.5px solid color-mix(in srgb, var(--rocket-color, #00f0ff) 65%, rgba(255, 255, 255, 0.15));
     border-left: 6px solid var(--rocket-color, #00f0ff);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -7481,13 +7481,14 @@ input[type="text"], input[type="password"], select, textarea {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.8);
 }
 #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--space-launch .team-race-scoreboard__entry b {
-    color: #fff4a4;
+    color: #04163a;
     font-size: clamp(1.15rem, 1.45vw, 1.6rem);
-    font-weight: 900;
-    text-shadow: 0 0 12px rgba(255, 244, 164, 0.7);
+    font-weight: 950;
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Gán màu chuẩn xác cho 8 phi thuyền */
