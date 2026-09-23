@@ -124,6 +124,9 @@ test('giao diện Lễ hội khinh khí cầu hiển thị chuẩn 3 khung bên 
         await expect(vehicles.nth(i)).toHaveAttribute('src', new RegExp(`balloon-${i + 1}\\.png$`));
     }
 
+    // Đã bỏ ô bảng tên và điểm trên đầu khinh khí cầu
+    await expect(canvas.locator('.team-stadium-lane__info')).toHaveCount(0);
+
     // Take screenshot of live match (8 teams)
     const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
     await page.screenshot({ path: path.join(brainDir, 'live_balloon_festival_match.png') });
