@@ -64,9 +64,8 @@ const { chromium } = require('@playwright/test');
         <div style="position: absolute; left: 0; right: 0; top: ${topPct}%; height: 0; z-index: ${zIndex};">
           <!-- Dock Team Badge (Height doubled: 52px, jade & gold accents) -->
           <div style="position: absolute; left: 0.8%; top: 0; transform: translateY(-50%); width: 148px; min-height: 52px; padding: 6px 12px; background: linear-gradient(135deg, color-mix(in srgb, ${t.color} 75%, #032d4a), rgba(1, 28, 48, 0.95)); border: 2px solid ${t.color}; border-radius: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4); display: flex; justify-content: space-between; align-items: center; color: #fff; font-family: system-ui, sans-serif; backdrop-filter: blur(4px);">
-            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-              <span style="font-size: 10px; color: ${t.color}; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;">Làn ${t.id}</span>
-              <strong style="font-size: 14px; text-shadow: 0 1px 2px #000; font-weight: 900; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 82px;">${t.name}</strong>
+            <div style="display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <strong style="font-size: 14px; text-shadow: 0 1px 2px #000; font-weight: 900; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 96px;">${t.name}</strong>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end;">
               <b style="font-size: 20px; color: #fff4a4; font-weight: 900; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">${t.score}</b>

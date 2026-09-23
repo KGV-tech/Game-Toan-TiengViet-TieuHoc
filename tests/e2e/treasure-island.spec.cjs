@@ -1,3 +1,4 @@
+const path = require('path');
 const { test, expect } = require('@playwright/test');
 
 const demoUsers = () => Array.from({ length: 8 }, (_, i) => ({
@@ -129,6 +130,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
 
         // Check dock badge height (doubled height, min-height around 48px to 54px)
         const firstBadge = lanes.first().locator('.team-stadium-lane__info');
+        await expect(firstBadge).toBeVisible();
         const badgeHeight = await firstBadge.evaluate(el => el.getBoundingClientRect().height);
         expect(badgeHeight).toBeGreaterThanOrEqual(44);
 
@@ -300,5 +302,65 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
 
         await page.waitForTimeout(1000);
         await page.screenshot({ path: 'src/assets/team-competition/Sea/live-game-treasure-island.png' });
+        const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
+        await page.screenshot({ path: path.join(brainDir, 'live-game-treasure-island.png') });
+    });
+
+    test('nút Bắt đầu thi đua đặt ở góc phải trên khung thi đấu và vẫn hiển thị khi mở full màn hình', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await openOfflineHomepage(page);
+
+        await page.evaluate(({ users, exam }) => {
+            window.app.data.users = users;
+            window.app.data.currentUser = { username: 'teacher', fullname: 'Giáo viên', role: 'admin' };
+            window.app.data.exams = [exam];
+
+            const match = {
+                id: 'match-prepared-sea',
+                name: 'Test giao diện trận · Lượt 5',
+                classlevel: '5',
+                className: '5A',
+                participantMode: 'manual',
+                questionMode: 'same',
+                commonExamId: exam.id,
+                presentationTheme: 'treasure-island',
+                status: 'prepared',
+                teams: Array.from({ length: 8 }, (_, i) => ({
+                    id: `team-${i + 1}`,
+                    name: `Nhóm ${i + 1}`,
+                    memberUsernames: [`hs${i + 1}`],
+                    leaderUsername: `hs${i + 1}`,
+                    score: 0,
+                    submittedCount: 0,
+                    status: 'pending'
+                }))
+            };
+
+            window.app.teamCompetition.store.upsert(match);
+            window.app.admin.openAdmin();
+            window.app.admin.openTeamCompetitionBoard(match.id);
+        }, { users: demoUsers(), exam: demoExam() });
+
+        const startBtn = page.getByRole('button', { name: 'Bắt đầu thi đua' });
+        await expect(startBtn).toBeVisible();
+
+        // Verify button is inside .team-board-hero alongside title and clock
+        const hero = page.locator('.team-board-hero');
+        await expect(hero).toBeVisible();
+        await expect(hero.locator('.team-board-start')).toBeVisible();
+        await expect(page.locator('.team-stadium-controls')).toHaveCount(0);
+
+        const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
+        await page.screenshot({ path: path.join(brainDir, 'prepared-board-normal.png') });
+
+        // Enter fullscreen
+        await page.locator('.team-board-toolbar button:has-text("Mở toàn màn hình")').click();
+        await page.waitForTimeout(500);
+
+        // Verify start button is STILL visible in fullscreen and stadium has no controls
+        await expect(startBtn).toBeVisible();
+        await expect(page.locator('.team-board-exit-fullscreen')).toBeVisible();
+        await expect(page.locator('.team-stadium-controls')).toHaveCount(0);
+        await page.screenshot({ path: path.join(brainDir, 'prepared-board-fullscreen.png') });
     });
 });
