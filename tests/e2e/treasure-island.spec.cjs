@@ -395,7 +395,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
 
         // Verify start button is STILL visible in fullscreen and stadium has no controls
         await expect(startBtn).toBeVisible();
-        await expect(page.locator('.team-board-exit-fullscreen')).toBeVisible();
+        await expect(page.locator('.team-board-exit-fullscreen')).toBeHidden();
         await expect(page.locator('.team-stadium-controls')).toHaveCount(0);
         await page.screenshot({ path: path.join(brainDir, 'prepared-board-fullscreen.png') });
     });
