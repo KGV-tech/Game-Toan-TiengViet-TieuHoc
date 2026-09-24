@@ -7623,6 +7623,447 @@ input[type="text"], input[type="password"], select, textarea {
 }
 
 /* ==========================================================================
+   THEME: KHU VƯỜN TRI THỨC (KNOWLEDGE GARDEN)
+   ========================================================================== */
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-stadium-canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: url('../assets/team-competition/Garden/BG.png') center bottom / cover no-repeat;
+    overflow: hidden;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 75% 15%, rgba(254, 240, 138, 0.18) 0%, rgba(255, 255, 255, 0) 55%);
+    z-index: 5;
+}
+
+/* 3 THANH HUD TRÊN CÙNG (TOP HEADER) */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-board-hero {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    z-index: 40;
+    pointer-events: none;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-board-summary {
+    display: none;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden :is(.team-stadium-title-card, .team-race-clock, .team-race-scoreboard) {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 18px;
+    box-shadow: 0 10px 25px -4px rgba(22, 101, 52, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
+}
+
+/* 1. HUD Trái: Tiêu đề trận */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-stadium-title-card {
+    padding: 10px 22px;
+    max-width: 380px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(240, 253, 244, 0.92) 100%);
+    border-color: rgba(74, 222, 128, 0.45);
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-stadium-title-card h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #14532d;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 2. HUD Giữa: Đồng hồ thời gian */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-clock {
+    padding: 8px 26px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 243, 199, 0.92) 100%);
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-clock span {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #92400e;
+    margin-bottom: 2px;
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-clock strong {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #b45309;
+    letter-spacing: 0.04em;
+    line-height: 1;
+}
+
+/* 3. HUD Phải: Bảng xếp hạng */
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-scoreboard {
+    padding: 8px 14px;
+    min-width: 320px;
+    max-width: 440px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(240, 253, 244, 0.92) 100%);
+    border-color: rgba(74, 222, 128, 0.45);
+}
+
+#treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-scoreboard p {
+    margin: 0 0 6px 0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #166534;
+    text-align: center;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(241, 245, 249, 0.7);
+    font-size: 0.82rem;
+    transition: transform 0.2s ease;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__entry span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: #cbd5e1;
+    color: #1e293b;
+    flex-shrink: 0;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__entry[data-rank="1"] span {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__entry strong {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__score {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__entry b {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-race-scoreboard__score-unit {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* CÁC BỒN CÂY TRÊN SÂN CỎ (GARDEN POTS) */
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-canvas__lanes {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane,
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane--garden {
+    position: absolute !important;
+    left: var(--garden-left) !important;
+    top: var(--garden-top) !important;
+    transform: translate(-50%, -85%) scale(var(--garden-scale)) !important;
+    z-index: var(--garden-z) !important;
+    width: clamp(140px, 15vw, 190px) !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    pointer-events: auto !important;
+    transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane--garden:hover {
+    transform: translate(-50%, -90%) scale(calc(var(--garden-scale) * 1.06)) !important;
+    z-index: 35 !important;
+}
+
+#treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane__vehicle {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.28)) !important;
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.team-garden-pot {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team-garden-pot__plant {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team-garden-pot__shadow {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 82%;
+    height: 24px;
+    background: radial-gradient(ellipse at center, rgba(15, 45, 15, 0.52) 0%, rgba(0, 0, 0, 0) 70%);
+    border-radius: 50%;
+    filter: blur(4px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.team-garden-pot__img {
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: block;
+    z-index: 2;
+}
+
+.team-garden-finish-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 900;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 4px 14px rgba(21, 128, 61, 0.45), 0 0 10px rgba(34, 197, 94, 0.35);
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 10;
+    letter-spacing: 0.03em;
+    animation: garden-badge-bounce 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes garden-badge-bounce {
+    0% { transform: translateX(-50%) translateY(0); }
+    100% { transform: translateX(-50%) translateY(-5px); }
+}
+
+.team-garden-pot__badge {
+    position: relative;
+    margin-top: -18px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.12);
+    border: 1.5px solid rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.team-garden-pot__rank {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    font-size: 0.74rem;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.team-garden-pot__info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
+.team-garden-pot__name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.01em;
+}
+
+.team-garden-pot__score {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.team-garden-pot__score b {
+    color: #ffffff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.team-garden-pot__score small {
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.92;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Gradient bên trái/trên tối, bên phải/dưới sáng cho 8 đội */
+.team-garden-pot__badge--cyan {
+    background: linear-gradient(135deg, #0e7490 0%, #22d3ee 100%);
+    border-color: #a5f3fc;
+}
+.team-garden-pot__badge--yellow {
+    background: linear-gradient(135deg, #854d0e 0%, #facc15 100%);
+    border-color: #fef08a;
+}
+.team-garden-pot__badge--coral {
+    background: linear-gradient(135deg, #9f1239 0%, #fb7185 100%);
+    border-color: #fecdd3;
+}
+.team-garden-pot__badge--violet {
+    background: linear-gradient(135deg, #581c87 0%, #a78bfa 100%);
+    border-color: #ddd6fe;
+}
+.team-garden-pot__badge--green {
+    background: linear-gradient(135deg, #14532d 0%, #4ade80 100%);
+    border-color: #bbf7d0;
+}
+.team-garden-pot__badge--pink {
+    background: linear-gradient(135deg, #831843 0%, #f472b6 100%);
+    border-color: #fbcfe8;
+}
+.team-garden-pot__badge--blue {
+    background: linear-gradient(135deg, #78350f 0%, #c27a42 100%);
+    border-color: #fde68a;
+}
+.team-garden-pot__badge--orange {
+    background: linear-gradient(135deg, #9a3412 0%, #fb923c 100%);
+    border-color: #fed7aa;
+}
+
+/* Leaderboard accent colors */
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--cyan { border-left: 4px solid #22d3ee; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--yellow { border-left: 4px solid #facc15; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--coral { border-left: 4px solid #fb7185; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--violet { border-left: 4px solid #a78bfa; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--green { border-left: 4px solid #4ade80; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--pink { border-left: 4px solid #f472b6; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--blue { border-left: 4px solid #c27a42; }
+.team-race-stadium--knowledge-garden .team-race-scoreboard__entry--orange { border-left: 4px solid #fb923c; }
+
+@media (max-width: 1024px) {
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-board-hero {
+        top: 10px;
+        left: 12px;
+        right: 12px;
+        gap: 10px;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-stadium-title-card {
+        padding: 8px 14px;
+        max-width: 220px;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-stadium-title-card h2 {
+        font-size: 1rem;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-clock {
+        padding: 6px 18px;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-clock strong {
+        font-size: 1.35rem;
+    }
+    #treasure-modal.team-board-fullscreen .team-competition-board--live .team-race-stadium--knowledge-garden .team-race-scoreboard {
+        min-width: 220px;
+        max-width: 260px;
+        padding: 6px 10px;
+    }
+    #treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane--garden {
+        width: clamp(120px, 14vw, 160px);
+    }
+}
+
+/* ==========================================================================
    UI/UX IMPROVEMENTS: Micro-interactions, Feedback polish & Light Mode
    ========================================================================== */
 

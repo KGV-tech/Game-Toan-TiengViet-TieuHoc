@@ -3,7 +3,7 @@ const { createServer } = require('node:http');
 const { extname, resolve, sep } = require('node:path');
 
 const host = '127.0.0.1';
-const port = 4173;
+const port = Number(process.env.TEST_PORT || 4173);
 const root = resolve(process.cwd());
 const types = {
   '.css': 'text/css; charset=utf-8',

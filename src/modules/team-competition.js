@@ -21,13 +21,15 @@
         SPEED_RACE: 'speed-race',
         BALLOON_FESTIVAL: 'balloon-festival',
         TREASURE_ISLAND: 'treasure-island',
-        SPACE_LAUNCH: 'space-launch'
+        SPACE_LAUNCH: 'space-launch',
+        KNOWLEDGE_GARDEN: 'knowledge-garden'
     });
     const PRESENTATION_THEME_OPTIONS = Object.freeze([
         Object.freeze({ id: PRESENTATION_THEMES.SPEED_RACE, label: 'Đường đua tốc độ', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.BALLOON_FESTIVAL, label: 'Lễ hội khinh khí cầu', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.TREASURE_ISLAND, label: 'Đảo Kho Báu', available: true }),
-        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Bay Lên Không Gian', available: true })
+        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Bay Lên Không Gian', available: true }),
+        Object.freeze({ id: PRESENTATION_THEMES.KNOWLEDGE_GARDEN, label: 'Khu Vườn Tri Thức', available: true })
     ]);
     const STADIUM_LANES = Object.freeze([
         Object.freeze({ number: 1, color: 'cyan', vehicleSprite: 0 }),
@@ -51,7 +53,66 @@
     const TEAM_ROCKET_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/Rockets/vehicles/rocket-${index + 1}.png`
     ));
+    const TEAM_GARDEN_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
+        `./src/assets/team-competition/Garden/stages/team-${index + 1}-stage-10.png`
+    ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
+
+    function getGardenTeamPosition(teamIndex, totalTeams) {
+        if (totalTeams <= 4) {
+            const leftPct = totalTeams === 1 ? 50 : 18 + (teamIndex / (totalTeams - 1)) * 64;
+            return { row: 1, topPct: 48, leftPct, scale: 0.95, zIndex: 15 };
+        }
+        let countRow1, countRow2;
+        if (totalTeams === 8) { countRow1 = 4; countRow2 = 4; }
+        else if (totalTeams === 7) { countRow1 = 4; countRow2 = 3; }
+        else if (totalTeams === 6) { countRow1 = 3; countRow2 = 3; }
+        else if (totalTeams === 5) { countRow1 = 3; countRow2 = 2; }
+        else {
+            countRow2 = Math.floor(totalTeams / 2);
+            countRow1 = totalTeams - countRow2;
+        }
+        const isRow1 = teamIndex < countRow1;
+        const rowIndex = isRow1 ? teamIndex : teamIndex - countRow1;
+        const rowCount = isRow1 ? countRow1 : countRow2;
+
+        if (isRow1) {
+            let leftPct;
+            if (countRow1 === 4) {
+                const positions = totalTeams === 8 ? [16, 36, 56, 76] : [18, 38, 58, 78];
+                leftPct = positions[rowIndex];
+            } else if (countRow1 === 3) {
+                const positions = totalTeams === 6 ? [22, 48, 74] : [24, 49, 74];
+                leftPct = positions[rowIndex];
+            } else {
+                leftPct = rowCount === 1 ? 50 : 20 + (rowIndex / (rowCount - 1)) * 60;
+            }
+            return { row: 1, topPct: 37, leftPct, scale: 0.82, zIndex: 12 };
+        } else {
+            let leftPct;
+            if (countRow1 === 4 && countRow2 === 4) {
+                const positions = [26, 46, 66, 86];
+                leftPct = positions[rowIndex];
+            } else if (countRow1 === 4 && countRow2 === 3) {
+                const positions = [28, 48, 68];
+                leftPct = positions[rowIndex];
+            } else if (countRow1 === 3 && countRow2 === 3) {
+                const positions = [35, 61, 87];
+                leftPct = positions[rowIndex];
+            } else if (countRow1 === 3 && countRow2 === 2) {
+                const positions = [36.5, 61.5];
+                leftPct = positions[rowIndex];
+            } else {
+                leftPct = rowCount === 1 ? 50 : 28 + (rowIndex / (rowCount - 1)) * 44;
+            }
+            return { row: 2, topPct: 58, leftPct, scale: 1.0, zIndex: 22 };
+        }
+    }
+
+    function getGardenStageAsset(laneNumber, score) {
+        const stage = Math.min(10, Math.max(0, Math.round(Number(score) || 0)));
+        return `./src/assets/team-competition/Garden/stages/team-${laneNumber}-stage-${stage}.png`;
+    }
 
     function createSpaceshipAvatar(color) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><filter id="g"><feGaussianBlur stdDeviation="3"/></filter></defs><path fill="#38bdf8" opacity=".65" filter="url(#g)" d="M46 137 25 164l38-14m71-13 21 27-38-14"/><path fill="${color}" stroke="#e0f2fe" stroke-width="6" d="M90 13c27 25 42 59 38 101l-38 30-38-30C48 72 63 38 90 13Z"/><path fill="#082f49" stroke="#fff" stroke-width="5" d="M90 50a22 22 0 1 1 0 44 22 22 0 0 1 0-44Z"/><path fill="#fef08a" d="m70 137 20 35 20-35-20 12Z"/></svg>`;
@@ -60,6 +121,9 @@
 
     function resolvePresentationTeamAvatar(presentationTheme, lane = STADIUM_LANES[0]) {
         const spriteIndex = Math.max(0, Math.min(TEAM_VEHICLE_ASSETS.length - 1, Number(lane?.vehicleSprite) || 0));
+        if (presentationTheme === PRESENTATION_THEMES.KNOWLEDGE_GARDEN) {
+            return { src: TEAM_GARDEN_ASSETS[spriteIndex], label: 'Cây Tri Thức' };
+        }
         if (presentationTheme === PRESENTATION_THEMES.SPACE_LAUNCH) {
             return { src: TEAM_ROCKET_ASSETS[spriteIndex], label: 'Phi thuyền' };
         }
@@ -86,6 +150,14 @@
     }
 
     function getPresentationThemePreview(themeId) {
+        if (themeId === PRESENTATION_THEMES.KNOWLEDGE_GARDEN) {
+            return {
+                id: PRESENTATION_THEMES.KNOWLEDGE_GARDEN,
+                src: './src/assets/team-competition/Garden/preview-start.png',
+                label: 'Khu Vườn Tri Thức',
+                hint: 'Khu Vườn Tri Thức · 8 bồn cây đá màu 3D · 2 hàng xen kẽ · Cây lớn dần theo điểm từ hạt mầm đến trĩu quả.'
+            };
+        }
         if (themeId === PRESENTATION_THEMES.SPACE_LAUNCH) {
             return {
                 id: PRESENTATION_THEMES.SPACE_LAUNCH,
@@ -1376,6 +1448,8 @@
         getRaceProgress,
         getRaceQuarterSteps,
         getStadiumLaneAssignments,
+        getGardenTeamPosition,
+        getGardenStageAsset,
         store,
         attemptStore,
         subscribe,

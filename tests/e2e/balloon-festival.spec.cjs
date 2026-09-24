@@ -329,12 +329,13 @@ test('khung Trình chiếu lớp chia 2 cột với ảnh minh họa vạch xu�
     await expect(leftCol.locator('.team-section-kicker')).toHaveText('Trình chiếu lớp');
     const themeSelect = leftCol.locator('#team-comp-presentation-theme');
     await expect(themeSelect).toBeVisible();
-    await expect(themeSelect.locator('option')).toHaveCount(4);
+    await expect(themeSelect.locator('option')).toHaveCount(5);
     expect(await themeSelect.locator('option').allInnerTexts()).toEqual([
         'Đường đua tốc độ',
         'Lễ hội khinh khí cầu',
         'Đảo Kho Báu',
-        'Bay Lên Không Gian'
+        'Bay Lên Không Gian',
+        'Khu Vườn Tri Thức'
     ]);
 
     const rightCol = page.locator('.team-presentation-layout__right');
