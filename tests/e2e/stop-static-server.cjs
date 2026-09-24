@@ -4,7 +4,7 @@ module.exports = () => new Promise(resolve => {
   const stopRequest = request(
     {
       host: '127.0.0.1',
-      port: 4173,
+      port: Number(process.env.TEST_PORT || 4173),
       path: '/__playwright/stop',
       method: 'POST',
       timeout: 2_000,

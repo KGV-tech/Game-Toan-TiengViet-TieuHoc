@@ -4,7 +4,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm Bài V/X', () => {
   test('Nút Thoát Chunky 3D và Theme Toggle nằm ở chân khung play-right', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:4173');
+    await page.goto('/');
     await page.evaluate(() => {
       app.data.currentUser = { username: 'test-student', fullname: 'Nguyễn Văn An', role: 'student', classlevel: '4', class_name: '4/1' };
       document.querySelectorAll('.screen, .game-view').forEach(element => element.classList.remove('active'));
@@ -36,7 +36,7 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
 
   test('Khung học sinh hiển thị danh hiệu 2 dòng: Line 1 Danh Hiệu:, Line 2 Học sinh tò mò', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:4173');
+    await page.goto('/');
     await page.evaluate(() => {
       app.data.currentUser = { username: 'test-student', fullname: 'L4', role: 'student', classlevel: '4', class_name: 'Cấp lớp 4', stars: 0 };
       app.auth.updateHeader();
@@ -74,7 +74,7 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
 
   test('Quy tắc stick V/X chuẩn chấm bài trên Đúng/Sai trong Dark Mode và Light Mode', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:4173');
+    await page.goto('/');
 
     const tfQuestion = {
       type: 'Đúng/Sai',
@@ -194,7 +194,7 @@ test.describe('Nút Thoát Chunky 3D, Theme Toggle và Quy tắc Stick Chấm B�
 
   test('Thi Đua Nhóm: bỏ khung vuông ngoài và nền vàng cát, câu động viên chuẩn luyện tập, ảnh xe +30%', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:4173');
+    await page.goto('/');
     await page.evaluate(() => {
       document.documentElement.setAttribute('data-theme', 'light');
       const user = { username: 'leader-1', fullname: 'Nguyễn Văn An', role: 'student', classlevel: '4', class_name: '4/1' };
