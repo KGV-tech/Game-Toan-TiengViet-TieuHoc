@@ -121,8 +121,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
         await expect(scoreboard.locator('.team-race-scoreboard__entry')).toHaveCount(8);
 
         // Check 3 HUD cards have golden border styling
-        const titleBorderColor = await titleCard.evaluate(el => window.getComputedStyle(el).borderTopColor);
-        expect(titleBorderColor).toBeTruthy();
+        await expect.poll(async () => titleCard.evaluate(el => window.getComputedStyle(el).borderTopColor || window.getComputedStyle(el).borderColor)).toBeTruthy();
 
         // Verify 8 stadium lanes
         const lanes = stadium.locator('.team-stadium-lane');
@@ -131,8 +130,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
         // Check dock badge height (doubled height, min-height around 48px to 54px)
         const firstBadge = lanes.first().locator('.team-stadium-lane__info');
         await expect(firstBadge).toBeVisible();
-        const badgeHeight = await firstBadge.evaluate(el => el.getBoundingClientRect().height);
-        expect(badgeHeight).toBeGreaterThanOrEqual(44);
+        await expect.poll(async () => firstBadge.evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
 
         // Verify boat images are loaded
         const firstBoat = lanes.first().locator('.team-stadium-lane__vehicle');

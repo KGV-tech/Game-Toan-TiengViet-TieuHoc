@@ -130,6 +130,8 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
         expect(entryHeight).toBeGreaterThanOrEqual(44);
         const entryRocketColor = await firstEntry.evaluate(el => el.style.getPropertyValue('--rocket-color') || window.getComputedStyle(el).getPropertyValue('--rocket-color'));
         expect(entryRocketColor).toBeTruthy();
+        await expect(firstEntry.locator('.team-race-scoreboard__score')).toBeVisible();
+        await expect(firstEntry.locator('.team-race-scoreboard__score-unit')).toHaveText('Điểm');
 
         // Verify 8 stadium lanes
         const lanes = stadium.locator('.team-stadium-lane');

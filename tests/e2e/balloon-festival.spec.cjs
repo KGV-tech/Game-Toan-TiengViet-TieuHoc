@@ -96,6 +96,8 @@ test('giao diện Lễ hội khinh khí cầu hiển thị chuẩn 3 khung bên 
     // Verify all 8 scoreboard entries
     const scoreboardEntries = hero.locator('.team-race-scoreboard__entry');
     await expect(scoreboardEntries).toHaveCount(8);
+    await expect(scoreboardEntries.first().locator('.team-race-scoreboard__score')).toBeVisible();
+    await expect(scoreboardEntries.first().locator('.team-race-scoreboard__score-unit')).toHaveText('Điểm');
 
     // Check hero board width is compacted (<= 250px at 1440px)
     await expect(async () => {
@@ -325,7 +327,15 @@ test('khung Trình chiếu lớp chia 2 cột với ảnh minh họa vạch xu�
     const leftCol = page.locator('.team-presentation-layout__left');
     await expect(leftCol).toBeVisible();
     await expect(leftCol.locator('.team-section-kicker')).toHaveText('Trình chiếu lớp');
-    await expect(leftCol.locator('#team-comp-presentation-theme')).toBeVisible();
+    const themeSelect = leftCol.locator('#team-comp-presentation-theme');
+    await expect(themeSelect).toBeVisible();
+    await expect(themeSelect.locator('option')).toHaveCount(4);
+    expect(await themeSelect.locator('option').allInnerTexts()).toEqual([
+        'Đường đua tốc độ',
+        'Lễ hội khinh khí cầu',
+        'Đảo Kho Báu',
+        'Bay Lên Không Gian'
+    ]);
 
     const rightCol = page.locator('.team-presentation-layout__right');
     await expect(rightCol).toBeVisible();
