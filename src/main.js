@@ -7753,6 +7753,8 @@ const app = {
                     : (stadiumLanes[index] || null)
             ]));
             const isSpaceLaunch = presentationTheme === 'space-launch';
+            const isBalloonFestival = presentationTheme === 'balloon-festival';
+            const hasScoreUnit = isSpaceLaunch || isBalloonFestival;
             const rocketThemeColors = ['#c27a42', '#2f74e6', '#f59e0b', '#22c55e', '#f97316', '#a855f7', '#06b6d4', '#ec4899'];
             const leaderboard = isLive ? `<aside class="team-race-scoreboard" aria-label="Bảng xếp hạng tạm thời"><p>Bảng xếp hạng tạm thời</p><ol>${rankedTeams.map(team => {
                 const lane = stadiumLaneByTeamId.get(String(team.id));
@@ -7764,7 +7766,11 @@ const app = {
                     ? `team-race-scoreboard__entry--rocket-${rocketIndex + 1} ${lane ? `team-race-scoreboard__entry--${lane.color}` : ''}`
                     : (lane ? `team-race-scoreboard__entry--${lane.color}` : '');
                 const entryStyle = isSpaceLaunch ? `style="--rocket-color:${rocketColor};"` : '';
-                return `<li class="team-race-scoreboard__entry ${entryClass}" ${entryStyle} data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong><b>${Number(team.score || 0).toLocaleString('vi-VN')}</b></li>`;
+                const scoreFormatted = Number(team.score || 0).toLocaleString('vi-VN');
+                const scoreHtml = hasScoreUnit
+                    ? `<div class="team-race-scoreboard__score"><b>${scoreFormatted}</b><small class="team-race-scoreboard__score-unit">Điểm</small></div>`
+                    : `<b>${scoreFormatted}</b>`;
+                return `<li class="team-race-scoreboard__entry ${entryClass}" ${entryStyle} data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong>${scoreHtml}</li>`;
             }).join('')}</ol></aside>` : '';
             const liveTimer = isLive && match.timeLimitMinutes !== null && match.startedAt ? Math.max(0, Number(match.timeLimitMinutes) * 60 - Math.floor((Date.now() - Number(match.startedAt)) / 1000)) : null;
             const timerLabel = liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`;

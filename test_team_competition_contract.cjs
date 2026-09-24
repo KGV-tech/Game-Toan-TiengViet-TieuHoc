@@ -119,7 +119,7 @@ assert.deepEqual(team.getStadiumLaneAssignments(7).map(lane => lane.number), [1,
 assert.deepEqual(team.getStadiumLaneAssignments(8).map(lane => lane.number), [1, 2, 3, 4, 5, 6, 7, 8]);
 assert.deepEqual(team.getStadiumLaneAssignments(4).map(lane => lane.color), ['cyan', 'coral', 'green', 'blue']);
 assert.throws(() => team.getStadiumLaneAssignments(1), /between 2 and 8/);
-assert.equal(team.PRESENTATION_THEME_OPTIONS.length, 10);
+assert.equal(team.PRESENTATION_THEME_OPTIONS.length, 4);
 assert.deepEqual(team.PRESENTATION_THEME_OPTIONS.filter(item => item.available).map(item => item.id), ['speed-race', 'balloon-festival', 'treasure-island', 'space-launch']);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'speed-race' }).presentationTheme, 'speed-race');
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'balloon-festival' }).presentationTheme, 'balloon-festival');

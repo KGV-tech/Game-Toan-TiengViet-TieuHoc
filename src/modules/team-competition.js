@@ -17,31 +17,17 @@
     });
     const STATUS_ORDER = Object.freeze([STATUS.DRAFT, STATUS.PREPARED, STATUS.ACTIVE, STATUS.ENDED]);
     const ATTEMPT_STATUS = Object.freeze({ ACTIVE: 'active', COMPLETED: 'completed', LOCKED: 'locked' });
-    // Keep the complete presentation roadmap in one place. Only a theme with
-    // finished assets may be saved to a competition; the other entries remain
-    // visible in the teacher UI as an honest "đang xây dựng" roadmap.
     const PRESENTATION_THEMES = Object.freeze({
         SPEED_RACE: 'speed-race',
         BALLOON_FESTIVAL: 'balloon-festival',
         TREASURE_ISLAND: 'treasure-island',
-        SPACE_LAUNCH: 'space-launch',
-        THEME_5: 'theme-5',
-        THEME_6: 'theme-6',
-        THEME_7: 'theme-7',
-        THEME_8: 'theme-8',
-        THEME_9: 'theme-9',
-        THEME_10: 'theme-10'
+        SPACE_LAUNCH: 'space-launch'
     });
     const PRESENTATION_THEME_OPTIONS = Object.freeze([
         Object.freeze({ id: PRESENTATION_THEMES.SPEED_RACE, label: 'Đường đua tốc độ', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.BALLOON_FESTIVAL, label: 'Lễ hội khinh khí cầu', available: true }),
         Object.freeze({ id: PRESENTATION_THEMES.TREASURE_ISLAND, label: 'Đảo Kho Báu', available: true }),
-        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Bay Lên Không Gian', available: true }),
-        ...Array.from({ length: 6 }, (_, index) => Object.freeze({
-            id: PRESENTATION_THEMES[`THEME_${index + 5}`],
-            label: `Giao diện số ${index + 5}`,
-            available: false
-        }))
+        Object.freeze({ id: PRESENTATION_THEMES.SPACE_LAUNCH, label: 'Bay Lên Không Gian', available: true })
     ]);
     const STADIUM_LANES = Object.freeze([
         Object.freeze({ number: 1, color: 'cyan', vehicleSprite: 0 }),
