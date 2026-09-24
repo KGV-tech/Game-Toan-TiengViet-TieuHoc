@@ -958,7 +958,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
     await page.locator('#team-comp-name').fill('Trận thử lưu lại');
     await page.locator('#team-comp-common-exam').selectOption('exam-team');
-    await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(4);
+    await expect(page.locator('#team-comp-presentation-theme option')).toHaveCount(5);
     await expect(page.locator('#team-comp-presentation-theme')).toHaveValue('speed-race');
     await expect(page.locator('#team-comp-presentation-theme option:disabled')).toHaveCount(0);
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
