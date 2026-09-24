@@ -350,7 +350,7 @@
                 return 'Không thể lưu trận thi đua vì Supabase còn thiếu cột cấu hình giao diện. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260915_team_competition_presentations.sql vào đúng dự án Supabase, rồi thử lưu lại.';
             }
             if (missingThemeCheck) {
-                return 'Không thể lưu trận thi đua vì Supabase chưa cập nhật cho phép giao diện mới (mã 23514). Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260922_team_competition_balloon_festival.sql vào đúng dự án Supabase, rồi thử lưu lại.';
+                return 'Không thể lưu trận thi đua vì Supabase chưa cập nhật cho phép giao diện mới (mã 23514). Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260924_team_competition_knowledge_garden.sql vào đúng dự án Supabase, rồi thử lưu lại.';
             }
             if (unsupportedGroupedAnswers) {
                 return 'Không thể lưu trận thi đua vì Supabase chưa hỗ trợ câu hỏi có nhiều đáp án trong cùng một ý. Bản nháp vẫn được giữ trên máy. Quản trị viên cần áp dụng migration 20260916_team_competition_grouped_answers.sql vào đúng dự án Supabase, rồi thử lưu lại.';
