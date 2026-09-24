@@ -140,29 +140,33 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
         // Row 1 (first 4 teams)
         for (let i = 0; i < 4; i++) {
-            expect(positions[i].top).toBe(37);
-            expect(positions[i].scale).toBeCloseTo(0.82, 2);
+            expect(positions[i].top).toBe(44);
+            expect(positions[i].scale).toBeCloseTo(0.85, 2);
             expect(positions[i].zIndex).toBe(12);
         }
 
         // Row 2 (last 4 teams)
         for (let i = 4; i < 8; i++) {
-            expect(positions[i].top).toBe(58);
+            expect(positions[i].top).toBe(63);
             expect(positions[i].scale).toBeCloseTo(1.0, 2);
             expect(positions[i].zIndex).toBe(22);
         }
 
-        // Verify interleaving: Team 4 (26%) is between Team 0 (16%) and Team 1 (36%)
-        expect(positions[4].left).toBeGreaterThan(positions[0].left);
-        expect(positions[4].left).toBeLessThan(positions[1].left);
+        // Verify interleaving and clear lawn spacing:
+        // Team 4 (21.5%) is to the left of Team 0 (30%)
+        expect(positions[4].left).toBeLessThan(positions[0].left);
 
-        // Team 5 (46%) is between Team 1 (36%) and Team 2 (56%)
-        expect(positions[5].left).toBeGreaterThan(positions[1].left);
-        expect(positions[5].left).toBeLessThan(positions[2].left);
+        // Team 5 (38.5%) is between Team 0 (30%) and Team 1 (47%)
+        expect(positions[5].left).toBeGreaterThan(positions[0].left);
+        expect(positions[5].left).toBeLessThan(positions[1].left);
 
-        // Team 6 (66%) is between Team 2 (56%) and Team 3 (76%)
-        expect(positions[6].left).toBeGreaterThan(positions[2].left);
-        expect(positions[6].left).toBeLessThan(positions[3].left);
+        // Team 6 (55.5%) is between Team 1 (47%) and Team 2 (64%)
+        expect(positions[6].left).toBeGreaterThan(positions[1].left);
+        expect(positions[6].left).toBeLessThan(positions[2].left);
+
+        // Team 7 (72.5%) is between Team 2 (64%) and Team 3 (81%)
+        expect(positions[7].left).toBeGreaterThan(positions[2].left);
+        expect(positions[7].left).toBeLessThan(positions[3].left);
 
         // 3. Verify stage assets according to score
         // Team 1: score 0 -> stage-0 (bồn đất trống)
@@ -220,7 +224,7 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
                 expect(positions).toHaveLength(4);
                 positions.forEach(p => {
                     expect(p.row).toBe(1);
-                    expect(p.topPct).toBe(48);
+                    expect(p.topPct).toBe(53);
                 });
                 for (let i = 1; i < positions.length; i++) {
                     expect(positions[i].leftPct).toBeGreaterThan(positions[i - 1].leftPct);
@@ -232,15 +236,21 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
                 expect(row1).toHaveLength(config.expectedRow1);
                 expect(row2).toHaveLength(config.expectedRow2);
 
-                row1.forEach(p => expect(p.row).toBe(1));
-                row2.forEach(p => expect(p.row).toBe(2));
+                row1.forEach(p => {
+                    expect(p.row).toBe(1);
+                    expect(p.topPct).toBe(44);
+                });
+                row2.forEach(p => {
+                    expect(p.row).toBe(2);
+                    expect(p.topPct).toBe(63);
+                });
 
                 // Verify row 2 is interleaved with row 1
-                for (let j = 0; j < row2.length; j++) {
-                    expect(row2[j].leftPct).toBeGreaterThan(row1[j].leftPct);
-                    if (row1[j + 1]) {
-                        expect(row2[j].leftPct).toBeLessThan(row1[j + 1].leftPct);
-                    }
+                for (let i = 1; i < row1.length; i++) {
+                    expect(row1[i].leftPct).toBeGreaterThan(row1[i - 1].leftPct);
+                }
+                for (let j = 1; j < row2.length; j++) {
+                    expect(row2[j].leftPct).toBeGreaterThan(row2[j - 1].leftPct);
                 }
             }
         }

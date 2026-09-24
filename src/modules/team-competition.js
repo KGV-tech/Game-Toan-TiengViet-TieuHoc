@@ -60,8 +60,16 @@
 
     function getGardenTeamPosition(teamIndex, totalTeams) {
         if (totalTeams <= 4) {
-            const leftPct = totalTeams === 1 ? 50 : 18 + (teamIndex / (totalTeams - 1)) * 64;
-            return { row: 1, topPct: 48, leftPct, scale: 0.95, zIndex: 15 };
+            const positionsByCount = {
+                1: [54],
+                2: [40, 68],
+                3: [32, 54, 76],
+                4: [26, 44, 62, 80]
+            };
+            const leftPct = (positionsByCount[totalTeams] && positionsByCount[totalTeams][teamIndex]) !== undefined
+                ? positionsByCount[totalTeams][teamIndex]
+                : (totalTeams === 1 ? 54 : 26 + (teamIndex / Math.max(1, totalTeams - 1)) * 54);
+            return { row: 1, topPct: 53, leftPct, scale: 0.95, zIndex: 15 };
         }
         let countRow1, countRow2;
         if (totalTeams === 8) { countRow1 = 4; countRow2 = 4; }
@@ -74,38 +82,37 @@
         }
         const isRow1 = teamIndex < countRow1;
         const rowIndex = isRow1 ? teamIndex : teamIndex - countRow1;
-        const rowCount = isRow1 ? countRow1 : countRow2;
 
         if (isRow1) {
             let leftPct;
             if (countRow1 === 4) {
-                const positions = totalTeams === 8 ? [16, 36, 56, 76] : [18, 38, 58, 78];
+                const positions = [30, 47, 64, 81];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3) {
-                const positions = totalTeams === 6 ? [22, 48, 74] : [24, 49, 74];
+                const positions = [34, 56, 78];
                 leftPct = positions[rowIndex];
             } else {
-                leftPct = rowCount === 1 ? 50 : 20 + (rowIndex / (rowCount - 1)) * 60;
+                leftPct = 30 + (rowIndex / Math.max(1, countRow1 - 1)) * 50;
             }
-            return { row: 1, topPct: 37, leftPct, scale: 0.82, zIndex: 12 };
+            return { row: 1, topPct: 44, leftPct, scale: 0.85, zIndex: 12 };
         } else {
             let leftPct;
             if (countRow1 === 4 && countRow2 === 4) {
-                const positions = [26, 46, 66, 86];
+                const positions = [21.5, 38.5, 55.5, 72.5];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 4 && countRow2 === 3) {
-                const positions = [28, 48, 68];
+                const positions = [38.5, 55.5, 72.5];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 3) {
-                const positions = [35, 61, 87];
+                const positions = [23, 45, 67];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 2) {
-                const positions = [36.5, 61.5];
+                const positions = [45, 67];
                 leftPct = positions[rowIndex];
             } else {
-                leftPct = rowCount === 1 ? 50 : 28 + (rowIndex / (rowCount - 1)) * 44;
+                leftPct = 25 + (rowIndex / Math.max(1, countRow2 - 1)) * 50;
             }
-            return { row: 2, topPct: 58, leftPct, scale: 1.0, zIndex: 22 };
+            return { row: 2, topPct: 63, leftPct, scale: 1.0, zIndex: 22 };
         }
     }
 
