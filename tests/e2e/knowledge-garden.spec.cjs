@@ -198,6 +198,23 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         await expect(badge1.locator('.team-garden-pot__name')).toHaveText('Mầm Xanh 1');
         await expect(badge1.locator('.team-garden-pot__score b')).toHaveText('0');
         await expect(badge1.locator('.team-garden-pot__score small')).toHaveText('Điểm');
+
+        // Verify badge colors match brick rim colors (Team 2: orange, Team 5: yellow, Team 8: green)
+        await expect(lanes.nth(1).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--orange/);
+        await expect(lanes.nth(4).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--yellow/);
+        await expect(lanes.nth(7).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--green/);
+
+        // Verify scoreboard entries match brick colors
+        await expect(stadium.locator('.team-race-scoreboard__entry', { hasText: 'Hướng Dương 2' })).toHaveClass(/team-race-scoreboard__entry--orange/);
+        await expect(stadium.locator('.team-race-scoreboard__entry', { hasText: 'Đại Thụ 5' })).toHaveClass(/team-race-scoreboard__entry--yellow/);
+        await expect(stadium.locator('.team-race-scoreboard__entry', { hasText: 'Phong Lan 8' })).toHaveClass(/team-race-scoreboard__entry--green/);
+
+        // Verify no hover enlargement on garden lane
+        const lane1BoxBefore = await lanes.nth(0).boundingBox();
+        await lanes.nth(0).hover();
+        const lane1BoxAfter = await lanes.nth(0).boundingBox();
+        expect(lane1BoxAfter.width).toBeCloseTo(lane1BoxBefore.width, 1);
+        expect(lane1BoxAfter.height).toBeCloseTo(lane1BoxBefore.height, 1);
     });
 
     test('tự động sắp xếp vị trí xen kẽ hợp lý khi có 7, 6, 5, 4 đội', async ({ page }) => {
