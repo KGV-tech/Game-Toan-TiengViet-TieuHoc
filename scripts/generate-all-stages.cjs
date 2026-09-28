@@ -9,16 +9,16 @@ const fs = require('fs');
     const stagesDir = path.join(gardenDir, 'stages');
     if (!fs.existsSync(stagesDir)) fs.mkdirSync(stagesDir, { recursive: true });
 
-    // Team to file mapping
+    // Team to sprite sheet mapping (Cyan = Blueberries, Brown = Coconuts)
     const teamConfigs = [
-        { teamNum: 1, file: 'Blue.png', color: 'cyan', seedX: 195, seedY: 183, patchRadius: 28 },
-        { teamNum: 2, file: 'Yellow.png', color: 'yellow', seedX: 173, seedY: 218, patchRadius: 28 },
-        { teamNum: 3, file: 'Red1.png', color: 'coral', seedX: 180, seedY: 205, patchRadius: 28 },
-        { teamNum: 4, file: 'Purple.png', color: 'violet', seedX: 162, seedY: 221, patchRadius: 28 },
-        { teamNum: 5, file: 'Green.png', color: 'green', seedX: 220, seedY: 168, patchRadius: 30 },
-        { teamNum: 6, file: 'Pink.png', color: 'pink', seedX: 163, seedY: 216, patchRadius: 28 },
-        { teamNum: 7, file: 'Brown.png', color: 'blue', seedX: 147, seedY: 289, patchRadius: 32 },
-        { teamNum: 8, file: 'Orange.png', color: 'orange', seedX: 167, seedY: 229, patchRadius: 28 }
+        { teamNum: 1, file: 'Blue.png', color: 'cyan', seedX: 189, seedY: 198, patchRadius: 32 },
+        { teamNum: 2, file: 'Yellow.png', color: 'yellow', seedX: 180, seedY: 242, patchRadius: 32 },
+        { teamNum: 3, file: 'Red1.png', color: 'coral', seedX: 184, seedY: 220, patchRadius: 32 },
+        { teamNum: 4, file: 'Purple.png', color: 'violet', seedX: 164, seedY: 236, patchRadius: 32 },
+        { teamNum: 5, file: 'Green.png', color: 'green', seedX: 206, seedY: 182, patchRadius: 34 },
+        { teamNum: 6, file: 'Pink.png', color: 'pink', seedX: 168, seedY: 232, patchRadius: 32 },
+        { teamNum: 7, file: 'Brown.png', color: 'blue', seedX: 150, seedY: 308, patchRadius: 36 },
+        { teamNum: 8, file: 'Orange.png', color: 'orange', seedX: 168, seedY: 242, patchRadius: 32 }
     ];
 
     const base64Map = {};
@@ -43,11 +43,11 @@ const fs = require('fs');
             'Yellow.png': 367
         };
 
-        const TARGET_W = 420;
-        const TARGET_H = 580;
-        const TARGET_POT_W = 300;
-        const POT_ANCHOR_X = 210;
-        const POT_ANCHOR_Y = 556;
+        const TARGET_W = 500;
+        const TARGET_H = 650;
+        const TARGET_POT_W = 390;
+        const POT_ANCHOR_X = 250;
+        const POT_ANCHOR_Y = 635;
 
         const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
@@ -67,40 +67,31 @@ const fs = require('fs');
             const sCtx = srcCanvas.getContext('2d');
             sCtx.drawImage(img, 0, 0);
 
+            const cellW = w / 5;
+
             // Wipe Red1 number badges if Red1
             if (cfg.file === 'Red1.png') {
                 const imgData = sCtx.getImageData(0, 0, w, h);
                 const d = imgData.data;
-                const cellW = w / 5;
-                for (let r = 0; r < 2; r++) {
-                    const rowMinY = r === 0 ? 0 : splitY;
-                    const rowMaxY = r === 0 ? splitY : h;
-                    for (let c = 0; c < 5; c++) {
-                        const cx = Math.round((c + 0.5) * cellW);
-                        const cy = r === 0 ? 418 : 862;
-                        for (let y = Math.max(rowMinY, cy - 50); y <= Math.min(rowMaxY - 1, cy + 50); y++) {
-                            for (let x = cx - 50; x <= cx + 50; x++) {
-                                if (Math.hypot(x - cx, y - cy) < 42) {
-                                    d[(y * w + x) * 4 + 3] = 0;
-                                }
-                            }
+                for (let c = 0; c < 5; c++) {
+                    const cx = Math.round((c + 0.5) * cellW);
+                    // Row 0 badges & hanging ring
+                    for (let y = 328; y <= 420; y++) {
+                        for (let x = cx - 38; x <= cx + 38; x++) {
+                            d[(y * w + x) * 4 + 3] = 0;
                         }
-                        // Also clear any rogue pixels below y=322 in row 0
-                        if (r === 0) {
-                            for (let y = 322; y < splitY; y++) {
-                                for (let x = Math.round(c * cellW); x < Math.round((c + 1) * cellW); x++) {
-                                    d[(y * w + x) * 4 + 3] = 0;
-                                }
-                            }
+                    }
+                    // Row 1 badges & hanging ring
+                    for (let y = 785; y <= 880; y++) {
+                        for (let x = cx - 38; x <= cx + 38; x++) {
+                            d[(y * w + x) * 4 + 3] = 0;
                         }
                     }
                 }
                 sCtx.putImageData(imgData, 0, 0);
             }
 
-            const cellW = w / 5;
-
-            // Measure cell 0 (Stage 1) to determine the pot width and center
+            // Measure cell 0 (Stage 1) to determine exact pot width and center
             const c0W = Math.round(cellW);
             const c0Data = sCtx.getImageData(0, 0, c0W, splitY).data;
             let bMinX = c0W, bMaxX = 0, bMinY = splitY, bMaxY = 0;
@@ -116,30 +107,24 @@ const fs = require('fs');
             }
 
             const rawPotW = bMaxX - bMinX + 1;
-            const rawPotH = bMaxY - bMinY + 1;
             const scale = TARGET_POT_W / rawPotW;
             const potRelCenterXRow0 = (bMinX + bMaxX) / 2;
             const potRelBottomYRow0 = bMaxY;
 
-            // Measure cell 9 (Stage 10) in row 1 for pot bottom in row 1
-            const c9MinX = Math.round(4 * cellW);
-            const c9MinY = splitY;
-            const c9W = w - c9MinX;
-            const c9H = h - c9MinY;
-            const c9Data = sCtx.getImageData(c9MinX, c9MinY, c9W, c9H).data;
-            let c9bMinX = c9W, c9bMaxX = 0, c9bMinY = c9H, c9bMaxY = 0;
-            for (let y = 0; y < c9H; y++) {
-                for (let x = 0; x < c9W; x++) {
-                    if (c9Data[(y * c9W + x) * 4 + 3] > 20) {
-                        if (x < c9bMinX) c9bMinX = x;
-                        if (x > c9bMaxX) c9bMaxX = x;
-                        if (y < c9bMinY) c9bMinY = y;
-                        if (y > c9bMaxY) c9bMaxY = y;
+            // Measure cell 5 (Stage 6) pot bottom in row 1
+            const c5H = h - splitY;
+            const c5Data = sCtx.getImageData(0, splitY, c0W, c5H).data;
+            let c5MaxY = 0;
+            for (let y = 0; y < c5H; y++) {
+                for (let x = 0; x < c0W; x++) {
+                    if (c5Data[(y * c0W + x) * 4 + 3] > 20) {
+                        if (y > c5MaxY) c5MaxY = y;
                     }
                 }
             }
-            const potRelBottomYRow1 = c9bMaxY;
-            const potRelCenterXRow1 = (c9bMinX + c9bMaxX) / 2;
+
+            const potRelCenterXRow1 = potRelCenterXRow0;
+            const potRelBottomYRow1 = c5MaxY;
 
             const teamImages = {};
 
@@ -153,7 +138,6 @@ const fs = require('fs');
                 const srcW = Math.round((c + 1) * cellW) - srcX;
                 const srcH = r === 0 ? splitY : (h - splitY);
 
-                // Pot reference center X and bottom Y relative to cell
                 const relPotCenterX = r === 0 ? potRelCenterXRow0 : potRelCenterXRow1;
                 const relPotBottomY = r === 0 ? potRelBottomYRow0 : potRelBottomYRow1;
 
@@ -177,7 +161,7 @@ const fs = require('fs');
                     const s0Ctx = stage0Canvas.getContext('2d');
                     s0Ctx.drawImage(canvas, 0, 0);
 
-                    // Seed coordinates on the transformed canvas:
+                    // Seed coordinates on transformed canvas
                     const targetSeedX = Math.round(POT_ANCHOR_X + (cfg.seedX - relPotCenterX) * scale);
                     const targetSeedY = Math.round(POT_ANCHOR_Y - (relPotBottomY - cfg.seedY) * scale);
 
@@ -215,7 +199,7 @@ const fs = require('fs');
         return result;
     }, { teamConfigs, base64Map });
 
-    // Write out all files
+    // Write out all 88 stage files
     for (const teamNum of Object.keys(outputImages)) {
         const stages = outputImages[teamNum];
         for (const [stageKey, dataUrl] of Object.entries(stages)) {
@@ -225,7 +209,7 @@ const fs = require('fs');
             fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
         }
     }
-    console.log('Successfully regenerated all 88 stage images at standard 420x580 canvas!');
+    console.log('Successfully regenerated all 88 stage images at standard 500x650 canvas with normalized pot width 390px!');
 
     await browser.close();
     fs.unlinkSync(tempHtml);
