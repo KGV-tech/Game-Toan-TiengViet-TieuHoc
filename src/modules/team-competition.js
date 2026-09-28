@@ -54,7 +54,7 @@
         `./src/assets/team-competition/Rockets/vehicles/rocket-${index + 1}.png`
     ));
     const TEAM_GARDEN_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
-        `./src/assets/team-competition/Garden/stages/team-${index + 1}-stage-10.png`
+        `./src/assets/team-competition/Garden/stages/team-${index + 1}-stage-10.webp`
     ));
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
@@ -121,7 +121,7 @@
 
     function getGardenStageAsset(laneNumber, score) {
         const stage = Math.min(10, Math.max(0, Math.round(Number(score) || 0)));
-        return `./src/assets/team-competition/Garden/stages/team-${laneNumber}-stage-${stage}.png`;
+        return `./src/assets/team-competition/Garden/stages/team-${laneNumber}-stage-${stage}.webp`;
     }
 
     function createSpaceshipAvatar(color) {
@@ -163,7 +163,7 @@
         if (themeId === PRESENTATION_THEMES.KNOWLEDGE_GARDEN) {
             return {
                 id: PRESENTATION_THEMES.KNOWLEDGE_GARDEN,
-                src: './src/assets/team-competition/Garden/preview-start.png',
+                src: './src/assets/team-competition/Garden/preview-start.webp',
                 label: 'Khu Vườn Tri Thức',
                 hint: 'Khu Vườn Tri Thức · 8 bồn cây đá màu 3D · 2 hàng xen kẽ · Cây lớn dần theo điểm từ hạt mầm đến trĩu quả.'
             };

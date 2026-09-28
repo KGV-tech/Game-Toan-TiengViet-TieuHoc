@@ -11,19 +11,19 @@ const fs = require('fs');
 
     // Team to sprite sheet mapping (Cyan = Blueberries, Brown = Coconuts)
     const teamConfigs = [
-        { teamNum: 1, file: 'Blue.png', color: 'cyan', seedX: 189, seedY: 198, patchRadius: 32 },
-        { teamNum: 2, file: 'Yellow.png', color: 'yellow', seedX: 180, seedY: 242, patchRadius: 32 },
-        { teamNum: 3, file: 'Red1.png', color: 'coral', seedX: 184, seedY: 220, patchRadius: 32 },
-        { teamNum: 4, file: 'Purple.png', color: 'violet', seedX: 164, seedY: 236, patchRadius: 32 },
-        { teamNum: 5, file: 'Green.png', color: 'green', seedX: 206, seedY: 182, patchRadius: 34 },
-        { teamNum: 6, file: 'Pink.png', color: 'pink', seedX: 168, seedY: 232, patchRadius: 32 },
-        { teamNum: 7, file: 'Brown.png', color: 'blue', seedX: 150, seedY: 308, patchRadius: 36 },
-        { teamNum: 8, file: 'Orange.png', color: 'orange', seedX: 168, seedY: 242, patchRadius: 32 }
+        { teamNum: 1, file: 'Blue.webp', color: 'cyan', seedX: 189, seedY: 198, patchRadius: 32 },
+        { teamNum: 2, file: 'Yellow.webp', color: 'yellow', seedX: 180, seedY: 242, patchRadius: 32 },
+        { teamNum: 3, file: 'Red1.webp', color: 'coral', seedX: 184, seedY: 220, patchRadius: 32 },
+        { teamNum: 4, file: 'Purple.webp', color: 'violet', seedX: 164, seedY: 236, patchRadius: 32 },
+        { teamNum: 5, file: 'Green.webp', color: 'green', seedX: 206, seedY: 182, patchRadius: 34 },
+        { teamNum: 6, file: 'Pink.webp', color: 'pink', seedX: 168, seedY: 232, patchRadius: 32 },
+        { teamNum: 7, file: 'Brown.webp', color: 'blue', seedX: 150, seedY: 308, patchRadius: 36 },
+        { teamNum: 8, file: 'Orange.webp', color: 'orange', seedX: 168, seedY: 242, patchRadius: 32 }
     ];
 
     const base64Map = {};
     for (const cfg of teamConfigs) {
-        base64Map[cfg.file] = 'data:image/png;base64,' + fs.readFileSync(path.join(gardenDir, cfg.file)).toString('base64');
+        base64Map[cfg.file] = 'data:image/webp;base64,' + fs.readFileSync(path.join(gardenDir, cfg.file)).toString('base64');
     }
 
     const html = `<!DOCTYPE html><html><body><canvas id="c"></canvas></body></html>`;
@@ -33,14 +33,14 @@ const fs = require('fs');
 
     const outputImages = await page.evaluate(async ({ teamConfigs, base64Map }) => {
         const splitYs = {
-            'Blue.png': 301,
-            'Brown.png': 443,
-            'Green.png': 293,
-            'Orange.png': 398,
-            'Pink.png': 388,
-            'Purple.png': 409,
-            'Red1.png': 398,
-            'Yellow.png': 367
+            'Blue.webp': 301,
+            'Brown.webp': 443,
+            'Green.webp': 293,
+            'Orange.webp': 398,
+            'Pink.webp': 388,
+            'Purple.webp': 409,
+            'Red1.webp': 398,
+            'Yellow.webp': 367
         };
 
         const TARGET_W = 500;
@@ -70,7 +70,7 @@ const fs = require('fs');
             const cellW = w / 5;
 
             // Wipe Red1 number badges if Red1
-            if (cfg.file === 'Red1.png') {
+            if (cfg.file === 'Red1.webp') {
                 const imgData = sCtx.getImageData(0, 0, w, h);
                 const d = imgData.data;
                 for (let c = 0; c < 5; c++) {
@@ -151,7 +151,7 @@ const fs = require('fs');
                 const destY = Math.round(POT_ANCHOR_Y - relPotBottomY * scale);
 
                 ctx.drawImage(srcCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
-                teamImages[`stage-${stageNum}`] = canvas.toDataURL('image/png');
+                teamImages[`stage-${stageNum}`] = canvas.toDataURL('image/webp', 0.92);
 
                 // If stage 1, also create Stage 0 (Empty soil pot)
                 if (stageNum === 1) {
@@ -189,7 +189,7 @@ const fs = require('fs');
                     pCtx.drawImage(maskCanvas, 0, 0);
 
                     s0Ctx.drawImage(patchCanvas, targetSeedX - rad, targetSeedY - rad);
-                    teamImages['stage-0'] = stage0Canvas.toDataURL('image/png');
+                    teamImages['stage-0'] = stage0Canvas.toDataURL('image/webp', 0.92);
                 }
             }
 
@@ -199,13 +199,19 @@ const fs = require('fs');
         return result;
     }, { teamConfigs, base64Map });
 
+    // Protect the user-provided stage WebP files unless overwrite is explicitly requested.
+    const overwriteExistingStages = process.argv.includes('--overwrite-existing-stages');
+
     // Write out all 88 stage files
     for (const teamNum of Object.keys(outputImages)) {
         const stages = outputImages[teamNum];
         for (const [stageKey, dataUrl] of Object.entries(stages)) {
-            const fileName = `team-${teamNum}-${stageKey}.png`;
+            const fileName = `team-${teamNum}-${stageKey}.webp`;
             const filePath = path.join(stagesDir, fileName);
-            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
+            if (fs.existsSync(filePath) && !overwriteExistingStages) {
+                throw new Error(`Refusing to overwrite ${fileName}; pass --overwrite-existing-stages to replace existing stage images.`);
+            }
+            const base64Data = dataUrl.replace(/^data:image\/webp;base64,/, '');
             fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
         }
     }
