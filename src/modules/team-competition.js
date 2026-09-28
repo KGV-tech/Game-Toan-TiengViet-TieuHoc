@@ -62,13 +62,13 @@
         if (totalTeams <= 4) {
             const positionsByCount = {
                 1: [54],
-                2: [40, 68],
-                3: [32, 54, 76],
-                4: [26, 44, 62, 80]
+                2: [42, 68],
+                3: [36, 57, 78],
+                4: [33, 50, 67, 84]
             };
             const leftPct = (positionsByCount[totalTeams] && positionsByCount[totalTeams][teamIndex]) !== undefined
                 ? positionsByCount[totalTeams][teamIndex]
-                : (totalTeams === 1 ? 54 : 26 + (teamIndex / Math.max(1, totalTeams - 1)) * 54);
+                : (totalTeams === 1 ? 56 : 33 + (teamIndex / Math.max(1, totalTeams - 1)) * 51);
             return { row: 1, topPct: 53, leftPct, scale: 0.95, zIndex: 15 };
         }
         let countRow1, countRow2;
@@ -86,28 +86,31 @@
         if (isRow1) {
             let leftPct;
             if (countRow1 === 4) {
-                const positions = [30, 47, 64, 81];
+                const positions = [33.5, 50.5, 67.5, 84.5];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3) {
-                const positions = [34, 56, 78];
+                const positions = [38, 59, 80];
+                leftPct = positions[rowIndex];
+            } else if (countRow1 === 2) {
+                const positions = [40, 78];
                 leftPct = positions[rowIndex];
             } else {
-                leftPct = 30 + (rowIndex / Math.max(1, countRow1 - 1)) * 50;
+                leftPct = 58;
             }
             return { row: 1, topPct: 44, leftPct, scale: 0.85, zIndex: 12 };
         } else {
             let leftPct;
             if (countRow1 === 4 && countRow2 === 4) {
-                const positions = [21.5, 38.5, 55.5, 72.5];
+                const positions = [25, 42, 59, 76];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 4 && countRow2 === 3) {
-                const positions = [38.5, 55.5, 72.5];
+                const positions = [42, 59, 76];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 3) {
-                const positions = [23, 45, 67];
+                const positions = [28, 49, 70];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 2) {
-                const positions = [45, 67];
+                const positions = [49, 70];
                 leftPct = positions[rowIndex];
             } else {
                 leftPct = 25 + (rowIndex / Math.max(1, countRow2 - 1)) * 50;

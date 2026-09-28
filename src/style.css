@@ -7926,7 +7926,7 @@ input[type="text"], input[type="password"], select, textarea {
 
 .team-garden-finish-badge {
     position: absolute;
-    top: -12px;
+    top: 6%;
     left: 50%;
     transform: translateX(-50%);
     background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);

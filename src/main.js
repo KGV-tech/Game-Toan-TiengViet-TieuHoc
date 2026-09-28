@@ -7666,6 +7666,8 @@ const app = {
             const usersByName = new Map((app.data.users || []).map(user => [String(user.username), user]));
             const token = encodeURIComponent(String(match.id));
             const isLive = match.status === app.teamCompetition.STATUS.ACTIVE;
+            const isEnded = match.status === app.teamCompetition.STATUS.ENDED;
+            const isVisualPresentation = isLive || isEnded;
             const presentationTheme = app.teamCompetition.normalizePresentationTheme(match.presentationTheme);
             const stadiumLanes = app.teamCompetition.getStadiumLaneAssignments(match.teams.length);
             const cards = match.teams.map((team, index) => {
@@ -7683,7 +7685,7 @@ const app = {
                 const metaRight = isLive ? `${team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : 'Đang làm')}${elapsedLabel}` : (match.status === app.teamCompetition.STATUS.ENDED ? 'Đã kết thúc' : '');
                 const teamStatus = team.status === 'locked' ? 'Đã khóa' : (team.status === 'completed' ? 'Đã nộp' : (isLive ? 'Đang làm' : 'Sẵn sàng'));
                 const teamStatusClass = ['pending', 'active', 'completed', 'locked'].includes(team.status) ? team.status : 'pending';
-                if (isLive) {
+                if (isVisualPresentation) {
                     const isBalloonTheme = presentationTheme === 'balloon-festival';
                     const isTreasureIsland = presentationTheme === 'treasure-island';
                     const isSpaceLaunch = presentationTheme === 'space-launch';
@@ -7699,7 +7701,7 @@ const app = {
                         const potAsset = `./src/assets/team-competition/Garden/stages/team-${lane.number}-stage-${stage}.png`;
                         const potAlt = `Cây Tri Thức của ${teamName} (giai đoạn ${stage}/10)`;
                         const ariaDesc = `${teamName}: ${score} trên 10 điểm, giai đoạn ${stage}/10, hạng tạm thời ${rank}`;
-                        const isFinished = stage >= 10 || team.status === 'completed';
+                        const isFinished = stage >= 10;
                         const finishBadgeHtml = isFinished ? `<div class="team-garden-finish-badge">🏆 Trĩu quả</div>` : '';
 
                         return `<article class="team-stadium-lane team-stadium-lane--garden team-stadium-lane--${lane.color} team-stadium-lane--${teamStatusClass}" data-stadium-lane="${lane.number}" style="--garden-left:${gardenPos.leftPct.toFixed(2)}%; --garden-top:${gardenPos.topPct.toFixed(2)}%; --garden-scale:${gardenPos.scale}; --garden-z:${gardenPos.zIndex}" aria-label="${ariaDesc}"><div class="team-garden-pot"><div class="team-garden-pot__plant"><div class="team-garden-pot__shadow"></div><img class="team-stadium-lane__vehicle team-garden-pot__img" src="${potAsset}" alt="${potAlt}" loading="eager" decoding="async" />${finishBadgeHtml}</div><div class="team-garden-pot__badge team-garden-pot__badge--${lane.color}"><span class="team-garden-pot__rank">${rank}</span><div class="team-garden-pot__info"><strong class="team-garden-pot__name">${teamName}</strong><div class="team-garden-pot__score"><b>${score}</b><small>Điểm</small></div></div></div></div></article>`;
@@ -7771,7 +7773,7 @@ const app = {
             const isGardenTheme = presentationTheme === 'knowledge-garden';
             const hasScoreUnit = isSpaceLaunch || isBalloonFestival || isGardenTheme;
             const rocketThemeColors = ['#c27a42', '#2f74e6', '#f59e0b', '#22c55e', '#f97316', '#a855f7', '#06b6d4', '#ec4899'];
-            const leaderboard = isLive ? `<aside class="team-race-scoreboard" aria-label="Bảng xếp hạng tạm thời"><p>Bảng xếp hạng tạm thời</p><ol>${rankedTeams.map(team => {
+            const leaderboard = isVisualPresentation ? `<aside class="team-race-scoreboard" aria-label="${isEnded ? 'Bảng xếp hạng chung cuộc' : 'Bảng xếp hạng tạm thời'}"><p>${isEnded ? 'Bảng xếp hạng chung cuộc' : 'Bảng xếp hạng tạm thời'}</p><ol>${rankedTeams.map(team => {
                 const lane = stadiumLaneByTeamId.get(String(team.id));
                 const rank = app.teamCompetition.getTeamRank(match, team.id);
                 const origIndex = match.teams.findIndex(t => String(t.id) === String(team.id));
@@ -7790,13 +7792,13 @@ const app = {
                 return `<li class="team-race-scoreboard__entry ${entryClass}" ${entryStyle} data-rank="${rank}"><span>${rank}</span><strong>${app.data.sanitizeHTML(team.name)}</strong>${scoreHtml}</li>`;
             }).join('')}</ol></aside>` : '';
             const liveTimer = isLive && match.timeLimitMinutes !== null && match.startedAt ? Math.max(0, Number(match.timeLimitMinutes) * 60 - Math.floor((Date.now() - Number(match.startedAt)) / 1000)) : null;
-            const timerLabel = liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`;
+            const timerLabel = isEnded ? 'Đã kết thúc' : (liveTimer === null ? 'Không giới hạn' : `${String(Math.floor(liveTimer / 60)).padStart(2, '0')}:${String(liveTimer % 60).padStart(2, '0')}`);
             const titleCard = `<div class="team-stadium-title-card"><h2>${app.data.sanitizeHTML(match.name || 'Trận thi đua')}</h2></div>`;
-            const maxProgress = isLive && match.teams.length ? Math.max(0, ...match.teams.map(t => app.teamCompetition.getRaceProgress(t.score))) : 0;
+            const maxProgress = isVisualPresentation && match.teams.length ? Math.max(0, ...match.teams.map(t => app.teamCompetition.getRaceProgress(t.score))) : 0;
 
             // For treasure island: chest only appears on beach (left: 94.5%) in front of the team reaching 10 points first!
             let seaTreasureHtml = '';
-            if (isLive && presentationTheme === 'treasure-island') {
+            if (isVisualPresentation && presentationTheme === 'treasure-island') {
                 const eligible10 = match.teams
                     .map((t, idx) => ({ team: t, index: idx, score: Number(t.score || 0), time: Number(t.completedAt || t.startedAt || Infinity) }))
                     .filter(item => item.score >= 10);
@@ -7815,13 +7817,13 @@ const app = {
                 ? 'Sân bay khinh khí cầu'
                 : (presentationTheme === 'treasure-island' ? 'Vùng biển Đảo Kho Báu' : (presentationTheme === 'space-launch' ? 'Sân phóng không gian' : (presentationTheme === 'knowledge-garden' ? 'Khu Vườn Tri Thức' : 'Đường đua 8 lane')));
 
-            const raceSurface = isLive
+            const raceSurface = isVisualPresentation
                 ? `<div class="team-stadium-canvas" style="--max-score-progress:${maxProgress.toFixed(2)}" aria-label="${canvasLabel}"><div class="team-stadium-canvas__lanes">${cards}</div>${seaTreasureHtml}</div>`
                 : `<div class="team-board-grid ${match.teams.length >= 6 ? 'team-board-grid--compact' : ''}">${cards}</div>`;
             const endedNote = endSyncFailed
                 ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
                 : 'Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.';
-            box.innerHTML = `<section class="team-competition-board ${isLive ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button>${toolbarAction ? `<div class="team-board-actions">${toolbarAction}</div>` : ''}<span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><button type="button" class="team-board-exit-fullscreen" onclick="app.admin.exitTeamBoardFullscreen()" aria-label="Thoát toàn màn hình" title="Thoát toàn màn hình (ESC)">✕</button><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div>${startActionHtml}</header>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note" role="status">${endedNote}</div>` : ''}</section>`;
+            box.innerHTML = `<section class="team-competition-board ${isVisualPresentation ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button>${toolbarAction ? `<div class="team-board-actions">${toolbarAction}</div>` : ''}<span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><button type="button" class="team-board-exit-fullscreen" onclick="app.admin.exitTeamBoardFullscreen()" aria-label="Thoát toàn màn hình" title="Thoát toàn màn hình (ESC)">✕</button><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div>${startActionHtml}</header>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note" role="status">${endedNote}</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
                 if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { this.stopTeamCompetitionBoardTimer(); return; }

@@ -153,18 +153,18 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         }
 
         // Verify interleaving and clear lawn spacing:
-        // Team 4 (21.5%) is to the left of Team 0 (30%)
+        // Team 4 (25%) is to the left of Team 0 (33.5%)
         expect(positions[4].left).toBeLessThan(positions[0].left);
 
-        // Team 5 (38.5%) is between Team 0 (30%) and Team 1 (47%)
+        // Team 5 (42%) is between Team 0 (33.5%) and Team 1 (50.5%)
         expect(positions[5].left).toBeGreaterThan(positions[0].left);
         expect(positions[5].left).toBeLessThan(positions[1].left);
 
-        // Team 6 (55.5%) is between Team 1 (47%) and Team 2 (64%)
+        // Team 6 (59%) is between Team 1 (50.5%) and Team 2 (67.5%)
         expect(positions[6].left).toBeGreaterThan(positions[1].left);
         expect(positions[6].left).toBeLessThan(positions[2].left);
 
-        // Team 7 (72.5%) is between Team 2 (64%) and Team 3 (81%)
+        // Team 7 (76%) is between Team 2 (67.5%) and Team 3 (84.5%)
         expect(positions[7].left).toBeGreaterThan(positions[2].left);
         expect(positions[7].left).toBeLessThan(positions[3].left);
 
@@ -254,5 +254,73 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
                 }
             }
         }
+    });
+
+    test('trận kết thúc (ended) khi các đội đạt 10/10 điểm vẫn giữ khung cảnh vườn và hiển thị cây trĩu quả stage-10', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await openOfflineHomepage(page);
+
+        await page.evaluate(({ users, exam }) => {
+            window.app.data.users = users;
+            window.app.data.currentUser = { username: 'admin', role: 'admin' };
+            window.app.data.exams = [exam];
+
+            const match = {
+                id: 'match-garden-ended-10',
+                name: 'Khu Vườn Tri Thức - Chung Kết',
+                classlevel: '5',
+                className: '5A',
+                participantMode: 'manual',
+                questionMode: 'same',
+                commonExamId: exam.id,
+                timeLimitMinutes: 15,
+                presentationTheme: 'knowledge-garden',
+                status: 'ended',
+                startedAt: Date.now() - 600000,
+                endedAt: Date.now() - 60000,
+                teams: [
+                    { id: 't1', name: 'Đội 1', memberUsernames: ['hs1'], leaderUsername: 'hs1', score: 10, submittedCount: 10, status: 'completed' },
+                    { id: 't2', name: 'Đội 2', memberUsernames: ['hs2'], leaderUsername: 'hs2', score: 10, submittedCount: 10, status: 'completed' }
+                ]
+            };
+
+            window.app.teamCompetition.store.upsert(match);
+            window.app.admin.openAdmin();
+            const modal = document.getElementById('treasure-modal');
+            modal.classList.add('active');
+            modal.classList.add('team-board-fullscreen');
+            modal.classList.add('team-board-fullscreen-mode');
+
+            const box = document.getElementById('treasure-content-area');
+            window.app.admin.renderTeamCompetitionBoard(box, match.id);
+        }, { users: demoUsers(), exam: demoExam() });
+
+        // Stadium canvas is preserved
+        const stadium = page.locator('.team-race-stadium--knowledge-garden');
+        await expect(stadium).toBeVisible();
+
+        const canvas = stadium.locator('.team-stadium-canvas');
+        await expect(canvas).toBeVisible();
+
+        // Clock says "Đã kết thúc"
+        const clock = stadium.locator('.team-race-clock strong');
+        await expect(clock).toHaveText('Đã kết thúc');
+
+        // Leaderboard says "Bảng xếp hạng chung cuộc"
+        const scoreboard = stadium.locator('.team-race-scoreboard');
+        await expect(scoreboard).toBeVisible();
+        await expect(scoreboard.locator('p')).toHaveText('Bảng xếp hạng chung cuộc');
+
+        // Verify stage-10 fruit-bearing tree is shown for 10/10 teams
+        const potImg1 = stadium.locator('.team-stadium-lane--garden').nth(0).locator('.team-garden-pot__img');
+        await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-10.png');
+
+        const potImg2 = stadium.locator('.team-stadium-lane--garden').nth(1).locator('.team-garden-pot__img');
+        await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-10.png');
+
+        // Both have Trĩu quả badge
+        const badges = stadium.locator('.team-garden-finish-badge');
+        await expect(badges).toHaveCount(2);
+        await expect(badges.first()).toContainText('Trĩu quả');
     });
 });
