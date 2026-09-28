@@ -137,6 +137,16 @@ assert.match(team.resolvePresentationTeamAvatar('knowledge-garden').src, /team-1
 assert.equal(team.getGardenStageAsset(1, 0), './src/assets/team-competition/Garden/stages/team-1-stage-0.webp');
 assert.equal(team.getGardenStageAsset(2, 5), './src/assets/team-competition/Garden/stages/team-2-stage-5.webp');
 assert.equal(team.getGardenStageAsset(3, 10), './src/assets/team-competition/Garden/stages/team-3-stage-10.webp');
+assert.ok(Array.isArray(team.GARDEN_LANES));
+assert.equal(team.GARDEN_LANES.length, 8);
+assert.equal(team.GARDEN_LANES[0].color, 'cyan');
+assert.equal(team.GARDEN_LANES[1].color, 'orange');
+assert.equal(team.GARDEN_LANES[2].color, 'coral');
+assert.equal(team.GARDEN_LANES[3].color, 'violet');
+assert.equal(team.GARDEN_LANES[4].color, 'yellow');
+assert.equal(team.GARDEN_LANES[5].color, 'pink');
+assert.equal(team.GARDEN_LANES[6].color, 'blue');
+assert.equal(team.GARDEN_LANES[7].color, 'green');
 assert.equal(team.getGardenTeamPosition(0, 8).row, 1);
 assert.equal(team.getGardenTeamPosition(4, 8).row, 2);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'stadium-3d' }).presentationTheme, 'speed-race');

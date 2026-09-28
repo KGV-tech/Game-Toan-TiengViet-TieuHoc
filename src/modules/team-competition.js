@@ -41,6 +41,16 @@
         Object.freeze({ number: 7, color: 'blue', vehicleSprite: 6 }),
         Object.freeze({ number: 8, color: 'orange', vehicleSprite: 7 })
     ]);
+    const GARDEN_LANES = Object.freeze([
+        Object.freeze({ number: 1, color: 'cyan', vehicleSprite: 0 }),
+        Object.freeze({ number: 2, color: 'orange', vehicleSprite: 1 }),
+        Object.freeze({ number: 3, color: 'coral', vehicleSprite: 2 }),
+        Object.freeze({ number: 4, color: 'violet', vehicleSprite: 3 }),
+        Object.freeze({ number: 5, color: 'yellow', vehicleSprite: 4 }),
+        Object.freeze({ number: 6, color: 'pink', vehicleSprite: 5 }),
+        Object.freeze({ number: 7, color: 'blue', vehicleSprite: 6 }),
+        Object.freeze({ number: 8, color: 'green', vehicleSprite: 7 })
+    ]);
     const TEAM_VEHICLE_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/stadium-3d-v1/vehicles/vehicle-${index + 1}.png`
     ));
@@ -1424,6 +1434,7 @@
         PRESENTATION_THEMES,
         PRESENTATION_THEME_OPTIONS,
         STADIUM_LANES,
+        GARDEN_LANES,
         TEAM_VEHICLE_ASSETS,
         TEAM_BALLOON_ASSETS,
         resolvePresentationTeamAvatar,

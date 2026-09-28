@@ -7691,8 +7691,11 @@ const app = {
                     const isSpaceLaunch = presentationTheme === 'space-launch';
                     const isGardenTheme = presentationTheme === 'knowledge-garden';
                     const scoreProgress = app.teamCompetition.getRaceProgress(team.score);
+                    const themeLanes = isGardenTheme
+                        ? (app.teamCompetition.GARDEN_LANES || app.teamCompetition.STADIUM_LANES)
+                        : app.teamCompetition.STADIUM_LANES;
                     const lane = (isBalloonTheme || isTreasureIsland || isSpaceLaunch || isGardenTheme)
-                        ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || { number: index + 1, color: 'cyan', vehicleSprite: index })
+                        ? ((themeLanes && themeLanes[index % themeLanes.length]) || stadiumLanes[index] || { number: index + 1, color: 'cyan', vehicleSprite: index })
                         : stadiumLanes[index];
 
                     if (isGardenTheme) {
@@ -7762,12 +7765,16 @@ const app = {
             const statusClass = ['draft', 'prepared', 'active', 'ended'].includes(match.status) ? match.status : 'draft';
             const totalQuestions = match.teams.reduce((max, team) => Math.max(max, app.teamCompetition.getExamForTeam(match, team)?.questions?.length || 0), 0);
             const rankedTeams = [...match.teams].sort((left, right) => app.teamCompetition.getTeamRank(match, left.id) - app.teamCompetition.getTeamRank(match, right.id));
-            const stadiumLaneByTeamId = new Map(match.teams.map((team, index) => [
-                String(team.id),
-                (presentationTheme === 'balloon-festival' || presentationTheme === 'treasure-island' || presentationTheme === 'space-launch' || presentationTheme === 'knowledge-garden')
-                    ? ((app.teamCompetition.STADIUM_LANES && app.teamCompetition.STADIUM_LANES[index % app.teamCompetition.STADIUM_LANES.length]) || stadiumLanes[index] || null)
-                    : (stadiumLanes[index] || null)
-            ]));
+            const stadiumLaneByTeamId = new Map(match.teams.map((team, index) => {
+                const isGarden = presentationTheme === 'knowledge-garden';
+                const themeLanes = isGarden
+                    ? (app.teamCompetition.GARDEN_LANES || app.teamCompetition.STADIUM_LANES)
+                    : app.teamCompetition.STADIUM_LANES;
+                const lane = (presentationTheme === 'balloon-festival' || presentationTheme === 'treasure-island' || presentationTheme === 'space-launch' || isGarden)
+                    ? ((themeLanes && themeLanes[index % themeLanes.length]) || stadiumLanes[index] || null)
+                    : (stadiumLanes[index] || null);
+                return [String(team.id), lane];
+            }));
             const isSpaceLaunch = presentationTheme === 'space-launch';
             const isBalloonFestival = presentationTheme === 'balloon-festival';
             const isGardenTheme = presentationTheme === 'knowledge-garden';

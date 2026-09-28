@@ -14,7 +14,7 @@ const fs = require('fs');
     const stylePath = path.resolve('./src/style.css').replace(/\\/g, '/');
     
     const teamCompetitionModule = require(path.resolve('./src/modules/team-competition.js'));
-    const lanes = teamCompetitionModule.STADIUM_LANES;
+    const lanes = teamCompetitionModule.GARDEN_LANES || teamCompetitionModule.STADIUM_LANES;
     
     const teamCards = Array.from({ length: 8 }, (_, index) => {
         const lane = lanes[index];
