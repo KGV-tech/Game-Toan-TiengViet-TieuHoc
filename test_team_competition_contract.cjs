@@ -133,10 +133,10 @@ assert.match(team.resolvePresentationTeamAvatar('treasure-island').src, /boat-1\
 assert.equal(team.resolvePresentationTeamAvatar('space-launch').label, 'Phi thuyền');
 assert.match(team.resolvePresentationTeamAvatar('space-launch').src, /rocket-1\.png$/);
 assert.equal(team.resolvePresentationTeamAvatar('knowledge-garden').label, 'Cây Tri Thức');
-assert.match(team.resolvePresentationTeamAvatar('knowledge-garden').src, /team-1-stage-10\.png$/);
-assert.equal(team.getGardenStageAsset(1, 0), './src/assets/team-competition/Garden/stages/team-1-stage-0.png');
-assert.equal(team.getGardenStageAsset(2, 5), './src/assets/team-competition/Garden/stages/team-2-stage-5.png');
-assert.equal(team.getGardenStageAsset(3, 10), './src/assets/team-competition/Garden/stages/team-3-stage-10.png');
+assert.match(team.resolvePresentationTeamAvatar('knowledge-garden').src, /team-1-stage-10\.webp$/);
+assert.equal(team.getGardenStageAsset(1, 0), './src/assets/team-competition/Garden/stages/team-1-stage-0.webp');
+assert.equal(team.getGardenStageAsset(2, 5), './src/assets/team-competition/Garden/stages/team-2-stage-5.webp');
+assert.equal(team.getGardenStageAsset(3, 10), './src/assets/team-competition/Garden/stages/team-3-stage-10.webp');
 assert.equal(team.getGardenTeamPosition(0, 8).row, 1);
 assert.equal(team.getGardenTeamPosition(4, 8).row, 2);
 assert.equal(team.normalizeCompetition({ ...validConfig, presentationTheme: 'stadium-3d' }).presentationTheme, 'speed-race');

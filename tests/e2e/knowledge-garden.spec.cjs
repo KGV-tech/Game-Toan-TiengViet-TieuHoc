@@ -51,7 +51,7 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         await select.selectOption('knowledge-garden');
 
         const previewImg = page.locator('#team-comp-presentation-preview-img');
-        await expect(previewImg).toHaveAttribute('src', './src/assets/team-competition/Garden/preview-start.png');
+        await expect(previewImg).toHaveAttribute('src', './src/assets/team-competition/Garden/preview-start.webp');
 
         const previewBadge = page.locator('#team-comp-presentation-preview-badge');
         await expect(previewBadge).toHaveText('Khu Vườn Tri Thức');
@@ -171,23 +171,23 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         // 3. Verify stage assets according to score
         // Team 1: score 0 -> stage-0 (bồn đất trống)
         const potImg1 = lanes.nth(0).locator('.team-garden-pot__img');
-        await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-0.png');
+        await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-0.webp');
 
         // Team 2: score 1 -> stage-1 (hạt trên đất)
         const potImg2 = lanes.nth(1).locator('.team-garden-pot__img');
-        await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-1.png');
+        await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-1.webp');
 
         // Team 3: score 5 -> stage-5
         const potImg3 = lanes.nth(2).locator('.team-garden-pot__img');
-        await expect(potImg3).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-3-stage-5.png');
+        await expect(potImg3).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-3-stage-5.webp');
 
         // Team 4: score 8 -> stage-8
         const potImg4 = lanes.nth(3).locator('.team-garden-pot__img');
-        await expect(potImg4).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-4-stage-8.png');
+        await expect(potImg4).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-4-stage-8.webp');
 
         // Team 5: score 10 -> stage-10 (cây trĩu quả) + finish badge
         const potImg5 = lanes.nth(4).locator('.team-garden-pot__img');
-        await expect(potImg5).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-5-stage-10.png');
+        await expect(potImg5).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-5-stage-10.webp');
         const finishBadge5 = lanes.nth(4).locator('.team-garden-finish-badge');
         await expect(finishBadge5).toBeVisible();
         await expect(finishBadge5).toContainText('Trĩu quả');
@@ -313,10 +313,10 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
         // Verify stage-10 fruit-bearing tree is shown for 10/10 teams
         const potImg1 = stadium.locator('.team-stadium-lane--garden').nth(0).locator('.team-garden-pot__img');
-        await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-10.png');
+        await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-10.webp');
 
         const potImg2 = stadium.locator('.team-stadium-lane--garden').nth(1).locator('.team-garden-pot__img');
-        await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-10.png');
+        await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-10.webp');
 
         // Both have Trĩu quả badge
         const badges = stadium.locator('.team-garden-finish-badge');

@@ -10,7 +10,7 @@ const fs = require('fs');
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     
     // Create preview start HTML
-    const bgPath = path.resolve('./src/assets/team-competition/Garden/BG.png').replace(/\\/g, '/');
+    const bgPath = path.resolve('./src/assets/team-competition/Garden/BG.webp').replace(/\\/g, '/');
     const stylePath = path.resolve('./src/style.css').replace(/\\/g, '/');
     
     const teamCompetitionModule = require(path.resolve('./src/modules/team-competition.js'));
@@ -19,7 +19,7 @@ const fs = require('fs');
     const teamCards = Array.from({ length: 8 }, (_, index) => {
         const lane = lanes[index];
         const gardenPos = teamCompetitionModule.getGardenTeamPosition(index, 8);
-        const potAsset = `./stages/team-${lane.number}-stage-0.png`;
+        const potAsset = `./stages/team-${lane.number}-stage-0.webp`;
         const teamName = `Nhóm ${index + 1}`;
         const score = 0;
         const rank = 1;
@@ -93,9 +93,30 @@ const fs = require('fs');
     await page.goto('file:///' + previewHtmlPath.replace(/\\/g, '/'), { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
     
-    const previewOutPath = path.join(gardenDir, 'preview-start.png');
-    await page.screenshot({ path: previewOutPath, clip: { x: 0, y: 0, width: 1440, height: 900 } });
-    console.log('Saved preview-start.png:', previewOutPath);
+    const previewOutPath = path.join(gardenDir, 'preview-start.webp');
+    const previewPng = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1440, height: 900 } });
+    const previewWebpBase64 = await page.evaluate(async (pngDataUrl) => {
+        const image = new Image();
+        image.src = pngDataUrl;
+        await image.decode();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        canvas.getContext('2d').drawImage(image, 0, 0);
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.92));
+        if (!blob || blob.type !== 'image/webp') throw new Error('Browser cannot encode preview as WebP.');
+
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 32768) {
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+        }
+        return btoa(binary);
+    }, `data:image/png;base64,${previewPng.toString('base64')}`);
+    fs.writeFileSync(previewOutPath, Buffer.from(previewWebpBase64, 'base64'));
+    console.log('Saved preview-start.webp:', previewOutPath);
     
     await browser.close();
     fs.unlinkSync(previewHtmlPath);
