@@ -33,6 +33,61 @@ async function openOfflineHomepage(page) {
 }
 
 test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
+    test('toàn bộ ảnh giai đoạn và nền Garden tải được dưới dạng WebP đồng bộ kích thước', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await openOfflineHomepage(page);
+
+        const stageAssets = Array.from({ length: 8 }, (_, teamIndex) =>
+            Array.from({ length: 11 }, (_, stageIndex) =>
+                `./src/assets/team-competition/Garden/stages/team-${teamIndex + 1}-stage-${stageIndex}.webp`
+            )
+        ).flat();
+        const gardenAssets = [...stageAssets, './src/assets/team-competition/Garden/BG.webp'];
+        const loadedAssets = await page.evaluate(async sources => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 832;
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            const loaded = await Promise.all(sources.map(source => new Promise(resolve => {
+                const image = new Image();
+                image.onload = () => resolve({ source, width: image.naturalWidth, height: image.naturalHeight, image });
+                image.onerror = () => resolve({ source, error: true });
+                image.src = source;
+            })));
+
+            return loaded.map(({ source, width, height, image, error }) => {
+                if (error || !source.endsWith('.webp') || source.endsWith('/BG.webp')) {
+                    return { source, width, height, error };
+                }
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, 0, 0);
+                const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+                let rimWidth = 0;
+                for (let y = 690; y <= 820; y++) {
+                    let left = canvas.width;
+                    let right = -1;
+                    for (let x = 0; x < canvas.width; x++) {
+                        if (pixels[(y * canvas.width + x) * 4 + 3] > 128) {
+                            left = Math.min(left, x);
+                            right = Math.max(right, x);
+                        }
+                    }
+                    if (right >= left) rimWidth = Math.max(rimWidth, right - left + 1);
+                }
+                const [, team, stage] = source.match(/team-(\d+)-stage-(\d+)\.webp$/) || [];
+                const scaleX = window.app.teamCompetition.getGardenPotScaleX(Number(team), Number(stage));
+                return { source, width, height, rimWidth, scaleX, normalizedRimWidth: rimWidth * scaleX };
+            });
+        }, gardenAssets);
+
+        expect(loadedAssets.filter(asset => asset.error)).toEqual([]);
+        expect(loadedAssets.slice(0, 88).map(({ width, height }) => ({ width, height })))
+            .toEqual(Array.from({ length: 88 }, () => ({ width: 640, height: 832 })));
+        const normalizedRimWidths = loadedAssets.slice(0, 88).map(asset => asset.normalizedRimWidth);
+        expect(Math.max(...normalizedRimWidths) - Math.min(...normalizedRimWidths)).toBeLessThanOrEqual(2);
+        expect(loadedAssets[88]).toMatchObject({ width: 1664, height: 936 });
+    });
+
     test('form tạo trận có tùy chọn Khu Vườn Tri Thức và cập nhật preview chuẩn', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await openOfflineHomepage(page);
@@ -51,13 +106,14 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         await select.selectOption('knowledge-garden');
 
         const previewImg = page.locator('#team-comp-presentation-preview-img');
-        await expect(previewImg).toHaveAttribute('src', './src/assets/team-competition/Garden/preview-start.webp');
+        await expect(previewImg).toHaveAttribute('src', './src/assets/team-competition/Garden/BG.webp');
+        await expect.poll(() => previewImg.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
 
         const previewBadge = page.locator('#team-comp-presentation-preview-badge');
         await expect(previewBadge).toHaveText('Khu Vườn Tri Thức');
     });
 
-    test('giao diện Khu Vườn Tri Thức 8 đội: 3 HUD trên cùng, 8 bồn cây xếp 2 hàng xen kẽ, bồn đất stage 0 khi 0 điểm, cây lớn theo điểm, huy hiệu Trĩu quả khi 10 điểm', async ({ page }) => {
+    test('giao diện Khu Vườn Tri Thức 8 đội: HUD rõ ràng, 8 bồn cây xếp thành 2 hàng thoáng, cây phát triển theo điểm', async ({ page }, testInfo) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await openOfflineHomepage(page);
 
@@ -128,6 +184,28 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         const lanes = stadium.locator('.team-stadium-lane--garden');
         await expect(lanes).toHaveCount(8);
 
+        await expect.poll(() => lanes.locator('.team-garden-pot__img').evaluateAll(images =>
+            images.map(image => image.complete && image.naturalWidth > 0)
+        )).toEqual(Array(8).fill(true));
+
+        const gardenCanvas = stadium.locator('.team-stadium-canvas');
+        const gardenBackground = await gardenCanvas.evaluate(element => getComputedStyle(element).backgroundImage);
+        expect(gardenBackground).toContain('/src/assets/team-competition/Garden/BG.webp');
+
+        const renderedPotScaleData = await lanes.locator('.team-garden-pot__img').evaluateAll(images =>
+            images.map(image => ({
+                declared: parseFloat(image.style.getPropertyValue('--garden-pot-scale-x')),
+                applied: Number(getComputedStyle(image).transform.match(/^matrix\(([-\d.]+)/)?.[1])
+            }))
+        );
+        const expectedPotScales = await page.evaluate(() =>
+            Array.from({ length: 8 }, (_, index) =>
+                window.app.teamCompetition.getGardenPotScaleX(index + 1, [0, 1, 5, 8, 10, 3, 2, 6][index])
+            )
+        );
+        expect(renderedPotScaleData.map(value => value.declared)).toEqual(expectedPotScales);
+        renderedPotScaleData.forEach((value, index) => expect(value.applied).toBeCloseTo(expectedPotScales[index], 4));
+
         // Check positions: Row 1 (teams 0..3) vs Row 2 (teams 4..7)
         const positions = await lanes.evaluateAll(elements =>
             elements.map(el => ({
@@ -140,33 +218,41 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
         // Row 1 (first 4 teams)
         for (let i = 0; i < 4; i++) {
-            expect(positions[i].top).toBe(44);
-            expect(positions[i].scale).toBeCloseTo(0.85, 2);
+            expect(positions[i].top).toBe(52);
+            expect(positions[i].scale).toBeCloseTo(1.0, 2);
             expect(positions[i].zIndex).toBe(12);
         }
 
         // Row 2 (last 4 teams)
         for (let i = 4; i < 8; i++) {
-            expect(positions[i].top).toBe(63);
+            expect(positions[i].top).toBe(86);
             expect(positions[i].scale).toBeCloseTo(1.0, 2);
             expect(positions[i].zIndex).toBe(22);
         }
 
-        // Verify interleaving and clear lawn spacing:
-        // Team 4 (25%) is to the left of Team 0 (33.5%)
-        expect(positions[4].left).toBeLessThan(positions[0].left);
+        // Both rows use matching, evenly spaced columns; the vertical gap keeps the large plants apart.
+        expect(positions.slice(4).map(position => position.left))
+            .toEqual(positions.slice(0, 4).map(position => position.left));
 
-        // Team 5 (42%) is between Team 0 (33.5%) and Team 1 (50.5%)
-        expect(positions[5].left).toBeGreaterThan(positions[0].left);
-        expect(positions[5].left).toBeLessThan(positions[1].left);
-
-        // Team 6 (59%) is between Team 1 (50.5%) and Team 2 (67.5%)
-        expect(positions[6].left).toBeGreaterThan(positions[1].left);
-        expect(positions[6].left).toBeLessThan(positions[2].left);
-
-        // Team 7 (76%) is between Team 2 (67.5%) and Team 3 (84.5%)
-        expect(positions[7].left).toBeGreaterThan(positions[2].left);
-        expect(positions[7].left).toBeLessThan(positions[3].left);
+        const accentByTeam = {
+            'Mầm Xanh 1': '#25e1fc',
+            'Hướng Dương 2': '#fd8d2f',
+            'Cây Sồi 3': '#fe6b5e',
+            'Cẩm Tú Cầu 4': '#a963fa',
+            'Đại Thụ 5': '#fee732',
+            'Hoa Sen 6': '#fc78bc',
+            'Thạch Thảo 7': '#2494fd',
+            'Phong Lan 8': '#35d063'
+        };
+        const renderedAccents = await scoreboard.locator('.team-race-scoreboard__entry').evaluateAll(entries =>
+            entries.map(entry => ({
+                name: entry.querySelector('strong')?.textContent?.trim(),
+                accent: getComputedStyle(entry).getPropertyValue('--leaderboard-accent').trim()
+            }))
+        );
+        for (const [teamName, expectedAccent] of Object.entries(accentByTeam)) {
+            expect(renderedAccents.find(entry => entry.name === teamName)?.accent).toBe(expectedAccent);
+        }
 
         // 3. Verify stage assets according to score
         // Team 1: score 0 -> stage-0 (bồn đất trống)
@@ -202,7 +288,11 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         // Verify badge colors match brick rim colors (Team 2: orange, Team 5: yellow, Team 8: green)
         await expect(lanes.nth(1).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--orange/);
         await expect(lanes.nth(4).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--yellow/);
+        await expect(lanes.nth(6).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--blue/);
         await expect(lanes.nth(7).locator('.team-garden-pot__badge')).toHaveClass(/team-garden-pot__badge--green/);
+        await expect.poll(() => lanes.nth(6).locator('.team-garden-pot__badge').evaluate(element =>
+            getComputedStyle(element).backgroundImage
+        )).toContain('rgb(59, 130, 246)');
 
         // Verify scoreboard entries match brick colors
         await expect(stadium.locator('.team-race-scoreboard__entry', { hasText: 'Hướng Dương 2' })).toHaveClass(/team-race-scoreboard__entry--orange/);
@@ -215,14 +305,66 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         const lane1BoxAfter = await lanes.nth(0).boundingBox();
         expect(lane1BoxAfter.width).toBeCloseTo(lane1BoxBefore.width, 1);
         expect(lane1BoxAfter.height).toBeCloseTo(lane1BoxBefore.height, 1);
+
+        for (const viewport of [
+            { width: 1280, height: 720 },
+            { width: 1440, height: 900 },
+            { width: 1024, height: 768 }
+        ]) {
+            await page.setViewportSize(viewport);
+            const canvasBounds = await stadium.locator('.team-stadium-canvas').evaluate(element => {
+                const { left, top, right, bottom } = element.getBoundingClientRect();
+                return { left, top, right, bottom };
+            });
+
+            expect(canvasBounds.left).toBeGreaterThanOrEqual(0);
+            expect(canvasBounds.top).toBeGreaterThanOrEqual(0);
+            expect(canvasBounds.right).toBeLessThanOrEqual(viewport.width + 1);
+            expect(canvasBounds.bottom).toBeLessThanOrEqual(viewport.height + 1);
+
+            const laneBoxes = await lanes.evaluateAll(elements => elements.map(element => {
+                const { left, top, right, bottom, width } = element.getBoundingClientRect();
+                return { left, top, right, bottom, width };
+            }));
+            expect(laneBoxes.map(box => box.width)).toEqual(Array(8).fill(laneBoxes[0].width));
+            for (let i = 0; i < laneBoxes.length; i++) {
+                for (let j = i + 1; j < laneBoxes.length; j++) {
+                    const overlaps = laneBoxes[i].left < laneBoxes[j].right
+                        && laneBoxes[i].right > laneBoxes[j].left
+                        && laneBoxes[i].top < laneBoxes[j].bottom
+                        && laneBoxes[i].bottom > laneBoxes[j].top;
+                    expect(overlaps, `teams ${i + 1} and ${j + 1} overlap at ${viewport.width}x${viewport.height}`).toBe(false);
+                }
+            }
+            const plantBoxes = await lanes.locator('.team-garden-pot__img').evaluateAll(images => images.map(image => {
+                const { left, top, right, bottom } = image.getBoundingClientRect();
+                return { left, top, right, bottom };
+            }));
+            for (let i = 0; i < plantBoxes.length; i++) {
+                for (let j = i + 1; j < plantBoxes.length; j++) {
+                    const overlaps = plantBoxes[i].left < plantBoxes[j].right
+                        && plantBoxes[i].right > plantBoxes[j].left
+                        && plantBoxes[i].top < plantBoxes[j].bottom
+                        && plantBoxes[i].bottom > plantBoxes[j].top;
+                    expect(overlaps, `plants ${i + 1} and ${j + 1} overlap at ${viewport.width}x${viewport.height}`).toBe(false);
+                }
+            }
+            await page.screenshot({
+                path: testInfo.outputPath(`garden-${viewport.width}x${viewport.height}.png`),
+                animations: 'disabled'
+            });
+        }
     });
 
-    test('tự động sắp xếp vị trí xen kẽ hợp lý khi có 7, 6, 5, 4 đội', async ({ page }) => {
+    test('tự động sắp xếp vị trí đều và cùng kích thước khi có 1 đến 7 đội', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await openOfflineHomepage(page);
 
         // Check layout calculation via window.app.teamCompetition.getGardenTeamPosition
         const testConfigs = [
+            { count: 1, expectedRow1: 1, expectedRow2: 0 },
+            { count: 2, expectedRow1: 2, expectedRow2: 0 },
+            { count: 3, expectedRow1: 3, expectedRow2: 0 },
             { count: 7, expectedRow1: 4, expectedRow2: 3 },
             { count: 6, expectedRow1: 3, expectedRow2: 3 },
             { count: 5, expectedRow1: 3, expectedRow2: 2 },
@@ -236,12 +378,13 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
                 );
             }, { count: config.count });
 
-            if (config.count === 4) {
+            if (config.count <= 4) {
                 // Single row
-                expect(positions).toHaveLength(4);
+                expect(positions).toHaveLength(config.count);
                 positions.forEach(p => {
                     expect(p.row).toBe(1);
-                    expect(p.topPct).toBe(53);
+                    expect(p.topPct).toBe(61);
+                    expect(p.scale).toBe(1);
                 });
                 for (let i = 1; i < positions.length; i++) {
                     expect(positions[i].leftPct).toBeGreaterThan(positions[i - 1].leftPct);
@@ -255,14 +398,16 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
                 row1.forEach(p => {
                     expect(p.row).toBe(1);
-                    expect(p.topPct).toBe(44);
+                    expect(p.topPct).toBe(52);
+                    expect(p.scale).toBe(1);
                 });
                 row2.forEach(p => {
                     expect(p.row).toBe(2);
-                    expect(p.topPct).toBe(63);
+                    expect(p.topPct).toBe(86);
+                    expect(p.scale).toBe(1);
                 });
 
-                // Verify row 2 is interleaved with row 1
+                // Ensure team positions remain ordered within both rows.
                 for (let i = 1; i < row1.length; i++) {
                     expect(row1[i].leftPct).toBeGreaterThan(row1[i - 1].leftPct);
                 }
