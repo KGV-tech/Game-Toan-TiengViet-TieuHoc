@@ -7856,7 +7856,7 @@ input[type="text"], input[type="password"], select, textarea {
 #treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-stadium-lane--garden {
     position: absolute !important;
     left: var(--garden-left) !important;
-    top: var(--garden-top) !important;
+    top: calc(var(--garden-top) + var(--garden-offset-y, 0px)) !important;
     transform: translate(-50%, -85%) scale(var(--garden-scale)) !important;
     z-index: var(--garden-z) !important;
     width: clamp(124px, 10.5vw, 160px) !important;
@@ -7920,33 +7920,8 @@ input[type="text"], input[type="password"], select, textarea {
 }
 
 #treasure-modal.team-board-fullscreen .team-race-stadium--knowledge-garden .team-garden-pot__img {
-    transform: scaleX(var(--garden-pot-scale-x, 1)) !important;
+    transform: scale(var(--garden-pot-image-scale, 1.5)) scaleX(var(--garden-pot-scale-x, 1)) !important;
     transform-origin: center bottom !important;
-}
-
-.team-garden-finish-badge {
-    position: absolute;
-    top: 6%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
-    color: #ffffff;
-    font-size: 0.72rem;
-    font-weight: 900;
-    padding: 3px 10px;
-    border-radius: 9999px;
-    border: 1.5px solid #ffffff;
-    box-shadow: 0 4px 14px rgba(21, 128, 61, 0.45), 0 0 10px rgba(34, 197, 94, 0.35);
-    text-transform: uppercase;
-    white-space: nowrap;
-    z-index: 10;
-    letter-spacing: 0.03em;
-    animation: garden-badge-bounce 1.6s ease-in-out infinite alternate;
-}
-
-@keyframes garden-badge-bounce {
-    0% { transform: translateX(-50%) translateY(0); }
-    100% { transform: translateX(-50%) translateY(-5px); }
 }
 
 .team-garden-pot__badge {

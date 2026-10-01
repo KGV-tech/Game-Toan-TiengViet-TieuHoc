@@ -1,5 +1,6 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
+const { waitForTeamBoardVisualAssets } = require('./team-competition-visuals.cjs');
 
 const demoUsers = () => Array.from({ length: 8 }, (_, i) => ({
     username: `hs${i + 1}`,
@@ -299,7 +300,7 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
         expect(activeMatch.status).toBe('active');
     });
 
-    test('chụp ảnh giao diện thực tế Bay Lên Không Gian trong trận đấu', async ({ page }) => {
+    test('chụp ảnh giao diện thực tế Bay Lên Không Gian trong trận đấu', async ({ page }, testInfo) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await openOfflineHomepage(page);
 
@@ -343,9 +344,8 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
             window.app.admin.renderTeamCompetitionBoard(box, match.id);
         }, { users: demoUsers(), exam: demoExam() });
 
-        await page.waitForTimeout(1000);
-        const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
-        await page.screenshot({ path: path.join(brainDir, 'live-game-space-launch.png') });
+        await waitForTeamBoardVisualAssets(page);
+        await page.screenshot({ path: testInfo.outputPath('space-launch-live-match.png'), animations: 'disabled' });
 
         // Also capture updated preview-start.png with 8 teams at score 0
         await page.evaluate(({ users, exam }) => {
@@ -376,10 +376,9 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
             window.app.admin.renderTeamCompetitionBoard(box, startMatch.id);
         }, { users: demoUsers(), exam: demoExam() });
 
-        await page.waitForTimeout(1000);
-        const rocketPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Rockets', 'preview-start.png');
-        await page.screenshot({ path: rocketPreviewPath });
-        await page.screenshot({ path: path.join(brainDir, 'preview-start.png') });
+        await waitForTeamBoardVisualAssets(page);
+        const rocketPreviewPath = testInfo.outputPath('space-launch-preview-start.png');
+        await page.screenshot({ path: rocketPreviewPath, animations: 'disabled' });
     });
 });
 

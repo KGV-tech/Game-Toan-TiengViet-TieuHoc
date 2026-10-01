@@ -1,5 +1,6 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
+const { waitForTeamBoardVisualAssets } = require('./team-competition-visuals.cjs');
 
 const demoUsers = () => Array.from({ length: 8 }, (_, i) => ({
     username: `hs${i + 1}`,
@@ -254,7 +255,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
         expect(boatWidth3).toBe('156px');
     });
 
-    test('chụp ảnh giao diện thực tế Đảo Kho Báu với HUD biển ngọc và vàng kim', async ({ page }) => {
+    test('chụp ảnh giao diện thực tế Đảo Kho Báu với HUD biển ngọc và vàng kim', async ({ page }, testInfo) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await openOfflineHomepage(page);
 
@@ -298,10 +299,8 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
             window.app.admin.renderTeamCompetitionBoard(box, match.id);
         }, { users: demoUsers(), exam: demoExam() });
 
-        await page.waitForTimeout(1000);
-        await page.screenshot({ path: 'src/assets/team-competition/Sea/live-game-treasure-island.png' });
-        const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
-        await page.screenshot({ path: path.join(brainDir, 'live-game-treasure-island.png') });
+        await waitForTeamBoardVisualAssets(page);
+        await page.screenshot({ path: testInfo.outputPath('treasure-island-live-match.png'), animations: 'disabled' });
 
         // Chụp cập nhật preview-start.png cho Đảo Kho Báu với 8 đội ở vạch xuất phát
         await page.evaluate(({ exam }) => {
@@ -334,10 +333,9 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
             window.app.admin.renderTeamCompetitionBoard(box, startMatch.id);
         }, { exam: demoExam() });
 
-        await page.waitForTimeout(1000);
-        const seaPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Sea', 'preview-start.png');
-        await page.screenshot({ path: seaPreviewPath });
-        await page.screenshot({ path: path.join(brainDir, 'preview-treasure-island-start.png') });
+        await waitForTeamBoardVisualAssets(page);
+        const seaPreviewPath = testInfo.outputPath('treasure-island-preview-start.png');
+        await page.screenshot({ path: seaPreviewPath, animations: 'disabled' });
     });
 
     test('nút Bắt đầu thi đua đặt ở góc phải trên khung thi đấu và vẫn hiển thị khi mở full màn hình', async ({ page }) => {
