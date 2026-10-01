@@ -66,20 +66,36 @@
     const TEAM_GARDEN_ASSETS = Object.freeze(Array.from({ length: 8 }, (_, index) =>
         `./src/assets/team-competition/Garden/stages/team-${index + 1}-stage-10.webp`
     ));
+    // Maximum opaque rim span in the lower image band (y=690..820 px), measured from each WebP.
+    // Normalize to 500 px so every soil bed stays the same size as plants grow.
+    const GARDEN_POT_RIM_TARGET_WIDTH = 500;
+    const GARDEN_POT_RIM_WIDTHS = Object.freeze([
+        Object.freeze([504, 500, 502, 500, 499, 502, 500, 531]),
+        Object.freeze([506, 502, 503, 506, 505, 504, 503, 500]),
+        Object.freeze([508, 503, 505, 508, 506, 505, 503, 500]),
+        Object.freeze([508, 502, 504, 510, 501, 508, 508, 501]),
+        Object.freeze([501, 501, 499, 504, 498, 493, 501, 504]),
+        Object.freeze([505, 502, 499, 504, 500, 496, 508, 499]),
+        Object.freeze([504, 503, 502, 503, 500, 498, 511, 503]),
+        Object.freeze([504, 501, 501, 506, 418, 499, 515, 463]),
+        Object.freeze([509, 496, 503, 508, 420, 502, 516, 464]),
+        Object.freeze([486, 501, 504, 507, 420, 455, 519, 463]),
+        Object.freeze([489, 503, 502, 467, 420, 456, 515, 464])
+    ]);
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
 
     function getGardenTeamPosition(teamIndex, totalTeams) {
         if (totalTeams <= 4) {
             const positionsByCount = {
-                1: [54],
-                2: [42, 68],
-                3: [36, 57, 78],
-                4: [33, 50, 67, 84]
+                1: [50],
+                2: [38, 62],
+                3: [25, 50, 75],
+                4: [14, 38, 62, 86]
             };
             const leftPct = (positionsByCount[totalTeams] && positionsByCount[totalTeams][teamIndex]) !== undefined
                 ? positionsByCount[totalTeams][teamIndex]
                 : (totalTeams === 1 ? 56 : 33 + (teamIndex / Math.max(1, totalTeams - 1)) * 51);
-            return { row: 1, topPct: 53, leftPct, scale: 0.95, zIndex: 15 };
+            return { row: 1, topPct: 61, leftPct, scale: 1.0, zIndex: 15 };
         }
         let countRow1, countRow2;
         if (totalTeams === 8) { countRow1 = 4; countRow2 = 4; }
@@ -96,42 +112,49 @@
         if (isRow1) {
             let leftPct;
             if (countRow1 === 4) {
-                const positions = [33.5, 50.5, 67.5, 84.5];
+                const positions = [14, 38, 62, 86];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3) {
-                const positions = [38, 59, 80];
+                const positions = [26, 50, 74];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 2) {
-                const positions = [40, 78];
+                const positions = [38, 62];
                 leftPct = positions[rowIndex];
             } else {
                 leftPct = 58;
             }
-            return { row: 1, topPct: 44, leftPct, scale: 0.85, zIndex: 12 };
+            return { row: 1, topPct: 52, leftPct, scale: 1.0, zIndex: 12 };
         } else {
             let leftPct;
             if (countRow1 === 4 && countRow2 === 4) {
-                const positions = [25, 42, 59, 76];
+                const positions = [14, 38, 62, 86];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 4 && countRow2 === 3) {
-                const positions = [42, 59, 76];
+                const positions = [26, 50, 74];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 3) {
-                const positions = [28, 49, 70];
+                const positions = [26, 50, 74];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 2) {
-                const positions = [49, 70];
+                const positions = [37, 63];
                 leftPct = positions[rowIndex];
             } else {
                 leftPct = 25 + (rowIndex / Math.max(1, countRow2 - 1)) * 50;
             }
-            return { row: 2, topPct: 63, leftPct, scale: 1.0, zIndex: 22 };
+            return { row: 2, topPct: 86, leftPct, scale: 1.0, zIndex: 22 };
         }
     }
 
     function getGardenStageAsset(laneNumber, score) {
         const stage = Math.min(10, Math.max(0, Math.round(Number(score) || 0)));
         return `./src/assets/team-competition/Garden/stages/team-${laneNumber}-stage-${stage}.webp`;
+    }
+
+    function getGardenPotScaleX(laneNumber, score) {
+        const teamIndex = Math.min(7, Math.max(0, Math.round(Number(laneNumber) || 1) - 1));
+        const stage = Math.min(10, Math.max(0, Math.round(Number(score) || 0)));
+        const measuredWidth = GARDEN_POT_RIM_WIDTHS[stage][teamIndex];
+        return Number((GARDEN_POT_RIM_TARGET_WIDTH / measuredWidth).toFixed(4));
     }
 
     function createSpaceshipAvatar(color) {
@@ -173,9 +196,9 @@
         if (themeId === PRESENTATION_THEMES.KNOWLEDGE_GARDEN) {
             return {
                 id: PRESENTATION_THEMES.KNOWLEDGE_GARDEN,
-                src: './src/assets/team-competition/Garden/preview-start.webp',
+                src: './src/assets/team-competition/Garden/BG.webp',
                 label: 'Khu Vườn Tri Thức',
-                hint: 'Khu Vườn Tri Thức · 8 bồn cây đá màu 3D · 2 hàng xen kẽ · Cây lớn dần theo điểm từ hạt mầm đến trĩu quả.'
+                hint: 'Khu Vườn Tri Thức · 8 bồn cây đá màu 3D · 2 hàng giãn đều · Cây lớn dần theo điểm từ hạt mầm đến trĩu quả.'
             };
         }
         if (themeId === PRESENTATION_THEMES.SPACE_LAUNCH) {
@@ -1471,6 +1494,7 @@
         getStadiumLaneAssignments,
         getGardenTeamPosition,
         getGardenStageAsset,
+        getGardenPotScaleX,
         store,
         attemptStore,
         subscribe,
