@@ -83,6 +83,7 @@
         Object.freeze([489, 503, 502, 467, 420, 456, 515, 464])
     ]);
     const TEAM_IDENTITY_COLORS = Object.freeze(['#22d3ee', '#facc15', '#fb7185', '#a78bfa', '#4ade80', '#f472b6', '#60a5fa', '#fb923c']);
+    const GARDEN_TOP_ROW_OFFSET_PX = 50;
 
     function getGardenTeamPosition(teamIndex, totalTeams) {
         if (totalTeams <= 4) {
@@ -95,7 +96,7 @@
             const leftPct = (positionsByCount[totalTeams] && positionsByCount[totalTeams][teamIndex]) !== undefined
                 ? positionsByCount[totalTeams][teamIndex]
                 : (totalTeams === 1 ? 56 : 33 + (teamIndex / Math.max(1, totalTeams - 1)) * 51);
-            return { row: 1, topPct: 61, leftPct, scale: 1.0, zIndex: 15 };
+            return { row: 1, topPct: 61, topOffsetPx: 0, leftPct, scale: 1.0, zIndex: 15 };
         }
         let countRow1, countRow2;
         if (totalTeams === 8) { countRow1 = 4; countRow2 = 4; }
@@ -108,6 +109,21 @@
         }
         const isRow1 = teamIndex < countRow1;
         const rowIndex = isRow1 ? teamIndex : teamIndex - countRow1;
+        // Alternate the 6- and 8-team rows on one shared grid while keeping the
+        // combined layout centered across the garden.
+        let interleavedPositions = null;
+        if (totalTeams === 8) interleavedPositions = [[10, 33, 56, 79], [21, 44, 67, 90]];
+        else if (totalTeams === 6) interleavedPositions = [[10, 42, 74], [26, 58, 90]];
+        if (interleavedPositions) {
+            return {
+                row: isRow1 ? 1 : 2,
+                topPct: isRow1 ? 50 : 94,
+                topOffsetPx: isRow1 ? GARDEN_TOP_ROW_OFFSET_PX : 0,
+                leftPct: interleavedPositions[isRow1 ? 0 : 1][rowIndex],
+                scale: 1.0,
+                zIndex: isRow1 ? 12 : 22
+            };
+        }
 
         if (isRow1) {
             let leftPct;
@@ -123,16 +139,17 @@
             } else {
                 leftPct = 58;
             }
-            return { row: 1, topPct: 52, leftPct, scale: 1.0, zIndex: 12 };
+            return {
+                row: 1,
+                topPct: 50,
+                topOffsetPx: GARDEN_TOP_ROW_OFFSET_PX,
+                leftPct,
+                scale: 1.0,
+                zIndex: 12
+            };
         } else {
             let leftPct;
-            if (countRow1 === 4 && countRow2 === 4) {
-                const positions = [14, 38, 62, 86];
-                leftPct = positions[rowIndex];
-            } else if (countRow1 === 4 && countRow2 === 3) {
-                const positions = [26, 50, 74];
-                leftPct = positions[rowIndex];
-            } else if (countRow1 === 3 && countRow2 === 3) {
+            if (countRow1 === 4 && countRow2 === 3) {
                 const positions = [26, 50, 74];
                 leftPct = positions[rowIndex];
             } else if (countRow1 === 3 && countRow2 === 2) {
@@ -141,7 +158,7 @@
             } else {
                 leftPct = 25 + (rowIndex / Math.max(1, countRow2 - 1)) * 50;
             }
-            return { row: 2, topPct: 86, leftPct, scale: 1.0, zIndex: 22 };
+            return { row: 2, topPct: 94, topOffsetPx: 0, leftPct, scale: 1.0, zIndex: 22 };
         }
     }
 

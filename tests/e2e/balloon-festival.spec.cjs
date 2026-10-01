@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const path = require('node:path');
+const { waitForTeamBoardVisualAssets } = require('./team-competition-visuals.cjs');
 
 const demoUsers = () => Array.from({ length: 8 }, (_, i) => ({
     username: `hs${i + 1}`,
@@ -225,12 +226,12 @@ test('giao diện Lễ hội khinh khí cầu khi có 4 đội tự chia đều 
     console.log('Saved 4-teams balloon festival match screenshot!');
 });
 
-test('chụp và cập nhật ảnh preview bắt đầu 8 đội cho Đường đua tốc độ và Lễ hội khinh khí cầu', async ({ page }) => {
+test('chụp ảnh preview bắt đầu 8 đội cho Đường đua tốc độ và Lễ hội khinh khí cầu', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openOfflineHomepage(page);
 
-    const balloonPreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'Ballons', 'preview-start.png');
-    const speedRacePreviewPath = path.join(__dirname, '..', '..', 'src', 'assets', 'team-competition', 'stadium-3d-v1', 'preview-start.png');
+    const balloonPreviewPath = testInfo.outputPath('balloon-festival-preview-start.png');
+    const speedRacePreviewPath = testInfo.outputPath('speed-race-preview-start.png');
 
     // 1. Balloon Festival preview (8 teams score 0)
     await page.evaluate(({ users, exam }) => {
@@ -269,8 +270,8 @@ test('chụp và cập nhật ảnh preview bắt đầu 8 đội cho Đường 
         window.app.admin.renderTeamCompetitionBoard(box, match.id);
     }, { users: demoUsers(), exam: demoExam() });
 
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: balloonPreviewPath });
+    await waitForTeamBoardVisualAssets(page);
+    await page.screenshot({ path: balloonPreviewPath, animations: 'disabled' });
     console.log('Saved balloon preview to ' + balloonPreviewPath);
 
     // 2. Speed Race preview (8 teams score 0)
@@ -303,8 +304,8 @@ test('chụp và cập nhật ảnh preview bắt đầu 8 đội cho Đường 
         window.app.admin.renderTeamCompetitionBoard(box, match.id);
     }, { exam: demoExam() });
 
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: speedRacePreviewPath });
+    await waitForTeamBoardVisualAssets(page);
+    await page.screenshot({ path: speedRacePreviewPath, animations: 'disabled' });
     console.log('Saved speed race preview to ' + speedRacePreviewPath);
 });
 

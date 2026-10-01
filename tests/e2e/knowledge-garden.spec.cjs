@@ -204,13 +204,14 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
             )
         );
         expect(renderedPotScaleData.map(value => value.declared)).toEqual(expectedPotScales);
-        renderedPotScaleData.forEach((value, index) => expect(value.applied).toBeCloseTo(expectedPotScales[index], 4));
+        renderedPotScaleData.forEach((value, index) => expect(value.applied).toBeCloseTo(expectedPotScales[index] * 1.5, 4));
 
         // Check positions: Row 1 (teams 0..3) vs Row 2 (teams 4..7)
         const positions = await lanes.evaluateAll(elements =>
             elements.map(el => ({
                 left: parseFloat(el.style.getPropertyValue('--garden-left')),
                 top: parseFloat(el.style.getPropertyValue('--garden-top')),
+                offsetY: parseFloat(el.style.getPropertyValue('--garden-offset-y')),
                 scale: parseFloat(el.style.getPropertyValue('--garden-scale')),
                 zIndex: parseInt(el.style.getPropertyValue('--garden-z'), 10)
             }))
@@ -218,21 +219,23 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
         // Row 1 (first 4 teams)
         for (let i = 0; i < 4; i++) {
-            expect(positions[i].top).toBe(52);
+            expect(positions[i].top).toBe(50);
+            expect(positions[i].offsetY).toBe(50);
             expect(positions[i].scale).toBeCloseTo(1.0, 2);
             expect(positions[i].zIndex).toBe(12);
         }
 
         // Row 2 (last 4 teams)
         for (let i = 4; i < 8; i++) {
-            expect(positions[i].top).toBe(86);
+            expect(positions[i].top).toBe(94);
+            expect(positions[i].offsetY).toBe(0);
             expect(positions[i].scale).toBeCloseTo(1.0, 2);
             expect(positions[i].zIndex).toBe(22);
         }
 
-        // Both rows use matching, evenly spaced columns; the vertical gap keeps the large plants apart.
-        expect(positions.slice(4).map(position => position.left))
-            .toEqual(positions.slice(0, 4).map(position => position.left));
+        // Interleaved rows keep the large plants centered and evenly spaced.
+        expect(positions.slice(0, 4).map(position => position.left)).toEqual([10, 33, 56, 79]);
+        expect(positions.slice(4).map(position => position.left)).toEqual([21, 44, 67, 90]);
 
         const accentByTeam = {
             'Mầm Xanh 1': '#25e1fc',
@@ -271,12 +274,10 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         const potImg4 = lanes.nth(3).locator('.team-garden-pot__img');
         await expect(potImg4).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-4-stage-8.webp');
 
-        // Team 5: score 10 -> stage-10 (cây trĩu quả) + finish badge
+        // Team 5: score 10 -> stage-10
         const potImg5 = lanes.nth(4).locator('.team-garden-pot__img');
         await expect(potImg5).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-5-stage-10.webp');
-        const finishBadge5 = lanes.nth(4).locator('.team-garden-finish-badge');
-        await expect(finishBadge5).toBeVisible();
-        await expect(finishBadge5).toContainText('Trĩu quả');
+        await expect(lanes.locator('.team-garden-finish-badge')).toHaveCount(0);
 
         // 4. Verify pot badge with team name and score
         const badge1 = lanes.nth(0).locator('.team-garden-pot__badge');
@@ -398,12 +399,14 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
                 row1.forEach(p => {
                     expect(p.row).toBe(1);
-                    expect(p.topPct).toBe(52);
+                    expect(p.topPct).toBe(50);
+                    expect(p.topOffsetPx).toBe(50);
                     expect(p.scale).toBe(1);
                 });
                 row2.forEach(p => {
                     expect(p.row).toBe(2);
-                    expect(p.topPct).toBe(86);
+                    expect(p.topPct).toBe(94);
+                    expect(p.topOffsetPx).toBe(0);
                     expect(p.scale).toBe(1);
                 });
 
@@ -473,16 +476,14 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         await expect(scoreboard).toBeVisible();
         await expect(scoreboard.locator('p')).toHaveText('Bảng xếp hạng chung cuộc');
 
-        // Verify stage-10 fruit-bearing tree is shown for 10/10 teams
+        // Verify stage-10 trees are shown for 10/10 teams without a finish label
         const potImg1 = stadium.locator('.team-stadium-lane--garden').nth(0).locator('.team-garden-pot__img');
         await expect(potImg1).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-1-stage-10.webp');
 
         const potImg2 = stadium.locator('.team-stadium-lane--garden').nth(1).locator('.team-garden-pot__img');
         await expect(potImg2).toHaveAttribute('src', './src/assets/team-competition/Garden/stages/team-2-stage-10.webp');
 
-        // Both have Trĩu quả badge
         const badges = stadium.locator('.team-garden-finish-badge');
-        await expect(badges).toHaveCount(2);
-        await expect(badges.first()).toContainText('Trĩu quả');
+        await expect(badges).toHaveCount(0);
     });
 });
