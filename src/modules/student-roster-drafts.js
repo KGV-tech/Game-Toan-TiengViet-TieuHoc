@@ -69,7 +69,7 @@ Object.assign(app.admin, {
     },
     classroomStatus() {
         const repo = app.classroom.activate();
-        return repo.error || (repo.status === 'synced' ? 'Đã tải dữ liệu từ Supabase' : repo.status === 'loading' ? 'Đang đồng bộ…' : 'Ngoại tuyến · chỉ lưu trên máy này');
+        return repo.error || (repo.status === 'synced' ? 'Đã đồng bộ dữ liệu' : repo.status === 'loading' ? 'Đang đồng bộ…' : 'Ngoại tuyến · chỉ lưu trên máy này');
     },
     switchStudentRosterTab(type) {
         if (!this.isAdminUser() || type !== 'sections') return;

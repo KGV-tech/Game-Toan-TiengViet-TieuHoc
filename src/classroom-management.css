@@ -153,3 +153,54 @@
 .quest-management-detail .weekly-workspace { display: grid; grid-template-rows: minmax(0, 1fr); }
 #treasure-modal :is(.quest-management-launch, .quest-management-back):focus-visible { outline: 3px solid #ffe49e; outline-offset: 4px; }
 @media (max-width: 1100px) { #treasure-modal .quest-management-launch { padding: 20px; gap: 18px; } .quest-management-detail { gap: 12px; } .quest-management-sidebar { padding: 18px 14px; } .quest-management-sidebar .quest-management-mark { width: 44px; height: 44px; border-radius: 14px; } }
+
+/* Use the available frame; the navigation rail always fits laptop/tablet height. */
+#treasure-modal[data-management-workspace="quests"]:not(.team-board-fullscreen) { padding: 0 !important; }
+#treasure-modal[data-management-workspace="quests"]:not(.team-board-fullscreen) .admin-panel { width: 99vw !important; max-width: 99vw !important; height: 98vh !important; max-height: 98vh !important; padding: 10px !important; }
+#treasure-modal[data-management-workspace="quests"]:not(.team-board-fullscreen) .admin-panel::before { inset: 4px; }
+#treasure-modal .quest-management-launch--team .quest-management-mark { background: linear-gradient(135deg, #a3ffe9, #39bbae); border-color: #a3ffe9; }
+#treasure-modal .quest-management-launch--weekly .quest-management-mark { background: linear-gradient(135deg, #ffe49e, #edb239); border-color: #ffe49e; }
+#treasure-modal .quest-management-launch:hover { filter: brightness(1.1); border-color: #fff; }
+.quest-management-detail { gap: 10px; grid-template-columns: clamp(220px, 22vw, 280px) minmax(0, 1fr); }
+.quest-management-sidebar { padding: 14px 12px; overflow: hidden; }
+.quest-management-sidebar .quest-management-mark { width: 44px; height: 44px; font-size: 1.7rem; border-radius: 14px; }
+.quest-management-sidebar h2 { font-size: .95rem; }
+#treasure-modal .quest-management-back { margin: 8px 0; padding: 10px 0; }
+.quest-management-tools { gap: 10px; }
+.quest-management-tools :is(.team-dashboard-stat, .personal-quest-stat) { padding: 10px 12px; gap: 2px; }
+.quest-management-tools :is(.team-dashboard-stat, .personal-quest-stat) strong { font-size: 1.45rem; }
+.quest-management-tools .team-dashboard-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.quest-management-tools :is(.team-dashboard-stat, .personal-quest-stat) small { display: none; }
+.quest-management-tools .weekly-toolbar { padding: 10px; gap: 8px; border-radius: 16px; }
+.quest-management-tools .weekly-toolbar p { font-size: .73rem; line-height: 1.4; overflow-wrap: anywhere; }
+#treasure-modal .quest-management-tools .classroom-button { padding: 9px 10px; min-height: 40px; font-size: .75rem; }
+.quest-management-tools .weekly-tabs { gap: 8px; }
+.quest-management-tools .weekly-status { font-size: .7rem; line-height: 1.4; margin: 0; }
+.quest-management-detail #admin-quest-subarea { padding: 14px; }
+.weekly-points-heading { display: grid; grid-template-columns: 1fr minmax(230px, 45%); align-items: end; gap: 16px; margin-bottom: 16px; }
+.weekly-points-heading h3 { margin: 0; color: #ffdf94; }
+#treasure-modal .weekly-student-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 90px; text-align: left; text-transform: none; white-space: normal; padding: 18px; border-width: 1.5px; box-shadow: 0 3px 0 var(--team-shadow, #111827); cursor: pointer; }
+.weekly-student-name { color: #f8f6ff; font-size: .9rem; line-height: 1.4; font-weight: 800; overflow-wrap: anywhere; }
+.weekly-student-card .weekly-point-value { margin: 0; font-size: 1.65rem; flex: 0 0 auto; }
+#treasure-modal .weekly-student-card:hover { filter: brightness(1.12); }
+#treasure-modal .weekly-student-card:focus-visible { outline: 3px solid #ffdf94; outline-offset: 2px; }
+.weekly-student-card[hidden] { display: none !important; }
+.weekly-point-panel { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; border-radius: 20px; background: radial-gradient(circle at 50% 10%, #ffd56915, transparent 50%), linear-gradient(160deg, #1a2940, #0c202c); }
+.weekly-selection-mark { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 28px; font-size: 3.2rem; color: #092538; background: linear-gradient(135deg, #ffe49e, #f5ac30); box-shadow: 0 8px 28px #f5ac3026; }
+.weekly-point-panel h3 { font-size: clamp(1.8rem, 4vw, 3rem); color: #c7abff; margin: 0; overflow-wrap: anywhere; }
+.weekly-point-panel p { margin: 0; color: #b7c9d8; }
+.weekly-selected-score { font-size: 2.8rem; color: #ffdf94; line-height: 1.1; }
+.weekly-point-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: min(100%, 560px); }
+.weekly-point-adjust { color: #b7c9d8; font-size: .8rem; }
+.weekly-point-adjust summary { cursor: pointer; padding: 10px; }
+.weekly-point-adjust > div { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.weekly-point-error:empty { display: none; }
+.weekly-point-panel .weekly-point-error { color: #ffb9cb; }
+.weekly-candidate-panel { margin-top: 18px; }
+.weekly-candidate-panel h4 { color: #bcd6e8; }
+.weekly-candidate-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.weekly-random-candidate { display: flex; justify-content: space-between; gap: 10px; padding: 12px; font-size: .8rem; }
+.weekly-random-candidate strong { color: var(--team-accent); }
+.weekly-random-result .weekly-selected-score { display: block; margin-bottom: 16px; }
+.weekly-random-result > #weekly-random-add { margin-bottom: 18px; }
+@media (max-width: 1100px) { .weekly-candidate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .quest-management-sidebar { padding: 12px; } }

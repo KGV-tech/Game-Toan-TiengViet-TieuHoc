@@ -22,13 +22,14 @@ Object.assign(app.admin, {
     },
     renderQuestManagement(box) {
         if (!box) return;
+        if (this.weeklyUI?.drawing) { this.weeklyUI.drawToken = (this.weeklyUI.drawToken || 0) + 1; this.weeklyUI.drawing = false; }
         const modal = document.getElementById('treasure-modal');
         const mode = this.questManagementModes[this.questMode] ? this.questMode : 'personal';
         const item = this.questManagementModes[mode];
         modal.toggleAttribute('data-quest-detail', this.questWorkspaceOpen);
         modal.setAttribute('aria-labelledby', this.questWorkspaceOpen ? 'quest-management-title' : 'treasure-title');
         if (!this.questWorkspaceOpen) {
-            box.innerHTML = `<section class="quest-management-hub" aria-label="Chọn chức năng quản lý">${Object.entries(this.questManagementModes).map(([key, entry], index) => `<button type="button" class="quest-management-launch quest-management-launch--${key}" data-quest-launch="${key}"><span class="quest-management-launch__number">0${index + 1} · KHU VỰC ADMIN</span><span class="quest-management-mark" aria-hidden="true">${entry.icon}</span><strong>${entry.name}</strong><span>${entry.description}</span><span class="quest-management-launch__open">Mở quản lý →</span></button>`).join('')}</section>`;
+            box.innerHTML = `<section class="quest-management-hub" aria-label="Chọn chức năng quản lý">${Object.entries(this.questManagementModes).map(([key, entry], index) => `<button type="button" class="quest-management-launch quest-management-launch--${key}" data-quest-launch="${key}"><span class="quest-management-launch__number">0${index + 1} · KHU VỰC ADMIN</span><span class="quest-management-mark" aria-hidden="true">${entry.icon}</span><strong>${entry.name}</strong><span>${entry.description}</span></button>`).join('')}</section>`;
             for (const button of box.querySelectorAll('[data-quest-launch]')) button.onclick = () => this.switchQuestMode(button.dataset.questLaunch);
             return;
         }
