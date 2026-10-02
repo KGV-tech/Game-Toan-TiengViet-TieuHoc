@@ -60,8 +60,8 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
     app.admin.switchQuestMode('team');
   }, { users: demoUsers(), exam: demoExam() });
 
-  await expect(page.getByRole('tab', { name: 'Cá nhân' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Nhóm' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Nhiệm vụ Cá nhân' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Thi đua Nhóm' })).toBeVisible();
   await expect(page.locator('.team-dashboard-hero')).toBeVisible();
   await expect(page.locator('.team-dashboard-stat')).toHaveCount(4);
   await expect(page.locator('.team-competition-list-heading')).toContainText('Các trận thi đua');

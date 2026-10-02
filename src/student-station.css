@@ -3288,6 +3288,7 @@
 #treasure-modal #admin-management-icon[hidden],
 #treasure-modal #admin-management-back[hidden],
 #treasure-modal #admin-management-subtitle[hidden] { display: none !important; }
+#treasure-modal #admin-management-tabs[hidden], #treasure-modal #btn-sub-add[hidden] { display: none !important; }
 #treasure-modal[data-ui-context="admin"][data-management-workspace] .station-shell__title-row {
     grid-column: 1 / -1;
     grid-row: 1;
@@ -3323,4 +3324,108 @@
 #treasure-modal #admin-management-back:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
     .admin-map-action, #treasure-modal #admin-management-back { transition: none; }
+}
+
+/* Student management follows the composer's navigation rail and bounded content. */
+#treasure-modal[data-ui-context="admin"][data-management-workspace="players"] .admin-panel {
+    grid-template-columns: clamp(220px, 22vw, 280px) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0 16px;
+    align-items: stretch;
+}
+#treasure-modal[data-management-workspace="players"] .admin-panel::before {
+    content: "";
+    position: static;
+    inset: auto;
+    z-index: 0;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    border: 1px solid rgba(244, 114, 182, .35);
+    border-radius: 22px;
+    background: linear-gradient(160deg, #092637, #071827);
+    pointer-events: none;
+}
+#treasure-modal[data-ui-context="admin"][data-management-workspace="players"] .station-shell__title-row {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 1;
+    width: auto;
+    margin: 0;
+    padding: 18px 16px 4px;
+}
+#treasure-modal[data-management-workspace="players"] .admin-management-brand { gap: 10px; }
+#treasure-modal[data-management-workspace="players"] #admin-management-icon { width: 46px; height: 46px; flex: 0 0 46px; border-color: #f9a8d4; background: linear-gradient(145deg, #f9a8d4, #ec4899); color: #831843; box-shadow: 0 0 18px rgba(236, 72, 153, .2); }
+#treasure-modal[data-management-workspace="players"] .station-shell__title-row #treasure-title { font-size: .95rem !important; letter-spacing: .04em; }
+#treasure-modal[data-management-workspace="players"] #treasure-content-area,
+#treasure-modal[data-management-workspace="players"] .admin-roster-workspace { display: contents; }
+.admin-roster-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    z-index: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px 16px 18px;
+    scrollbar-width: thin;
+}
+.admin-roster-sidebar .admin-roster-switcher { display: grid; gap: 7px; }
+.admin-roster-sidebar .roster-mode-button { width: 100%; margin: 0; text-align: left; min-height: 42px; padding: 9px 11px; }
+.admin-roster-sidebar .admin-roster-filter-panel { margin-top: 14px; padding: 12px 0 0; border: 0; border-top: 1px solid #264455; border-radius: 0; background: none; gap: 10px; }
+.admin-roster-sidebar .admin-roster-filter-panel__header { align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-roster-sidebar .admin-roster-filter-panel__header h4 { font-size: .8rem; }
+.admin-roster-sidebar .admin-roster-filter-panel__reset { width: auto; min-height: 32px; padding: 5px 8px; }
+.admin-roster-sidebar .admin-roster-filter-grid { grid-template-columns: 1fr; gap: 9px; }
+.admin-roster-sidebar .admin-roster-filter-field--search { grid-column: auto; }
+.admin-roster-sidebar .admin-roster-filter-field :is(input, select) { min-height: 38px; }
+.admin-roster-sidebar .admin-roster-filter-panel__sort-note { margin: 6px 0 0; }
+.admin-roster-main {
+    z-index: 1;
+    grid-column: 2;
+    grid-row: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px;
+    border: 1px solid rgba(125, 211, 252, .25);
+    border-radius: 22px;
+    background: rgba(5, 22, 36, .65);
+    color: #e8f7ff;
+}
+.admin-roster-main .admin-roster-toolbar { flex: 0 0 auto; justify-content: flex-end; padding: 0 0 12px; }
+.admin-roster-main #admin-subcontent-area { min-height: 0; min-width: 0; overflow-y: auto; scrollbar-width: thin; padding: 2px 4px 8px 0; }
+.admin-roster-main .admin-student-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.admin-roster-main .admin-roster-stat { padding: 10px; }
+.admin-roster-main .admin-roster-stat strong { font-size: 1.25rem; }
+.admin-roster-main .admin-student-card { padding: 10px; gap: 8px; }
+.admin-roster-main .admin-student-card__topline { flex-wrap: wrap; }
+.admin-roster-main .admin-student-card__meta { grid-template-columns: 1fr; }
+.admin-roster-main .admin-student-card__actions { flex-wrap: wrap; gap: 5px; }
+.admin-roster-main .admin-student-card__actions button { min-width: 48px; }
+.admin-student-draft-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.admin-student-draft-card { border: 1px solid #375166; border-radius: 14px; padding: 16px; background: #0b263a; overflow-wrap: anywhere; }
+.admin-student-draft-card h3, .admin-student-draft-form h3 { color: #f4fbff; margin: 0 0 8px; }
+.admin-student-draft-note { font-size: .8rem; color: #b3cfdf; margin: 0 0 16px; }
+.admin-student-draft-card footer, .admin-student-draft-form footer { display: flex; gap: 10px; justify-content: flex-end; }
+.admin-student-draft-card button, .admin-student-draft-form button { width: auto; min-height: 40px; margin: 0; }
+.admin-student-draft-form { display: grid; gap: 14px; padding: 8px; }
+.admin-student-draft-form fieldset { min-width: 0; padding: 12px; border: 1px solid #375166; border-radius: 12px; }
+.admin-student-draft-members { display: grid; gap: 10px; }
+.admin-student-draft-members label { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.admin-student-draft-members input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: #ec4899; }
+.admin-student-draft-members small { display: block; color: #a8c9da; }
+.admin-student-draft-members label:has(input:disabled) { opacity: .65; }
+#student-draft-error { color: #fda4af; margin: 0; }
+.admin-roster-sidebar button:focus-visible, .admin-roster-main :is(button, input):focus-visible { outline: 2px solid #f9a8d4; outline-offset: 3px; }
+
+#treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] .station-shell__title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; align-items: center; }
+#treasure-modal[data-management-workspace="quests"] .admin-management-brand { grid-column: 1; grid-row: 1; }
+#treasure-modal[data-management-workspace="quests"] #admin-management-back { grid-column: 1; grid-row: 2; justify-self: start; }
+#treasure-modal[data-management-workspace="quests"] #admin-management-tabs { grid-column: 2; grid-row: 1 / 3; border: 0; padding: 0; gap: 8px; justify-content: flex-end; }
+#admin-management-tabs .quest-workspace-tab { min-height: 44px; padding: 10px 12px; margin: 0; font-size: .78rem; text-transform: none; }
+#admin-management-tabs button:focus-visible { outline: 2px solid #fde68a; outline-offset: 3px; }
+.admin-weekly-placeholder { color: #dcefff; padding: 32px; }
+@media (max-width: 1100px) {
+    #treasure-modal[data-management-workspace="quests"] .station-shell__title-row #treasure-title { font-size: 1rem !important; }
+    #admin-management-tabs .quest-workspace-tab { font-size: .69rem; padding: 9px; }
+    #treasure-modal[data-management-workspace="quests"] .admin-management-brand { gap: 9px; }
 }

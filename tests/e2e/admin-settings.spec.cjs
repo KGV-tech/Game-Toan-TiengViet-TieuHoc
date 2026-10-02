@@ -50,6 +50,8 @@ test('Các tab quản trị còn lại dùng workspace trực quan và không tr
   await page.locator('#btn-sub-pending').click();
   await expect(page.locator('.admin-student-card')).toHaveCount(1);
   await expect(page.locator('#admin-subcontent-area')).toContainText('Trần Gia Bình');
+  await expect(page.locator('#btn-sub-add')).toBeHidden();
+  await page.locator('#btn-sub-players').click();
   await page.locator('#btn-sub-add').click();
   await expect(page.locator('.admin-student-form')).toBeVisible();
   await expect(page.locator('#add-fullname')).toBeVisible();
@@ -257,7 +259,7 @@ test('Danh sách học sinh khôi phục bộ lọc, thẻ hồ sơ và thứ t�
   const desktopColumnCount = await page.locator('.admin-student-grid').evaluate(grid =>
     getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
   );
-  expect(desktopColumnCount).toBe(5);
+  expect(desktopColumnCount).toBe(4);
   await expect(page.locator('.admin-student-card h4')).toHaveText([
     'Nguyễn Minh Alpha',
     'Trần Quang Alpha',

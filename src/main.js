@@ -1025,7 +1025,7 @@ const app = {
                         // Keep the standalone roster current without relying on settings tabs.
                         if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
                             if (isAdmin && app.admin.currentTab === 'players') {
-                                app.admin.renderPlayersList(app.admin.studentRosterModePending);
+                                app.admin.refreshStudentRosterView();
                             }
                         }
                     })
@@ -6939,6 +6939,11 @@ const app = {
             }
             const icon = document.getElementById('admin-management-icon');
             if (icon) icon.textContent = tab === 'quests' ? '⚑' : '✦';
+            const modeTabs = document.getElementById('admin-management-tabs');
+            if (modeTabs) {
+                modeTabs.hidden = tab !== 'quests';
+                if (tab !== 'quests') modeTabs.replaceChildren();
+            }
         },
         openAdmin(tab = 'settings') {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
@@ -7045,34 +7050,28 @@ const app = {
             else if (tab === 'quests') this.renderQuests(box);
         },
         switchQuestMode(mode) {
+            const keepTabFocus = document.activeElement?.closest('#admin-management-tabs');
             this.exitTeamCompetitionPresentation();
-            this.questMode = mode === 'team' ? 'team' : 'personal';
+            this.questMode = ['team', 'weekly'].includes(mode) ? mode : 'personal';
             this.renderQuests(document.getElementById('treasure-content-area'));
+            if (keepTabFocus) document.querySelector('#admin-management-tabs [aria-selected="true"]')?.focus();
         },
         renderQuests(box) {
             if (!box) return;
-            const mode = this.questMode === 'team' ? 'team' : 'personal';
+            const mode = ['team', 'weekly'].includes(this.questMode) ? this.questMode : 'personal';
+            const tabs = document.getElementById('admin-management-tabs');
+            if (tabs) {
+                tabs.setAttribute('role', 'tablist');
+                tabs.setAttribute('aria-label', 'Loại nhiệm vụ và thi đua');
+                tabs.innerHTML = [['personal', 'Nhiệm vụ Cá nhân'], ['team', 'Thi đua Nhóm'], ['weekly', 'Thi đua tuần']].map(([key, label]) => `<button type="button" class="quest-workspace-tab ${mode === key ? 'active' : ''}" role="tab" aria-selected="${mode === key}" aria-controls="admin-quest-subarea" onclick="app.admin.switchQuestMode('${key}')">${label}</button>`).join('');
+            }
             box.innerHTML = `
                 <section class="quest-workspace quest-workspace--admin" aria-label="Quản lý nhiệm vụ">
-                    <header class="quest-workspace__header">
-                        <div class="quest-workspace__heading">
-                            <span class="quest-workspace__eyebrow">Quản lý Thi đua &amp; Nhiệm vụ</span>
-                            <h3>Nhiệm vụ &amp; thi đua</h3>
-                            <p>Điều phối hoạt động học tập, giao bài và theo dõi tiến độ của cả lớp.</p>
-                        </div>
-                        <div class="quest-workspace__badge" aria-label="Khu vực chỉ dành cho quản trị viên">
-                            <span class="quest-workspace__badge-icon" aria-hidden="true">✦</span>
-                            <span><strong>Admin only</strong><small>Không gian vận hành</small></span>
-                        </div>
-                    </header>
-                    <div class="quest-workspace-tabs" role="tablist" aria-label="Loại nhiệm vụ">
-                        <button type="button" class="quest-workspace-tab ${mode === 'personal' ? 'active' : ''}" role="tab" aria-selected="${mode === 'personal'}" onclick="app.admin.switchQuestMode('personal')">Cá nhân</button>
-                        <button type="button" class="quest-workspace-tab ${mode === 'team' ? 'active' : ''}" role="tab" aria-selected="${mode === 'team'}" onclick="app.admin.switchQuestMode('team')">Nhóm</button>
-                    </div>
-                    <div id="admin-quest-subarea" class="quest-workspace-content" role="tabpanel" aria-label="${mode === 'team' ? 'Nhiệm vụ nhóm' : 'Nhiệm vụ cá nhân'}"></div>
+                    <div id="admin-quest-subarea" class="quest-workspace-content" role="tabpanel" aria-label="${mode === 'team' ? 'Thi đua Nhóm' : mode === 'weekly' ? 'Thi đua tuần' : 'Nhiệm vụ Cá nhân'}"></div>
                 </section>`;
             const subarea = document.getElementById('admin-quest-subarea');
             if (mode === 'team') this.renderTeamCompetitions(subarea);
+            else if (mode === 'weekly') subarea.innerHTML = '<section class="admin-empty-state admin-weekly-placeholder" aria-label="Thi đua tuần"><h3>Thi đua tuần</h3><p>Sắp cập nhật giao diện.</p></section>';
             else this.renderPersonalQuests(subarea);
         },
         renderPersonalQuests(box) {
@@ -11941,25 +11940,25 @@ const app = {
         },
         renderPlayers(box) {
             this.studentRosterModePending = false;
+            this.studentRosterTab = 'players';
             this.studentRosterFilters = { search: '', classlevel: '', className: '', gender: '' };
             box.innerHTML = `
                 <section class="admin-roster-workspace" aria-label="Quản lý học sinh">
-                    <header class="admin-roster-workspace__hero">
-                        <div>
-                            <span class="admin-roster-workspace__kicker">Dữ liệu lớp học · Admin</span>
-                            <h3>Học sinh &amp; lớp học</h3>
-                            <p>Quản lý hồ sơ, trạng thái duyệt và thông tin đăng nhập trong một không gian gọn gàng.</p>
-                        </div>
-                        <div class="admin-roster-workspace__badge"><span aria-hidden="true">◎</span><strong>Roster</strong><small>Danh sách an toàn</small></div>
-                    </header>
-                    <div class="admin-roster-toolbar">
-                        <div class="admin-roster-switcher" role="tablist" aria-label="Danh sách học sinh">
+                    <aside class="admin-roster-sidebar" aria-label="Điều hướng và bộ lọc học sinh">
+                        <div class="admin-roster-switcher" role="tablist" aria-label="Danh sách học sinh" aria-orientation="vertical">
                             <button type="button" class="roster-mode-button btn-primary" id="btn-sub-players" role="tab" aria-selected="true" onclick="app.admin.renderPlayersList(false)"><span aria-hidden="true">▦</span> Danh sách học sinh</button>
+                            <button type="button" class="roster-mode-button btn-opt" id="btn-sub-sections" role="tab" aria-selected="false" onclick="app.admin.switchStudentRosterTab('sections')"><span aria-hidden="true">▤</span> Tổ</button>
+                            <button type="button" class="roster-mode-button btn-opt" id="btn-sub-groups" role="tab" aria-selected="false" onclick="app.admin.switchStudentRosterTab('groups')"><span aria-hidden="true">◈</span> Nhóm</button>
                             <button type="button" class="roster-mode-button btn-opt" id="btn-sub-pending" role="tab" aria-selected="false" onclick="app.admin.renderPlayersList(true)"><span aria-hidden="true">◷</span> Chờ phê duyệt</button>
                         </div>
+                        <div id="admin-roster-filters"></div>
+                    </aside>
+                    <main class="admin-roster-main" aria-label="Nội dung quản lý học sinh">
+                    <div class="admin-roster-toolbar">
                         <button type="button" class="roster-add-button btn-success" id="btn-sub-add" onclick="app.admin.showAddPlayerForm()"><span aria-hidden="true">＋</span> Thêm học sinh</button>
                     </div>
                     <div id="admin-subcontent-area"></div>
+                    </main>
                 </section>
             `;
             this.renderPlayersList(false);
@@ -11972,9 +11971,11 @@ const app = {
                 search: document.getElementById('admin-roster-filter-search')?.value || '',
                 classlevel: document.getElementById('admin-roster-filter-class')?.value || '',
                 className: document.getElementById('admin-roster-filter-section')?.value || '',
-                gender: document.getElementById('admin-roster-filter-gender')?.value || ''
+                gender: document.getElementById('admin-roster-filter-gender')?.value || '',
+                section: document.getElementById('admin-roster-filter-team')?.value || '',
+                group: document.getElementById('admin-roster-filter-group')?.value || ''
             };
-            this.renderPlayersList(this.studentRosterModePending);
+            this.refreshStudentRosterView();
             const nextActiveElement = activeId ? document.getElementById(activeId) : null;
             if (nextActiveElement) {
                 nextActiveElement.focus();
@@ -11985,20 +11986,12 @@ const app = {
         },
         resetStudentRosterFilters() {
             this.studentRosterFilters = { search: '', classlevel: '', className: '', gender: '' };
-            this.renderPlayersList(this.studentRosterModePending);
+            this.refreshStudentRosterView();
         },
         renderPlayersList(isPending) {
             this.studentRosterModePending = Boolean(isPending);
-            const playersButton = document.getElementById('btn-sub-players');
-            const pendingButton = document.getElementById('btn-sub-pending');
-            if (playersButton) {
-                playersButton.className = `roster-mode-button ${isPending ? 'btn-opt' : 'btn-primary'}`;
-                playersButton.setAttribute('aria-selected', String(!isPending));
-            }
-            if (pendingButton) {
-                pendingButton.className = `roster-mode-button ${isPending ? 'btn-primary' : 'btn-opt'}`;
-                pendingButton.setAttribute('aria-selected', String(isPending));
-            }
+            this.studentRosterTab = isPending ? 'pending' : 'players';
+            this.syncStudentRosterNavigation();
             const subBox = document.getElementById('admin-subcontent-area');
             if (!subBox) return;
             const allStudents = (app.data.users || []).filter(u => u.role?.toLowerCase() !== 'admin');
@@ -12027,6 +12020,7 @@ const app = {
                 if (filters.className === '__unassigned__' && userClassName) return false;
                 if (filters.className && filters.className !== '__unassigned__' && userClassName !== filters.className) return false;
                 if (filters.gender && String(user.gender || '') !== filters.gender) return false;
+                if (!this.matchesStudentDraftFilters(user)) return false;
                 if (filters.search) {
                     const searchable = [user.fullname, user.username, userClassLevel, userClassName, app.data.genderLabel(user.gender)]
                         .map(normalizeFilterText)
@@ -12098,25 +12092,29 @@ const app = {
                     <footer class="admin-student-card__actions">${actionBtns}</footer>
                 </article>`;
             }).join('');
+            document.getElementById('admin-roster-filters').innerHTML = `
+                <section class="admin-roster-filter-panel" role="search" aria-label="Bộ lọc học sinh">
+                    <header class="admin-roster-filter-panel__header">
+                        <h4>Bộ lọc danh sách</h4>
+                        <button type="button" id="admin-roster-filter-reset" class="admin-roster-filter-panel__reset" onclick="app.admin.resetStudentRosterFilters()">Xóa bộ lọc</button>
+                    </header>
+                    <div class="admin-roster-filter-grid">
+                        <label class="admin-roster-filter-field admin-roster-filter-field--search"><span>Tìm học sinh</span><input type="search" id="admin-roster-filter-search" value="${esc(filters.search)}" placeholder="Họ tên hoặc tên đăng nhập" autocomplete="off" oninput="app.admin.updateStudentRosterFilters()"></label>
+                        <label class="admin-roster-filter-field"><span>Cấp lớp</span><select id="admin-roster-filter-class" onchange="app.admin.updateStudentRosterFilters()">${classLevelOptions}</select></label>
+                        <label class="admin-roster-filter-field"><span>Lớp cụ thể</span><select id="admin-roster-filter-section" onchange="app.admin.updateStudentRosterFilters()">${classNameOptions}</select></label>
+                        <label class="admin-roster-filter-field"><span>Giới tính</span><select id="admin-roster-filter-gender" onchange="app.admin.updateStudentRosterFilters()">${genderOptions}</select></label>
+                        <label class="admin-roster-filter-field"><span>Tổ (tùy chọn)</span><select id="admin-roster-filter-team" aria-label="Tổ (tùy chọn)" onchange="app.admin.updateStudentRosterFilters()"><option value="">Tất cả tổ</option></select></label>
+                        <label class="admin-roster-filter-field"><span>Nhóm (tùy chọn)</span><select id="admin-roster-filter-group" aria-label="Nhóm (tùy chọn)" onchange="app.admin.updateStudentRosterFilters()"><option value="">Tất cả nhóm</option></select></label>
+                    </div>
+                    <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
+                </section>`;
+            this.populateStudentDraftFilters();
             subBox.innerHTML = `<div class="admin-roster-subview">
                 <div class="admin-roster-stats" aria-label="Tổng quan học sinh">
                     <div class="admin-roster-stat admin-roster-stat--cyan"><span>Tổng học sinh</span><strong>${allStudents.length}</strong><small>Không tính tài khoản Admin</small></div>
                     <div class="admin-roster-stat admin-roster-stat--green"><span>Đã duyệt</span><strong>${approvedStudents.length}</strong><small>Có thể tham gia học tập</small></div>
                     <div class="admin-roster-stat admin-roster-stat--amber"><span>Chờ xử lý</span><strong>${pendingStudents.length}</strong><small>${classCount} lớp đang có dữ liệu</small></div>
                 </div>
-                <section class="admin-roster-filter-panel" role="search" aria-label="Bộ lọc học sinh">
-                    <header class="admin-roster-filter-panel__header">
-                        <div><span class="admin-roster-filter-panel__kicker">Bộ lọc danh sách</span><h4>Lọc nhanh hồ sơ</h4><p>Tìm theo tên, lớp hoặc giới tính để thu gọn danh sách đang mở.</p></div>
-                        <button type="button" id="admin-roster-filter-reset" class="admin-roster-filter-panel__reset" onclick="app.admin.resetStudentRosterFilters()">Xóa bộ lọc</button>
-                    </header>
-                    <div class="admin-roster-filter-grid">
-                        <label class="admin-roster-filter-field admin-roster-filter-field--search"><span>Tìm học sinh</span><input type="search" id="admin-roster-filter-search" value="${esc(filters.search)}" placeholder="Nhập họ tên hoặc tên đăng nhập" autocomplete="off" oninput="app.admin.updateStudentRosterFilters()"></label>
-                        <label class="admin-roster-filter-field"><span>Cấp lớp</span><select id="admin-roster-filter-class" onchange="app.admin.updateStudentRosterFilters()">${classLevelOptions}</select></label>
-                        <label class="admin-roster-filter-field"><span>Lớp cụ thể</span><select id="admin-roster-filter-section" onchange="app.admin.updateStudentRosterFilters()">${classNameOptions}</select></label>
-                        <label class="admin-roster-filter-field"><span>Giới tính</span><select id="admin-roster-filter-gender" onchange="app.admin.updateStudentRosterFilters()">${genderOptions}</select></label>
-                    </div>
-                    <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
-                </section>
                 <div class="admin-roster-list-heading"><div><span class="admin-roster-list-heading__kicker">${isPending ? 'Hộp duyệt hồ sơ' : 'Danh sách đang hoạt động'}</span><h4>${isPending ? 'Học sinh chờ phê duyệt' : 'Học sinh đã sẵn sàng'}</h4><p>${isPending ? 'Kiểm tra thông tin trước khi cho phép học sinh đăng nhập.' : 'Chọn một hồ sơ để chỉnh sửa hoặc đặt lại thông tin an toàn.'}</p></div><span class="admin-roster-list-heading__count">${users.length} hồ sơ</span></div>
                 <div class="admin-student-grid">${cards || `<div class="admin-roster-empty admin-empty-state"><span class="admin-roster-empty__icon" aria-hidden="true">✓</span><div><h4>${baseUsers.length ? 'Không có hồ sơ khớp bộ lọc' : (isPending ? 'Không có hồ sơ chờ duyệt' : 'Chưa có học sinh nào')}</h4><p>${baseUsers.length ? 'Thử đổi điều kiện lọc để xem thêm hồ sơ.' : (isPending ? 'Các hồ sơ mới sẽ xuất hiện tại đây để cô kiểm tra.' : 'Thêm học sinh đầu tiên để bắt đầu quản lý lớp học.')}</p></div></div>`}</div>
             </div>`;
