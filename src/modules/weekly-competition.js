@@ -2,7 +2,7 @@
 Object.assign(app.admin, {
     weeklyState() {
         const owner = app.classroom.activate().owner;
-        if (this.weeklyUI?.owner !== owner) this.weeklyUI = { owner, tab: 'points', selected: '', search: '', randomMode: 'all', teamId: '', instant: false, noRepeat: true, drawn: [], result: '', error: '', requests: new Map() };
+        if (this.weeklyUI?.owner !== owner) this.weeklyUI = { owner, tab: 'points', selected: '', search: '', randomMode: 'all', teamId: '', instant: false, noRepeat: true, drawn: [], result: '', randomStudent: '', pointStudent: null, error: '', requests: new Map() };
         return this.weeklyUI;
     },
     selectedWeek() { const ui = this.weeklyState(); return app.classroom.weeks.find(week => week.id === ui.selected) || null; },
@@ -17,7 +17,7 @@ Object.assign(app.admin, {
         if (!ui.selected && repo.weeks.length) ui.selected = repo.weeks[repo.weeks.length - 1].id;
         const week = this.selectedWeek();
         box.innerHTML = `<section class="weekly-workspace" aria-label="Thi đua tuần"><header class="weekly-toolbar"><div><h3>Thi đua tuần</h3><p>${week ? `${esc(week.className ? `Lớp ${week.className}` : `Cấp lớp ${week.classlevel}`)} · ${esc(week.startDate)} → ${esc(week.endDate)}` : 'Tạo một trận tuần để bắt đầu từ 0 điểm.'}</p></div><label class="weekly-select"><span>Trận thi đua tuần</span><select id="weekly-select" aria-label="Trận thi đua tuần">${repo.weeks.map(item => `<option value="${esc(item.id)}" ${item.id === ui.selected ? 'selected' : ''}>${esc(item.name)}</option>`).join('') || '<option value="">Chưa có trận</option>'}</select></label><button type="button" class="classroom-button classroom-button--save" id="weekly-create">＋ Tạo tuần mới</button>${week?.localOnly && repo.getClient() ? '<button type="button" class="classroom-button classroom-button--save" id="weekly-sync">↑ Lưu trận lên máy chủ</button>' : ''}<button type="button" class="classroom-button classroom-button--quiet" id="weekly-refresh">↻ Tải lại</button></header><nav class="weekly-tabs" role="tablist" aria-label="Chức năng thi đua tuần">${[['points', '⭐ Cộng điểm'], ['random', '🎲 Chọn ngẫu nhiên'], ['standings', '⚑ Thi đua']].map(([id, label]) => `<button type="button" class="classroom-button" role="tab" data-weekly-tab="${id}" aria-selected="${ui.tab === id}" aria-controls="weekly-body">${label}</button>`).join('')}</nav><p class="weekly-status" role="status">${esc(ui.error || (week?.localOnly && repo.getClient() ? 'Trận chỉ lưu trên máy · chưa đồng bộ' : this.classroomStatus()))}</p><div id="weekly-body" class="weekly-body" role="tabpanel"></div></section>`;
-        document.getElementById('weekly-select').onchange = event => { ui.selected = event.target.value; ui.drawn = []; ui.result = ''; ui.teamId = ''; ui.search = ''; ui.error = ''; this.renderWeeklyCompetition(); document.getElementById('weekly-select')?.focus(); };
+        document.getElementById('weekly-select').onchange = event => { ui.selected = event.target.value; ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.result = ''; ui.randomStudent = ''; ui.pointStudent = null; ui.teamId = ''; ui.search = ''; ui.error = ''; this.renderWeeklyCompetition(); document.getElementById('weekly-select')?.focus(); };
         document.getElementById('weekly-create').onclick = () => this.showWeeklyForm();
         const sync = document.getElementById('weekly-sync');
         if (sync) sync.onclick = async () => {
@@ -26,9 +26,10 @@ Object.assign(app.admin, {
             finally { ui.busy = false; if (this.isAdminUser() && this.weeklyUI === ui) this.refreshWeeklyAfterAsync(); }
         };
         document.getElementById('weekly-refresh').onclick = async () => { await repo.ensure(true); if (this.isAdminUser() && this.weeklyUI === ui) this.refreshWeeklyAfterAsync(); };
-        for (const button of box.querySelectorAll('[data-weekly-tab]')) button.onclick = () => { ui.tab = button.dataset.weeklyTab; ui.error = ''; this.renderWeeklyCompetition(); document.querySelector(`[data-weekly-tab="${ui.tab}"]`)?.focus(); };
+        for (const button of box.querySelectorAll('[data-weekly-tab]')) button.onclick = () => { ui.tab = button.dataset.weeklyTab; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.pointStudent = null; ui.error = ''; this.renderWeeklyCompetition(); document.querySelector(`[data-weekly-tab="${ui.tab}"]`)?.focus(); };
         const body = document.getElementById('weekly-body');
         if (!week) body.innerHTML = '<div class="classroom-empty"><span aria-hidden="true">⚑</span><h4>Một tuần, một bảng điểm mới</h4><p>Chọn lớp và tạo trận. Điểm học tập và Sao giữ nguyên.</p></div>';
+        else if (ui.pointStudent?.weekId === week.id) this.renderWeeklyPointPanel(body, week);
         else if (ui.tab === 'random') this.renderWeeklyRandom(body, week);
         else if (ui.tab === 'standings') this.renderWeeklyStandings(body, week);
         else this.renderWeeklyPoints(body, week);
@@ -38,39 +39,18 @@ Object.assign(app.admin, {
             else this.renderWeeklyCompetition();
         } });
     },
-    renderWeeklyPoints(box, week) {
-        const ui = this.weeklyState(), esc = value => app.data.sanitizeHTML(String(value ?? ''));
-        box.innerHTML = `<div class="weekly-points-tools"><label class="admin-roster-filter-field"><span>Tìm học sinh trong trận</span><input id="weekly-search" type="search" value="${esc(ui.search)}" placeholder="Họ tên hoặc tên đăng nhập"></label><p>Điểm chỉ thuộc trận <strong>${esc(week.name)}</strong>.</p></div><div class="weekly-student-grid">${week.participants.map((student, index) => `<article class="weekly-student-card classroom-team-card" data-tone="${index % 6}" data-weekly-student="${esc(student.username)}"><span class="classroom-pill">${(week.absences || []).includes(student.username) ? 'Vắng trong tuần' : 'Có mặt'}</span><h4>${esc(student.fullname || student.username)}</h4><strong class="weekly-point-value">${Number(week.scores[student.username] || 0)}<small>điểm tuần</small></strong><footer><button type="button" class="classroom-button classroom-button--save" data-point="1">＋ 1 điểm</button><button type="button" class="classroom-button classroom-button--quiet" data-point="-1" ${!week.scores[student.username] ? 'disabled' : ''} aria-label="Trừ 1 điểm của ${esc(student.fullname)}">− 1</button><button type="button" class="classroom-button classroom-button--quiet" data-absence>${(week.absences || []).includes(student.username) ? 'Có mặt' : 'Nghỉ học'}</button></footer></article>`).join('')}</div>`;
-        const applySearch = () => {
-            const norm = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLocaleLowerCase('vi');
-            for (const card of box.querySelectorAll('[data-weekly-student]')) {
-                const student = week.participants.find(item => item.username === card.dataset.weeklyStudent);
-                card.hidden = !norm(`${student.fullname} ${student.username}`).includes(norm(ui.search));
-            }
-        };
-        document.getElementById('weekly-search').oninput = event => { ui.search = event.target.value; applySearch(); };
-        applySearch();
-        for (const card of box.querySelectorAll('[data-weekly-student]')) {
-            for (const button of card.querySelectorAll('[data-point]')) button.onclick = () => void this.addWeeklyPoint(week.id, card.dataset.weeklyStudent, Number(button.dataset.point));
-            card.querySelector('[data-absence]').onclick = async () => {
-                if (ui.busy) return;
-                ui.busy = true;
-                try { const absences = new Set(this.selectedWeek().absences || []); absences.has(card.dataset.weeklyStudent) ? absences.delete(card.dataset.weeklyStudent) : absences.add(card.dataset.weeklyStudent); await app.classroom.setAbsences(week.id, [...absences]); }
-                catch (error) { ui.error = error.message; }
-                finally { ui.busy = false; if (this.isAdminUser() && this.weeklyUI === ui) { this.refreshWeeklyAfterAsync(); [...document.querySelectorAll('[data-weekly-student]')].find(item => item.dataset.weeklyStudent === card.dataset.weeklyStudent)?.querySelector('[data-absence]')?.focus(); } }
-            };
-        }
-    },
     async addWeeklyPoint(weekId, username, delta = 1) {
         if (!this.isAdminUser()) return;
         const ui = this.weeklyState();
         if (ui.busy) return;
         ui.busy = true;
+        const panel = ui.pointStudent;
+        for (const button of document.querySelectorAll('#weekly-point-panel button')) button.disabled = true;
         const key = `${weekId}:${username}:${delta}`;
         if (!ui.requests.has(key)) ui.requests.set(key, crypto.randomUUID());
-        try { await app.classroom.point(weekId, username, delta, ui.requests.get(key)); ui.requests.delete(key); ui.error = ''; }
+        try { await app.classroom.point(weekId, username, delta, ui.requests.get(key)); ui.requests.delete(key); ui.error = ''; if (ui.pointStudent === panel) ui.pointStudent = null; }
         catch (error) { ui.error = error.message; }
-        finally { ui.busy = false; if (this.isAdminUser() && this.weeklyUI === ui && this.questMode === 'weekly') { this.refreshWeeklyAfterAsync(); const card = [...document.querySelectorAll('[data-weekly-student]')].find(item => item.dataset.weeklyStudent === username); card?.querySelector(`[data-point="${delta}"]`)?.focus(); } }
+        finally { ui.busy = false; if (this.isAdminUser() && this.weeklyUI === ui && this.questMode === 'weekly') { this.refreshWeeklyAfterAsync(); const card = [...document.querySelectorAll('[data-weekly-student]')].find(item => item.dataset.weeklyStudent === username); if (ui.pointStudent) document.getElementById('weekly-point-add')?.focus(); else if (ui.tab === 'random') document.getElementById('weekly-random-add')?.focus(); else card?.focus(); } }
     },
     renderWeeklyStandings(box, week) {
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
@@ -82,15 +62,27 @@ Object.assign(app.admin, {
     renderWeeklyRandom(box, week) {
         const ui = this.weeklyState(), esc = value => app.data.sanitizeHTML(String(value ?? ''));
         const label = week.mode === 'groups' ? 'nhóm' : 'tổ';
-        box.innerHTML = `<section class="weekly-random-controls classroom-form-hero"><label class="admin-roster-filter-field"><span>Chế độ chọn</span><select id="weekly-random-mode"><option value="all">Tất cả học sinh</option><option value="team">Random ${label}</option><option value="member">${label === 'tổ' ? 'Tổ' : 'Nhóm'} → thành viên</option></select></label><label class="admin-roster-filter-field"><span>Chọn ${label}</span><select id="weekly-random-team"><option value="">Chọn ngẫu nhiên ${label} trước</option>${week.teams.map(team => `<option value="${esc(team.id)}">${esc(team.name)}</option>`).join('')}</select></label><label class="weekly-check"><input type="checkbox" id="weekly-instant" ${ui.instant ? 'checked' : ''}>Instant · kết quả ngay</label><label class="weekly-check"><input type="checkbox" id="weekly-no-repeat" ${ui.noRepeat ? 'checked' : ''}>Không lặp trong vòng</label></section><section class="weekly-random-result classroom-team-card" data-tone="2"><span class="classroom-team-mark" aria-hidden="true">🎲</span><h4 id="weekly-random-result" role="status" aria-live="polite">${esc(ui.result || 'Sẵn sàng chọn ngẫu nhiên')}</h4><p>Chỉ chọn học sinh có mặt của trận này. Bốc thăm không cộng điểm.</p><div><button type="button" class="classroom-button classroom-button--save" id="weekly-draw">🎲 Chọn ngẫu nhiên</button><button type="button" class="classroom-button classroom-button--quiet" id="weekly-draw-reset">Đặt lại vòng</button></div></section>`;
+        box.innerHTML = `<section class="weekly-random-controls classroom-form-hero"><label class="admin-roster-filter-field"><span>Chế độ chọn</span><select id="weekly-random-mode"><option value="all">Tất cả học sinh</option><option value="team">Random ${label}</option><option value="member">${label === 'tổ' ? 'Tổ' : 'Nhóm'} → thành viên</option></select></label><label class="admin-roster-filter-field"><span>Chọn ${label}</span><select id="weekly-random-team"><option value="">Chọn ngẫu nhiên ${label} trước</option>${week.teams.map(team => `<option value="${esc(team.id)}">${esc(team.name)}</option>`).join('')}</select></label><label class="weekly-check"><input type="checkbox" id="weekly-instant" ${ui.instant ? 'checked' : ''}>Instant · kết quả ngay</label><label class="weekly-check"><input type="checkbox" id="weekly-no-repeat" ${ui.noRepeat ? 'checked' : ''}>Không lặp trong vòng</label></section><section class="weekly-random-result classroom-team-card" data-tone="2"><span class="classroom-team-mark" aria-hidden="true">🎲</span><h4 id="weekly-random-result" role="status" aria-live="polite">${esc(ui.result || 'Sẵn sàng chọn ngẫu nhiên')}</h4>${ui.randomStudent ? `<p>Điểm hiện tại</p><strong id="weekly-random-score" class="weekly-selected-score">${Number(week.scores[ui.randomStudent] || 0)}</strong><button type="button" class="classroom-button classroom-button--save" id="weekly-random-add">＋ Cộng điểm cho học sinh</button>` : ''}<div><button type="button" class="classroom-button classroom-button--save" id="weekly-draw">🎲 Chọn ngẫu nhiên</button><button type="button" class="classroom-button classroom-button--quiet" id="weekly-draw-reset">Đặt lại vòng</button></div></section><section class="weekly-candidate-panel"><h4 id="weekly-candidate-heading">Danh sách tham gia</h4><div id="weekly-random-candidates" class="weekly-candidate-grid"></div></section>`;
         document.getElementById('weekly-random-mode').value = ui.randomMode;
         document.getElementById('weekly-random-team').value = ui.teamId;
-        document.getElementById('weekly-random-mode').onchange = event => { ui.randomMode = event.target.value; ui.drawn = []; ui.result = ''; };
-        document.getElementById('weekly-random-team').onchange = event => { ui.teamId = event.target.value; ui.drawn = []; };
+        document.getElementById('weekly-random-mode').onchange = event => { ui.randomMode = event.target.value; ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.result = ''; ui.randomStudent = ''; this.renderWeeklyCompetition(); document.getElementById('weekly-random-mode')?.focus(); };
+        document.getElementById('weekly-random-team').onchange = event => { ui.teamId = event.target.value; ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.result = ''; ui.randomStudent = ''; this.renderWeeklyCompetition(); document.getElementById('weekly-random-team')?.focus(); };
         document.getElementById('weekly-instant').onchange = event => { ui.instant = event.target.checked; };
-        document.getElementById('weekly-no-repeat').onchange = event => { ui.noRepeat = event.target.checked; ui.drawn = []; };
-        document.getElementById('weekly-draw-reset').onclick = () => { ui.drawn = []; ui.result = 'Đã đặt lại vòng chọn'; this.renderWeeklyCompetition(); };
+        document.getElementById('weekly-no-repeat').onchange = event => { ui.noRepeat = event.target.checked; ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; this.renderWeeklyCompetition(); document.getElementById('weekly-no-repeat')?.focus(); };
+        document.getElementById('weekly-draw-reset').onclick = () => { ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.result = 'Đã đặt lại vòng chọn'; ui.randomStudent = ''; this.renderWeeklyCompetition(); };
         document.getElementById('weekly-draw').onclick = () => void this.drawWeeklyRandom();
+        const add = document.getElementById('weekly-random-add');
+        if (add) add.onclick = () => this.openWeeklyPointPanel(week.id, ui.randomStudent);
+        document.getElementById('weekly-random-team').disabled = ui.randomMode !== 'member';
+        const candidates = this.weeklyRandomCandidates(week, ui);
+        document.getElementById('weekly-candidate-heading').textContent = `${ui.randomMode === 'team' ? 'Tổ/Nhóm' : 'Học sinh'} tham gia · ${candidates.length}`;
+        document.getElementById('weekly-random-candidates').innerHTML = candidates.map((candidate, index) => `<div class="weekly-random-candidate classroom-team-card" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong>${candidate.score}</strong></div>`).join('') || '<p>Không còn lựa chọn phù hợp. Đặt lại vòng để tiếp tục.</p>';
+    },
+    weeklyRandomCandidates(week, ui) {
+        const eligible = week.participants.filter(student => !(week.absences || []).includes(student.username) && !(ui.noRepeat && ui.randomMode !== 'team' && ui.drawn.includes(student.username)));
+        const teams = week.teams.filter(team => team.members.some(username => eligible.some(student => student.username === username)));
+        if (ui.randomMode === 'team') return teams.filter(team => !ui.noRepeat || !ui.drawn.includes(team.id)).map(team => ({ id: team.id, name: team.name, score: team.members.reduce((sum, username) => sum + Number(week.scores[username] || 0), 0) }));
+        return eligible.filter(student => ui.randomMode !== 'member' || !ui.teamId || teams.some(team => team.id === ui.teamId && team.members.includes(student.username))).map(student => ({ id: student.username, name: student.fullname, score: Number(week.scores[student.username] || 0) }));
     },
     async drawWeeklyRandom() {
         if (!this.isAdminUser()) return;
@@ -111,8 +103,10 @@ Object.assign(app.admin, {
             candidates = members.map(student => ({ id: student.username, name: `${student.fullname}${chosen ? ` · ${chosen.name}` : ''}` }));
         }
         if (ui.noRepeat) candidates = candidates.filter(item => !ui.drawn.includes(item.id));
-        if (!candidates.length) { ui.result = 'Không còn lựa chọn phù hợp. Kiểm tra vắng mặt hoặc đặt lại vòng.'; this.renderWeeklyCompetition(); return; }
+        if (!candidates.length) { ui.randomStudent = ''; ui.result = 'Không còn lựa chọn phù hợp. Kiểm tra vắng mặt hoặc đặt lại vòng.'; this.renderWeeklyCompetition(); return; }
         ui.drawing = true;
+        const drawToken = ui.drawToken = (ui.drawToken || 0) + 1;
+        const randomMode = ui.randomMode, teamId = ui.teamId;
         const result = candidates[Math.floor(Math.random() * candidates.length)];
         const button = document.getElementById('weekly-draw');
         if (button) button.disabled = true;
@@ -120,12 +114,15 @@ Object.assign(app.admin, {
             document.querySelector('.weekly-random-result')?.classList.add('is-drawing');
             await new Promise(resolve => setTimeout(resolve, 650));
         }
+        if (ui.drawToken !== drawToken) return;
         ui.drawing = false;
-        if (!this.isAdminUser() || this.weeklyUI !== ui || this.selectedWeek()?.id !== week.id) return;
-        ui.drawn.push(result.id); ui.result = result.name; this.refreshWeeklyAfterAsync(); document.getElementById('weekly-draw')?.focus();
+        if (ui.randomMode !== randomMode || ui.teamId !== teamId) return;
+        if (!this.isAdminUser() || this.weeklyUI !== ui || this.selectedWeek()?.id !== week.id || this.questMode !== 'weekly' || ui.tab !== 'random' || !document.getElementById('weekly-draw')) return;
+        ui.drawn.push(result.id); ui.result = result.name; ui.randomStudent = ui.randomMode === 'team' ? '' : result.id; this.refreshWeeklyAfterAsync(); document.getElementById('weekly-draw')?.focus();
     },
     showWeeklyForm() {
         if (!this.isAdminUser()) return;
+        const ui = this.weeklyState(); ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.pointStudent = null;
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
         this.weeklyFormId = crypto.randomUUID();
         const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -161,7 +158,7 @@ Object.assign(app.admin, {
             if (unassigned.length) teams.push({ id: 'unassigned', name: 'Chưa phân tổ', members: unassigned.map(user => user.username) });
             const week = await app.classroom.createWeek({ id: this.weeklyFormId, name, classlevel, className, startDate, endDate, mode, participants: users.map(user => ({ username: user.username, fullname: user.fullname || user.username })), teams, scores: {}, absences: [], version: 1 });
             if (!this.isAdminUser() || this.weeklyUI !== ui) return;
-            ui.selected = week.id; ui.drawn = []; ui.result = ''; ui.tab = 'standings'; this.renderWeeklyCompetition();
+            ui.selected = week.id; ui.drawn = []; ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.result = ''; ui.randomStudent = ''; ui.pointStudent = null; ui.tab = 'standings'; this.renderWeeklyCompetition();
         } catch (error) { if (form?.isConnected) document.getElementById('weekly-form-error').textContent = error.message; }
         finally { this.weeklyFormSaving = false; if (form?.isConnected) form.querySelector('[type="submit"]').disabled = false; }
     }

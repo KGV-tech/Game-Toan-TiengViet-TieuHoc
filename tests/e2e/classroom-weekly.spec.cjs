@@ -107,9 +107,12 @@ test('Ba tab tuần, điểm từng trận độc lập, giữ điểm game và 
   const first = await page.locator('#weekly-select').inputValue();
   await page.locator('[data-weekly-tab=points]').click();
   await expect(page.locator('[data-weekly-student]')).toHaveCount(2);
-  await page.locator('[data-weekly-student=a] [data-point="1"]').click();
+  await page.locator('[data-weekly-student=a]').click();
+  await page.locator('#weekly-point-add').click();
   await expect(page.locator('[data-weekly-student=a] .weekly-point-value')).toContainText('1');
-  await page.locator('[data-weekly-student=b] [data-absence]').click();
+  await page.locator('[data-weekly-student=b]').click();
+  await page.locator('.weekly-point-adjust summary').click();
+  await page.locator('[data-absence]').click();
   await page.locator('[data-weekly-tab=random]').click();
   await page.locator('#weekly-instant').check();
   await page.locator('#weekly-draw').click();
