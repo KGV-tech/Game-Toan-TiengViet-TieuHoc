@@ -48,10 +48,10 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     await expect(page.locator('#treasure-modal')).toHaveClass(/active/);
     await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
     
-    // Kiểm tra danh sách tabs chỉ còn 3 tab, KHÔNG còn tab "Quản lý lộ trình học"
+    // Trạm Cài đặt chỉ còn Điều chỉnh; hai mục quản lý mở riêng từ map.
     const tabTexts = await page.locator('#admin-tabs .tab-btn').allTextContents();
-    expect(tabTexts).toContain('Quản Lý Học Sinh');
-    expect(tabTexts).toContain('Quản lý Nhiệm vụ');
+    expect(tabTexts).not.toContain('Quản Lý Học Sinh');
+    expect(tabTexts).not.toContain('Quản lý Nhiệm vụ');
     expect(tabTexts).toContain('Điều chỉnh');
     expect(tabTexts).not.toContain('Quản lý lộ trình học');
   });
@@ -127,7 +127,7 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     });
 
     // Chụp ảnh giao diện câu hỏi trước khi nộp
-    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_font_check.png' });
+    await page.screenshot({ path: 'test-results/ui-review/actual_edtech_play_screen_font_check.png' });
 
     // Điền câu a, b đúng, câu c, d sai
     await page.fill('#fill-input-0', '70 000');
@@ -137,7 +137,7 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     await page.click('#submit-ans-btn');
 
     // Chụp ảnh phản hồi đúng/sai sau khi nộp
-    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_feedback_ticks.png' });
+    await page.screenshot({ path: 'test-results/ui-review/actual_edtech_play_screen_feedback_ticks.png' });
 
     // 9. Kiểm tra nét gạch đỏ gấp đôi size (2.5px) trên ô sai
     const strikeThickness = await page.locator('#fill-input-2').evaluate(el => window.getComputedStyle(el).textDecorationThickness);
@@ -173,6 +173,6 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     expect(tfTitleFontSize).toBeLessThan(28);
 
     // Chụp ảnh màn hình câu Đúng/Sai
-    await page.screenshot({ path: 'C:/Users/htleh/.gemini/antigravity-ide/brain/43a79f58-4379-46df-8c70-c82f62eb373e/actual_edtech_play_screen_tf_harmonized.png' });
+    await page.screenshot({ path: 'test-results/ui-review/actual_edtech_play_screen_tf_harmonized.png' });
   });
 });

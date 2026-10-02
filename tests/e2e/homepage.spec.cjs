@@ -1778,7 +1778,8 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
     if (state.adminTab && !isAdminComposerState(state)) {
-      await expect(page.locator('#admin-tabs')).toBeVisible();
+      if (state.adminTab === 'settings') await expect(page.locator('#admin-tabs')).toBeVisible();
+      else await expect(page.locator('#admin-tabs')).toBeHidden();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }
@@ -1811,7 +1812,8 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
     if (state.adminTab && !isAdminComposerState(state)) {
-      await expect(page.locator('#admin-tabs')).toBeVisible();
+      if (state.adminTab === 'settings') await expect(page.locator('#admin-tabs')).toBeVisible();
+      else await expect(page.locator('#admin-tabs')).toBeHidden();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }

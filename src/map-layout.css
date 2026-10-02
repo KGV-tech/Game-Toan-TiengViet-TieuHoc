@@ -1,3 +1,26 @@
+/* Quick access sits below the Admin profile, outside map stations. */
+.admin-map-actions { display: grid; gap: 8px; width: 100%; }
+.admin-map-actions[hidden] { display: none; }
+.admin-map-action {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid #7dd3fc;
+  border-radius: 12px;
+  background: #0c4a6e;
+  color: #f0f9ff;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.admin-map-action:hover, .admin-map-action:active { transform: none; border: 1px solid #7dd3fc; background: #075985; }
+.admin-map-action:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+html[data-theme="light"] .admin-map-action { background: #e0f2fe; border-color: #0369a1; color: #0c4a6e; }
+html[data-theme="light"] .admin-map-action:hover { background: #bae6fd; }
+html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a1; }
+
 /* Map v2 uses the title rendered in the artwork so it is not duplicated by HTML. */
 .map-v2 .map-title-container {
   display: none;

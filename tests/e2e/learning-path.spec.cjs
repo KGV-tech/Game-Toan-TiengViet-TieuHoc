@@ -299,11 +299,9 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
   await expect(page.locator('#treasure-title')).toContainText('Quản lý lộ trình học · Môn Toán');
   await expect(page.locator('#admin-tabs')).toBeHidden();
 
-  // Verify Admin settings station has streamlined 3 tabs
+  // Student and quest management now open independently from the map.
   await page.evaluate(() => app.admin.openAdmin());
-  await expect(page.locator('#admin-tabs .tab-btn')).toHaveCount(3);
-  await expect(page.locator('#admin-tabs .tab-btn', { hasText: 'Quản Lý Học Sinh' })).toBeVisible();
-  await expect(page.locator('#admin-tabs .tab-btn', { hasText: 'Quản lý Nhiệm vụ' })).toBeVisible();
+  await expect(page.locator('#admin-tabs .tab-btn')).toHaveCount(1);
   await expect(page.locator('#admin-tabs .tab-btn', { hasText: 'Điều chỉnh' })).toBeVisible();
   await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
 

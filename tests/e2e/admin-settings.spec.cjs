@@ -33,7 +33,7 @@ async function openOfflineAdmin(page) {
     ];
     app.data.exams = [];
     app.data.settings = { hardTimeLimit: 12, examTimeLimit: 45 };
-    app.admin.openAdmin();
+    app.admin.openAdmin('players');
   });
   return { consoleErrors, supabaseRequests };
 }

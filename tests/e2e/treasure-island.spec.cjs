@@ -382,7 +382,7 @@ test.describe('Đảo Kho Báu - Thi Đua Nhóm', () => {
         await expect(hero.locator('.team-board-start')).toBeVisible();
         await expect(page.locator('.team-stadium-controls')).toHaveCount(0);
 
-        const brainDir = 'C:/Users/htleh/.gemini/antigravity-ide/brain/a140c77a-307d-4b01-98ad-bffeca5b05d9';
+        const brainDir = 'test-results/ui-review';
         await page.screenshot({ path: path.join(brainDir, 'prepared-board-normal.png') });
 
         // Enter fullscreen

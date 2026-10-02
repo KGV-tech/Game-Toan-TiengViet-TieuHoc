@@ -267,6 +267,10 @@
 
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <div id="player-info" class="player-info-card"></div>
+          <nav id="admin-map-actions" class="admin-map-actions" aria-label="Quản lý lớp học" hidden>
+            <button type="button" class="admin-map-action" onclick="app.admin.openAdmin('players')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý học sinh</button>
+            <button type="button" class="admin-map-action" onclick="app.admin.openAdmin('quests')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý Nhiệm vụ</button>
+          </nav>
           <div id="energy-display" class="energy-display" style="display:none;"></div>
           <div id="gift-notice" class="gift-notice" style="display:none;">🎁 Bạn có hộp quà hằng ngày chưa mở!</div>
           <div id="admin-notification"
