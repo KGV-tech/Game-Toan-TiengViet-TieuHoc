@@ -33,7 +33,7 @@ Object.assign(app.admin, {
             for (const button of box.querySelectorAll('[data-quest-launch]')) button.onclick = () => this.switchQuestMode(button.dataset.questLaunch);
             return;
         }
-        box.innerHTML = `<section class="quest-management-detail quest-management-detail--${mode}" aria-label="${item.name}"><aside class="quest-management-sidebar"><header><span class="quest-management-mark" aria-hidden="true">${item.icon}</span><div><h2 id="quest-management-title">${item.name}</h2><p>Khu vực Admin</p></div></header><button type="button" class="quest-management-back" id="quest-management-back">← Quay về</button><div id="quest-management-tools" class="quest-management-tools"></div></aside><div id="admin-quest-subarea" class="quest-workspace-content" aria-label="${item.name}"></div></section>`;
+        box.innerHTML = `<section class="quest-management-detail quest-management-detail--${mode}" aria-label="${item.name}"><aside class="quest-management-sidebar"><header><span class="quest-management-mark" aria-hidden="true">${item.icon}</span><div><h2 id="quest-management-title">${item.name}</h2><p>Khu vực Admin</p></div></header><div class="admin-theme-nav"><button type="button" class="quest-management-back" id="quest-management-back">← Quay về</button>${app.ui.themeToggleMarkup()}</div><div id="quest-management-tools" class="quest-management-tools"></div></aside><div id="admin-quest-subarea" class="quest-workspace-content" aria-label="${item.name}"></div></section>`;
         document.getElementById('quest-management-back').onclick = () => this.returnToQuestManagement();
         const subarea = document.getElementById('admin-quest-subarea');
         if (mode === 'team') this.renderTeamCompetitions(subarea);
