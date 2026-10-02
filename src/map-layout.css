@@ -21,15 +21,34 @@ html[data-theme="light"] .admin-map-action { background: #e0f2fe; border-color: 
 html[data-theme="light"] .admin-map-action:hover { background: #bae6fd; }
 html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a1; }
 .admin-map-action--students, html[data-theme="light"] .admin-map-action--students {
-  background-image: linear-gradient(125deg, #0e7490, #1d4ed8);
+  position: relative;
+  isolation: isolate;
+  background-image: linear-gradient(125deg, #be185d, #9d174d);
+  border-color: #f9a8d4;
   color: #fff;
 }
+.admin-map-action--students::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--roster-led-angle), #9d174d, #f472b6, #fce7f3, #ec4899, #9d174d);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: roster-led 5s linear infinite;
+}
+@property --roster-led-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes roster-led { to { --roster-led-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .admin-map-action--students::before { animation: none; } }
 .admin-map-action--quests, html[data-theme="light"] .admin-map-action--quests {
   background-image: linear-gradient(125deg, #a16207, #9a3412);
   border-color: #fbbf24;
   color: #fff;
 }
-.admin-map-action--students:hover, html[data-theme="light"] .admin-map-action--students:hover { background-image: linear-gradient(125deg, #155e75, #1e40af); }
+.admin-map-action--students:hover, html[data-theme="light"] .admin-map-action--students:hover { background-image: linear-gradient(125deg, #9d174d, #831843); border-color: #f9a8d4; }
 .admin-map-action--quests:hover, html[data-theme="light"] .admin-map-action--quests:hover { background-image: linear-gradient(125deg, #854d0e, #7c2d12); border-color: #fbbf24; }
 
 /* Map v2 uses the title rendered in the artwork so it is not duplicated by HTML. */
