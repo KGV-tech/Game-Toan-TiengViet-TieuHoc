@@ -1,0 +1,118 @@
+/* Composer-inspired colored surfaces for class administration. */
+.classroom-team-card {
+    --team-accent: #c4a1ff;
+    --team-base: #38295e;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    border: 2px solid var(--team-accent);
+    border-bottom-width: 6px;
+    border-radius: 22px;
+    padding: 22px;
+    background: linear-gradient(145deg, var(--team-base), #142438);
+    color: #f5f0ff;
+    box-shadow: inset 0 1px 0 #ffffff18, 0 10px 24px #0003;
+}
+.classroom-team-card[data-tone="1"] { --team-accent: #76deed; --team-base: #164b63; }
+.classroom-team-card[data-tone="2"] { --team-accent: #f3b3d9; --team-base: #552d53; }
+.classroom-team-card[data-tone="3"] { --team-accent: #8ee4bd; --team-base: #205749; }
+.classroom-team-card[data-tone="4"] { --team-accent: #ffd48a; --team-base: #605036; }
+.classroom-team-card[data-tone="5"] { --team-accent: #8cbdff; --team-base: #274773; }
+.classroom-team-card::after { content: ""; position: absolute; right: -70px; bottom: -110px; width: 240px; height: 240px; border: 1px solid color-mix(in srgb, var(--team-accent) 25%, transparent); border-radius: 50%; pointer-events: none; }
+.classroom-team-card > * { position: relative; z-index: 1; }
+.classroom-team-card header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.classroom-team-card h3 { margin: 0 0 8px; font-size: clamp(1.15rem, 1.8vw, 1.55rem); color: #f8f2ff; overflow-wrap: anywhere; }
+.classroom-team-card p { margin: 0 0 14px; color: #d3d7ea; font-size: .82rem; }
+.classroom-team-mark { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border: 1px solid #ffffff50; border-radius: 15px; background: linear-gradient(135deg, var(--team-accent, #d2b3ff), color-mix(in srgb, var(--team-accent, #d2b3ff) 70%, #6749a0)); color: #192638; font-size: 1.5rem; font-weight: 900; }
+.classroom-pill { display: inline-flex; padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--team-accent, #c4a1ff) 50%, transparent); border-radius: 999px; background: #07152666; color: var(--team-accent, #c4a1ff); font-size: .7rem; font-weight: 800; }
+.classroom-member-chips { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: 15px 0 22px; padding: 0; }
+.classroom-member-chips li { border: 1px solid #ffffff25; border-radius: 10px; background: #07152666; color: #f0f1fc; padding: 7px 10px; font-size: .8rem; }
+.classroom-member-chips b { color: var(--team-accent); margin-left: 8px; }
+.classroom-team-card footer { border-top: 1px solid #ffffff25; padding-top: 15px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+#treasure-modal .classroom-button {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    padding: 10px 16px;
+    border: 1px solid #ccb1fa;
+    border-bottom-width: 3px;
+    border-radius: 12px;
+    background: linear-gradient(130deg, #d4b7ff, #a683df);
+    box-shadow: 0 6px 15px #0002;
+    color: #211839;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 850;
+    text-transform: none;
+    letter-spacing: 0;
+    text-shadow: none;
+    transform: none;
+}
+#treasure-modal .classroom-button--quiet { border-color: #7381a0; background: linear-gradient(130deg, #29374f, #172a3b); color: #e2eaf9; box-shadow: none; }
+#treasure-modal .classroom-button--save { border-color: #8beec7; background: linear-gradient(130deg, #83efc8, #29b5a1); color: #062d32; }
+#treasure-modal .classroom-button:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+#treasure-modal .classroom-button:disabled { opacity: .5; cursor: default; }
+#treasure-modal .classroom-button:focus-visible { outline: 3px solid #f7d890; outline-offset: 3px; }
+.classroom-form { display: grid; gap: 16px; color: #e8f3ff; padding: 4px; }
+.classroom-form-hero { display: flex; gap: 15px; align-items: center; padding: 18px; border: 1px solid #be9afa80; border-radius: 18px; background: linear-gradient(130deg, #40315f, #132d42); }
+.classroom-form-hero h3 { margin: 0 0 5px; color: #f4ecff; font-size: 1.3rem; }
+.classroom-form-hero p { margin: 0; color: #c2cfe1; font-size: .8rem; }
+.classroom-form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 16px; border: 1px solid #655984; border-radius: 16px; background: linear-gradient(145deg, #2c2845, #14293a); }
+.classroom-member-panel { min-width: 0; border: 1px solid #75bbd780; border-radius: 16px; padding: 14px; background: linear-gradient(145deg, #142e46, #112235); }
+.classroom-member-panel legend { font-weight: 800; color: #b5e6fc; padding: 0 8px; }
+.classroom-member-panel > p { margin: 0 0 12px; color: #b6cee1; font-size: .75rem; }
+.classroom-form .admin-student-draft-members, .weekly-form-members { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.classroom-form .admin-student-draft-members label, .weekly-member-assignment { min-width: 0; margin: 0; min-height: 74px; gap: 9px; padding: 12px; border: 1px solid #6689a780; border-radius: 12px; background: linear-gradient(140deg, #25415b, #17263e); font-size: .8rem; line-height: 1.35; }
+.classroom-form .admin-student-draft-members label span { min-width: 0; overflow-wrap: anywhere; }
+.classroom-form .admin-student-draft-members label:has(input:checked) { border-color: #c4a1ff; background: linear-gradient(140deg, #4d3c75, #20384a); box-shadow: inset 0 0 0 1px #c4a1ff40; }
+.classroom-form .admin-student-draft-members label[hidden], .weekly-student-card[hidden] { display: none !important; }
+.classroom-form-actions { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px; border: 1px solid #8770ad80; border-radius: 16px; background: linear-gradient(130deg, #302740, #142a3b); z-index: 3; }
+.classroom-form-actions > span { margin-right: auto; color: #b2c7da; font-size: .7rem; max-width: 55%; }
+.classroom-empty { padding: 30px; border: 1px dashed #b994f4; border-radius: 18px; background: linear-gradient(130deg, #33294d, #142c40); color: #e6e7fa; text-align: center; }
+.classroom-empty > span { font-size: 2rem; color: #dab4ff; }
+.classroom-section-status { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+#weekly-form-error { color: #ffb6c6; margin: 0; }
+#weekly-group-count-field[hidden] { display: none; }
+.weekly-workspace { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100%; min-height: 0; gap: 12px; color: #eef5ff; }
+.weekly-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px; border: 1px solid #efc57880; border-radius: 18px; background: linear-gradient(130deg, #473745, #18334b); }
+.weekly-toolbar > div { margin-right: auto; }
+.weekly-toolbar h3 { font-size: 1.35rem; color: #ffe2a1; margin: 0 0 5px; }
+.weekly-toolbar p, .weekly-ranking-heading p { font-size: .8rem; color: #c1d2e1; margin: 0; }
+.weekly-select { display: grid; gap: 5px; font-size: .72rem; }
+.weekly-select select, .weekly-member-assignment select { width: 100%; min-height: 40px; border: 1px solid #7d93b5; border-radius: 10px; padding: 7px 10px; background: #11273a; color: #eef5ff; }
+.weekly-tabs { display: flex; gap: 10px; }
+.weekly-tabs [aria-selected="true"] { border-color: #f7d890 !important; background: linear-gradient(130deg, #82dcf1, #7594f4) !important; color: #10273c !important; }
+.weekly-status { margin: 0; color: #c8d9e9; font-size: .75rem; min-height: 1em; }
+.weekly-body { min-height: 0; overflow-y: auto; padding: 2px 4px 10px 0; scrollbar-width: thin; }
+#treasure-modal[data-management-workspace="quests"]:has(.weekly-workspace) #treasure-content-area { overflow: hidden; }
+.quest-workspace:has(.weekly-workspace), #admin-quest-subarea:has(.weekly-workspace) { height: 100%; min-height: 0; }
+.weekly-points-tools { display: grid; grid-template-columns: minmax(240px, 1fr) 1fr; align-items: end; gap: 14px; margin-bottom: 16px; }
+.weekly-points-tools p { color: #c2d3e3; font-size: .8rem; }
+.weekly-student-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.weekly-student-card { padding: 16px; }
+.weekly-student-card h4 { font-size: .98rem; margin: 14px 0; color: #fbf5ff; overflow-wrap: anywhere; }
+.weekly-point-value { display: block; color: var(--team-accent, #d1b5ff); font-size: 2rem; margin: 12px 0; }
+.weekly-point-value small { display: inline-block; font-size: .7rem; color: #d2dfef; margin-left: 8px; }
+.weekly-student-card footer { justify-content: flex-start; gap: 6px; }
+#treasure-modal .weekly-student-card .classroom-button { padding: 8px 10px; font-size: .7rem; }
+.weekly-random-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
+.weekly-check { display: flex; gap: 8px; align-items: center; font-size: .8rem; }
+.weekly-check input { width: 20px; height: 20px; accent-color: #bd96ff; }
+.weekly-random-result { padding: 28px; text-align: center; }
+.weekly-random-result .classroom-team-mark { margin: 0 auto 15px; }
+.weekly-random-result h4 { color: #f6edff; font-size: clamp(1.35rem, 2.5vw, 2rem); margin: 16px 0; }
+.weekly-random-result > div { display: flex; gap: 10px; justify-content: center; }
+.weekly-random-result.is-drawing .classroom-team-mark { animation: weekly-dice .65s ease-in-out; }
+@keyframes weekly-dice { 50% { transform: rotate(150deg) scale(1.2); } }
+.weekly-ranking-heading { padding: 8px 0 16px; }
+.weekly-ranking-heading h4 { margin: 0 0 8px; font-size: 1.15rem; }
+.weekly-individual-ranking { margin-top: 18px; padding: 16px; border: 1px solid #62769b; border-radius: 18px; background: linear-gradient(130deg, #293653, #152c3c); }
+.weekly-individual-ranking ol { padding-left: 28px; }
+.weekly-individual-ranking li { padding: 10px; border-bottom: 1px solid #ffffff18; }
+.weekly-individual-ranking li strong { float: right; color: #f4d487; }
+.weekly-member-assignment { display: grid; gap: 7px; color: #eff5ff; }
+.weekly-member-assignment small { color: #d0b6f1; }
+@media (max-width: 1250px) { .classroom-form .admin-student-draft-members, .weekly-form-members { grid-template-columns: repeat(3, minmax(0, 1fr)); } .weekly-student-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .weekly-random-result.is-drawing .classroom-team-mark { animation: none; } #treasure-modal .classroom-button { transition: none; } }
