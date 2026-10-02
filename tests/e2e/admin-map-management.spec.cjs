@@ -111,7 +111,8 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await expect(page.locator('#treasure-title')).toHaveText('Quản lý Thi đua & Nhiệm vụ');
     await expect(page.locator('#treasure-close-button')).toBeHidden();
     await expect(page.locator('#admin-management-back')).toBeFocused();
-    await expect(page.locator('.quest-workspace')).toBeVisible();
+    await expect(page.locator('.quest-management-hub')).toBeVisible();
+    await expect(page.locator('[data-quest-launch]')).toHaveCount(3);
     await expect(page.locator('#admin-tabs')).toBeHidden();
     await page.screenshot({ path: `test-results/ui-review/admin-quests-header-${viewport.width}.png` });
     await page.locator('#admin-management-back').click();

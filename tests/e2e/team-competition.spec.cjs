@@ -60,9 +60,9 @@ test('Admin tạo Nhóm, chuẩn bị và bắt đầu bảng thi đua', async (
     app.admin.switchQuestMode('team');
   }, { users: demoUsers(), exam: demoExam() });
 
-  await expect(page.getByRole('tab', { name: 'Nhiệm vụ Cá nhân' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Thi đua Nhóm' })).toBeVisible();
-  await expect(page.locator('.team-dashboard-hero')).toBeVisible();
+  await expect(page.locator('[data-quest-launch]')).toHaveCount(0);
+  await expect(page.locator('.quest-management-sidebar')).toContainText('Thi đua Nhóm');
+  await expect(page.locator('#admin-management-tabs')).toBeHidden();
   await expect(page.locator('.team-dashboard-stat')).toHaveCount(4);
   await expect(page.locator('.team-competition-list-heading')).toContainText('Các trận thi đua');
   await page.getByRole('button', { name: '+ Tạo trận mới' }).click();
@@ -361,7 +361,10 @@ test('mở form sau bảng trình chiếu vẫn cuộn được trong cửa sổ
 
   await expect(page.locator('.team-competition-form')).toBeVisible();
   await expect(page.locator('#treasure-modal')).not.toHaveClass(/team-board-fullscreen/);
-  const scrollBox = page.locator('#treasure-content-area');
+  await expect(page.locator('.quest-management-sidebar')).toContainText('Thi đua Nhóm');
+  await expect(page.locator('#quest-management-back')).toBeVisible();
+  await expect(page.locator('#treasure-modal')).toHaveAttribute('aria-labelledby', 'quest-management-title');
+  const scrollBox = page.locator('#admin-quest-subarea');
   expect(await scrollBox.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
   await scrollBox.evaluate(node => { node.scrollTop = node.scrollHeight; });
   await expect(page.getByRole('button', { name: 'Đã chuẩn bị' })).toBeVisible();
@@ -971,7 +974,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768
     ]);
     await page.evaluate(() => { window.saveTest.error = null; });
     await page.getByRole('button', { name: 'Lưu Nháp', exact: true }).click();
-    await expect(page.locator('.team-dashboard-hero')).toBeVisible();
+    await expect(page.locator('.quest-management-sidebar')).toContainText('Thi đua Nhóm');
     await expect(page.locator('.team-form-hero')).toHaveCount(0);
     expect(dialogs).toHaveLength(1);
     const saved = await page.evaluate(() => ({

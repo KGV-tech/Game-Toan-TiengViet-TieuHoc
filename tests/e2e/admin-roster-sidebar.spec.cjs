@@ -77,10 +77,12 @@ test('Cập nhật roster giữ nội dung Tổ đang soạn và kiểm tra lạ
   await expect(page.locator('#student-draft-error')).toContainText('Danh sách học sinh đã thay đổi');
 });
 
-test('Chuyển tab thi đua bằng bàn phím giữ focus trên tab mới', async ({ page }) => {
+test('Mở thi đua bằng bàn phím và Quay về giữ focus đúng chức năng', async ({ page }) => {
   await openAdmin(page, 'quests');
-  const weekly = page.getByRole('tab', { name: 'Thi đua tuần', exact: true });
+  const weekly = page.locator('[data-quest-launch=weekly]');
   await weekly.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#quest-management-back')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(weekly).toBeFocused();
 });
@@ -123,22 +125,20 @@ test('Tổ lưu ngoại tuyến, lọc thành viên và tách theo Admin', async
 });
 
 for (const width of [1280, 1440, 1024]) {
-  test(`Tab nhiệm vụ trên tiêu đề và Thi đua tuần ở ${width}`, async ({ page }) => {
+  test(`Chọn chức năng thi đua và mở màn riêng ở ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 768 });
     await openAdmin(page, 'quests');
-    const tabs = page.locator('#admin-management-tabs');
-    await expect(tabs.getByRole('tab')).toHaveText(['Nhiệm vụ Cá nhân', 'Thi đua Nhóm', 'Thi đua tuần']);
-    const title = await page.locator('.admin-management-brand').boundingBox();
-    const tabRect = await tabs.boundingBox();
-    expect(tabRect.x).toBeGreaterThanOrEqual(title.x + title.width);
-    expect(tabRect.y).toBeLessThanOrEqual(title.y + title.height);
+    await expect(page.locator('[data-quest-launch]')).toHaveCount(3);
+    await expect(page.locator('#admin-management-tabs')).toBeHidden();
     await expect(page.locator('.quest-workspace__header')).toHaveCount(0);
-    await tabs.getByRole('tab', { name: 'Thi đua tuần' }).click();
+    await page.locator('[data-quest-launch=weekly]').click();
     await expect(page.locator('.weekly-tabs [role=tab]')).toHaveText(['⭐ Cộng điểm', '🎲 Chọn ngẫu nhiên', '⚑ Thi đua']);
     await page.screenshot({ path: `test-results/ui-review/quest-tabs-${width}.png` });
-    await tabs.getByRole('tab', { name: 'Thi đua Nhóm' }).click();
+    await page.locator('#quest-management-back').click();
+    await page.locator('[data-quest-launch=team]').click();
     await expect(page.locator('.team-competition-dashboard')).toBeVisible();
-    await tabs.getByRole('tab', { name: 'Nhiệm vụ Cá nhân' }).click();
+    await page.locator('#quest-management-back').click();
+    await page.locator('[data-quest-launch=personal]').click();
     await expect(page.locator('.personal-quest-workspace')).toBeVisible();
   });
 }

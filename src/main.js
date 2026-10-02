@@ -6928,6 +6928,7 @@ const app = {
             const modal = document.getElementById('treasure-modal');
             const management = tab === 'players' || tab === 'quests';
             if (modal) {
+                if (tab !== 'quests') { modal.removeAttribute('data-quest-detail'); modal.setAttribute('aria-labelledby', 'treasure-title'); }
                 if (management) modal.dataset.managementWorkspace = tab;
                 else delete modal.dataset.managementWorkspace;
             }
@@ -6941,11 +6942,12 @@ const app = {
             if (icon) icon.textContent = tab === 'quests' ? '⚑' : '✦';
             const modeTabs = document.getElementById('admin-management-tabs');
             if (modeTabs) {
-                modeTabs.hidden = tab !== 'quests';
-                if (tab !== 'quests') modeTabs.replaceChildren();
+                modeTabs.hidden = true;
+                modeTabs.replaceChildren();
             }
         },
         openAdmin(tab = 'settings') {
+            this.questWorkspaceOpen = false;
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
             this.currentContext = 'admin-settings';
             document.getElementById('admin-compose-screen')?.classList.remove('active');
@@ -7050,29 +7052,14 @@ const app = {
             else if (tab === 'quests') this.renderQuests(box);
         },
         switchQuestMode(mode) {
-            const keepTabFocus = document.activeElement?.closest('#admin-management-tabs');
             this.exitTeamCompetitionPresentation();
             this.questMode = ['team', 'weekly'].includes(mode) ? mode : 'personal';
+            this.questWorkspaceOpen = true;
             this.renderQuests(document.getElementById('treasure-content-area'));
-            if (keepTabFocus) document.querySelector('#admin-management-tabs [aria-selected="true"]')?.focus();
+            document.getElementById('quest-management-back')?.focus();
         },
         renderQuests(box) {
-            if (!box) return;
-            const mode = ['team', 'weekly'].includes(this.questMode) ? this.questMode : 'personal';
-            const tabs = document.getElementById('admin-management-tabs');
-            if (tabs) {
-                tabs.setAttribute('role', 'tablist');
-                tabs.setAttribute('aria-label', 'Loại nhiệm vụ và thi đua');
-                tabs.innerHTML = [['personal', 'Nhiệm vụ Cá nhân'], ['team', 'Thi đua Nhóm'], ['weekly', 'Thi đua tuần']].map(([key, label]) => `<button type="button" class="quest-workspace-tab ${mode === key ? 'active' : ''}" role="tab" aria-selected="${mode === key}" aria-controls="admin-quest-subarea" onclick="app.admin.switchQuestMode('${key}')">${label}</button>`).join('');
-            }
-            box.innerHTML = `
-                <section class="quest-workspace quest-workspace--admin" aria-label="Quản lý nhiệm vụ">
-                    <div id="admin-quest-subarea" class="quest-workspace-content" role="tabpanel" aria-label="${mode === 'team' ? 'Thi đua Nhóm' : mode === 'weekly' ? 'Thi đua tuần' : 'Nhiệm vụ Cá nhân'}"></div>
-                </section>`;
-            const subarea = document.getElementById('admin-quest-subarea');
-            if (mode === 'team') this.renderTeamCompetitions(subarea);
-            else if (mode === 'weekly') this.renderWeeklyCompetition(subarea);
-            else this.renderPersonalQuests(subarea);
+            this.renderQuestManagement(box);
         },
         renderPersonalQuests(box) {
             const quests = app.data.quests || [];
@@ -7403,7 +7390,7 @@ const app = {
                 });
             }
             const draft = this.teamCompetitionDraft;
-            const box = document.getElementById('treasure-content-area');
+            const box = this.getQuestContentArea();
             if (!box) return;
             const classlevel = draft.classlevel || '5';
             const classNames = this.getTeamCompetitionClassNames(classlevel);
@@ -7668,6 +7655,9 @@ const app = {
         },
         openTeamCompetitionBoard(id) {
             this.questMode = 'team';
+            const modal = document.getElementById('treasure-modal');
+            modal?.removeAttribute('data-quest-detail');
+            modal?.setAttribute('aria-labelledby', 'treasure-title');
             this.stopTeamCompetitionBoardTimer();
             const box = document.getElementById('treasure-content-area');
             const match = app.teamCompetition?.store.get(id);
@@ -8055,7 +8045,7 @@ const app = {
         },
         showAddQuestForm() {
             this.questMode = 'personal';
-            const box = document.getElementById('treasure-content-area');
+            const box = this.getQuestContentArea();
             const examOptions = (app.data.exams || []).map(exam => `<option value="${exam.id}">${app.data.sanitizeHTML(`${exam.classlevel} – ${exam.subject} – ${exam.period}: ${exam.name}`)}</option>`).join('');
             box.innerHTML = `
                 <section class="quest-form-workspace" aria-label="Tạo nhiệm vụ cá nhân">
