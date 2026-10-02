@@ -1022,11 +1022,10 @@ const app = {
                             app.auth.updateHeader();
                         }
 
-                        // Auto-refresh admin panel if open in admin-settings mode
+                        // Keep the standalone roster current without relying on settings tabs.
                         if (app.admin && document.getElementById('treasure-modal')?.classList.contains('active') && app.admin.currentContext === 'admin-settings') {
-                            const activeTab = document.querySelector('.tab-btn.active');
-                            if (activeTab && activeTab.textContent.includes('Học Sinh')) {
-                                app.admin.renderPlayersList(document.getElementById('admin-subcontent-area')?.innerHTML.includes('chờ duyệt') || false);
+                            if (isAdmin && app.admin.currentTab === 'players') {
+                                app.admin.renderPlayersList(app.admin.studentRosterModePending);
                             }
                         }
                     })
@@ -5631,6 +5630,8 @@ const app = {
             const stationImage = document.getElementById('exam-station-image');
             const station = document.getElementById('exam-station');
             const admin = this.isAdminUser();
+            const managementActions = document.getElementById('admin-map-actions');
+            if (managementActions) managementActions.hidden = !admin;
             if (stationLabel) stationLabel.textContent = admin ? 'Soạn Đề' : 'Luyện Đề';
             if (station) {
                 station.dataset.role = admin ? 'admin' : 'student';
@@ -6923,7 +6924,7 @@ const app = {
                 .join('<br>');
             return { comparisonRows: activeComparisonRows, partAnswerCounts: selectedPartCounts, ans: activeComparisonRows.map(part => part.answer).filter(Boolean).join(', '), q, ...selectionPatch };
         },
-        openAdmin() {
+        openAdmin(tab = 'settings') {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
             this.currentContext = 'admin-settings';
             document.getElementById('admin-compose-screen')?.classList.remove('active');
@@ -6941,7 +6942,7 @@ const app = {
             document.getElementById('treasure-close-button')?.setAttribute('aria-label', 'Đóng Cài đặt');
             const adminTabs = document.getElementById('admin-tabs');
             if (adminTabs) adminTabs.style.display = 'flex';
-            this.switchTab('players');
+            this.switchTab(['players', 'quests', 'settings'].includes(tab) ? tab : 'settings');
         },
         openLearningPath(subject = 'math') {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
@@ -6972,7 +6973,9 @@ const app = {
             this.renderLearningPath(box, subject);
         },
         switchTab(tab) {
+            if (!this.isAdminUser()) return;
             this.currentContext = 'admin-settings';
+            this.currentTab = tab;
             const module = tab;
             const composerModules = module === 'templates' || module === 'questions' || module === 'exams';
             if (composerModules && this.isAdminUser()) {
@@ -6986,13 +6989,15 @@ const app = {
                 adminModal.classList.remove('team-board-fullscreen-mode');
             }
             const tabs = [
-                { id: 'players', label: 'Quản Lý Học Sinh' },
-                { id: 'quests', label: 'Quản lý Nhiệm vụ' },
                 { id: 'settings', label: 'Điều chỉnh' }
             ];
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
+            const adminTabs = document.getElementById('admin-tabs');
+            if (adminTabs) adminTabs.style.display = tab === 'settings' ? 'flex' : 'none';
+            const workspaceTitle = tab === 'players' ? 'Quản lý học sinh' : tab === 'quests' ? 'Quản lý Nhiệm vụ' : 'Cài Đặt Hệ Thống';
             const treasureTitle = document.getElementById('treasure-title');
-            if (treasureTitle) treasureTitle.textContent = 'Cài Đặt Hệ Thống';
+            if (treasureTitle) treasureTitle.textContent = workspaceTitle;
+            document.getElementById('treasure-close-button')?.setAttribute('aria-label', `Đóng ${workspaceTitle}`);
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
@@ -7002,8 +7007,9 @@ const app = {
                     box.innerHTML = `<div class="admin-loading-state" role="status" aria-live="polite"><span class="admin-loading-state__icon" aria-hidden="true">◌</span><div><strong>Đang mở kho dữ liệu</strong><p>Đang tải đúng phần cần dùng, các màn khác không bị tải theo.</p></div></div>`;
                 }
                 void app.data.ensureAdminDataLoaded().then(loaded => {
-                    if (loaded && document.getElementById('treasure-modal')?.classList.contains('active') && this.currentContext === 'admin-settings') this.switchTab(tab);
-                    else if (box && !loaded) {
+                    if (!this.isAdminUser() || !document.getElementById('treasure-modal')?.classList.contains('active') || this.currentContext !== 'admin-settings' || this.currentTab !== tab) return;
+                    if (loaded) this.switchTab(tab);
+                    else if (box) {
                         box.setAttribute('aria-busy', 'false');
                         box.innerHTML = `<div class="admin-error-state" role="alert"><strong>Chưa tải được dữ liệu</strong><p>Vui lòng thử lại khi kết nối ổn định.</p><button type="button" class="action-btn" onclick="app.admin.switchTab('${tab}')">Thử lại</button></div>`;
                     }
@@ -7031,7 +7037,7 @@ const app = {
                 <section class="quest-workspace quest-workspace--admin" aria-label="Quản lý nhiệm vụ">
                     <header class="quest-workspace__header">
                         <div class="quest-workspace__heading">
-                            <span class="quest-workspace__eyebrow">Admin workspace · Cài đặt</span>
+                            <span class="quest-workspace__eyebrow">Quản lý Nhiệm vụ</span>
                             <h3>Nhiệm vụ &amp; thi đua</h3>
                             <p>Điều phối hoạt động học tập, giao bài và theo dõi tiến độ của cả lớp.</p>
                         </div>
