@@ -6924,6 +6924,22 @@ const app = {
                 .join('<br>');
             return { comparisonRows: activeComparisonRows, partAnswerCounts: selectedPartCounts, ans: activeComparisonRows.map(part => part.answer).filter(Boolean).join(', '), q, ...selectionPatch };
         },
+        syncManagementHeader(tab = '') {
+            const modal = document.getElementById('treasure-modal');
+            const management = tab === 'players' || tab === 'quests';
+            if (modal) {
+                if (management) modal.dataset.managementWorkspace = tab;
+                else delete modal.dataset.managementWorkspace;
+            }
+            const close = document.getElementById('treasure-close-button');
+            if (close) close.hidden = management;
+            for (const id of ['admin-management-icon', 'admin-management-subtitle', 'admin-management-back']) {
+                const element = document.getElementById(id);
+                if (element) element.hidden = !management;
+            }
+            const icon = document.getElementById('admin-management-icon');
+            if (icon) icon.textContent = tab === 'quests' ? '⚑' : '✦';
+        },
         openAdmin(tab = 'settings') {
             if (app.data.currentUser?.role?.toLowerCase() !== 'admin') return;
             this.currentContext = 'admin-settings';
@@ -6934,8 +6950,9 @@ const app = {
             modal.dataset.adminMode = 'settings';
             modal.style.display = 'flex';
             modal.classList.add('active');
+            this.syncManagementHeader(tab);
             app.modal?.open(modal, {
-                initialFocus: '.utility-close-button',
+                initialFocus: tab === 'players' || tab === 'quests' ? '#admin-management-back' : '.utility-close-button',
                 onEscape: () => app.treasure.close()
             });
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
@@ -6951,6 +6968,7 @@ const app = {
             document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
             if (!modal) return;
+            this.syncManagementHeader();
             modal.dataset.uiContext = 'admin';
             modal.dataset.adminMode = 'learning-path';
             modal.style.display = 'flex';
@@ -6974,6 +6992,7 @@ const app = {
         },
         switchTab(tab) {
             if (!this.isAdminUser()) return;
+            this.syncManagementHeader(tab);
             this.currentContext = 'admin-settings';
             this.currentTab = tab;
             const module = tab;
@@ -6994,7 +7013,7 @@ const app = {
             app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
             const adminTabs = document.getElementById('admin-tabs');
             if (adminTabs) adminTabs.style.display = tab === 'settings' ? 'flex' : 'none';
-            const workspaceTitle = tab === 'players' ? 'Quản lý học sinh' : tab === 'quests' ? 'Quản lý Nhiệm vụ' : 'Cài Đặt Hệ Thống';
+            const workspaceTitle = tab === 'players' ? 'Quản lý học sinh' : tab === 'quests' ? 'Quản lý Thi đua & Nhiệm vụ' : 'Cài Đặt Hệ Thống';
             const treasureTitle = document.getElementById('treasure-title');
             if (treasureTitle) treasureTitle.textContent = workspaceTitle;
             document.getElementById('treasure-close-button')?.setAttribute('aria-label', `Đóng ${workspaceTitle}`);
@@ -7037,7 +7056,7 @@ const app = {
                 <section class="quest-workspace quest-workspace--admin" aria-label="Quản lý nhiệm vụ">
                     <header class="quest-workspace__header">
                         <div class="quest-workspace__heading">
-                            <span class="quest-workspace__eyebrow">Quản lý Nhiệm vụ</span>
+                            <span class="quest-workspace__eyebrow">Quản lý Thi đua &amp; Nhiệm vụ</span>
                             <h3>Nhiệm vụ &amp; thi đua</h3>
                             <p>Điều phối hoạt động học tập, giao bài và theo dõi tiến độ của cả lớp.</p>
                         </div>
@@ -12377,6 +12396,7 @@ const app = {
         studentProfileDetails: {},
         open() {
             const modal = document.getElementById('treasure-modal');
+            app.admin?.syncManagementHeader();
             modal.dataset.uiContext = 'student';
             modal.style.display = 'flex';
             modal.classList.add('active');

@@ -28,7 +28,7 @@
     function isVisible(element) {
         if (!element || !element.isConnected || element.hidden) return false;
         const style = window.getComputedStyle(element);
-        return style.display !== 'none' && style.visibility !== 'hidden';
+        return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
     }
 
     function isFocusable(element) {

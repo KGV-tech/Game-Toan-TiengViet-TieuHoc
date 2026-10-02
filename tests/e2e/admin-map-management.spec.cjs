@@ -1,6 +1,30 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
+test('Bảng thi đua nhóm không giữ nút Quay về ẩn trong vòng focus', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+  await page.goto('/');
+  await page.evaluate(() => {
+    app.data.currentUser = { username: 'demo-admin', fullname: 'Giáo viên Minh họa', role: 'admin' };
+    app.data.exams = [{ id: 'demo-exam', name: 'Đề minh họa', questions: [{ q: '1 + 1 = ?', type: 'Trắc nghiệm', options: ['2', '3'], ans: '2' }] }];
+    const match = app.teamCompetition.normalizeCompetition({
+      id: 'demo-board', name: 'Thi đua minh họa', classlevel: '4', teamCount: 2,
+      commonExamId: 'demo-exam', questionMode: 'same', status: app.teamCompetition.STATUS.PREPARED,
+      teams: [{ id: 'demo-team-1', name: 'Nhóm 1' }, { id: 'demo-team-2', name: 'Nhóm 2' }]
+    });
+    app.teamCompetition.store.upsert(match);
+    app.admin.openAdmin('quests');
+    app.admin.openTeamCompetitionBoard(match.id);
+  });
+  await expect(page.locator('.team-competition-board')).toBeVisible();
+  const buttons = page.locator('#treasure-modal button:visible:not([disabled])');
+  await buttons.last().focus();
+  await page.keyboard.press('Tab');
+  await expect(buttons.first()).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(buttons.last()).toBeFocused();
+});
+
 test('Danh sách và chờ duyệt vẫn tự cập nhật khi nhận sự kiện hồ sơ', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
   await page.goto('/');
@@ -48,9 +72,11 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
       app.router.open('map-screen');
     });
     const students = page.getByRole('button', { name: 'Quản lý học sinh', exact: true });
-    const quests = page.getByRole('button', { name: 'Quản lý Nhiệm vụ', exact: true });
+    const quests = page.getByRole('button', { name: 'Quản lý Thi đua & Nhiệm vụ', exact: true });
     await expect(students).toBeVisible();
     await expect(quests).toBeVisible();
+    await expect(students).toHaveCSS('background-image', /linear-gradient/);
+    await expect(quests).toHaveCSS('background-image', /linear-gradient/);
     const profileRect = await page.locator('#player-info').boundingBox();
     const studentRect = await students.boundingBox();
     const questRect = await quests.boundingBox();
@@ -66,6 +92,15 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await students.focus();
     await students.press('Enter');
     await expect(page.locator('#treasure-title')).toHaveText('Quản lý học sinh');
+    await expect(page.locator('#treasure-close-button')).toBeHidden();
+    await expect(page.locator('#admin-management-back')).toBeVisible();
+    await expect(page.locator('#admin-management-icon')).toBeVisible();
+    const heading = await page.locator('#treasure-title').boundingBox();
+    const icon = await page.locator('#admin-management-icon').boundingBox();
+    expect(icon.x).toBeLessThan(viewport.width / 3);
+    const back = await page.locator('#admin-management-back').boundingBox();
+    expect(back.y).toBeGreaterThanOrEqual(heading.y + heading.height);
+    await page.screenshot({ path: `test-results/ui-review/admin-students-header-${viewport.width}.png` });
     await expect(page.locator('#admin-tabs')).toBeHidden();
     await expect(page.locator('.admin-student-card')).toHaveCount(1);
     await page.locator('#btn-sub-pending').click();
@@ -73,12 +108,18 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await page.keyboard.press('Escape');
     await expect(students).toBeFocused();
     await quests.click();
-    await expect(page.locator('#treasure-title')).toHaveText('Quản lý Nhiệm vụ');
+    await expect(page.locator('#treasure-title')).toHaveText('Quản lý Thi đua & Nhiệm vụ');
+    await expect(page.locator('#treasure-close-button')).toBeHidden();
+    await expect(page.locator('#admin-management-back')).toBeFocused();
     await expect(page.locator('.quest-workspace')).toBeVisible();
     await expect(page.locator('#admin-tabs')).toBeHidden();
-    await page.keyboard.press('Escape');
+    await page.screenshot({ path: `test-results/ui-review/admin-quests-header-${viewport.width}.png` });
+    await page.locator('#admin-management-back').click();
+    await expect(quests).toBeFocused();
     await page.evaluate(() => app.admin.openAdmin());
     await expect(page.locator('.settings-workspace')).toBeVisible();
+    await expect(page.locator('#treasure-close-button')).toBeVisible();
+    await expect(page.locator('#admin-management-back')).toBeHidden();
     await expect(page.locator('#admin-tabs .tab-btn')).toHaveText(['Điều chỉnh']);
     await page.keyboard.press('Escape');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
