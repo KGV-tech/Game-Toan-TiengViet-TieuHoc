@@ -89,7 +89,7 @@ test('Tải Supabase chậm không xóa form tuần; gửi lại dùng một ID 
 
 async function weekly(page) {
   await page.evaluate(() => app.admin.openAdmin('quests'));
-  await page.getByRole('tab', { name: 'Thi đua tuần', exact: true }).click();
+  await page.locator('[data-quest-launch=weekly]').click();
 }
 async function createWeek(page, name) {
   await page.locator('#weekly-create').click();
@@ -124,7 +124,7 @@ test('Ba tab tuần, điểm từng trận độc lập, giữ điểm game và 
   expect(await page.evaluate(() => JSON.stringify(app.data.users))).toBe(initial);
   await page.reload();
   await page.evaluate(() => { app.data.currentUser = { username: 'demo-teacher', role: 'admin' }; app.admin.openAdmin('quests'); });
-  await page.getByRole('tab', { name: 'Thi đua tuần', exact: true }).click();
+  await page.locator('[data-quest-launch=weekly]').click();
   await page.locator('#weekly-select').selectOption(first);
   await expect(page.locator('[data-weekly-student=a] .weekly-point-value')).toContainText('1');
 });

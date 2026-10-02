@@ -12,6 +12,7 @@ Object.assign(app.admin, {
     },
     renderWeeklyCompetition(box = document.getElementById('admin-quest-subarea')) {
         if (!this.isAdminUser() || !box || this.questMode !== 'weekly') return;
+        document.getElementById('quest-management-tools')?.replaceChildren();
         const ui = this.weeklyState(), repo = app.classroom, esc = value => app.data.sanitizeHTML(String(value ?? ''));
         if (!ui.selected && repo.weeks.length) ui.selected = repo.weeks[repo.weeks.length - 1].id;
         const week = this.selectedWeek();
@@ -31,6 +32,7 @@ Object.assign(app.admin, {
         else if (ui.tab === 'random') this.renderWeeklyRandom(body, week);
         else if (ui.tab === 'standings') this.renderWeeklyStandings(body, week);
         else this.renderWeeklyPoints(body, week);
+        this.arrangeQuestManagementTools();
         if (!repo.loaded && !repo.pending && repo.status !== 'error') void repo.ensure().then(() => { if (this.isAdminUser() && this.questMode === 'weekly' && this.weeklyUI === ui) {
             if (document.getElementById('weekly-form')) document.querySelector('.weekly-status').textContent = this.classroomStatus();
             else this.renderWeeklyCompetition();
