@@ -7071,7 +7071,7 @@ const app = {
                 </section>`;
             const subarea = document.getElementById('admin-quest-subarea');
             if (mode === 'team') this.renderTeamCompetitions(subarea);
-            else if (mode === 'weekly') subarea.innerHTML = '<section class="admin-empty-state admin-weekly-placeholder" aria-label="Thi đua tuần"><h3>Thi đua tuần</h3><p>Sắp cập nhật giao diện.</p></section>';
+            else if (mode === 'weekly') this.renderWeeklyCompetition(subarea);
             else this.renderPersonalQuests(subarea);
         },
         renderPersonalQuests(box) {
@@ -11948,7 +11948,6 @@ const app = {
                         <div class="admin-roster-switcher" role="tablist" aria-label="Danh sách học sinh" aria-orientation="vertical">
                             <button type="button" class="roster-mode-button btn-primary" id="btn-sub-players" role="tab" aria-selected="true" onclick="app.admin.renderPlayersList(false)"><span aria-hidden="true">▦</span> Danh sách học sinh</button>
                             <button type="button" class="roster-mode-button btn-opt" id="btn-sub-sections" role="tab" aria-selected="false" onclick="app.admin.switchStudentRosterTab('sections')"><span aria-hidden="true">▤</span> Tổ</button>
-                            <button type="button" class="roster-mode-button btn-opt" id="btn-sub-groups" role="tab" aria-selected="false" onclick="app.admin.switchStudentRosterTab('groups')"><span aria-hidden="true">◈</span> Nhóm</button>
                             <button type="button" class="roster-mode-button btn-opt" id="btn-sub-pending" role="tab" aria-selected="false" onclick="app.admin.renderPlayersList(true)"><span aria-hidden="true">◷</span> Chờ phê duyệt</button>
                         </div>
                         <div id="admin-roster-filters"></div>
@@ -11962,19 +11961,24 @@ const app = {
                 </section>
             `;
             this.renderPlayersList(false);
+            void app.classroom.ensure().then(() => {
+                if (this.isAdminUser() && this.currentTab === 'players' && document.getElementById('treasure-modal')?.classList.contains('active')) this.refreshStudentRosterView();
+            });
         },
         updateStudentRosterFilters() {
             const activeElement = document.activeElement;
             const activeId = activeElement?.id || '';
             const caretPosition = typeof activeElement?.selectionStart === 'number' ? activeElement.selectionStart : null;
+            const previous = this.studentRosterFilters || {};
             this.studentRosterFilters = {
                 search: document.getElementById('admin-roster-filter-search')?.value || '',
                 classlevel: document.getElementById('admin-roster-filter-class')?.value || '',
                 className: document.getElementById('admin-roster-filter-section')?.value || '',
                 gender: document.getElementById('admin-roster-filter-gender')?.value || '',
-                section: document.getElementById('admin-roster-filter-team')?.value || '',
-                group: document.getElementById('admin-roster-filter-group')?.value || ''
+                section: document.getElementById('admin-roster-filter-team')?.value || ''
             };
+            if (previous.classlevel !== this.studentRosterFilters.classlevel) this.studentRosterFilters.className = '';
+            if (previous.classlevel !== this.studentRosterFilters.classlevel || previous.className !== this.studentRosterFilters.className) this.studentRosterFilters.section = '';
             this.refreshStudentRosterView();
             const nextActiveElement = activeId ? document.getElementById(activeId) : null;
             if (nextActiveElement) {
@@ -12007,32 +12011,11 @@ const app = {
                 className: this.studentRosterFilters?.className === '__unassigned__' ? '__unassigned__' : app.data.normalizeClassName(this.studentRosterFilters?.className),
                 gender: String(this.studentRosterFilters?.gender || '').trim()
             };
-            const normalizeFilterText = value => String(value || '')
-                .trim()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[đĐ]/g, 'd')
-                .toLocaleLowerCase('vi-VN');
-            const filteredUsers = baseUsers.filter(user => {
-                const userClassLevel = app.data.normalizeClassLevel(user.classlevel);
-                const userClassName = app.data.normalizeClassName(user.class_name);
-                if (filters.classlevel && userClassLevel !== filters.classlevel) return false;
-                if (filters.className === '__unassigned__' && userClassName) return false;
-                if (filters.className && filters.className !== '__unassigned__' && userClassName !== filters.className) return false;
-                if (filters.gender && String(user.gender || '') !== filters.gender) return false;
-                if (!this.matchesStudentDraftFilters(user)) return false;
-                if (filters.search) {
-                    const searchable = [user.fullname, user.username, userClassLevel, userClassName, app.data.genderLabel(user.gender)]
-                        .map(normalizeFilterText)
-                        .join(' ');
-                    if (!searchable.includes(normalizeFilterText(filters.search))) return false;
-                }
-                return true;
-            });
+            const filteredUsers = baseUsers.filter(user => this.matchesStudentRosterFilters(user, filters));
             const users = app.data.sortUsersByVietnameseName(filteredUsers);
             const classLevels = Array.from(new Set(baseUsers.map(user => app.data.normalizeClassLevel(user.classlevel)).filter(Boolean)))
                 .sort((left, right) => Number(left) - Number(right) || left.localeCompare(right, 'vi'));
-            const classNames = Array.from(new Set(baseUsers.map(user => app.data.normalizeClassName(user.class_name)).filter(Boolean)))
+            const classNames = Array.from(new Set(baseUsers.filter(user => !filters.classlevel || app.data.normalizeClassLevel(user.classlevel) === filters.classlevel).map(user => app.data.normalizeClassName(user.class_name)).filter(Boolean)))
                 .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
             const esc = value => app.data.sanitizeHTML(String(value ?? ''));
             const classLevelOptions = [
@@ -12104,7 +12087,6 @@ const app = {
                         <label class="admin-roster-filter-field"><span>Lớp cụ thể</span><select id="admin-roster-filter-section" onchange="app.admin.updateStudentRosterFilters()">${classNameOptions}</select></label>
                         <label class="admin-roster-filter-field"><span>Giới tính</span><select id="admin-roster-filter-gender" onchange="app.admin.updateStudentRosterFilters()">${genderOptions}</select></label>
                         <label class="admin-roster-filter-field"><span>Tổ (tùy chọn)</span><select id="admin-roster-filter-team" aria-label="Tổ (tùy chọn)" onchange="app.admin.updateStudentRosterFilters()"><option value="">Tất cả tổ</option></select></label>
-                        <label class="admin-roster-filter-field"><span>Nhóm (tùy chọn)</span><select id="admin-roster-filter-group" aria-label="Nhóm (tùy chọn)" onchange="app.admin.updateStudentRosterFilters()"><option value="">Tất cả nhóm</option></select></label>
                     </div>
                     <div class="admin-roster-filter-panel__summary" role="status" aria-live="polite">Đang hiển thị <strong>${users.length}/${baseUsers.length}</strong> hồ sơ <span class="admin-roster-filter-panel__sort-note" role="note">Thứ tự tên: Tên → chữ lót → họ</span></div>
                 </section>`;
