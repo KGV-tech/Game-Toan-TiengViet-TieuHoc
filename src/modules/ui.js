@@ -161,6 +161,11 @@
             const next = current === 'light' ? 'dark' : 'light';
             this.setTheme(next);
         },
+        themeToggleMarkup() {
+            const light = document.documentElement.getAttribute('data-theme') === 'light';
+            const label = light ? 'Chuyển sang giao diện Tối' : 'Chuyển sang giao diện Sáng';
+            return `<button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="${label}" title="${label}" aria-pressed="${light}"><span class="theme-icon" aria-hidden="true">${light ? '🌙' : '☀️'}</span><span class="theme-label">${light ? 'Tối' : 'Sáng'}</span></button>`;
+        },
         setTheme(theme) {
             if (theme === 'light') {
                 document.documentElement.setAttribute('data-theme', 'light');
@@ -176,11 +181,14 @@
             icons.forEach(icon => {
                 icon.textContent = theme === 'light' ? '🌙' : '☀️';
             });
-            const toggles = document.querySelectorAll('#game-theme-toggle');
+            const toggles = document.querySelectorAll('#game-theme-toggle, [data-theme-toggle]');
             toggles.forEach(btn => {
                 const label = theme === 'light' ? 'Chuyển sang giao diện Tối' : 'Chuyển sang giao diện Sáng';
                 btn.setAttribute('aria-label', label);
                 btn.setAttribute('title', label);
+                btn.setAttribute('aria-pressed', String(theme === 'light'));
+                const text = btn.querySelector('.theme-label');
+                if (text) text.textContent = theme === 'light' ? 'Tối' : 'Sáng';
             });
         },
         initTheme() {

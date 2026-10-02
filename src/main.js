@@ -6927,6 +6927,8 @@ const app = {
         syncManagementHeader(tab = '') {
             const modal = document.getElementById('treasure-modal');
             const management = tab === 'players' || tab === 'quests';
+            const themeToggle = document.getElementById('admin-theme-toggle-modal');
+            if (themeToggle) themeToggle.hidden = !tab || app.data.currentUser?.role?.toLowerCase() !== 'admin';
             if (modal) {
                 if (tab !== 'quests') { modal.removeAttribute('data-quest-detail'); modal.setAttribute('aria-labelledby', 'treasure-title'); }
                 if (management) modal.dataset.managementWorkspace = tab;
@@ -6975,7 +6977,7 @@ const app = {
             document.getElementById('admin-compose-screen')?.classList.remove('active');
             const modal = document.getElementById('treasure-modal');
             if (!modal) return;
-            this.syncManagementHeader();
+            this.syncManagementHeader('learning-path');
             modal.dataset.uiContext = 'admin';
             modal.dataset.adminMode = 'learning-path';
             modal.style.display = 'flex';
@@ -7842,7 +7844,7 @@ const app = {
             const endedNote = endSyncFailed
                 ? 'Kết quả đã được giữ trên thiết bị này nhưng chưa đồng bộ lên Supabase. Hãy kiểm tra kết nối rồi thử đồng bộ lại.'
                 : 'Trận đã kết thúc. Điểm nhóm được gán giống nhau cho từng thành viên trong bản ghi kết quả riêng.';
-            box.innerHTML = `<section class="team-competition-board ${isVisualPresentation ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar"><button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button>${toolbarAction ? `<div class="team-board-actions">${toolbarAction}</div>` : ''}<span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><button type="button" class="team-board-exit-fullscreen" onclick="app.admin.exitTeamBoardFullscreen()" aria-label="Thoát toàn màn hình" title="Thoát toàn màn hình (ESC)">✕</button><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div>${startActionHtml}</header>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note" role="status">${endedNote}</div>` : ''}</section>`;
+            box.innerHTML = `<section class="team-competition-board ${isVisualPresentation ? 'team-competition-board--live' : ''} team-competition-board--${presentationTheme}" aria-label="Bảng thi đua nhóm"><div class="team-board-toolbar">${app.ui.themeToggleMarkup()}<button type="button" class="btn-opt" onclick="app.admin.switchQuestMode('team')"><span aria-hidden="true">←</span><span>Danh sách trận</span></button><button type="button" class="btn-opt" onclick="app.admin.enterTeamBoardFullscreen()"><span aria-hidden="true">⛶</span><span>Mở toàn màn hình</span></button>${toolbarAction ? `<div class="team-board-actions">${toolbarAction}</div>` : ''}<span class="team-status-pill team-status-pill--${statusClass}">${status}</span></div><div class="team-race-stadium team-race-stadium--${presentationTheme}"><button type="button" class="team-board-exit-fullscreen" onclick="app.admin.exitTeamBoardFullscreen()" aria-label="Thoát toàn màn hình" title="Thoát toàn màn hình (ESC)">✕</button><header class="team-board-hero">${titleCard}<div class="team-race-clock"><span>Thời gian còn lại</span><strong>${timerLabel}</strong></div>${leaderboard}<div class="team-board-summary" aria-label="Tóm tắt trận"><div><strong>${match.teams.length}</strong><span>đội</span></div><div><strong>${totalQuestions || '—'}</strong><span>câu/đề</span></div><div><strong>${match.teams.reduce((sum, team) => sum + team.memberUsernames.length, 0)}</strong><span>học sinh</span></div></div>${startActionHtml}</header>${raceSurface}</div>${match.status === app.teamCompetition.STATUS.ENDED ? `<div class="team-board-ended-note" role="status">${endedNote}</div>` : ''}</section>`;
             if (isLive) this.teamCompetitionBoardTimer = setInterval(() => {
                 const current = app.teamCompetition.store.get(match.id);
                 if (!current || current.status !== app.teamCompetition.STATUS.ACTIVE || !document.getElementById('treasure-content-area')?.contains(box)) { this.stopTeamCompetitionBoardTimer(); return; }
