@@ -268,8 +268,8 @@
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <div id="player-info" class="player-info-card"></div>
           <nav id="admin-map-actions" class="admin-map-actions" aria-label="Quản lý lớp học" hidden>
-            <button type="button" class="admin-map-action" onclick="app.admin.openAdmin('players')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý học sinh</button>
-            <button type="button" class="admin-map-action" onclick="app.admin.openAdmin('quests')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý Nhiệm vụ</button>
+            <button type="button" class="admin-map-action admin-map-action--students" onclick="app.admin.openAdmin('players')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý học sinh</button>
+            <button type="button" class="admin-map-action admin-map-action--quests" onclick="app.admin.openAdmin('quests')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý Thi đua &amp; Nhiệm vụ</button>
           </nav>
           <div id="energy-display" class="energy-display" style="display:none;"></div>
           <div id="gift-notice" class="gift-notice" style="display:none;">🎁 Bạn có hộp quà hằng ngày chưa mở!</div>
@@ -895,7 +895,14 @@
         </button>
 
         <div class="station-shell__title-row">
-          <h2 id="treasure-title" class="title-glow">Kho Báu</h2>
+          <div class="admin-management-brand">
+            <span id="admin-management-icon" class="admin-compose-brand__mark" aria-hidden="true" hidden>✦</span>
+            <div>
+              <h2 id="treasure-title" class="title-glow">Kho Báu</h2>
+              <small id="admin-management-subtitle" hidden>Khu vực Admin</small>
+            </div>
+          </div>
+          <button id="admin-management-back" type="button" class="admin-compose-back" onclick="app.treasure.close()" hidden><span aria-hidden="true">←</span> Quay về</button>
         </div>
 
         <div id="admin-tabs" class="admin-tabs" style="display:none;">

@@ -1134,7 +1134,7 @@
         box-shadow: 0 24px 70px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 255, 255, .08) !important;
     }
 
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell__title-row {
+    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)):not([data-management-workspace]) .station-shell__title-row {
         background: rgba(5, 20, 33, .78) !important;
         border: 1px solid rgba(126, 224, 244, .46) !important;
     }
@@ -3282,4 +3282,45 @@
             transition-duration: 0s !important;
         }
     }
+}
+/* Standalone Admin management uses the compact Soạn Đề brand and back link. */
+#treasure-modal #treasure-close-button[hidden],
+#treasure-modal #admin-management-icon[hidden],
+#treasure-modal #admin-management-back[hidden],
+#treasure-modal #admin-management-subtitle[hidden] { display: none !important; }
+#treasure-modal[data-ui-context="admin"][data-management-workspace] .station-shell__title-row {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: start;
+    align-self: start;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 0;
+    gap: 6px;
+    border: 0 !important;
+    border-radius: 0;
+    background: none !important;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+#treasure-modal[data-management-workspace] .station-shell__title-row::after { display: none; }
+#treasure-modal[data-management-workspace] .admin-management-brand { display: flex; align-items: center; gap: 12px; }
+#treasure-modal[data-management-workspace] .station-shell__title-row #treasure-title {
+    color: #f4fbff !important;
+    font-size: clamp(1.05rem, 1.6vw, 1.4rem) !important;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    line-height: 1.25;
+    text-shadow: none !important;
+}
+#treasure-modal[data-management-workspace] #admin-management-subtitle { display: block; margin-top: 3px; color: #8eb8d0; font-size: .8rem; font-weight: 700; }
+#treasure-modal[data-management-workspace="quests"] #admin-management-icon { border-color: #fde68a; background: linear-gradient(145deg, #fde68a, #f59e0b); color: #78350f; box-shadow: 0 0 18px rgba(245, 158, 11, .22); }
+#treasure-modal #admin-management-back { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; }
+#treasure-modal #admin-management-back:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .admin-map-action, #treasure-modal #admin-management-back { transition: none; }
 }

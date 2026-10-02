@@ -20,6 +20,17 @@
 html[data-theme="light"] .admin-map-action { background: #e0f2fe; border-color: #0369a1; color: #0c4a6e; }
 html[data-theme="light"] .admin-map-action:hover { background: #bae6fd; }
 html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a1; }
+.admin-map-action--students, html[data-theme="light"] .admin-map-action--students {
+  background-image: linear-gradient(125deg, #0e7490, #1d4ed8);
+  color: #fff;
+}
+.admin-map-action--quests, html[data-theme="light"] .admin-map-action--quests {
+  background-image: linear-gradient(125deg, #a16207, #9a3412);
+  border-color: #fbbf24;
+  color: #fff;
+}
+.admin-map-action--students:hover, html[data-theme="light"] .admin-map-action--students:hover { background-image: linear-gradient(125deg, #155e75, #1e40af); }
+.admin-map-action--quests:hover, html[data-theme="light"] .admin-map-action--quests:hover { background-image: linear-gradient(125deg, #854d0e, #7c2d12); border-color: #fbbf24; }
 
 /* Map v2 uses the title rendered in the artwork so it is not duplicated by HTML. */
 .map-v2 .map-title-container {
