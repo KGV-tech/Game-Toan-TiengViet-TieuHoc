@@ -81,6 +81,7 @@ Object.assign(app.admin, {
         else if (ui.tab === 'roster' && ui.view !== 'students') this.renderWeeklyTeams(body, activity, ui.view);
         else this.renderWeeklyPoints(body, activity);
         this.arrangeQuestManagementTools();
+        if (ui.tab === 'random' && ui.meteorId && !matchMedia('(prefers-reduced-motion: reduce)').matches) this.placeWeeklyMeteor(ui.meteorId, 0, !ui.drawing);
         if (!repo.loaded && !repo.pending && repo.status !== 'error') void repo.ensure().then(() => {
             if (this.isAdminUser() && this.questMode === 'weekly' && this.weeklyUI === ui) this.refreshWeeklyAfterAsync();
         });
@@ -151,7 +152,7 @@ Object.assign(app.admin, {
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
         const displayed = [...(ui.drawing ? ui.animationCandidates || candidates : ui.revealedCandidates || candidates)];
         if (!ui.drawing && ui.lastCandidate && !displayed.some(item => item.id === ui.lastCandidate.id)) displayed.push(ui.lastCandidate);
-        grid.innerHTML = displayed.map((candidate,index) => `<div class="weekly-random-candidate classroom-team-card ${!ui.drawing && candidate.id === ui.lastCandidate?.id ? 'is-selected' : ''}" data-candidate-id="${esc(candidate.id)}" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong>${candidate.score}</strong></div>`).join('') || '<p>Chưa có lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.</p>';
+        grid.innerHTML = displayed.map((candidate,index) => `<div class="weekly-random-candidate classroom-team-card ${!ui.drawing && candidate.id === ui.lastCandidate?.id ? 'is-selected' : ''}" data-candidate-id="${esc(candidate.id)}" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong class="weekly-candidate-score">${candidate.score}<small>điểm</small></strong></div>`).join('') || '<p>Chưa có lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.</p>';
         const panel = grid.closest('.weekly-candidate-panel');
         if (!document.getElementById('weekly-meteor')) panel.insertAdjacentHTML('beforeend', '<span id="weekly-meteor" class="weekly-meteor" aria-hidden="true" hidden>✦</span>');
         if (ui.meteorId && !matchMedia('(prefers-reduced-motion: reduce)').matches) this.placeWeeklyMeteor(ui.meteorId, 0, !ui.drawing);
