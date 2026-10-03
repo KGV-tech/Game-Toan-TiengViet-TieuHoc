@@ -102,6 +102,7 @@ test('Đổi chế độ trong animation loại kết quả cũ và trạng thá
   await expect(page.locator('.weekly-status')).toHaveText('Đã đồng bộ dữ liệu');
   await page.locator('[data-weekly-tab=random]').click();
   await page.locator('#weekly-draw').click();
+  await page.keyboard.press('Escape');
   await page.locator('[data-weekly-random-mode=group]').click();
   await page.waitForTimeout(750);
   await expect(page.locator('#weekly-random-result')).toHaveText('Sẵn sàng chọn ngẫu nhiên');

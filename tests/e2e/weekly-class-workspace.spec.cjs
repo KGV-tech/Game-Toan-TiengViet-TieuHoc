@@ -72,8 +72,10 @@ test('Năm ô random, bỏ instant, có delay và hủy kết quả khi đổi l
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw')).toBeDisabled();
   await expect.poll(() => page.evaluate(() => app.admin.weeklyState().randomStudent), {timeout:8000}).toMatch(/^s0[01]$/);
+  await page.locator('#weekly-result-close').click();
   await page.locator('#weekly-draw-reset').click();
   await page.locator('#weekly-draw').click();
+  await page.keyboard.press('Escape');
   await page.getByLabel('Lớp phụ trách', { exact: true }).selectOption({ label: 'Lớp 4/2' });
   await page.waitForTimeout(1400);
   expect(await page.evaluate(() => app.admin.weeklyState().randomStudent)).toBe('');

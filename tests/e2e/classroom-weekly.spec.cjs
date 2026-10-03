@@ -118,6 +118,7 @@ test('Ba tab tuần, điểm từng trận độc lập, giữ điểm game và 
   await page.locator('[data-weekly-tab=random]').click();
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-random-result')).toHaveText('Nguyễn An', {timeout:8000});
+  await page.locator('#weekly-result-close').click();
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-random-result')).toContainText('Không còn lựa chọn');
   await createWeek(page, 'Tuần Cầu vồng');
