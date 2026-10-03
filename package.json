@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "icons:admin": "node scripts/build-admin-icons.cjs",
     "test": "npm run test:contracts && npm run test:browser",
     "test:contracts": "node scripts/run-contract-tests.cjs",
     "test:browser": "playwright test"
@@ -24,6 +25,8 @@
   },
   "homepage": "https://github.com/KGV-tech/Game-Toan-TiengViet-TieuHoc#readme",
   "devDependencies": {
-    "@playwright/test": "^1.62.1"
+    "@dicebear/core": "10.7.0",
+    "@playwright/test": "^1.62.1",
+    "@tabler/icons": "3.48.0"
   }
 }

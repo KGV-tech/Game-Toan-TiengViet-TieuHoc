@@ -197,8 +197,8 @@ test('lỗi Realtime không chặn REST và được báo đúng trên dashboard
     });
   });
 
-  await expect(page.locator('.team-remote-status-notice')).toContainText('realtime đang tạm thời không khả dụng');
-  await expect(page.locator('.team-remote-status-notice')).toContainText('Lưu bản nháp vẫn dùng đường REST');
+  await expect(page.locator('.team-remote-status-notice')).toContainText('Đã kết nối. Cập nhật trực tiếp tạm gián đoạn.');
+  await expect(page.locator('.team-remote-status-notice')).not.toContainText('Supabase');
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {

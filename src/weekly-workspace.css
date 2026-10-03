@@ -51,3 +51,39 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-sidebar-controls :is(button,select):focus-visible, .weekly-body button:focus-visible { outline: 3px solid #ddacfa; outline-offset: 3px; }
 @media (max-width: 1100px) { .weekly-week-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .weekly-random-modes { gap: 7px; } #treasure-modal .weekly-random-mode { padding: 12px 9px; } }
 @media (prefers-reduced-motion: reduce) { .weekly-random-result.is-drawing .classroom-team-mark { animation: none; } }
+
+.classroom-team-mark svg { width: 65%; height: 65%; color: #142b40; }
+.classroom-button svg { width: 21px; height: 21px; vertical-align: middle; }
+.weekly-score { display: grid; justify-items: center; gap: 2px; flex: 0 0 auto; }
+.weekly-score small { font-size: .7rem; color: #cbd9ed; }
+.weekly-rank-medal { display: grid; place-items: center; position: relative; width: 44px; height: 52px; color: #ffe3a2; background: linear-gradient(135deg,#91610f,#edb737); border: 1px solid #ffe8ab; border-radius: 13px; box-shadow: 0 4px 12px #ffc74726; }
+.weekly-rank-medal svg { width: 27px; height: 27px; }
+.weekly-rank-medal small { font-size: .65rem; font-weight: 900; line-height: 1; }
+.weekly-ranking-row[data-rank="2"] .weekly-rank-medal { background: linear-gradient(135deg,#687b99,#bacbe0); color: #172b45; border-color: #d9e6fa; }
+.weekly-ranking-row[data-rank="3"] .weekly-rank-medal { background: linear-gradient(135deg,#915a38,#e6a879); color: #392313; border-color: #ffc999; }
+.weekly-ranking-row:nth-child(n+4) .weekly-rank-medal { background: #223f59; border-color: #63819a; box-shadow: none; height: 40px; }
+.weekly-ranking-row:nth-child(n+4) .weekly-rank-medal small { font-size: 1.1rem; }
+.weekly-draw-stage { display: grid; gap: 18px; margin: 12px 0 24px; }
+.weekly-draw-stage[hidden] { display: none; }
+#weekly-draw-preview { display: block; min-height: 56px; font-size: clamp(1.3rem,3vw,2.5rem); color: #ffe598; overflow-wrap: anywhere; }
+#weekly-draw-progress { width: min(500px,100%); height: 8px; margin: auto; accent-color: #c6a2ff; }
+.weekly-random-result.is-drawing { box-shadow: 0 0 25px #c799fa50; }
+.weekly-random-candidate.is-preview { outline: 3px solid #ffe498; outline-offset: 1px; transform: translateY(-3px); box-shadow: 0 8px 18px #daba6340; }
+@keyframes weekly-dice { 0%,100% { transform: rotate(-12deg) scale(.9); } 50% { transform: rotate(18deg) scale(1.12); } }
+.weekly-group-tools { display: grid; gap: 14px; margin: 8px 0 16px; }
+.weekly-group-tools > button { justify-self: start; }
+.weekly-group-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.weekly-group-count { display: grid; gap: 4px; padding: 12px; border: 1px solid #b594e780; border-radius: 12px; background: linear-gradient(135deg,#49365c,#1d364d); }
+.weekly-group-count:nth-child(3n+2) { background: linear-gradient(135deg,#245766,#173747); border-color: #76d7e580; }
+.weekly-group-count:nth-child(3n) { background: linear-gradient(135deg,#574838,#27354a); border-color: #f6d38180; }
+.weekly-group-count span { font-size: .75rem; color: #c9d5e6; }
+.weekly-group-count strong { font-size: .85rem; color: #f0f8ff; }
+.weekly-team-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.weekly-team-members { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+.weekly-team-members label { display: flex; gap: 10px; align-items: center; padding: 12px; border: 1px solid #849cbe70; border-radius: 12px; background: #183449; font-size: .85rem; }
+.weekly-team-members label:has(:checked) { background: linear-gradient(135deg,#463b64,#214f64); border-color: #bc96f0; }
+.weekly-team-members span { min-width: 0; overflow-wrap: anywhere; }
+.weekly-team-members small { display: block; margin-top: 4px; color: #bdcfe0; font-size: .7rem; }
+.weekly-membership-note { color: #bccedf; font-size: .8rem; }
+@media (min-width: 1400px) { .weekly-team-members { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media (prefers-reduced-motion: reduce) { .weekly-random-candidate.is-preview { transform: none; } }

@@ -185,3 +185,22 @@ html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-cont
 
 /* The roster rail shares the rounded outer surface instead of painting square edges. */
 html[data-theme="light"] #treasure-modal[data-management-workspace="players"] :is(.admin-roster-sidebar, .admin-roster-filter-panel) { background: transparent; box-shadow: none; }
+
+/* Small info surfaces need their own light backgrounds, not inherited dark chips. */
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.team-match-tags span,.team-team-chip,.classroom-member-chips li,.weekly-team-members label,.weekly-group-count) { background: linear-gradient(135deg,#d9f3fa,#baddf0); border-color: #78a8bd; color: #182a42 !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.team-team-chip strong,.team-team-chip small,.weekly-group-count span,.weekly-group-count strong,.weekly-team-members small,.weekly-score small) { color: #263f58 !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .team-team-chip__index { background: #b2d5f4; color: #183959 !important; border: 1px solid #6c9bbc; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .team-competition-list-meta { background: transparent; box-shadow: none; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.team-local-adapter-notice,.team-remote-status-notice) { background: #c5e7df; color: #194c43 !important; border-color: #70a995; text-shadow: none; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .team-remote-status-notice--warning { background: #f2e5bd; color: #64430e !important; border-color: #c5a34e; }
+.quest-management-tools .team-dashboard-notice > div { font-size: .72rem; line-height: 1.4; padding: 8px 10px; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-rank-medal { color: #4d3106 !important; background: linear-gradient(135deg,#ffe5a3,#e9b64a); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-rank-medal small { color: inherit !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="2"] .weekly-rank-medal { color: #253a54 !important; background: linear-gradient(135deg,#e1ebf7,#a9bfd7); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="3"] .weekly-rank-medal { color: #58311d !important; background: linear-gradient(135deg,#f5d0b3,#dba177); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row:nth-child(n+4) .weekly-rank-medal { background: #b9dfee; color: #263f58 !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] #weekly-draw-preview { color: #684288 !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-team-members label:has(:checked) { background: linear-gradient(135deg,#e0c9f4,#c9e9f6); border: 2px solid #7956ac; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .classroom-team-mark { background: linear-gradient(135deg,var(--team-base,#e1d1f8),#c8ebf6); border: 1px solid var(--team-accent,#7246ad); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .classroom-team-mark svg { color: var(--team-accent,#7246ad); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.quest-management-back,.admin-roster-back) { color: #263f58 !important; text-shadow: none; }

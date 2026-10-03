@@ -37,7 +37,7 @@
         },
         message(error) {
             if (['42P01', 'PGRST202', 'PGRST205'].includes(error?.code)) return 'Chưa có cấu trúc lưu Tổ/Thi đua tuần trên máy chủ. Cần áp dụng migration đã duyệt.';
-            const known = { week_conflict: 'Tuần đã được thay đổi trên thiết bị khác. Tải lại trước khi xóa.', section_conflict: 'Tổ đã được thay đổi trên thiết bị khác. Tải lại trước khi lưu.', member_conflict: 'Học sinh đã thuộc tổ khác trong lớp.', invalid_members: 'Danh sách học sinh đã thay đổi hoặc không thuộc lớp đã chọn.', duplicate_section: 'Tên tổ đã tồn tại trong lớp.', forbidden: 'Bạn không có quyền quản lý.', invalid_week: 'Thông tin tuần hoặc danh sách thành viên không hợp lệ.', point_conflict: 'Lượt điểm đã thay đổi. Tải lại bảng điểm.' };
+            const known = { week_conflict: 'Tuần đã được thay đổi trên thiết bị khác. Tải lại trước khi lưu hoặc xóa.', section_conflict: 'Tổ đã được thay đổi trên thiết bị khác. Tải lại trước khi lưu.', member_conflict: 'Học sinh đã thuộc tổ khác trong lớp.', invalid_members: 'Danh sách học sinh đã thay đổi hoặc không thuộc lớp đã chọn.', duplicate_section: 'Tên tổ đã tồn tại trong lớp.', forbidden: 'Bạn không có quyền quản lý.', invalid_week: 'Thông tin tuần hoặc danh sách thành viên không hợp lệ.', point_conflict: 'Lượt điểm đã thay đổi. Tải lại bảng điểm.' };
             return known[error?.message] || 'Chưa thể đồng bộ. Kiểm tra kết nối rồi thử lại; nội dung đang soạn được giữ nguyên.';
         },
         async rows(table, fields) {
@@ -68,7 +68,7 @@
                     if (this.owner !== owner || !app.admin.isAdminUser() || (app.data.currentUser.id || app.data.currentUser.username) !== owner) return this;
                     const savedSections = sections.map(row => this.section(row));
                     const drafts = this.sections.filter(record => !record.version && !savedSections.some(saved => saved.id === record.id));
-                    const savedWeeks = weeks.filter(row => !this.deletedWeekIds.has(row.id)).map(row => this.week(row));
+                    const savedWeeks = weeks.filter(row => !this.deletedWeekIds.has(row.id)).map(row => { const saved = this.week(row), current = this.weeks.find(week => week.id === saved.id); return current && !current.localOnly && current.version > saved.version ? current : saved; });
                     const localWeeks = this.weeks.filter(week => week.localOnly && !savedWeeks.some(saved => saved.id === week.id));
                     this.sections = [...savedSections, ...drafts]; this.weeks = [...savedWeeks, ...localWeeks];
                     this.loaded = true; this.status = 'synced'; this.error = '';
@@ -113,6 +113,35 @@
             if (this.getClient()) saved = this.week(await this.rpc('classroom_create_week', { p_week: record }));
             else { saved.localOnly = true; this.localCommit(this.sections, [...this.weeks, saved]); }
             this.weeks = [...this.weeks.filter(item => item.id !== saved.id), saved];
+            if (this.getClient()) this.cacheServerState();
+            return saved;
+        },
+        async setWeekTeams(record, kind, teams) {
+            this.activate();
+            const week = this.weeks.find(item => item.id === record.id);
+            if (!week || !['sections', 'groups'].includes(kind) || !Array.isArray(teams)) throw new Error('Thông tin tổ/nhóm không hợp lệ.');
+            if (!week.localOnly && !this.getClient()) throw new Error('Kết nối lại để cập nhật tuần đã đồng bộ.');
+            if (week.localOnly && this.getClient()) throw new Error('Lưu tuần lên máy chủ trước khi chỉnh sửa tổ/nhóm.');
+            if (week.version !== record.version) throw new Error(this.message({ message: 'week_conflict' }));
+            const participants = new Set(week.participants.map(student => student.username)), assigned = new Set(), ids = new Set();
+            const other = week.teams.filter(team => (team.kind || week.mode) !== kind);
+            for (const team of other) ids.add(team.id);
+            for (const team of teams) {
+                if (typeof team.id !== 'string' || !team.id || ids.has(team.id) || typeof team.name !== 'string' || !team.name.trim() || team.name.trim().length > 160 || !Array.isArray(team.members)) throw new Error('Thông tin tổ/nhóm không hợp lệ.');
+                ids.add(team.id);
+                for (const member of team.members) { if (!participants.has(member) || assigned.has(member)) throw new Error('Thành viên không hợp lệ hoặc thuộc nhiều tổ/nhóm.'); assigned.add(member); }
+            }
+            if (kind === week.mode && [...participants].some(member => !assigned.has(member))) throw new Error('Cần phân đủ học sinh của tuần.');
+            const normalized = teams.map(team => ({ id: team.id, name: team.name.trim(), kind, members: [...team.members] }));
+            let saved;
+            if (this.getClient()) {
+                saved = this.week(await this.rpc('classroom_set_week_teams', { p_id: week.id, p_kind: kind, p_teams: normalized, p_version: record.version }));
+                const current = this.weeks.find(item => item.id === week.id);
+                if (this.deletedWeekIds.has(week.id)) throw new Error('Tuần đã bị xóa.');
+                if (current && current.version > saved.version) saved = current;
+            }
+            else { saved = { ...copy(week), teams: [...other, ...normalized], version: week.version + 1 }; this.localCommit(this.sections, this.weeks.map(item => item.id === week.id ? saved : item)); }
+            this.weeks = this.weeks.map(item => item.id === week.id ? saved : item);
             if (this.getClient()) this.cacheServerState();
             return saved;
         },
