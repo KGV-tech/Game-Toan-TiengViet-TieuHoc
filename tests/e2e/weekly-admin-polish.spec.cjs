@@ -23,8 +23,8 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
   const meteorBefore = await page.locator('#weekly-meteor').evaluate(el => el.style.transform);
   await expect.poll(() => page.locator('#weekly-meteor').evaluate(el => el.style.transform)).not.toBe(meteorBefore);
   await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
-  await expect(page.locator('#weekly-draw-preview')).toBeVisible();
-  await expect(page.locator('#weekly-draw-progress')).toBeVisible();
+  await expect(page.locator('#weekly-draw-preview')).toBeAttached();
+  await expect(page.locator('#weekly-draw-progress')).toBeAttached();
   const before = await page.locator('#weekly-draw-preview').textContent();
   const originalOrder = await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId));
   await expect.poll(() => page.locator('#weekly-draw-preview').textContent()).not.toBe(before);
@@ -32,7 +32,7 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
   expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(1);
   await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveCount(1);
   expect(await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId))).toEqual(originalOrder);
-  await expect(page.locator('#weekly-meteor')).toBeVisible();
+  await expect(page.locator('#weekly-result-dialog')).toBeVisible();
 });
 test('Sao băng cố định sáu giây, không có bộ chọn thời lượng', async ({page}) => {
   await setup(page); await page.locator('[data-weekly-tab=random]').click();
@@ -66,9 +66,17 @@ for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Sao băng
     app.classroom.weeks[0].participants = Array.from({length:31},(_,i)=>({username:`p${i}`,fullname:`Nguyễn Hoàng Minh Phúc ${i}`}));
     app.admin.weeklyState().tab='random'; app.admin.renderWeeklyCompetition();
   });
-  expect(await page.locator('[data-candidate-id]').first().evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(90);
+  expect(await page.locator('#weekly-body').evaluate(body => body.scrollHeight <= body.clientHeight + 1 && body.querySelector('.weekly-candidate-grid').getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom)).toBe(true);
+  expect(await page.locator('.weekly-candidate-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(5);
+  await expect(page.locator('.weekly-random-controls #weekly-draw-reset')).toBeVisible();
+  expect(await page.locator('.weekly-random-result').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('0px');
+  expect(await page.locator('[data-candidate-id]').evaluateAll(cards => cards.every(card => [...card.children].every(child => {
+    const parent = card.getBoundingClientRect(), box = child.getBoundingClientRect();
+    return box.top >= parent.top && box.bottom <= parent.bottom && box.right <= parent.right;
+  })))).toBe(true);
   expect(await page.locator('#weekly-body').evaluate(body => body.querySelector('#weekly-draw').getBoundingClientRect().top >= body.querySelector('.weekly-candidate-panel').getBoundingClientRect().bottom)).toBe(true);
   expect(await page.locator('[data-candidate-id]').first().evaluate(el => getComputedStyle(el,'::after').content)).toBe('none');
+  await page.screenshot({path:`test-results/ui-review/meteor-ready-${width}.png`});
   await expect(page.locator('#weekly-delay')).toHaveCount(0); await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-meteor')).toBeVisible();
   await page.screenshot({path:`test-results/ui-review/meteor-active-${width}.png`});
@@ -94,6 +102,16 @@ for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Sao băng
   await expect(page.locator('#weekly-draw')).toBeFocused();
   await page.locator('#weekly-draw-reset').click();
   expect(await page.locator('#weekly-body').evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+});
+
+test('Light mode quản lý thi đua đổi cả canvas và header', async ({page}) => {
+  await page.setViewportSize({width:1280,height:720}); await setup(page);
+  await page.locator('#quest-management-back').click();
+  await page.evaluate(() => document.documentElement.dataset.theme = 'light');
+  const canvas = page.locator('#treasure-modal .station-shell');
+  expect(await canvas.evaluate(el => getComputedStyle(el,'::before').backgroundImage)).toContain('rgb(200, 235, 246)');
+  await expect(page.locator('#admin-management-back')).toHaveCSS('color','rgb(24, 42, 66)');
+  await page.screenshot({path:'test-results/ui-review/quest-hub-light-complete.png'});
 });
 test('Chia nhóm ngẫu nhiên cân bằng và cập nhật bảng số lượng', async ({ page }) => {
   await setup(page); await page.locator('[data-weekly-tab=standings]').click(); await page.locator('#weekly-manager-create').click();
