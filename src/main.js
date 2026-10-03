@@ -12011,16 +12011,16 @@ const app = {
                 .sort((left, right) => left.localeCompare(right, 'vi', { numeric: true, sensitivity: 'base' }));
             const esc = value => app.data.sanitizeHTML(String(value ?? ''));
             const classLevelOptions = [
-                { value: '', label: 'Tất cả cấp lớp' },
+                { value: '', label: 'Tất cả' },
                 ...classLevels.map(value => ({ value, label: `Cấp lớp ${value}` }))
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.classlevel ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const classNameOptions = [
-                { value: '', label: 'Tất cả lớp' },
+                { value: '', label: 'Tất cả' },
                 ...(baseUsers.some(user => !app.data.normalizeClassName(user.class_name)) ? [{ value: '__unassigned__', label: 'Chưa khai báo lớp cụ thể' }] : []),
                 ...classNames.map(value => ({ value, label: `Lớp ${value}` }))
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.className ? ' selected' : ''}>${esc(option.label)}</option>`).join('');
             const genderOptions = [
-                { value: '', label: 'Tất cả giới tính' },
+                { value: '', label: 'Tất cả' },
                 { value: 'female', label: 'Nữ' },
                 { value: 'male', label: 'Nam' }
             ].map(option => `<option value='${esc(option.value)}'${option.value === filters.gender ? ' selected' : ''}>${esc(option.label)}</option>`).join('');

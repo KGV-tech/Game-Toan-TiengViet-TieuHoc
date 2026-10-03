@@ -1,0 +1,53 @@
+/* Compact classroom navigation and independent weekly operations. */
+.weekly-workspace { grid-template-rows: minmax(0, 1fr); gap: 0; }
+.weekly-sidebar-controls { display: grid; gap: 10px; }
+.weekly-roster-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+#treasure-modal .weekly-roster-tabs .classroom-button { padding: 8px 4px; min-height: 38px; font-size: .72rem; }
+#treasure-modal .weekly-roster-tabs [aria-pressed="true"] { border-color: #e6a7e0; background: linear-gradient(130deg, #ebb8df, #b59aee); color: #301d4f; }
+.weekly-sidebar-controls .weekly-tabs { border-top: 1px solid #7184a050; padding-top: 10px; }
+.quest-management-tools .weekly-sidebar-controls .weekly-toolbar { border: 0; padding: 0; background: none; box-shadow: none; }
+.weekly-sidebar-actions { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 6px; }
+#treasure-modal .weekly-sidebar-actions .classroom-button { padding: 8px; min-height: 38px; font-size: .72rem; }
+.quest-management-tools .weekly-class-picker :is(span,select), .quest-management-tools .weekly-select span { font-size: .75rem; }
+.weekly-section-heading { margin-bottom: 16px; }
+.weekly-section-heading h3 { margin: 0 0 5px; color: #ffe4a8; font-size: 1.6rem; }
+.weekly-section-heading p { margin: 0; color: #b7c9de; font-size: .85rem; }
+.weekly-week-manager, .weekly-ranking-panel { padding: 20px; border: 1px solid #cfaaed80; border-radius: 20px; background: linear-gradient(145deg, #342b50, #112e43); margin-bottom: 18px; }
+.weekly-week-manager > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.weekly-week-manager h4, .weekly-ranking-panel h4 { margin: 0 0 5px; font-size: 1.05rem; color: #f1e5ff; }
+.weekly-week-manager p, .weekly-ranking-panel p { color: #b8c8dc; margin: 0 0 18px; font-size: .8rem; }
+.weekly-week-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+.weekly-week-card { display: flex; align-items: center; min-width: 0; padding: 12px; border: 1px solid #8295b560; border-radius: 14px; background: linear-gradient(135deg, #293e55, #16293f); }
+.weekly-week-card.is-selected { border: 2px solid #b899ef; box-shadow: inset 0 0 16px #b899ef18; }
+.weekly-week-card > button:first-child { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; gap: 8px; text-align: left; border: 0; margin: 0; padding: 2px; background: none; color: #f0f4ff; text-transform: none; box-shadow: none; text-shadow: none; font: inherit; font-size: .9rem; }
+.weekly-week-card strong { overflow-wrap: anywhere; }
+.weekly-week-card small { flex-basis: 100%; color: #bbccdf; font-size: .7rem; }
+#treasure-modal .weekly-week-card > [data-weekly-delete] { padding: 7px; min-height: 36px; font-size: .7rem; color: #ffc0d1; border-color: #cf7c93; }
+.weekly-type-choices { border: 1px solid #9782b880; border-radius: 14px; padding: 12px; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 18px; }
+.weekly-type-choices legend { padding: 0 6px; font-weight: 800; }
+.weekly-type-choices label { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+.weekly-ranking-panel { border-color: #75d5dd80; background: linear-gradient(145deg, #1b4055, #17263d); }
+.weekly-ranking-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin: 15px 0; }
+#treasure-modal .weekly-ranking-tabs [aria-selected="true"] { background: linear-gradient(135deg, #99e7df, #7fa9ed); color: #123344; border-color: #a0dce9; }
+.weekly-ranking-list { display: grid; gap: 9px; list-style: none; margin: 0; padding: 0; }
+.weekly-ranking-row { display: grid; grid-template-columns: 44px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #7395ba60; border-radius: 14px; background: linear-gradient(125deg, #263951, #172a3f); }
+.weekly-ranking-row[data-rank="1"] { border-color: #ffd984; background: linear-gradient(125deg, #544334, #223149); }
+.weekly-ranking-row strong { overflow-wrap: anywhere; }
+.weekly-ranking-row > span:last-child { font-weight: 900; color: #ffe4a3; }
+.weekly-rank-medal { font-size: 1.65rem; text-align: center; }
+.weekly-random-modes { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; margin-bottom: 18px; }
+#treasure-modal .weekly-random-mode { display: grid; justify-items: start; gap: 12px; padding: 16px 12px; text-align: left; font: inherit; text-transform: none; text-shadow: none; min-height: 132px; }
+#treasure-modal .weekly-random-mode strong { font-size: .9rem; }
+.weekly-random-mode[aria-pressed="true"] { outline: 3px solid #ffe498; outline-offset: 2px; }
+.weekly-random-controls { display: grid; grid-template-columns: 1fr 150px 1fr; gap: 16px; align-items: end; margin-bottom: 18px; }
+.weekly-random-result.is-drawing .classroom-team-mark { animation: weekly-dice .65s ease-in-out infinite; }
+.weekly-no-week { color: #f4db9e; font-size: .85rem; }
+#weekly-week-form-region:not(:empty) { margin: 20px 0; padding: 16px; border: 1px solid #b89ade80; border-radius: 16px; background: #11263c70; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.weekly-week-manager, .weekly-ranking-panel, .weekly-week-card, .weekly-ranking-row, #weekly-week-form-region) { background: linear-gradient(145deg, #c8ebf6, #b4deed); color: #182a42; border-color: #a9bbd5; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-week-card > button:first-child { color: #182a42; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-week-card > [data-weekly-delete] { color: #932344; background: #fff0f4; border-color: #cb87a0; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="1"] { background: linear-gradient(125deg, #fff0c6, #fff8e8); border-color: #b99138; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random-mode[aria-pressed="true"] { outline-color: #7047a0; }
+.weekly-sidebar-controls :is(button,select):focus-visible, .weekly-body button:focus-visible { outline: 3px solid #ddacfa; outline-offset: 3px; }
+@media (max-width: 1100px) { .weekly-week-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .weekly-random-modes { gap: 7px; } #treasure-modal .weekly-random-mode { padding: 12px 9px; } }
+@media (prefers-reduced-motion: reduce) { .weekly-random-result.is-drawing .classroom-team-mark { animation: none; } }

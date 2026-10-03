@@ -164,7 +164,7 @@
         themeToggleMarkup() {
             const light = document.documentElement.getAttribute('data-theme') === 'light';
             const label = light ? 'Chuyển sang giao diện Tối' : 'Chuyển sang giao diện Sáng';
-            return `<button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="${label}" title="${label}" aria-pressed="${light}"><span class="theme-icon" aria-hidden="true">${light ? '🌙' : '☀️'}</span><span class="theme-label">${light ? 'Tối' : 'Sáng'}</span></button>`;
+            return `<button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="${label}" title="${label}" aria-pressed="${light}"><span class="theme-icon" aria-hidden="true">${light ? '🌙' : '☀️'}</span></button>`;
         },
         setTheme(theme) {
             if (theme === 'light') {

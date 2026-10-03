@@ -111,7 +111,7 @@ test('Soạn đề sáng có thẻ và form dễ đọc; bảng thi đua giữ c
     app.teamCompetition.store.upsert(match);
     app.admin.openTeamCompetitionBoard(match.id);
   });
-  await expect(page.locator('.team-race-clock')).toHaveCSS('background-color', 'rgb(245, 250, 255)');
+  await expect(page.locator('.team-race-clock')).toHaveCSS('background-color', 'rgb(211, 239, 249)');
   await expect(page.locator('.team-race-clock strong')).toHaveCSS('color', 'rgb(24, 42, 66)');
   await expect(page.locator('.team-board-toolbar [data-theme-toggle]')).toBeVisible();
 });

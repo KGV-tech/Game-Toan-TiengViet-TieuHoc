@@ -82,6 +82,47 @@ const plain = value => JSON.parse(JSON.stringify(value));
   await assert.rejects(synced.setAbsences('week-one', ['demo']), /Kết nối lại/);
   assert.deepEqual(plain(synced.weeks[0].scores), {});
 
+  await assert.rejects(synced.deleteWeek(synced.weeks[0]), /Kết nối lại/);
+  const deleteCache = new Map(), deletions = fixture(null, deleteCache).app.classroom;
+  await deletions.createWeek({ ...week, version: 1 });
+  await deletions.createWeek({ ...week, id: 'keep-week', version: 1 });
+  await deletions.point('keep-week', 'demo', 1);
+  await deletions.deleteWeek(deletions.weeks[0]);
+  const restored = fixture(null, deleteCache).app.classroom; restored.activate();
+  assert.equal(restored.weeks.length, 1);
+  assert.equal(restored.weeks[0].id, 'keep-week');
+  assert.equal(restored.weeks[0].scores.demo, 1);
+  const remoteDelete = fixture(client).app.classroom; remoteDelete.activate();
+  remoteDelete.weeks = [{ ...week, version: 7, localOnly: false }];
+  failure = true;
+  await assert.rejects(remoteDelete.deleteWeek(remoteDelete.weeks[0]));
+  assert.equal(remoteDelete.weeks.length, 1, 'Failed acknowledgement retains the week');
+  failure = false;
+  await remoteDelete.deleteWeek({ ...week, version: 7 });
+  assert.equal(remoteDelete.weeks.length, 0);
+  assert.deepEqual(plain(calls.at(-1)), { name: 'classroom_delete_week', args: { p_id: 'week-one', p_version: 7 } });
+  const deleteSql = fs.readFileSync('supabase/migrations/20261002_classroom_delete_week.sql', 'utf8');
+  let releaseWeeks;
+  const staleCache = new Map();
+  const race = fixture({
+    from(table) { return { select() { return { order() { return { range() {
+      return table === 'classroom_weeks' ? new Promise(resolve => { releaseWeeks = resolve; }) : Promise.resolve({ data: [] });
+    } }; } }; } }; },
+    rpc: async () => ({ data: { id: week.id } })
+  }, staleCache).app.classroom;
+  race.activate(); race.weeks = [{ ...week, version: 7 }];
+  const earlierRead = race.ensure(true);
+  await race.deleteWeek(race.weeks[0]);
+  releaseWeeks({ data: [{ ...week, version: 7 }] });
+  await earlierRead;
+  assert.equal(race.weeks.length, 0, 'Earlier server read cannot restore a deleted week');
+  assert.equal(JSON.parse(staleCache.get('classroom:v1:teacher')).weeks.length, 0);
+  assert.match(deleteSql, /SECURITY DEFINER SET search_path = ''/);
+  assert.match(deleteSql, /IF NOT coalesce\(private\.is_admin\(\), false\)/);
+  assert.match(deleteSql, /WHERE id = p_id FOR UPDATE[\s\S]+version IS DISTINCT FROM p_version/);
+  assert.match(deleteSql, /DELETE FROM public.classroom_point_events WHERE week_id = p_id;[\s\S]+DELETE FROM public.classroom_weeks WHERE id = p_id;/);
+  assert.doesNotMatch(deleteSql, /(?:DELETE FROM|UPDATE|ALTER TABLE) public\.(?:game_users|classroom_sections|team_competitions)/);
+
   const sql = fs.readFileSync('supabase/migrations/20261002_classroom_sections_weekly.sql', 'utf8');
   assert.doesNotMatch(sql, /(?:UPDATE|INSERT INTO|DELETE FROM|ALTER TABLE)\s+public\.(?:game_users|team_competitions|user_quests|game_quests)\b/i);
   const functions = sql.split(/CREATE OR REPLACE FUNCTION public\./).slice(1);
