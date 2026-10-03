@@ -74,7 +74,7 @@ test('Tải Supabase chậm không xóa form tuần; gửi lại dùng một ID 
   });
   await weekly(page);
   await page.locator('#weekly-create').click();
-  await page.getByLabel('Tên tuần', { exact: true }).fill('Tuần đang soạn');
+  await page.getByLabel('Tên thi đua tuần', { exact: true }).fill('Tuần đang soạn');
   await page.evaluate(() => window.finishClassroomLoading({ data: [] }));
   await expect(page.locator('#weekly-name')).toHaveValue('Tuần đang soạn');
   await page.getByLabel('Thi đua theo Nhóm', { exact: true }).check();
@@ -93,7 +93,7 @@ async function weekly(page) {
 }
 async function createWeek(page, name) {
   await page.locator('#weekly-create').click();
-  await page.getByLabel('Tên tuần', { exact: true }).fill(name);
+  await page.getByLabel('Tên thi đua tuần', { exact: true }).fill(name);
   await page.getByLabel('Lớp thi đua', { exact: true }).selectOption({ label: 'Lớp 4/4' });
   await page.locator('#weekly-form [type=submit]').click();
   await expect(page.locator('#weekly-select')).toHaveText(new RegExp(name));

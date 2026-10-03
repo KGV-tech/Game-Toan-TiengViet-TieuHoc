@@ -7,7 +7,7 @@ Object.assign(app.admin, {
     },
     selectedWeek() { const ui = this.weeklyState(); return app.classroom.weeks.find(week => week.id === ui.selected && (!ui.classKey || this.studentClassKey({ classlevel: week.classlevel, class_name: week.className }) === ui.classKey)) || null; },
     refreshWeeklyAfterAsync() {
-        if (document.getElementById('weekly-form')) document.querySelector('.weekly-status').textContent = this.weeklyState().error || this.classroomStatus();
+        if (document.getElementById('weekly-form') || document.getElementById('weekly-team-form')) document.querySelector('.weekly-status').textContent = this.weeklyState().error || this.classroomStatus();
         else this.renderWeeklyCompetition();
     },
     async addWeeklyPoint(weekId, username, delta = 1) {
@@ -23,18 +23,21 @@ Object.assign(app.admin, {
         catch (error) { ui.error = error.message; }
         finally { ui.busy = false; if (this.isAdminUser() && this.weeklyUI === ui && this.questMode === 'weekly') { this.refreshWeeklyAfterAsync(); const card = [...document.querySelectorAll('[data-weekly-student]')].find(item => item.dataset.weeklyStudent === username); if (ui.pointStudent) document.getElementById('weekly-point-add')?.focus(); else if (ui.tab === 'random') document.getElementById('weekly-random-add')?.focus(); else card?.focus(); } }
     },
-    showWeeklyForm() {
+    showWeeklyForm(kind = 'sections') {
+        if (!['sections', 'groups'].includes(kind)) kind = 'sections';
         if (!this.isAdminUser()) return;
         const ui = this.weeklyState(); ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false; ui.pointStudent = null;
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
         this.weeklyFormId = crypto.randomUUID();
         const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-        (document.getElementById('weekly-week-form-region') || document.getElementById('weekly-body')).innerHTML = `<form id="weekly-form" class="classroom-form"><header class="classroom-form-hero"><span class="classroom-team-mark">⚑</span><div><h3>Tạo trận thi đua tuần</h3><p>Mọi học sinh bắt đầu từ 0 điểm trong trận mới.</p></div></header><div class="classroom-form-fields"><label class="admin-roster-filter-field"><span>Tên tuần</span><input id="weekly-name" maxlength="160" required></label><label class="admin-roster-filter-field"><span>Lớp thi đua</span><select id="weekly-class" aria-label="Lớp thi đua" required>${this.weeklyClasses().filter(([key]) => key === ui.classKey).map(([key,label]) => `<option value="${esc(key)}">${esc(label)}</option>`).join('')}</select></label><label class="admin-roster-filter-field"><span>Ngày bắt đầu</span><input id="weekly-start" type="date" value="${esc(today)}" required></label><label class="admin-roster-filter-field"><span>Ngày kết thúc</span><input id="weekly-end" type="date" value="${esc(today)}" required></label><fieldset class="weekly-type-choices"><legend>Loại thi đua</legend><input id="weekly-type" type="hidden" value="sections"><label><input type="radio" name="weekly-type-choice" value="sections" checked>Thi đua theo Tổ</label><label><input type="radio" name="weekly-type-choice" value="groups">Thi đua theo Nhóm</label></fieldset><label class="admin-roster-filter-field" id="weekly-group-count-field" hidden><span>Số nhóm</span><input id="weekly-group-count" type="number" min="2" max="12" value="3"></label></div><div id="weekly-form-members"></div><p id="weekly-form-error" role="alert"></p><footer class="classroom-form-actions"><span>Giữ nguyên điểm và lịch sử các trận khác.</span><button type="button" id="weekly-form-cancel" class="classroom-button classroom-button--quiet">Hủy</button><button type="submit" class="classroom-button classroom-button--save">✓ Tạo tuần mới</button></footer></form>`;
+        (document.getElementById('weekly-week-form-region') || document.getElementById('weekly-body')).innerHTML = `<form id="weekly-form" class="classroom-form"><header class="classroom-form-hero"><span class="classroom-team-mark">⚑</span><div><h3>Tạo trận thi đua tuần</h3><p>Mọi học sinh bắt đầu từ 0 điểm trong trận mới.</p></div></header><div class="classroom-form-fields"><label class="admin-roster-filter-field"><span>Tên thi đua tuần</span><input id="weekly-name" maxlength="160" required></label><label class="admin-roster-filter-field"><span>Lớp thi đua</span><select id="weekly-class" aria-label="Lớp thi đua" required>${this.weeklyClasses().filter(([key]) => key === ui.classKey).map(([key,label]) => `<option value="${esc(key)}">${esc(label)}</option>`).join('')}</select></label><label class="admin-roster-filter-field"><span>Ngày bắt đầu</span><input id="weekly-start" type="date" value="${esc(today)}" required></label><label class="admin-roster-filter-field"><span>Ngày kết thúc</span><input id="weekly-end" type="date" value="${esc(today)}" required></label><fieldset class="weekly-type-choices"><legend>Loại thi đua</legend><input id="weekly-type" type="hidden" value="sections"><label><input type="radio" name="weekly-type-choice" value="sections" checked>Thi đua theo Tổ</label><label><input type="radio" name="weekly-type-choice" value="groups">Thi đua theo Nhóm</label></fieldset><label class="admin-roster-filter-field" id="weekly-group-count-field" hidden><span>Số nhóm</span><input id="weekly-group-count" type="number" min="2" max="12" value="3"></label></div><div id="weekly-form-members"></div><p id="weekly-form-error" role="alert"></p><footer class="classroom-form-actions"><span>Giữ nguyên điểm và lịch sử các trận khác.</span><button type="button" id="weekly-form-cancel" class="classroom-button classroom-button--quiet">Hủy</button><button type="submit" class="classroom-button classroom-button--save">✓ Tạo tuần mới</button></footer></form>`;
         const preview = () => this.previewWeeklyMembers();
         for (const id of ['weekly-class', 'weekly-group-count']) document.getElementById(id).onchange = preview;
         document.getElementById('weekly-form-cancel').onclick = () => this.renderWeeklyCompetition();
         document.getElementById('weekly-form').onsubmit = event => { event.preventDefault(); void this.submitWeeklyForm(); };
         for (const input of document.querySelectorAll('[name="weekly-type-choice"]')) input.onchange = () => { document.getElementById('weekly-type').value = input.value; preview(); };
+        document.getElementById('weekly-type').value = kind;
+        document.querySelector(`[name="weekly-type-choice"][value="${kind}"]`).checked = true;
         preview(); document.getElementById('weekly-name').focus();
     },
     previewWeeklyMembers() {
@@ -45,7 +48,23 @@ Object.assign(app.admin, {
         document.getElementById('weekly-group-count-field').hidden = mode !== 'groups';
         const sections = this.getStudentDraftStore().filter(record => this.studentClassKey(this.sectionClass(record)) === key);
         this.weeklyFormRoster = students;
-        document.getElementById('weekly-form-members').innerHTML = `<fieldset class="classroom-member-panel"><legend>${students.length} học sinh trong trận</legend><div class="weekly-form-members">${students.map((student, index) => `<label class="weekly-member-assignment"><span>${esc(student.fullname)}</span>${mode === 'groups' ? `<select data-weekly-assignment="${esc(student.username)}" aria-label="Nhóm của ${esc(student.fullname)}">${Array.from({ length: count }, (_, team) => `<option value="${team}" ${team === index % count ? 'selected' : ''}>Nhóm ${team + 1}</option>`).join('')}</select>` : `<small>${esc(sections.find(section => section.members.includes(student.username))?.name || 'Chưa phân tổ')}</small>`}</label>`).join('')}</div></fieldset>`;
+        document.getElementById('weekly-form-members').innerHTML = `<fieldset class="classroom-member-panel"><legend>${students.length} học sinh trong trận</legend>${mode === 'groups' ? `<div class="weekly-group-tools"><button type="button" id="weekly-shuffle-groups" class="classroom-button classroom-button--save">${this.icon('arrows-shuffle')} Chọn ngẫu nhiên</button><div id="weekly-group-summary" class="weekly-group-summary" aria-live="polite"></div></div>` : ''}<div class="weekly-form-members">${students.map((student, index) => `<label class="weekly-member-assignment"><span>${esc(student.fullname)}</span>${mode === 'groups' ? `<select data-weekly-assignment="${esc(student.username)}" aria-label="Nhóm của ${esc(student.fullname)}">${Array.from({ length: count }, (_, team) => `<option value="${team}" ${team === index % count ? 'selected' : ''}>Nhóm ${team + 1}</option>`).join('')}</select>` : `<small>${esc(sections.find(section => section.members.includes(student.username))?.name || 'Chưa phân tổ')}</small>`}</label>`).join('')}</div></fieldset>`;
+        if (mode === 'groups') {
+            for (const select of document.querySelectorAll('[data-weekly-assignment]')) select.onchange = () => this.updateWeeklyGroupSummary();
+            document.getElementById('weekly-shuffle-groups').onclick = () => this.shuffleWeeklyGroups();
+            this.updateWeeklyGroupSummary();
+        }
+    },
+    updateWeeklyGroupSummary() {
+        const selects = [...document.querySelectorAll('[data-weekly-assignment]')], count = selects[0]?.options.length || 0;
+        document.getElementById('weekly-group-summary').innerHTML = Array.from({ length: count }, (_, index) => `<div class="weekly-group-count" data-weekly-group-count="${index}"><span>Nhóm ${index + 1}</span><strong>${selects.filter(select => Number(select.value) === index).length} học sinh</strong></div>`).join('');
+    },
+    shuffleWeeklyGroups() {
+        const selects = [...document.querySelectorAll('[data-weekly-assignment]')], count = selects[0]?.options.length;
+        if (!count) return;
+        for (let i = selects.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [selects[i], selects[j]] = [selects[j], selects[i]]; }
+        selects.forEach((select, index) => { select.value = String(index % count); });
+        this.updateWeeklyGroupSummary();
     },
     async submitWeeklyForm() {
         if (!this.isAdminUser() || this.weeklyFormSaving) return;

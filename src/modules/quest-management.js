@@ -45,7 +45,7 @@ Object.assign(app.admin, {
         const tools = document.getElementById('quest-management-tools');
         const content = document.getElementById('admin-quest-subarea');
         if (!tools || !content) return;
-        const selectors = this.questMode === 'weekly' ? ['.weekly-sidebar-controls', '.weekly-status'] : this.questMode === 'team' ? ['.team-dashboard-create', '.team-dashboard-overview'] : ['#btn-personal-quest-create', '.personal-quest-overview'];
+        const selectors = this.questMode === 'weekly' ? ['.weekly-sidebar-controls', '.weekly-status'] : this.questMode === 'team' ? ['.team-dashboard-create', '.team-dashboard-overview', '.team-dashboard-notice'] : ['#btn-personal-quest-create', '.personal-quest-overview'];
         const elements = selectors.map(selector => content.querySelector(selector)).filter(Boolean);
         if (!elements.length) return;
         tools.replaceChildren(...elements);
