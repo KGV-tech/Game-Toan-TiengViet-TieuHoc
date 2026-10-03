@@ -204,3 +204,8 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-team-m
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .classroom-team-mark { background: linear-gradient(135deg,var(--team-base,#e1d1f8),#c8ebf6); border: 1px solid var(--team-accent,#7246ad); }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .classroom-team-mark svg { color: var(--team-accent,#7246ad); }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.quest-management-back,.admin-roster-back) { color: #263f58 !important; text-shadow: none; }
+
+/* Theme the inner station canvas too; the pseudo surface otherwise stays dark. */
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] .station-shell::before { background: linear-gradient(145deg,#c8ebf6,#b4deed); border-color: #83b5ca; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] :is(.admin-management-brand,#admin-management-back) { color: #182a42 !important; text-shadow: none; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] .admin-management-brand :is(h2,p) { color: #182a42 !important; }
