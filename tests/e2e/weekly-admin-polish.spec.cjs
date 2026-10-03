@@ -17,15 +17,60 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
   await page.locator('[data-weekly-tab=random]').click();
   const icons = await page.locator('.weekly-random-mode svg').evaluateAll(els => els.map(el => el.innerHTML));
   expect(new Set(icons).size).toBe(5);
-  await page.locator('#weekly-delay').selectOption('3000');
+  await expect(page.locator('#weekly-delay')).toHaveCount(0);
   await page.locator('#weekly-draw').click();
+  await expect(page.locator('#weekly-meteor')).toBeVisible();
+  const meteorBefore = await page.locator('#weekly-meteor').evaluate(el => el.style.transform);
+  await expect.poll(() => page.locator('#weekly-meteor').evaluate(el => el.style.transform)).not.toBe(meteorBefore);
   await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
   await expect(page.locator('#weekly-draw-preview')).toBeVisible();
   await expect(page.locator('#weekly-draw-progress')).toBeVisible();
   const before = await page.locator('#weekly-draw-preview').textContent();
+  const originalOrder = await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId));
   await expect.poll(() => page.locator('#weekly-draw-preview').textContent()).not.toBe(before);
-  await expect(page.locator('#weekly-draw')).toBeEnabled({ timeout: 5000 });
+  await expect(page.locator('#weekly-draw')).toBeEnabled({ timeout: 8000 });
   expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(1);
+  await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveCount(1);
+  expect(await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId))).toEqual(originalOrder);
+  await expect(page.locator('#weekly-meteor')).toBeVisible();
+});
+test('Sao băng cố định sáu giây, không có bộ chọn thời lượng', async ({page}) => {
+  await setup(page); await page.locator('[data-weekly-tab=random]').click();
+  const start = new Date('2026-10-03T08:00:00Z');
+  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  await expect(page.locator('#weekly-delay')).toHaveCount(0);
+  await page.locator('#weekly-draw').click(); await page.clock.runFor(5900);
+  await expect(page.locator('#weekly-draw')).toBeDisabled();
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn.length)).toBe(0);
+  await page.clock.runFor(200); await expect(page.locator('#weekly-draw')).toBeEnabled();
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn.length)).toBe(1);
+});
+test('Sao băng chọn Nhóm rồi thành viên, giữ kết quả cuối và điểm độc lập', async ({ page }) => {
+  await setup(page);
+  await page.locator('[data-weekly-tab=random]').click();
+  await page.locator('[data-weekly-random-mode=group-member]').click();
+  await expect(page.locator('#weekly-delay')).toHaveCount(0);
+  await page.locator('#weekly-draw').click();
+  await expect(page.locator('#weekly-draw-preview')).toContainText('Nhóm Sao');
+  await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
+  await expect(page.locator('#weekly-draw')).toBeEnabled();
+  const state = await page.evaluate(() => ({ ui: app.admin.weeklyState(), scores: app.classroom.weeks[0].scores }));
+  await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveAttribute('data-candidate-id', state.ui.randomStudent);
+  expect(state.scores).toEqual({s0:7});
+  await expect(page.locator('#weekly-random-team-result')).toHaveText('Nhóm Sao');
+});
+for (const [width,height] of [[1280,720],[1024,768]]) test(`Sao băng hiện rõ khi có 31 học sinh ${width}`, async ({page}) => {
+  await page.setViewportSize({width,height}); await setup(page);
+  await page.evaluate(() => {
+    app.classroom.weeks[0].participants = Array.from({length:31},(_,i)=>({username:`p${i}`,fullname:`Học sinh thử ${i}`}));
+    app.admin.weeklyState().tab='random'; app.admin.renderWeeklyCompetition();
+  });
+  await expect(page.locator('#weekly-delay')).toHaveCount(0); await page.locator('#weekly-draw').click();
+  await expect(page.locator('#weekly-meteor')).toBeVisible();
+  await page.screenshot({path:`test-results/ui-review/meteor-active-${width}.png`});
+  expect(await page.locator('#weekly-body').evaluate(body => [...body.querySelectorAll('[data-candidate-id]')].every(card => card.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom))).toBe(true);
+  await page.locator('#weekly-draw-reset').click();
+  expect(await page.locator('#weekly-body').evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
 });
 test('Chia nhóm ngẫu nhiên cân bằng và cập nhật bảng số lượng', async ({ page }) => {
   await setup(page); await page.locator('[data-weekly-tab=standings]').click(); await page.locator('#weekly-manager-create').click();
@@ -85,11 +130,14 @@ for (const [width, height] of [[1280,720],[1440,900],[1024,768]]) test(`Sidebar,
   await page.locator('[data-weekly-tab=random]').click();
   await page.screenshot({ path: `test-results/ui-review/polish-random-light-${width}.png` });
   await page.locator('[data-weekly-tab=standings]').click();
-  await expect(page.locator('.weekly-rank-star')).toHaveCount(3);
+  await expect(page.locator('.weekly-rank-laurel')).toHaveCount(3);
   await expect(page.locator('.weekly-rank-medal').first()).toHaveAttribute('aria-label', 'Hạng 1');
   await expect(page.locator('.quest-management-sidebar #weekly-create, .quest-management-sidebar #weekly-refresh')).toHaveCount(0);
   await expect(page.locator('#weekly-manager-create')).toBeVisible();
   await page.screenshot({ path: `test-results/ui-review/polish-ranking-light-${width}.png` });
+  await page.locator('.quest-management-sidebar [data-theme-toggle]').click();
+  await expect(page.locator('.weekly-rank-medal').first()).toHaveCSS('color', 'rgb(255, 211, 106)');
+  await page.screenshot({ path: `test-results/ui-review/polish-ranking-dark-${width}.png` });
   await page.locator('#quest-management-back').click(); await page.locator('[data-quest-launch=team]').click();
   await expect(page.locator('.quest-management-sidebar .team-dashboard-notice')).toBeVisible();
   await expect(page.locator('.team-dashboard-notice')).not.toContainText('Supabase');

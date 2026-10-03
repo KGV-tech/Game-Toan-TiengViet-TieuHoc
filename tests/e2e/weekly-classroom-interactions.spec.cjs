@@ -58,7 +58,7 @@ test('Random có danh sách ứng viên, điểm hiện tại, cộng điểm t�
   await page.locator('[data-weekly-tab=random]').click();
   await expect(page.locator('.weekly-random-candidate')).toHaveCount(32);
   await page.locator('#weekly-draw').click();
-  await expect(page.locator('#weekly-random-score')).toHaveText('0');
+  await expect(page.locator('#weekly-random-score')).toHaveText('0', {timeout:8000});
   await page.screenshot({ path: 'test-results/ui-review/weekly-random-selection.png' });
   const selected = await page.evaluate(() => app.admin.weeklyState().randomStudent);
   await page.locator('#weekly-random-add').click();

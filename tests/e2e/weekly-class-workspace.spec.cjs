@@ -22,13 +22,13 @@ for (const [width, height] of [[1280,720], [1440,900], [1024,768]]) test(`Random
 
 test('Tải lại giữa animation vẫn giữ nút chờ và thông báo đang chọn', async ({ page }) => {
   await setup(page); await page.locator('[data-weekly-tab=random]').click();
-  await page.locator('#weekly-delay').selectOption('3000');
+  await expect(page.locator('#weekly-delay')).toHaveCount(0);
   await page.locator('#weekly-draw').click();
   await page.evaluate(() => app.admin.refreshWeeklyAfterAsync());
   await expect(page.locator('#weekly-draw')).toBeDisabled();
   await expect(page.locator('.weekly-random-result')).toHaveClass(/is-drawing/);
   await expect(page.locator('#weekly-random-result')).toContainText('Đang chọn');
-  await expect(page.locator('#weekly-draw')).toBeEnabled({ timeout: 5000 });
+  await expect(page.locator('#weekly-draw')).toBeEnabled({ timeout: 8000 });
 });
 async function setup(page) {
   await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
@@ -71,7 +71,7 @@ test('Năm ô random, bỏ instant, có delay và hủy kết quả khi đổi l
   await page.locator('[data-weekly-random-mode=section-member]').click();
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw')).toBeDisabled();
-  await expect.poll(() => page.evaluate(() => app.admin.weeklyState().randomStudent)).toMatch(/^s0[01]$/);
+  await expect.poll(() => page.evaluate(() => app.admin.weeklyState().randomStudent), {timeout:8000}).toMatch(/^s0[01]$/);
   await page.locator('#weekly-draw-reset').click();
   await page.locator('#weekly-draw').click();
   await page.getByLabel('Lớp phụ trách', { exact: true }).selectOption({ label: 'Lớp 4/2' });

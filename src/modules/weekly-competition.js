@@ -2,7 +2,7 @@
 Object.assign(app.admin, {
     weeklyState() {
         const owner = app.classroom.activate().owner;
-        if (this.weeklyUI?.owner !== owner) this.weeklyUI = { owner, tab: 'points', selected: '', search: '', randomMode: 'all', teamId: '', classKey: app.safeStorage?.getItem(`weekly_class_${owner}`) || '', view: 'students', ranking: 'students', delay: 1200, noRepeat: true, drawn: [], result: '', randomStudent: '', pointStudent: null, error: '', requests: new Map() };
+        if (this.weeklyUI?.owner !== owner) this.weeklyUI = { owner, tab: 'points', selected: '', search: '', randomMode: 'all', teamId: '', classKey: app.safeStorage?.getItem(`weekly_class_${owner}`) || '', view: 'students', ranking: 'students', noRepeat: true, drawn: [], result: '', randomStudent: '', pointStudent: null, error: '', requests: new Map() };
         return this.weeklyUI;
     },
     selectedWeek() { const ui = this.weeklyState(); return app.classroom.weeks.find(week => week.id === ui.selected && (!ui.classKey || this.studentClassKey({ classlevel: week.classlevel, class_name: week.className }) === ui.classKey)) || null; },

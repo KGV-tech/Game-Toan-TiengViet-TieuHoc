@@ -37,7 +37,7 @@
 #treasure-modal .weekly-random-mode { display: grid; justify-items: start; gap: 12px; padding: 16px 12px; text-align: left; font: inherit; text-transform: none; text-shadow: none; min-height: 132px; }
 #treasure-modal .weekly-random-mode strong { font-size: .9rem; }
 .weekly-random-mode[aria-pressed="true"] { outline: 3px solid #ffe498; outline-offset: 2px; }
-.weekly-random-controls { display: grid; grid-template-columns: 1fr 150px 1fr; gap: 16px; align-items: end; margin-bottom: 18px; }
+.weekly-random-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; margin-bottom: 18px; }
 .weekly-random-result.is-drawing .classroom-team-mark { animation: weekly-dice .65s ease-in-out infinite; }
 .weekly-no-week { color: #f4db9e; font-size: .85rem; }
 #weekly-week-form-region:not(:empty) { margin: 20px 0; padding: 16px; border: 1px solid #b89ade80; border-radius: 16px; background: #11263c70; }
@@ -55,17 +55,12 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-score { display: grid; justify-items: center; gap: 2px; flex: 0 0 auto; }
 .weekly-score small { font-size: .7rem; color: #cbd9ed; }
 .weekly-rank-medal { display: grid; place-items: center; position: relative; width: 44px; height: 52px; color: #ffe3a2; background: linear-gradient(135deg,#91610f,#edb737); border: 1px solid #ffe8ab; border-radius: 13px; box-shadow: 0 4px 12px #ffc74726; }
-.weekly-rank-star { display: block; position: relative; width: 36px; height: 34px; background: linear-gradient(145deg,#fff1ad,#ffbe35); clip-path: polygon(50% 0,64% 28%,96% 33%,73% 56%,79% 90%,50% 75%,21% 90%,27% 56%,4% 33%,36% 28%); }
-.weekly-rank-face { position: absolute; left: 12px; top: 13px; width: 12px; height: 9px; color: #51360d; }
-.weekly-rank-face::before { content: ''; position: absolute; width: 3px; height: 4px; background: currentColor; border-radius: 50%; box-shadow: 8px 0 currentColor; }
-.weekly-rank-face::after { content: ''; position: absolute; left: 3px; top: 4px; width: 6px; height: 4px; border-bottom: 2px solid currentColor; border-radius: 0 0 50% 50%; }
-.weekly-ranking-row[data-rank="2"] .weekly-rank-star { background: linear-gradient(145deg,#f3f9ff,#bdcde4); }
-.weekly-ranking-row[data-rank="2"] .weekly-rank-face { color: #263e5b; }
-.weekly-ranking-row[data-rank="3"] .weekly-rank-star { background: linear-gradient(145deg,#ffe0b8,#efa166); }
-.weekly-ranking-row[data-rank="3"] .weekly-rank-face { color: #59321d; }
+.weekly-rank-laurel { position: absolute; inset: 0; background: currentColor; mask: url('./icons/rank-laurel.svg') center / contain no-repeat; }
+.weekly-ranking-row:nth-child(-n+3) .weekly-rank-medal { background: none; border: 0; box-shadow: none; color: #ffd36a; }
+.weekly-ranking-row:nth-child(-n+3) .weekly-rank-medal small { font-size: 1.35rem; font-weight: 950; padding-bottom: 4px; }
+.weekly-ranking-row[data-rank="2"] .weekly-rank-medal { color: #dce5f0; }
+.weekly-ranking-row[data-rank="3"] .weekly-rank-medal { color: #edaa75; }
 .weekly-rank-medal small { font-size: .65rem; font-weight: 900; line-height: 1; }
-.weekly-ranking-row[data-rank="2"] .weekly-rank-medal { background: linear-gradient(135deg,#687b99,#bacbe0); color: #172b45; border-color: #d9e6fa; }
-.weekly-ranking-row[data-rank="3"] .weekly-rank-medal { background: linear-gradient(135deg,#915a38,#e6a879); color: #392313; border-color: #ffc999; }
 .weekly-ranking-row:nth-child(n+4) .weekly-rank-medal { background: #223f59; border-color: #63819a; box-shadow: none; height: 40px; }
 .weekly-ranking-row:nth-child(n+4) .weekly-rank-medal small { font-size: 1.1rem; }
 .weekly-draw-stage { display: grid; gap: 18px; margin: 12px 0 24px; }
@@ -74,6 +69,22 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 #weekly-draw-progress { width: min(500px,100%); height: 8px; margin: auto; accent-color: #c6a2ff; }
 .weekly-random-result.is-drawing { box-shadow: 0 0 25px #c799fa50; }
 .weekly-random-candidate.is-preview { outline: 3px solid #ffe498; outline-offset: 1px; transform: translateY(-3px); box-shadow: 0 8px 18px #daba6340; }
+.weekly-candidate-panel { position: relative; }
+.weekly-meteor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center; font-size: 40px; line-height: 1; color: #ffe793; pointer-events: none; z-index: 3; text-shadow: 0 0 8px #ffd463, -10px -6px 8px #ff7eae, -24px -12px 12px #bc8cff; transition-property: transform; transition-timing-function: ease-out; }
+.weekly-meteor[hidden] { display: none; }
+.weekly-random-candidate.is-selected { outline: 3px solid #ffe498; outline-offset: 1px; padding-left: 50px; }
+.weekly-body:has(.is-drawing) :is(.weekly-random-modes,.weekly-random-controls) { display: none; }
+.weekly-body:has(.is-drawing) .weekly-random-result { padding: 12px; margin-bottom: 12px; }
+.weekly-body:has(.is-drawing) .weekly-random-result > :is(.classroom-team-mark,p) { display: none; }
+.weekly-body:has(.is-drawing) .weekly-draw-stage { gap: 5px; margin: 5px 0; }
+.weekly-body:has(.is-drawing) #weekly-draw-preview { min-height: 26px; font-size: 1.2rem; }
+.weekly-body:has(.is-drawing) .weekly-candidate-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }
+.weekly-body:has(.is-drawing) .weekly-random-candidate { height: 44px; padding: 6px 8px; gap: 5px; font-size: .7rem; }
+.weekly-body:has(.is-drawing) .weekly-random-candidate > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.weekly-body:has(.is-drawing) .weekly-random-result h4 { margin: 4px 0; font-size: 1.1rem; }
+@media (max-width:1100px) { .weekly-body:has(.is-drawing) .weekly-candidate-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } }
+html[data-theme="light"] #treasure-modal .weekly-meteor { color: #b0760b; text-shadow: 0 0 6px #ffe077, -10px -6px 8px #dc7fa4, -24px -12px 12px #a785d7; }
+@media (prefers-reduced-motion: reduce) { .weekly-meteor { display: none; } .weekly-random-candidate.is-preview { transform: none; } }
 @keyframes weekly-dice { 0%,100% { transform: rotate(-12deg) scale(.9); } 50% { transform: rotate(18deg) scale(1.12); } }
 .weekly-group-tools { display: grid; gap: 14px; margin: 8px 0 16px; }
 .weekly-group-tools > button { justify-self: start; }
