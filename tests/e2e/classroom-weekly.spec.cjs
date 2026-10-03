@@ -77,7 +77,7 @@ test('Tải Supabase chậm không xóa form tuần; gửi lại dùng một ID 
   await page.getByLabel('Tên tuần', { exact: true }).fill('Tuần đang soạn');
   await page.evaluate(() => window.finishClassroomLoading({ data: [] }));
   await expect(page.locator('#weekly-name')).toHaveValue('Tuần đang soạn');
-  await page.locator('#weekly-type').selectOption('groups');
+  await page.getByLabel('Thi đua theo Nhóm', { exact: true }).check();
   await page.locator('#weekly-form [type=submit]').click();
   await expect(page.locator('#weekly-form-error')).toContainText('Chưa thể đồng bộ');
   await page.locator('#weekly-form [type=submit]').click();
@@ -114,7 +114,6 @@ test('Ba tab tuần, điểm từng trận độc lập, giữ điểm game và 
   await page.locator('.weekly-point-adjust summary').click();
   await page.locator('[data-absence]').click();
   await page.locator('[data-weekly-tab=random]').click();
-  await page.locator('#weekly-instant').check();
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-random-result')).toHaveText('Nguyễn An');
   await page.locator('#weekly-draw').click();

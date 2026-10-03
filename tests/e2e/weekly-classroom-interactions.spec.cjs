@@ -57,7 +57,7 @@ test('Random có danh sách ứng viên, điểm hiện tại, cộng điểm t�
   await setup(page); await page.locator('[data-quest-launch=weekly]').click();
   await page.locator('[data-weekly-tab=random]').click();
   await expect(page.locator('.weekly-random-candidate')).toHaveCount(32);
-  await page.locator('#weekly-instant').check(); await page.locator('#weekly-draw').click();
+  await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-random-score')).toHaveText('0');
   await page.screenshot({ path: 'test-results/ui-review/weekly-random-selection.png' });
   const selected = await page.evaluate(() => app.admin.weeklyState().randomStudent);
@@ -68,7 +68,7 @@ test('Random có danh sách ứng viên, điểm hiện tại, cộng điểm t�
   expect(await page.evaluate(selected => app.admin.selectedWeek().scores[selected], selected)).toBe(1);
   await page.locator('#weekly-select').selectOption('week-a');
   await expect(page.locator('#weekly-random-add')).toHaveCount(0);
-  await page.locator('#weekly-random-mode').selectOption('team');
+  await page.locator('[data-weekly-random-mode=group]').click();
   await expect(page.locator('.weekly-random-candidate')).toHaveCount(4);
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-random-add')).toHaveCount(0);
@@ -102,7 +102,7 @@ test('Đổi chế độ trong animation loại kết quả cũ và trạng thá
   await expect(page.locator('.weekly-status')).toHaveText('Đã đồng bộ dữ liệu');
   await page.locator('[data-weekly-tab=random]').click();
   await page.locator('#weekly-draw').click();
-  await page.locator('#weekly-random-mode').selectOption('team');
+  await page.locator('[data-weekly-random-mode=group]').click();
   await page.waitForTimeout(750);
   await expect(page.locator('#weekly-random-result')).toHaveText('Sẵn sàng chọn ngẫu nhiên');
   await expect(page.locator('#weekly-random-add')).toHaveCount(0);

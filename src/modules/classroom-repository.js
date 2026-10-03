@@ -2,7 +2,7 @@
 (function () {
     const copy = value => JSON.parse(JSON.stringify(value));
     const api = {
-        owner: '', sections: [], weeks: [], status: 'local', error: '', client: null, pending: null, loaded: false,
+        owner: '', sections: [], weeks: [], deletedWeekIds: new Set(), status: 'local', error: '', client: null, pending: null, loaded: false,
         configure(client) { this.client = client; this.loaded = false; },
         activate() {
             if (!app.admin.isAdminUser()) throw new Error('Chỉ Admin được quản lý lớp.');
@@ -10,7 +10,7 @@
             if (!owner) throw new Error('Chưa xác định tài khoản Admin.');
             if (this.owner !== owner) {
                 this.owner = owner; this.loaded = false; this.pending = null; this.error = ''; this.status = 'local';
-                this.sections = []; this.weeks = [];
+                this.sections = []; this.weeks = []; this.deletedWeekIds = new Set();
                 try {
                     const local = JSON.parse(localStorage.getItem(`classroom:v1:${owner}`) || 'null');
                     if (local) {
@@ -37,7 +37,7 @@
         },
         message(error) {
             if (['42P01', 'PGRST202', 'PGRST205'].includes(error?.code)) return 'Chưa có cấu trúc lưu Tổ/Thi đua tuần trên máy chủ. Cần áp dụng migration đã duyệt.';
-            const known = { section_conflict: 'Tổ đã được thay đổi trên thiết bị khác. Tải lại trước khi lưu.', member_conflict: 'Học sinh đã thuộc tổ khác trong lớp.', invalid_members: 'Danh sách học sinh đã thay đổi hoặc không thuộc lớp đã chọn.', duplicate_section: 'Tên tổ đã tồn tại trong lớp.', forbidden: 'Bạn không có quyền quản lý.', invalid_week: 'Thông tin tuần hoặc danh sách thành viên không hợp lệ.', point_conflict: 'Lượt điểm đã thay đổi. Tải lại bảng điểm.' };
+            const known = { week_conflict: 'Tuần đã được thay đổi trên thiết bị khác. Tải lại trước khi xóa.', section_conflict: 'Tổ đã được thay đổi trên thiết bị khác. Tải lại trước khi lưu.', member_conflict: 'Học sinh đã thuộc tổ khác trong lớp.', invalid_members: 'Danh sách học sinh đã thay đổi hoặc không thuộc lớp đã chọn.', duplicate_section: 'Tên tổ đã tồn tại trong lớp.', forbidden: 'Bạn không có quyền quản lý.', invalid_week: 'Thông tin tuần hoặc danh sách thành viên không hợp lệ.', point_conflict: 'Lượt điểm đã thay đổi. Tải lại bảng điểm.' };
             return known[error?.message] || 'Chưa thể đồng bộ. Kiểm tra kết nối rồi thử lại; nội dung đang soạn được giữ nguyên.';
         },
         async rows(table, fields) {
@@ -68,7 +68,7 @@
                     if (this.owner !== owner || !app.admin.isAdminUser() || (app.data.currentUser.id || app.data.currentUser.username) !== owner) return this;
                     const savedSections = sections.map(row => this.section(row));
                     const drafts = this.sections.filter(record => !record.version && !savedSections.some(saved => saved.id === record.id));
-                    const savedWeeks = weeks.map(row => this.week(row));
+                    const savedWeeks = weeks.filter(row => !this.deletedWeekIds.has(row.id)).map(row => this.week(row));
                     const localWeeks = this.weeks.filter(week => week.localOnly && !savedWeeks.some(saved => saved.id === week.id));
                     this.sections = [...savedSections, ...drafts]; this.weeks = [...savedWeeks, ...localWeeks];
                     this.loaded = true; this.status = 'synced'; this.error = '';
@@ -115,6 +115,18 @@
             this.weeks = [...this.weeks.filter(item => item.id !== saved.id), saved];
             if (this.getClient()) this.cacheServerState();
             return saved;
+        },
+        async deleteWeek(record) {
+            this.activate();
+            const week = this.weeks.find(item => item.id === record.id);
+            if (!week) throw new Error('Không tìm thấy tuần thi đua.');
+            if (!week.localOnly && !this.getClient()) throw new Error('Kết nối lại máy chủ để xóa tuần đã đồng bộ.');
+            if (!week.localOnly) await this.rpc('classroom_delete_week', { p_id: week.id, p_version: record.version });
+            else this.localCommit(this.sections, this.weeks.filter(item => item.id !== week.id));
+            // An earlier in-flight read must not resurrect this confirmed deletion.
+            this.deletedWeekIds.add(week.id);
+            this.weeks = this.weeks.filter(item => item.id !== week.id);
+            if (this.getClient()) this.cacheServerState();
         },
         async syncWeek(record) {
             this.activate();

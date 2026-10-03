@@ -114,6 +114,7 @@
   </script>
   <link rel="stylesheet" href="./src/classroom-management.css">
   <link rel="stylesheet" href="./src/admin-theme.css">
+  <link rel="stylesheet" href="./src/weekly-workspace.css">
 </head>
 
 <body>
@@ -272,7 +273,7 @@
           <nav id="admin-map-actions" class="admin-map-actions" aria-label="Quản lý lớp học" hidden>
             <button type="button" class="admin-map-action admin-map-action--students" onclick="app.admin.openAdmin('players')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý học sinh</button>
             <button type="button" class="admin-map-action admin-map-action--quests" onclick="app.admin.openAdmin('quests')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý Thi đua &amp; Nhiệm vụ</button>
-            <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span><span class="theme-label">Sáng</span></button>
+            <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
           </nav>
           <div id="energy-display" class="energy-display" style="display:none;"></div>
           <div id="gift-notice" class="gift-notice" style="display:none;">🎁 Bạn có hộp quà hằng ngày chưa mở!</div>
@@ -364,7 +365,7 @@
           </header>
 
           <button type="button" class="admin-compose-back" onclick="app.admin.closeComposer()">← Về bản đồ</button>
-          <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span><span class="theme-label">Sáng</span></button>
+          <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
 
           <section id="admin-compose-quickstart" class="admin-compose-quickstart" aria-labelledby="admin-compose-quickstart-title">
             <div class="admin-compose-quickstart__copy">
@@ -907,7 +908,7 @@
             </div>
           </div>
           <button id="admin-management-back" type="button" class="admin-compose-back" onclick="app.treasure.close()" hidden><span aria-hidden="true">←</span> Quay về</button>
-          <button type="button" id="admin-theme-toggle-modal" hidden class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span><span class="theme-label">Sáng</span></button>
+          <button type="button" id="admin-theme-toggle-modal" hidden class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
           <div id="admin-management-tabs" class="quest-workspace-tabs" hidden></div>
         </div>
 
@@ -1116,6 +1117,7 @@
   <script defer src="./src/modules/student-roster-drafts.js"></script>
   <script defer src="./src/modules/weekly-competition.js"></script>
   <script defer src="./src/modules/weekly-points.js"></script>
+  <script defer src="./src/modules/weekly-workspace.js"></script>
   <script defer src="./src/modules/quest-management.js"></script>
   <script defer src="./src/modules/daily.js"></script>
   <script defer src="./src/modules/ui.js"></script>
