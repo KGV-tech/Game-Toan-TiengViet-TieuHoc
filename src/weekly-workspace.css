@@ -73,17 +73,44 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-meteor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center; font-size: 40px; line-height: 1; color: #ffe793; pointer-events: none; z-index: 3; text-shadow: 0 0 8px #ffd463, -10px -6px 8px #ff7eae, -24px -12px 12px #bc8cff; transition-property: transform; transition-timing-function: ease-out; }
 .weekly-meteor[hidden] { display: none; }
 .weekly-random-candidate.is-selected { outline: 3px solid #ffe498; outline-offset: 1px; padding-left: 50px; }
+/* Keep the whole class on the stage before, during and after each draw. */
+.weekly-body:has(.weekly-candidate-panel) { display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.weekly-body:has(.weekly-candidate-panel) > * { flex-shrink: 0; }
+.weekly-body:has(.weekly-candidate-panel) .weekly-section-heading { margin: 0; }
+.weekly-body:has(.weekly-candidate-panel) .weekly-section-heading h3 { font-size: 1.2rem; }
+.weekly-body:has(.weekly-candidate-panel) .weekly-random-modes { margin: 0; gap: 8px; }
+#treasure-modal .weekly-body .weekly-random-mode { min-height: 54px; padding: 8px; gap: 7px; display: flex; align-items: center; border-radius: 14px; }
+#treasure-modal .weekly-body .weekly-random-mode strong { font-size: .75rem; }
+.weekly-body .weekly-random-mode .classroom-team-mark { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 9px; }
+.weekly-body:has(.weekly-candidate-panel) .weekly-random-controls { margin: 0; gap: 10px; }
+.weekly-body .weekly-random-controls select { padding: 6px 10px; min-height: 34px; }
+.weekly-body .weekly-random-result { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-radius: 14px; }
+.weekly-body .weekly-random-result > :is(.classroom-team-mark,p) { display: none; }
+.weekly-body .weekly-random-result h4 { flex: 1; margin: 0; font-size: 1rem; }
+.weekly-body .weekly-random-result .weekly-selected-score { margin: 0; font-size: 1.4rem; }
+.weekly-body .weekly-random-result > #weekly-random-add { margin: 0; }
+#treasure-modal .weekly-body .weekly-random-result button { padding: 6px 10px; min-height: 34px; font-size: .7rem; }
+.weekly-body .weekly-random-result .weekly-draw-stage { display: grid; flex-basis: 100%; gap: 4px; margin: 0; }
+.weekly-body .weekly-draw-stage[hidden] { display: none; }
+.weekly-body #weekly-draw-preview { min-height: 24px; font-size: 1rem; }
 .weekly-body:has(.is-drawing) :is(.weekly-random-modes,.weekly-random-controls) { display: none; }
-.weekly-body:has(.is-drawing) .weekly-random-result { padding: 12px; margin-bottom: 12px; }
-.weekly-body:has(.is-drawing) .weekly-random-result > :is(.classroom-team-mark,p) { display: none; }
-.weekly-body:has(.is-drawing) .weekly-draw-stage { gap: 5px; margin: 5px 0; }
-.weekly-body:has(.is-drawing) #weekly-draw-preview { min-height: 26px; font-size: 1.2rem; }
-.weekly-body:has(.is-drawing) .weekly-candidate-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }
-.weekly-body:has(.is-drawing) .weekly-random-candidate { height: 44px; padding: 6px 8px; gap: 5px; font-size: .7rem; }
-.weekly-body:has(.is-drawing) .weekly-random-candidate > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.weekly-body:has(.is-drawing) .weekly-random-result h4 { margin: 4px 0; font-size: 1.1rem; }
-@media (max-width:1100px) { .weekly-body:has(.is-drawing) .weekly-candidate-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } }
+.weekly-body .weekly-random-result.is-drawing { display: grid; grid-template-columns: minmax(0,1fr) auto; text-align: left; }
+.weekly-body .weekly-random-result.is-drawing h4 { grid-column: 1; }
+.weekly-body .weekly-random-result.is-drawing .weekly-draw-stage { grid-column: 1; }
+.weekly-body .weekly-random-result.is-drawing > div:last-child { grid-column: 2; grid-row: 1 / span 2; }
+.weekly-body .weekly-candidate-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; padding: 4px; }
+.weekly-candidate-panel h4 { margin: 0 0 8px; font-size: .9rem; }
+.weekly-body .weekly-candidate-grid { flex: 1; min-height: 0; grid-template-columns: repeat(5,minmax(0,1fr)); grid-auto-rows: minmax(0,1fr); gap: 8px; }
+.weekly-body .weekly-random-candidate { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 16px; border-bottom-width: 3px; font-size: .8rem; font-weight: 750; }
+.weekly-body .weekly-random-candidate > span { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.weekly-body:has(.is-drawing) .weekly-random-candidate { font-size: .9rem; }
+.weekly-body .weekly-random-candidate::after, .weekly-body .weekly-random-mode::after, .weekly-body .weekly-random-result::after { content: none; }
+.weekly-candidate-score { display: grid; text-align: center; font-size: 1.1rem; line-height: 1.1; }
+.weekly-candidate-score small { font-size: .6rem; font-weight: 600; }
+.weekly-body .weekly-random-candidate.is-selected { padding-left: 44px; }
+@media (max-width:1100px) { .weekly-body .weekly-candidate-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; } .weekly-body .weekly-random-candidate { padding: 5px 7px; font-size: .75rem; } }
 html[data-theme="light"] #treasure-modal .weekly-meteor { color: #b0760b; text-shadow: 0 0 6px #ffe077, -10px -6px 8px #dc7fa4, -24px -12px 12px #a785d7; }
+html[data-theme="light"] #treasure-modal .weekly-body :is(.weekly-random-mode strong,.weekly-random-result .classroom-button--quiet) { color: #182a42 !important; text-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .weekly-meteor { display: none; } .weekly-random-candidate.is-preview { transform: none; } }
 @keyframes weekly-dice { 0%,100% { transform: rotate(-12deg) scale(.9); } 50% { transform: rotate(18deg) scale(1.12); } }
 .weekly-group-tools { display: grid; gap: 14px; margin: 8px 0 16px; }
