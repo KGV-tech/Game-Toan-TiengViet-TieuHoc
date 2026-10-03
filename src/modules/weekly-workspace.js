@@ -170,7 +170,7 @@ Object.assign(app.admin, {
         const dialog = document.createElement('dialog');
         dialog.id = 'weekly-result-dialog'; dialog.className = 'weekly-winner-dialog';
         dialog.setAttribute('aria-labelledby', 'weekly-winner-name');
-        dialog.innerHTML = `<div class="weekly-winner-content"><span class="weekly-winner-star" aria-hidden="true">✦</span><p>Bạn may mắn được chọn</p><h2 id="weekly-winner-name">${esc(ui.result)}</h2><strong class="weekly-winner-score">${Number(ui.lastCandidate?.score || 0)}<small>điểm</small></strong><footer><button type="button" id="weekly-result-close" class="classroom-button classroom-button--quiet">Quay về danh sách</button></footer></div>`;
+        dialog.innerHTML = `<div class="weekly-winner-content"><span class="weekly-winner-star" aria-hidden="true">✦</span><p>${ui.randomMode === 'section' ? 'Tổ' : ui.randomMode === 'group' ? 'Nhóm' : 'Bạn'} may mắn được chọn</p><h2 id="weekly-winner-name">${esc(ui.result)}</h2><strong class="weekly-winner-score">${Number(ui.lastCandidate?.score || 0)}<small>điểm</small></strong><footer><button type="button" id="weekly-result-close" class="classroom-button classroom-button--quiet">Quay về danh sách</button></footer></div>`;
         body.append(dialog);
         const add = document.getElementById('weekly-random-add');
         if (add) dialog.querySelector('footer').prepend(add);
@@ -197,6 +197,7 @@ Object.assign(app.admin, {
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
         const displayed = [...(ui.drawing ? ui.animationCandidates || candidates : candidates)];
         grid.classList.toggle('is-small-roster', displayed.length <= 10);
+        grid.style.setProperty('--presentation-columns', Math.max(1, displayed.length <= 3 ? displayed.length : Math.ceil(displayed.length / 2)));
         grid.style.setProperty('--candidate-columns', Math.max(1, Math.min(displayed.length, ui.randomMode === 'all' || ui.teamId ? 4 : 3)));
         grid.innerHTML = displayed.map((candidate,index) => `<div class="weekly-random-candidate classroom-team-card" data-candidate-id="${esc(candidate.id)}" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong class="weekly-candidate-score">${candidate.score}<small>điểm</small></strong></div>`).join('') || '<p>Chưa có lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.</p>';
         const panel = grid.closest('.weekly-candidate-panel');

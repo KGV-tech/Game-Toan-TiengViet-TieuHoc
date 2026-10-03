@@ -40,6 +40,7 @@
     .admin-compose-quickstart, .admin-compose-quickstart-card, .admin-compose-step,
     .admin-compose-question-nav, .admin-compose-question-nav__item,
     .admin-roster-empty, .admin-student-card, .admin-roster-stat,
+    .admin-loading-state, .admin-error-state, .admin-empty-state,
     .classroom-form-fields, .classroom-member-panel, .classroom-form-actions,
     .classroom-empty, .weekly-toolbar, .weekly-panel, .weekly-point-panel,
     .weekly-random-result, .weekly-random-candidate, .weekly-member-assignment
@@ -212,3 +213,5 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-managemen
 
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-point-adjust summary { color: #28455d; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-sidebar-controls .weekly-toolbar { background: none; border: 0; box-shadow: none; }
+
+[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) .admin-loading-state__icon { color: #176d87 !important; border-color: #176d87; }
