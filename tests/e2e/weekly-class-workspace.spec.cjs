@@ -71,6 +71,9 @@ test('Năm ô random, bỏ instant, có delay và hủy kết quả khi đổi l
   await page.locator('[data-weekly-random-mode=section-member]').click();
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw')).toBeDisabled();
+  await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await page.locator('#weekly-draw').click();
   await expect.poll(() => page.evaluate(() => app.admin.weeklyState().randomStudent), {timeout:8000}).toMatch(/^s0[01]$/);
   await page.locator('#weekly-result-close').click();
   await page.locator('#weekly-draw-reset').click();
