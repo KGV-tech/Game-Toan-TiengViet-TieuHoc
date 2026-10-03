@@ -61,28 +61,37 @@ test('Sao băng chọn Nhóm rồi thành viên, giữ kết quả cuối và đ
 });
 for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Sao băng hiện rõ khi có 31 học sinh ${width}`, async ({page}) => {
   await page.setViewportSize({width,height}); await setup(page);
+  expect(await page.locator('.weekly-student-card').first().evaluate(el => getComputedStyle(el,'::after').content)).toBe('none');
   await page.evaluate(() => {
     app.classroom.weeks[0].participants = Array.from({length:31},(_,i)=>({username:`p${i}`,fullname:`Nguyễn Hoàng Minh Phúc ${i}`}));
     app.admin.weeklyState().tab='random'; app.admin.renderWeeklyCompetition();
   });
-  const fits = () => page.locator('#weekly-body').evaluate(body => body.scrollHeight <= body.clientHeight + 1 && [...body.querySelectorAll('[data-candidate-id]')].every(card => card.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom));
-  expect(await fits()).toBe(true);
+  expect(await page.locator('[data-candidate-id]').first().evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(90);
+  expect(await page.locator('#weekly-body').evaluate(body => body.querySelector('#weekly-draw').getBoundingClientRect().top >= body.querySelector('.weekly-candidate-panel').getBoundingClientRect().bottom)).toBe(true);
   expect(await page.locator('[data-candidate-id]').first().evaluate(el => getComputedStyle(el,'::after').content)).toBe('none');
   await expect(page.locator('#weekly-delay')).toHaveCount(0); await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-meteor')).toBeVisible();
   await page.screenshot({path:`test-results/ui-review/meteor-active-${width}.png`});
-  expect(await page.locator('#weekly-body').evaluate(body => [...body.querySelectorAll('[data-candidate-id]')].every(card => card.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom))).toBe(true);
+  expect(await page.locator('#weekly-draw-dialog').evaluate(body => body.scrollHeight <= body.clientHeight + 1 && [...body.querySelectorAll('[data-candidate-id]')].every(card => card.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom))).toBe(true);
   await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});
-  expect(await fits()).toBe(true);
-  expect(await page.locator('#weekly-body').evaluate(body => {
-    const star = body.querySelector('#weekly-meteor').getBoundingClientRect(), card = body.querySelector('.is-selected').getBoundingClientRect();
-    return star.left >= card.left && star.right <= card.right && star.top >= card.top && star.bottom <= card.bottom;
+  await expect(page.locator('#weekly-result-dialog')).toBeVisible();
+  if (width === 1280) {
+    const winner = await page.locator('#weekly-winner-name').textContent();
+    await page.evaluate(() => app.admin.refreshWeeklyAfterAsync());
+    await expect(page.locator('#weekly-result-dialog')).toBeVisible();
+    await expect(page.locator('#weekly-winner-name')).toHaveText(winner);
+  }
+  expect(await page.locator('#weekly-result-dialog').evaluate(body => {
+    const box = body.getBoundingClientRect(); return box.width === innerWidth && box.height === innerHeight;
   })).toBe(true);
   await page.screenshot({path:`test-results/ui-review/meteor-finished-${width}.png`});
   await page.evaluate(() => document.documentElement.dataset.theme = 'light');
-  expect(await fits()).toBe(true);
-  await expect(page.locator('.weekly-random-mode strong').first()).toHaveCSS('color','rgb(24, 42, 66)');
+  await expect(page.locator('#weekly-result-close')).toHaveCSS('color','rgb(24, 42, 66)');
   await page.screenshot({path:`test-results/ui-review/meteor-light-${width}.png`});
+  if (width === 1280) await page.keyboard.press('Escape');
+  else await page.locator('#weekly-result-close').click();
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await expect(page.locator('#weekly-draw')).toBeFocused();
   await page.locator('#weekly-draw-reset').click();
   expect(await page.locator('#weekly-body').evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
 });
@@ -134,6 +143,7 @@ test('Thêm tổ độc lập, lỗi giữ form, reduced motion và hủy vòng 
   await page.locator('[data-weekly-tab=random]').click(); await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw-preview')).toHaveText('Đang chọn…');
   expect(await page.locator('.weekly-random-result .classroom-team-mark').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  await page.keyboard.press('Escape');
   await page.locator('[data-weekly-tab=points]').click();
   await page.waitForTimeout(1400);
   expect(await page.evaluate(() => app.admin.weeklyState().drawn)).toEqual([]);

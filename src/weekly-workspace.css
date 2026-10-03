@@ -73,42 +73,44 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-meteor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center; font-size: 40px; line-height: 1; color: #ffe793; pointer-events: none; z-index: 3; text-shadow: 0 0 8px #ffd463, -10px -6px 8px #ff7eae, -24px -12px 12px #bc8cff; transition-property: transform; transition-timing-function: ease-out; }
 .weekly-meteor[hidden] { display: none; }
 .weekly-random-candidate.is-selected { outline: 3px solid #ffe498; outline-offset: 1px; padding-left: 50px; }
-/* Keep the whole class on the stage before, during and after each draw. */
-.weekly-body:has(.weekly-candidate-panel) { display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+/* Browse large cards, then use a full-screen stage for the draw. */
+.weekly-body:has(.weekly-candidate-panel) { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .weekly-body:has(.weekly-candidate-panel) > * { flex-shrink: 0; }
-.weekly-body:has(.weekly-candidate-panel) .weekly-section-heading { margin: 0; }
-.weekly-body:has(.weekly-candidate-panel) .weekly-section-heading h3 { font-size: 1.2rem; }
-.weekly-body:has(.weekly-candidate-panel) .weekly-random-modes { margin: 0; gap: 8px; }
-#treasure-modal .weekly-body .weekly-random-mode { min-height: 54px; padding: 8px; gap: 7px; display: flex; align-items: center; border-radius: 14px; }
-#treasure-modal .weekly-body .weekly-random-mode strong { font-size: .75rem; }
-.weekly-body .weekly-random-mode .classroom-team-mark { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 9px; }
-.weekly-body:has(.weekly-candidate-panel) .weekly-random-controls { margin: 0; gap: 10px; }
-.weekly-body .weekly-random-controls select { padding: 6px 10px; min-height: 34px; }
-.weekly-body .weekly-random-result { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-radius: 14px; }
-.weekly-body .weekly-random-result > :is(.classroom-team-mark,p) { display: none; }
-.weekly-body .weekly-random-result h4 { flex: 1; margin: 0; font-size: 1rem; }
-.weekly-body .weekly-random-result .weekly-selected-score { margin: 0; font-size: 1.4rem; }
-.weekly-body .weekly-random-result > #weekly-random-add { margin: 0; }
-#treasure-modal .weekly-body .weekly-random-result button { padding: 6px 10px; min-height: 34px; font-size: .7rem; }
-.weekly-body .weekly-random-result .weekly-draw-stage { display: grid; flex-basis: 100%; gap: 4px; margin: 0; }
-.weekly-body .weekly-draw-stage[hidden] { display: none; }
-.weekly-body #weekly-draw-preview { min-height: 24px; font-size: 1rem; }
-.weekly-body:has(.is-drawing) :is(.weekly-random-modes,.weekly-random-controls) { display: none; }
-.weekly-body .weekly-random-result.is-drawing { display: grid; grid-template-columns: minmax(0,1fr) auto; text-align: left; }
-.weekly-body .weekly-random-result.is-drawing h4 { grid-column: 1; }
-.weekly-body .weekly-random-result.is-drawing .weekly-draw-stage { grid-column: 1; }
-.weekly-body .weekly-random-result.is-drawing > div:last-child { grid-column: 2; grid-row: 1 / span 2; }
-.weekly-body .weekly-candidate-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; padding: 4px; }
-.weekly-candidate-panel h4 { margin: 0 0 8px; font-size: .9rem; }
-.weekly-body .weekly-candidate-grid { flex: 1; min-height: 0; grid-template-columns: repeat(5,minmax(0,1fr)); grid-auto-rows: minmax(0,1fr); gap: 8px; }
-.weekly-body .weekly-random-candidate { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 16px; border-bottom-width: 3px; font-size: .8rem; font-weight: 750; }
-.weekly-body .weekly-random-candidate > span { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
-.weekly-body:has(.is-drawing) .weekly-random-candidate { font-size: .9rem; }
-.weekly-body .weekly-random-candidate::after, .weekly-body .weekly-random-mode::after, .weekly-body .weekly-random-result::after { content: none; }
-.weekly-candidate-score { display: grid; text-align: center; font-size: 1.1rem; line-height: 1.1; }
-.weekly-candidate-score small { font-size: .6rem; font-weight: 600; }
-.weekly-body .weekly-random-candidate.is-selected { padding-left: 44px; }
-@media (max-width:1100px) { .weekly-body .weekly-candidate-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; } .weekly-body .weekly-random-candidate { padding: 5px 7px; font-size: .75rem; } }
+.weekly-body .weekly-candidate-panel { order: 3; padding: 6px; }
+.weekly-body .weekly-random-result { order: 4; padding: 14px; }
+.weekly-body .weekly-candidate-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.weekly-body .weekly-random-candidate { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; min-height: 90px; padding: 18px; border-radius: 22px; border-bottom-width: 2px; font-size: .9rem; font-weight: 800; }
+.weekly-body .weekly-random-candidate > span { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
+.weekly-body .weekly-random-candidate::after, .weekly-body .weekly-random-mode::after, .weekly-body .weekly-random-result::after, .weekly-student-card::after { content: none; }
+.weekly-candidate-score { display: grid; text-align: center; font-size: 1.65rem; line-height: 1.1; }
+.weekly-candidate-score small { font-size: .7rem; font-weight: 600; margin-top: 5px; }
+.weekly-body .weekly-random-candidate.is-selected { padding-left: 50px; }
+#treasure-modal .weekly-presentation-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; box-sizing: border-box; padding: 16px; border: 0; background: #0a2231; color: #eff6ff; overflow: hidden; }
+#treasure-modal .weekly-presentation-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
+.weekly-presentation-dialog .weekly-candidate-panel { order: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.weekly-presentation-dialog .weekly-candidate-panel h4 { margin: 0 0 10px; }
+.weekly-body .weekly-presentation-dialog .weekly-candidate-grid { flex: 1; min-height: 0; grid-template-columns: repeat(5,minmax(0,1fr)); grid-auto-rows: minmax(0,1fr); gap: 10px; }
+.weekly-body .weekly-presentation-dialog .weekly-random-candidate { min-height: 0; padding: 10px 14px; font-size: clamp(.85rem,1.2vw,1.2rem); }
+.weekly-body .weekly-presentation-dialog .weekly-random-result { flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 16px; }
+.weekly-presentation-dialog .weekly-random-result > :is(.classroom-team-mark,p) { display: none; }
+.weekly-presentation-dialog .weekly-random-result h4 { margin: 0; font-size: 1rem; }
+.weekly-presentation-dialog .weekly-random-result .weekly-draw-stage { flex: 1; display: grid; gap: 5px; margin: 0; }
+.weekly-presentation-dialog #weekly-draw-preview { min-height: 24px; font-size: 1.1rem; }
+#treasure-modal .weekly-winner-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 24px; box-sizing: border-box; border: 0; background: radial-gradient(ellipse at 50% 30%,#563b7d,#102c40 70%); color: #f7efff; }
+.weekly-winner-content { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; text-align: center; }
+.weekly-winner-dialog[open] .weekly-winner-content { animation: weekly-winner-reveal .45s ease-out; }
+@keyframes weekly-winner-reveal { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .weekly-winner-dialog[open] .weekly-winner-content { animation: none; } }
+.weekly-winner-star { color: #ffe08a; font-size: clamp(64px,12vh,110px); text-shadow: 0 0 35px #edb457; }
+.weekly-winner-content p { margin: 0; font-size: 1.2rem; }
+.weekly-winner-content h2 { margin: 0; max-width: 95%; font-size: clamp(2.5rem,6vw,6rem); overflow-wrap: anywhere; line-height: 1.15; }
+.weekly-winner-score { display: grid; font-size: 3rem; color: #ffe08a; }
+.weekly-winner-score small { font-size: 1rem; }
+.weekly-winner-content footer { display: flex; gap: 14px; margin-top: 16px; }
+html[data-theme="light"] #treasure-modal :is(.weekly-presentation-dialog,.weekly-winner-dialog) { background: radial-gradient(ellipse at 50% 30%,#eee0fa,#b8e5f3 75%); color: #182a42; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog :is(.weekly-winner-score,.weekly-winner-star) { color: #80530a !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog .classroom-button--quiet { color: #182a42 !important; }
+@media (max-width:1100px) { .weekly-body .weekly-candidate-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } .weekly-body .weekly-presentation-dialog .weekly-candidate-grid { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; } .weekly-body .weekly-presentation-dialog .weekly-random-candidate { padding: 8px; } }
 html[data-theme="light"] #treasure-modal .weekly-meteor { color: #b0760b; text-shadow: 0 0 6px #ffe077, -10px -6px 8px #dc7fa4, -24px -12px 12px #a785d7; }
 html[data-theme="light"] #treasure-modal .weekly-body :is(.weekly-random-mode strong,.weekly-random-result .classroom-button--quiet) { color: #182a42 !important; text-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .weekly-meteor { display: none; } .weekly-random-candidate.is-preview { transform: none; } }
