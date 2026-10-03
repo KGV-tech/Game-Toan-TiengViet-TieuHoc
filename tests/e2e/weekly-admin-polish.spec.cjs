@@ -11,6 +11,49 @@ async function setup(page) {
   });
 }
 
+test('Light mode: trạng thái tải dùng nền pastel và chữ tương phản', async ({page}) => {
+  await setup(page);
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme='light';
+    window.supabase={}; app.data.adminDataLoaded=false;
+    app.data.ensureAdminDataLoaded=()=>new Promise(()=>{});
+    app.admin.openAdmin('quests');
+  });
+  await expect(page.locator('.admin-loading-state')).toBeVisible();
+  const colors=await page.locator('.admin-loading-state').evaluate(e=>({background:getComputedStyle(e).backgroundImage,title:getComputedStyle(e.querySelector('strong')).color,text:getComputedStyle(e.querySelector('p')).color}));
+  expect(colors.background).toContain('200, 235, 246');
+  expect(colors.title).toBe('rgb(24, 42, 66)');
+  expect(colors.text).toBe('rgb(70, 93, 118)');
+  await page.screenshot({path:'test-results/ui-review/loading-pastel.png'});
+});
+
+test('Kết quả random dùng lời chúc riêng cho Tổ, Nhóm và học sinh', async ({page}) => {
+  await setup(page); await page.locator('[data-weekly-tab=random]').click();
+  for (const [mode,label] of [['section','Tổ'],['group','Nhóm'],['all','Bạn'],['section-member','Bạn'],['group-member','Bạn']]) {
+    await page.evaluate(mode=>{const ui=app.admin.weeklyState();ui.randomMode=mode;ui.result='Kết quả';ui.lastCandidate={score:0};app.admin.showWeeklyDrawWinner(ui);},mode);
+    await expect(page.locator('.weekly-winner-content p')).toHaveText(`${label} may mắn được chọn`);
+    await page.locator('#weekly-result-close').click();
+    await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  }
+});
+
+for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Trình chiếu cân giữa các hàng từ 1 đến 10 ô ${width}`, async ({page}) => {
+  await page.setViewportSize({width,height}); await setup(page);
+  await page.locator('[data-weekly-tab=random]').click();
+  await page.evaluate(width=>{if(width===1440)document.documentElement.dataset.theme='light';app.admin.showWeeklyDrawStage();},width);
+  for (let count=1;count<=10;count++) {
+    await page.evaluate(count=>app.admin.renderWeeklyCandidateGrid(app.admin.weeklyState(),Array.from({length:count},(_,i)=>({id:`x${i}`,name:`Tổ ${i+1}`,score:i}))),count);
+    await page.locator('#weekly-candidate-heading').evaluate((e,count)=>e.textContent=`Danh sách tham gia · ${count}`,count);
+    const rows=await page.locator('#weekly-draw-dialog [data-candidate-id]').evaluateAll(cards=>{
+      const rows=[]; for(const card of cards){const r=card.getBoundingClientRect();let row=rows.find(row=>Math.abs(row.top-r.top)<2);if(!row){row={top:r.top,left:r.left,right:r.right,count:0};rows.push(row);}row.right=r.right;row.count++;if(r.top<0||r.bottom>innerHeight||r.left<0||r.right>innerWidth)throw Error('Card outside viewport');}return rows;
+    });
+    const columns=count<=3?count:Math.ceil(count/2);
+    expect(rows.map(row=>row.count)).toEqual(count<=3?[count]:[columns,count-columns]);
+    for(const row of rows) expect(Math.abs((row.left+row.right)/2-width/2)).toBeLessThan(2);
+    if(count===5) await page.screenshot({path:`test-results/ui-review/balanced-five-${width}.png`});
+  }
+});
+
 for (const kind of ['groups','sections']) test(`Hai tầng ${kind}: chọn đội trước, bấm tiếp chọn đúng học sinh`, async ({page}) => {
   await setup(page);
   await page.evaluate(kind => {
