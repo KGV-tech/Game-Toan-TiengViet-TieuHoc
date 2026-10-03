@@ -194,10 +194,10 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .team-competit
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.team-local-adapter-notice,.team-remote-status-notice) { background: #c5e7df; color: #194c43 !important; border-color: #70a995; text-shadow: none; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .team-remote-status-notice--warning { background: #f2e5bd; color: #64430e !important; border-color: #c5a34e; }
 .quest-management-tools .team-dashboard-notice > div { font-size: .72rem; line-height: 1.4; padding: 8px 10px; }
-html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-rank-medal { color: #4d3106 !important; background: linear-gradient(135deg,#ffe5a3,#e9b64a); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-rank-medal { color: #a36b0a !important; background: none; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-rank-medal small { color: inherit !important; }
-html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="2"] .weekly-rank-medal { color: #253a54 !important; background: linear-gradient(135deg,#e1ebf7,#a9bfd7); }
-html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="3"] .weekly-rank-medal { color: #58311d !important; background: linear-gradient(135deg,#f5d0b3,#dba177); }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="2"] .weekly-rank-medal { color: #65798e !important; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row[data-rank="3"] .weekly-rank-medal { color: #9d5528 !important; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-ranking-row:nth-child(n+4) .weekly-rank-medal { background: #b9dfee; color: #263f58 !important; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] #weekly-draw-preview { color: #684288 !important; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-team-members label:has(:checked) { background: linear-gradient(135deg,#e0c9f4,#c9e9f6); border: 2px solid #7956ac; }

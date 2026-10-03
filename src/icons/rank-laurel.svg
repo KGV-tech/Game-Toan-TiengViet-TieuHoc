@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <g id="branch">
+      <path d="M28 58C9 55 2 29 20 10" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M18 13Q17 4 26 3Q26 10 18 13Z M14 19Q12 10 18 7Q22 15 14 19Z M10 26Q4 20 8 13Q15 18 10 26Z M8 34Q1 30 2 22Q10 25 8 34Z M10 42Q2 40 1 32Q10 33 10 42Z M14 49Q5 50 3 42Q12 41 14 49Z M20 55Q11 58 7 51Q15 47 20 55Z M28 58Q19 63 14 57Q21 52 28 58Z M15 18Q17 11 24 12Q22 19 15 18Z M11 26Q13 18 20 20Q18 27 11 26Z M10 34Q11 26 17 28Q17 35 10 34Z M12 42Q11 34 17 35Q21 42 12 42Z M17 49Q14 41 21 42Q25 48 17 49Z M24 54Q20 47 26 47Q32 52 24 54Z"/>
+    </g>
+  </defs>
+  <use href="#branch"/>
+  <use href="#branch" transform="translate(64 0) scale(-1 1)"/>
+</svg>
