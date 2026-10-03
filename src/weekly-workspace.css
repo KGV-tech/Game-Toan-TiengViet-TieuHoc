@@ -150,3 +150,21 @@ html[data-theme="light"] #treasure-modal .weekly-body :is(.weekly-random-mode st
 @media (prefers-reduced-motion: reduce) { .weekly-ranking-row:nth-child(-n+3) .weekly-rank-medal { animation: none; } }
 
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog .weekly-winner-star { color: #dc2626 !important; text-shadow: 0 0 35px #f9737380; }
+
+.weekly-team-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.weekly-arrangement-form { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.weekly-arrangement-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.weekly-arrangement-controls > label { width: 150px; }
+.weekly-arrangement-controls fieldset { display: flex; gap: 14px; flex-wrap: wrap; border: 1px solid #849cbe70; border-radius: 12px; padding: 10px; }
+.weekly-arrangement-controls fieldset label { display: flex; align-items: center; gap: 6px; }
+.weekly-arrangement-preview { min-height: 0; overflow: auto; flex: 1; padding: 4px; }
+.weekly-team-counts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.weekly-arrangement-form .weekly-team-members label { flex-wrap: wrap; }
+.weekly-arrangement-form .weekly-team-members select { width: 100%; min-width: 0; }
+.weekly-arrangement-form .classroom-form-hero { padding: 12px; }
+.weekly-arrangement-form .classroom-form-hero h3 { font-size: 1.2rem; }
+.weekly-arrangement-form .weekly-membership-note { margin: 0; }
+.weekly-arrangement-form #weekly-team-error { margin: 0; }
+
+.weekly-body:has(.weekly-arrangement-form) { overflow: hidden; }
+.weekly-arrangement-form { box-sizing: border-box; }

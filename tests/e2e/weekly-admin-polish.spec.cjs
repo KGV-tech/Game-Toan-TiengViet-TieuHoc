@@ -11,6 +11,91 @@ async function setup(page) {
   });
 }
 
+test('Sửa và xóa nhóm giữ điểm và danh sách học sinh', async ({page}) => {
+  await setup(page); await page.locator('[data-weekly-view=groups]').click();
+  await page.locator('[data-weekly-team-edit="g1"]').click();
+  await expect(page.locator('#weekly-team-name')).toHaveValue('Nhóm Sao');
+  await page.locator('#weekly-team-name').fill('Nhóm Mặt Trời');
+  await page.locator('[data-weekly-team-member="s0"]').uncheck();
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-body')).toContainText('Nhóm Mặt Trời');
+  let saved = await page.evaluate(() => app.classroom.weeks[0]);
+  expect(saved.scores).toEqual({s0:7});
+  expect(saved.teams.find(t=>t.id==='g1').members).toHaveLength(8);
+  expect(saved.teams.some(t=>t.id!=='g1' && t.members.includes('s0'))).toBe(true);
+  const pendingId = saved.teams.find(t=>t.id!=='g1').id;
+  await page.locator(`[data-weekly-team-edit="${pendingId}"]`).click();
+  await page.locator('#weekly-team-name').fill('Nhóm Cầu Vồng');
+  await page.locator('[data-weekly-team-member="s1"]').check();
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
+  await page.locator(`[data-weekly-team-edit="${pendingId}"]`).click();
+  await page.locator('[data-weekly-team-member="s0"]').uncheck();
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
+  page.once('dialog', dialog=>dialog.dismiss());
+  await page.locator('[data-weekly-team-delete="g1"]').click();
+  await expect(page.locator('[data-weekly-team-edit="g1"]')).toHaveCount(1);
+  page.once('dialog', dialog=>dialog.accept());
+  await page.locator('[data-weekly-team-delete="g1"]').click();
+  await expect(page.locator('[data-weekly-team-edit="g1"]')).toHaveCount(0);
+  saved = await page.evaluate(() => app.classroom.weeks[0]);
+  expect(saved.scores).toEqual({s0:7});
+  expect(new Set(saved.teams.filter(t=>(t.kind||saved.mode)==='groups').flatMap(t=>t.members)).size).toBe(9);
+  await page.evaluate(() => { app.classroom.owner=''; app.classroom.activate(); app.admin.renderWeeklyCompetition(); });
+  await expect(page.locator('[data-weekly-team-edit="g1"]')).toHaveCount(0);
+});
+
+for (const kind of ['sections','groups']) test(`Phân ${kind}: số lượng, cân bằng, admin chọn và giữ điểm`, async ({page}) => {
+  await setup(page); await page.locator(`[data-weekly-view=${kind}]`).click();
+  await page.locator('#weekly-team-arrange').click();
+  await page.locator('#weekly-team-count').fill('4');
+  await page.locator('#weekly-team-count').dispatchEvent('change');
+  await page.getByLabel('Tự chia ngẫu nhiên, cân bằng', {exact:true}).check();
+  await expect(page.locator('[data-weekly-team-total]')).toHaveCount(4);
+  expect(await page.locator('[data-weekly-team-total]').evaluateAll(cards=>cards.map(card=>Number(card.dataset.weeklyTeamTotal)).sort())).toEqual([2,2,2,3]);
+  expect(await page.evaluate(()=>app.classroom.weeks[0].teams.length)).toBe(1);
+  await page.getByLabel('Admin chọn học sinh', {exact:true}).check();
+  await page.locator('[data-weekly-team-draft-name="0"]').fill('Chưa phân tổ');
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-error')).toContainText('Tên này dành cho danh sách chưa phân');
+  await page.locator('[data-weekly-team-draft-name="0"]').fill('Đội Cầu Vồng');
+  await page.locator('[data-weekly-team-draft-name="0"]').press('Tab');
+  await expect(page.locator('[data-weekly-team-draft-name="1"]')).toBeFocused();
+  await page.locator('[data-weekly-team-assignment="s0"]').selectOption('0');
+  await page.locator('[data-weekly-team-assignment="s1"]').selectOption('0');
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
+  const saved = await page.evaluate(()=>app.classroom.weeks[0]);
+  const teams = saved.teams.filter(t=>(t.kind||saved.mode)===kind);
+  expect(teams).toHaveLength(4);
+  expect(teams[0].name).toBe('Đội Cầu Vồng');
+  expect(teams[0].members).toEqual(expect.arrayContaining(['s0','s1']));
+  expect(teams.flatMap(t=>t.members).sort()).toEqual(['s0','s1','s2','s3','s4','s5','s6','s7','s8']);
+  expect(saved.scores).toEqual({s0:7});
+  if (kind==='sections') expect(saved.teams.find(t=>t.id==='g1').members).toHaveLength(9);
+});
+
+for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Phân nhóm 31 học sinh: bounds, light và lỗi lưu ${width}`, async ({page}) => {
+  await page.setViewportSize({width,height}); await setup(page);
+  await page.evaluate(() => {
+    app.classroom.weeks[0].participants = Array.from({length:31},(_,i)=>({username:`p${i}`,fullname:`Nguyễn Hoàng Minh Phúc ${i}`}));
+    document.documentElement.dataset.theme='light';
+  });
+  await page.locator('[data-weekly-view=groups]').click(); await page.locator('#weekly-team-arrange').click();
+  await expect(page.locator('[data-weekly-team-assignment]')).toHaveCount(31);
+  expect(await page.locator('#weekly-body').evaluate(body => body.scrollHeight<=body.clientHeight+1 && body.scrollWidth<=body.clientWidth+1)).toBe(true);
+  await expect(page.locator('#weekly-team-form [type=submit]')).toBeVisible();
+  await page.screenshot({path:`test-results/ui-review/weekly-team-arrange-light-${width}.png`});
+  await page.getByLabel('Tự chia ngẫu nhiên, cân bằng', {exact:true}).check();
+  await page.evaluate(() => { const original=app.classroom.setWeekTeams.bind(app.classroom); let fail=true; app.classroom.setWeekTeams=(...args)=> { if(fail) { fail=false; throw new Error('Chưa thể lưu'); } return original(...args); }; });
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-error')).toHaveText('Chưa thể lưu');
+  await expect(page.locator('[data-weekly-team-assignment]').first()).toBeDisabled();
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
+});
+
 test('Danh sách đủ sau mỗi lượt, ghi nhớ ngầm đến khi đặt lại vòng', async ({page}) => {
   await setup(page);
   await page.evaluate(() => { app.classroom.weeks[0].participants.splice(3); });
@@ -209,7 +294,8 @@ test('Thêm tổ độc lập, lỗi giữ form, reduced motion và hủy vòng 
   await expect(page.locator('#weekly-team-name')).toHaveValue('Tổ Mặt Trời');
   await page.locator('#weekly-team-form [type=submit]').click();
   const state = await page.evaluate(() => app.classroom.weeks[0]);
-  expect(state.teams.filter(t => t.kind === 'sections')).toHaveLength(1);
+  expect(state.teams.find(t => t.name === 'Tổ Mặt Trời').members).toEqual(['s0']);
+  expect(state.teams.find(t => t.name === 'Chưa phân tổ').members).toHaveLength(8);
   expect(state.teams.find(t => t.id === 'g1').members).toHaveLength(9);
   expect(state.scores.s0).toBe(7);
   await page.emulateMedia({ reducedMotion: 'reduce' });
