@@ -11,6 +11,63 @@ async function setup(page) {
   });
 }
 
+for (const kind of ['groups','sections']) test(`Hai tầng ${kind}: chọn đội trước, bấm tiếp chọn đúng học sinh`, async ({page}) => {
+  await setup(page);
+  await page.evaluate(kind => {
+    app.classroom.weeks[0].teams = [
+      {id:'a',kind,name:'Đội A',members:['s0','s1','s4']},
+      {id:'b',kind,name:'Đội B',members:['s2','s3']}
+    ];
+    app.classroom.weeks[0].absences=['s1'];
+  },kind);
+  await page.locator('[data-weekly-tab=random]').click();
+  await page.locator(`[data-weekly-random-mode=${kind==='groups'?'group-member':'section-member'}]`).click();
+  await expect(page.locator('[data-candidate-id]')).toHaveCount(2);
+  const start=new Date('2026-10-03T08:00:00Z');
+  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  await page.locator('#weekly-draw').click(); await page.clock.runFor(6100);
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  const team=await page.evaluate(()=>app.admin.weeklyState().teamId);
+  expect(['a','b']).toContain(team);
+  const visible=team==='a'?['s0','s4']:['s2','s3'];
+  expect(await page.locator('[data-candidate-id]').evaluateAll(cards=>cards.map(card=>card.dataset.candidateId))).toEqual(visible);
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn)).toEqual([]);
+  await page.clock.runFor(10000);
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await page.locator('#weekly-draw').click(); await page.clock.runFor(6100);
+  await expect(page.locator('#weekly-result-dialog')).toBeVisible();
+  const winner=await page.evaluate(()=>app.admin.weeklyState().randomStudent);
+  expect(visible).toContain(winner);
+  await page.locator('#weekly-result-close').click();
+  expect(await page.locator('[data-candidate-id]').evaluateAll(cards=>cards.map(card=>card.dataset.candidateId))).toEqual(visible);
+  await page.locator('#weekly-draw').click();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(()=>app.admin.weeklyState().teamId)).toBe(team);
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn)).toEqual([winner]);
+  await page.locator('#weekly-team-stage-back').click();
+  await expect(page.locator('[data-candidate-id]')).toHaveCount(2);
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn)).toEqual([winner]);
+  await page.locator('#weekly-draw-reset').click();
+  expect(await page.evaluate(()=>app.admin.weeklyState().drawn)).toEqual([]);
+});
+
+for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Tổ/Nhóm gọn và chữ cân đối ${width}`, async ({page}) => {
+  await page.setViewportSize({width,height}); await setup(page);
+  await page.evaluate(() => {
+    const week=app.classroom.weeks[0];
+    week.participants=Array.from({length:31},(_,i)=>({username:`p${i}`,fullname:`Nguyễn Hoàng Minh Phúc ${i}`}));
+    week.teams=Array.from({length:6},(_,i)=>({id:`g${i}`,name:`Nhóm ${i+1}`,kind:'groups',members:week.participants.filter((s,j)=>j%6===i).map(s=>s.username)}));
+    document.documentElement.dataset.theme='light';
+  });
+  await page.locator('[data-weekly-view=groups]').click();
+  expect(await page.locator('#weekly-body').evaluate(e=>e.scrollHeight<=e.clientHeight+1 && e.scrollWidth<=e.clientWidth+1)).toBe(true);
+  expect(await page.locator('.weekly-roster-team-card').evaluateAll(cards=>cards.every(card=>card.getBoundingClientRect().height<300))).toBe(true);
+  await page.screenshot({path:`test-results/ui-review/compact-weekly-teams-${width}.png`});
+  await page.locator('[data-weekly-tab=random]').click(); await page.locator('[data-weekly-random-mode=group]').click();
+  expect(await page.locator('[data-candidate-id]').evaluateAll(cards=>cards.every(card=>card.getBoundingClientRect().height<=101))).toBe(true);
+  await page.screenshot({path:`test-results/ui-review/compact-team-random-${width}.png`});
+});
+
 test('Sửa và xóa nhóm giữ điểm và danh sách học sinh', async ({page}) => {
   await setup(page); await page.locator('[data-weekly-view=groups]').click();
   await page.locator('[data-weekly-team-edit="g1"]').click();
@@ -192,8 +249,12 @@ test('Sao băng chọn Nhóm rồi thành viên, giữ kết quả cuối và đ
   await expect(page.locator('#weekly-delay')).toHaveCount(0);
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw-preview')).toContainText('Nhóm Sao');
+  await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await expect(page.locator('#weekly-random-step')).toContainText('Nhóm Sao');
+  await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
-  await expect(page.locator('#weekly-draw')).toBeEnabled();
+  await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});
   const state = await page.evaluate(() => ({ ui: app.admin.weeklyState(), scores: app.classroom.weeks[0].scores }));
   await expect(page.locator('#weekly-winner-name')).toHaveText(state.ui.result);
   expect(state.scores).toEqual({s0:7});
