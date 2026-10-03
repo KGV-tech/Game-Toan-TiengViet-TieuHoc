@@ -22,7 +22,7 @@ Object.assign(app.admin, {
     resetWeeklySelection() {
         const ui = this.weeklyState();
         ui.drawToken = (ui.drawToken || 0) + 1; ui.drawing = false;
-        ui.drawn = []; ui.lastCandidate = null; ui.revealedCandidates = null; ui.animationCandidates = null; ui.meteorId = ''; ui.result = ''; ui.resultTeam = ''; ui.randomStudent = ''; ui.pointStudent = null; ui.teamId = ''; ui.search = ''; ui.error = '';
+        ui.drawn = []; ui.lastCandidate = null; ui.animationCandidates = null; ui.meteorId = ''; ui.result = ''; ui.resultTeam = ''; ui.randomStudent = ''; ui.pointStudent = null; ui.teamId = ''; ui.search = ''; ui.error = '';
     },
     selectWeeklyClass(key) {
         const ui = this.weeklyState();
@@ -133,11 +133,9 @@ Object.assign(app.admin, {
         document.getElementById('weekly-draw').onclick = () => void this.drawWeeklyRandom();
         const add = document.getElementById('weekly-random-add');
         if (add) add.onclick = () => { const dialog = document.getElementById('weekly-result-dialog'); if (dialog) { app.modal?.close(dialog, { restoreFocus: false }); dialog.close(); } this.openWeeklyPointPanel(week.id, ui.randomStudent); };
-        const candidates = this.weeklyRandomCandidates(week, ui);
+        const candidates = this.weeklyRandomCandidates(week, { ...ui, noRepeat: false });
         if (ui.lastCandidate) {
-            const current = this.weeklyRandomCandidates(week, { ...ui, noRepeat: false });
-            ui.lastCandidate = current.find(item => item.id === ui.lastCandidate.id) || ui.lastCandidate;
-            ui.revealedCandidates = ui.revealedCandidates?.map(item => current.find(candidate => candidate.id === item.id) || item);
+            ui.lastCandidate = candidates.find(item => item.id === ui.lastCandidate.id) || ui.lastCandidate;
         }
         document.getElementById('weekly-candidate-heading').textContent = `Danh sách tham gia · ${candidates.length}`;
         this.renderWeeklyCandidateGrid(ui, candidates);
@@ -160,7 +158,7 @@ Object.assign(app.admin, {
         const dialog = document.createElement('dialog');
         dialog.id = 'weekly-result-dialog'; dialog.className = 'weekly-winner-dialog';
         dialog.setAttribute('aria-labelledby', 'weekly-winner-name');
-        dialog.innerHTML = `<div class="weekly-winner-content"><span class="weekly-winner-star" aria-hidden="true">✦</span><p>${esc(ui.resultTeam || 'Sao băng đã tìm thấy')}</p><h2 id="weekly-winner-name">${esc(ui.result)}</h2><strong class="weekly-winner-score">${Number(ui.lastCandidate?.score || 0)}<small>điểm</small></strong><footer><button type="button" id="weekly-result-close" class="classroom-button classroom-button--quiet">Quay về danh sách</button></footer></div>`;
+        dialog.innerHTML = `<div class="weekly-winner-content"><span class="weekly-winner-star" aria-hidden="true">✦</span><p>Bạn may mắn được chọn</p><h2 id="weekly-winner-name">${esc(ui.result)}</h2><strong class="weekly-winner-score">${Number(ui.lastCandidate?.score || 0)}<small>điểm</small></strong><footer><button type="button" id="weekly-result-close" class="classroom-button classroom-button--quiet">Quay về danh sách</button></footer></div>`;
         body.append(dialog);
         const add = document.getElementById('weekly-random-add');
         if (add) dialog.querySelector('footer').prepend(add);
@@ -185,9 +183,8 @@ Object.assign(app.admin, {
         const grid = document.getElementById('weekly-random-candidates');
         if (!grid) return;
         const esc = value => app.data.sanitizeHTML(String(value ?? ''));
-        const displayed = [...(ui.drawing ? ui.animationCandidates || candidates : ui.revealedCandidates || candidates)];
-        if (!ui.drawing && ui.lastCandidate && !displayed.some(item => item.id === ui.lastCandidate.id)) displayed.push(ui.lastCandidate);
-        grid.innerHTML = displayed.map((candidate,index) => `<div class="weekly-random-candidate classroom-team-card ${!ui.drawing && candidate.id === ui.lastCandidate?.id ? 'is-selected' : ''}" data-candidate-id="${esc(candidate.id)}" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong class="weekly-candidate-score">${candidate.score}<small>điểm</small></strong></div>`).join('') || '<p>Chưa có lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.</p>';
+        const displayed = [...(ui.drawing ? ui.animationCandidates || candidates : candidates)];
+        grid.innerHTML = displayed.map((candidate,index) => `<div class="weekly-random-candidate classroom-team-card" data-candidate-id="${esc(candidate.id)}" data-tone="${index % 6}"><span>${esc(candidate.name)}</span><strong class="weekly-candidate-score">${candidate.score}<small>điểm</small></strong></div>`).join('') || '<p>Chưa có lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.</p>';
         const panel = grid.closest('.weekly-candidate-panel');
         if (!document.getElementById('weekly-meteor')) panel.insertAdjacentHTML('beforeend', '<span id="weekly-meteor" class="weekly-meteor" aria-hidden="true" hidden>✦</span>');
         if (ui.meteorId && !matchMedia('(prefers-reduced-motion: reduce)').matches) this.placeWeeklyMeteor(ui.meteorId, 0, !ui.drawing);
@@ -238,17 +235,19 @@ Object.assign(app.admin, {
         const ui = this.weeklyState(), week = this.weeklyActivityWeek();
         if (ui.drawing) return;
         let candidates = this.weeklyRandomCandidates(week, ui), team = null, teamCandidates = [];
+        let displayCandidates = this.weeklyRandomCandidates(week, { ...ui, noRepeat: false });
         if (ui.randomMode.endsWith('-member')) {
             const kind = ui.randomMode.startsWith('group') ? 'groups' : 'sections';
             const teams = this.weeklyTeams(week, kind).filter(item => (!ui.teamId || item.id === ui.teamId) && item.members.some(username => candidates.some(student => student.id === username)));
-            teamCandidates = teams.map(item => ({ id: item.id, name: item.name, score: item.members.reduce((sum, username) => sum + Number(week.scores[username] || 0), 0) }));
+            teamCandidates = this.weeklyTeams(week, kind).filter(item => item.members.some(username => displayCandidates.some(student => student.id === username))).map(item => ({ id: item.id, name: item.name, score: item.members.reduce((sum, username) => sum + Number(week.scores[username] || 0), 0) }));
             team = teams[Math.floor(Math.random() * teams.length)];
             candidates = team ? candidates.filter(student => team.members.includes(student.id)) : [];
+            displayCandidates = team ? displayCandidates.filter(student => team.members.includes(student.id)) : [];
         }
-        if (!candidates.length) { ui.result = 'Không còn lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.'; ui.randomStudent = ''; this.renderWeeklyCompetition(); return; }
+        if (!candidates.length) { ui.error = ui.result = 'Không còn lựa chọn phù hợp. Kiểm tra danh sách hoặc đặt lại vòng.'; ui.randomStudent = ''; this.renderWeeklyCompetition(); return; }
         const result = candidates[Math.floor(Math.random() * candidates.length)], token = ui.drawToken = (ui.drawToken || 0) + 1;
         const classKey = ui.classKey, weekId = week.id;
-        ui.drawing = true; ui.lastCandidate = null; ui.revealedCandidates = null; ui.meteorId = ''; ui.previewName = '';
+        ui.drawing = true; ui.lastCandidate = null; ui.meteorId = ''; ui.previewName = '';
         document.getElementById('weekly-draw').disabled = true;
         document.querySelector('.weekly-draw-stage').hidden = false;
         const panel = document.querySelector('.weekly-random-result');
@@ -262,12 +261,12 @@ Object.assign(app.admin, {
             ui.drawingText = `Đang chọn ${team.name} → học sinh…`;
             document.getElementById('weekly-random-result').textContent = ui.drawingText;
         }
-        await this.animateWeeklyDraw(ui, token, candidates, result, team && !ui.teamId ? 3300 : 6000);
+        await this.animateWeeklyDraw(ui, token, displayCandidates, result, team && !ui.teamId ? 3300 : 6000);
         if (ui.drawToken !== token) return;
         ui.previewName = ''; ui.drawProgress = 0;
         ui.drawing = false;
         if (!this.isAdminUser() || this.weeklyUI !== ui || ui.classKey !== classKey || this.weeklyActivityWeek().id !== weekId || this.questMode !== 'weekly' || ui.tab !== 'random' || !document.getElementById('weekly-draw')) return;
-        ui.animationCandidates = null; ui.revealedCandidates = candidates; ui.lastCandidate = result;
+        ui.animationCandidates = null; ui.lastCandidate = result;
         ui.drawn.push(result.id); ui.result = result.name; ui.resultTeam = team?.name || '';
         ui.randomStudent = ui.randomMode === 'all' || ui.randomMode.endsWith('-member') ? result.id : '';
         this.renderWeeklyCompetition(); this.showWeeklyDrawWinner(ui);
