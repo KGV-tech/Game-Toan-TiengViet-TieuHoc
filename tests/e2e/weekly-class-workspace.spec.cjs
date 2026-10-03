@@ -24,7 +24,7 @@ test('Tải lại giữa animation vẫn giữ nút chờ và thông báo đang 
   await setup(page); await page.locator('[data-weekly-tab=random]').click();
   await page.locator('#weekly-delay').selectOption('3000');
   await page.locator('#weekly-draw').click();
-  await page.locator('#weekly-refresh').click();
+  await page.evaluate(() => app.admin.refreshWeeklyAfterAsync());
   await expect(page.locator('#weekly-draw')).toBeDisabled();
   await expect(page.locator('.weekly-random-result')).toHaveClass(/is-drawing/);
   await expect(page.locator('#weekly-random-result')).toContainText('Đang chọn');

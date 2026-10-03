@@ -6,8 +6,6 @@
 #treasure-modal .weekly-roster-tabs [aria-pressed="true"] { border-color: #e6a7e0; background: linear-gradient(130deg, #ebb8df, #b59aee); color: #301d4f; }
 .weekly-sidebar-controls .weekly-tabs { border-top: 1px solid #7184a050; padding-top: 10px; }
 .quest-management-tools .weekly-sidebar-controls .weekly-toolbar { border: 0; padding: 0; background: none; box-shadow: none; }
-.weekly-sidebar-actions { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 6px; }
-#treasure-modal .weekly-sidebar-actions .classroom-button { padding: 8px; min-height: 38px; font-size: .72rem; }
 .quest-management-tools .weekly-class-picker :is(span,select), .quest-management-tools .weekly-select span { font-size: .75rem; }
 .weekly-section-heading { margin-bottom: 16px; }
 .weekly-section-heading h3 { margin: 0 0 5px; color: #ffe4a8; font-size: 1.6rem; }
@@ -57,7 +55,14 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-score { display: grid; justify-items: center; gap: 2px; flex: 0 0 auto; }
 .weekly-score small { font-size: .7rem; color: #cbd9ed; }
 .weekly-rank-medal { display: grid; place-items: center; position: relative; width: 44px; height: 52px; color: #ffe3a2; background: linear-gradient(135deg,#91610f,#edb737); border: 1px solid #ffe8ab; border-radius: 13px; box-shadow: 0 4px 12px #ffc74726; }
-.weekly-rank-medal svg { width: 27px; height: 27px; }
+.weekly-rank-star { display: block; position: relative; width: 36px; height: 34px; background: linear-gradient(145deg,#fff1ad,#ffbe35); clip-path: polygon(50% 0,64% 28%,96% 33%,73% 56%,79% 90%,50% 75%,21% 90%,27% 56%,4% 33%,36% 28%); }
+.weekly-rank-face { position: absolute; left: 12px; top: 13px; width: 12px; height: 9px; color: #51360d; }
+.weekly-rank-face::before { content: ''; position: absolute; width: 3px; height: 4px; background: currentColor; border-radius: 50%; box-shadow: 8px 0 currentColor; }
+.weekly-rank-face::after { content: ''; position: absolute; left: 3px; top: 4px; width: 6px; height: 4px; border-bottom: 2px solid currentColor; border-radius: 0 0 50% 50%; }
+.weekly-ranking-row[data-rank="2"] .weekly-rank-star { background: linear-gradient(145deg,#f3f9ff,#bdcde4); }
+.weekly-ranking-row[data-rank="2"] .weekly-rank-face { color: #263e5b; }
+.weekly-ranking-row[data-rank="3"] .weekly-rank-star { background: linear-gradient(145deg,#ffe0b8,#efa166); }
+.weekly-ranking-row[data-rank="3"] .weekly-rank-face { color: #59321d; }
 .weekly-rank-medal small { font-size: .65rem; font-weight: 900; line-height: 1; }
 .weekly-ranking-row[data-rank="2"] .weekly-rank-medal { background: linear-gradient(135deg,#687b99,#bacbe0); color: #172b45; border-color: #d9e6fa; }
 .weekly-ranking-row[data-rank="3"] .weekly-rank-medal { background: linear-gradient(135deg,#915a38,#e6a879); color: #392313; border-color: #ffc999; }

@@ -28,7 +28,7 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
   expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(1);
 });
 test('Chia nhóm ngẫu nhiên cân bằng và cập nhật bảng số lượng', async ({ page }) => {
-  await setup(page); await page.locator('#weekly-create').click();
+  await setup(page); await page.locator('[data-weekly-tab=standings]').click(); await page.locator('#weekly-manager-create').click();
   await expect(page.getByText('Tên thi đua tuần', { exact: true })).toBeVisible();
   await page.getByLabel('Thi đua theo Nhóm', { exact: true }).check();
   await page.locator('[data-weekly-assignment]').first().selectOption('1');
@@ -85,7 +85,10 @@ for (const [width, height] of [[1280,720],[1440,900],[1024,768]]) test(`Sidebar,
   await page.locator('[data-weekly-tab=random]').click();
   await page.screenshot({ path: `test-results/ui-review/polish-random-light-${width}.png` });
   await page.locator('[data-weekly-tab=standings]').click();
-  await expect(page.locator('.weekly-rank-medal svg')).toHaveCount(3);
+  await expect(page.locator('.weekly-rank-star')).toHaveCount(3);
+  await expect(page.locator('.weekly-rank-medal').first()).toHaveAttribute('aria-label', 'Hạng 1');
+  await expect(page.locator('.quest-management-sidebar #weekly-create, .quest-management-sidebar #weekly-refresh')).toHaveCount(0);
+  await expect(page.locator('#weekly-manager-create')).toBeVisible();
   await page.screenshot({ path: `test-results/ui-review/polish-ranking-light-${width}.png` });
   await page.locator('#quest-management-back').click(); await page.locator('[data-quest-launch=team]').click();
   await expect(page.locator('.quest-management-sidebar .team-dashboard-notice')).toBeVisible();

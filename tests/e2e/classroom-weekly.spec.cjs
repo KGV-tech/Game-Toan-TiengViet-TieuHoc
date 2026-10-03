@@ -73,7 +73,8 @@ test('Tải Supabase chậm không xóa form tuần; gửi lại dùng một ID 
     });
   });
   await weekly(page);
-  await page.locator('#weekly-create').click();
+  await page.locator('[data-weekly-tab=standings]').click();
+  await page.locator('#weekly-manager-create').click();
   await page.getByLabel('Tên thi đua tuần', { exact: true }).fill('Tuần đang soạn');
   await page.evaluate(() => window.finishClassroomLoading({ data: [] }));
   await expect(page.locator('#weekly-name')).toHaveValue('Tuần đang soạn');
@@ -92,7 +93,8 @@ async function weekly(page) {
   await page.locator('[data-quest-launch=weekly]').click();
 }
 async function createWeek(page, name) {
-  await page.locator('#weekly-create').click();
+  await page.locator('[data-weekly-tab=standings]').click();
+  await page.locator('#weekly-manager-create').click();
   await page.getByLabel('Tên thi đua tuần', { exact: true }).fill(name);
   await page.getByLabel('Lớp thi đua', { exact: true }).selectOption({ label: 'Lớp 4/4' });
   await page.locator('#weekly-form [type=submit]').click();
