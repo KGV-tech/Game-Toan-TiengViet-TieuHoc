@@ -72,7 +72,6 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-candidate-panel { position: relative; }
 .weekly-meteor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center; font-size: 40px; line-height: 1; color: #ffe793; pointer-events: none; z-index: 3; text-shadow: 0 0 8px #ffd463, -10px -6px 8px #ff7eae, -24px -12px 12px #bc8cff; transition-property: transform; transition-timing-function: ease-out; }
 .weekly-meteor[hidden] { display: none; }
-.weekly-random-candidate.is-selected { outline: 3px solid #ffe498; outline-offset: 1px; padding-left: 50px; }
 /* Browse large cards, then use a full-screen stage for the draw. */
 .weekly-body:has(.weekly-candidate-panel) { display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
 .weekly-body:has(.weekly-candidate-panel) > * { flex-shrink: 0; }
@@ -96,7 +95,6 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-random
 .weekly-body .weekly-random-candidate::after, .weekly-body .weekly-random-mode::after, .weekly-body .weekly-random-result::after, .weekly-student-card::after { content: none; }
 .weekly-candidate-score { display: grid; text-align: center; font-size: 1.2rem; line-height: 1.1; }
 .weekly-candidate-score small { font-size: .6rem; font-weight: 600; margin-top: 2px; }
-.weekly-body .weekly-random-candidate.is-selected { padding-left: 10px; }
 .weekly-body > .weekly-candidate-panel .weekly-meteor { display: none; }
 #treasure-modal .weekly-presentation-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; box-sizing: border-box; padding: 16px; border: 0; background: #0a2231; color: #eff6ff; overflow: hidden; }
 #treasure-modal .weekly-presentation-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
@@ -124,7 +122,7 @@ html[data-theme="light"] #treasure-modal :is(.weekly-presentation-dialog,.weekly
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog :is(.weekly-winner-score,.weekly-winner-star) { color: #80530a !important; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog .classroom-button--quiet { color: #182a42 !important; }
 @media (max-width:1100px) { .weekly-body .weekly-candidate-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } .weekly-body .weekly-presentation-dialog .weekly-candidate-grid { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; } .weekly-body .weekly-presentation-dialog .weekly-random-candidate { padding: 8px; } }
-html[data-theme="light"] #treasure-modal .weekly-meteor { color: #b0760b; text-shadow: 0 0 6px #ffe077, -10px -6px 8px #dc7fa4, -24px -12px 12px #a785d7; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-meteor { color: #dc2626 !important; text-shadow: 0 0 6px #ffaca5, -10px -6px 8px #f97373, -24px -12px 12px #fda4af; }
 html[data-theme="light"] #treasure-modal .weekly-body :is(.weekly-random-mode strong,.weekly-random-result .classroom-button--quiet) { color: #182a42 !important; text-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .weekly-meteor { display: none; } .weekly-random-candidate.is-preview { transform: none; } }
 @keyframes weekly-dice { 0%,100% { transform: rotate(-12deg) scale(.9); } 50% { transform: rotate(18deg) scale(1.12); } }
@@ -145,3 +143,10 @@ html[data-theme="light"] #treasure-modal .weekly-body :is(.weekly-random-mode st
 .weekly-membership-note { color: #bccedf; font-size: .8rem; }
 @media (min-width: 1400px) { .weekly-team-members { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media (prefers-reduced-motion: reduce) { .weekly-random-candidate.is-preview { transform: none; } }
+
+/* Soft light around the laurels keeps the number and rank colors readable. */
+.weekly-ranking-row:nth-child(-n+3) .weekly-rank-medal { animation: weekly-rank-glow 2.8s ease-in-out infinite; filter: drop-shadow(0 0 3px currentColor); }
+@keyframes weekly-rank-glow { 50% { filter: drop-shadow(0 0 7px currentColor); } }
+@media (prefers-reduced-motion: reduce) { .weekly-ranking-row:nth-child(-n+3) .weekly-rank-medal { animation: none; } }
+
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner-dialog .weekly-winner-star { color: #dc2626 !important; text-shadow: 0 0 35px #f9737380; }

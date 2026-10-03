@@ -209,3 +209,6 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] :is(.quest-man
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] .station-shell::before { background: linear-gradient(145deg,#c8ebf6,#b4deed); border-color: #83b5ca; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] :is(.admin-management-brand,#admin-management-back) { color: #182a42 !important; text-shadow: none; }
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-management-workspace="quests"] .admin-management-brand :is(h2,p) { color: #182a42 !important; }
+
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-point-adjust summary { color: #28455d; }
+html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-sidebar-controls .weekly-toolbar { background: none; border: 0; box-shadow: none; }

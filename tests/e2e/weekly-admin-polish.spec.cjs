@@ -10,6 +10,61 @@ async function setup(page) {
     app.admin.openAdmin('quests'); app.admin.switchQuestMode('weekly');
   });
 }
+
+test('Danh sách đủ sau mỗi lượt, ghi nhớ ngầm đến khi đặt lại vòng', async ({page}) => {
+  await setup(page);
+  await page.evaluate(() => { app.classroom.weeks[0].participants.splice(3); });
+  await page.locator('[data-weekly-tab=random]').click();
+  const start = new Date('2026-10-03T08:00:00Z');
+  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  const order = await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId));
+  const winners = [];
+  for (let i=0;i<3;i++) {
+    await page.locator('#weekly-draw').click();
+    await expect(page.locator('[data-candidate-id]')).toHaveCount(3);
+    await page.clock.runFor(6100);
+    await expect(page.locator('#weekly-result-dialog p')).toHaveText('Bạn may mắn được chọn');
+    if (i===0) {
+      await page.evaluate(() => document.documentElement.dataset.theme='light');
+      await expect(page.locator('.weekly-winner-star')).toHaveCSS('color','rgb(220, 38, 38)');
+      await page.evaluate(() => document.documentElement.dataset.theme='dark');
+      await expect(page.locator('.weekly-winner-star')).toHaveCSS('color','rgb(255, 224, 138)');
+    }
+    winners.push(await page.evaluate(() => app.admin.weeklyState().randomStudent));
+    await page.locator('#weekly-result-close').click();
+    expect(await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId))).toEqual(order);
+    await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveCount(0);
+  }
+  expect(new Set(winners).size).toBe(3);
+  await page.locator('#weekly-draw').click();
+  await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await expect(page.locator('.weekly-status')).toBeVisible();
+  await expect(page.locator('.weekly-status')).toContainText('đặt lại vòng');
+  expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(3);
+  await expect(page.locator('[data-candidate-id]')).toHaveCount(3);
+  await page.locator('#weekly-draw-reset').click();
+  await expect(page.locator('.weekly-status')).not.toContainText('đặt lại vòng');
+  await page.locator('#weekly-draw').click(); await page.clock.runFor(6100);
+  expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(1);
+});
+
+test('Light mode: sao đỏ, điều chỉnh rõ, chọn tuần không có mảng vàng; icon có ánh sáng', async ({page}) => {
+  await setup(page);
+  await page.evaluate(() => document.documentElement.dataset.theme='light');
+  await page.locator('.weekly-student-card').first().click();
+  await expect(page.locator('.weekly-point-adjust summary')).toHaveCSS('color','rgb(40, 69, 93)');
+  await page.locator('#weekly-point-cancel').click();
+  await expect(page.locator('.weekly-sidebar-controls .weekly-toolbar')).toHaveCSS('background-image','none');
+  await page.locator('[data-weekly-tab=standings]').click();
+  await expect(page.locator('.weekly-rank-medal').first()).toHaveCSS('animation-name','weekly-rank-glow');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect(page.locator('.weekly-rank-medal').first()).toHaveCSS('animation-name','none');
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.locator('[data-weekly-tab=random]').click(); await page.locator('#weekly-draw').click();
+  await expect(page.locator('#weekly-meteor')).toHaveCSS('color','rgb(220, 38, 38)');
+  await page.evaluate(() => document.documentElement.dataset.theme='dark');
+  await expect(page.locator('#weekly-meteor')).toHaveCSS('color','rgb(255, 231, 147)');
+});
 test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời gian chờ', async ({ page }) => {
   await setup(page);
   await expect(page.getByText('Tìm học sinh', { exact: true })).toBeVisible();
@@ -30,7 +85,7 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
   await expect.poll(() => page.locator('#weekly-draw-preview').textContent()).not.toBe(before);
   await expect(page.locator('#weekly-draw')).toBeEnabled({ timeout: 8000 });
   expect(await page.evaluate(() => app.admin.weeklyState().drawn.length)).toBe(1);
-  await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveCount(1);
+  await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveCount(0);
   expect(await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId))).toEqual(originalOrder);
   await expect(page.locator('#weekly-result-dialog')).toBeVisible();
 });
@@ -55,7 +110,7 @@ test('Sao băng chọn Nhóm rồi thành viên, giữ kết quả cuối và đ
   await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
   await expect(page.locator('#weekly-draw')).toBeEnabled();
   const state = await page.evaluate(() => ({ ui: app.admin.weeklyState(), scores: app.classroom.weeks[0].scores }));
-  await expect(page.locator('.weekly-random-candidate.is-selected')).toHaveAttribute('data-candidate-id', state.ui.randomStudent);
+  await expect(page.locator('#weekly-winner-name')).toHaveText(state.ui.result);
   expect(state.scores).toEqual({s0:7});
   await expect(page.locator('#weekly-random-team-result')).toHaveText('Nhóm Sao');
 });
