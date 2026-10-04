@@ -1687,6 +1687,13 @@ const app = {
                 app.ui.setButtonLoading('change-password-submit', false);
             }
         },
+        async ensureGameAssetsLoaded() {
+            if (typeof window.waitForGameAssets !== 'function' || !await window.waitForGameAssets()) {
+                this.showAuthFeedback('login-error', 'Chưa tải đủ giao diện hoặc bộ câu hỏi. Hãy chờ rồi thử lại; nếu vẫn lỗi, tải lại trang.', []);
+                return false;
+            }
+            return true;
+        },
         async login() {
             if (app.teamCompetition?.hasActiveLeaderAttempt?.()) {
                 const confirmed = await app.teamCompetition.confirmLeaderExit('account_switch');
@@ -1738,12 +1745,28 @@ const app = {
                 if (user.role?.toLowerCase() !== 'admin') app.router.prefetch('map-screen');
                 const localExams = app.data.loadLocalExams();
                 const pendingExamSnapshot = app.data.loadPendingExamSnapshot();
-                const [exams, settingsData] = await Promise.all([
+                const isAdmin = user.role?.toLowerCase() === 'admin';
+                const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
+                // Read-only collections have no dependency on each other. Start
+                // both groups after the profile is approved, then apply settings
+                // before hydrating question/quest metadata as before.
+                const [[exams, settingsData], roleData] = await Promise.all([
+                  Promise.all([
                     app.data.fetchAllFromSupabase('game_exams'),
                     app.data.fetchAllFromSupabase('game_settings'),
                     app.data.refreshPetInventory()
+                  ]),
+                  isAdmin
+                    ? Promise.all([app.data.fetchAllFromSupabase('game_users', '', '', { pageSize: 250 })])
+                    : Promise.all([
+                        app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
+                        app.data.fetchAllFromSupabase('question_templates'),
+                        app.data.loadSeenQuestions(user.username),
+                        app.data.fetchAllFromSupabase('game_quests'),
+                        app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username),
+                        app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
+                    ])
                 ]);
-                const isAdmin = user.role?.toLowerCase() === 'admin';
                 if (isAdmin && exams.length > 0 && pendingExamSnapshot !== null) {
                     // Giữ lại đề mới/chỉnh sửa đang chờ đồng bộ nếu lần lưu trước gặp lỗi mạng hoặc RLS.
                     app.data.exams = app.data.mergeExamSnapshots(exams, pendingExamSnapshot);
@@ -1760,7 +1783,7 @@ const app = {
                     // Roster is needed by the team adapter immediately after
                     // login; the large authoring collections are loaded only
                     // when an Admin opens a relevant workspace.
-                    const users = await app.data.fetchAllFromSupabase('game_users', '', '', { pageSize: 250 });
+                    const [users] = roleData;
                     app.data.users = users;
                     app.data.users.forEach(usr => { if (!Array.isArray(usr.history)) usr.history = []; });
                     app.data.libraryQuestions = [];
@@ -1771,15 +1794,7 @@ const app = {
                     if (document.getElementById('quest-station')) document.getElementById('quest-station').style.display = 'none';
                 } else {
                     loginStage = 'load-student-data';
-                    const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
-                    const [questions, templates, , quests, userQuests, userPets] = await Promise.all([
-                        app.data.fetchAllFromSupabase('game_questions', 'classlevel', clLvl),
-                        app.data.fetchAllFromSupabase('question_templates'),
-                        app.data.loadSeenQuestions(user.username),
-                        app.data.fetchAllFromSupabase('game_quests'),
-                        app.data.fetchAllFromSupabase('user_quests', 'user_username', user.username),
-                        app.data.fetchAllFromSupabase('user_pets', 'user_username', user.username)
-                    ]);
+                    const [questions, templates, , quests, userQuests, userPets] = roleData;
                     app.data.libraryQuestions = questions;
                     app.data.hydrateQuestionLessons(app.data.libraryQuestions);
                     app.data.questionTemplates = templates;
@@ -1794,6 +1809,8 @@ const app = {
                 // Team competitions are persisted separately from personal
                 // quests. Load the server snapshot only after Auth succeeds so
                 // RLS can scope the result to the teacher/leader account.
+                loginStage = 'load-game-assets';
+                if (!await this.ensureGameAssetsLoaded()) return;
                 loginStage = 'sync-team-competition';
                 if (app.teamCompetition?.syncRemote) {
                     await app.teamCompetition.syncRemote();
@@ -1834,12 +1851,19 @@ const app = {
             }
             } catch (error) {
                 console.error(`Đăng nhập lỗi tại bước ${loginStage}:`, error);
+                if (loginStage === 'load-game-assets') {
+                    // Required assets cannot use the optional-data recovery:
+                    // opening the map here would expose incomplete gameplay.
+                    this.showAuthFeedback('login-error', error.message, []);
+                    return;
+                }
                 if (authenticatedProfile && app.data.currentUser) {
                     // Authentication and profile lookup have succeeded. A failure
                     // in optional post-login data must not send the student back to
                     // the login screen; keep the session usable and expose the
                     // exact stage for diagnosis.
                     try {
+                        if (!await this.ensureGameAssetsLoaded()) return;
                         this.updateHeader();
                         app.router.open('map-screen');
                         app.daily?.onMapEnter?.();
