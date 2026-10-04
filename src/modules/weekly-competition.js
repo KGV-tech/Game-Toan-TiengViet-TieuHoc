@@ -7,7 +7,7 @@ Object.assign(app.admin, {
     },
     selectedWeek() { const ui = this.weeklyState(); return app.classroom.weeks.find(week => week.id === ui.selected && (!ui.classKey || this.studentClassKey({ classlevel: week.classlevel, class_name: week.className }) === ui.classKey)) || null; },
     refreshWeeklyAfterAsync() {
-        if (document.getElementById('weekly-form') || document.getElementById('weekly-team-form')) document.querySelector('.weekly-status').textContent = this.weeklyState().error || this.classroomStatus();
+        if (document.getElementById('weekly-form') || document.getElementById('weekly-team-form')) document.querySelector('.weekly-status').textContent = this.weeklyState().error || app.weeklyOffline?.status() || this.classroomStatus();
         else this.renderWeeklyCompetition();
     },
     async addWeeklyPoint(weekId, username, delta = 1) {
