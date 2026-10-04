@@ -8,12 +8,12 @@
   <link rel="preload" as="image" href="./public/login_reference_bg.webp" fetchpriority="high">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
   <link rel="stylesheet" href="./src/style.css?v=garden-hud-pots-v2">
   <link rel="stylesheet" href="./src/login-layout.css">
-  <link rel="stylesheet" href="./src/map-layout.css">
-  <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1">
-  <link rel="stylesheet" href="./src/student-learning.css?v=learning-deck-v2">
+  <link rel="stylesheet" href="./src/map-layout.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
+  <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
+  <link rel="stylesheet" href="./src/student-learning.css?v=learning-deck-v2" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
   <script>
     (() => {
       const defaultTimeoutMs = 4000;
@@ -112,10 +112,10 @@
       window.__gameDependencies = { timeoutMs, supabase, mobileDragDrop };
     })();
   </script>
-  <link rel="stylesheet" href="./src/classroom-management.css">
-  <link rel="stylesheet" href="./src/admin-theme.css">
-  <link rel="stylesheet" href="./src/weekly-workspace.css">
-  <link rel="stylesheet" href="./src/station-light-theme.css">
+  <link rel="stylesheet" href="./src/classroom-management.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
+  <link rel="stylesheet" href="./src/admin-theme.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
+  <link rel="stylesheet" href="./src/weekly-workspace.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
+  <link rel="stylesheet" href="./src/station-light-theme.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
 </head>
 
 <body>
@@ -1050,47 +1050,48 @@
   </div>
 
   </div>
-  <script defer src="./src/question-templates/grade-4/math/shared.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/smallest-of-four.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/largest-of-four.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/min-max-of-four.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/digit-at-place.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/compose-from-places.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/missing-expanded-addend.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/four-arithmetic-blanks.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/four-arithmetic-comparisons.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/four-operations-fill-blanks.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/four-operations-expressions.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/neighbor-numbers.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/natural-sequence.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/compare-number-forms.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/match-number-words.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/six-digit-numbers.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/million-class.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/round-hundred-thousands.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/round-number.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/review-b10-b15.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/place-value-true-false.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/safe-password-by-place-value.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/even-odd.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/variable-expressions.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/review-b01-b04.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/measurement-units.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/measurement-phase5.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/topic-5.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/review-b22-b25.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/geometry-phase7.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/review-phase8.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/three-step-word-problems.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-shared.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-count-in-polygon.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-drag-classify.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-clock-classify.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-count-eight-angles.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-measure.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/angle-review.js"></script>
-  <script defer src="./src/question-templates/grade-4/math/index.js"></script>
-  <script defer src="./src/question-templates/grade-4/vietnamese/index.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/shared.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/smallest-of-four.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/largest-of-four.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/min-max-of-four.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/digit-at-place.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/compose-from-places.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/missing-expanded-addend.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/four-arithmetic-blanks.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/four-arithmetic-comparisons.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/four-operations-fill-blanks.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/four-operations-expressions.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/neighbor-numbers.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/natural-sequence.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/compare-number-forms.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/match-number-words.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/six-digit-numbers.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/million-class.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/round-hundred-thousands.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/round-number.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/review-b10-b15.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/place-value-true-false.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/safe-password-by-place-value.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/even-odd.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/variable-expressions.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/review-b01-b04.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/measurement-units.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/measurement-phase5.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/topic-5.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/review-b22-b25.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/geometry-phase7.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/review-phase8.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/three-step-word-problems.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-shared.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-count-in-polygon.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-drag-classify.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-clock-classify.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-count-eight-angles.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-measure.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/angle-review.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/math/index.js"></script>
+  <script type="application/x-game-template" data-src="./src/question-templates/grade-4/vietnamese/index.js"></script>
+  <script defer src="./src/modules/startup-assets.js"></script>
   <script defer src="./src/template-content-builder.js"></script>
   <script defer src="./src/main.js?v=exam-composer-v1"></script>
   <script defer src="./src/modules/utils.js"></script>
