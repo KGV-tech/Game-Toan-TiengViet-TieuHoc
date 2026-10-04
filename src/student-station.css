@@ -1120,206 +1120,155 @@
         cursor: pointer;
     }
 
-    /* =========================================================================
-       CHẾ ĐỘ LIGHT MODE VÀ QUY TẮC AN TOÀN DARK CHO ADMIN
-       - Admin Kho Báu: LUÔN giữ style Dark Mode trạm không gian sang trọng
-       - Học sinh Kho Báu: Thêm giao diện Light Mode sáng sủa, sắc nét chuẩn EdTech
-       ========================================================================= */
-
-    /* 1. Đảm bảo Admin Kho Báu LUÔN ở Dark Mode dù html bật data-theme="light" */
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell {
-        border: 1px solid var(--station-line) !important;
-        background: linear-gradient(145deg, rgba(20, 54, 73, .32), rgba(8, 20, 34, .2) 58%, rgba(48, 35, 81, .2)), var(--station-panel) !important;
-        color: var(--station-text) !important;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 255, 255, .08) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)):not([data-management-workspace]) .station-shell__title-row {
-        background: rgba(5, 20, 33, .78) !important;
-        border: 1px solid rgba(126, 224, 244, .46) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .station-shell__title-row .title-glow {
-        color: var(--station-text) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) #admin-tabs .tab-btn {
-        background: rgba(11, 35, 52, .78) !important;
-        color: #cfe7ef !important;
-        border: 1px solid rgba(132, 173, 193, .38) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) #admin-tabs .tab-btn.active {
-        background: linear-gradient(145deg, #1689a5, #1554a3 78%) !important;
-        color: #fff !important;
-        border-color: var(--station-cyan) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table {
-        background: rgba(5, 20, 33, .72) !important;
-        color: #dbeef5 !important;
-        border: 1px solid var(--station-line-soft) !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table th {
-        background: linear-gradient(180deg, rgba(19, 53, 76, .95), rgba(11, 35, 52, .98)) !important;
-        color: #e9f5fb !important;
-    }
-
-    html[data-theme="light"] :is(#treasure-modal[data-ui-context="admin"], #treasure-modal:has(.admin-control-panel), #treasure-modal:has(#student-profile-detail)) .data-table td {
-        color: #dbeef5 !important;
-        border-bottom: 1px solid rgba(111, 214, 240, .1) !important;
-    }
-
     /* 2. Giao diện Light Mode dành riêng cho Học sinh trong Kho Báu */
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .station-shell {
         border: 1px solid #7dd3fc !important;
         background: linear-gradient(145deg, #ffffff, #f0f9ff 58%, #e0f2fe) !important;
         color: #0f172a !important;
         box-shadow: 0 24px 60px rgba(12, 74, 110, 0.18), inset 0 1px 0 #ffffff !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell::before {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .station-shell::before {
         border: 1px solid rgba(14, 165, 233, 0.2);
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell__title-row {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .station-shell__title-row {
         background: rgba(255, 255, 255, 0.9) !important;
         border: 1px solid #7dd3fc !important;
         box-shadow: 0 6px 18px rgba(14, 165, 233, 0.15) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .station-shell__title-row .title-glow {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .station-shell__title-row .title-glow {
         color: #0369a1 !important;
         text-shadow: 0 0 12px rgba(14, 165, 233, 0.25) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #admin-tabs {
         border-bottom-color: rgba(14, 165, 233, 0.25) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #admin-tabs .tab-btn {
         background: #f1f5f9 !important;
         border: 1px solid #cbd5e1 !important;
         color: #334155 !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn:hover {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #admin-tabs .tab-btn:hover {
         background: #e0f2fe !important;
         color: #0284c7 !important;
         border-color: #38bdf8 !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #admin-tabs .tab-btn.active {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #admin-tabs .tab-btn.active {
         background: linear-gradient(145deg, #0284c7, #0369a1) !important;
         border-color: #0284c7 !important;
         color: #ffffff !important;
         box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .admin-content {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .admin-content {
         background: rgba(255, 255, 255, 0.75) !important;
         border: 1px solid #bae6fd !important;
         color: #0f172a !important;
     }
 
     /* Light Mode: Tab Thành tích học sinh */
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-overview__heading {
         background: linear-gradient(145deg, #fdf4ff, #fae8ff) !important;
         border: 1px solid #d8b4fe !important;
         box-shadow: 0 8px 24px rgba(168, 85, 247, 0.12) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading .station-kicker {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-overview__heading .station-kicker {
         color: #7c3aed !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading h3 {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-overview__heading h3 {
         color: #581c87 !important;
         text-shadow: none !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading p {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-overview__heading p {
         color: #64748b !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-overview__heading strong {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-overview__heading strong {
         color: #d97706 !important;
         text-shadow: none !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-stars {
         background: radial-gradient(circle at 50% 40%, rgba(254, 243, 199, 0.8), transparent 70%), #fffbeb !important;
         border: 1.5px dashed #f59e0b !important;
         box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars img {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-stars img {
         filter: drop-shadow(0 4px 10px rgba(217, 119, 6, 0.4)) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .student-treasure-stars__empty {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .student-treasure-stars__empty {
         color: #78716c !important;
     }
 
     /* Light Mode: Tab Lịch sử làm bài học sinh */
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .data-table {
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table th {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .data-table th {
         background: linear-gradient(180deg, #f0f9ff, #e0f2fe) !important;
         color: #0369a1 !important;
         border-bottom: 2px solid #38bdf8 !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table td {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .data-table td {
         color: #0f172a !important;
         border-bottom: 1px solid #e2e8f0 !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table tbody tr:nth-child(even) {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .data-table tbody tr:nth-child(even) {
         background: rgba(240, 249, 255, 0.6) !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .data-table tbody tr:hover {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .data-table tbody tr:hover {
         background: #e0f2fe !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .filter-input {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .filter-input {
         background: #ffffff !important;
         border: 1px solid #94a3b8 !important;
         color: #0f172a !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) .filter-input:focus-visible {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .filter-input:focus-visible {
         border-color: #0284c7 !important;
         box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
     }
 
     /* Light Mode: Màn hình chi tiết bài làm học sinh */
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area h3 {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #treasure-content-area h3 {
         color: #0f172a !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area p {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #treasure-content-area p {
         color: #64748b !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .scroll-box > div[style*="border-left"] {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #treasure-content-area .scroll-box > div[style*="border-left"] {
         background: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
         color: #0f172a !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .scroll-box > div[style*="border-left"] * {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #treasure-content-area .scroll-box > div[style*="border-left"] * {
         color: #0f172a !important;
     }
 
-    html[data-theme="light"] #treasure-modal:not(:has(.admin-control-panel)):not([data-ui-context="admin"]) #treasure-content-area .btn-primary {
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #treasure-content-area .btn-primary {
         background: linear-gradient(145deg, #0284c7, #0369a1) !important;
         border: 1px solid #0284c7 !important;
         color: #ffffff !important;

@@ -1,0 +1,175 @@
+/* Shared light surfaces. Artwork and answer-state colors remain component-owned.
+   Screen-only: printed exams keep their existing paper stylesheet. */
+@media screen {
+    html[data-theme="light"] {
+        --station-panel: #c6eafa;
+        --station-panel-soft: #d3eff9;
+        --station-text: #182a42;
+        --station-muted: #465d76;
+        --station-line: #83afc4;
+        --station-line-soft: #aec9dc;
+        --station-cyan: #086785;
+        --station-gold: #855600;
+        --station-green: #186448;
+        --station-danger: #b42336;
+        --light-surface: linear-gradient(145deg, #d2edf9, #b9e2f1);
+        --light-card: linear-gradient(145deg, #e3f5fc, #cae9f6);
+    }
+
+    /* Station shells must follow the theme even when the original panel has a
+       fixed background or a painted pseudo-element beneath its contents. */
+    html[data-theme="light"] :is(#game-config-view, #quest-modal, #shop-modal) .station-shell,
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-admin-mode="learning-path"] .station-shell {
+        background: var(--light-surface) !important;
+        color: var(--station-text) !important;
+        border-color: var(--station-line) !important;
+        box-shadow: 0 16px 40px #164a6826, inset 0 1px 0 #ffffff80 !important;
+    }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"][data-admin-mode="learning-path"] .station-shell::before {
+        background: var(--light-surface) !important;
+    }
+    html[data-theme="light"] :is(#game-config-view, #quest-modal) :is(.screen-title-row, .station-shell__title-row, .config-section, .topic-mode-toggle) {
+        background: var(--light-card) !important;
+        border-color: var(--station-line-soft) !important;
+    }
+    html[data-theme="light"] :is(#game-config-view, #quest-modal) .title-glow {
+        color: #145573 !important;
+        text-shadow: none !important;
+    }
+    html[data-theme="light"] #game-config-view :is(.btn-opt, .topic-card, .topic-mode-option span) {
+        background: var(--light-card) !important;
+        color: var(--station-text) !important;
+        border-color: var(--station-line) !important;
+    }
+    html[data-theme="light"] #game-config-view :is(.btn-opt.active, .topic-card:has(input:checked), .topic-mode-option input:checked + span) {
+        background: #b9dfed !important;
+        color: #123b52 !important;
+        border-color: #287c98 !important;
+    }
+    html[data-theme="light"] #game-config-view .config-difficulty-options .btn-opt.active {
+        background: #ffe5a2 !important;
+        color: #67420c !important;
+        border-color: #a57726 !important;
+    }
+    html[data-theme="light"] #game-config-view .topic-card--locked { background: #d7e4ec !important; }
+    html[data-theme="light"] #game-play-view .option-btn { background: var(--light-card); color: var(--station-text); border-color: #6098b7; }
+    html[data-theme="light"] #game-play-view .option-btn:is(:hover, .selected) { background: #ffedbd; color: #67420c; border-color: #a57726; }
+
+    /* Guide, task board and the shop's text panels; sprite buttons stay intact. */
+    html[data-theme="light"] #guide-modal .sci-fi-panel {
+        background: var(--light-surface) !important;
+        border-color: #4798b7 !important;
+        color: var(--station-text);
+        box-shadow: 0 16px 40px #164a6840 !important;
+    }
+    html[data-theme="light"] #guide-modal :is(.guide-title, .guide-intro, .guide-content, .guide-section, .guide-reward-table) {
+        color: var(--station-text) !important;
+        text-shadow: none;
+    }
+    html[data-theme="light"] #guide-modal :is(.guide-section h3, .guide-toc__label) { color: #77500a; border-color: #a57726; }
+    html[data-theme="light"] #guide-modal .guide-toc a { background: #d9f1fb; color: #185873; border-color: #6da2bd; }
+    html[data-theme="light"] #guide-modal .guide-reward-table :is(th,td) { background: #d9f1fb; color: var(--station-text); border-color: #96b9ce; }
+    html[data-theme="light"] #quest-modal :is(.quest-item-card, .student-team-competition-card, .quest-list-container > p) {
+        background: var(--light-card) !important;
+        color: var(--station-text) !important;
+        border-color: #83afc4;
+        box-shadow: 0 6px 18px #164a681a;
+    }
+    html[data-theme="light"] #quest-modal .quest-gift-box { background: #fff0c8; border-color: #b58b3c; }
+    html[data-theme="light"] #quest-modal .quest-gift-info p { color: #66502b; }
+    html[data-theme="light"] #shop-modal .shop-shell__scrim { background: var(--light-surface); }
+    html[data-theme="light"] #shop-modal :is(.shop-content-area, .lucky-info-card, .pet-details-card, .admin-pet-preview) {
+        background: var(--light-card) !important;
+        color: var(--station-text);
+        border-color: #83afc4;
+        box-shadow: 0 6px 18px #164a681a;
+    }
+    html[data-theme="light"] #shop-modal .notebook-tab { background: #c7e8f5 !important; border-color: #83afc4 !important; }
+    html[data-theme="light"] #shop-modal .notebook-tab:hover { background: #b6daeb !important; }
+    html[data-theme="light"] #shop-modal .notebook-tab.active { background: #ffe9b9 !important; border-color: #aa7c24 !important; outline-color: #aa7c24 !important; }
+    html[data-theme="light"] #shop-modal .lucky-star-count { background: #fff0c8; color: #67420c; border-color: #b58b3c; }
+    html[data-theme="light"] #shop-modal .lucky-rules { background: #d0eaf5; color: var(--station-muted); }
+    html[data-theme="light"] #shop-modal :is(.pet-details-description, .admin-pet-preview p) { color: var(--station-muted) !important; }
+    html[data-theme="light"] #shop-modal .admin-pet-preview h3 { color: var(--station-text); }
+
+    /* Exam paper and result panels use light ink, including inline answer colors. */
+    html[data-theme="light"] #exam-play-screen :is(.exam-paper, .exam-header, .exam-q-block, .exam-opt-label, .exam-true-false-row),
+    html[data-theme="light"] #result-modal :is(.result-layout, .result-left, .result-right, .details-box, .details-box > div) {
+        background: var(--light-card) !important;
+        color: var(--station-text) !important;
+        border-color: #83afc4 !important;
+    }
+    html[data-theme="light"] #exam-play-screen :is(h1, #exam-meta, .exam-q-text, .exam-subquestion-prompt, label) { color: var(--station-text) !important; text-shadow: none; }
+    html[data-theme="light"] #exam-play-screen :is(.exam-shared-prompt, .exam-true-false-row legend) { color: #263f58; }
+    html[data-theme="light"] #exam-play-screen :is(input, select, textarea) { background: #eefaff !important; color: var(--station-text) !important; border-color: #6098b7; color-scheme: light; }
+    html[data-theme="light"] #exam-play-screen .exam-opt-label:has(input:checked) { background: #ffedbd !important; border-color: #a57726 !important; }
+    html[data-theme="light"] #result-modal #result-details { background: #def2fb !important; color: var(--station-text); }
+    html[data-theme="light"] #result-modal :is(#result-title, .result-right h3) { color: #77500a; text-shadow: none; }
+    html[data-theme="light"] #result-modal #result-score { color: #186448; text-shadow: none; }
+    html[data-theme="light"] #result-modal :is(.max-score, #result-msg) { color: #465d76; }
+    html[data-theme="light"] #result-modal :is([style*="color:#ff"], [style*="color:#f87171"]) { color: #b42336 !important; }
+    html[data-theme="light"] #result-modal :is([style*="color:#00ff"], [style*="color:#4ade80"]) { color: #186448 !important; }
+
+    /* Admin's public leaderboard is still a treasure view, not an admin editor. */
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .admin-control-panel { background: var(--light-card); border-color: #83afc4; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .admin-control-panel :is(.btn-opt, .acp-btn:not(.btn-success), .form-input, #student-profile-select) {
+        background: #d9f1fb !important;
+        color: var(--station-text) !important;
+        border-color: #83afc4 !important;
+        color-scheme: light;
+        text-shadow: none;
+    }
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .admin-control-panel .btn-opt.active { background: #aedbe9 !important; color: #123b52 !important; border-color: #287c98 !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] .admin-control-panel label { color: #465d76; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #student-profile-detail .glass-container { background: var(--light-card) !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="student"] #student-profile-detail h3 { color: var(--station-text); }
+    html[data-theme="light"] :is(#print-modal .modal-content, .attempt-resume-card) { background: var(--light-card) !important; color: var(--station-text); border-color: #6098b7 !important; }
+    html[data-theme="light"] #print-modal label { background: #d9f1fb; color: var(--station-text); }
+    html[data-theme="light"] #print-modal label:hover { background: #b9dfed; }
+    html[data-theme="light"] .attempt-resume-card :is(h2,p) { color: var(--station-text); text-shadow: none; }
+
+    /* The learning-path dashboard has separate rails with legacy dark paint. */
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) :is(.learning-release-control-rail, .learning-release-release-rail, .learning-release-list-panel, .learning-release-controls) {
+        background: var(--light-card) !important;
+        border-color: #83afc4 !important;
+    }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-boundary { background: #fff0c8; border-color: #b58b3c !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-summary { background: #cceee0; color: #185940 !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-release-rail .learning-release-main-panel__header :is(h3,p) { color: var(--station-text) !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) #learning-release-card-boundary { color: #77500a !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .settings-workspace__kicker,
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-list-panel > header span { color: #465d76 !important; }
+    html[data-theme="light"] #treasure-modal[data-ui-context="admin"]:has(.learning-release-workspace) .learning-release-row.is-boundary { background: #ffedbd; color: #67420c; }
+
+    /* Composer tools, checked lessons and structured parts need matching paint. */
+    html[data-theme="light"] #admin-compose-screen :is(.exam-library-tools summary, .question-library__tools summary, .exam-workspace__tabs button) {
+        background: #d3eafa !important;
+        color: #263f58 !important;
+        border-color: #91afc9;
+    }
+    html[data-theme="light"] #admin-compose-screen .exam-workspace__tabs button.active { background: #e5d6fa !important; color: #53327d !important; }
+    html[data-theme="light"] #admin-compose-screen .exam-composer__lesson-option:is(:hover, :has(input:checked)) {
+        background: color-mix(in srgb, var(--topic-color) 18%, #edf8fd);
+        color: #182a42;
+    }
+    html[data-theme="light"] #admin-compose-screen :is(.exam-structured-editor, .exam-structured-selection, .exam-structured-part, .exam-structured-part:has(.exam-structured-part__checkbox:checked)) {
+        background: var(--light-card);
+        color: var(--station-text);
+        border-color: #83afc4;
+    }
+    html[data-theme="light"] #admin-compose-screen :is(.exam-structured-part__heading, .exam-structured-options__title, .exam-structured-selection__count) { color: #263f58; }
+    html[data-theme="light"] #admin-compose-screen .exam-structured-part__number { background: #bbd7f7; color: #233e6c !important; }
+    html[data-theme="light"] #admin-compose-screen .exam-structured-selection__status { color: #186448; }
+    html[data-theme="light"] #admin-compose-screen .exam-structured-selection.has-selection-error { background: #fbe0e6; border-color: #b64c63; }
+    html[data-theme="light"] #admin-compose-screen .exam-structured-selection.has-selection-error .exam-structured-selection__status { color: #a32342; }
+    html[data-theme="light"] #admin-compose-screen .exam-structured-part__checkmark { background: #d2e8f4; border-color: #6e97b0; }
+    html[data-theme="light"] #admin-compose-screen .template-part-option { background: var(--light-card); color: var(--station-text); border-color: #83afc4; }
+    html[data-theme="light"] #admin-compose-screen .template-part-option:has(input:checked) { background: #fff0c8; color: #67420c; border-color: #b58b3c; }
+    html[data-theme="light"] #admin-compose-screen :is(.template-content-builder, .template-content-block) { background: var(--light-card); color: var(--station-text); border-color: #83afc4; }
+    html[data-theme="light"] #admin-compose-screen :is(.template-content-builder__actions button, .template-content-block__controls button) { background: #d8e8fb; color: #233e6c; border-color: #82a3c7; text-shadow: none; }
+    html[data-theme="light"] #admin-compose-screen :is(.template-content-builder__actions button:hover, .template-content-block__controls button:hover:not(:disabled)) { background: #e5d6fa; border-color: #8263ac; }
+    html[data-theme="light"] #admin-compose-screen .template-part-option__mark { background: #d2e8f4; border-color: #6e97b0; }
+    html[data-theme="light"] #admin-compose-screen .template-editor__part-selection.has-selection-error { background: #fbe0e6; border-color: #b64c63; }
+    html[data-theme="light"] #admin-compose-screen .template-editor__part-selection-status { color: #186448; }
+    html[data-theme="light"] #admin-compose-screen .template-editor__part-selection.has-selection-error .template-editor__part-selection-status { color: #a32342; }
+}
