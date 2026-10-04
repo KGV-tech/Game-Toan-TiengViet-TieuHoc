@@ -1761,6 +1761,99 @@ test('soạn đề Toán lớp 4 dùng bố cục lưới cân đối trên desk
   await testInfo.attach('soan-de-question-tablet.png', { path: tabletQuestionScreenshot, contentType: 'image/png' });
 });
 
+for (const viewport of [{width:1280,height:720},{width:1440,height:900},{width:1024,height:768}]) {
+test(`light mode xuyên các trạm và trình biên soạn ${viewport.width}x${viewport.height}`, async ({page},testInfo) => {
+  test.setTimeout(180000);
+  await page.setViewportSize(viewport);
+  const {consoleErrors,supabaseRequests}=await openOfflineHomepage(page);
+  await page.evaluate(()=>document.documentElement.dataset.theme='light');
+  const extraStates = [
+    {name:'admin-learning',screenId:'map-screen',adminTab:'settings'},
+    {name:'admin-leaderboard',screenId:'map-screen',studentTreasureTab:'leaderboard'},
+    {name:'admin-profile',screenId:'map-screen',studentTreasureTab:'student-profile'},
+    {name:'template-editor',screenId:'map-screen',adminTab:'templates'},
+    {name:'question-editor',screenId:'map-screen',adminTab:'questions'},
+    {name:'print',screenId:'map-screen',modalId:'print-modal'},
+    {name:'resume',screenId:'map-screen',modalId:'attempt-resume-modal'}
+  ];
+  for(const state of [...auditStates,...extraStates]) {
+    await page.evaluate(()=>['print-modal','attempt-resume-modal'].forEach(id=>document.getElementById(id).style.display='none'));
+    await showAuditState(page,state);
+    if(state.name==='admin-learning')await page.evaluate(()=>app.admin.openLearningPath('math'));
+    if(state.name==='admin-leaderboard')await page.evaluate(()=>{app.data.currentUser.role='admin';app.treasure.open();app.treasure.switchTab('leaderboard');});
+    if(state.name==='admin-profile')await page.evaluate(async()=>{app.data.currentUser.role='admin';app.treasure.open();app.treasure.switchTab('student-profile');await app.treasure.loadStudentProfile(app.data.users.find(u=>u.role==='student').username);});
+    if(state.name==='print')await page.evaluate(()=>app.treasure.showPrintModal('leaderboard'));
+    if(state.name==='resume')await page.evaluate(()=>document.getElementById('attempt-resume-modal').style.display='flex');
+    if(state.name==='template-editor') {
+      await page.evaluate(()=>{
+        app.data.questionTemplates=[{
+          id:'light-compose', name:'Lập số từ các hàng', classlevel:'Lớp 4', subject:'Toán', semester:'Học kỳ 1',
+          topic:'1. Ôn tập và bổ sung', lesson:'g4-math-hk1-b01', question_type:'Điền khuyết',
+          generator_key:'number.compose_from_places', prompt_template:'{question}',
+          config:{minimum:10000,maximum:99999}, is_active:true
+        }];
+        app.admin.renderTemplateForm(0);
+      });
+      await page.locator('#template-part-count').selectOption('2', {timeout:10000});
+    }
+    if(state.name==='question-editor')await page.evaluate(()=>app.admin.renderQSubTab('add'));
+    if(state.name==='admin-exams')await page.evaluate(()=>{
+      app.data.exams=[{
+        name:'Đề minh họa',classlevel:'Lớp 4',subject:'Toán',period:'Học Kỳ 1',
+        questions:[{type:'Trắc nghiệm',q:'Chọn đáp án từng ý',
+          subquestions:Array.from({length:4},(_,i)=>({label:'abcd'[i],prompt:'Chọn số',options:['1','2','3','4'],ans:'1'}))}]
+      }];
+      app.admin.renderESubTab('add',0);
+    });
+    const surfaces = {
+      'game-config':'#game-config-view .station-shell', 'exam-play':'#exam-paper',
+      'guide-modal':'#guide-modal .sci-fi-panel', 'result-modal':'#result-modal .result-layout',
+      'quest-board':'#quest-modal .quest-item-card', 'shop-pets':'#shop-modal .pet-details-card',
+      'shop-my-pets':'#shop-modal .shop-content-area', 'shop-lucky':'#shop-modal .lucky-info-card',
+      'admin-learning':'.learning-release-control-rail', 'admin-leaderboard':'.admin-control-panel',
+      'admin-exams':'.exam-structured-part', 'admin-profile':'#student-profile-detail .glass-container',
+      'template-editor':'.template-content-builder, .template-content-block, .template-part-option', 'question-editor':'#add-q-class',
+      'print':'#print-modal .modal-content', 'resume':'.attempt-resume-card'
+    };
+    if(surfaces[state.name]) {
+      const surface=page.locator(surfaces[state.name]).first();
+      await expect(surface).toBeAttached();
+      const stops=await page.locator(surfaces[state.name]).evaluateAll(elements=>elements.flatMap(e=>{
+        const s=getComputedStyle(e);
+        return [...(s.backgroundImage==='none'?s.backgroundColor:s.backgroundImage).matchAll(/rgba?\(([^)]+)\)/g)].map(m=>m[1].split(',').slice(0,3).map(Number));
+      }));
+      expect(stops.length,state.name).toBeGreaterThan(0);
+      expect(stops.every(rgb=>Math.min(...rgb)>140),`${state.name}: ${JSON.stringify(stops)}`).toBe(true);
+      if(['admin-exams','template-editor'].includes(state.name))await surface.scrollIntoViewIfNeeded();
+    }
+    const textSelectors = {
+      'guide-modal':'#guide-intro, .guide-section h3, .guide-reward-table th',
+      'result-modal':'#result-title, #result-msg, #result-details span',
+      'exam-play':'.exam-q-text, .exam-opt-label',
+      'admin-learning':'.learning-release-dashboard .settings-workspace__kicker, .learning-release-list-panel > header span',
+      'admin-profile':'#student-profile-detail h3', 'resume':'.attempt-resume-card h2, .attempt-resume-card p',
+      'shop-lucky':'.lucky-rules b', 'template-editor':'.template-content-builder strong, .template-part-option strong',
+      'question-editor':'#admin-q-subarea label'
+    };
+    if(textSelectors[state.name]) {
+      const colors=await page.locator(textSelectors[state.name]).evaluateAll(elements=>elements.map(e=>getComputedStyle(e).color.match(/[\d.]+/g).slice(0,3).map(Number)));
+      expect(colors.length).toBeGreaterThan(0);
+      // Selected text regressions against the darker shared light-card color;
+      // screenshots cover the actual composite surfaces and artwork separately.
+      const luminance=rgb=>rgb.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+      expect(colors.every(rgb=>(luminance([185,226,241])+.05)/(luminance(rgb)+.05)>=4.5),`${state.name}: ${JSON.stringify(colors)}`).toBe(true);
+    }
+    await captureUiReview(page,testInfo,`light-audit-${viewport.width}-${state.name}.png`);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  }
+  await showAuditState(page,auditStates.find(state=>state.name==='guide-modal'));
+  await page.evaluate(()=>document.documentElement.dataset.theme='dark');
+  expect(await page.locator('#guide-modal .sci-fi-panel').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgba(15, 23, 42, 0.9)');
+  expect(consoleErrors).toEqual([]);
+  expect(supabaseRequests).toEqual([]);
+});
+}
+
 test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
