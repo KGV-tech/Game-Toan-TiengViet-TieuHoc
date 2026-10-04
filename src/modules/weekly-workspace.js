@@ -52,6 +52,7 @@ Object.assign(app.admin, {
     renderWeeklyCompetition(box = document.getElementById('admin-quest-subarea')) {
         if (!this.isAdminUser() || !box || this.questMode !== 'weekly') return;
         const restoreWinner = document.getElementById('weekly-result-dialog')?.open;
+        const restoreTeamStage = !!document.getElementById('weekly-selected-team-heading');
         for (const dialog of document.querySelectorAll('#weekly-draw-dialog, #weekly-result-dialog')) { app.modal?.close(dialog, { restoreFocus: false }); dialog.close(); }
         const ui = this.weeklyState(), repo = app.classroom, esc = value => app.data.sanitizeHTML(String(value ?? ''));
         const classes = this.weeklyClasses();
@@ -84,6 +85,7 @@ Object.assign(app.admin, {
         else this.renderWeeklyPoints(body, activity);
         this.arrangeQuestManagementTools();
         if (ui.tab === 'random' && ui.drawing) this.showWeeklyDrawStage();
+        else if (restoreTeamStage && ui.tab === 'random' && ui.teamId && !ui.lastCandidate) this.showWeeklyTeamMembers(ui, activity);
         else if (restoreWinner && ui.tab === 'random' && ui.lastCandidate) this.showWeeklyDrawWinner(ui);
         if (ui.tab === 'random' && ui.meteorId && !matchMedia('(prefers-reduced-motion: reduce)').matches) this.placeWeeklyMeteor(ui.meteorId, 0, !ui.drawing);
         if (!repo.loaded && !repo.pending && repo.status !== 'error') void repo.ensure().then(() => {
@@ -158,12 +160,31 @@ Object.assign(app.admin, {
         dialog.append(body.querySelector('.weekly-candidate-panel'), body.querySelector('.weekly-random-result'));
         const cancel = () => {
             const ui = this.weeklyState(), drawn = [...ui.drawn], teamId = ui.teamId, resultTeam = ui.resultTeam;
+            dialog.querySelector('#weekly-selected-team-heading')?.remove();
             this.resetWeeklySelection(); Object.assign(ui, { drawn, teamId, resultTeam });
             this.renderWeeklyCompetition(); document.getElementById('weekly-draw')?.focus();
         };
         dialog.addEventListener('cancel', event => { event.preventDefault(); cancel(); });
         dialog.showModal(); app.modal?.open(dialog, { initialFocus: dialog, onEscape: cancel });
         dialog.setAttribute('tabindex','-1'); dialog.focus();
+    },
+    showWeeklyTeamMembers(ui, week) {
+        this.showWeeklyDrawStage();
+        const dialog = document.getElementById('weekly-draw-dialog');
+        const heading = document.createElement('header');
+        heading.id = 'weekly-selected-team-heading'; heading.setAttribute('role', 'status');
+        const notice = document.createElement('p'), name = document.createElement('h3');
+        notice.textContent = `${ui.randomMode.startsWith('group') ? 'Nhóm' : 'Tổ'} may mắn được chọn`;
+        name.textContent = ui.resultTeam; heading.append(notice, name); dialog.prepend(heading);
+        dialog.setAttribute('aria-label', `Chọn học sinh của ${ui.resultTeam}`);
+        const members = this.weeklyRandomCandidates(week, { ...ui, noRepeat: false });
+        document.getElementById('weekly-candidate-heading').textContent = `Danh sách học sinh · ${members.length}`;
+        this.renderWeeklyCandidateGrid(ui, members);
+        document.getElementById('weekly-meteor').hidden = true;
+        document.querySelector('.weekly-draw-stage').hidden = true;
+        document.querySelector('.weekly-random-result')?.classList.remove('is-drawing');
+        const button = document.getElementById('weekly-draw');
+        button.disabled = false; button.textContent = '🎲 Chọn ngẫu nhiên học sinh'; button.focus();
     },
     showWeeklyDrawWinner(ui) {
         const body = document.getElementById('weekly-body'), esc = value => app.data.sanitizeHTML(String(value ?? ''));
@@ -271,7 +292,8 @@ Object.assign(app.admin, {
         ui.animationCandidates = null;
         if (selectingTeam) {
             ui.teamId = result.id; ui.resultTeam = result.name; ui.result = ''; ui.lastCandidate = null; ui.meteorId = '';
-            this.renderWeeklyCompetition(); document.getElementById('weekly-draw')?.focus(); return;
+            this.showWeeklyTeamMembers(ui, week);
+            return;
         }
         ui.lastCandidate = result;
         ui.drawn.push(result.id); ui.result = result.name;

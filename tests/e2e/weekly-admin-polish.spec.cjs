@@ -54,7 +54,8 @@ for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Trình ch
   }
 });
 
-for (const kind of ['groups','sections']) test(`Hai tầng ${kind}: chọn đội trước, bấm tiếp chọn đúng học sinh`, async ({page}) => {
+for (const kind of ['groups','sections']) for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Hai tầng ${kind} ${width}: giữ trình chiếu, bấm tiếp chọn đúng học sinh`, async ({page}) => {
+  await page.setViewportSize({width,height});
   await setup(page);
   await page.evaluate(kind => {
     app.classroom.weeks[0].teams = [
@@ -68,15 +69,30 @@ for (const kind of ['groups','sections']) test(`Hai tầng ${kind}: chọn độ
   await expect(page.locator('[data-candidate-id]')).toHaveCount(2);
   const start=new Date('2026-10-03T08:00:00Z');
   await page.clock.install({time:start}); await page.clock.pauseAt(start);
-  await page.locator('#weekly-draw').click(); await page.clock.runFor(6100);
+  await page.locator('#weekly-draw').click();
+  await page.locator('#weekly-draw-dialog').evaluate(e=>{window.firstDrawDialog=e;window.drawDialogClosed=false;e.addEventListener('close',()=>window.drawDialogClosed=true);});
+  await page.clock.runFor(6100);
+  await expect(page.locator('#weekly-draw-dialog')).toBeVisible();
+  expect(await page.evaluate(()=>window.firstDrawDialog===document.getElementById('weekly-draw-dialog') && !window.drawDialogClosed)).toBe(true);
+  await expect(page.locator('#weekly-draw-dialog #weekly-draw')).toBeEnabled();
+  await expect(page.locator('#weekly-draw-dialog #weekly-draw')).toContainText('Chọn ngẫu nhiên học sinh');
+  await expect(page.locator('#weekly-meteor')).toBeHidden();
   await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
   const team=await page.evaluate(()=>app.admin.weeklyState().teamId);
   expect(['a','b']).toContain(team);
+  await expect(page.locator('#weekly-selected-team-heading h3')).toHaveText(team==='a'?'Đội A':'Đội B');
+  await expect(page.locator('#weekly-selected-team-heading p')).toHaveText(`${kind==='groups'?'Nhóm':'Tổ'} may mắn được chọn`);
+  expect(await page.locator('#weekly-selected-team-heading').evaluate(e=>e.getBoundingClientRect().bottom<=document.getElementById('weekly-random-candidates').getBoundingClientRect().top)).toBe(true);
+  await page.screenshot({path:`test-results/ui-review/continuous-${kind}-${width}.png`});
   const visible=team==='a'?['s0','s4']:['s2','s3'];
   expect(await page.locator('[data-candidate-id]').evaluateAll(cards=>cards.map(card=>card.dataset.candidateId))).toEqual(visible);
   expect(await page.evaluate(()=>app.admin.weeklyState().drawn)).toEqual([]);
   await page.clock.runFor(10000);
   await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
+  await page.evaluate(()=>app.admin.renderWeeklyCompetition());
+  await expect(page.locator('#weekly-draw-dialog')).toBeVisible();
+  await expect(page.locator('#weekly-selected-team-heading h3')).toHaveText(team==='a'?'Đội A':'Đội B');
+  await expect(page.locator('#weekly-draw-dialog #weekly-draw')).toBeFocused();
   await page.locator('#weekly-draw').click(); await page.clock.runFor(6100);
   await expect(page.locator('#weekly-result-dialog')).toBeVisible();
   const winner=await page.evaluate(()=>app.admin.weeklyState().randomStudent);
@@ -294,7 +310,7 @@ test('Sao băng chọn Nhóm rồi thành viên, giữ kết quả cuối và đ
   await expect(page.locator('#weekly-draw-preview')).toContainText('Nhóm Sao');
   await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});
   await expect(page.locator('#weekly-result-dialog')).toHaveCount(0);
-  await expect(page.locator('#weekly-random-step')).toContainText('Nhóm Sao');
+  await expect(page.locator('#weekly-selected-team-heading h3')).toHaveText('Nhóm Sao');
   await page.locator('#weekly-draw').click();
   await expect(page.locator('#weekly-draw-preview')).toContainText('Học sinh');
   await expect(page.locator('#weekly-draw')).toBeEnabled({timeout:8000});

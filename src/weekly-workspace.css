@@ -197,3 +197,9 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner
 /* Center every presentation row, including a partially filled final row. */
 .weekly-body .weekly-presentation-dialog .weekly-candidate-grid.is-small-roster { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; }
 .weekly-body .weekly-presentation-dialog .weekly-candidate-grid.is-small-roster .weekly-random-candidate { flex: 0 0 calc((100% - (var(--presentation-columns) - 1) * 10px) / var(--presentation-columns)); height: clamp(100px,20vh,160px); }
+
+/* Keep the selected team and its students on the same presentation stage. */
+.weekly-presentation-dialog #weekly-selected-team-heading { flex: 0 0 auto; text-align: center; padding: 8px; }
+#weekly-selected-team-heading p { margin: 0 0 4px; font-size: 1rem; }
+#weekly-selected-team-heading h3 { margin: 0; font-size: clamp(1.5rem,3vw,2.5rem); overflow-wrap: anywhere; }
+#treasure-modal .weekly-presentation-dialog .weekly-random-result { justify-content: center; }
