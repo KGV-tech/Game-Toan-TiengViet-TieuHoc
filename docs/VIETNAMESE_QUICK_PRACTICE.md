@@ -2,7 +2,7 @@
 
 ## Phạm vi
 
-- 10 template kỹ năng, 5 tương tác: trắc nghiệm, đúng/sai, kéo thả, điền khuyết có lựa chọn và đối chiếu.
+- 10 template kỹ năng, 3 tương tác hiện tại: trắc nghiệm, đúng/sai và đối chiếu. Phân nhóm một ô và điền từ dùng nút trắc nghiệm; không dùng ô xổ xuống. Kéo thả chỉ phù hợp khi có nhiều ô đích để phân dữ liệu, chưa áp dụng cho bộ hiện tại.
 - Mỗi câu chính có đúng 2 câu con độc lập, mỗi câu con đúng được 0,5 điểm.
 - Không sinh tự luận, viết đoạn, nghe–nói, so sánh hoặc chuỗi quy luật.
 - Chỉ học kì I, đúng bộ Kết nối tri thức với cuộc sống. Bài sau có thể ôn ngữ liệu đã học; đây không phải ngân hàng riêng đầy đủ cho từng bài.
@@ -53,7 +53,9 @@ Review hiện tại do Codex đọc ảnh trang nguồn và rà soát toàn bộ
 - Câu từ server chưa đạt kiểm chứng không được dùng trong lượt luyện nhanh Tiếng Việt lớp 4; không sửa hoặc xoá dữ liệu server.
 - Trang quản trị hiển thị nguồn, trích đoạn và lý do từng lựa chọn để kiểm tra lại.
 
-Điểm tính bằng mảng hai đáp án, không tách theo dấu phẩy. Chuẩn hoá Unicode NFC/khoảng trắng nhưng giữ dấu và hoa/thường. Không dùng so khớp gần đúng. Mỗi câu chỉ ghi điểm một lần. Kéo thả có cách bấm/chạm/bàn phím thay thế; matching cho phép tái sử dụng loại nghĩa nếu hợp lệ.
+Điểm tính bằng mảng hai đáp án, không tách theo dấu phẩy. Chuẩn hoá Unicode NFC/khoảng trắng nhưng giữ dấu và hoa/thường. Không dùng so khớp gần đúng. Mỗi câu chỉ ghi điểm một lần. Lựa chọn hỗ trợ bấm/chạm/bàn phím; matching cho phép tái sử dụng loại nghĩa nếu hợp lệ. Đáp án chọn sai có một gạch đỏ, lựa chọn đúng và nhãn chữa bài dùng màu xanh như Toán. Đề kiểm tra Tiếng Việt dùng radio theo từng ý; lưu/khôi phục đáp án vẫn là mảng hai giá trị.
+
+Các câu phân nhóm/điền từ đã lưu có thể giữ nhãn loại cũ; chỉ chấp nhận hai nhãn cũ đúng template tương ứng, vẫn kiểm chứng toàn bộ nội dung và hiển thị bằng lựa chọn trực tiếp. Không sửa dữ liệu server.
 
 ## Mở rộng ngân hàng
 

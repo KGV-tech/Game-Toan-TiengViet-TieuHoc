@@ -10,7 +10,15 @@ const templates = registry.getDefaultTemplates();
 assert.equal(registry.templateIds.length, 10, 'Ten skill templates replace the activity-name quiz.');
 assert.equal(new Set(templates.map(t => t.lesson)).size, 32);
 assert.ok(templates.every(t => t.semester === 'Học kỳ 1'));
-assert.equal(new Set(templates.map(t => t.question_type)).size, 5);
+assert.equal(new Set(templates.map(t => t.question_type)).size, 3);
+for (const key of ['word_groups', 'context_fill']) {
+  const question = registry.generateQuestion(`vietnamese.${key}`, { lesson: 'g4-vietnamese-hk1-b01' });
+  assert.equal(question.type, 'Trắc nghiệm');
+  question.type = key === 'word_groups' ? 'Kéo thả' : 'Điền khuyết';
+  assert.equal(registry.validateQuestion(question), '', 'Previously saved content remains verified.');
+  question.type = 'So sánh';
+  assert.notEqual(registry.validateQuestion(question), '', 'Only the exact previous interaction is accepted.');
+}
 for (const template of templates) {
   for (let i = 0; i < 8; i++) {
     const q = registry.generateQuestion(template.generator_key, { ...template.config, subquestionCount: 4 });
@@ -44,4 +52,4 @@ for (const field of ['sharedPrompt', 'imageUrl', 'hint', 'statements', 'instruct
   assert.notEqual(registry.validateQuestion(changed), '', `Unreviewed top-level field: ${field}`);
 }
 assert.throws(() => registry.generateQuestion('vietnamese.word_type', { lesson: 'g4-vietnamese-hk2-b01' }));
-console.log('Vietnamese quick practice: ten skills, five interactions, HK1 coverage, exactly two parts verified.');
+console.log('Vietnamese quick practice: ten skills, three interactions, HK1 coverage, exactly two parts verified.');

@@ -1,10 +1,10 @@
 ;(function (root) {
     const definitions = [
         ['word_type', 'TV01 · Nhận biết từ loại', 'Trắc nghiệm', 1, 9],
-        ['word_groups', 'TV02 · Phân nhóm từ', 'Kéo thả', 1, 9],
+        ['word_groups', 'TV02 · Phân nhóm từ', 'Trắc nghiệm', 1, 9],
         ['capitalization', 'TV03 · Viết hoa đúng', 'Trắc nghiệm', 3, 18],
         ['word_meaning', 'TV04 · Ghép từ với nghĩa', 'Đối chiếu trùng khớp', 2, 13],
-        ['context_fill', 'TV05 · Điền từ vào câu', 'Điền khuyết', 1, 9],
+        ['context_fill', 'TV05 · Điền từ vào câu', 'Trắc nghiệm', 1, 9],
         ['personification', 'TV06 · Nhận diện nhân hoá', 'Đúng/Sai', 17, 78],
         ['dash_usage', 'TV07 · Công dụng dấu gạch ngang', 'Đối chiếu trùng khớp', 27, 119],
         ['reading_detail', 'TV08 · Tìm chi tiết đọc hiểu', 'Trắc nghiệm', 1, 9],
@@ -63,7 +63,9 @@
     function validateQuestion(question) {
         const definition = definitions.find(d => d.id === question?.templateId);
         const lesson = lessons().find(l => l.id === question?.lesson);
-        if (!definition || !lesson || !question.quickPractice || question.type !== definition.type || !Array.isArray(question.subquestions) || question.subquestions.length !== 2 || question.subquestions.some(part => !part || typeof part !== 'object')) return 'Câu hỏi không thuộc bộ luyện tập đã kiểm chứng.';
+        // Previously saved questions retain their type but now use choice buttons.
+        const legacyType = { word_groups: 'Kéo thả', context_fill: 'Điền khuyết' }[definition?.key];
+        if (!definition || !lesson || !question.quickPractice || (question.type !== definition.type && (!legacyType || question.type !== legacyType)) || !Array.isArray(question.subquestions) || question.subquestions.length !== 2 || question.subquestions.some(part => !part || typeof part !== 'object')) return 'Câu hỏi không thuộc bộ luyện tập đã kiểm chứng.';
         const allowedFields = ['classlevel', 'subject', 'semester', 'topic', 'lesson', 'templateId', 'quickPractice', 'type', 'q', 'passage', 'subquestions', 'partAnswerCounts', 'options', 'ans', 'explanation', 'source', 'templateVariables', 'id', 'created_at', 'difficulty'];
         if (Object.keys(question).some(key => !allowedFields.includes(key))) return 'Câu chính chứa trường hiển thị chưa được kiểm chứng.';
         if (question.subject !== 'Tiếng Việt' || question.classlevel !== 'Lớp 4' || question.semester !== 'Học kỳ 1' || question.topic !== lesson.topic) return 'Thông tin chương trình không khớp.';

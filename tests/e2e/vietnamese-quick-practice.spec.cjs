@@ -45,6 +45,10 @@ test('verified answers survive exams and history; edited wording cannot score', 
   });
   expect(result.full).toBe(1);
   expect(result.restored).toEqual(result.selected);
+  expect(await page.evaluate(() => {
+    const q = Grade4VietnameseTemplates.generateQuestion('vietnamese.context_fill', { lesson: 'g4-vietnamese-hk1-b01' });
+    return app.exam.renderQuestionInput(q, 0);
+  })).not.toContain('<select');
   expect(result.passage).not.toBe('');
   expect(result.history).toContain(result.passage);
   expect(result.rejected).toBe(0);
@@ -92,19 +96,20 @@ test('matching results render safely and shield cannot add Vietnamese answer poi
   await expect(page.locator('#result-details')).toContainText('Bỏ trống');
 });
 
-test('drag choices reject another row and support keyboard selection', async ({ page }) => {
+test('single-slot grouping uses choices and supports keyboard selection', async ({ page }) => {
   await open(page);
   const q = await show(page, 'word_groups', 1);
   const rows = page.locator('.vietnamese-part');
-  const transfer = await page.evaluateHandle(() => new DataTransfer());
-  const wrongRowChoice = rows.nth(1).getByRole('button', { name: q.subquestions[1].answer, exact: true });
-  await wrongRowChoice.dispatchEvent('dragstart', { dataTransfer: transfer });
-  await rows.nth(0).locator('.vietnamese-drop').dispatchEvent('drop', { dataTransfer: transfer });
+  expect(q.type).toBe('Trắc nghiệm');
+  await expect(rows.locator('.vietnamese-drop, [draggable="true"], select')).toHaveCount(0);
   expect(await page.evaluate(() => app.game.state.multipleChoiceSelections)).toEqual(['', '']);
   const firstChoice = rows.nth(0).getByRole('button', { name: q.subquestions[0].answer, exact: true });
   await firstChoice.focus();
   await page.keyboard.press('Space');
-  await rows.nth(1).locator('.vietnamese-drop').dispatchEvent('drop', { dataTransfer: transfer });
+  await expect(page.locator('#submit-ans-btn')).toBeDisabled();
+  const secondChoice = rows.nth(1).getByRole('button', { name: q.subquestions[1].answer, exact: true });
+  await secondChoice.focus();
+  await page.keyboard.press('Enter');
   await expect(page.locator('#submit-ans-btn')).toBeEnabled();
   expect(await page.evaluate(() => app.game.state.multipleChoiceSelections)).toEqual(q.subquestions.map(p => p.answer));
 });
@@ -142,7 +147,7 @@ test('unreviewed top-level image cannot reach the gameplay renderer', async ({ p
 });
 
 for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
-  test(`Vietnamese five interactions and half-point scoring ${viewport.width}`, async ({ page }, testInfo) => {
+  test(`Vietnamese choices and half-point correction ${viewport.width}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const errors = [];
@@ -150,7 +155,9 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await open(page);
     for (const key of ['word_type', 'personification', 'word_groups', 'context_fill', 'word_meaning', 'reading_detail', 'topic_sentence']) {
       const q = await show(page, key);
+      await page.evaluate(theme => document.documentElement.dataset.theme = theme, viewport.width === 1440 ? 'light' : 'dark');
       const rows = page.locator('.vietnamese-part');
+      await expect(rows.locator('select, .vietnamese-drop, [draggable="true"]')).toHaveCount(0);
       await expect(rows).toHaveCount(2);
       const smallButtons = await rows.locator('.multi-choice-subquestion__option').evaluateAll(buttons => buttons
         .filter(button => button.getBoundingClientRect().height < 44)
@@ -172,6 +179,14 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
       expect(await page.evaluate(() => app.game.state.score)).toBe(0.5);
       await expect(rows.nth(0)).toContainText('0,5 điểm');
       await expect(rows.nth(1)).toContainText('0 điểm');
+      const wrong = rows.nth(1).locator('.multi-choice-subquestion__option.selected');
+      await expect(wrong).toHaveClass(/wrong/);
+      await expect(wrong).toHaveCSS('text-decoration-line', 'line-through');
+      await expect(wrong).toHaveCSS('text-decoration-color', 'rgb(239, 68, 68)');
+      await expect(rows.nth(1).getByRole('button', { name: q.subquestions[1].answer, exact: true })).toHaveClass(/correct/);
+      await expect(rows.nth(1).locator('.answer-correction')).toHaveText(q.subquestions[1].answer);
+      await expect(rows.nth(0).locator('.answer-correction')).toHaveCount(0);
+      if (viewport.width === 1440) await expect(rows.nth(0).locator('.vietnamese-feedback')).toHaveCSS('color', 'rgb(15, 23, 42)');
       const bounds = await page.locator('#game-play-view .play-center').evaluate(e => ({ x: e.scrollWidth <= e.clientWidth + 1, y: e.scrollHeight <= e.clientHeight + 1 }));
       expect(bounds).toEqual({ x: true, y: true });
       await page.screenshot({ path: testInfo.outputPath(`${key}.png`) });

@@ -118,7 +118,7 @@ for (const role of ['student', 'admin']) {
 for (const asset of ['question-templates/grade-4/vietnamese/index.js', 'map-layout.css', 'modules/startup-assets.js']) {
 test(`lỗi tải ${asset} được báo rõ, không mở gameplay thiếu tài nguyên`, async ({ page }) => {
   await installLoginFixture(page, 'student');
-  await page.route(`**/${asset}`, route => route.abort());
+  await page.route(url => url.pathname.endsWith(`/${asset}`), route => route.abort());
   await page.goto('/');
   await page.evaluate(() => window.__releaseShared());
   await page.locator('#username').fill('perf-user');
