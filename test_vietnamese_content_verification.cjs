@@ -30,6 +30,6 @@ const glossary = entries.filter(e => e.id.startsWith('meaning-'));
 assert.equal(glossary.find(e => e.id === 'meaning-1').answer, 'Nhịp điệu của âm nhạc');
 assert.equal(glossary.find(e => e.id === 'meaning-6').introducedAt, 21);
 assert.equal(globalThis.VietnamesePracticeContent.getItems('word_meaning', 1).items.length, 0);
-assert.equal(globalThis.VietnamesePracticeContent.getItems('word_meaning', 2).items.length, 3);
+assert.equal(globalThis.VietnamesePracticeContent.getItems('word_meaning', 2).items.length, 4);
 assert.ok(globalThis.VietnamesePracticeContent.getItems('word_type', 9).items.every(e => !['nhớ', 'yêu'].includes(e.answer)));
 console.log(`Verified ${entries.length} contextual records: locked source evidence, wording, options, explanations and lesson gates.`);

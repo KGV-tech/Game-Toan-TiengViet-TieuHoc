@@ -8656,8 +8656,11 @@ html[data-theme="light"] #game-play-view #submit-ans-btn:disabled #submit-ans-te
 #game-options-container.vietnamese-practice .multi-choice-subquestion__options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 #game-options-container.vietnamese-practice .multi-choice-subquestion__option { flex: 1 1 120px; min-height: 44px !important; font-size: 1rem !important; padding: 0.5rem !important; }
 .vietnamese-passage { padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; font-size: 1rem; line-height: 1.5; }
+html[data-theme="light"] .vietnamese-passage { background: #fff; color: #0f172a; border-color: #94a3b8; }
 .vietnamese-drop { border: 2px dashed currentColor; border-radius: 0.5rem; padding: 0.5rem; min-height: 44px; font-size: 1rem; }
 .vietnamese-match-source { min-height: 44px; padding: 0.5rem; font: inherit; cursor: pointer; }
+#game-options-container.vietnamese-practice select { width: 100%; min-height: 44px; padding: 0.5rem; border: 1px solid currentColor; border-radius: 0.5rem; background: #12314a; color: inherit; font: inherit; color-scheme: dark; }
+html[data-theme="light"] #game-options-container.vietnamese-practice select { color-scheme: light; }
 .vietnamese-feedback { margin: 0; font-size: 1rem; font-weight: 700; }
 .vietnamese-feedback:empty { display: none; }
 .vietnamese-part button:focus-visible, .vietnamese-part select:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }

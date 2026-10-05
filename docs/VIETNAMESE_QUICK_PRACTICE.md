@@ -6,7 +6,7 @@
 - Mỗi câu chính có đúng 2 câu con độc lập, mỗi câu con đúng được 0,5 điểm.
 - Không sinh tự luận, viết đoạn, nghe–nói, so sánh hoặc chuỗi quy luật.
 - Chỉ học kì I, đúng bộ Kết nối tri thức với cuộc sống. Bài sau có thể ôn ngữ liệu đã học; đây không phải ngân hàng riêng đầy đủ cho từng bài.
-- Ngân hàng khởi đầu có **33 câu con**. Đã loại các câu tự biên soạn mới chỉ có dẫn chứng quy tắc; ưu tiên chất lượng hơn số lượng. Không ghép từ ngẫu nhiên, không gọi AI/Internet khi học sinh đang chơi.
+- Ngân hàng có **93 câu con**: giữ 33 câu đã duyệt và bổ sung 60 câu, 6 câu cho mỗi kỹ năng. Không ghép từ ngẫu nhiên, không gọi AI/Internet khi học sinh đang chơi.
 
 ## Nguồn và cách kiểm chứng
 
@@ -48,7 +48,7 @@ Review hiện tại do Codex đọc ảnh trang nguồn và rà soát toàn bộ
 - `reviewed-content.js`: bản chụp nội dung sau review và bốn phạm vi đã kiểm tra. Không có cơ chế tự duyệt câu mới hoặc tự cập nhật snapshot.
 - `verification.js`: từ chối bản ghi chưa duyệt, thiếu phạm vi, chỉ có dẫn quy tắc, sai nguồn/trang, thiếu lý do lựa chọn, chưa đến bài học hoặc bị đổi nội dung sau duyệt.
 - Snapshot khóa toàn bộ cách diễn đạt, ngữ cảnh và căn cứ; chỉ được đảo thứ tự lựa chọn/nhãn a–b. **So khớp snapshot bảo vệ kết quả review, không tự chứng minh ngữ nghĩa đúng.**
-- Generator cần ít nhất hai mục hợp lệ. Nếu thiếu thì báo chưa đủ nội dung; không dùng câu nháp bù vào.
+- Generator cần ít nhất hai mục hợp lệ có cùng đoạn đọc; các mục không có đoạn đọc phải tự đủ ngữ cảnh trong câu dẫn. Không ghép hai câu từ hai đoạn khác nhau. Nếu thiếu thì báo chưa đủ nội dung; không dùng câu nháp bù vào.
 - Registry kiểm tra môn/lớp/học kì/chủ điểm, template, hai ID khác nhau, đoạn đọc và đáp án tổng hợp.
 - Câu từ server chưa đạt kiểm chứng không được dùng trong lượt luyện nhanh Tiếng Việt lớp 4; không sửa hoặc xoá dữ liệu server.
 - Trang quản trị hiển thị nguồn, trích đoạn và lý do từng lựa chọn để kiểm tra lại.
@@ -66,6 +66,18 @@ Review hiện tại do Codex đọc ảnh trang nguồn và rà soát toàn bộ
 Bộ đầu tiên còn ít ngữ liệu nên có thể lặp trong nhiều lượt chơi. Trong một lượt, các cặp câu con được liệt kê trước khi chọn; đảo a/b không được tính là câu mới. Bài 1 có đủ 10 cặp khác nhau. Mở rộng phải theo quy trình trên, không sinh tự do rồi coi AI tự chấm là nguồn xác thực.
 
 ## Ghi nhận tự review ngày 05/10/2026
+
+### Đợt mở rộng 60 câu con
+
+- Mỗi kỹ năng có thêm 6 bản ghi mới; đảo lựa chọn hoặc nhãn a/b không tính là câu mới. Khóa cả 60 bản ghi sau review độc lập đủ bốn phạm vi.
+- [Khảo sát nguồn](VIETNAMESE_EXPANSION_SOURCES.md) ghi rõ nguồn chính thức, nguồn cộng đồng và giới hạn truy cập. Tài liệu Violet chỉ giúp tìm đầu mối; đáp án dựa trên trang SGK đã đọc. Chưa đọc toàn bộ SGV hoặc tra được từng mục từ Vietlex.
+- [Biên bản review](VIETNAMESE_EXPANSION_REVIEW.md) đối chiếu từng ID với nguồn. Đã sửa hai lỗi: trích đúng “có vẻ chật chỗ”, và đặt “lả chả” trong ngữ cảnh ví ý văn với sương. Review lại không còn lỗi bắt buộc; giáo viên duyệt ở bước sau.
+- Bổ sung kiểm thử đủ 60 bản ghi, bài bắt đầu, ghép cùng ngữ cảnh, chấm 0,5 điểm, ngữ liệu dài nhất và giới hạn khung chơi ở 1280×720, 1440×900, 1024×768. Ô chọn từ có vùng chạm tối thiểu 44 px; đoạn đọc chế độ sáng được kiểm tra tương phản.
+- Bảng nguồn bên trên mô tả 33 câu khởi đầu; bảng đầy đủ của 60 câu bổ sung nằm trong biên bản review.
+- Test lịch sử/đề thi kiểm tra chính đoạn nguồn của câu được chọn, thay vì giả định mọi câu nhân vật đều có “Thầy vàng anh”; vẫn giữ kiểm tra lưu đáp án, điểm và từ chối nội dung bị sửa.
+- Cổng cuối `npm test` đạt toàn bộ hợp đồng Node và 345/345 ca Chromium. Lần đầu có hai lỗi không ổn định ở test ảnh nền thi đua; cả hai đạt khi chạy riêng và trong cổng cuối, không sửa mã thi đua.
+
+### Ngân hàng khởi đầu và cơ chế bảo vệ
 
 - Đã thay ngân hàng nháp chỉ dẫn quy tắc bằng 33 mục có đoạn nguồn; khóa cả phương án nhiễu và ngữ cảnh sau review.
 - Sửa trường hợp bốc ngẫu nhiên báo thiếu câu dù có đủ tổ hợp; kiểm thử bắt đầu lượt bài 1 với nguồn ngẫu nhiên cố định.

@@ -41,11 +41,12 @@ test('verified answers survive exams and history; edited wording cannot score', 
     const restored = app.exam.readQuestionAnswer(q, 0);
     host.remove();
     q.subquestions[0].prompt += ' Nội dung bị sửa';
-    return { full, restored, selected, history, rejected: app.game.calculateQuestionScore(q, selected).points, html: app.exam.renderQuestionInput(q, 0) };
+    return { full, restored, selected, history, passage: q.passage, rejected: app.game.calculateQuestionScore(q, selected).points, html: app.exam.renderQuestionInput(q, 0) };
   });
   expect(result.full).toBe(1);
   expect(result.restored).toEqual(result.selected);
-  expect(result.history).toContain('Thầy vàng anh');
+  expect(result.passage).not.toBe('');
+  expect(result.history).toContain(result.passage);
   expect(result.rejected).toBe(0);
   expect(result.html).not.toContain('<select');
 });
