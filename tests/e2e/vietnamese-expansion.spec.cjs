@@ -19,14 +19,14 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
       for (const item of bank) {
         const definition = Grade4VietnameseTemplates.definitions.find(d => item.id.startsWith(`e60-${d.key}-`));
         const lesson = `g4-vietnamese-hk1-b${String(item.introducedAt).padStart(2, '0')}`;
-        const q = Grade4VietnameseTemplates.getQuestionVariants(definition.id, { lesson }).find(q => q.subquestions.some(part => part.id === item.id));
+        const q = Grade4VietnameseTemplates.getLegacyQuestionVariants(definition.id, { lesson }).find(q => q.subquestions.some(part => part.id === item.id));
         if (!q) throw Error(`Unplayable addition ${item.id}`);
         add(q);
       }
       // Include the longest compatible pair per skill, beyond the first partner.
       const length = q => q.passage.length + q.subquestions.reduce((sum, part) => sum + part.prompt.length + part.options.join('').length, 0);
       for (const definition of Grade4VietnameseTemplates.definitions) {
-        const variants = Grade4VietnameseTemplates.getQuestionVariants(definition.id, { lesson: 'g4-vietnamese-hk1-b32' });
+        const variants = Grade4VietnameseTemplates.getLegacyQuestionVariants(definition.id, { lesson: 'g4-vietnamese-hk1-b32' });
         add(variants.reduce((longest, q) => length(q) > length(longest) ? q : longest));
       }
       app.data.currentUser = { username: 'offline-expansion', role: 'student' };
