@@ -33,10 +33,9 @@
             const feedback = node('p', 'vietnamese-feedback');
             feedback.setAttribute('role', 'status');
             row.append(heading, choices, feedback);
-            let slot;
             const choose = choiceId => {
                 if (state.answerSubmitted) return;
-                // Resolve only this row's known IDs; never accept drag payload as answer text.
+                // Resolve only this row's known IDs.
                 const optionIndex = part.options.findIndex((_, i) => `${index}:${i}` === choiceId);
                 if (optionIndex < 0) return;
                 state.multipleChoiceSelections[index] = part.options[optionIndex];
@@ -46,56 +45,29 @@
                     button.classList.toggle('selected', active);
                     button.setAttribute('aria-pressed', String(active));
                 });
-                if (slot) slot.textContent = `Đã chọn: ${part.options[optionIndex]}`;
                 checkButton.disabled = state.multipleChoiceSelections.some(value => !value);
             };
-            if (question.type === 'Điền khuyết') {
-                const select = node('select', 'form-input');
-                select.setAttribute('aria-label', `Điền từ câu ${part.label}`);
-                select.add(new Option('Chọn từ phù hợp', ''));
-                part.options.forEach((option, i) => select.add(new Option(option, `${index}:${i}`)));
-                select.onchange = () => {
-                    if (!select.value) {
-                        state.multipleChoiceSelections[index] = '';
-                        state.selectedAns = [...state.multipleChoiceSelections];
-                        checkButton.disabled = true;
-                    } else choose(select.value);
+            const matching = question.type === 'Đối chiếu trùng khớp';
+            if (matching) {
+                const source = node('button', 'vietnamese-match-source', 'Chọn vế này để ghép');
+                source.type = 'button';
+                source.setAttribute('aria-pressed', 'false');
+                source.onclick = () => {
+                    if (state.answerSubmitted) return;
+                    source.setAttribute('aria-pressed', 'true');
+                    choices.querySelectorAll('button').forEach(b => { b.disabled = false; });
                 };
-                choices.append(select);
-            } else {
-                const matching = question.type === 'Đối chiếu trùng khớp';
-                if (matching) {
-                    const source = node('button', 'vietnamese-match-source', 'Chọn vế này để ghép');
-                    source.type = 'button';
-                    source.setAttribute('aria-pressed', 'false');
-                    source.onclick = () => {
-                        if (state.answerSubmitted) return;
-                        source.setAttribute('aria-pressed', 'true');
-                        choices.querySelectorAll('button').forEach(b => { b.disabled = false; });
-                    };
-                    row.insertBefore(source, choices);
-                }
-                if (question.type === 'Kéo thả') {
-                    slot = node('div', 'vietnamese-drop', 'Thả thẻ vào đây hoặc bấm chọn thẻ');
-                    slot.setAttribute('aria-label', `Ô thả câu ${part.label}`);
-                    slot.ondragover = event => event.preventDefault();
-                    slot.ondrop = event => { event.preventDefault(); choose(event.dataTransfer.getData('text/plain')); };
-                    row.insertBefore(slot, choices);
-                }
-                part.options.forEach((option, i) => {
-                    const button = node('button', 'multi-choice-subquestion__option', option);
-                    button.type = 'button';
-                    button.dataset.choiceId = `${index}:${i}`;
-                    button.setAttribute('aria-pressed', 'false');
-                    button.disabled = matching;
-                    button.onclick = () => choose(button.dataset.choiceId);
-                    if (slot) {
-                        button.draggable = true;
-                        button.ondragstart = event => event.dataTransfer.setData('text/plain', button.dataset.choiceId);
-                    }
-                    choices.append(button);
-                });
+                row.insertBefore(source, choices);
             }
+            part.options.forEach((option, i) => {
+                const button = node('button', 'multi-choice-subquestion__option', option);
+                button.type = 'button';
+                button.dataset.choiceId = `${index}:${i}`;
+                button.setAttribute('aria-pressed', 'false');
+                button.disabled = matching;
+                button.onclick = () => choose(button.dataset.choiceId);
+                choices.append(button);
+            });
             container.append(row);
         });
     }
@@ -106,6 +78,20 @@
             row.classList.add(correct ? 'vietnamese-part--correct' : 'vietnamese-part--wrong');
             row.querySelector('.vietnamese-feedback').textContent = correct
                 ? 'Đúng · 0,5 điểm' : `Chưa đúng · 0 điểm. Đáp án: ${part.answer}`;
+            row.querySelectorAll('.multi-choice-subquestion__option').forEach(button => {
+                const option = part.options[Number(button.dataset.choiceId.split(':')[1])];
+                button.classList.toggle('correct', option === part.answer);
+                button.classList.toggle('wrong', option !== part.answer && normalize(option) === normalize(selected?.[i]));
+            });
+            if (!correct) {
+                const feedback = row.querySelector('.vietnamese-feedback');
+                feedback.textContent = 'Chưa đúng · 0 điểm. Đáp án: ';
+                const correction = document.createElement('span');
+                correction.className = 'answer-correction';
+                correction.setAttribute('aria-label', `Đáp án đúng: ${part.answer}`);
+                correction.textContent = part.answer;
+                feedback.append(correction);
+            }
             row.querySelectorAll('button, select').forEach(el => { el.disabled = true; el.draggable = false; });
         });
     }

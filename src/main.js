@@ -5365,7 +5365,7 @@ const app = {
             if (question.quickPractice) {
                 if (window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
                 const esc = value => app.data.sanitizeHTML(value);
-                return `${question.passage ? `<p>${esc(question.passage)}</p>` : ''}${question.subquestions.map((part, i) => `<fieldset class="exam-true-false-row"><legend>${esc(`${part.label}) ${part.prompt}`)}</legend><select data-vietnamese-exam="${index}" data-part="${i}" aria-label="Đáp án câu ${part.label}"><option value="">Chọn đáp án</option>${part.options.map(option => `<option value="${esc(option)}">${esc(option)}</option>`).join('')}</select></fieldset>`).join('')}`;
+                return `${question.passage ? `<p>${esc(question.passage)}</p>` : ''}${question.subquestions.map((part, i) => `<fieldset class="exam-true-false-row"><legend>${esc(`${part.label}) ${part.prompt}`)}</legend>${this.renderSimpleChoices(`viet_${index}_${i}`, part.options)}</fieldset>`).join('')}`;
             }
             if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
                 return question.subquestions.map((subquestion, part) => `
@@ -5410,7 +5410,7 @@ const app = {
             return Array.from({ length: inputCount }, (_, part) => `<input type="text" class="fill-input" data-exam-part="${index}" data-part="${part}" style="max-width:400px; margin:5px;" placeholder="Nhập đáp án ${inputCount > 1 ? part + 1 : ''}">`).join('');
         },
         readQuestionAnswer(question, index) {
-            if (question.quickPractice) return [...document.querySelectorAll(`[data-vietnamese-exam="${index}"]`)].map(input => input.value);
+            if (question.quickPractice) return question.subquestions.map((_, part) => document.querySelector(`input[name="exam_q_viet_${index}_${part}"]:checked`)?.value || '');
             const type = this.getQuestionType(question);
             if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
                 return question.statements.map((_, part) =>
@@ -5451,8 +5451,9 @@ const app = {
         applySavedAnswers(answers = []) {
             this.state.questions.forEach((question, index) => {
                 if (question.quickPractice) {
-                    document.querySelectorAll(`[data-vietnamese-exam="${index}"]`).forEach((input, part) => {
-                        input.value = Array.isArray(answers[index]) ? (answers[index][part] || '') : '';
+                    question.subquestions.forEach((_, part) => {
+                        const selected = Array.isArray(answers[index]) ? (answers[index][part] || '') : '';
+                        document.querySelectorAll(`input[name="exam_q_viet_${index}_${part}"]`).forEach(input => { input.checked = input.value === selected; });
                     });
                     return;
                 }

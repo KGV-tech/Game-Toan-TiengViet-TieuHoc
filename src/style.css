@@ -8662,6 +8662,7 @@ html[data-theme="light"] .vietnamese-passage { background: #fff; color: #0f172a;
 #game-options-container.vietnamese-practice select { width: 100%; min-height: 44px; padding: 0.5rem; border: 1px solid currentColor; border-radius: 0.5rem; background: #12314a; color: inherit; font: inherit; color-scheme: dark; }
 html[data-theme="light"] #game-options-container.vietnamese-practice select { color-scheme: light; }
 .vietnamese-feedback { margin: 0; font-size: 1rem; font-weight: 700; }
+html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese-feedback { color: #0f172a; }
 .vietnamese-feedback:empty { display: none; }
 .vietnamese-part button:focus-visible, .vietnamese-part select:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
 #game-options-container.vietnamese-practice button { text-transform: none; }
