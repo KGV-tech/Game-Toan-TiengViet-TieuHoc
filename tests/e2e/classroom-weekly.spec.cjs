@@ -82,6 +82,8 @@ test('Tải Supabase chậm không xóa form tuần; gửi lại dùng một ID 
   await page.locator('#weekly-form [type=submit]').click();
   await expect(page.locator('#weekly-form-error')).toContainText('Chưa thể đồng bộ');
   await page.locator('#weekly-form [type=submit]').click();
+  // Retrying waits for the repository's asynchronous browser lock before RPC.
+  await expect.poll(() => page.evaluate(() => window.weekRequests.length)).toBe(2);
   const requests = await page.evaluate(() => window.weekRequests);
   expect(requests).toHaveLength(2);
   expect(requests[0].id).toBe(requests[1].id);

@@ -615,6 +615,7 @@ const app = {
             return JSON.stringify(semantic);
         },
         getQuestionSemanticKey(question) {
+            if (question?.quickPractice && Array.isArray(question.subquestions)) return JSON.stringify([question.templateId, question.lesson, question.subquestions.map(part => part?.id).sort()]);
             const normalize = value => String(value ?? '')
                 .replace(/<[^>]*>/g, ' ')
                 .replace(/\s+/g, ' ')
@@ -694,7 +695,7 @@ const app = {
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
             try {
                 let generated = registry.generateQuestion(template.generator_key, template.config || {});
-                const presentation = template.config?.presentation;
+                const presentation = generated.quickPractice ? null : template.config?.presentation;
                 if (presentation && window.TemplateContentBuilder) {
                     generated = window.TemplateContentBuilder.apply(generated, template.generator_key, presentation);
                 }
@@ -713,13 +714,13 @@ const app = {
                 };
                 const savedPrompt = String(template.prompt_template || '{question}').trim();
                 const structuralMeasurementTemplate = String(template.generator_key || '').startsWith('measurement.');
-                const promptTemplate = structuralMeasurementTemplate && !savedPrompt.includes('{question}')
+                const promptTemplate = generated.quickPractice ? '{question}' : structuralMeasurementTemplate && !savedPrompt.includes('{question}')
                     ? '{question}'
                     : legacySingleQuestionPrompts[template.generator_key]?.includes(savedPrompt)
                     ? '{question}'
                     : savedPrompt;
                 const prompt = promptTemplate.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (token, key) => variables[key] ?? token);
-                return {
+                const result = {
                     ...generated,
                     q: this.formatMathHTML(prompt),
                     classlevel: template.classlevel,
@@ -727,9 +728,11 @@ const app = {
                     semester: template.semester,
                     topic: template.topic,
                     lesson: app.curriculum?.getTemplateLesson(template) || template.lesson || template.config?.lesson || '',
-                    type: template.question_type || generated.type,
+                    type: generated.quickPractice ? generated.type : (template.question_type || generated.type),
                     templateId: template.generator_key
                 };
+                if (result.quickPractice && registry.validateQuestion(result)) return null;
+                return result;
             } catch (error) {
                 console.error(`Không thể sinh câu hỏi từ template ${template?.generator_key}:`, error);
                 return null;
@@ -759,6 +762,7 @@ const app = {
             return '';
         },
         getQuestionAnswerCount(question) {
+            if (question?.quickPractice) return question.subquestions?.length || 0;
             if (Array.isArray(question?.statements)) return question.statements.length;
             const answer = String(question?.ans || '').trim();
             if (!answer) return 0;
@@ -867,6 +871,7 @@ const app = {
             return null;
         },
         validateQuestionScoring(question) {
+            if (question?.quickPractice) return window.Grade4VietnameseTemplates.validateQuestion(question);
             const duplicateError = this.validateQuestionSubquestions(question);
             if (duplicateError) return duplicateError;
             const count = this.getQuestionAnswerCount(question);
@@ -3139,6 +3144,7 @@ const app = {
             }
 
             let pool = app.data.libraryQuestions.filter(q => {
+                if (clLevel === '4' && this.state.subject === 'vietnamese' && window.Grade4VietnameseTemplates.validateQuestion(q)) return false;
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
                 const matchSubject = same(q.subject, mappedSubject);
                 const matchClass = same(String(q.classlevel || '').replace(/^Lớp\s*/i, ''), clLevel);
@@ -3177,11 +3183,26 @@ const app = {
             // Tiếng Việt lớp 4 có catalog nội bộ theo từng Bài học. Khi chưa
             // seed Supabase, dùng các record chỉ-đọc này để lộ trình và luyện
             // tập không bị trống; chúng không ghi dữ liệu lên server.
-            if (pool.length === 0 && dynamicTemplates.length === 0 && clLevel === '4' && this.state.subject === 'vietnamese') {
+            if (clLevel === '4' && this.state.subject === 'vietnamese') {
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
                 dynamicTemplates = (window.Grade4VietnameseTemplates?.getDefaultTemplates?.() || []).filter(template => {
                     const selectedTopic = this.state.selectedTopics.find(topic => same(template.topic, topic));
                     return Boolean(selectedTopic) && (!selectedLessonId || same(template.lesson, selectedLessonId));
+                });
+                // Enumerate reviewed pairs once: retrying random samples can miss valid
+                // combinations in a small bank, and swapped a/b is not a new question.
+                dynamicTemplates.forEach(template => {
+                    try {
+                        pool.push(...window.Grade4VietnameseTemplates.getQuestionVariants(template.generator_key, template.config));
+                    } catch { /* Insufficient verified content stays unavailable. */ }
+                });
+                dynamicTemplates = [];
+                const seenVerified = new Set();
+                pool = pool.filter(question => {
+                    const key = app.data.getQuestionSemanticKey(question);
+                    if (seenVerified.has(key)) return false;
+                    seenVerified.add(key);
+                    return true;
                 });
             }
 
@@ -3392,6 +3413,10 @@ const app = {
             return [ansString.trim()];
         },
         calculateQuestionScore(q, selected) {
+            if (q?.quickPractice) {
+                if (window.Grade4VietnameseTemplates.validateQuestion(q)) return { answerCount: 2, correctCount: 0, points: 0, isCorrect: false };
+                return window.VietnameseQuickPractice.score(q, selected);
+            }
             const expected = Array.isArray(q?.statements)
                 ? q.statements.map(statement => String(statement.answer || '').trim())
                 : this.getAnsArr(String(q?.ans || ''));
@@ -3463,21 +3488,27 @@ const app = {
         },
         createHistoryDetail(q, selected, isCorrect, extra = {}) {
             const detail = { q: q.q, selected, correct: q.ans, isCorrect, type: q.type, ...extra };
+            if (q.quickPractice) {
+                detail.quickPractice = true;
+                detail.passage = q.passage;
+                detail.partScores = window.VietnameseQuickPractice.score(q, selected).partScores;
+            }
             if (q.sharedPrompt) detail.sharedPrompt = q.sharedPrompt;
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
             }
-            if (q.type === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
+            if ((q.quickPractice || q.type === 'Trắc nghiệm') && Array.isArray(q.subquestions)) {
                 detail.subquestions = q.subquestions.map(({ label, prompt, options }) => ({ label, prompt, options }));
             }
             return detail;
         },
         formatHistoryQuestion(detail) {
             const lines = [detail.q];
+            if (detail.passage) lines.push(detail.passage);
             if (detail.type === 'Đúng/Sai' && Array.isArray(detail.statements)) {
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
             }
-            if (detail.type === 'Trắc nghiệm' && Array.isArray(detail.subquestions)) {
+            if ((detail.quickPractice || detail.type === 'Trắc nghiệm') && Array.isArray(detail.subquestions)) {
                 if (typeof detail.sharedPrompt === 'string' && detail.sharedPrompt.trim()) lines.push(detail.sharedPrompt);
                 lines.push(...detail.subquestions.map(item => {
                     const prompt = this.getSubquestionPrompt(detail, item);
@@ -3789,6 +3820,11 @@ const app = {
             }
             
             const q = this.state.questions[this.state.currentIdx];
+            if (q?.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(q)) {
+                alert('Câu hỏi đã thay đổi hoặc chưa đủ căn cứ kiểm chứng. Vui lòng bắt đầu lượt luyện tập mới.');
+                app.router.openGameView('game-config-view');
+                return;
+            }
             this.bindProgressPanelListeners();
             document.getElementById('current-q-index').textContent = this.state.currentIdx + 1;
             document.getElementById('total-q-count').textContent = this.state.questions.length;
@@ -3885,7 +3921,9 @@ const app = {
                 else if (qType !== 'Chuỗi quy luật') qType = 'Điền khuyết';
             }
 
-            if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
+            if (q.quickPractice) {
+                window.VietnameseQuickPractice.render(q, optContainer, this.state, btnCheck);
+            } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 optContainer.className = 'multi-choice-subquestions';
                 if (q.subquestions.length === 4) playCenter?.classList.add('play-center--four-part-mc');
                 const labels = ['A', 'B', 'C', 'D'];
@@ -4624,6 +4662,7 @@ const app = {
             this.updateProgressPanel();
         },
         submitAnswer(isTimeout = false) {
+            if (this.state.answerSubmitted) return;
             if (this.hardTimer) clearInterval(this.hardTimer);
             this.hardTimer = null;
             const q = this.state.questions[this.state.currentIdx];
@@ -4651,7 +4690,9 @@ const app = {
                 }
             }
 
-            if (qType === 'Điền khuyết') {
+            if (q.quickPractice) {
+                window.VietnameseQuickPractice.reveal(q, document.getElementById('game-options-container'), this.state.multipleChoiceSelections);
+            } else if (qType === 'Điền khuyết') {
                 const ansArr = this.getAnsArr(q.ans);
                 const selectedArr = this.getAnsArr(this.state.selectedAns);
                 isCorrect = selectedArr.length === ansArr.length && selectedArr.every((val, i) => this.normalizeFillAnswer(val) === this.normalizeFillAnswer(ansArr[i]));
@@ -4894,7 +4935,7 @@ const app = {
                 }
             }
 
-            const selectedForScore = qType === 'Đúng/Sai' && Array.isArray(q.statements)
+            const selectedForScore = q.quickPractice ? this.state.multipleChoiceSelections : qType === 'Đúng/Sai' && Array.isArray(q.statements)
                 ? (this.state.trueFalseSelections || [])
                 : (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)
                     ? (this.state.multipleChoiceSelections || [])
@@ -4905,7 +4946,7 @@ const app = {
 
             const hasInlineCorrections = document.querySelectorAll('#game-play-view .answer-correction').length > 0;
             const isOptionBased = qType === 'Trắc nghiệm' || qType === 'Đúng/Sai';
-            if (!isCorrect && !hasInlineCorrections && !isOptionBased) this.showCorrectAnswerReveal(q);
+            if (!q.quickPractice && !isCorrect && !hasInlineCorrections && !isOptionBased) this.showCorrectAnswerReveal(q);
 
             if (isCorrect && q.templateId === 'number.safe_password_by_place_value') {
                 document.querySelectorAll('.safe-password-illustration').forEach(safeImage => {
@@ -4970,7 +5011,7 @@ const app = {
                 explBox.innerHTML = '';
             }
 
-            if (!isCorrect && this.skills && this.skills.state.shieldActive) {
+            if (!q.quickPractice && !isCorrect && this.skills && this.skills.state.shieldActive) {
                 // Hấp thụ sát thương, vẫn tính điểm cho câu này
                 this.state.score += 1 - scoreResult.points;
                 this.state.historyDetails.push(this.createHistoryDetail(q, this.state.selectedAns, false, { shieldUsed: true, ...scoreResult }));
@@ -5148,7 +5189,13 @@ const app = {
             const historyDetails = Array.isArray(this.state.historyDetails) ? this.state.historyDetails : [];
             const htmlString = historyDetails.map((d, i) => {
                             let ansHtml = '';
-                            if (d.type === 'Đối chiếu trùng khớp' && d.selected) {
+                            if (d.quickPractice) {
+                                ansHtml = [0, 1].map(part => {
+                                    const correct = d.partScores?.[part] === 0.5;
+                                    const selected = Array.isArray(d.selected) ? d.selected[part] : '';
+                                    return `<span style="color:${correct ? '#4ade80' : '#f87171'}">${'ab'[part]}) ${app.data.sanitizeHTML(selected || 'Bỏ trống')} · ${correct ? '0,5' : '0'} điểm</span>`;
+                                }).join('<br>');
+                            } else if (d.type === 'Đối chiếu trùng khớp' && d.selected) {
                                 const selPairs = d.selected.split(', ');
                                 const corPairs = d.correct ? d.correct.split(', ') : [];
                                 ansHtml = selPairs.map(sp => {
@@ -5315,6 +5362,11 @@ const app = {
         renderQuestionInput(question, index) {
             const type = this.getQuestionType(question);
             const options = question.options || [];
+            if (question.quickPractice) {
+                if (window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
+                const esc = value => app.data.sanitizeHTML(value);
+                return `${question.passage ? `<p>${esc(question.passage)}</p>` : ''}${question.subquestions.map((part, i) => `<fieldset class="exam-true-false-row"><legend>${esc(`${part.label}) ${part.prompt}`)}</legend><select data-vietnamese-exam="${index}" data-part="${i}" aria-label="Đáp án câu ${part.label}"><option value="">Chọn đáp án</option>${part.options.map(option => `<option value="${esc(option)}">${esc(option)}</option>`).join('')}</select></fieldset>`).join('')}`;
+            }
             if (type === 'Trắc nghiệm' && Array.isArray(question.subquestions)) {
                 return question.subquestions.map((subquestion, part) => `
                     <fieldset class="exam-true-false-row">
@@ -5358,6 +5410,7 @@ const app = {
             return Array.from({ length: inputCount }, (_, part) => `<input type="text" class="fill-input" data-exam-part="${index}" data-part="${part}" style="max-width:400px; margin:5px;" placeholder="Nhập đáp án ${inputCount > 1 ? part + 1 : ''}">`).join('');
         },
         readQuestionAnswer(question, index) {
+            if (question.quickPractice) return [...document.querySelectorAll(`[data-vietnamese-exam="${index}"]`)].map(input => input.value);
             const type = this.getQuestionType(question);
             if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
                 return question.statements.map((_, part) =>
@@ -5380,6 +5433,7 @@ const app = {
                 .join(', ');
         },
         isAnswerCorrect(question, selected) {
+            if (question.quickPractice) return app.game.calculateQuestionScore(question, selected).isCorrect;
             const type = this.getQuestionType(question);
             if (type === 'Đối chiếu trùng khớp') {
                 const normalizePairs = value => String(value || '').split(',').map(pair => this.normalizeAnswer(pair)).filter(Boolean).sort();
@@ -5396,6 +5450,12 @@ const app = {
         },
         applySavedAnswers(answers = []) {
             this.state.questions.forEach((question, index) => {
+                if (question.quickPractice) {
+                    document.querySelectorAll(`[data-vietnamese-exam="${index}"]`).forEach((input, part) => {
+                        input.value = Array.isArray(answers[index]) ? (answers[index][part] || '') : '';
+                    });
+                    return;
+                }
                 const selected = String(answers[index] || '');
                 if (!selected) return;
                 const type = this.getQuestionType(question);
@@ -8554,6 +8614,7 @@ const app = {
                 ${visible.length ? `<div class="template-library__grid">${visible.map(cardMarkup).join('')}</div>` : emptyMarkup}
               </section>
             `;
+            window.VietnameseQuickPractice?.appendCatalog(box);
         },
         getTemplateTopics(classlevel, subject, semester) {
             const classNumber = String(classlevel || '').replace('Lớp ', '');
@@ -9534,6 +9595,7 @@ const app = {
         },
         renderGeneratedTemplatePreview(question) {
             if (!question) return '';
+            if (question.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
             const plain = value => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
             const visual = value => {
                 const raw = String(value ?? '').trim();
@@ -9559,12 +9621,12 @@ const app = {
             const [kind, parts] = partCollections.find(([, values]) => Array.isArray(values) && values.length) || ['', []];
             const partCount = parts.length || (Array.isArray(question.partAnswerCounts) ? question.partAnswerCounts.length : 1);
             const score = `${partCount} câu con · ${(1 / Math.max(1, partCount)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm/câu`;
-            const frame = (body, variant = 'template-preview--fill') => `<section class="template-preview__canvas ${variant}" aria-label="Khung câu hỏi được sinh"><div class="template-preview__topbar"><span>Khung câu hỏi</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${body}</section>`;
+            const frame = (body, variant = 'template-preview--fill') => `<section class="template-preview__canvas ${variant}" aria-label="Khung câu hỏi được sinh"><div class="template-preview__topbar"><span>Khung câu hỏi</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${question.passage ? `<p>${text(question.passage)}</p>` : ''}${body}</section>`;
             const choices = values => `<div class="template-preview__choices">${(values || []).map((value, index) => `<span><b>${String.fromCharCode(65 + index)}</b>${text(value)}</span>`).join('')}</div>`;
             const label = (part, index, uppercase = false) => text(part?.label || String.fromCharCode((uppercase ? 65 : 97) + index));
 
             if (kind === 'subquestions') {
-                if (question.type === 'Điền khuyết') {
+                if (question.type === 'Điền khuyết' && !question.quickPractice) {
                     return frame(`<div class="template-preview__rows">${parts.map((part, index) => `<div class="template-preview__line"><b>${label(part, index)})</b><span>${content(part.display || part.expression || part.text || part.prompt || 'Nội dung câu con')}</span></div>`).join('')}</div>`);
                 }
                 return frame(`<div class="template-preview__mc">${parts.map((part, index) => {
@@ -11825,6 +11887,8 @@ const app = {
             }).join('')}</div>`;
         },
         renderExamPrintQuestionParts(question) {
+            if (question.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
+            if (question.quickPractice) return `${question.passage ? `<p>${app.data.sanitizeHTML(question.passage)}</p>` : ''}${this.renderExamPrintSubquestions(question)}`;
             const printableQuestion = this.normalizeExamQuestionStructure(question);
             if (this.isB05ThreeStepFillQuestion(printableQuestion)) return this.renderExamPrintThreeStepFill(printableQuestion);
             if (this.isB05ThreeStepMcqQuestion(printableQuestion)) return this.renderExamPrintThreeStepMcq(printableQuestion);

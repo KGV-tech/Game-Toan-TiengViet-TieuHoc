@@ -8649,3 +8649,21 @@ html[data-theme="light"] #game-play-view #submit-ans-btn:disabled #submit-ans-te
     display: none !important;
 }
 
+/* Two independently scored Vietnamese parts reuse the game's answer cards. */
+.vietnamese-practice { gap: 0.75rem; }
+.vietnamese-part { display: grid; grid-template-columns: 1fr; gap: 0.5rem; padding: 0.75rem; }
+#game-options-container.vietnamese-practice h3 { white-space: pre-line; font-size: clamp(1rem, 1.3vw, 1.15rem); line-height: 1.4; margin: 0; }
+#game-options-container.vietnamese-practice .multi-choice-subquestion__options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+#game-options-container.vietnamese-practice .multi-choice-subquestion__option { flex: 1 1 120px; min-height: 44px !important; font-size: 1rem !important; padding: 0.5rem !important; }
+.vietnamese-passage { padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; font-size: 1rem; line-height: 1.5; }
+.vietnamese-drop { border: 2px dashed currentColor; border-radius: 0.5rem; padding: 0.5rem; min-height: 44px; font-size: 1rem; }
+.vietnamese-match-source { min-height: 44px; padding: 0.5rem; font: inherit; cursor: pointer; }
+.vietnamese-feedback { margin: 0; font-size: 1rem; font-weight: 700; }
+.vietnamese-feedback:empty { display: none; }
+.vietnamese-part button:focus-visible, .vietnamese-part select:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+#game-options-container.vietnamese-practice button { text-transform: none; }
+#game-options-container .vietnamese-part--correct { border-color: #4ade80; }
+#game-options-container .vietnamese-part--wrong { border-color: #fbbf24; }
+.vietnamese-catalog { margin-top: 1rem; padding: 1rem; display: grid; gap: 0.75rem; }
+.vietnamese-catalog select { max-width: 100%; }
+.vietnamese-catalog .template-preview__choices { text-transform: none; }

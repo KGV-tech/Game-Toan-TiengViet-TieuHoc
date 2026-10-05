@@ -413,6 +413,7 @@ test('Thêm tổ độc lập, lỗi giữ form, reduced motion và hủy vòng 
   await expect(page.locator('#weekly-team-error')).toContainText('Chưa thể đồng bộ');
   await expect(page.locator('#weekly-team-name')).toHaveValue('Tổ Mặt Trời');
   await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
   const state = await page.evaluate(() => app.classroom.weeks[0]);
   expect(state.teams.find(t => t.name === 'Tổ Mặt Trời').members).toEqual(['s0']);
   expect(state.teams.find(t => t.name === 'Chưa phân tổ').members).toHaveLength(8);
