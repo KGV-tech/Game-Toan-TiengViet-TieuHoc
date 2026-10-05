@@ -22,10 +22,15 @@
         }
         return copy;
     };
-    function verifiedContext(templateId, config) {
+    function verifiedContext(templateId, config, legacy = false) {
         const definition = definitions.find(d => d.id === templateId);
         const lesson = lessons().find(l => l.id === config.lesson);
         if (!definition || !lesson || numberOf(lesson) < definition.from) throw new Error('Template không thuộc bài học Tiếng Việt học kì I đã chọn.');
+        if (root.VietnameseParameterEngine && !legacy) {
+            const pairs = root.VietnameseParameterEngine.pairs(definition.key, numberOf(lesson));
+            if (!pairs.length) throw new Error('Chưa đủ tham số đã kiểm chứng cho kỹ năng này.');
+            return { definition, lesson, pairs };
+        }
         const { items } = root.VietnamesePracticeContent.getItems(definition.key, numberOf(lesson));
         const verified = items.filter(entry => root.VietnameseContentVerification.check(entry, numberOf(lesson)) === '');
         const pairs = [];
@@ -48,17 +53,33 @@
             templateId: definition.id, quickPractice: true, type: definition.type, q, passage, subquestions,
             partAnswerCounts: [1, 1], options: [], ans: subquestions.map(p => p.answer).join(' | '),
             explanation: subquestions.map(p => `${p.label}) ${p.explanation}`).join('\n'),
-            source: { kind: 'reviewed-practice', curriculum: 'Tiếng Việt 4 tập một · Kết nối tri thức', recordIds: subquestions.map(p => p.id) },
+            source: { kind: parts[0].generation ? 'parameter-generated' : 'reviewed-practice', curriculum: 'Tiếng Việt 4 tập một · Kết nối tri thức', recordIds: subquestions.map(p => p.id) },
             templateVariables: { question: q }
         };
     }
     function generateQuestion(templateId, config = {}, random = Math.random) {
         const context = verifiedContext(templateId, config);
+        if (config.parameters !== undefined) {
+            if (!root.VietnameseParameterEngine || !Array.isArray(config.parameters) || config.parameters.length !== 2) throw new Error('Cần đúng hai bộ tham số câu con.');
+            const parts = config.parameters.map(params => root.VietnameseParameterEngine.materialize(context.definition.key, params, numberOf(context.lesson)));
+            if (!root.VietnameseParameterEngine.independent(...parts)) throw new Error('Hai bộ tham số phải tạo hai ý độc lập cùng ngữ cảnh.');
+            return makeQuestion(context, parts, random);
+        }
         return makeQuestion(context, context.pairs[Math.floor(random() * context.pairs.length)], random);
     }
     function getQuestionVariants(templateId, config = {}, random = Math.random) {
+        if (config.parameters !== undefined) return [generateQuestion(templateId, config, random)];
         const context = verifiedContext(templateId, config);
         return context.pairs.map(parts => makeQuestion(context, parts, random));
+    }
+    function getLegacyQuestionVariants(templateId, config = {}, random = Math.random) {
+        const context = verifiedContext(templateId, config, true);
+        return context.pairs.map(parts => makeQuestion(context, parts, random));
+    }
+    function generateForHistory(templateId, config, history, chosen, random = Math.random) {
+        const context = verifiedContext(templateId, config);
+        const parts = root.VietnameseParameterEngine.selectParts(context.definition.key, numberOf(context.lesson), history, chosen, random);
+        return parts ? makeQuestion(context, parts, random) : null;
     }
     function validateQuestion(question) {
         const definition = definitions.find(d => d.id === question?.templateId);
@@ -72,6 +93,19 @@
         if (question.q !== `${definition.name.replace(/^TV\d+ · /, '')}. Mỗi ý đúng được 0,5 điểm.`) return 'Câu dẫn đã thay đổi sau kiểm chứng.';
         if (question.ans !== question.subquestions.map(p => p.answer).join(' | ') || question.explanation !== question.subquestions.map(p => `${p.label}) ${p.explanation}`).join('\n')) return 'Đáp án hoặc lời giải tổng hợp không khớp.';
         if (JSON.stringify(question.partAnswerCounts) !== '[1,1]') return 'Cần đúng hai ý độc lập.';
+        if (question.subquestions.some(part => part.generation)) {
+            if (question.type !== definition.type) return 'Kiểu tương tác không khớp template có tham số.';
+            if (!root.VietnameseParameterEngine || !root.VietnameseParameterEngine.independent(...question.subquestions)) return 'Hai tham số câu con phải độc lập.';
+            for (const [index, part] of question.subquestions.entries()) {
+                if (part.label !== 'ab'[index] || part.passage !== question.passage) return 'Ngữ cảnh hoặc nhãn câu con không khớp.';
+                const issue = root.VietnameseParameterEngine.check(part, definition.key, numberOf(lesson));
+                if (issue) return issue;
+            }
+            if (question.source?.kind !== 'parameter-generated' || question.source.curriculum !== 'Tiếng Việt 4 tập một · Kết nối tri thức'
+                || JSON.stringify(question.source.recordIds) !== JSON.stringify(question.subquestions.map(part => part.id)) || Object.keys(question.source).length !== 3
+                || JSON.stringify(question.options) !== '[]' || question.templateVariables?.question !== question.q || Object.keys(question.templateVariables).length !== 1) return 'Thông tin nguồn hoặc trường hiển thị không khớp.';
+            return '';
+        }
         const available = new Set(root.VietnamesePracticeContent.getItems(definition.key, numberOf(lesson), () => 0).items.map(p => p.id));
         root.VietnamesePracticeContent.getItems(definition.key, numberOf(lesson), () => 0.9).items.forEach(p => available.add(p.id));
         if (question.subquestions[0].id === question.subquestions[1].id) return 'Hai câu con bị trùng.';
@@ -89,5 +123,5 @@
         question_type: d.type, generator_key: d.id, prompt_template: '{question}',
         config: { lesson: lesson.id, subquestionCount: 2 }, is_active: true
     })));
-    root.Grade4VietnameseTemplates = Object.freeze({ templateIds: definitions.map(d => d.id), definitions, generateQuestion, getQuestionVariants, getDefaultTemplates, validateQuestion });
+    root.Grade4VietnameseTemplates = Object.freeze({ templateIds: definitions.map(d => d.id), definitions, generateQuestion, generateForHistory, getQuestionVariants, getLegacyQuestionVariants, getDefaultTemplates, validateQuestion });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

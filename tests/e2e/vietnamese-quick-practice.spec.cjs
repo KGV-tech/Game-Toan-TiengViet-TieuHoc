@@ -127,6 +127,16 @@ test('teacher can inspect the excerpt and each option reason without writing dat
   await expect(catalog.locator('details').first()).toContainText('Ngữ cảnh nguồn:');
   await expect(catalog.locator('details').first()).toContainText('SGK tr. 13');
   await expect(catalog.locator('.template-preview__rows, .template-preview__mc')).toBeVisible();
+  await page.evaluate(() => {
+    const random = Math.random;
+    Math.random = () => 0.99;
+    try {
+      const lesson = document.querySelector('.vietnamese-catalog select');
+      lesson.value = 'g4-vietnamese-hk1-b09';
+      lesson.dispatchEvent(new Event('change'));
+    } finally { Math.random = random; }
+  });
+  await expect(catalog.locator('details').first()).toContainText('Câu biên soạn từ khung đã đối chiếu SGK:');
 });
 
 test('unreviewed top-level image cannot reach the gameplay renderer', async ({ page }) => {

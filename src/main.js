@@ -3189,13 +3189,10 @@ const app = {
                     const selectedTopic = this.state.selectedTopics.find(topic => same(template.topic, topic));
                     return Boolean(selectedTopic) && (!selectedLessonId || same(template.lesson, selectedLessonId));
                 });
-                // Enumerate reviewed pairs once: retrying random samples can miss valid
-                // combinations in a small bank, and swapped a/b is not a new question.
-                dynamicTemplates.forEach(template => {
-                    try {
-                        pool.push(...window.Grade4VietnameseTemplates.getQuestionVariants(template.generator_key, template.config));
-                    } catch { /* Insufficient verified content stays unavailable. */ }
-                });
+                // Practice uses parameter templates; persisted fixed questions remain
+                // available for old exams but do not dilute the generated round.
+                pool = window.VietnameseParameterHistory.createRound(dynamicTemplates, this.questionsPerRound,
+                    window.VietnameseParameterHistory.load(app.data.currentUser));
                 dynamicTemplates = [];
                 const seenVerified = new Set();
                 pool = pool.filter(question => {
@@ -3922,6 +3919,7 @@ const app = {
             }
 
             if (q.quickPractice) {
+                window.VietnameseParameterHistory?.remember(q, app.data.currentUser);
                 window.VietnameseQuickPractice.render(q, optContainer, this.state, btnCheck);
             } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 optContainer.className = 'multi-choice-subquestions';

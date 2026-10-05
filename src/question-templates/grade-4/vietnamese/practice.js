@@ -122,7 +122,7 @@
                 const summary = document.createElement('summary');
                 summary.textContent = `${part.label}) ${part.id}: SGK tr. ${part.evidence.pages.join(', ')}; học từ bài ${part.introducedAt}`;
                 const source = document.createElement('p');
-                source.textContent = `Ngữ cảnh nguồn: ${part.evidence.excerpt}`;
+                source.textContent = `${part.evidence.kind === 'reviewed-composition' ? 'Câu biên soạn từ khung đã đối chiếu SGK' : 'Ngữ cảnh nguồn'}: ${part.evidence.excerpt}`;
                 details.append(summary, source);
                 part.options.forEach(option => {
                     const reason = document.createElement('p');
