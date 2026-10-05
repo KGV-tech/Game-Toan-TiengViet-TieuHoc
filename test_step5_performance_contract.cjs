@@ -11,7 +11,7 @@ assert.match(main, /SUPABASE_LIST_PROJECTIONS/);
 assert.match(main, /fetchPageFromSupabase/);
 assert.match(main, /ensureAdminDataLoaded/);
 assert.match(main, /if \(window\.supabase && !app\.data\.adminDataLoaded\)/, 'Admin composer must not schedule a stale offline rerender');
-assert.match(main, /needsAdminData && !window\.weeklyOfflineEntry && !app\.data\.adminDataLoaded && window\.supabase/, 'Admin tab lazy-load must not replace local weekly or offline fixture forms');
+assert.match(main, /needsAdminData && !app\.data\.adminDataLoaded && window\.supabase/, 'Admin tab lazy-load follows the authenticated session without an offline-login exception');
 assert.doesNotMatch(main, /\.select\(\s*['"]\*['"]\s*\)/, 'main.js must not issue broad select(*) reads');
 assert.doesNotMatch(remote, /async function fetchRows\(table, columns = ['"]\*['"]\)/, 'team adapter must use table projections');
 assert.match(remote, /TEAM_COMPETITION_PROJECTIONS/);

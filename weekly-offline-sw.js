@@ -1,7 +1,10 @@
 /* Static assets only. Never intercept credentials or Supabase responses. */
-const WEEKLY_CACHE = 'weekly-shell-v1';
+const WEEKLY_CACHE = 'weekly-shell-v2';
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+    await caches.delete('weekly-shell-v1');
+    await self.clients.claim();
+})()));
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;

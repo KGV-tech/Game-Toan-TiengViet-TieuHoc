@@ -977,7 +977,6 @@ const app = {
         },
 
         async init() {
-            if (window.weeklyOfflineEntry) return;
             try {
                 // 1. Fetch Users (Deferred to login to save memory/bandwidth)
                 this.users = [];
@@ -7113,7 +7112,7 @@ const app = {
 
             const box = document.getElementById('treasure-content-area');
             const needsAdminData = ['templates', 'questions', 'quests'].includes(tab);
-            if (needsAdminData && !window.weeklyOfflineEntry && !app.data.adminDataLoaded && window.supabase) {
+            if (needsAdminData && !app.data.adminDataLoaded && window.supabase) {
                 if (box) {
                     box.setAttribute('aria-busy', 'true');
                     box.innerHTML = `<div class="admin-loading-state" role="status" aria-live="polite"><span class="admin-loading-state__icon" aria-hidden="true">◌</span><div><strong>Đang mở kho dữ liệu</strong><p>Đang tải đúng phần cần dùng, các màn khác không bị tải theo.</p></div></div>`;
@@ -13829,7 +13828,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     const handleNetworkChange = () => {
-        if (window.weeklyOfflineEntry) return;
         const isOnline = navigator.onLine;
         const noti = document.getElementById('admin-notification');
         if (noti) {
