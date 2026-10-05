@@ -26,12 +26,19 @@
         const definition = definitions.find(d => d.id === templateId);
         const lesson = lessons().find(l => l.id === config.lesson);
         if (!definition || !lesson || numberOf(lesson) < definition.from) throw new Error('Template không thuộc bài học Tiếng Việt học kì I đã chọn.');
-        const { items, passage = '' } = root.VietnamesePracticeContent.getItems(definition.key, numberOf(lesson));
+        const { items } = root.VietnamesePracticeContent.getItems(definition.key, numberOf(lesson));
         const verified = items.filter(entry => root.VietnameseContentVerification.check(entry, numberOf(lesson)) === '');
-        if (verified.length < 2) throw new Error('Chưa đủ hai câu con đã kiểm chứng cho bài học này.');
-        return { definition, lesson, passage, verified };
+        const pairs = [];
+        for (let i = 0; i < verified.length; i++) {
+            for (let j = i + 1; j < verified.length; j++) {
+                if ((verified[i].passage || '') === (verified[j].passage || '')) pairs.push([verified[i], verified[j]]);
+            }
+        }
+        if (!pairs.length) throw new Error('Chưa đủ hai câu con đã kiểm chứng cùng ngữ cảnh cho bài học này.');
+        return { definition, lesson, pairs };
     }
-    function makeQuestion({ definition, lesson, passage }, parts, random) {
+    function makeQuestion({ definition, lesson }, parts, random) {
+        const passage = parts[0].passage || '';
         const subquestions = shuffle(parts, random).map((part, index) => ({
             ...part, label: 'ab'[index], options: shuffle(part.options, random)
         }));
@@ -47,17 +54,11 @@
     }
     function generateQuestion(templateId, config = {}, random = Math.random) {
         const context = verifiedContext(templateId, config);
-        return makeQuestion(context, shuffle(context.verified, random).slice(0, 2), random);
+        return makeQuestion(context, context.pairs[Math.floor(random() * context.pairs.length)], random);
     }
     function getQuestionVariants(templateId, config = {}, random = Math.random) {
         const context = verifiedContext(templateId, config);
-        const variants = [];
-        for (let i = 0; i < context.verified.length; i++) {
-            for (let j = i + 1; j < context.verified.length; j++) {
-                variants.push(makeQuestion(context, [context.verified[i], context.verified[j]], random));
-            }
-        }
-        return variants;
+        return context.pairs.map(parts => makeQuestion(context, parts, random));
     }
     function validateQuestion(question) {
         const definition = definitions.find(d => d.id === question?.templateId);

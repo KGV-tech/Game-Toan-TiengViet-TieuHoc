@@ -1,0 +1,41 @@
+# Review độc lập 60 câu con Tiếng Việt HK1
+
+Ngày: 05/10/2026. Người review: Codex, agent độc lập với người biên soạn. Phạm vi: toàn bộ 60 ID `e60-*` trong `src/question-templates/grade-4/vietnamese/content.js`; không duyệt nội dung bằng cách chỉ so snapshot.
+
+## Nguồn và phương pháp
+
+Nguồn chính là bản [Tiếng Việt 4 tập một](<D:/LỆ HOA/SGK tạm/Tiếng Việt 4 tập một.pdf>) người dùng cung cấp, bộ Kết nối tri thức với cuộc sống. SHA-256 được tính lại trong lượt review: `feb7517458e487865c262da2ab1b58e82306a2d2d8a3771b9302c8a729e3df71`. Trang PDF bằng trang in cộng 1.
+
+Đã trực tiếp đọc ảnh các trang in 11, 12, 13, 18, 20, 32, 35, 41, 44, 45, 48, 49, 71, 78, 79, 87, 93, 95, 119, 120, 127. Các ảnh trang 44, 48, 119 được render thêm từ PDF gốc trong lượt review (`tmp/pdfs/review-44.png`, `review-48.png`, `review-119.png`). Căn cứ đáp án là văn bản/chú giải/ghi nhớ và bài tập trong SGK; không sử dụng sự đồng thuận của diễn đàn làm chứng cứ thay thế.
+
+Với từng câu đã kiểm tra câu dẫn, câu trích/đoạn đọc, đáp án, toàn bộ phương án nhiễu, lý do đúng/sai, lời giải, trang nguồn và thời điểm xuất hiện. Những câu nhận biết từ loại dựa cả ngữ cảnh và định nghĩa đã học; câu đọc hiểu chỉ hỏi chi tiết hiển thị; câu chủ đề dựa toàn bộ đoạn, không chỉ vị trí câu.
+
+Sau khi sửa và kiểm tra lại hai finding, **bốn phạm vi review nguồn đã hoàn tất cho từng record trong cả 60 ID ở bảng dưới: `curriculum`, `wording`, `context`, `options`**. Kết quả này cho phép agent triển khai tạo snapshot tương ứng với đúng nội dung vừa review; không phải quyền tự duyệt những thay đổi hoặc record bổ sung sau đó.
+
+## Hai finding được xác nhận trên bản đầu
+
+1. **P2 — Sai chép ngữ liệu trang 44.** `verbGarden` và `garden` ghi “có vẻ chật chội”, nhưng SGK ghi “có vẻ chật chỗ”. Ảnh `review-44.png` xác nhận trực tiếp. Ảnh hưởng `e60-word_type-3`, `e60-word_type-4`, `e60-context_fill-3`, `e60-context_fill-4`, `e60-reading_detail-3`, `e60-reading_detail-4`. Đáp án các câu này vẫn đúng nhưng trích nguồn chưa chính xác. Sửa thành “chật chỗ” trước khi tạo snapshot đã duyệt.
+2. **P2 — Ngữ cảnh mục từ lả chả chưa đúng cách dùng trong bài.** `e60-word_meaning-6` ghi ngữ cảnh “những giọt sương trong bài Tập làm văn”; trang 48 thực tế viết “Ý văn cũng như sương lả chả”, ví ý văn với sương. Chú giải trang 49 và đáp án nghĩa đều đúng. Đề nghị ghi “cách ví ý văn với sương trong bài Tập làm văn” và bổ sung trang 48 cho căn cứ ngữ cảnh.
+
+Không xác nhận lỗi đáp án hoặc phương án nhiễu khác trên 60 câu. **Hai finding đã được sửa và kiểm tra lại độc lập trong lượt review này:** cả `verbGarden` và `garden` dùng đúng “chật chỗ”; mục `e60-word_meaning-6` dùng ngữ cảnh “cách ví ý văn với sương trong bài Tập làm văn”, trích cả câu trang 48 và chú giải trang 49, với danh sách trang `[48,49]`. Đã đọc lại mã và nạp dữ liệu thực tế: đủ 60 record mới, không còn chuỗi “chật chội” trong record mới. **Gate nội dung: đạt; không còn finding bắt buộc.** Gate kỹ thuật vẫn cần hoàn tất riêng.
+
+## Bảng kiểm tra đầy đủ 60 ID
+
+Mỗi dòng gồm sáu ID theo thứ tự hậu tố 1–6. “Đạt” nghĩa là đáp án duy nhất trong các lựa chọn, lý do phương án nhiễu phù hợp và không vượt kiến thức đã học; những finding riêng được ghi rõ.
+
+| Nhóm và ID | Đáp án theo thứ tự 1–6 | Trang in và kết luận |
+| --- | --- | --- |
+| `e60-word_type-1`, `e60-word_type-2`, `e60-word_type-3`, `e60-word_type-4`, `e60-word_type-5`, `e60-word_type-6` | áo; hoạ mi; bứng; trồng; vàng ruộm; nâu sẫm | 13; 13; 41/44/45; 41/44/45; 95; 95. “Áo”, “hoạ mi” gọi tên vật/con vật; “bứng”, “trồng” chỉ hoạt động; hai cụm màu sắc chỉ đặc điểm. Đáp án đạt; 3/4 cần sửa chép nguồn. Bài 2/10/21 phù hợp giới hạn chương trình. |
+| `e60-word_groups-1`, `e60-word_groups-2`, `e60-word_groups-3`, `e60-word_groups-4`, `e60-word_groups-5`, `e60-word_groups-6` | Tên thành phố; Tên người; Tên người; Tên sông; Tên sông; Tên thành phố | 18. Các tên lần lượt Hà Nội, Chu Văn An, Trần Thị Lý, Bạch Đằng, Cửu Long, Cần Thơ. Câu dẫn khóa vào bài tập này, tránh đa nghĩa tên riêng ngoài ngữ cảnh. Cả sáu đạt từ bài 3. |
+| `e60-capitalization-1`, `e60-capitalization-2`, `e60-capitalization-3`, `e60-capitalization-4`, `e60-capitalization-5`, `e60-capitalization-6` | Bạch Đằng; Cửu Long; Việt Nam; Cao Bằng; Đài Truyền hình Việt Nam; Trường Tiểu học Quang Trung | 18 cho 1–4; 32 cho 5–6. Mẫu chữ hoa đúng sách; phương án sai chỉ làm thường chữ cái đầu. Quy tắc cơ quan/tổ chức là đầu từng bộ phận, không đầu mọi tiếng. Cả sáu đạt; giới hạn bài 3 và bài 7 chính xác. |
+| `e60-word_meaning-1`, `e60-word_meaning-2`, `e60-word_meaning-3`, `e60-word_meaning-4`, `e60-word_meaning-5`, `e60-word_meaning-6` | Một loại nhạc cụ; Có vẻ đang phải băn khoăn, suy nghĩ; Đào cây cùng bầu đất quanh rễ để chuyển đi trồng ở nơi khác; Không rõ ràng, không xác thực; Từ mô phỏng tiếng lá cây lay động, va chạm nhẹ vào nhau; Nhỏ xuống thành giọt, nối tiếp nhau không dứt | 13; 35; 45; 45; 49; 48/49. Tương ứng xen-lô, đăm chiêu, bứng, mơ hồ, xào xạc, lả chả. Đáp án và các lựa chọn nhiễu đạt; mục 6 cần sửa ngữ cảnh như finding. Giới hạn bài 2/8/10/11 phù hợp. |
+| `e60-context_fill-1`, `e60-context_fill-2`, `e60-context_fill-3`, `e60-context_fill-4`, `e60-context_fill-5`, `e60-context_fill-6` | công chúa; vui lắm; hoa hồng bạch; huệ; giấy; Hoa | 20 cho 1/2; 44 cho 3/4; 93 cho 5/6. Chỉ chọn từ các phương án, chi tiết có trong đoạn hiển thị; không chấm câu tự viết. Cả sáu đáp án đạt; 3/4 cần sửa chép ngữ liệu. Giới hạn bài 4/10/21 phù hợp. |
+| `e60-personification-1`, `e60-personification-2`, `e60-personification-3`, `e60-personification-4`, `e60-personification-5`, `e60-personification-6` | Đúng; Sai; Đúng; Sai; Đúng; Sai | 79 cho 1–3, 87 cho 4–6, quy tắc 78/79. Dấu hiệu tỉnh giấc, trốn tìm, mắt cười, chị gió, chào/xưng cậu với cây, thím chích choè đều trực tiếp có trong sách. Mục 4 kiểm tra chị gọi gió, không gọi hạt. Cả sáu đạt từ bài 17 hoặc 19. |
+| `e60-dash_usage-1`, `e60-dash_usage-2`, `e60-dash_usage-3`, `e60-dash_usage-4`, `e60-dash_usage-5`, `e60-dash_usage-6` | Đánh dấu các ý trong một đoạn liệt kê; Nối các từ ngữ trong một liên danh; Đánh dấu các ý trong một đoạn liệt kê; Nối các từ ngữ trong một liên danh; Đánh dấu lời nói trực tiếp của nhân vật; Đánh dấu lời nói trực tiếp của nhân vật | 120; 120; 127; 127; 35; 20, kết hợp ba công dụng ở 119. Các đoạn danh sách rút ngắn vẫn giữ đúng cấu trúc. Hai đoạn lời nói trực tiếp có lời dẫn rõ. Cả sáu đạt, chỉ xuất hiện từ bài 27/29 khi đã học dấu gạch ngang. |
+| `e60-reading_detail-1`, `e60-reading_detail-2`, `e60-reading_detail-3`, `e60-reading_detail-4`, `e60-reading_detail-5`, `e60-reading_detail-6` | Công chúa; Vui lắm; Dưới cửa sổ; Một cây huệ; Hà; Hoa | 20; 20; 44; 44; 93; 93. Khóa vào đoạn hiển thị: vai người dẫn chuyện xuất hiện sau không tạo đáp án thứ hai cho đoạn đầu; Hà là người làm, Hoa là người nhận. Cả sáu đáp án đạt; 3/4 cần sửa chép ngữ liệu. |
+| `e60-character_detail-1`, `e60-character_detail-2`, `e60-character_detail-3`, `e60-character_detail-4`, `e60-character_detail-5`, `e60-character_detail-6` | Mùa hè; Áo măng tô trong suốt; Bình minh; Kiêu hãnh ngẩng đầu; Mùa thu; Chiếc áo nâu óng | 12. Từng cặp dùng cùng đoạn cho ve sầu, gà trống, dế mèn; các chi tiết và trang phục có trong sách. Phương án của nhân vật khác không khớp đoạn đã khóa. Cả sáu đạt từ bài 2. |
+| `e60-topic_sentence-1`, `e60-topic_sentence-2`, `e60-topic_sentence-3`, `e60-topic_sentence-4`, `e60-topic_sentence-5`, `e60-topic_sentence-6` | Tất cả đều lo diệt trừ sâu bọ để giữ gìn hoa lá.; Các con vật diệt sâu bọ để giữ gìn hoa lá; Biển động.; Cảnh biển động; Ngần ấy loại chuồn chuồn cũng đủ cho chúng tôi mê tơi trong suốt mùa hè.; Cuối đoạn | 11 cho 1/2; 71 cho 3–6; ghi nhớ 11. Câu chủ đề bao quát các chi tiết, phương án còn lại chỉ nêu cóc/gió/chuồn chuồn ngô. Cả sáu đạt. Mục 3–6 đặt bài 17, trễ hơn nguồn trước đó, nên không đưa ngữ liệu chưa học. |
+
+## Giới hạn
+
+Đây là review ngữ liệu đóng của Codex dựa nguồn đọc trực tiếp, chưa phải chứng nhận giáo viên hoặc NXB. Không tuyên bố đã tra riêng từng từ trong từ điển; các nghĩa mục tiêu có chú giải SGK. Các phương án nhiễu cố ý sai nhưng được đối chiếu để không có đáp án thứ hai hợp lý trong ngữ cảnh đã khóa. Hash xác định bản PDF, snapshot khóa nội dung đã review; cả hai không tự chứng minh ngữ nghĩa. Kiểm thử tính điểm và hiển thị thuộc gate kỹ thuật riêng do agent triển khai thực hiện.
