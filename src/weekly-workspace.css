@@ -5,9 +5,6 @@
 .weekly-offline-controls .classroom-button { min-height: 36px; padding: 6px 8px; font-size: 12px; }
 .weekly-offline-controls #weekly-export { grid-column: 1 / -1; min-height: 28px; }
 .weekly-offline-controls [aria-pressed="true"] { outline: 2px solid var(--admin-accent, #80dabb); outline-offset: -2px; }
-.weekly-offline-entry { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
-.weekly-offline-entry :is(button,select) { border: 1px solid #63cadc; border-radius: 10px; background: #112b40; color: #eefaff; padding: 6px 10px; font: inherit; font-size: 12px; }
-.weekly-local-entry #admin-tabs { display: none !important; }
 .weekly-roster-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 #treasure-modal .weekly-roster-tabs .classroom-button { padding: 8px 4px; min-height: 38px; font-size: .72rem; }
 #treasure-modal .weekly-roster-tabs [aria-pressed="true"] { border-color: #e6a7e0; background: linear-gradient(130deg, #ebb8df, #b59aee); color: #301d4f; }

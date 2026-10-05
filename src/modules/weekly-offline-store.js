@@ -34,7 +34,6 @@
     repo.setOffline = async function (enabled) {
         this.activate();
         if (this.offlineSyncing) throw new Error('Đang đồng bộ. Hãy chờ hoàn tất.');
-        if (!enabled && typeof window !== 'undefined' && window.weeklyOfflineEntry) throw new Error('Đăng nhập Online để chuyển chế độ. Bản lưu Offline vẫn được giữ.');
         if (enabled && typeof window !== 'undefined' && !navigator.locks) throw new Error('Trình duyệt chưa hỗ trợ khóa lưu Offline an toàn. Hãy dùng Chrome hoặc Edge trên thiết bị này.');
         if (this.pending) await this.pending;
         this.activate();
@@ -157,7 +156,7 @@
         if (this.offlineSyncing) throw new Error('Đang đồng bộ. Hãy chờ hoàn tất.');
         const owner = this.owner, client = this.getClient();
         if (!client?.auth?.getUser) throw new Error('Đăng nhập lại đúng tài khoản khi có mạng để đồng bộ.');
-        if (typeof window === 'undefined' || !window.weeklyOfflineEntry) this.offlineAuthUserId = app.data.currentUser.auth_user_id || this.offlineAuthUserId;
+        this.offlineAuthUserId = app.data.currentUser.auth_user_id || this.offlineAuthUserId;
         this.offlineSyncing = true;
         try {
             const { data, error } = await client.auth.getUser();
@@ -179,7 +178,7 @@
                 this.saveOfflineState(weeks, remaining);
                 if (op.type === 'delete') this.deletedWeekIds.add(op.weekId);
             }
-            this.saveOfflineState(this.weeks, [], typeof window !== 'undefined' && !!window.weeklyOfflineEntry);
+            this.saveOfflineState(this.weeks, [], false);
             this.cacheServerState(); this.loaded = false;
             await this.ensure(true);
         } finally { this.offlineSyncing = false; }

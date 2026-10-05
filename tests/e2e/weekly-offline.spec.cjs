@@ -9,31 +9,27 @@ async function setup(page) {
     await app.classroom.ensure();
     await app.classroom.createWeek({ id: crypto.randomUUID(), name: 'Tuần Offline', classlevel: '4', className: '4/4', startDate: '2026-10-04', endDate: '2026-10-10', mode: 'groups', participants: [{ username: 'a', fullname: 'Nguyễn An' }], teams: [{ id: 'g', name: 'Nhóm 1', members: ['a'] }], scores: {}, absences: [], version: 1 });
     app.admin.openAdmin('quests'); app.admin.switchQuestMode('weekly');
+    app.classroom.configure({ auth: { getUser: async () => ({ data: { user: { id: 'auth-offline-teacher' } } }) } });
   });
 }
-test('chuẩn bị Offline, mở lại mất mạng và ghi điểm tiếp; không mở quyền Admin khác', async ({ page, context }) => {
+test('giáo viên đã xác thực ghi điểm khi mất mạng; tải lại không tự mở quyền từ bản lưu', async ({ page, context }) => {
   test.setTimeout(60000);
   await page.setViewportSize({ width: 1280, height: 720 });
   await setup(page);
+  await page.evaluate(async () => { const legacy = await caches.open('weekly-shell-v1'); await legacy.put('/index.html', new Response('legacy login')); });
   await page.locator('#weekly-offline').click();
   await expect(page.locator('#weekly-offline')).toHaveAttribute('aria-pressed', 'true', { timeout: 20000 });
+  expect(await page.evaluate(() => caches.has('weekly-shell-v1'))).toBe(false);
   await page.locator('[data-weekly-student=a]').click();
   await page.locator('#weekly-point-add').click();
   await expect(page.locator('.weekly-status')).toContainText('2 thao tác');
   await context.setOffline(true);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => { window.supabase = {}; window.unrelatedOfflineReads = 0; app.data.ensureAdminDataLoaded = async () => { window.unrelatedOfflineReads++; return false; }; });
-  await page.locator('#weekly-open-offline').click();
   await expect(page.locator('#weekly-select')).toContainText('Tuần Offline');
-  expect(await page.evaluate(() => window.unrelatedOfflineReads)).toBe(0);
   await expect(page.locator('[data-weekly-student=a]')).toContainText('1');
   await page.locator('[data-weekly-student=a]').click();
   await page.locator('#weekly-point-add').click();
   await expect(page.locator('[data-weekly-student=a]')).toContainText('2');
-  await page.evaluate(() => { app.admin.openAdmin('players'); app.admin.switchQuestMode('personal'); });
   await expect(page.locator('.quest-management-detail--weekly')).toBeVisible();
-  await page.locator('#weekly-sync-all').click();
-  await expect(page.locator('.weekly-status')).toContainText('Đăng nhập lại');
   expect(await page.evaluate(() => app.classroom.offlineQueue.length)).toBe(3);
   await page.screenshot({ path: 'test-results/weekly-offline-1280.png' });
   await context.setOffline(false);
@@ -53,19 +49,20 @@ test('chuẩn bị Offline, mở lại mất mạng và ghi điểm tiếp; khô
   await page.locator('#weekly-sync-all').click();
   await expect.poll(() => page.evaluate(() => app.classroom.offlineQueue.length)).toBe(0);
   await expect(page.locator('#weekly-sync-all')).toBeEnabled();
-  await expect(page.locator('#weekly-offline')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weekly-offline')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('[data-weekly-student=a]')).toContainText('2');
   expect(await page.evaluate(() => window.offlineRpcs)).toEqual(['classroom_create_week', 'classroom_add_point', 'classroom_add_point']);
   expect(await page.evaluate(() => app.classroom.offlineQueue.length)).toBe(0);
   await page.evaluate(() => { app.classroom.client.auth.getUser = async () => ({ data: { user: { id: 'other-auth-account' } } }); });
   await page.locator('#weekly-offline').click();
-  await expect(page.locator('.weekly-status')).toContainText('Đăng nhập Online');
+  await expect(page.locator('.weekly-status')).toContainText('đăng nhập lại');
   expect(await page.evaluate(() => window.offlineRpcs.length)).toBe(3);
-  await page.locator('[data-weekly-student=a]').click(); await page.locator('#weekly-point-add').click();
-  await page.locator('#weekly-sync-all').click();
-  await expect(page.locator('.weekly-status')).toContainText('Đăng nhập lại');
-  expect(await page.evaluate(() => app.classroom.offlineQueue.length)).toBe(1);
-  expect(await page.evaluate(() => window.offlineRpcs.length)).toBe(3);
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#login-screen')).toHaveClass(/active/);
+  await expect(page.locator('#weekly-open-offline, .weekly-offline-entry')).toHaveCount(0);
+  expect(await page.evaluate(() => app.data.currentUser)).toBeNull();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('weekly-offline:v1:offline-teacher')).weeks.length)).toBe(1);
 });
 for (const [width, height] of [[1440,900],[1024,768]]) {
   test(`Offline controls fit light/dark workspace ${width}`, async ({ page }) => {
