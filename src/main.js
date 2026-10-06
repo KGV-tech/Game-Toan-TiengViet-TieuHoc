@@ -7080,6 +7080,7 @@ const app = {
                 if (tab !== 'quests') { modal.removeAttribute('data-quest-detail'); modal.setAttribute('aria-labelledby', 'treasure-title'); }
                 if (management) modal.dataset.managementWorkspace = tab;
                 else delete modal.dataset.managementWorkspace;
+                if (tab !== 'learning-path') delete modal.dataset.learningSubject;
             }
             const close = document.getElementById('treasure-close-button');
             if (close) close.hidden = management;
@@ -7127,6 +7128,7 @@ const app = {
             this.syncManagementHeader('learning-path');
             modal.dataset.uiContext = 'admin';
             modal.dataset.adminMode = 'learning-path';
+            modal.dataset.learningSubject = subject;
             modal.style.display = 'flex';
             modal.classList.add('active');
             modal.classList.remove('team-board-fullscreen');
@@ -7163,12 +7165,9 @@ const app = {
                 adminModal.classList.remove('team-board-fullscreen');
                 adminModal.classList.remove('team-board-fullscreen-mode');
             }
-            const tabs = [
-                { id: 'settings', label: 'Điều chỉnh' }
-            ];
-            app.ui.renderTabs(tabs, tab, 'app.admin.switchTab');
+            app.ui.renderTabs([], tab, 'app.admin.switchTab');
             const adminTabs = document.getElementById('admin-tabs');
-            if (adminTabs) adminTabs.style.display = tab === 'settings' ? 'flex' : 'none';
+            if (adminTabs) adminTabs.style.display = 'none';
             const workspaceTitle = tab === 'players' ? 'Quản lý học sinh' : tab === 'quests' ? 'Quản lý Thi đua & Nhiệm vụ' : 'Cài Đặt Hệ Thống';
             const treasureTitle = document.getElementById('treasure-title');
             if (treasureTitle) treasureTitle.textContent = workspaceTitle;
@@ -7806,6 +7805,7 @@ const app = {
             this.questMode = 'team';
             const modal = document.getElementById('treasure-modal');
             modal?.removeAttribute('data-quest-detail');
+            delete modal?.dataset.managementWorkspace;
             modal?.setAttribute('aria-labelledby', 'treasure-title');
             this.stopTeamCompetitionBoardTimer();
             const box = document.getElementById('treasure-content-area');
@@ -8509,8 +8509,6 @@ const app = {
                             <span class="settings-workspace__kicker">Cấu hình trải nghiệm · Admin</span>
                             <h3>Nhịp độ học tập & Điểm chuẩn</h3>
                             <p>Điều chỉnh khoảng thời gian và mức điểm đạt để học sinh có đủ nhịp suy nghĩ ở phần luyện tập và bài kiểm tra.</p>
-                        </div>
-                        <div class="settings-workspace__badge"><strong>04</strong><span>tham số đang dùng</span></div>
                     </header>
                     <div class="settings-columns">
                         <div class="settings-column">

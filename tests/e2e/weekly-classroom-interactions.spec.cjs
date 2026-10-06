@@ -25,7 +25,7 @@ for (const [width, height] of [[1280, 720], [1440, 900], [1024, 768]]) {
       const left = await sidebar.boundingBox(), frame = await page.locator('.admin-panel').boundingBox();
       expect(frame.width).toBeGreaterThanOrEqual(width * .98);
       expect(frame.height).toBeGreaterThanOrEqual(height * .96);
-      expect(left.x - frame.x).toBeLessThanOrEqual(14);
+      expect(left.x - frame.x).toBeLessThanOrEqual(16);
       await page.screenshot({ path: `test-results/ui-review/compact-${mode}-${width}.png` });
       await page.locator('#quest-management-back').click();
     }

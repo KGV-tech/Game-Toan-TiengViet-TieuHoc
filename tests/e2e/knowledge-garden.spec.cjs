@@ -149,13 +149,9 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
 
             window.app.teamCompetition.store.upsert(match);
             window.app.admin.openAdmin();
-            const modal = document.getElementById('treasure-modal');
-            modal.classList.add('active');
-            modal.classList.add('team-board-fullscreen');
-            modal.classList.add('team-board-fullscreen-mode');
-
-            const box = document.getElementById('treasure-content-area');
-            window.app.admin.renderTeamCompetitionBoard(box, match.id);
+            // Test that the board opens cleanly via the app method (which cleans up workspaces)
+            window.app.admin.openTeamCompetitionBoard(match.id);
+            document.getElementById('treasure-modal').classList.add('team-board-fullscreen-mode');
         }, { users: demoUsers(), exam: demoExam() });
 
         const board = page.locator('.team-competition-board--knowledge-garden');
@@ -313,15 +309,13 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
             { width: 1024, height: 768 }
         ]) {
             await page.setViewportSize(viewport);
-            const canvasBounds = await stadium.locator('.team-stadium-canvas').evaluate(element => {
-                const { left, top, right, bottom } = element.getBoundingClientRect();
-                return { left, top, right, bottom };
-            });
+            await page.waitForTimeout(100);
+            const canvasBounds = await stadium.locator('.team-stadium-canvas').boundingBox();
 
-            expect(canvasBounds.left).toBeGreaterThanOrEqual(0);
-            expect(canvasBounds.top).toBeGreaterThanOrEqual(0);
-            expect(canvasBounds.right).toBeLessThanOrEqual(viewport.width + 1);
-            expect(canvasBounds.bottom).toBeLessThanOrEqual(viewport.height + 1);
+            expect(canvasBounds.x).toBeGreaterThanOrEqual(0);
+            expect(canvasBounds.y).toBeGreaterThanOrEqual(0);
+            expect(canvasBounds.x + canvasBounds.width).toBeLessThanOrEqual(viewport.width + 1);
+            expect(canvasBounds.y + canvasBounds.height).toBeLessThanOrEqual(viewport.height + 1);
 
             const laneBoxes = await lanes.evaluateAll(elements => elements.map(element => {
                 const { left, top, right, bottom, width } = element.getBoundingClientRect();

@@ -190,7 +190,7 @@ test('khung Hướng dẫn nằm trọn trong màn hình và chỉ cuộn phần
   });
 
   const panel = await page.locator('#guide-modal .sci-fi-panel').boundingBox();
-  const closeButton = await page.locator('#guide-modal button[aria-label="Đóng Hướng dẫn"]').boundingBox();
+  const closeButton = await page.locator('#guide-modal button[aria-label="Quay về"]').boundingBox();
   expect(panel.y).toBeGreaterThanOrEqual(16);
   expect(panel.y + panel.height).toBeLessThanOrEqual(752);
   expect(closeButton.y).toBeGreaterThanOrEqual(16);
@@ -1872,8 +1872,7 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
     if (state.adminTab && !isAdminComposerState(state)) {
-      if (state.adminTab === 'settings') await expect(page.locator('#admin-tabs')).toBeVisible();
-      else await expect(page.locator('#admin-tabs')).toBeHidden();
+      await expect(page.locator('#admin-tabs')).toBeHidden();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }
@@ -1906,8 +1905,7 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
       await expect(page.locator('#guide-modal')).toBeHidden();
     }
     if (state.adminTab && !isAdminComposerState(state)) {
-      if (state.adminTab === 'settings') await expect(page.locator('#admin-tabs')).toBeVisible();
-      else await expect(page.locator('#admin-tabs')).toBeHidden();
+      await expect(page.locator('#admin-tabs')).toBeHidden();
       await expect(page.locator('#treasure-content-area')).not.toBeEmpty();
       await expect(page.locator('#shop-modal')).toBeHidden();
     }

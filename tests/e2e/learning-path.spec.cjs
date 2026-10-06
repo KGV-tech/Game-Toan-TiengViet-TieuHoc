@@ -301,8 +301,7 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
 
   // Student and quest management now open independently from the map.
   await page.evaluate(() => app.admin.openAdmin());
-  await expect(page.locator('#admin-tabs .tab-btn')).toHaveCount(1);
-  await expect(page.locator('#admin-tabs .tab-btn', { hasText: 'Điều chỉnh' })).toBeVisible();
+  await expect(page.locator('#admin-tabs')).toBeHidden();
   await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
 
   // Return to learning path for math
@@ -377,7 +376,6 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
 
   // Switch to admin station settings
   await page.evaluate(() => app.admin.openAdmin());
-  await page.locator('#admin-tabs .tab-btn', { hasText: 'Điều chỉnh' }).click();
   await expect(page.locator('.settings-workspace')).toBeVisible();
   await expect(page.locator('.learning-release-workspace')).toHaveCount(0);
   await expect(page.locator('#learning-release-lesson')).toHaveCount(0);

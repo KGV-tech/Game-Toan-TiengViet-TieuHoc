@@ -121,7 +121,7 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await expect(page.locator('.settings-workspace')).toBeVisible();
     await expect(page.locator('#treasure-close-button')).toBeHidden();
     await expect(page.locator('#admin-management-back')).toBeVisible();
-    await expect(page.locator('#admin-tabs .tab-btn')).toHaveText(['Điều chỉnh']);
+    await expect(page.locator('#admin-tabs')).toBeHidden();
     await page.keyboard.press('Escape');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     await page.evaluate(() => {
