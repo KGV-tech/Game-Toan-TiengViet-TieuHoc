@@ -132,6 +132,10 @@ const app = {
                 onEscape: () => this.hideGuide()
             });
             const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
+            document.getElementById('guide-title').textContent = isAdmin ? 'Hướng dẫn Admin' : 'Hướng Dẫn Hành Trình';
+            const intro = modal.querySelectorAll('.guide-intro span');
+            intro[0].textContent = isAdmin ? 'Chuẩn bị lớp, đặt mốc học và theo dõi kết quả của học sinh.' : 'Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!';
+            intro[1].textContent = isAdmin ? 'Chọn “Dành cho Admin” để xem các bước quản lý; các mục còn lại giải thích cách học sinh chơi.' : 'Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.';
             modal.querySelectorAll('.guide-admin-only').forEach(element => {
                 element.hidden = !isAdmin;
             });

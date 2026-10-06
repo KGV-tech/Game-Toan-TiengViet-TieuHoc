@@ -62,9 +62,9 @@ assert.match(source, /⭐.*\$\{starCount\}.*Sao/,
 // ---- Hướng dẫn: mục Danh hiệu + đánh số theo vai trò ----
 assert.match(html, /id="guide-titles"/,
   'The guide must include the title-system section.');
-assert.match(html, /9\. Hệ thống Danh hiệu/,
-  'The student guide must number the title section 9.');
-assert.match(html, /10\. Dành cho Giáo viên/,
-  'The admin guide must number the teacher section 10 (last).');
+assert.match(html, /10\. Hệ thống Danh hiệu/,
+  'The student guide must number the title section 10.');
+assert.match(html, /11\. Dành cho Admin \/ Giáo viên/,
+  'The admin guide must number the teacher section 11 (last).');
 
 console.log('Progression systems (titles / energy / daily gift / stars) contract verified.');
