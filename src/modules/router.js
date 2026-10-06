@@ -101,6 +101,7 @@
         open(screenId) {
             const target = document.getElementById(screenId);
             if (!target) return;
+            app.game?.pausePracticeClock?.();
             prepareRouteAssets(screenId, true);
             app.game?.stopTimers?.();
             app.exam?.stopTimer?.();
@@ -112,6 +113,7 @@
         openGameView(viewId) {
             const target = document.getElementById(viewId);
             if (!target) return;
+            app.game?.pausePracticeClock?.();
             prepareRouteAssets(viewId, true);
             app.game?.stopTimers?.();
             app.exam?.stopTimer?.();
@@ -119,6 +121,7 @@
             app.teamCompetition?.clearPlayTimer?.();
             document.querySelectorAll('.game-view').forEach(v => v.classList.remove('active'));
             target.classList.add('active');
+            if (viewId === 'game-play-view') app.game?.resumePracticeClock?.();
         },
         prefetch(routeId) {
             return prepareRouteAssets(routeId, false);

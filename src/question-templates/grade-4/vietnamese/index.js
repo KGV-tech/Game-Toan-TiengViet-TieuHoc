@@ -111,11 +111,21 @@
         if (question.subquestions[0].id === question.subquestions[1].id) return 'Hai câu con bị trùng.';
         for (const [index, part] of question.subquestions.entries()) {
             if (part.label !== 'ab'[index] || Object.keys(part).some(key => !['id', 'introducedAt', 'prompt', 'answer', 'options', 'explanation', 'passage', 'evidence', 'label'].includes(key))) return 'Câu con chứa trường chưa được kiểm chứng.';
-            if (!available.has(part.id) || (part.passage || '') !== (question.passage || '')) return 'Ngữ liệu không khớp bài học hoặc đoạn đọc.';
+            if (!available.has(part.id) || (part.passage || '') !== (question.passage || '')) return 'Nội dung không khớp bài học hoặc đoạn đọc.';
             const issue = root.VietnameseContentVerification.check(part, numberOf(lesson));
             if (issue) return issue;
         }
         return '';
+    }
+    function updateQuestionWording(question) {
+        if (validateQuestion(question) || !question.subquestions.every(part => part.generation)) return question;
+        const skill = definitions.find(d => d.id === question.templateId).key;
+        question.subquestions = question.subquestions.map(part => ({
+            ...root.VietnameseParameterEngine.materialize(skill, part.generation, numberOf({ id: question.lesson })),
+            label: part.label, options: [...part.options]
+        }));
+        question.explanation = question.subquestions.map(part => `${part.label}) ${part.explanation}`).join('\n');
+        return question;
     }
     const getDefaultTemplates = () => lessons().flatMap(lesson => definitions.filter(d => numberOf(lesson) >= d.from).map(d => ({
         id: `built-in-${d.id}-${lesson.id}`, name: `[${lesson.label}] ${d.name}`,
@@ -123,5 +133,5 @@
         question_type: d.type, generator_key: d.id, prompt_template: '{question}',
         config: { lesson: lesson.id, subquestionCount: 2 }, is_active: true
     })));
-    root.Grade4VietnameseTemplates = Object.freeze({ templateIds: definitions.map(d => d.id), definitions, generateQuestion, generateForHistory, getQuestionVariants, getLegacyQuestionVariants, getDefaultTemplates, validateQuestion });
+    root.Grade4VietnameseTemplates = Object.freeze({ templateIds: definitions.map(d => d.id), definitions, generateQuestion, generateForHistory, getQuestionVariants, getLegacyQuestionVariants, getDefaultTemplates, validateQuestion, updateQuestionWording });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

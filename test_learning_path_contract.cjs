@@ -40,7 +40,7 @@ const states = learningPath.getProgressStates({
     subject: 'Toán', classlevel: '4', lesson: 'g4-math-hk1-b01', score: 10, questionCount: 10
   }]
 });
-assert.deepEqual(states.map(item => item.state), ['completed', 'current', 'available', 'locked', 'locked']);
+assert.deepEqual(states.map(item => item.state), ['completed', 'current', 'locked', 'locked', 'locked']);
 assert.equal(learningPath.getRecommendedEntry(states)?.id, 'g4-math-hk1-b02');
 
 const grade5Vietnamese = learningPath.getEntries({ classlevel: '5', subject: 'vietnamese' });

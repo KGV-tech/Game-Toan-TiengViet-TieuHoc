@@ -1238,7 +1238,7 @@ test('admin khóa chủ đề nhưng vẫn test được, lộ trình học sinh
   await expect(page.locator('#game-start-btn')).toBeVisible();
 });
 
-test('học sinh chỉ mở chủ đề kế tiếp sau một lượt luyện tập đạt 10 điểm', async ({ page }) => {
+test('học sinh mở chủ đề kế tiếp khi đạt mức điểm riêng và mốc mở không bỏ qua điều kiện điểm', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
@@ -1284,11 +1284,11 @@ test('học sinh chỉ mở chủ đề kế tiếp sau một lượt luyện t�
   expect(progression).toEqual({
     before: { firstLocked: false, secondLocked: true },
     initialSteps: { first: 'current', second: 'locked' },
-    afterNine: true,
+    afterNine: false,
     afterPerfect: false,
     nextLocked: true,
-    teacherOpenedNext: false,
-    nextStepAfterTeacherOverride: 'available'
+    teacherOpenedNext: true,
+    nextStepAfterTeacherOverride: 'locked'
   });
 });
 

@@ -68,7 +68,7 @@
         const roundClass = normalizeClass(round.classlevel);
         if (expectedClass && roundClass && expectedClass !== roundClass) return false;
         if (entry.kind === 'lesson') {
-            const lessonIds = [round.lesson, ...(Array.isArray(round.lessons) ? round.lessons : [])].filter(Boolean);
+            const lessonIds = [round.lesson, ...(Array.isArray(round.lessons) ? round.lessons : []), ...(Array.isArray(round.details) ? round.details : []).map(detail => detail.lesson)].filter(Boolean);
             return lessonIds.some(id => same(id, entry.id));
         }
         return same(round.topic, entry.topic);
@@ -79,23 +79,54 @@
         return Number(round?.score) === 10 && questionCount === 10;
     };
 
-    const getProgressStates = ({ entries = [], releaseId = '', history = [], subject = '', classlevel = '' } = {}) => {
+    const getPracticePolicy = (settings, subject) => {
+        const policy = settings?.practicePass?.[normalizeSubject(subject)];
+        return { enabled: policy?.enabled !== false, score: Number.isInteger(policy?.score) && policy.score >= 0 && policy.score <= 10 ? policy.score : 8 };
+    };
+    const isCompletedPractice = round => round?.difficulty !== 'Đề thi' && !round?.isExam
+        && Number(round?.questionCount || round?.details?.length) === 10
+        && (!Array.isArray(round?.details) || !round.details.length || round.details.length === 10);
+    const isPassingPractice = (round, policy) => isCompletedPractice(round) && Number(round.score) >= policy.score;
+    const getDailyPracticeSummary = ({ history = [], subject, classlevel, now = new Date(), policy = { enabled: true, score: 8 }, user } = {}) => {
+        const day = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' }).format(now);
+        const seen = new Set();
+        const rounds = history.filter(round => {
+            const key = round.attempt_id;
+            if (key && seen.has(key)) return false;
+            if (key) seen.add(key);
+            return normalizeSubject(round.subject || round.title) === normalizeSubject(subject)
+                && (!round.classlevel || normalizeClass(round.classlevel) === normalizeClass(classlevel))
+                && isCompletedPractice(round) && String(round.date || '').endsWith(day);
+        });
+        // The existing daily reward is credited once for the first practice of
+        // the day (1 star, or 6 when the five-day streak resets), across subjects.
+        const firstCredited = (user?.history || []).find(round => isCompletedPractice(round) && String(round.date || '').endsWith(day));
+        const dayKey = day.split('/').reverse().join('-');
+        const stars = user?.last_practice_date === dayKey && normalizeSubject(firstCredited?.subject || firstCredited?.title) === normalizeSubject(subject)
+            ? (Number(user.practice_streak) === 0 ? 6 : 1) : 0;
+        const seconds = rounds.reduce((sum, round) => sum + Math.max(0, Number(round.details?.[0]?.practice?.durationSeconds) || 0), 0);
+        return { completed: rounds.length, stars, eligible: !policy.enabled || rounds.some(round => isPassingPractice(round, policy)),
+            seconds, minutes: Math.floor(seconds / 60) };
+    };
+
+    const getProgressStates = ({ entries = [], releaseId = '', history = [], subject = '', classlevel = '', settings } = {}) => {
         const safeEntries = Array.isArray(entries) ? entries : [];
         const configuredReleaseIndex = releaseId ? safeEntries.findIndex(entry => entry.id === releaseId) : -1;
         const releaseIndex = configuredReleaseIndex >= 0
             ? configuredReleaseIndex
             : (safeEntries[0]?.kind === 'lesson' ? 0 : safeEntries.length - 1);
+        const policy = getPracticePolicy(settings, subject);
         const completed = new Set(safeEntries
-            .filter(entry => (Array.isArray(history) ? history : []).some(round => roundMatchesEntry(round, entry, { subject, classlevel }) && isPerfectRound(round)))
+            .filter(entry => (Array.isArray(history) ? history : []).some(round => roundMatchesEntry(round, entry, { subject, classlevel }) && isPassingPractice(round, policy)))
             .map(entry => entry.id));
         const currentIndex = safeEntries.findIndex((entry, index) => index <= releaseIndex && !completed.has(entry.id));
 
         return safeEntries.map((entry, index) => {
             let state = 'available';
-            if (index > releaseIndex) state = 'locked';
+            if (index > releaseIndex || (policy.enabled && currentIndex >= 0 && index > currentIndex)) state = 'locked';
             else if (completed.has(entry.id)) state = 'completed';
             else if (index === currentIndex) state = 'current';
-            return { ...entry, state };
+            return { ...entry, state, lockReason: index > releaseIndex ? 'teacher' : state === 'locked' ? 'progression' : '' };
         });
     };
 
@@ -109,7 +140,7 @@
 
     const getSummary = states => {
         const safeStates = Array.isArray(states) ? states : [];
-        const released = safeStates.filter(entry => entry.state !== 'locked');
+        const released = safeStates.filter(entry => entry.state !== 'locked' || entry.lockReason === 'progression');
         return {
             total: safeStates.length,
             released: released.length,
@@ -127,6 +158,10 @@
         getRecommendedEntry,
         getSummary,
         roundMatchesEntry,
+        getPracticePolicy,
+        isCompletedPractice,
+        isPassingPractice,
+        getDailyPracticeSummary,
         isPerfectRound
     };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

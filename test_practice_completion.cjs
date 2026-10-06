@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+globalThis.app = {};
+require('./src/modules/constants.js');
+require('./src/modules/curriculum.js');
+require('./src/modules/learning-path.js');
+const path = app.learningPath;
+const entries = path.getEntries({ classlevel: '4', subject: 'vietnamese' }).slice(0, 4);
+const context = { entries, releaseId: entries[2].id, subject: 'vietnamese', classlevel: '4' };
+const round = score => ({ subject: 'vietnamese', classlevel: '4', questionCount: 10, score, lesson: entries[0].id, difficulty: 'Dễ' });
+assert.deepEqual(path.getProgressStates({ ...context, history: [round(7), round(1)] }).map(x => x.state), ['current', 'locked', 'locked', 'locked']);
+assert.deepEqual(path.getProgressStates({ ...context, history: [round(8)] }).map(x => x.state), ['completed', 'current', 'locked', 'locked']);
+assert.deepEqual(path.getProgressStates({ ...context, settings: { practicePass: { vietnamese: { enabled: false, score: 9 } } }, history: [] }).map(x => x.state), ['current', 'available', 'available', 'locked']);
+assert.equal(path.getProgressStates({ ...context, history: [{ ...round(10), difficulty: 'Đề thi' }] })[1].state, 'locked');
+const canonical = { ...round(8), lesson: undefined, details: Array.from({ length: 10 }, () => ({ lesson: entries[0].id })) };
+assert.equal(path.getProgressStates({ ...context, history: [canonical] })[1].state, 'current');
+console.log('Practice completion and per-attempt score gates verified.');
