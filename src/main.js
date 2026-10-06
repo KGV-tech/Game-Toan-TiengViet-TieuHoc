@@ -7073,7 +7073,7 @@ const app = {
         },
         syncManagementHeader(tab = '') {
             const modal = document.getElementById('treasure-modal');
-            const management = tab === 'players' || tab === 'quests';
+            const management = tab === 'players' || tab === 'quests' || tab === 'settings' || tab === 'learning-path';
             const themeToggle = document.getElementById('admin-theme-toggle-modal');
             if (themeToggle) themeToggle.hidden = !tab || app.data.currentUser?.role?.toLowerCase() !== 'admin';
             if (modal) {
@@ -7088,7 +7088,7 @@ const app = {
                 if (element) element.hidden = !management;
             }
             const icon = document.getElementById('admin-management-icon');
-            if (icon) icon.textContent = tab === 'quests' ? '⚑' : '✦';
+            if (icon) icon.textContent = tab === 'quests' ? '⚑' : (tab === 'learning-path' ? '◈' : '✦');
             const modeTabs = document.getElementById('admin-management-tabs');
             if (modeTabs) {
                 modeTabs.hidden = true;
@@ -7108,7 +7108,7 @@ const app = {
             modal.classList.add('active');
             this.syncManagementHeader(tab);
             app.modal?.open(modal, {
-                initialFocus: tab === 'players' || tab === 'quests' ? '#admin-management-back' : '.utility-close-button',
+                initialFocus: '#admin-management-back',
                 onEscape: () => app.treasure.close()
             });
             document.getElementById('treasure-title').textContent = 'Cài Đặt Hệ Thống';
@@ -7132,7 +7132,7 @@ const app = {
             modal.classList.remove('team-board-fullscreen');
             modal.classList.remove('team-board-fullscreen-mode');
             app.modal?.open(modal, {
-                initialFocus: '.utility-close-button',
+                initialFocus: '#admin-management-back',
                 onEscape: () => app.treasure.close()
             });
             const isVietnamese = subject === 'vietnamese';
@@ -8507,50 +8507,57 @@ const app = {
                     <header class="settings-workspace__hero">
                         <div>
                             <span class="settings-workspace__kicker">Cấu hình trải nghiệm · Admin</span>
-                            <h3>Nhịp độ học tập</h3>
-                            <p>Điều chỉnh khoảng thời gian để học sinh có đủ nhịp suy nghĩ ở phần luyện tập và bài kiểm tra.</p>
+                            <h3>Nhịp độ học tập & Điểm chuẩn</h3>
+                            <p>Điều chỉnh khoảng thời gian và mức điểm đạt để học sinh có đủ nhịp suy nghĩ ở phần luyện tập và bài kiểm tra.</p>
                         </div>
                         <div class="settings-workspace__badge"><strong>04</strong><span>tham số đang dùng</span></div>
                     </header>
-                    <div class="settings-overview" aria-label="Giá trị hiện tại">
-                        <article class="settings-overview-card settings-overview-card--amber"><span class="settings-overview-card__icon" aria-hidden="true">◷</span><div><span>Mức độ Khó</span><strong>${hardTime} giây</strong><small>Thời gian cho mỗi câu</small></div></article>
-                        <article class="settings-overview-card settings-overview-card--cyan"><span class="settings-overview-card__icon" aria-hidden="true">◴</span><div><span>Giải đề kiểm tra</span><strong>${examTime} phút</strong><small>Thời lượng cho một đề</small></div></article>
-                    </div>
-                    <section class="settings-panel" aria-labelledby="settings-panel-title">
-                        <header class="settings-panel__header">
-                            <div><span class="settings-panel__kicker">Điều khiển thời gian</span><h4 id="settings-panel-title">Cài đặt nhịp độ</h4></div>
-                            <p>Giá trị chỉ áp dụng cho trải nghiệm học sinh sau khi cô lưu thay đổi.</p>
-                        </header>
-                        <div class="settings-fields">
-                            <label class="settings-field" for="setting-hard-time">
-                                <span class="settings-field__icon settings-field__icon--amber" aria-hidden="true">✦</span>
-                                <span class="settings-field__content"><strong>Mức độ Khó</strong><small>Đếm ngược cho câu hỏi khó trong phần luyện tập.</small></span>
-                                <span class="settings-field__range">5–30 giây</span>
-                                <span class="settings-input-wrap"><input type="number" id="setting-hard-time" class="form-input" min="5" max="30" value="${hardTime}" inputmode="numeric" aria-describedby="setting-hard-time-help"><span>giây</span></span>
-                                <small id="setting-hard-time-help" class="settings-field__help">Tối thiểu 5 · tối đa 30</small>
-                            </label>
-                            <label class="settings-field" for="setting-exam-time">
-                                <span class="settings-field__icon settings-field__icon--cyan" aria-hidden="true">◈</span>
-                                <span class="settings-field__content"><strong>Giải đề kiểm tra</strong><small>Thời lượng đếm ngược cho một đề hoàn chỉnh.</small></span>
-                                <span class="settings-field__range">1–99 phút</span>
-                                <span class="settings-input-wrap"><input type="number" id="setting-exam-time" class="form-input" min="1" max="99" value="${examTime}" inputmode="numeric" aria-describedby="setting-exam-time-help"><span>phút</span></span>
-                                <small id="setting-exam-time-help" class="settings-field__help">Tối thiểu 1 · tối đa 99</small>
-                            </label>
+                    <div class="settings-columns">
+                        <div class="settings-column">
+                            <header class="settings-panel__header">
+                                <div><span class="settings-panel__kicker">Điều khiển thời gian</span><h4 id="settings-panel-title">Cài đặt nhịp độ</h4></div>
+                                <p>Áp dụng sau khi lưu.</p>
+                            </header>
+                            <div class="settings-overview" aria-label="Giá trị hiện tại">
+                                <article class="settings-overview-card settings-overview-card--amber"><span class="settings-overview-card__icon" aria-hidden="true">◷</span><div><span>Mức độ Khó</span><strong>${hardTime} giây</strong><small>Thời gian mỗi câu</small></div></article>
+                                <article class="settings-overview-card settings-overview-card--cyan"><span class="settings-overview-card__icon" aria-hidden="true">◴</span><div><span>Giải đề kiểm tra</span><strong>${examTime} phút</strong><small>Thời lượng một đề</small></div></article>
+                            </div>
+                            <div class="settings-fields settings-fields--single-col">
+                                <label class="settings-field" for="setting-hard-time">
+                                    <span class="settings-field__icon settings-field__icon--amber" aria-hidden="true">✦</span>
+                                    <span class="settings-field__content"><strong>Mức độ Khó</strong><small>Đếm ngược cho câu hỏi khó trong phần luyện tập.</small></span>
+                                    <span class="settings-field__range">5–30 giây</span>
+                                    <span class="settings-input-wrap"><input type="number" id="setting-hard-time" class="form-input" min="5" max="30" value="${hardTime}" inputmode="numeric" aria-describedby="setting-hard-time-help"><span>giây</span></span>
+                                    <small id="setting-hard-time-help" class="settings-field__help">Tối thiểu 5 · tối đa 30</small>
+                                </label>
+                                <label class="settings-field" for="setting-exam-time">
+                                    <span class="settings-field__icon settings-field__icon--cyan" aria-hidden="true">◈</span>
+                                    <span class="settings-field__content"><strong>Giải đề kiểm tra</strong><small>Thời lượng đếm ngược cho một đề hoàn chỉnh.</small></span>
+                                    <span class="settings-field__range">1–99 phút</span>
+                                    <span class="settings-input-wrap"><input type="number" id="setting-exam-time" class="form-input" min="1" max="99" value="${examTime}" inputmode="numeric" aria-describedby="setting-exam-time-help"><span>phút</span></span>
+                                    <small id="setting-exam-time-help" class="settings-field__help">Tối thiểu 1 · tối đa 99</small>
+                                </label>
+                            </div>
                         </div>
-                        <section class="settings-practice-pass" aria-labelledby="practice-pass-title">
-                            <h4 id="practice-pass-title">Mức điểm tối thiểu để qua bài luyện tập</h4>
-                            <p>Tính theo điểm của một lượt làm đủ 10 câu, không cộng dồn các lượt. Luôn giới hạn trong mốc giáo viên đã mở.</p>
-                            <div class="settings-fields">${['math', 'vietnamese'].map(subject => {
-                                const policy = app.learningPath.getPracticePolicy(app.data.settings, subject);
-                                const name = subject === 'math' ? 'Toán' : 'Tiếng Việt';
-                                return `<div class="settings-field"><label class="settings-field__content" for="setting-pass-${subject}-enabled"><input type="checkbox" id="setting-pass-${subject}-enabled" ${policy.enabled ? 'checked' : ''}> <strong>${name}: yêu cầu đủ điểm để qua bài</strong></label><label class="settings-input-wrap" for="setting-pass-${subject}-score"><span>Điểm tối thiểu</span><input id="setting-pass-${subject}-score" type="number" class="form-input" min="0" max="10" step="1" value="${policy.score}" inputmode="numeric"><span>/10</span></label><small class="settings-field__help">Bỏ chọn: được làm mọi bài giáo viên đã mở.</small></div>`;
-                            }).join('')}</div>
-                        </section>
-                        <footer class="settings-save-bar">
-                            <p><span aria-hidden="true">✓</span> Cài đặt được lưu cho các lượt chơi tiếp theo.</p>
-                            <button type="button" id="settings-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveSettings()">Lưu thay đổi <span aria-hidden="true">→</span></button>
-                        </footer>
-                    </section>
+                        <div class="settings-column">
+                            <header class="settings-panel__header">
+                                <div><span class="settings-panel__kicker">Chuẩn đầu ra</span><h4 id="practice-pass-title">Mức điểm tối thiểu để qua bài</h4></div>
+                                <p>Tính theo điểm 1 lượt 10 câu.</p>
+                            </header>
+                            <section class="settings-practice-pass" aria-labelledby="practice-pass-title">
+                                <p class="settings-practice-pass__desc">Giới hạn trong mốc giáo viên đã mở. Không cộng dồn các lượt.</p>
+                                <div class="settings-fields settings-fields--single-col">${['math', 'vietnamese'].map(subject => {
+                                    const policy = app.learningPath.getPracticePolicy(app.data.settings, subject);
+                                    const name = subject === 'math' ? 'Toán' : 'Tiếng Việt';
+                                    return `<div class="settings-field"><label class="settings-field__content" for="setting-pass-${subject}-enabled"><input type="checkbox" id="setting-pass-${subject}-enabled" ${policy.enabled ? 'checked' : ''}> <strong>${name}: yêu cầu đủ điểm để qua bài</strong></label><label class="settings-input-wrap" for="setting-pass-${subject}-score"><span>Điểm tối thiểu</span><input id="setting-pass-${subject}-score" type="number" class="form-input" min="0" max="10" step="1" value="${policy.score}" inputmode="numeric"><span>/10</span></label><small class="settings-field__help">Bỏ chọn: được làm mọi bài giáo viên đã mở.</small></div>`;
+                                }).join('')}</div>
+                            </section>
+                        </div>
+                    </div>
+                    <footer class="settings-save-bar">
+                        <p><span aria-hidden="true">✓</span> Cài đặt được lưu cho các lượt chơi tiếp theo.</p>
+                        <button type="button" id="settings-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveSettings()">Lưu thay đổi <span aria-hidden="true">→</span></button>
+                    </footer>
                 </section>
             `;
         },
@@ -8959,7 +8966,7 @@ const app = {
                   <div class="template-editor__rule template-editor__rule--measurement-controls" hidden><h5>Cấu hình đơn vị đo</h5><p>Chỉ trường phù hợp với generator đang chọn được áp dụng khi lưu; danh sách rỗng hoặc giá trị ngoài allowlist sẽ bị chặn.</p><fieldset class="template-measurement-config--mass" hidden><legend>Dạng đổi khối lượng</legend><div id="template-measurement-mass-kinds" class="template-editor__checks">${[['yenToKg', 'Yến → kg'], ['taToKg', 'Tạ → kg'], ['tonToKg', 'Tấn → kg'], ['yenAndKgToKg', 'Yến và kg → kg'], ['tonAndYenToKg', 'Tấn và yến → kg']].map(([value, label]) => checkbox(value, label, measurementMassKinds, 'measurement-mass-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--area" hidden><legend>Dạng đổi diện tích</legend><div id="template-measurement-area-kinds" class="template-editor__checks">${[['m2ToDm2', 'm² → dm²'], ['dm2ToCm2', 'dm² → cm²'], ['dm2ToMm2', 'dm² → mm²'], ['cm2ToDm2', 'cm² → dm²']].map(([value, label]) => checkbox(value, label, measurementAreaKinds, 'measurement-area-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--time" hidden><legend>Dạng đổi thời gian</legend><div id="template-measurement-time-kinds" class="template-editor__checks">${[['minuteToSeconds', 'Phút → giây'], ['hourToMinutes', 'Giờ → phút'], ['minutesAndSecondsToSeconds', 'Phút và giây → giây'], ['weekAndDaysToDays', 'Tuần và ngày → ngày']].map(([value, label]) => checkbox(value, label, measurementTimeKinds, 'measurement-time-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--century" hidden><legend>Khoảng thế kỉ</legend><div class="template-editor__fields"><label class="template-editor__field"><span>Thế kỉ bắt đầu</span><input id="template-measurement-century-start" class="form-input" type="number" min="1" max="99" value="${measurementCenturyStart}"></label><label class="template-editor__field"><span>Thế kỉ kết thúc</span><input id="template-measurement-century-end" class="form-input" type="number" min="1" max="99" value="${measurementCenturyEnd}"></label></div></fieldset><fieldset class="template-measurement-config--word-problem" hidden><legend>Nhóm tình huống lời văn</legend><div id="template-measurement-scenario-kinds" class="template-editor__checks">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian']].map(([value, label]) => checkbox(value, label, measurementScenarioKinds, 'measurement-scenario-kinds')).join('')}</div></fieldset></div>
               </div></div>
               <footer class="template-editor__actions"><button type="button" class="template-editor__action template-editor__action--back" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="template-editor__action template-editor__action--secondary" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
-              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()">×</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
+              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close admin-compose-back" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()"><span aria-hidden="true">←</span> Quay về</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
             </section>`;
             if (existing?.generator_key === 'number.safe_password_by_place_value') {
                 document.getElementById('template-minimum').value = app.data.formatMathNumber(config.minimum ?? 0);
@@ -12101,7 +12108,7 @@ const app = {
                     <h3>${heading}</h3>
                     <div class="exam-detail-toolbar__actions">
                         ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)})`, 'compact-admin-action--view')}
-                        <button type="button" class="utility-close-button utility-close-button--inline" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề">×</button>
+                        <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề"><span aria-hidden="true">←</span> Quay về</button>
                     </div>
                 </div>
                 ${this.renderExamPrintContent(exam, 'print-area')}

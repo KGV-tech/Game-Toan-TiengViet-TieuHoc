@@ -29,7 +29,7 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     expect(mathVal).toBe('math');
 
     // Đóng modal
-    await page.locator('#treasure-close-button').click();
+    await page.locator('#admin-management-back').click();
     await expect(page.locator('#treasure-modal')).not.toHaveClass(/active/);
 
     // 2. Click trạm Tiếng Việt
@@ -40,7 +40,7 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     expect(vietVal).toBe('vietnamese');
 
     // Đóng modal
-    await page.locator('#treasure-close-button').click();
+    await page.locator('#admin-management-back').click();
     await expect(page.locator('#treasure-modal')).not.toHaveClass(/active/);
 
     // 3. Click trạm Cài Đặt (admin-station)
