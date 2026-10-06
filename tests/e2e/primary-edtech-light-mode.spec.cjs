@@ -48,12 +48,8 @@ test.describe('Chuẩn Giao diện Tương tác Giáo dục Tiểu học & Đi�
     await expect(page.locator('#treasure-modal')).toHaveClass(/active/);
     await expect(page.locator('#treasure-title')).toHaveText('Cài Đặt Hệ Thống');
     
-    // Trạm Cài đặt chỉ còn Điều chỉnh; hai mục quản lý mở riêng từ map.
-    const tabTexts = await page.locator('#admin-tabs .tab-btn').allTextContents();
-    expect(tabTexts).not.toContain('Quản Lý Học Sinh');
-    expect(tabTexts).not.toContain('Quản lý Nhiệm vụ');
-    expect(tabTexts).toContain('Điều chỉnh');
-    expect(tabTexts).not.toContain('Quản lý lộ trình học');
+    // Trạm Cài đặt không còn tab menu
+    await expect(page.locator('#admin-tabs')).toBeHidden();
   });
 
   test('Màn hình làm bài Light mode chuẩn EdTech: không còn hố đen, nút Tiếp tục 3D và lõi điểm sáng rõ', async ({ page }) => {
