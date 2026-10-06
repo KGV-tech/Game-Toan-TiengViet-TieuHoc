@@ -30,7 +30,7 @@
 [data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(
     .admin-compose-sidebar, .admin-compose-main, .admin-compose-module-panel,
     .admin-roster-sidebar, .admin-roster-main, .admin-roster-filter-panel,
-    .quest-management-sidebar, .quest-workspace-content, .settings-panel,
+    .quest-management-sidebar, .quest-workspace-content, .settings-panel, .settings-column,
     .settings-workspace__hero, .settings-overview-card, .settings-field,
     .personal-quest-stat, .personal-quest-card, .personal-quest-empty,
     .team-dashboard-stat, .team-competition-card, .team-form-section,

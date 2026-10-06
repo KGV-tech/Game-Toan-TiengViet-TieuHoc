@@ -156,7 +156,7 @@
 
     <div id="change-password-modal" class="modal auth-password-modal" aria-hidden="true">
       <section class="modal-content auth-password-card" role="dialog" aria-modal="true" aria-labelledby="change-password-title" aria-describedby="change-password-intro change-password-note change-password-error">
-        <button type="button" id="change-password-cancel" class="auth-password-close" aria-label="Đóng cửa sổ đổi mật khẩu">×</button>
+        <button type="button" id="change-password-cancel" class="auth-password-close admin-compose-back" aria-label="Đóng cửa sổ đổi mật khẩu"><span aria-hidden="true">←</span> Quay về</button>
         <h2 id="change-password-title">Đổi mật khẩu</h2>
         <p id="change-password-intro" class="auth-password-intro">Nhập đúng mật khẩu cũ để đặt mật khẩu mới<br>cho tài khoản của bạn.</p>
         <form id="change-password-form" novalidate aria-describedby="change-password-error">
@@ -365,8 +365,10 @@
             </div>
           </header>
 
-          <button type="button" class="admin-compose-back" onclick="app.admin.closeComposer()">← Về bản đồ</button>
-          <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
+          <div class="admin-compose-nav-actions">
+            <button type="button" class="admin-compose-back" onclick="app.admin.closeComposer()">← Về bản đồ</button>
+            <button type="button" class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
+          </div>
 
           <section id="admin-compose-quickstart" class="admin-compose-quickstart" aria-labelledby="admin-compose-quickstart-title">
             <div class="admin-compose-quickstart__copy">
@@ -472,8 +474,7 @@
       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
       <div class="sci-fi-panel" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-intro"
         style="width: 90%; max-width: 650px; background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8; border-radius: 20px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.2); padding: 30px; position: relative; backdrop-filter: blur(10px);">
-        <button type="button" id="guide-close" onclick="app.hideGuide()" aria-label="Đóng Hướng dẫn"
-          style="position:absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); z-index: 10; font-weight: bold;">✖</button>
+        <button type="button" id="guide-close" class="admin-compose-back modal-back-link" onclick="app.hideGuide()" aria-label="Quay về" style="position:absolute; top: 16px; left: 20px; z-index: 10;"><span aria-hidden="true">←</span> Quay về</button>
         <h2 id="guide-title" class="guide-title">Hướng Dẫn Hành Trình</h2>
         <p id="guide-intro" class="guide-intro"><span>Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!</span><span>Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.</span></p>
 
@@ -786,11 +787,11 @@
               </div>
 
               <div id="play-right-footer" class="play-right-footer">
-                <button id="game-theme-toggle" class="game-theme-toggle" onclick="app.ui.toggleTheme()" aria-label="Đổi giao diện Sáng / Tối" title="Chuyển chế độ Sáng / Tối">
-                  <span class="theme-icon" aria-hidden="true">☀️</span>
-                </button>
                 <button id="game-btn-back" class="btn-exit-chunky" onclick="app.game.confirmExit()" aria-label="Thoát lượt làm bài">
                   <span>Thoát</span>
+                </button>
+                <button id="game-theme-toggle" class="game-theme-toggle" onclick="app.ui.toggleTheme()" aria-label="Đổi giao diện Sáng / Tối" title="Chuyển chế độ Sáng / Tối">
+                  <span class="theme-icon" aria-hidden="true">☀️</span>
                 </button>
               </div>
             </aside>
@@ -802,7 +803,7 @@
     <!-- Màn hình Chọn Đề Kiểm tra -->
     <div id="exam-select-screen" class="screen station-screen exam-bg" data-ui-context="student">
       <div class="glass-container-xl station-shell">
-        <button class="utility-close-button" onclick="app.router.open('map-screen')" aria-label="Trở về map">×</button>
+        <button class="utility-close-button admin-compose-back station-back-link" onclick="app.router.open('map-screen')" aria-label="Về bản đồ"><span aria-hidden="true">←</span> Quay về</button>
         <div class="screen-title-row">
           <h2 class="title-glow" style="margin:0;">Giải Đề Kiểm Tra</h2>
         </div>
@@ -852,8 +853,8 @@
     <div id="exam-play-screen" class="screen exam-bg"
       style="overflow-y:auto; align-items:flex-start; padding-top: 50px;">
       <div class="exam-paper" id="exam-paper">
-        <button id="exam-btn-back" class="utility-close-button" style="position:absolute; top:-40px; right:0;"
-          onclick="app.exam.confirmExit()" aria-label="Thoát đề kiểm tra">×</button>
+        <button id="exam-btn-back" class="utility-close-button admin-compose-back" style="position:absolute; top:-40px; right:0;"
+          onclick="app.exam.confirmExit()" aria-label="Thoát đề kiểm tra"><span aria-hidden="true">←</span> Thoát</button>
         <div class="exam-header">
           <h1 id="exam-title">Đề Kiểm tra</h1>
           <p id="exam-meta">Họ tên: <span id="exam-student-name"></span> <span id="exam-timer-display"
@@ -920,9 +921,9 @@
     <!-- Modal Kho Báu (Student) & Cài Đặt (Admin) -->
     <div id="treasure-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="treasure-title" aria-hidden="true">
       <div class="modal-content admin-panel glass-container-xl station-shell">
-        <button id="treasure-close-button" class="utility-close-button"
-          onclick="app.treasure.close()" aria-label="Đóng Kho báu">
-          <span aria-hidden="true">×</span>
+        <button id="treasure-close-button" class="utility-close-button admin-compose-back modal-back-link"
+          onclick="app.treasure.close()" aria-label="Quay về">
+          <span aria-hidden="true">←</span> Quay về
         </button>
 
         <div class="station-shell__title-row">
@@ -933,8 +934,10 @@
               <small id="admin-management-subtitle" hidden>Khu vực Admin</small>
             </div>
           </div>
-          <button id="admin-management-back" type="button" class="admin-compose-back" onclick="app.treasure.close()" hidden><span aria-hidden="true">←</span> Quay về</button>
-          <button type="button" id="admin-theme-toggle-modal" hidden class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
+          <div class="admin-management-nav-actions">
+            <button id="admin-management-back" type="button" class="admin-compose-back" onclick="app.treasure.close()" hidden><span aria-hidden="true">←</span> Quay về</button>
+            <button type="button" id="admin-theme-toggle-modal" hidden class="admin-theme-toggle" data-theme-toggle onclick="app.ui.toggleTheme()" aria-label="Chuyển sang giao diện Sáng" title="Chuyển sang giao diện Sáng" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀️</span></button>
+          </div>
           <div id="admin-management-tabs" class="quest-workspace-tabs" hidden></div>
         </div>
 
@@ -950,9 +953,9 @@
   <!-- Modal Nhiệm vụ -->
     <div id="quest-modal" class="modal" data-ui-context="student" role="dialog" aria-modal="true" aria-labelledby="quest-modal-title" aria-hidden="true">
     <div class="modal-content glass-container-xl station-shell quest-shell">
-      <button class="utility-close-button"
-        onclick="app.quest.close()" aria-label="Đóng Nhiệm vụ">
-        <span aria-hidden="true">×</span>
+      <button class="utility-close-button admin-compose-back modal-back-link"
+        onclick="app.quest.close()" aria-label="Quay về">
+        <span aria-hidden="true">←</span> Quay về
       </button>
       <div class="station-shell__title-row">
         <h2 id="quest-modal-title" class="title-glow">Bảng Nhiệm Vụ</h2>
@@ -989,9 +992,9 @@
       <div class="shop-shell__scrim">
       </div> <!-- Overlay -->
 
-      <button id="shop-close-button" class="utility-close-button"
-        onclick="app.shop.close()" aria-label="Đóng Cửa hàng">
-        <span aria-hidden="true">×</span>
+      <button id="shop-close-button" class="utility-close-button admin-compose-back modal-back-link"
+        onclick="app.shop.close()" aria-label="Quay về">
+        <span aria-hidden="true">←</span> Quay về
       </button>
 
       <!-- Notebook Tabs (Left) -->
