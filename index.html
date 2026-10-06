@@ -288,7 +288,7 @@
         <img src="./public/map_scifi_adventure_v2.webp" alt="Bản đồ hành trình kết nối tri thức" class="map-bg" loading="lazy" decoding="async">
 
         <!-- Nút Hướng dẫn (Gắn liền với Map, co giãn theo tỷ lệ Map) -->
-        <div class="station station-guide" style="top: 82%; left: 6%; z-index: 50;">
+        <div class="station station-guide" style="top: 46%; left: 67%; z-index: 50;">
           <img src="./public/stations-v3/huong-dan.png" alt="Hướng dẫn" loading="lazy" decoding="async" class="station-img">
           <button id="btn-guide" class="map-guide-label" onclick="app.showGuide()" aria-label="Mở hướng dẫn"></button>
           <div id="guide-arrow"
@@ -335,7 +335,7 @@
         </div>
 
         <!-- Cửa hàng Shop & Gacha -->
-        <div id="shop-station" class="station station-shop station-artwork" style="top: 46%; left: 67%;">
+        <div id="shop-station" hidden class="station station-shop station-artwork" style="top: 46%; left: 67%;">
           <img src="./public/stations-v3/cua-hang.png" alt="Cửa hàng" loading="lazy" decoding="async" class="station-img" style="transform: rotate(10deg);">
           <span class="station-label">Cửa hàng</span>
         </div>
@@ -484,8 +484,8 @@
           <a href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở bài kế tiếp</a>
           <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Thành tích &amp; sao</a>
           <a href="#guide-titles" onclick="return app.goToGuide('guide-titles')">Danh hiệu</a>
-          <a href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
-          <a href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
+          <a class="guide-shop-only" hidden href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
+          <a class="guide-shop-only" hidden href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
           <a href="#guide-exams" onclick="return app.goToGuide('guide-exams')">Luyện đề</a>
           <a href="#guide-quests" onclick="return app.goToGuide('guide-quests')">Nhiệm vụ</a>
           <a href="#guide-history" onclick="return app.goToGuide('guide-history')">Kho Báu</a>
@@ -502,8 +502,10 @@
               <li><strong>Luyện đề</strong>: làm đề kiểm tra theo môn và thời điểm trong năm.</li>
               <li><strong>Nhiệm vụ</strong>: xem các bài cô giáo giao và nhận thưởng khi hoàn thành.</li>
               <li><strong>Kho Báu</strong>: xem thành tích và lịch sử làm bài.</li>
-              <li><strong>Cửa hàng</strong>: quản lý thú cưng và quay may mắn.</li>
-              <li><strong>Hướng dẫn</strong>: mở lại bảng này bất cứ lúc nào.</li>
+              <li class="guide-shop-only" hidden><strong>Cửa hàng</strong>: quản lý thú cưng và quay may mắn.</li>
+              <li class="guide-shop-paused"><strong>Cửa hàng, thú cưng và Trạm May Mắn đang tạm khóa với học sinh.</strong> Bạn chưa thể chọn thú cưng, dùng kỹ năng hay quay may mắn. Thú cưng đã có vẫn được giữ lại.</li>
+              <li><strong>Hướng dẫn</strong>: bấm ảnh Hướng dẫn trên bản đồ để mở lại bảng này bất cứ lúc nào.</li>
+              <li class="guide-shop-paused">Ảnh <strong>Hướng dẫn</strong> nằm ở vị trí Cửa hàng trước đây. Robot Mèo mặc định sẽ đồng hành cùng bạn khi luyện tập.</li>
             </ul>
           </section>
 
@@ -550,7 +552,7 @@
             <p>Chưa làm đủ 10 câu thì chưa ghi nhận lượt hoàn thành. Nếu game khôi phục bản nháp, làm tiếp đến cuối lượt để ghi nhận kết quả và thời gian đã làm. Kết quả chờ kết nối được giữ trên thiết bị; khi đồng bộ không tính thêm lượt trùng.</p>
           </section>
 
-          <section id="guide-pets" class="guide-section" tabindex="-1">
+          <section id="guide-pets" class="guide-section guide-shop-only" hidden tabindex="-1">
             <h3>5. Thú cưng đồng hành</h3>
             <ul>
               <li>Vào <strong>Cửa hàng → Trạm Thú Cưng</strong> để xem các thú cưng. Chức năng đổi thú cưng sẽ sớm ra mắt.</li>
@@ -561,7 +563,7 @@
             </ul>
           </section>
 
-          <section id="guide-lucky" class="guide-section" tabindex="-1">
+          <section id="guide-lucky" class="guide-section guide-shop-only" hidden tabindex="-1">
             <h3>6. Trạm May Mắn</h3>
             <p>Tại <strong>Cửa hàng → Trạm May Mắn</strong>:</p>
             <ul>
@@ -608,7 +610,7 @@
 
           <section id="guide-titles" class="guide-section" tabindex="-1">
             <h3>10. Hệ thống Danh hiệu</h3>
-            <p>Tổng Sao đã kiếm được quyết định Danh hiệu của bạn. Sao đang có dùng cho hoạt động như quay may mắn; tiêu Sao không làm tụt Danh hiệu.</p>
+            <p>Tổng Sao đã kiếm được quyết định Danh hiệu của bạn. Sao đang có được giữ trong tài khoản; tiêu Sao không làm tụt Danh hiệu.</p>
             <p>Mỗi danh hiệu có 4 cấp. Thanh trạng thái trong thẻ người chơi cho biết bạn đang ở mức nào của cấp hiện tại — khi vàng đầy thanh là lên cấp cao hơn!</p>
             <table class="guide-reward-table">
               <thead><tr><th>Danh hiệu</th><th>Cấp 1</th><th>Cấp 2</th><th>Cấp 3</th><th>Cấp 4</th></tr></thead>
@@ -1123,7 +1125,7 @@
   <script type="application/x-game-template" data-src="./src/question-templates/grade-4/vietnamese/practice.js?v=parameter-v1"></script>
   <script defer src="./src/modules/startup-assets.js"></script>
   <script defer src="./src/template-content-builder.js"></script>
-  <script defer src="./src/main.js?v=role-guides-v1"></script>
+  <script defer src="./src/main.js?v=student-shop-pause-v1"></script>
   <script defer src="./src/modules/utils.js"></script>
   <script defer src="./src/modules/safe-storage.js"></script>
   <script defer src="./src/modules/constants.js"></script>

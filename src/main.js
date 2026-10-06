@@ -136,6 +136,12 @@ const app = {
             const intro = modal.querySelectorAll('.guide-intro span');
             intro[0].textContent = isAdmin ? 'Chuẩn bị lớp, đặt mốc học và theo dõi kết quả của học sinh.' : 'Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!';
             intro[1].textContent = isAdmin ? 'Chọn “Dành cho Admin” để xem các bước quản lý; các mục còn lại giải thích cách học sinh chơi.' : 'Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.';
+            modal.querySelectorAll('.guide-shop-only').forEach(element => {
+                element.hidden = !app.shop.canAccess();
+            });
+            modal.querySelectorAll('.guide-shop-paused').forEach(element => {
+                element.hidden = app.shop.canAccess();
+            });
             modal.querySelectorAll('.guide-admin-only').forEach(element => {
                 element.hidden = !isAdmin;
             });
@@ -164,8 +170,8 @@ const app = {
         return false;
     },
     getEquippedPet(user) {
-        // Giáo viên không sở hữu/trang bị thú cưng; chú mèo robot vẫn là linh vật mặc định khi test bài.
-        if (user?.role?.toLowerCase() === 'admin') return 'robot_cat_normal.webp';
+        // Giữ lựa chọn đã lưu để dùng lại khi mở khóa; hiện học sinh dùng linh vật mặc định.
+        if (!app.shop.canAccess(user) || user?.role?.toLowerCase() === 'admin') return 'robot_cat_normal.webp';
         const savedPet = user ? app.safeStorage.getItem('equipped_pet_' + user.username) : null;
         // Keep existing pupils' default selection working while moving the mascot to its new art set.
         return (!savedPet || savedPet === 'cat_normal.png') ? 'robot_cat_normal.webp' : savedPet;
@@ -1290,6 +1296,7 @@ const app = {
             return result;
         },
         async spinLuckyWheel({ freeSpin = false } = {}) {
+            if (!app.shop.canAccess()) return { error: 'student_shop_paused' };
             const event = this.getPendingStudentEvent('lucky-spin', 'lucky_spin', { free_spin: Boolean(freeSpin) });
             const result = await this.applyStudentProgressEvent(event);
             if (!result.error) this.clearPendingStudentEvent('lucky-spin');
@@ -2365,7 +2372,11 @@ const app = {
                 const container = document.getElementById('skill-bar-container');
                 if (!container) return;
                 const user = app.data.currentUser;
-                if (!user) return;
+                if (!app.shop.canAccess(user)) {
+                    container.innerHTML = '';
+                    container.style.display = 'none';
+                    return;
+                }
                 
                 let shopInfo = app.shop.shopData.find(x => x.id === petId);
                 if (!shopInfo || !shopInfo.skills) {
@@ -2391,6 +2402,7 @@ const app = {
                 container.style.display = html.trim() ? 'flex' : 'none';
             },
             useSkill(skillId) {
+                if (!app.shop.canAccess()) return;
                 if (this.state.skillUsed) return;
                 const user = app.data.currentUser;
                 if (!user) return;
@@ -2543,6 +2555,7 @@ const app = {
 
             const shopSt = document.getElementById('shop-station');
             if (shopSt) shopSt.onclick = () => {
+                if (!app.shop.canAccess()) return;
                 app.router.prefetch('shop-modal');
                 app.router.animateCatTo(shopSt, () => app.shop.open());
             }; // Will implement app.shop
@@ -5756,6 +5769,14 @@ const app = {
             const stationImage = document.getElementById('exam-station-image');
             const station = document.getElementById('exam-station');
             const admin = this.isAdminUser();
+            const shopStation = document.getElementById('shop-station');
+            if (shopStation) shopStation.hidden = !app.shop.canAccess();
+            const guideStation = document.querySelector('.station-guide');
+            if (guideStation) {
+                guideStation.style.top = app.shop.canAccess() ? '82%' : '46%';
+                guideStation.style.left = app.shop.canAccess() ? '6%' : '67%';
+            }
+            if (!app.shop.canAccess()) app.shop.close();
             const managementActions = document.getElementById('admin-map-actions');
             if (managementActions) managementActions.hidden = !admin;
             if (stationLabel) stationLabel.textContent = admin ? 'Soạn Đề' : 'Luyện Đề';
@@ -13305,8 +13326,14 @@ const app = {
     },
 
     shop: {
+        // Tạm khóa Cửa hàng và thú cưng cho học sinh, không xóa dữ liệu đã có.
+        studentAccessEnabled: false,
+        canAccess(user = app.data.currentUser) {
+            return Boolean(user && (user.role?.toLowerCase() === 'admin' || this.studentAccessEnabled));
+        },
         init() { },
         open() {
+            if (!this.canAccess()) return;
             const modal = document.getElementById('shop-modal');
             app.router?.prepareAssets?.('shop-modal');
             modal.dataset.uiContext = 'student';
@@ -13326,6 +13353,7 @@ const app = {
             modal.classList.remove('active');
         },
         switchTab(tab, btnEl) {
+            if (!this.canAccess()) return;
             const activeButton = btnEl || document.querySelector(`#shop-modal .notebook-tab[data-shop-tab="${tab}"]`);
             if (activeButton) {
                 document.querySelectorAll('#shop-modal .notebook-tab').forEach(b => b.classList.remove('active'));
@@ -13353,6 +13381,7 @@ const app = {
             return user.lucky_spin_date === this.getLuckySpinDay() ? Number(user.lucky_spin_count || 0) : 0;
         },
         renderLuckyStation(box, user) {
+            if (!this.canAccess()) return;
             if (app.safeStorage.getItem(`free_spin_available_${user.username}`) === 'true') this.freeSpin = true;
             let isSpinning = this.isSpinning || false;
             const spinsToday = this.getLuckySpinsToday(user);
@@ -13419,6 +13448,7 @@ const app = {
         },
 
         async spinWheelOnline(user) {
+            if (!this.canAccess()) return;
             const wasFreeSpin = Boolean(this.freeSpin);
             this.isSpinning = true;
             this.freeSpin = false;
@@ -13484,6 +13514,7 @@ const app = {
             }, 5100);
         },
         async spinWheel() {
+            if (!this.canAccess()) return;
             if (this.isSpinning) return;
 
             const user = app.data.currentUser;
@@ -13649,6 +13680,7 @@ const app = {
         currentTrainIndex: 0,
         trainAnimationDir: 0,
         nextTrainCar(dir) {
+            if (!this.canAccess()) return;
             this.trainAnimationDir = dir;
             this.currentTrainIndex += dir;
             if (this.currentTrainIndex < 0) this.currentTrainIndex = this.shopData.length - 1;
@@ -13656,6 +13688,7 @@ const app = {
             this.switchTab('pets');
         },
         renderPetStation(box, user) {
+            if (!this.canAccess()) return;
             let isAdmin = (user.role === 'admin');
             let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
 
@@ -13741,6 +13774,7 @@ const app = {
             box.innerHTML = html;
         },
         renderMyPets(box, user) {
+            if (!this.canAccess()) return;
             let isAdmin = (user.role === 'admin');
             let myPets = (app.data.userPets || []).filter(x => x.user_username === user.username);
             let equippedPet = app.getEquippedPet(user);
@@ -13835,6 +13869,7 @@ const app = {
             box.innerHTML = html;
         },
         equipPet(petImage) {
+            if (!this.canAccess()) return;
             const user = app.data.currentUser;
             if (!user) return;
             let currentlyEquipped = localStorage.getItem('equipped_pet_' + user.username);
@@ -13846,6 +13881,7 @@ const app = {
             this.switchTab('mypets');
         },
         async adminSavePet(petId) {
+            if (!this.canAccess()) return;
             const val = Number.parseInt(document.getElementById('admin_edit_' + petId).value, 10);
             if (!Number.isInteger(val) || val < 0) {
                 return alert('Số lượng tồn kho phải là số nguyên từ 0 trở lên.');

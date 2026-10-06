@@ -103,6 +103,7 @@ test('các trạm học sinh dùng chung shell, token và trạng thái tương 
 
   await page.evaluate(() => {
     app.quest.close();
+    app.data.currentUser.role = 'admin';
     app.shop.open();
   });
   await expect(page.locator('#shop-modal')).toBeVisible();

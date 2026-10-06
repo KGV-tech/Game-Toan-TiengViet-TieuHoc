@@ -134,3 +134,6 @@ html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a
   outline: 3px solid #fff2a8;
   outline-offset: 4px;
 }
+
+/* Trạm bị khóa phải ẩn cả khi layout trạm đặt display riêng. */
+.map-v2 .station[hidden] { display: none !important; }
