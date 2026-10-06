@@ -177,7 +177,7 @@ for (const kind of ['sections','groups']) test(`Phân ${kind}: số lượng, c�
   await expect(page.locator('#weekly-team-error')).toContainText('Tên này dành cho danh sách chưa phân');
   await page.locator('[data-weekly-team-draft-name="0"]').fill('Đội Cầu Vồng');
   await page.locator('[data-weekly-team-draft-name="0"]').press('Tab');
-  await expect(page.locator('[data-weekly-team-draft-name="1"]')).toBeFocused();
+  await expect(page.locator('[data-weekly-team-capacity="0"]')).toBeFocused();
   await page.locator('[data-weekly-team-assignment="s0"]').selectOption('0');
   await page.locator('[data-weekly-team-assignment="s1"]').selectOption('0');
   await page.locator('#weekly-team-form [type=submit]').click();
@@ -190,6 +190,40 @@ for (const kind of ['sections','groups']) test(`Phân ${kind}: số lượng, c�
   expect(teams.flatMap(t=>t.members).sort()).toEqual(['s0','s1','s2','s3','s4','s5','s6','s7','s8']);
   expect(saved.scores).toEqual({s0:7});
   if (kind==='sections') expect(saved.teams.find(t=>t.id==='g1').members).toHaveLength(9);
+});
+
+for (const kind of ['sections','groups']) test(`Số lượng tùy chọn ${kind}: chia đúng và chặn tổng sai`, async ({page}) => {
+  await setup(page); await page.locator(`[data-weekly-view=${kind}]`).click();
+  await page.locator('#weekly-team-arrange').click();
+  await page.locator('#weekly-team-count').fill('3');
+  await page.locator('#weekly-team-count').dispatchEvent('change');
+  await page.getByLabel('Tự chia ngẫu nhiên, cân bằng', {exact:true}).check();
+  await expect(page.locator('[data-weekly-team-capacity]')).toHaveCount(3);
+  const before=await page.locator('[data-weekly-team-assignment]').evaluateAll(items=>items.map(item=>item.value));
+  await page.locator('[data-weekly-team-capacity="0"]').fill('5');
+  await page.locator('#weekly-team-shuffle').click();
+  await expect(page.locator('#weekly-team-error')).toContainText('Tổng số học sinh phải bằng 9');
+  expect(await page.locator('[data-weekly-team-assignment]').evaluateAll(items=>items.map(item=>item.value))).toEqual(before);
+  await page.locator('[data-weekly-team-capacity="1"]').fill('3');
+  await page.locator('[data-weekly-team-capacity="2"]').fill('1');
+  await page.locator('#weekly-team-shuffle').click();
+  expect(await page.locator('[data-weekly-team-total]').evaluateAll(items=>items.map(item=>Number(item.dataset.weeklyTeamTotal)))).toEqual([5,3,1]);
+  await page.locator('#weekly-team-shuffle').click();
+  expect(await page.locator('[data-weekly-team-total]').evaluateAll(items=>items.map(item=>Number(item.dataset.weeklyTeamTotal)))).toEqual([5,3,1]);
+  await page.locator('#weekly-team-form [type=submit]').click();
+  await expect(page.locator('#weekly-team-form')).toHaveCount(0);
+  const saved=await page.evaluate(kind=>app.classroom.weeks[0].teams.filter(t=>(t.kind||app.classroom.weeks[0].mode)===kind),kind);
+  expect(saved.map(t=>t.members.length)).toEqual([5,3,1]);
+  expect(new Set(saved.flatMap(t=>t.members)).size).toBe(9);
+});
+
+test('Dark mode: ô phân nhóm và option dùng nền tối, chữ sáng', async ({page}) => {
+  await setup(page); await page.locator('[data-weekly-view=groups]').click(); await page.locator('#weekly-team-arrange').click();
+  const colors=await page.locator('[data-weekly-team-assignment]').first().evaluate(e=>({bg:getComputedStyle(e).backgroundColor,scheme:getComputedStyle(e).colorScheme,option:getComputedStyle(e.options[0]).backgroundColor}));
+  expect(colors.scheme).toBe('dark');
+  expect(colors.bg).toBe('rgb(7, 25, 42)');
+  expect(colors.option).toBe('rgb(7, 25, 42)');
+  await page.screenshot({path:'test-results/ui-review/team-capacity-dark.png'});
 });
 
 for (const [width,height] of [[1280,720],[1440,900],[1024,768]]) test(`Phân nhóm 31 học sinh: bounds, light và lỗi lưu ${width}`, async ({page}) => {
