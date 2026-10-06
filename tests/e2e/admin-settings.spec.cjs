@@ -229,7 +229,7 @@ test('Workspace học sinh và Điều chỉnh có trạng thái keyboard focus 
     fieldCount: workspace.querySelectorAll('.settings-field').length
   }));
   expect(settingsState.overflow).toBe(false);
-  expect(settingsState.fieldCount).toBe(2);
+  expect(settingsState.fieldCount).toBe(4);
 
   expect(supabaseRequests).toEqual([]);
   expect(consoleErrors).toEqual([]);

@@ -90,7 +90,7 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-continue__art')).toHaveAttribute('src', './public/student-learning-practice-button.png');
   const achievements = page.locator('.student-learning-achievements');
   await expect(achievements).toContainText('THÀNH TÍCH HÔM NAY');
-  await expect(achievements.locator('li').nth(0)).toContainText('Hoàn thành bài học');
+  await expect(achievements.locator('li').nth(0)).toContainText('Hoàn thành bài làm');
   await expect(achievements.locator('li').nth(0).locator('strong')).toHaveText('0');
   await expect(achievements.locator('li').nth(1)).toContainText('Đạt sao');
   await expect(achievements.locator('li').nth(1).locator('strong')).toHaveText('0');
@@ -197,7 +197,7 @@ test('học sinh vào môn Toán thấy bài tiếp theo và không vượt mố
   await expect(page.locator('.student-learning-route-board__header')).toContainText('Cùng khám phá hành trình của bạn');
   await expect(page.locator('.student-learning-route-board__header')).toContainText('Các Bài được xếp đúng theo thứ tự trên lớp');
   await expect(page.getByRole('button', { name: 'Quay lại Luyện tập' })).toBeVisible();
-  await expect(page.locator('.student-learning-release-badge')).toContainText('Đã mở đến Bài 3');
+  await expect(page.locator('.student-learning-release-badge')).toContainText('Giáo viên đã mở đến: Bài 3');
   const routeLayout = await page.locator('.student-learning-screen--route').evaluate(screen => {
     const topicList = screen.querySelector('.student-learning-topic-nav__list');
     const board = screen.querySelector('.student-learning-route-board');

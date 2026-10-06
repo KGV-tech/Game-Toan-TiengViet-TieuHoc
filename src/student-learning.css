@@ -4343,7 +4343,7 @@
 }
 
 #game-config-view .student-learning-path-toggle--right-rail {
-    top: clamp(350px, 40vh, 390px) !important;
+    top: clamp(480px, 58vh, 550px) !important;
     z-index: 9;
     display: inline-flex;
     align-items: center;
@@ -4398,7 +4398,7 @@
     }
 
     #game-config-view .student-learning-path-toggle--right-rail {
-        top: clamp(318px, 42vh, 350px) !important;
+        top: clamp(480px, 60vh, 520px) !important;
         gap: 10px;
         min-height: 96px !important;
         padding: 14px 16px !important;
@@ -4416,6 +4416,31 @@
         height: 48px;
     }
 }
+
+/* Admin settings: keep navigation compact so the active workspace owns the viewport. */
+#game-config-view .student-learning-teacher-mark {
+    margin: .5rem 0;
+    color: #fff4a2;
+    font-weight: 800;
+    font-size: .8rem;
+    line-height: 1.35;
+}
+#game-config-view .student-learning-step:has(.student-learning-teacher-mark) {
+    border-color: #fff4a2;
+}
+#game-config-view .student-learning-achievements > small {
+    display: block;
+    color: #e7faff;
+    font-size: .75rem;
+    line-height: 1.35;
+}
+.settings-practice-pass { margin-top: 1rem; }
+.settings-practice-pass p { color: var(--text-muted, #91b5c2); }
+.settings-practice-pass .settings-field { display: flex; flex-direction: column; align-items: stretch; gap: .75rem; }
+.settings-practice-pass .settings-field__content { display: block; }
+.settings-practice-pass .settings-input-wrap { justify-content: flex-start; }
+.settings-practice-pass input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: #22d3ee; vertical-align: middle; }
+.settings-practice-pass input:focus-visible { outline: 3px solid #fff4a2; outline-offset: 3px; }
 
 /* Admin settings: keep navigation compact so the active workspace owns the viewport. */
 #treasure-modal[data-ui-context="admin"] .admin-panel {

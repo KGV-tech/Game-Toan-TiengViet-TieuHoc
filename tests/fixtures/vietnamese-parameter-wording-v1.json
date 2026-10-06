@@ -1,0 +1,110 @@
+{
+  "classlevel": "Lớp 4",
+  "subject": "Tiếng Việt",
+  "semester": "Học kỳ 1",
+  "topic": "1. Mỗi người một vẻ",
+  "lesson": "g4-vietnamese-hk1-b01",
+  "templateId": "vietnamese.word_type",
+  "quickPractice": true,
+  "type": "Trắc nghiệm",
+  "q": "Nhận biết từ loại. Mỗi ý đúng được 0,5 điểm.",
+  "passage": "",
+  "subquestions": [
+    {
+      "id": "parameter:[\"word_type\",[\"atomId\",\"noun-1\"],[\"pattern\",\"lexeme-class\"]]",
+      "introducedAt": 1,
+      "prompt": "Trong ngữ liệu “Bạn thì đi với bố, bạn thì đi với mẹ, có bạn lại đi một mình.”, từ ngữ “bố” thuộc nhóm nào?",
+      "answer": "Chỉ người",
+      "options": [
+        "Chỉ vật",
+        "Chỉ hiện tượng tự nhiên",
+        "Chỉ thời gian",
+        "Chỉ người"
+      ],
+      "explanation": "Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.",
+      "passage": "",
+      "generation": {
+        "pattern": "lexeme-class",
+        "atomId": "noun-1"
+      },
+      "semanticKey": "[\"word_type\",[\"atomId\",\"noun-1\"],[\"pattern\",\"lexeme-class\"]]",
+      "targets": [
+        "bố"
+      ],
+      "evidence": {
+        "source": "sgk-tv4-kntt-t1",
+        "pages": [
+          9,
+          10
+        ],
+        "kind": "reviewed-parameter",
+        "excerpt": "Bạn thì đi với bố, bạn thì đi với mẹ, có bạn lại đi một mình.",
+        "rule": "Dựng lại từ tham số, nhãn và quan hệ theo ngữ cảnh đã review.",
+        "optionReasons": {
+          "Chỉ người": "Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.",
+          "Chỉ vật": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.",
+          "Chỉ hiện tượng tự nhiên": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.",
+          "Chỉ thời gian": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này."
+        }
+      },
+      "label": "a"
+    },
+    {
+      "id": "parameter:[\"word_type\",[\"atomId\",\"noun-0\"],[\"pattern\",\"lexeme-class\"]]",
+      "introducedAt": 1,
+      "prompt": "Trong ngữ liệu “Lá như cũng biết nô đùa, cứ quấn theo chân các bạn học sinh đang đi vội vã.”, từ ngữ “học sinh” thuộc nhóm nào?",
+      "answer": "Chỉ người",
+      "options": [
+        "Chỉ vật",
+        "Chỉ hiện tượng tự nhiên",
+        "Chỉ thời gian",
+        "Chỉ người"
+      ],
+      "explanation": "Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.",
+      "passage": "",
+      "generation": {
+        "pattern": "lexeme-class",
+        "atomId": "noun-0"
+      },
+      "semanticKey": "[\"word_type\",[\"atomId\",\"noun-0\"],[\"pattern\",\"lexeme-class\"]]",
+      "targets": [
+        "học sinh"
+      ],
+      "evidence": {
+        "source": "sgk-tv4-kntt-t1",
+        "pages": [
+          9,
+          10
+        ],
+        "kind": "reviewed-parameter",
+        "excerpt": "Lá như cũng biết nô đùa, cứ quấn theo chân các bạn học sinh đang đi vội vã.",
+        "rule": "Dựng lại từ tham số, nhãn và quan hệ theo ngữ cảnh đã review.",
+        "optionReasons": {
+          "Chỉ người": "Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.",
+          "Chỉ vật": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.",
+          "Chỉ hiện tượng tự nhiên": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.",
+          "Chỉ thời gian": "Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này."
+        }
+      },
+      "label": "b"
+    }
+  ],
+  "partAnswerCounts": [
+    1,
+    1
+  ],
+  "options": [],
+  "ans": "Chỉ người | Chỉ người",
+  "explanation": "a) Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.\nb) Đối chiếu ngữ liệu SGK trang 9, 10: đáp án là “Chỉ người”.",
+  "source": {
+    "kind": "parameter-generated",
+    "curriculum": "Tiếng Việt 4 tập một · Kết nối tri thức",
+    "recordIds": [
+      "parameter:[\"word_type\",[\"atomId\",\"noun-1\"],[\"pattern\",\"lexeme-class\"]]",
+      "parameter:[\"word_type\",[\"atomId\",\"noun-0\"],[\"pattern\",\"lexeme-class\"]]"
+    ]
+  },
+  "templateVariables": {
+    "question": "Nhận biết từ loại. Mỗi ý đúng được 0,5 điểm."
+  }
+}

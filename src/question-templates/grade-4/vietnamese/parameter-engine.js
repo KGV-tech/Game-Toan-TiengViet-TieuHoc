@@ -1,6 +1,7 @@
 ;(function (root) {
     const corpus = root.VietnameseParameterCorpus;
     const unique = values => [...new Set(values)];
+    const contextLabel = text => (String(text).match(/[.!?](?:[”’"']|\s|$)/g) || []).length > 1 || String(text).includes('\n') ? 'đoạn văn' : 'câu văn';
     const upper = word => word[0].toLocaleUpperCase('vi-VN') + word.slice(1);
     const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
         ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
@@ -16,7 +17,7 @@
         topic_sentence: ['topic-value', 'topic-position']
     };
     function materialize(skill, params, lesson) {
-        if (corpus.reviewStatus !== 'reviewed') throw new Error('Ngữ liệu tham số chưa hoàn tất review nguồn.');
+        if (corpus.reviewStatus !== 'reviewed') throw new Error('Nội dung tham số chưa hoàn tất kiểm chứng nguồn.');
         if (!Number.isInteger(lesson) || lesson < 1 || lesson > 32) throw new Error('Ngoài phạm vi học kì I.');
         if (!patterns[skill]?.includes(params?.pattern)) throw new Error('Khung không thuộc kỹ năng.');
         const composed = params.pattern.startsWith('sentence-');
@@ -35,7 +36,7 @@
             introducedAt = 9; pages = unique([...actor.pages, ...action.pages]); targets = [actor.word, action.word];
         } else {
             atom = corpus.resolve(params.atomId);
-            if (lesson < atom.lesson) throw new Error('Ngữ liệu chưa thuộc bài đang học.');
+            if (lesson < atom.lesson) throw new Error('Nội dung chưa thuộc bài đang học.');
             context = atom.context; word = atom.word; introducedAt = atom.lesson; pages = atom.pages;
             targets = [word || atom.subject || atom.field || atom.id];
             const peers = corpus.atoms.filter(a => a.kind === atom.kind).map(a => corpus.resolve(a.id)).filter(a => a.lesson <= lesson && a.context === context);
@@ -45,7 +46,7 @@
                     if (atom.id.startsWith('verb-')) throw new Error('Động từ từ nhãn tranh chỉ dùng trong khung câu có chủ thể.');
                     answer = lesson < 9 ? corpus.nounCategories[atom.category] : atom.pos;
                     options = lesson < 9 ? Object.values(corpus.nounCategories) : ['Danh từ', 'Động từ', ...(lesson >= 21 ? ['Tính từ'] : [])];
-                    prompt = `Trong ngữ liệu “${context}”, từ ngữ “${word}” thuộc ${lesson < 9 ? 'nhóm nào' : 'từ loại nào'}?`; break;
+                    prompt = `Trong ${contextLabel(context)} “${context}”, từ ngữ “${word}” thuộc ${lesson < 9 ? 'nhóm nào' : 'từ loại nào'}?`; break;
                 case 'noun-group': case 'name-group': {
                     const name = params.pattern === 'name-group';
                     if (atom.kind !== (name ? 'name' : 'lexeme') || !atom.category) throw new Error('Thiếu nhãn nhóm nghĩa.');
@@ -66,7 +67,7 @@
                     options = [answer, ...rotate(alternatives, corpus.atoms.findIndex(a => a.id === atom.id)).slice(0, 2).map(a => sentenceInitial ? upper(a.word) : a.word)];
                     const blank = context.slice(0, start) + '___' + context.slice(start + word.length);
                     const hint = atom.category ? corpus.nounCategories[atom.category].toLocaleLowerCase('vi-VN') : `là ${atom.pos.toLocaleLowerCase('vi-VN')}`;
-                    prompt = `Chọn từ ngữ ${hint} điền vào ngữ liệu: “${blank}”`; break;
+                    prompt = `Chọn từ ngữ ${hint} điền vào chỗ trống trong ${contextLabel(context)}: “${blank}”`; break;
                 }
                 case 'name-case': {
                     if (atom.kind !== 'name') throw new Error('Cần tên riêng đã kiểm chứng.');
@@ -88,8 +89,8 @@
                     answer = params.positive ? 'Đúng' : 'Sai'; options = ['Đúng', 'Sai'];
                     prompt = `Trong “${context}”, nhận định sau đúng hay sai: “${atom.subject} ${params.positive ? 'được' : 'không được'} nhân hoá qua dấu hiệu ‘${atom.signal}’.”`; break;
                 case 'dash-function':
-                    if (atom.kind !== 'dash') throw new Error('Cần ngữ liệu dấu gạch ngang.');
-                    answer = atom.value; options = [answer, ...atom.alternatives]; prompt = `Trong ngữ liệu “${context}”, dấu gạch ngang có công dụng nào?`; break;
+                    if (atom.kind !== 'dash') throw new Error('Cần đoạn trích có dấu gạch ngang.');
+                    answer = atom.value; options = [answer, ...atom.alternatives]; prompt = `Trong ${contextLabel(context)} “${context}”, dấu gạch ngang có công dụng nào?`; break;
                 case 'detail-value': case 'character-value': case 'detail-field': case 'character-field': {
                     const character = params.pattern.startsWith('character');
                     if (atom.kind !== (character ? 'character' : 'detail')) throw new Error('Cần quan hệ theo đoạn đọc.');
@@ -108,16 +109,16 @@
         }
         options = unique(options);
         if (!answer || options.length < 2 || !options.includes(answer)) throw new Error('Chưa đủ phương án có một đáp án duy nhất.');
-        const explanation = composed ? `Câu biên soạn từ khung đã duyệt. “${word}” ${params.role === 'subject' ? 'chỉ chủ thể, là danh từ' : 'chỉ hoạt động, là động từ'}.` : `Đối chiếu ngữ liệu SGK trang ${pages.join(', ')}: đáp án là “${answer}”.`;
+        const explanation = composed ? `Câu biên soạn từ khung đã duyệt. “${word}” ${params.role === 'subject' ? 'chỉ chủ thể, là danh từ' : 'chỉ hoạt động, là động từ'}.` : `Đối chiếu ${contextLabel(context)} trong SGK trang ${pages.join(', ')}: đáp án là “${answer}”.`;
         const generation = { ...params };
         const semanticKey = JSON.stringify([skill, ...Object.entries(params).filter(([key]) => key !== 'positive').sort()]);
         return { id: `parameter:${semanticKey}`, introducedAt, prompt, answer, options, explanation, passage, generation, semanticKey, targets,
             evidence: { source: 'sgk-tv4-kntt-t1', pages, kind: composed ? 'reviewed-composition' : 'reviewed-parameter', excerpt: context,
-                rule: 'Dựng lại từ tham số, nhãn và quan hệ theo ngữ cảnh đã review.', optionReasons: Object.fromEntries(options.map(value => [value, value === answer ? explanation : 'Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.'])) } };
+                rule: 'Dựng lại từ tham số, nhãn và quan hệ theo ngữ cảnh đã review.', optionReasons: Object.fromEntries(options.map(value => [value, value === answer ? explanation : `Không khớp yêu cầu của ${contextLabel(context)} này.`])) } };
     }
     const cache = new Map();
     function candidates(skill, lesson) {
-        if (corpus.reviewStatus !== 'reviewed') throw new Error('Ngữ liệu tham số chưa hoàn tất review nguồn.');
+        if (corpus.reviewStatus !== 'reviewed') throw new Error('Nội dung tham số chưa hoàn tất kiểm chứng nguồn.');
         const key = skill + ':' + lesson;
         if (cache.has(key)) return cache.get(key);
         const params = [];
@@ -175,7 +176,15 @@
             const actual = { ...part }; delete actual.label;
             if (!same(Object.keys(actual).sort(), Object.keys(expected).sort())) return 'Câu con chứa trường ngoài hợp đồng template.';
             actual.options = [...actual.options].sort(); expected.options.sort();
-            return same(actual, expected) ? '' : 'Câu sinh không khớp tham số và bằng chứng đã kiểm chứng.';
+            if (same(actual, expected)) return '';
+            // Accept only the exact previous wording reconstructed from the
+            // same reviewed parameters; edited questions still fail closed.
+            const previous = structuredClone(expected);
+            previous.prompt = previous.prompt.replace(/^Trong (câu văn|đoạn văn) /, 'Trong ngữ liệu ')
+                .replace(/điền vào chỗ trống trong (câu văn|đoạn văn):/, 'điền vào ngữ liệu:');
+            previous.explanation = previous.explanation.replace(/^Đối chiếu (câu văn|đoạn văn) trong SGK/, 'Đối chiếu ngữ liệu SGK');
+            previous.evidence.optionReasons = Object.fromEntries(previous.options.map(value => [value, value === previous.answer ? previous.explanation : 'Không khớp yêu cầu theo nhãn hoặc quan hệ của ngữ liệu này.']));
+            return same(actual, previous) ? '' : 'Câu sinh không khớp tham số và bằng chứng đã kiểm chứng.';
         } catch { return 'Tham số không thuộc khung hoặc chương trình đã kiểm chứng.'; }
     }
     root.VietnameseParameterEngine = Object.freeze({ materialize, candidates, pairs, selectParts, independent, pairKey, check });

@@ -60,7 +60,7 @@ test('real practice consumes parameters and keeps unseen questions unrecorded', 
   page.on('dialog', async dialog => { dialogs.push(dialog.message()); await dialog.accept(); });
   const result = await page.evaluate(async () => {
     app.data.currentUser = { id: 'real-parameter', username: 'real-parameter', role: 'student', classlevel: '4', history: [], stars: 0 };
-    app.data.settings = { topicLocks: {}, lessonReleaseByClass: { '4': { vietnamese: 'g4-vietnamese-hk1-b09' } } };
+    app.data.settings = { topicLocks: {}, practicePass: { vietnamese: { enabled: false, score: 8 } }, lessonReleaseByClass: { '4': { vietnamese: 'g4-vietnamese-hk1-b09' } } };
     app.data.libraryQuestions = [];
     app.game.openConfig('vietnamese');
     const template = Grade4VietnameseTemplates.getDefaultTemplates().find(t => t.lesson === 'g4-vietnamese-hk1-b09');

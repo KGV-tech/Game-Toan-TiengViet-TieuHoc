@@ -5,6 +5,21 @@ for (const file of ['content', 'verification', 'reviewed-content', 'parameter-co
 const engine = globalThis.VietnameseParameterEngine;
 const atoms = VietnameseParameterCorpus.atoms;
 const history = VietnameseParameterHistory;
+const previousQuestion = structuredClone(require('./tests/fixtures/vietnamese-parameter-wording-v1.json'));
+assert.equal(Grade4VietnameseTemplates.validateQuestion(previousQuestion), '', 'Exact generated wording from the previous release remains valid.');
+const previousAnswers = previousQuestion.subquestions.map(part => part.answer);
+for (const subquestions of [{}, [null, null]]) {
+    const malformed = { ...previousQuestion, subquestions };
+    assert.doesNotThrow(() => Grade4VietnameseTemplates.updateQuestionWording(malformed));
+    assert.equal(Grade4VietnameseTemplates.updateQuestionWording(malformed), malformed);
+}
+Grade4VietnameseTemplates.updateQuestionWording(previousQuestion);
+assert.equal(Grade4VietnameseTemplates.validateQuestion(previousQuestion), '');
+assert.deepEqual(previousQuestion.subquestions.map(part => part.answer), previousAnswers);
+assert.doesNotMatch(JSON.stringify(previousQuestion), /ngữ liệu/i);
+const editedPrevious = structuredClone(require('./tests/fixtures/vietnamese-parameter-wording-v1.json'));
+editedPrevious.subquestions[0].prompt += ' Nội dung bị sửa';
+assert.notEqual(Grade4VietnameseTemplates.validateQuestion(editedPrevious), '');
 assert.ok(engine, 'Use parameter generation, not the fixed question bank.');
 const config = { lesson: 'g4-vietnamese-hk1-b09' };
 const first = engine.materialize('word_type', { pattern: 'sentence-class', actorId: 'human-0', actionId: 'verb-5', role: 'action' }, 9);

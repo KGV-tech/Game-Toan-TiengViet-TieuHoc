@@ -76,12 +76,12 @@
     ];
     const sourceEntry = id => {
         const entry = root.VietnamesePracticeContent.allItems().find(item => item.id === id);
-        if (!entry || root.VietnameseContentVerification.check(entry, 32)) throw new Error('Nguồn của ngữ liệu tham số chưa được kiểm chứng: ' + id);
+        if (!entry || root.VietnameseContentVerification.check(entry, 32)) throw new Error('Nguồn của nội dung tham số chưa được kiểm chứng: ' + id);
         return entry;
     };
     function resolve(id) {
         const atom = atoms.find(value => value.id === id);
-        if (!atom) throw new Error('Tham số ngữ liệu không hợp lệ.');
+        if (!atom) throw new Error('Tham số nội dung không hợp lệ.');
         const source = sourceEntry(atom.sourceRecord);
         const result = { ...atom, lesson: atom.lesson || source.introducedAt, context: atom.context || source.passage || source.evidence.excerpt, pages: atom.pages || source.evidence.pages };
         if (atom.kind === 'lexeme' && !atom.pos) result.pos = atom.id === 'plant' || atom.id === 'uproot' ? 'Động từ' : 'Tính từ';

@@ -20,9 +20,9 @@
     function check(entry, lessonNumber) {
         if (!entry || !Number.isInteger(lessonNumber) || lessonNumber < 1 || lessonNumber > 32) return 'Ngoài phạm vi học kì I.';
         const review = root.VietnameseReviewedContent?.[entry.id];
-        if (!review || review.status !== 'source-reviewed' || !['curriculum', 'wording', 'context', 'options'].every(scope => review.scopes?.includes(scope))) return 'Ngữ liệu chưa được đối chiếu đủ phạm vi.';
+        if (!review || review.status !== 'source-reviewed' || !['curriculum', 'wording', 'context', 'options'].every(scope => review.scopes?.includes(scope))) return 'Nội dung chưa được đối chiếu đủ phạm vi.';
         if (!Array.isArray(entry.options) || !entry.options.every(value => typeof value === 'string')) return 'Lựa chọn không hợp lệ.';
-        if (review.snapshot !== snapshot(entry)) return 'Ngữ liệu đã thay đổi; cần kiểm chứng lại từng lựa chọn và ngữ cảnh.';
+        if (review.snapshot !== snapshot(entry)) return 'Nội dung đã thay đổi; cần kiểm chứng lại từng lựa chọn và ngữ cảnh.';
         if (!sources[entry.evidence?.source] || !entry.evidence.pages?.length) return 'Thiếu nguồn chính thống hoặc trang đối chiếu.';
         const evidence = entry.evidence;
         if (!['textbook-context', 'textbook-glossary'].includes(evidence.kind) || typeof evidence.excerpt !== 'string' || evidence.excerpt.length < 10) return 'Thiếu dẫn chứng từ ngữ trong ngữ cảnh; dẫn quy tắc chưa đủ.';

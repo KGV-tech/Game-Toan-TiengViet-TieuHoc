@@ -2168,6 +2168,7 @@ const app = {
                 multipleChoiceSelections: Array.isArray(this.state.multipleChoiceSelections) ? this.state.multipleChoiceSelections : null,
                 trueFalseSelections: Array.isArray(this.state.trueFalseSelections) ? this.state.trueFalseSelections : null,
                 historyDetails: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : [],
+                practiceElapsedMs: this.getPracticeElapsedMs(),
                 attemptId: this.state.attemptId || app.data.progressEventId(kind)
             };
             this.state.attemptId = payload.attemptId;
@@ -2211,6 +2212,8 @@ const app = {
                     trueFalseSelections: Array.isArray(payload.trueFalseSelections) ? payload.trueFalseSelections : null,
                     historyDetails: Array.isArray(payload.historyDetails) ? payload.historyDetails : [],
                     attemptId: payload.attemptId || app.data.progressEventId(kind),
+                    practiceElapsedMs: Number(payload.practiceElapsedMs) || 0,
+                    practiceClockStartedAt: null,
                     examName: kind === 'exam' ? (payload.examName || '') : ''
                 };
                 this.restoredAttemptKind = kind;
@@ -2598,12 +2601,11 @@ const app = {
             const topicGroups = app.constants.topics?.[String(classlevel)]?.[subject] || {};
             return [...(topicGroups.hk1 || []), ...(topicGroups.hk2 || [])];
         },
-        hasPerfectTopicRound(topic, subject, classlevel) {
-            const user = app.data.currentUser;
+        hasPassingTopicRound(topic, subject, classlevel) {
             const subjectTitle = subject === 'math' ? 'Toán' : 'Tiếng Việt';
-            return (Array.isArray(user?.history) ? user.history : []).some(round => (
+            return this.getPracticeHistory().some(round => (
                 round?.topic === topic
-                && Number(round.score) === 10
+                && app.learningPath.isPassingPractice(round, app.learningPath.getPracticePolicy(app.data.settings, subject))
                 && Number(round.questionCount) === this.questionsPerRound
                 && (round.subject ? round.subject === subject : round.title === subjectTitle)
                 && (!round.classlevel || String(round.classlevel).replace(/^Lớp\s*/i, '') === String(classlevel))
@@ -2611,14 +2613,14 @@ const app = {
         },
         isStudentProgressionLocked(classlevel, subject, topic) {
             if (this.isAdmin()) return false;
-            const overrides = app.data.settings?.topicUnlockOverrides;
-            if (overrides?.[String(classlevel)]?.[subject]?.[topic]) return false;
+            if (app.curriculum?.supportsLessons(classlevel, subject)) return false;
+            if (!app.learningPath.getPracticePolicy(app.data.settings, subject).enabled) return false;
             const orderedTopics = this.getOrderedTopics(classlevel, subject);
             const topicIndex = orderedTopics.indexOf(topic);
             if (topicIndex <= 0) return false;
 
             return orderedTopics.slice(0, topicIndex).some(previousTopic => (
-                !this.hasPerfectTopicRound(previousTopic, subject, classlevel)
+                !this.hasPassingTopicRound(previousTopic, subject, classlevel)
             ));
         },
         getNewlyUnlockedTopic(classlevel, subject, completedTopic) {
@@ -2731,7 +2733,10 @@ const app = {
             let states = app.learningPath.getProgressStates({
                 entries,
                 releaseId: release?.id || '',
-                history: app.data.currentUser?.history || []
+                history: this.getPracticeHistory(),
+                subject,
+                classlevel,
+                settings: app.data.settings
             });
 
             states = states.map(entry => {
@@ -2761,6 +2766,24 @@ const app = {
             const plan = this.getLearningPlan();
             const entry = plan.states.find(item => item.id === selected);
             return entry?.kind === 'lesson' && entry.state !== 'locked' ? entry.id : '';
+        },
+        getPracticeHistory() {
+            const history = app.data.currentUser?.history || [];
+            const pending = this.readStoredJson(this.getPendingResultsStorageKey(app.data.currentUser), []);
+            const seen = new Set(history.map(round => round.attempt_id).filter(Boolean));
+            return [...history, ...(Array.isArray(pending) ? pending : []).filter(item => item?.entry && !seen.has(item.entry.attempt_id)).map(item => item.entry)];
+        },
+        getPracticeElapsedMs() {
+            return Math.max(0, Number(this.state.practiceElapsedMs) || 0)
+                + (this.state.practiceClockStartedAt == null ? 0 : Math.max(0, Date.now() - this.state.practiceClockStartedAt));
+        },
+        pausePracticeClock() {
+            this.state.practiceElapsedMs = this.getPracticeElapsedMs();
+            this.state.practiceClockStartedAt = null;
+        },
+        resumePracticeClock() {
+            if (this.state.examName || this.state.finished || !this.state.questions?.length || document.hidden) return;
+            if (this.state.practiceClockStartedAt == null) this.state.practiceClockStartedAt = Date.now();
         },
         getQuestionLessonId(question) {
             if (question?.lesson) return String(question.lesson).trim();
@@ -2792,6 +2815,8 @@ const app = {
 
             const plan = this.getLearningPlan();
             const states = Array.isArray(plan.states) ? plan.states : [];
+            const policy = app.learningPath.getPracticePolicy(app.data.settings, this.state.subject);
+            const dailySummary = app.learningPath.getDailyPracticeSummary({ history: this.getPracticeHistory(), subject: this.state.subject, classlevel, policy, user: app.data.currentUser });
             const recommended = plan.recommended || states.find(entry => entry.state !== 'locked') || null;
             const recommendedIndex = Math.max(0, states.findIndex(entry => entry.id === recommended?.id));
             const expanded = container.dataset.expanded === 'true';
@@ -2844,7 +2869,7 @@ const app = {
                 const routeClass = isFullRoute ? ' student-learning-step--route' : '';
                 return `<button type="button" class="student-learning-step student-learning-step--${entry.state}${routeClass}" data-learning-entry="${esc(entry.id)}" ${locked ? 'disabled aria-disabled="true"' : ''} role="listitem" aria-label="${esc(`${lessonName} — ${pathStateLabel[entry.state]}`)}">
                   <span class="student-learning-step__icon" aria-hidden="true">${pathIcon[entry.state]}</span>
-                  <span class="student-learning-step__copy"><strong>${esc(lessonName)}</strong><small>${esc(pathStateLabel[entry.state])}</small></span>
+                  <span class="student-learning-step__copy"><strong>${esc(lessonName)}</strong><small>${esc(entry.lockReason === 'teacher' ? 'Giáo viên chưa mở' : entry.lockReason === 'progression' ? `Cần đạt ${policy.score}/10 ở bài trước` : pathStateLabel[entry.state])}</small>${entry.id === plan.release?.id ? '<small class="student-learning-teacher-mark">⚑ Mốc giáo viên đã mở</small>' : ''}</span>
                 </button>`;
             };
 
@@ -2879,8 +2904,8 @@ const app = {
                         </div>
                         <div class="student-learning-route-board__actions">
                           <div class="student-learning-release-badge" aria-label="${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'Chưa có mốc mở bài')}" >
-                            <strong>${Number(plan.summary.released || 0)}</strong>
-                            <span>${esc(plan.release ? `Đã mở đến ${plan.release.label}` : 'bài đã mở')}</span>
+                            <strong aria-hidden="true">⚑</strong>
+                            <span>${esc(plan.release ? `Giáo viên đã mở đến: ${plan.release.label}` : 'Giáo viên chưa đặt mốc · Tạm mở Bài 1')}</span>
                           </div>
                           <button type="button" class="student-learning-path-toggle" data-learning-path-toggle aria-expanded="true">Quay lại Luyện tập</button>
                         </div>
@@ -2941,10 +2966,13 @@ const app = {
                   <aside class="student-learning-achievements" aria-label="Thành tích hôm nay">
                     <h3><span aria-hidden="true">📋</span> THÀNH TÍCH HÔM NAY</h3>
                     <ul>
-                      <li><span class="student-learning-achievements__icon" aria-hidden="true">✅</span><span>Hoàn thành bài học</span><strong>0</strong></li>
-                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⭐</span><span>Đạt sao</span><strong>0</strong></li>
-                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⏱️</span><span>Thời gian Luyện tập</span><strong>0 phút</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">✅</span><span>Hoàn thành bài làm</span><strong data-practice-completed>${dailySummary.completed}</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⭐</span><span>Đạt sao</span><strong>${dailySummary.stars}</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">⏱️</span><span>Thời gian Luyện tập</span><strong data-practice-duration>${dailySummary.minutes} phút${dailySummary.seconds % 60 ? ` ${dailySummary.seconds % 60} giây` : ''}</strong></li>
+                      <li><span class="student-learning-achievements__icon" aria-hidden="true">↗</span><span>Đủ điều kiện làm bài kế tiếp</span><strong data-practice-eligible>${dailySummary.eligible ? 'Đạt' : 'Chưa đạt'}</strong></li>
                     </ul>
+                    <p class="student-learning-teacher-mark">⚑ Giáo viên đã mở đến: ${esc(plan.release?.label || 'Bài 1')}</p>
+                    <small>${policy.enabled ? `Mỗi lượt cần đạt ${policy.score}/10 để mở bài kế tiếp.` : 'Có thể chọn mọi bài trong mốc giáo viên đã mở.'}</small>
                   </aside>
 
                   ${recommended ? `<section class="student-learning-mission" data-learning-focus="${recommended.state === 'completed' ? 'review' : 'next'}" aria-labelledby="student-learning-mission-title">
@@ -3125,7 +3153,7 @@ const app = {
             ))) {
                 this.state.selectedTopics = [];
                 this.renderTopics();
-                alert('Chủ đề này chưa được mở. Hãy đạt 10 điểm ở chủ đề trước để tiếp tục.');
+                alert(`Chủ đề này chưa được mở. Mỗi lượt cần đạt ${app.learningPath.getPracticePolicy(app.data.settings, this.state.subject).score}/10 ở chủ đề trước để tiếp tục.`);
                 return;
             }
 
@@ -3139,6 +3167,11 @@ const app = {
                 this.state.selectedLessons = [];
                 this.renderTopics();
                 alert('Bài này chưa được mở theo tiến độ của lớp. Hãy chọn bài đang học nhé.');
+                return;
+            }
+            if (!isAdmin && app.curriculum?.supportsLessons(clLevel, this.state.subject) && !selectedLessonId) {
+                this.renderTopics();
+                alert('Hãy chọn một bài đã mở trong lộ trình để luyện tập.');
                 return;
             }
 
@@ -3386,6 +3419,8 @@ const app = {
             }
 
             this.state.attemptId = app.data.progressEventId('round');
+            this.state.practiceElapsedMs = 0;
+            this.state.practiceClockStartedAt = null;
             if (!isAdmin && !window.supabase) {
                 const energySpent = await app.daily.spendEnergy(app.data.currentUser);
                 if (!energySpent) {
@@ -3484,6 +3519,7 @@ const app = {
         },
         createHistoryDetail(q, selected, isCorrect, extra = {}) {
             const detail = { q: q.q, selected, correct: q.ans, isCorrect, type: q.type, ...extra };
+            detail.lesson = this.getQuestionLessonId(q);
             if (q.quickPractice) {
                 detail.quickPractice = true;
                 detail.passage = q.passage;
@@ -3816,6 +3852,7 @@ const app = {
             }
             
             const q = this.state.questions[this.state.currentIdx];
+            if (q?.quickPractice) window.Grade4VietnameseTemplates.updateQuestionWording(q);
             if (q?.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(q)) {
                 alert('Câu hỏi đã thay đổi hoặc chưa đủ căn cứ kiểm chứng. Vui lòng bắt đầu lượt luyện tập mới.');
                 app.router.openGameView('game-config-view');
@@ -5052,6 +5089,7 @@ const app = {
         },
         async finishPlay() {
             if (this.state.finished) return;
+            this.pausePracticeClock();
             this.state.finished = true;
             if (this.skills && app.data.currentUser) {
                 this.skills.decreaseCooldowns(app.data.currentUser.username);
@@ -5229,15 +5267,15 @@ const app = {
                 ? this.state.questions.length
                 : (Array.isArray(this.state.historyDetails) ? this.state.historyDetails.length : 10);
             const date = new Date();
-            const dStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' '
-                + date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0') + '/' + date.getFullYear();
+            const dateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric', hourCycle: 'h23' }).formatToParts(date).map(part => [part.type, part.value]));
+            const dStr = `${dateParts.hour}:${dateParts.minute} ${dateParts.day}/${dateParts.month}/${dateParts.year}`;
             const classlevel = String(app.data.currentUser?.classlevel || '5').replace(/^Lớp\s*/i, '');
             const completedTopic = selectedTopics.length === 1 ? selectedTopics[0] : null;
-            const perfectPracticeRound = !this.state.examName
+            const passingPracticeRound = !this.state.examName
                 && completedTopic
-                && score === 10
+                && score >= app.learningPath.getPracticePolicy(app.data.settings, this.state.subject).score
                 && qCount === this.questionsPerRound;
-            const nextTopic = perfectPracticeRound
+            const nextTopic = passingPracticeRound
                 ? this.getNewlyUnlockedTopic(classlevel, this.state.subject, completedTopic)
                 : null;
             const newlyUnlockedTopic = nextTopic && this.isStudentProgressionLocked(classlevel, this.state.subject, nextTopic)
@@ -5258,7 +5296,7 @@ const app = {
                 score,
                 lesson: playedLessons.length === 1 ? playedLessons[0] : null,
                 lessons: playedLessons,
-                details: Array.isArray(this.state.historyDetails) ? this.state.historyDetails : []
+                details: (Array.isArray(this.state.historyDetails) ? this.state.historyDetails : []).map((detail, index) => index === 0 ? { ...detail, practice: { durationSeconds: Math.round(this.getPracticeElapsedMs() / 1000) } } : detail)
             };
             return { entry, newlyUnlockedTopic, playedTopics, fallbackTopics, playedLessons };
         },
@@ -5357,6 +5395,7 @@ const app = {
             return choices.map(choice => `<label class="exam-opt-label"><input type="radio" name="exam_q_${index}" value="${app.data.sanitizeHTML(choice)}"> ${app.data.sanitizeHTML(choice)}</label>`).join('');
         },
         renderQuestionInput(question, index) {
+            if (question?.quickPractice) window.Grade4VietnameseTemplates.updateQuestionWording(question);
             const type = this.getQuestionType(question);
             const options = question.options || [];
             if (question.quickPractice) {
@@ -8334,7 +8373,10 @@ const app = {
             }
 
             const releaseId = lessonField.value || '';
-            const states = app.learningPath.getProgressStates({ entries, releaseId });
+            // This preview describes the teacher's release boundary, not an
+            // individual student's score gate.
+            const states = app.learningPath.getProgressStates({ entries, releaseId, subject: draft.subject,
+                settings: { practicePass: { [draft.subject]: { enabled: false } } } });
             const releaseEntry = states.find(entry => entry.id === releaseId);
             const cardBoundary = document.getElementById('learning-release-card-boundary');
             if (cardBoundary) cardBoundary.textContent = releaseEntry ? `Đã mở đến ${releaseEntry.label}` : 'Chưa đặt mốc · tạm mở Bài 1';
@@ -8443,7 +8485,7 @@ const app = {
                             <h3>Nhịp độ học tập</h3>
                             <p>Điều chỉnh khoảng thời gian để học sinh có đủ nhịp suy nghĩ ở phần luyện tập và bài kiểm tra.</p>
                         </div>
-                        <div class="settings-workspace__badge"><strong>02</strong><span>tham số đang dùng</span></div>
+                        <div class="settings-workspace__badge"><strong>04</strong><span>tham số đang dùng</span></div>
                     </header>
                     <div class="settings-overview" aria-label="Giá trị hiện tại">
                         <article class="settings-overview-card settings-overview-card--amber"><span class="settings-overview-card__icon" aria-hidden="true">◷</span><div><span>Mức độ Khó</span><strong>${hardTime} giây</strong><small>Thời gian cho mỗi câu</small></div></article>
@@ -8470,6 +8512,15 @@ const app = {
                                 <small id="setting-exam-time-help" class="settings-field__help">Tối thiểu 1 · tối đa 99</small>
                             </label>
                         </div>
+                        <section class="settings-practice-pass" aria-labelledby="practice-pass-title">
+                            <h4 id="practice-pass-title">Mức điểm tối thiểu để qua bài luyện tập</h4>
+                            <p>Tính theo điểm của một lượt làm đủ 10 câu, không cộng dồn các lượt. Luôn giới hạn trong mốc giáo viên đã mở.</p>
+                            <div class="settings-fields">${['math', 'vietnamese'].map(subject => {
+                                const policy = app.learningPath.getPracticePolicy(app.data.settings, subject);
+                                const name = subject === 'math' ? 'Toán' : 'Tiếng Việt';
+                                return `<div class="settings-field"><label class="settings-field__content" for="setting-pass-${subject}-enabled"><input type="checkbox" id="setting-pass-${subject}-enabled" ${policy.enabled ? 'checked' : ''}> <strong>${name}: yêu cầu đủ điểm để qua bài</strong></label><label class="settings-input-wrap" for="setting-pass-${subject}-score"><span>Điểm tối thiểu</span><input id="setting-pass-${subject}-score" type="number" class="form-input" min="0" max="10" step="1" value="${policy.score}" inputmode="numeric"><span>/10</span></label><small class="settings-field__help">Bỏ chọn: được làm mọi bài giáo viên đã mở.</small></div>`;
+                            }).join('')}</div>
+                        </section>
                         <footer class="settings-save-bar">
                             <p><span aria-hidden="true">✓</span> Cài đặt được lưu cho các lượt chơi tiếp theo.</p>
                             <button type="button" id="settings-save-button" class="action-btn compact-admin-action compact-admin-action--save" onclick="app.admin.saveSettings()">Lưu thay đổi <span aria-hidden="true">→</span></button>
@@ -8479,21 +8530,36 @@ const app = {
             `;
         },
         async saveSettings() {
+            if (!this.isAdminUser()) return;
             const hardTime = parseInt(document.getElementById('setting-hard-time').value, 10);
             const examTime = parseInt(document.getElementById('setting-exam-time').value, 10);
 
             if (isNaN(hardTime) || hardTime < 5 || hardTime > 30) return alert('Thời gian mức độ Khó phải từ 5 đến 30 giây!');
             if (isNaN(examTime) || examTime < 1 || examTime > 99) return alert('Thời gian Giải đề Kiểm tra phải từ 1 đến 99 phút!');
 
+            const practicePass = Object.fromEntries(['math', 'vietnamese'].map(subject => [subject, {
+                enabled: document.getElementById(`setting-pass-${subject}-enabled`).checked,
+                score: document.getElementById(`setting-pass-${subject}-score`).value.trim() === '' ? NaN : Number(document.getElementById(`setting-pass-${subject}-score`).value)
+            }]));
+            if (Object.values(practicePass).some(policy => !Number.isInteger(policy.score) || policy.score < 0 || policy.score > 10)) return alert('Điểm tối thiểu phải là số nguyên từ 0 đến 10.');
+            const previous = { ...app.data.settings };
+
             app.data.settings.hardTimeLimit = hardTime;
             app.data.settings.examTimeLimit = examTime;
+            app.data.settings.practicePass = practicePass;
 
             const btn = document.querySelector('button[onclick="app.admin.saveSettings()"]');
             const oldText = btn.innerHTML;
             btn.textContent = 'Đang lưu...';
             btn.disabled = true;
 
-            const error = await app.data.saveSettings();
+            let error;
+            try { error = await app.data.saveSettings(); }
+            catch (cause) { error = cause; alert('Chưa lưu được cài đặt. Hãy thử lại.'); }
+            if (error) {
+                app.data.settings = previous;
+                app.safeStorage.setItem('game_settings', JSON.stringify(previous));
+            }
 
             btn.innerHTML = oldText;
             btn.disabled = false;
@@ -13850,6 +13916,7 @@ window.addEventListener('DOMContentLoaded', () => {
     listenForAppLifecycle(window, 'offline', handleNetworkChange);
     listenForAppLifecycle(window, 'online', handleNetworkChange);
     listenForAppLifecycle(window, 'beforeunload', () => {
+        app.game?.pausePracticeClock?.();
         app.game?.saveAttemptDraft?.();
         app.exam?.saveAttemptDraft?.();
         app.data?.shutdownRealtime?.();
@@ -13857,8 +13924,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     listenForAppLifecycle(document, 'visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
+            app.game?.pausePracticeClock?.();
             app.game?.saveAttemptDraft?.();
             app.exam?.saveAttemptDraft?.();
+        } else if (document.getElementById('game-screen')?.classList.contains('active') && document.getElementById('game-play-view')?.classList.contains('active')) {
+            app.game?.resumePracticeClock?.();
         }
     });
     listenForAppLifecycle(document, 'fullscreenchange', () => {
