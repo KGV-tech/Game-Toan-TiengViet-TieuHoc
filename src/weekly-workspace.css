@@ -165,6 +165,11 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-winner
 .weekly-team-counts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
 .weekly-arrangement-form .weekly-team-members label { flex-wrap: wrap; }
 .weekly-arrangement-form .weekly-team-members select { width: 100%; min-width: 0; }
+#treasure-modal .weekly-arrangement-form .weekly-team-members select { min-height: 40px; padding: 7px 10px; border: 1px solid #64859d; border-radius: 10px; background: #07192a; color: #ebf8ff; color-scheme: dark; font: inherit; }
+#treasure-modal .weekly-arrangement-form .weekly-team-members select option { background: #07192a; color: #ebf8ff; }
+html[data-theme="light"] #treasure-modal .weekly-arrangement-form .weekly-team-members select { background: #e0f5fc; color: #182a42; color-scheme: light; }
+html[data-theme="light"] #treasure-modal .weekly-arrangement-form .weekly-team-members select option { background: #e0f5fc; color: #182a42; }
+.weekly-team-target { display: grid; gap: 6px; min-width: 0; }
 .weekly-arrangement-form .classroom-form-hero { padding: 12px; }
 .weekly-arrangement-form .classroom-form-hero h3 { font-size: 1.2rem; }
 .weekly-arrangement-form .weekly-membership-note { margin: 0; }
