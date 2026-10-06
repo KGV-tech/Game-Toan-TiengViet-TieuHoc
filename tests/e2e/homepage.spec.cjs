@@ -163,7 +163,7 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   await expect(page.locator('#guide-history h3')).toHaveText('9. Kho Báu');
   await expect(page.getByRole('link', { name: 'Kho Báu' })).toBeVisible();
   await expect(page.locator('#guide-rewards .guide-reward-table')).toContainText('Làm đủ 5 ngày liên tiếp');
-  await expect(page.getByRole('link', { name: 'May mắn' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'May mắn' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Nhiệm vụ' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Dành cho Admin' })).toHaveCount(0);
   await expect(page.locator('#guide-teacher')).toBeHidden();
@@ -1089,7 +1089,7 @@ test('cửa hàng làm nổi trạm đang chọn và không lộ tỉ lệ thư�
   await openOfflineHomepage(page);
 
   await page.evaluate(() => {
-    app.data.currentUser = { id: 'demo-student', username: 'minh-hoa', fullname: 'Học sinh Minh họa', role: 'student', stars: 7 };
+    app.data.currentUser = { id: 'demo-admin', username: 'minh-hoa', fullname: 'Giáo viên Minh họa', role: 'admin', stars: 7 };
     app.data.userPets = [];
     app.shop.open();
     app.shop.switchTab('lucky');
@@ -1365,6 +1365,7 @@ async function showAuditState(page, state) {
     }
     if (questBoard) app.quest.open();
     if (shopTab) {
+      app.data.currentUser = { ...studentFixture, role: 'admin' };
       app.shop.open();
       app.shop.switchTab(shopTab);
     }

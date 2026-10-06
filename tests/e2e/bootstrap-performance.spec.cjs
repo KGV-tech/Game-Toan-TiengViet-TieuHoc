@@ -39,7 +39,10 @@ async function openMainRoute(page, routeName) {
       return app.router.openGameView('game-config-view');
     }
     if (name === 'exam') return app.router.open('exam-select-screen');
-    if (name === 'shop') return app.shop.open();
+    if (name === 'shop') {
+      app.data.currentUser = { username: 'asset-admin', role: 'admin' };
+      return app.shop.open();
+    }
     throw new Error(`Unknown route: ${name}`);
   }, routeName);
 }
