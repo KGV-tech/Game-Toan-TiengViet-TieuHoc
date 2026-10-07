@@ -6479,10 +6479,10 @@ const app = {
                   </fieldset>
 
                   <fieldset id="add-e-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
-                     <legend>Nội dung hai cột đối chiếu</legend>
+                     <legend>Nội dung hai cột đối chiếu <span style="font-size: 0.85em; font-weight: normal; color: #94a3b8; font-style: italic;">— Ngăn cách bằng dấu phẩy (,), mỗi cụm từ sẽ hiện thành 1 ô</span></legend>
                      <div class="exam-question-card__option-grid">
-                        <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
-                        <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                        <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="VD: Mèo, Chó (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                        <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="VD: Meo, Gâu (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
                      </div>
                   </fieldset>
 
@@ -10837,14 +10837,14 @@ const app = {
                </div>
                
                <div id="add-q-match-wrapper" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}; margin-bottom:10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-                  <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">Ngăn cách các ô bằng dấu phẩy (Tối đa 5 ô mỗi bên). VD: Mèo, Chó, Gà</p>
+                  <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">Ngăn cách bằng dấu phẩy (,). Mỗi cụm từ sẽ hiển thị thành 1 ô riêng biệt. Tối đa 5 ô mỗi bên.</p>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0; color:#4ade80;">Cột Trái</label>
-                     <input type="text" id="add-q-match-left" placeholder="Mèo, Chó, Gà" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
+                     <input type="text" id="add-q-match-left" placeholder="VD: Mèo, Chó (sẽ tạo thành 2 ô)" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}">
                   </div>
                   <div style="display:flex; align-items:center; margin-bottom:5px;">
                      <label style="width:150px; font-weight:bold; flex-shrink:0; color:#60a5fa;">Cột Phải</label>
-                     <input type="text" id="add-q-match-right" placeholder="Meo meo, Gâu gâu, Ò ó o, Cục tác" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
+                     <input type="text" id="add-q-match-right" placeholder="VD: Meo, Gâu (sẽ tạo thành 2 ô)" class="form-input" style="flex:1; padding:8px;" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}">
                   </div>
                   <p style="font-size:0.85rem; color:#f87171; margin-top:10px;">Lưu ý: Ô Đáp án Đúng phải nhập theo cặp, ngăn bằng dấu phẩy. VD: Mèo:Meo meo, Chó:Gâu gâu</p>
                </div>
