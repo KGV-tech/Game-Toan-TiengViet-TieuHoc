@@ -6137,7 +6137,7 @@ const app = {
         getExamLessonSelectionState() {
             const wrap = document.getElementById('add-e-lessons');
             if (!wrap || wrap.hidden) return { selectedLessons: [], unrestricted: true };
-            const inputs = Array.from(wrap.querySelectorAll('input[type="checkbox"]'));
+            const inputs = Array.from(wrap.querySelectorAll('.exam-composer__lesson-option input[type="checkbox"]'));
             const selectedLessons = inputs.filter(input => input.checked).map(input => input.value);
             const unrestricted = selectedLessons.length === 0 || selectedLessons.length === inputs.length;
             return { selectedLessons: unrestricted ? [] : selectedLessons, unrestricted };
@@ -6170,7 +6170,7 @@ const app = {
                 ? (unrestrictedScope ? `Đang áp dụng toàn bộ ${totalLessons} Bài học trong Chủ đề đã chọn` : `Đang chọn ${selectedCount}/${totalLessons} Bài học`)
                 : 'Chọn Chủ đề để hiện các Bài học tương ứng';
             wrap.innerHTML = `<div id="add-e-lessons-summary" class="exam-composer__lessons-summary" role="status">${app.data.sanitizeHTML(summary)}</div>${entries.length
-                ? entries.map((entry, topicIndex) => `<fieldset class="exam-composer__lesson-group" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><legend>${app.data.sanitizeHTML(entry.topic)}</legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
+                ? entries.map((entry, topicIndex) => `<fieldset class="exam-composer__lesson-group" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><legend><label class="exam-composer__lesson-group-toggle"><input type="checkbox" ${entry.lessons.every(lesson => unrestrictedScope || selected.has(lesson.id)) ? 'checked' : ''} onchange="const group = this.closest('fieldset'); group.querySelectorAll('.exam-composer__lesson-option input').forEach(el => el.checked = this.checked); app.admin.updateExamTopics();"><span>${app.data.sanitizeHTML(entry.topic)}</span></label></legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
                 : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>'}`;
         },
         updateExamQuestionLesson(index, selectedLesson = '') {
@@ -6379,8 +6379,153 @@ const app = {
                 }
             }
         },
+        getExamComposerQuestionHTML(q, editorQuestion, i) {
+             const structureKind = this.getExamQuestionStructureKind(editorQuestion);
+            const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
+            const optionsDisplay = hasStructuredOptions || (editorQuestion && editorQuestion.type && editorQuestion.type !== 'Trắc nghiệm' && editorQuestion.type !== 'Kéo thả') ? 'none' : 'block';
+            return `
+            <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}">
+               <header class="exam-question-card__header">
+                  <div class="exam-question-card__title-wrap">
+                     <span class="exam-question-card__number">${i + 1}</span>
+                     <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
+                  </div>
+                  <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
+               </header>
+               <div class="exam-question-card__fields">
+                  <label class="exam-form-field">
+                     <span>Chủ đề</span>
+                     <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateExamQuestionLesson(${i})">
+                     </select>
+                  </label>
+                  <label class="exam-form-field" hidden>
+                     <span>Bài học</span>
+                     <select id="add-e-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
+                  </label>
+                  <label class="exam-form-field">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                         <span>Loại câu hỏi</span>
+                         <label style="display: flex; align-items: center; gap: 5px; font-weight: normal; font-size: 0.85em; margin: 0; cursor: pointer; color: #bae6fd;">
+                             <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasStructuredOptions ? 'checked' : ''} style="accent-color: #4ade80;">
+                             Có câu hỏi con
+                         </label>
+                      </div>
+                      <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
+                     <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
+                     <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
+                     <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
+                     <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
+                     <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
+                     <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
+                     <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
+                     </select>
+                  </label>
+                  <label class="exam-form-field exam-form-field--full">
+                     <span>Nội dung câu</span>
+                     <textarea id="add-e-q-q-${i}" placeholder="Nội dung câu hỏi" class="form-input">${q ? q.q : ''}</textarea>
+                  </label>
+
+                  ${this.renderExamQuestionStructure(editorQuestion, i)}
+
+                  <fieldset id="add-e-q-opts-wrapper-${i}" class="exam-question-card__conditional exam-question-card__options" style="display: ${optionsDisplay}"${hasStructuredOptions ? ' aria-hidden="true"' : ''}>
+                     <legend>Các lựa chọn</legend>
+                     <div class="exam-question-card__option-grid">
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 1</span><input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 2</span><input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 3</span><input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 4</span><input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}"></label>
+                     </div>
+                  </fieldset>
+
+                  <fieldset id="add-e-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
+                     <legend>Nội dung hai cột đối chiếu</legend>
+                     <div class="exam-question-card__option-grid">
+                        <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                        <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                     </div>
+                  </fieldset>
+
+                  <div class="exam-question-card__answer-grid${structureKind ? ' exam-question-card__answer-grid--explanation-only' : ''}">
+                     ${structureKind ? '' : '<label class="exam-form-field"><span>Đáp án đúng</span><input type="text" id="add-e-q-ans-' + i + '" placeholder="Đáp án đúng" class="form-input" value="' + (q ? app.data.sanitizeHTML(q.ans) : '') + '"></label>'}
+                     <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
+                  </div>
+               </div>
+            </article>
+                  `;
+        },
+        changeComposerQuestionType(i) {
+            const card = document.querySelector(`.exam-question-card[data-question-index="${i}"]`);
+            if (!card) return;
+            const typeVal = document.getElementById(`add-e-q-type-${i}`).value;
+            const hasSub = document.getElementById(`add-e-q-has-sub-${i}`)?.checked;
+            
+            const qText = document.getElementById(`add-e-q-q-${i}`)?.value || '';
+            const expText = document.getElementById(`add-e-q-exp-${i}`)?.value || '';
+            const topicVal = document.getElementById(`add-e-q-topic-${i}`)?.value || '';
+            const lessonVal = document.getElementById(`add-e-q-lesson-${i}`)?.value || '';
+            const ansText = document.getElementById(`add-e-q-ans-${i}`)?.value || '';
+            const opts = [];
+            for (let j = 1; j <= 4; j++) {
+                const opt = document.getElementById(`add-e-q-opt${j}-${i}`);
+                if (opt) opts.push(opt.value);
+            }
+            if (typeVal === 'Đối chiếu trùng khớp') {
+                const left = document.getElementById(`add-e-q-match-left-${i}`);
+                const right = document.getElementById(`add-e-q-match-right-${i}`);
+                if (left) opts[0] = left.value;
+                if (right) opts[1] = right.value;
+            }
+            
+            const newQ = this.getEmptyExamQuestionDraft();
+            newQ.q = qText;
+            newQ.explanation = expText;
+            newQ.topic = topicVal;
+            newQ.lesson = lessonVal;
+            newQ.type = typeVal;
+            if (ansText) newQ.ans = ansText;
+            if (opts.some(Boolean)) newQ.options = opts;
+            
+            delete newQ.subquestions;
+            delete newQ.statements;
+            delete newQ.comparisonRows;
+            delete newQ.sequenceRounds;
+            delete newQ.partAnswerCounts;
+            
+            if (hasSub) {
+                if (typeVal === 'Đúng/Sai') {
+                    newQ.statements = Array.from({length: 4}, () => ({ text: '', answer: 'Đúng' }));
+                } else if (typeVal === 'So sánh') {
+                    newQ.comparisonRows = Array.from({length: 4}, () => ({ left: '', right: '', sign: '=' }));
+                } else if (typeVal === 'Chuỗi Quy luật') {
+                    newQ.sequenceRounds = Array.from({length: 4}, () => ({ sequence: '', answer: '' }));
+                } else if (typeVal === 'Điền khuyết') {
+                    newQ.partAnswerCounts = [1, 1, 1, 1];
+                } else if (typeVal === 'Trắc nghiệm') {
+                    newQ.subquestions = Array.from({ length: 4 }, (_, index) => ({
+                        label: String.fromCharCode(97 + index),
+                        prompt: '',
+                        options: ['', '', '', ''],
+                        answer: ''
+                    }));
+                } else if (typeVal === 'Kéo thả') {
+                    newQ.partAnswerCounts = [1, 1, 1, 1];
+                }
+            } else {
+                if (typeVal === 'Đúng/Sai') {
+                    newQ.statements = [{ text: '', answer: 'Đúng' }];
+                } else if (typeVal === 'So sánh') {
+                    newQ.comparisonRows = [{ left: '', right: '', sign: '=' }];
+                } else if (typeVal === 'Chuỗi Quy luật') {
+                    newQ.sequenceRounds = [{ sequence: '', answer: '' }];
+                }
+            }
+            
+            const newHTML = this.getExamComposerQuestionHTML(newQ, newQ, i);
+            card.outerHTML = newHTML;
+            this.updateExamQuestionCard(i);
+        },
         getSupportedPartCounts(partCount = 4) {
-            return [1, 2, 4].filter(count => count <= Number(partCount));
+            return [2, 4].filter(count => count <= Number(partCount));
         },
         normalizePartIndexes(rawIndexes, partCount = 4) {
             const total = Math.max(0, Number(partCount) || 0);
@@ -6462,7 +6607,11 @@ const app = {
                 chosen.push(...checkboxes.filter(input => !input.checked).slice(0, targetCount - chosen.length));
             }
             const selected = new Set(chosen);
-            checkboxes.forEach(input => { input.checked = selected.has(input); });
+            checkboxes.forEach(input => { 
+                input.checked = selected.has(input); 
+                const partEl = input.closest('.exam-structured-part');
+                if (partEl) partEl.style.display = input.checked ? 'block' : 'none';
+            });
             this.syncStructuredPartSelectionUI(questionIndex);
         },
         getEmptyExamQuestionDraft() {
@@ -6555,9 +6704,6 @@ const app = {
         },
         getExamQuestionStructureKind(question) {
             if (question?.answerMode === 'single') return '';
-            const hasSingleStructuredPart = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows']
-                .some(key => Array.isArray(question?.[key]) && question[key].length === 1 && question?.answerMode !== 'subquestions');
-            if (hasSingleStructuredPart) return '';
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) {
                 const hasChoiceFields = question.subquestions.some(part => Array.isArray(part?.options) && part.options.length)
@@ -6663,8 +6809,8 @@ const app = {
                 ? splitPromptParts(question.q)
                 : question[kind] || (kind === 'practiceRows' ? question.subquestions : []);
             const selectedPartIndexes = this.getSelectedPartIndexes(question, parts.length);
-            const selectionMarkup = this.renderStructuredPartSelection(index, parts.length, selectedPartIndexes);
-            const partHeading = (label, partIndex) => `<div class="exam-structured-part__heading"><label class="exam-structured-part__toggle"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${esc(label)}" ${selectedPartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateStructuredPartSelection(${index}, ${partIndex})"><span class="exam-structured-part__checkmark" aria-hidden="true"></span><span class="exam-structured-part__toggle-text">Chọn</span></label><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>`;
+            const selectionMarkup = parts.length > 1 ? this.renderStructuredPartSelection(index, parts.length, selectedPartIndexes) : '';
+            const partHeading = (label, partIndex) => parts.length > 1 ? `<div class="exam-structured-part__heading"><label class="exam-structured-part__toggle"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${esc(label)}" ${selectedPartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateStructuredPartSelection(${index}, ${partIndex})"><span class="exam-structured-part__checkmark" aria-hidden="true"></span><span class="exam-structured-part__toggle-text">Chọn</span></label><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>` : `<div style="display:none;"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" checked></div>`;
 
             if (kind === 'statements') {
                 return `<fieldset class="exam-structured-editor exam-structured-editor--statements" data-structured-kind="statements" data-question-index="${index}">
@@ -6675,7 +6821,7 @@ const app = {
                         ${parts.map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex, true);
                             const currentAnswer = String(part?.answer ?? '').trim().toLocaleLowerCase('vi-VN');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nhãn ý</span>
@@ -6708,7 +6854,7 @@ const app = {
                             const label = part?.label || defaultLabel(partIndex);
                             const options = Array.isArray(part?.options) ? part.options : [];
                             const optionCount = Math.max(4, options.length);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
@@ -6780,7 +6926,7 @@ const app = {
                     <div class="exam-structured-editor__parts">
                         ${parts.map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
@@ -6818,7 +6964,7 @@ const app = {
                             const display = part?.display || (Array.isArray(part?.sequence)
                                 ? part.sequence.map((value, termIndex) => part.blankIndexes?.includes(termIndex) ? '___' : app.data.formatMathNumber(value)).join(', ')
                                 : '');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung dãy ${esc(label)}</span>
@@ -6843,7 +6989,7 @@ const app = {
                     <div class="exam-structured-editor__parts">
                         ${parts.slice(0, 4).map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
@@ -6872,7 +7018,7 @@ const app = {
                             const answerValue = Array.isArray(part?.answers)
                                 ? part.answers.join(', ')
                                 : String(part?.answer ?? '');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
@@ -9834,7 +9980,11 @@ const app = {
             const chosen = current.slice(0, targetCount);
             if (chosen.length < targetCount) chosen.push(...checkboxes.filter(input => !input.checked).slice(0, targetCount - chosen.length));
             const selected = new Set(chosen);
-            checkboxes.forEach(input => { input.checked = selected.has(input); });
+            checkboxes.forEach(input => { 
+                input.checked = selected.has(input); 
+                const partEl = input.closest('.exam-structured-part');
+                if (partEl) partEl.style.display = input.checked ? 'block' : 'none';
+            });
             this.templatePartSelection = checkboxes.filter(input => input.checked).map(input => Number(input.dataset.partIndex));
             this.templateAnswerMode = 'subquestions';
             const modeSelect = document.getElementById('template-answer-mode');
@@ -11295,72 +11445,7 @@ const app = {
                    ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
                      const q = e && e.questions && e.questions[i] ? e.questions[i] : null;
                      const editorQuestion = this.normalizeExamQuestionStructure(q || this.getEmptyExamQuestionDraft());
-                     const structureKind = this.getExamQuestionStructureKind(editorQuestion);
-                    const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
-                    const optionsDisplay = hasStructuredOptions || (editorQuestion && editorQuestion.type && editorQuestion.type !== 'Trắc nghiệm' && editorQuestion.type !== 'Kéo thả') ? 'none' : 'block';
-                    return `
-                    <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}">
-                       <header class="exam-question-card__header">
-                          <div class="exam-question-card__title-wrap">
-                             <span class="exam-question-card__number">${i + 1}</span>
-                             <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
-                          </div>
-                          <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
-                       </header>
-                       <div class="exam-question-card__fields">
-                          <label class="exam-form-field">
-                             <span>Chủ đề</span>
-                             <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateExamQuestionLesson(${i})">
-                             </select>
-                          </label>
-                          <label class="exam-form-field" hidden>
-                             <span>Bài học</span>
-                             <select id="add-e-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
-                          </label>
-                          <label class="exam-form-field">
-                             <span>Loại câu hỏi</span>
-                             <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.toggleQuestionType('add-e-q', ${i})">
-                             <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
-                             <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
-                             <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
-                             <option value="So sánh" ${q && q.type === 'So sánh' ? 'selected' : ''}>So sánh</option>
-                             <option value="Chuỗi Quy luật" ${q && q.type === 'Chuỗi Quy luật' ? 'selected' : ''}>Chuỗi Quy luật</option>
-                             <option value="Kéo thả" ${q && q.type === 'Kéo thả' ? 'selected' : ''}>Kéo thả</option>
-                             <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
-                             </select>
-                          </label>
-                          <label class="exam-form-field exam-form-field--full">
-                             <span>Nội dung câu</span>
-                             <textarea id="add-e-q-q-${i}" placeholder="Nội dung câu hỏi" class="form-input">${q ? q.q : ''}</textarea>
-                          </label>
-
-                          ${this.renderExamQuestionStructure(editorQuestion, i)}
-
-                          <fieldset id="add-e-q-opts-wrapper-${i}" class="exam-question-card__conditional exam-question-card__options" style="display: ${optionsDisplay}"${hasStructuredOptions ? ' aria-hidden="true"' : ''}>
-                             <legend>Các lựa chọn</legend>
-                             <div class="exam-question-card__option-grid">
-                                <label class="exam-question-card__option-field"><span>Lựa chọn 1</span><input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
-                                <label class="exam-question-card__option-field"><span>Lựa chọn 2</span><input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
-                                <label class="exam-question-card__option-field"><span>Lựa chọn 3</span><input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}"></label>
-                                <label class="exam-question-card__option-field"><span>Lựa chọn 4</span><input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}"></label>
-                             </div>
-                          </fieldset>
-
-                          <fieldset id="add-e-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
-                             <legend>Nội dung hai cột đối chiếu</legend>
-                             <div class="exam-question-card__option-grid">
-                                <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="Mèo, Chó..." class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
-                                <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="Meo, Gâu..." class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
-                             </div>
-                          </fieldset>
-
-                          <div class="exam-question-card__answer-grid${structureKind ? ' exam-question-card__answer-grid--explanation-only' : ''}">
-                             ${structureKind ? '' : '<label class="exam-form-field"><span>Đáp án đúng</span><input type="text" id="add-e-q-ans-' + i + '" placeholder="Đáp án đúng" class="form-input" value="' + (q ? app.data.sanitizeHTML(q.ans) : '') + '"></label>'}
-                             <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
-                          </div>
-                       </div>
-                    </article>
-                  `;
+                    return this.getExamComposerQuestionHTML(q, editorQuestion, i);
                 }).join('')}
                   </div>
                </section>
@@ -11612,6 +11697,12 @@ const app = {
                         if (!newQ.semester && lessonContext) newQ.semester = lessonContext.semester === 'hk2' ? 'Học kỳ 2' : 'Học kỳ 1';
                     } else {
                         delete newQ.lesson;
+                    }
+                    if (typeVal === 'Đối chiếu trùng khớp') {
+                        newQ.options = [
+                            document.getElementById(`add-e-q-match-left-${i}`)?.value.trim() || '',
+                            document.getElementById(`add-e-q-match-right-${i}`)?.value.trim() || ''
+                        ];
                     }
                     if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems' || structureKind === 'answerParts')) {
                         newQ.options = [
