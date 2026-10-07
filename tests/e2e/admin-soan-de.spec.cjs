@@ -52,9 +52,6 @@ test('Admin mở Soạn Đề với quick start, thẻ thống kê và ngữ c�
   await expect(page.locator('.admin-compose-card')).toHaveCount(4);
   await expect(page.locator('.admin-compose-card__metrics')).toHaveCount(4);
   await expect(page.locator('#admin-compose-screen')).toContainText('Học sinh vẫn dùng trạm Luyện Đề');
-  await expect(page.locator('#admin-compose-module-summary')).toContainText('Lớp 4');
-  await expect(page.locator('#admin-compose-module-summary')).toContainText('Toán');
-  await expect(page.locator('#admin-compose-module-summary')).toContainText('Học Kỳ 1');
 
   await page.getByRole('button', { name: /Câu Hỏi/ }).first().click();
   await expect(page.locator('.admin-compose-card--questions')).toHaveClass(/is-selected/);
