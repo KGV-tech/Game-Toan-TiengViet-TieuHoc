@@ -6422,10 +6422,33 @@ const app = {
                          Có câu hỏi con
                      </label>
                   </div>
-                  <label class="exam-form-field exam-form-field--full">
-                     <span>Nội dung câu</span>
-                     <textarea id="add-e-q-q-${i}" placeholder="Nội dung câu hỏi" class="form-input">${q ? q.q : ''}</textarea>
-                  </label>
+                  ${(() => {
+                      const qType = editorQuestion?.type || q?.type || 'Trắc nghiệm';
+                      let qPlaceholder = 'Nội dung câu hỏi';
+                      let qHint = '';
+                      if (!structureKind) {
+                          if (qType === 'Điền khuyết') {
+                              qPlaceholder = 'VD: Kết quả của 5 + ___ = 10';
+                              qHint = 'Dùng ___ (3 dấu gạch dưới) để làm chỗ trống.';
+                          } else if (qType === 'So sánh') {
+                              qPlaceholder = 'VD: 5 ___ 3';
+                              qHint = 'Dùng ___ (3 dấu gạch dưới) ở giữa 2 vế.';
+                          } else if (qType === 'Chuỗi Quy luật') {
+                              qPlaceholder = 'VD: 2, 4, ___, 8';
+                              qHint = 'Dùng ___ (3 dấu gạch dưới) tại vị trí cần điền.';
+                          } else if (qType === 'Kéo thả') {
+                              qPlaceholder = 'VD: Con chó sủa ___ ___.';
+                              qHint = 'Dùng ___ (3 dấu gạch dưới) tại chỗ cần kéo thả.';
+                          }
+                      } else {
+                          qPlaceholder = 'Nội dung câu hỏi chung (VD: Hãy điền vào chỗ trống)';
+                      }
+                      return `
+                      <label class="exam-form-field exam-form-field--full">
+                         <span>Nội dung câu ${qHint ? `<em>— ${qHint}</em>` : ''}</span>
+                         <textarea id="add-e-q-q-${i}" placeholder="${qPlaceholder}" class="form-input">${q ? q.q : ''}</textarea>
+                      </label>`;
+                  })()}
 
                   ${this.renderExamQuestionStructure(editorQuestion, i)}
 
@@ -6970,7 +6993,7 @@ const app = {
                             return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
-                                    <span>Nội dung dãy ${esc(label)}</span>
+                                    <span>Nội dung dãy ${esc(label)} <em>— Dùng ___ (3 dấu gạch dưới) tại vị trí cần điền</em></span>
                                     <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Ví dụ: 12, ___, 22, ___, 32">${esc(display)}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
@@ -6995,8 +7018,8 @@ const app = {
                             return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
-                                    <span>Nội dung ý ${esc(label)}</span>
-                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Nhập nội dung ý">${esc(part?.display || '')}</textarea>
+                                    <span>Nội dung ý ${esc(label)} ${question?.type === 'Điền khuyết' ? '<em>— Dùng ___ (3 dấu gạch dưới) để làm chỗ trống</em>' : (question?.type === 'Kéo thả' ? '<em>— Dùng ___ (3 dấu gạch dưới) tại chỗ cần kéo thả</em>' : '')}</span>
+                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="${question?.type === 'Kéo thả' ? 'VD: 2 + 3 = ___' : 'VD: Kết quả của 5 + ___ = 10'}">${esc(part?.display || '')}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Đáp án ý ${esc(label)}</span>
