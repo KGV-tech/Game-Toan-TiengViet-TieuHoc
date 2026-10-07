@@ -114,6 +114,9 @@
     .admin-compose-card--exams, .quest-management-launch--personal, .classroom-form-hero
 ) { background: linear-gradient(145deg, #e5d5ff, #f3edff); color: #59319a; border-color: #9c78c9; }
 [data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(
+    .admin-compose-card--worksheets
+) { background: linear-gradient(145deg, #fcdcf0, #fdf2f9); color: #9a2b6e; border-color: #d67eb7; }
+[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(
     .admin-compose-back, .quest-management-back, .admin-compose-breadcrumb,
     .admin-compose-card__count strong, .quest-management-launch, .quest-management-launch p,
     .quest-management-launch h3, .admin-compose-card > p
