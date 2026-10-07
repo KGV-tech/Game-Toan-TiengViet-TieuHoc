@@ -5823,6 +5823,14 @@ const app = {
                     countLabel: 'đề đã soạn',
                     openLabel: 'Mở kho Đề Kiểm Tra',
                     actionLabel: 'Tạo đề mới'
+                },
+                worksheets: {
+                    eyebrow: '04 · PHIẾU HỌC TẬP',
+                    title: 'Phiếu Học Tập',
+                    description: 'Soạn, chỉnh sửa, xem trước và chuẩn bị phiếu bài tập giao về nhà.',
+                    countLabel: 'phiếu đã soạn',
+                    openLabel: 'Mở kho Phiếu Học Tập',
+                    actionLabel: 'Tạo phiếu mới'
                 }
             }[module] || this.getComposerModuleMeta('exams');
         },
@@ -5861,6 +5869,8 @@ const app = {
             const countType = (items, type) => items.filter(item => item.question_type === type || item.type === type).length;
             const explanationCount = questions.filter(question => String(question.explanation || '').trim()).length;
             const exactExams = exams.filter(exam => (exam.questions || []).length === app.game.questionsPerRound).length;
+            const worksheets = Array.isArray(app.data.worksheets) ? app.data.worksheets : [];
+            const exactWorksheets = worksheets.filter(ws => (ws.questions || []).length === app.game.questionsPerRound).length;
             return {
                 templates: {
                     count: templates.length,
@@ -5888,6 +5898,15 @@ const app = {
                         [`Vượt ${app.game.questionsPerRound} câu`, exams.filter(exam => (exam.questions || []).length > app.game.questionsPerRound).length]
                     ],
                     countLabel: 'đề đã soạn'
+                },
+                worksheets: {
+                    count: worksheets.length,
+                    metrics: [
+                        ['Phiếu đang soạn', worksheets.filter(ws => (ws.questions || []).length < app.game.questionsPerRound).length],
+                        [`Đủ ${app.game.questionsPerRound} câu`, exactWorksheets],
+                        [`Vượt ${app.game.questionsPerRound} câu`, worksheets.filter(ws => (ws.questions || []).length > app.game.questionsPerRound).length]
+                    ],
+                    countLabel: 'phiếu đã soạn'
                 }
             };
         },
@@ -5910,7 +5929,8 @@ const app = {
             const modules = [
                 { id: 'templates', className: 'template', icon: 'T' },
                 { id: 'questions', className: 'questions', icon: 'Q' },
-                { id: 'exams', className: 'exams', icon: 'Đ' }
+                { id: 'exams', className: 'exams', icon: 'Đ' },
+                { id: 'worksheets', className: 'worksheets', icon: 'P' }
             ];
             const esc = value => app.data.sanitizeHTML(value ?? '');
             container.innerHTML = modules.map(item => {
@@ -11430,6 +11450,10 @@ const app = {
                 this.renderExamLibrary(subBox);
             }
             else if (tab === 'add') {
+                const label = isW ? 'phiếu' : 'đề';
+                const labelCap = isW ? 'Phiếu' : 'Đề';
+                const fullLabel = isW ? 'phiếu học tập' : 'đề kiểm tra';
+                const fullLabelCap = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
                 let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
@@ -11437,11 +11461,11 @@ const app = {
                 const selectedSubject = e?.subject || this.composerState.subject || 'Toán';
                 const selectedPeriod = this.normalizeComposerPeriod(e?.period || this.composerState.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
-            <section class="exam-composer ${isW ? 'worksheet-composer' : ''}" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
+            <section class="exam-composer ${isW ? 'worksheet-composer' : ''}" aria-label="${e ? `Sửa ${fullLabel}` : `Soạn ${fullLabel}`}">
                <header class="exam-composer__header">
                   <div class="exam-composer__header-copy">
-                     <p class="exam-composer__eyebrow">${e ? 'CHỈNH SỬA ĐỀ' : 'TẠO ĐỀ MỚI'}</p>
-                     <h3>${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}</h3>
+                     <p class="exam-composer__eyebrow">${e ? `CHỈNH SỬA ${labelCap.toUpperCase()}` : `TẠO ${labelCap.toUpperCase()} MỚI`}</p>
+                     <h3>${e ? `Sửa ${fullLabel}` : `Soạn ${fullLabel}`}</h3>
                      <p class="exam-composer__description">Điền thông tin chung, chọn chủ đề và hoàn thiện từng câu hỏi trong một không gian rõ ràng.</p>
                   </div>
                   <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có" aria-live="polite">
@@ -11453,8 +11477,8 @@ const app = {
 
                <section class="exam-composer__section exam-composer__meta" data-composer-section="meta" aria-labelledby="exam-composer-meta-title">
                   <div class="exam-composer__section-heading">
-                     <div><span class="exam-composer__section-kicker">BƯỚC 01 · KHỞI TẠO</span><h4 id="exam-composer-meta-title">1. Thông tin chung của đề</h4></div>
-                     <p>Dùng các trường này để phân loại và tìm lại đề trong thư viện.</p>
+                     <div><span class="exam-composer__section-kicker">BƯỚC 01 · KHỞI TẠO</span><h4 id="exam-composer-meta-title">1. Thông tin chung của ${label}</h4></div>
+                     <p>Dùng các trường này để phân loại và tìm lại ${label} trong thư viện.</p>
                   </div>
                   <label class="exam-form-field">
                      <span>Cấp lớp</span>
@@ -11480,14 +11504,14 @@ const app = {
                       </select>
                    </label>
                    <label class="exam-form-field exam-form-field--wide">
-                      <span>Tên đề kiểm tra <em aria-hidden="true">*</em></span>
-                      <input type="text" id="add-e-name" placeholder="Tên Đề (VD: Đề kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-e-form-error">
+                      <span>Tên ${fullLabel} <em aria-hidden="true">*</em></span>
+                      <input type="text" id="add-e-name" placeholder="Tên ${labelCap} (VD: ${labelCap} kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-e-form-error">
                    </label>
                    <div id="add-e-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
                   <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
                      <span>Chủ đề áp dụng</span>
                      <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
-                     <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo đề tự động.</small>
+                     <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo ${label} tự động.</small>
                   </div>
                    <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
                       <span>Bài học áp dụng</span>
@@ -11496,7 +11520,7 @@ const app = {
                    </div>
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
-                     <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo đề tự động</button>
+                     <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo ${label} tự động</button>
                   </div>
                </section>
 
