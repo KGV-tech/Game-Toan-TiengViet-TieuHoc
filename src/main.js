@@ -11435,16 +11435,16 @@ const app = {
         renderESubTab(tab, editIdx, isW = false) {
             const mId = isW ? 'w' : 'e';
             ['lib', 'add', 'tpl', 'exp', 'imp'].forEach(t => {
-                const el = document.getElementById('btn-e-' + t);
+                const el = document.getElementById('btn-' + mId + '-' + t);
                 if (el) {
                     el.classList.toggle('is-active', t === tab);
                     el.setAttribute('aria-pressed', String(t === tab));
                 }
             });
-            const subBox = document.getElementById('admin-e-subarea');
+            const subBox = document.getElementById('admin-' + mId + '-subarea');
 
             if (tab === 'lib') {
-                this.renderExamLibrary(subBox);
+                this.renderExamLibrary(subBox, isW);
             }
             else if (tab === 'add') {
                 const label = isW ? 'phiếu' : 'đề';
@@ -11580,12 +11580,12 @@ const app = {
             else if (tab === 'tpl') {
                 subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
                 app.admin.downloadETemplate();
-                setTimeout(() => this.renderESubTab('lib'), 1000);
+                setTimeout(() => this.renderESubTab('lib', undefined, isW), 1000);
             }
             else if (tab === 'exp') {
                 subBox.innerHTML = `<p>Đang xuất dữ liệu...</p>`;
                 app.admin.exportExams();
-                setTimeout(() => this.renderESubTab('lib'), 1000);
+                setTimeout(() => this.renderESubTab('lib', undefined, isW), 1000);
             }
             else if (tab === 'select_for_q') {
                 let qIdx = editIdx;
@@ -12226,9 +12226,10 @@ const app = {
                 ${this.renderExamPrintQuestionParts(printableQuestion)}
             </article>`;
         },
-        renderExamPrintContent(exam, rootId = 'print-area') {
+        renderExamPrintContent(exam, rootId = 'print-area', isW = false) {
             const esc = value => app.data.sanitizeHTML(value ?? '');
-            const name = String(exam?.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
+            const defaultLabel = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
+            const name = String(exam?.name || defaultLabel).trim() || defaultLabel;
             const questions = Array.isArray(exam?.questions) ? exam.questions : [];
             const classLabel = this.getExamPrintClassLabel(exam);
             return `<section id="${rootId}" class="exam-print" aria-label="Nội dung đề kiểm tra">
@@ -12252,15 +12253,17 @@ const app = {
             window.addEventListener('afterprint', cleanup, { once: true });
             window.print();
         },
-        printExam(idx) {
-            const exam = app.data.exams[idx];
+        printExam(idx, isW = false) {
+            const store = isW ? app.data.worksheets : app.data.exams;
+            const exam = store[idx];
             if (!exam) return;
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
                 this.printExamInPlace(idx);
                 return;
             }
-            const name = String(exam.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
+            const defaultLabel = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
+            const name = String(exam.name || defaultLabel).trim() || defaultLabel;
             const sourceStylesheet = Array.from(document.styleSheets).find(stylesheet => stylesheet.href?.includes('/src/style.css'));
             let stylesheetText = '';
             try {
@@ -12288,7 +12291,7 @@ const app = {
             const styleMarkup = stylesheetText
                 ? `<style id="exam-print-styles">${stylesheetText}</style>`
                 : `<link rel="stylesheet" href="${stylesheetHref}">`;
-            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title>${styleMarkup}</head><body>${this.renderExamPrintContent(exam, 'print-document')}</body></html>`);
+            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title>${styleMarkup}</head><body>${this.renderExamPrintContent(exam, 'print-document', isW)}</body></html>`);
             printWindow.document.close();
             let styleWaitAttempts = 0;
             const printWhenReady = () => {
@@ -12305,22 +12308,25 @@ const app = {
             };
             printWindow.setTimeout(printWhenReady, 0);
         },
-        viewExam(idx) {
-            const exam = app.data.exams[idx];
+        viewExam(idx, isW = false) {
+            const mId = isW ? 'w' : 'e';
+            const store = isW ? app.data.worksheets : app.data.exams;
+            const label = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
+            const exam = store[idx];
             if (!exam) return;
-            const name = String(exam.name || 'Đề kiểm tra').trim() || 'Đề kiểm tra';
-            const heading = app.data.sanitizeHTML(`Chi tiết đề: ${name}`);
+            const name = String(exam.name || label).trim() || label;
+            const heading = app.data.sanitizeHTML(`Chi tiết: ${name}`);
             const html = `
                 <div class="exam-detail-toolbar">
                     <h3>${heading}</h3>
                     <div class="exam-detail-toolbar__actions">
-                        ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)})`, 'compact-admin-action--view')}
-                        <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.renderESubTab('lib')" aria-label="Đóng chi tiết đề"><span aria-hidden="true">←</span> Quay về</button>
+                        ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)}, ${isW})`, 'compact-admin-action--view')}
+                        <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')" aria-label="Đóng chi tiết"><span aria-hidden="true">←</span> Quay về</button>
                     </div>
                 </div>
-                ${this.renderExamPrintContent(exam, 'print-area')}
+                ${this.renderExamPrintContent(exam, 'print-area', isW)}
             `;
-            document.getElementById('admin-e-subarea').innerHTML = html;
+            document.getElementById('admin-' + mId + '-subarea').innerHTML = html;
         },
         renderPlayers(box) {
             this.studentRosterModePending = false;
@@ -12719,6 +12725,23 @@ const app = {
                 }
                 app.data.saveLibrary();
                 this.renderQSubTab('lib');
+            }
+        },
+        viewWorksheet(idx) {
+            this.viewExam(idx, true);
+        },
+        editWorksheet(idx) {
+            this.renderWSubTab('add', idx);
+        },
+        async deleteWorksheet(idx) {
+            if (confirm('Xác nhận xóa phiếu học tập này?')) {
+                const w = app.data.worksheets[idx];
+                app.data.worksheets.splice(idx, 1);
+                if (w && w.id && window.supabase) {
+                    await supabaseClient.from('game_worksheets').delete().eq('id', w.id);
+                }
+                app.data.saveWorksheets();
+                this.renderWSubTab('lib');
             }
         },
         editExam(idx) {
