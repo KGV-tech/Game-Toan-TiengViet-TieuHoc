@@ -3147,10 +3147,13 @@ input[type="text"], input[type="password"], select, textarea {
 .admin-compose-card--questions .admin-compose-card__icon { background: #52d7ee; }
 .admin-compose-card--exams { border-color: #bd9cff; border-bottom-color: #7950b7; background: linear-gradient(145deg, rgba(65, 50, 116, .86), rgba(28, 31, 72, .94)); color: #c4a1ff; }
 .admin-compose-card--exams .admin-compose-card__icon { background: #b895ff; }
+.admin-compose-card--worksheets { border-color: #ff9cf0; border-bottom-color: #b750a9; background: linear-gradient(145deg, rgba(116, 50, 96, .86), rgba(72, 28, 55, .94)); color: #ffbaf4; }
+.admin-compose-card--worksheets .admin-compose-card__icon { background: #ff9cf0; }
 .admin-compose-module-panel { --composer-accent: #c09cff; margin-top: 22px; padding: 20px; border: 1px solid rgba(57, 183, 224, .5); border-radius: 17px; background: linear-gradient(145deg, rgba(6, 32, 48, .94), rgba(5, 20, 35, .88)); box-shadow: inset 0 0 24px rgba(34, 211, 238, .045); }
 .admin-compose-module-panel[data-module="templates"] { --composer-accent: #ffd15a; border-color: rgba(246, 187, 71, .58); background: linear-gradient(145deg, rgba(45, 35, 18, .84), rgba(5, 20, 35, .9)); }
 .admin-compose-module-panel[data-module="questions"] { --composer-accent: #57e3f5; border-color: rgba(81, 224, 245, .58); }
 .admin-compose-module-panel[data-module="exams"] { --composer-accent: #c4a1ff; border-color: rgba(189, 156, 255, .58); background: linear-gradient(145deg, rgba(24, 25, 61, .88), rgba(5, 20, 35, .9)); }
+.admin-compose-module-panel[data-module="worksheets"] { --composer-accent: #ffbaf4; border-color: rgba(255, 156, 240, .58); background: linear-gradient(145deg, rgba(61, 24, 49, .88), rgba(5, 20, 35, .9)); }
 .admin-compose-module-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid rgba(125, 211, 252, .22); }
 .admin-compose-module-kicker { color: var(--composer-accent); }
 .admin-compose-module-header h2 { margin: 5px 0 6px; color: color-mix(in srgb, var(--composer-accent) 26%, #f1eaff); font-size: clamp(1.5rem, 2.5vw, 2.15rem); }
@@ -3692,6 +3695,8 @@ input[type="text"], input[type="password"], select, textarea {
 .admin-compose-quickstart-card--questions .admin-compose-quickstart-card__icon { background: #52d7ee; }
 .admin-compose-quickstart-card--exams { border-color: rgba(189, 156, 255, .78); background: linear-gradient(135deg, rgba(65, 50, 116, .86), rgba(28, 31, 72, .94)); color: #c4a1ff; }
 .admin-compose-quickstart-card--exams .admin-compose-quickstart-card__icon { background: #b895ff; }
+.admin-compose-quickstart-card--worksheets { border-color: rgba(255, 153, 204, .78); background: linear-gradient(135deg, rgba(116, 50, 85, .86), rgba(72, 28, 50, .94)); color: #ffbaf4; }
+.admin-compose-quickstart-card--worksheets .admin-compose-quickstart-card__icon { background: #ff9cf0; }
 
 .template-library {
     min-width: 0;
@@ -8879,3 +8884,18 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 .vietnamese-catalog { margin-top: 1rem; padding: 1rem; display: grid; gap: 0.75rem; }
 .vietnamese-catalog select { max-width: 100%; }
 .vietnamese-catalog .template-preview__choices { text-transform: none; }
+
+/* =========================================================================
+   Worksheet Composer Theme (Pink)
+   ========================================================================= */
+.worksheet-composer .exam-composer__eyebrow { color: #f9a8d4; }
+.worksheet-composer .exam-composer__header h3 { color: #fdf2f8; text-shadow: 0 0 10px rgba(244,114,182,.4); }
+.worksheet-composer .exam-composer__progress { border-color: rgba(244, 114, 182, .42); background: rgba(157, 23, 77, .28); color: #fbcfe8; }
+.worksheet-composer .exam-composer__progress strong { color: #f472b6; }
+.worksheet-composer .exam-composer__section-heading h4 { color: #f9a8d4; }
+.worksheet-composer .exam-composer__section-kicker { color: #fbcfe8; background: #9d174d; border-color: #f472b6; }
+.worksheet-composer .compact-admin-action--save { background: linear-gradient(to bottom, #ec4899, #be185d); border-color: #9d174d; box-shadow: 0 2px 8px rgba(236,72,153,.3); }
+.worksheet-composer .compact-admin-action--save:hover { background: linear-gradient(to bottom, #f472b6, #db2777); }
+.worksheet-composer .exam-library-button--primary { background: linear-gradient(to bottom, #ec4899, #be185d); border-color: #9d174d; }
+.worksheet-composer .exam-library-button--primary:hover { background: linear-gradient(to bottom, #f472b6, #db2777); }
+.admin-tab[data-module="worksheets"].is-active { color: #f472b6; border-color: #f472b6; }
