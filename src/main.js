@@ -6378,6 +6378,21 @@ const app = {
                 if (matchWrapper) {
                     matchWrapper.style.display = (val === 'Đối chiếu trùng khớp') ? 'block' : 'none';
                 }
+                const qEl = document.getElementById(`${prefix}-q${suffix}`);
+                const ansEl = document.getElementById(`${prefix}-ans${suffix}`);
+                if (qEl) {
+                    if (val === 'Điền khuyết') qEl.placeholder = 'VD: Kết quả của 5 + ___ = 10 (Dùng ___ để tạo chỗ trống)';
+                    else if (val === 'So sánh') qEl.placeholder = 'VD: 5 ___ 3 (Dùng ___ ở giữa 2 vế)';
+                    else if (val === 'Chuỗi Quy luật') qEl.placeholder = 'VD: 2, 4, ___, 8 (Dùng ___ tại vị trí cần điền)';
+                    else if (val === 'Kéo thả') qEl.placeholder = 'VD: Con chó sủa ___ ___. (Dùng ___ tại chỗ cần kéo thả)';
+                    else qEl.placeholder = 'Nội dung câu hỏi';
+                }
+                if (ansEl) {
+                    if (['Điền khuyết', 'Kéo thả', 'Chuỗi Quy luật'].includes(val)) ansEl.placeholder = 'VD: 5, 10 (Nhiều đáp án cách nhau bằng dấu phẩy)';
+                    else if (val === 'Đối chiếu trùng khớp') ansEl.placeholder = 'VD: Mèo:Meo meo, Chó:Gâu gâu (Các cặp cách nhau bằng dấu phẩy)';
+                    else if (val === 'Trắc nghiệm') ansEl.placeholder = 'Đáp án đúng (Ghi chính xác 1 trong 4 lựa chọn ở trên)';
+                    else ansEl.placeholder = 'Đáp án đúng';
+                }
             }
         },
         getExamComposerQuestionHTML(q, editorQuestion, i) {
@@ -6471,7 +6486,20 @@ const app = {
                   </fieldset>
 
                   <div class="exam-question-card__answer-grid${structureKind ? ' exam-question-card__answer-grid--explanation-only' : ''}">
-                     ${structureKind ? '' : '<label class="exam-form-field"><span>Đáp án đúng</span><input type="text" id="add-e-q-ans-' + i + '" placeholder="Đáp án đúng" class="form-input" value="' + (q ? app.data.sanitizeHTML(q.ans) : '') + '"></label>'}
+                     ${(() => {
+                         if (structureKind) return '';
+                         const qType = editorQuestion?.type || q?.type || 'Trắc nghiệm';
+                         let ansHint = '';
+                         let ansPlaceholder = 'Đáp án đúng';
+                         if (['Điền khuyết', 'Kéo thả', 'Chuỗi Quy luật'].includes(qType)) {
+                             ansHint = 'Nhiều đáp án cách nhau bằng dấu phẩy (,)';
+                             ansPlaceholder = 'VD: 5, 10';
+                         } else if (qType === 'Đối chiếu trùng khớp') {
+                             ansHint = 'Nhập theo cặp (Trái:Phải), cách nhau bằng dấu phẩy';
+                             ansPlaceholder = 'VD: Mèo:Meo meo, Chó:Gâu gâu';
+                         }
+                         return `<label class="exam-form-field"><span>Đáp án đúng ${ansHint ? `<em>— ${ansHint}</em>` : ''}</span><input type="text" id="add-e-q-ans-${i}" placeholder="${ansPlaceholder}" class="form-input" value="${q ? app.data.sanitizeHTML(q.ans) : ''}"></label>`;
+                     })()}
                      <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
                   </div>
                </div>
@@ -7022,7 +7050,7 @@ const app = {
                                     <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="${question?.type === 'Kéo thả' ? 'VD: 2 + 3 = ___' : 'VD: Kết quả của 5 + ___ = 10'}">${esc(part?.display || '')}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
-                                    <span>Đáp án ý ${esc(label)}</span>
+                                    <span>Đáp án ý ${esc(label)} ${['Điền khuyết', 'Kéo thả'].includes(question?.type) ? '<em>— Nếu có nhiều khoảng trống, cách nhau bằng dấu phẩy (,)</em>' : ''}</span>
                                     <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập đáp án đúng">
                                 </label>
                             </article>`;
