@@ -59,14 +59,14 @@ test('Soạn đề Toán lớp 4 có bộ lọc Bài học và tự động ch�
   });
   await page.locator('#add-e-class').selectOption('Lớp 4');
   await expect(page.locator('#add-e-lessons-field')).toBeVisible();
-  await expect(page.locator('#add-e-lessons input')).toHaveCount(37);
+  await expect(page.locator('#add-e-lessons .exam-composer__lesson-option input')).toHaveCount(37);
   await page.locator('#add-e-topics input').first().check();
   await expect(page.locator('#add-e-lessons .exam-composer__lesson-group')).toHaveCount(1);
-  await expect(page.locator('#add-e-lessons input')).toHaveCount(6);
+  await expect(page.locator('#add-e-lessons .exam-composer__lesson-option input')).toHaveCount(6);
   await expect(page.locator('#add-e-lessons-summary')).toContainText('6 Bài học');
 
   await page.evaluate(() => {
-    const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons input'));
+    const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons .exam-composer__lesson-option input'));
     lessonInputs.forEach(input => { input.checked = input.value === 'g4-math-hk1-b02'; });
     app.admin.updateExamTopics();
     const topic = app.constants.topics['4'].math.hk1[0];
@@ -99,17 +99,17 @@ test('Soạn đề giữ rõ trạng thái phạm vi Bài học khi đổi học
   await page.locator('#add-e-class').selectOption('Lớp 4');
   await page.locator('#add-e-topics input').first().check();
   await page.evaluate(() => {
-    const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons input'));
+    const lessonInputs = Array.from(document.querySelectorAll('#add-e-lessons .exam-composer__lesson-option input'));
     lessonInputs.forEach(input => { input.checked = input.value === 'g4-math-hk1-b02'; });
     app.admin.updateExamTopics();
   });
   await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'selected');
-  await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(1);
+  await expect(page.locator('#add-e-lessons .exam-composer__lesson-option input:checked')).toHaveCount(1);
   await expect(page.locator('#add-e-lessons-summary')).toHaveText('Đang chọn 1/6 Bài học');
 
   await page.locator('#add-e-period').selectOption('Học Kỳ 2');
   await expect(page.locator('#add-e-lessons')).toHaveAttribute('data-selection-mode', 'all');
-  await expect(page.locator('#add-e-lessons input:checked')).toHaveCount(36);
+  await expect(page.locator('#add-e-lessons .exam-composer__lesson-option input:checked')).toHaveCount(36);
 });
 
 test('Kho template và nhiệm vụ Admin dùng cùng danh mục Bài học', async ({ page }) => {

@@ -6510,6 +6510,14 @@ const app = {
                 } else if (typeVal === 'Kéo thả') {
                     newQ.partAnswerCounts = [1, 1, 1, 1];
                 }
+            } else {
+                if (typeVal === 'Đúng/Sai') {
+                    newQ.statements = [{ text: '', answer: 'Đúng' }];
+                } else if (typeVal === 'So sánh') {
+                    newQ.comparisonRows = [{ left: '', right: '', sign: '=' }];
+                } else if (typeVal === 'Chuỗi Quy luật') {
+                    newQ.sequenceRounds = [{ sequence: '', answer: '' }];
+                }
             }
             
             const newHTML = this.getExamComposerQuestionHTML(newQ, newQ, i);
@@ -6517,7 +6525,7 @@ const app = {
             this.updateExamQuestionCard(i);
         },
         getSupportedPartCounts(partCount = 4) {
-            return [1, 2, 4].filter(count => count <= Number(partCount));
+            return [2, 4].filter(count => count <= Number(partCount));
         },
         normalizePartIndexes(rawIndexes, partCount = 4) {
             const total = Math.max(0, Number(partCount) || 0);
@@ -6599,7 +6607,11 @@ const app = {
                 chosen.push(...checkboxes.filter(input => !input.checked).slice(0, targetCount - chosen.length));
             }
             const selected = new Set(chosen);
-            checkboxes.forEach(input => { input.checked = selected.has(input); });
+            checkboxes.forEach(input => { 
+                input.checked = selected.has(input); 
+                const partEl = input.closest('.exam-structured-part');
+                if (partEl) partEl.style.display = input.checked ? 'block' : 'none';
+            });
             this.syncStructuredPartSelectionUI(questionIndex);
         },
         getEmptyExamQuestionDraft() {
@@ -6692,9 +6704,6 @@ const app = {
         },
         getExamQuestionStructureKind(question) {
             if (question?.answerMode === 'single') return '';
-            const hasSingleStructuredPart = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows']
-                .some(key => Array.isArray(question?.[key]) && question[key].length === 1 && question?.answerMode !== 'subquestions');
-            if (hasSingleStructuredPart) return '';
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) {
                 const hasChoiceFields = question.subquestions.some(part => Array.isArray(part?.options) && part.options.length)
@@ -6800,8 +6809,8 @@ const app = {
                 ? splitPromptParts(question.q)
                 : question[kind] || (kind === 'practiceRows' ? question.subquestions : []);
             const selectedPartIndexes = this.getSelectedPartIndexes(question, parts.length);
-            const selectionMarkup = this.renderStructuredPartSelection(index, parts.length, selectedPartIndexes);
-            const partHeading = (label, partIndex) => `<div class="exam-structured-part__heading"><label class="exam-structured-part__toggle"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${esc(label)}" ${selectedPartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateStructuredPartSelection(${index}, ${partIndex})"><span class="exam-structured-part__checkmark" aria-hidden="true"></span><span class="exam-structured-part__toggle-text">Chọn</span></label><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>`;
+            const selectionMarkup = parts.length > 1 ? this.renderStructuredPartSelection(index, parts.length, selectedPartIndexes) : '';
+            const partHeading = (label, partIndex) => parts.length > 1 ? `<div class="exam-structured-part__heading"><label class="exam-structured-part__toggle"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" aria-label="Chọn câu con ${esc(label)}" ${selectedPartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateStructuredPartSelection(${index}, ${partIndex})"><span class="exam-structured-part__checkmark" aria-hidden="true"></span><span class="exam-structured-part__toggle-text">Chọn</span></label><span class="exam-structured-part__number">${partIndex + 1}</span><strong>Ý ${esc(label)}</strong></div>` : `<div style="display:none;"><input type="checkbox" class="exam-structured-part__checkbox" data-part-index="${partIndex}" checked></div>`;
 
             if (kind === 'statements') {
                 return `<fieldset class="exam-structured-editor exam-structured-editor--statements" data-structured-kind="statements" data-question-index="${index}">
@@ -6812,7 +6821,7 @@ const app = {
                         ${parts.map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex, true);
                             const currentAnswer = String(part?.answer ?? '').trim().toLocaleLowerCase('vi-VN');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nhãn ý</span>
@@ -6845,7 +6854,7 @@ const app = {
                             const label = part?.label || defaultLabel(partIndex);
                             const options = Array.isArray(part?.options) ? part.options : [];
                             const optionCount = Math.max(4, options.length);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
@@ -6917,7 +6926,7 @@ const app = {
                     <div class="exam-structured-editor__parts">
                         ${parts.map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
@@ -6955,7 +6964,7 @@ const app = {
                             const display = part?.display || (Array.isArray(part?.sequence)
                                 ? part.sequence.map((value, termIndex) => part.blankIndexes?.includes(termIndex) ? '___' : app.data.formatMathNumber(value)).join(', ')
                                 : '');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung dãy ${esc(label)}</span>
@@ -6980,7 +6989,7 @@ const app = {
                     <div class="exam-structured-editor__parts">
                         ${parts.slice(0, 4).map((part, partIndex) => {
                             const label = part?.label || defaultLabel(partIndex);
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
@@ -7009,7 +7018,7 @@ const app = {
                             const answerValue = Array.isArray(part?.answers)
                                 ? part.answers.join(', ')
                                 : String(part?.answer ?? '');
-                            return `<article class="exam-structured-part" data-structured-part="${partIndex}">
+                            return `<article class="exam-structured-part" data-structured-part="${partIndex}" style="${!selectedPartIndexes.includes(partIndex) ? 'display: none;' : ''}">
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
@@ -9971,7 +9980,11 @@ const app = {
             const chosen = current.slice(0, targetCount);
             if (chosen.length < targetCount) chosen.push(...checkboxes.filter(input => !input.checked).slice(0, targetCount - chosen.length));
             const selected = new Set(chosen);
-            checkboxes.forEach(input => { input.checked = selected.has(input); });
+            checkboxes.forEach(input => { 
+                input.checked = selected.has(input); 
+                const partEl = input.closest('.exam-structured-part');
+                if (partEl) partEl.style.display = input.checked ? 'block' : 'none';
+            });
             this.templatePartSelection = checkboxes.filter(input => input.checked).map(input => Number(input.dataset.partIndex));
             this.templateAnswerMode = 'subquestions';
             const modeSelect = document.getElementById('template-answer-mode');
@@ -11684,6 +11697,12 @@ const app = {
                         if (!newQ.semester && lessonContext) newQ.semester = lessonContext.semester === 'hk2' ? 'Học kỳ 2' : 'Học kỳ 1';
                     } else {
                         delete newQ.lesson;
+                    }
+                    if (typeVal === 'Đối chiếu trùng khớp') {
+                        newQ.options = [
+                            document.getElementById(`add-e-q-match-left-${i}`)?.value.trim() || '',
+                            document.getElementById(`add-e-q-match-right-${i}`)?.value.trim() || ''
+                        ];
                     }
                     if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems' || structureKind === 'answerParts')) {
                         newQ.options = [
