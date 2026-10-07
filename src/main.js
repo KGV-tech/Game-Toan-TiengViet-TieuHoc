@@ -6301,7 +6301,8 @@ const app = {
             this.syncExamComposerTopicStates();
         },
         syncExamComposerTopicStates() {
-            document.querySelectorAll('#add-e-topics .exam-composer__topic-option').forEach(option => {
+            const mId = this.composerState.module === 'worksheets' ? 'w' : 'e';
+            document.querySelectorAll(`#add-${mId}-topics .exam-composer__topic-option`).forEach(option => {
                 const input = option.querySelector('input[type="checkbox"]');
                 const selected = Boolean(input?.checked);
                 option.classList.toggle('is-selected', selected);
@@ -11479,7 +11480,7 @@ const app = {
                   </div>
                   <label class="exam-form-field">
                      <span>Cấp lớp</span>
-                     <select id="add-e-class" class="form-input" onchange="app.admin.updateExamTopics()">
+                     <select id="add-${mId}-class" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Lớp 1" ${selectedClasslevel === 'Lớp 1' ? 'selected' : ''}>Lớp 1</option>
                      <option value="Lớp 2" ${selectedClasslevel === 'Lớp 2' ? 'selected' : ''}>Lớp 2</option>
                      <option value="Lớp 3" ${selectedClasslevel === 'Lớp 3' ? 'selected' : ''}>Lớp 3</option>
@@ -11489,30 +11490,30 @@ const app = {
                   </label>
                   <label class="exam-form-field">
                      <span>Môn học</span>
-                     <select id="add-e-sub" class="form-input" onchange="app.admin.updateExamTopics()">
+                     <select id="add-${mId}-sub" class="form-input" onchange="app.admin.updateExamTopics()">
                      <option value="Toán" ${selectedSubject === 'Toán' ? 'selected' : ''}>Toán</option>
                      <option value="Tiếng Việt" ${selectedSubject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option>
                      </select>
                   </label>
                    <label class="exam-form-field">
                       <span>Thời gian</span>
-                      <select id="add-e-period" class="form-input" onchange="app.admin.updateExamTopics()">
+                      <select id="add-${mId}-period" class="form-input" onchange="app.admin.updateExamTopics()">
                       ${this.getComposerPeriodOptions().map(option => `<option value="${option.value}" ${selectedPeriod === option.value ? 'selected' : ''}>${option.label}</option>`).join('')}
                       </select>
                    </label>
                    <label class="exam-form-field exam-form-field--wide">
                       <span>Tên ${fullLabel} <em aria-hidden="true">*</em></span>
-                      <input type="text" id="add-e-name" placeholder="Tên ${labelCap} (VD: ${labelCap} kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-e-form-error">
+                      <input type="text" id="add-${mId}-name" placeholder="Tên ${labelCap} (VD: ${labelCap} kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-${mId}-form-error">
                    </label>
-                   <div id="add-e-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
+                   <div id="add-${mId}-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
                   <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
                      <span>Chủ đề áp dụng</span>
-                     <div id="add-e-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
+                     <div id="add-${mId}-topics" class="exam-composer__topics" data-selected='${app.data.sanitizeHTML(JSON.stringify(e?.topics || []))}'></div>
                      <small>Chọn một hoặc nhiều chủ đề để lọc câu hỏi và hỗ trợ tạo ${label} tự động.</small>
                   </div>
-                   <div id="add-e-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
+                   <div id="add-${mId}-lessons-field" class="exam-form-field exam-form-field--full exam-composer__topics-field" hidden>
                       <span>Bài học áp dụng</span>
-                      <div id="add-e-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
+                      <div id="add-${mId}-lessons" class="exam-composer__lessons-panel" data-selected='${app.data.sanitizeHTML(JSON.stringify(initialLessonFilters))}' data-selection-mode="${initialLessonFilters.length ? 'selected' : 'all'}"></div>
                       <small>Chỉ dành cho Lớp 4 – Toán. Sau khi chọn Chủ đề, bỏ chọn các Bài học chưa học để thu hẹp nguồn câu hỏi.</small>
                    </div>
                   <div class="exam-composer__meta-action">
@@ -11675,7 +11676,7 @@ const app = {
             const classlevel = document.getElementById(`add-${mId}-class`).value;
             const subject = document.getElementById(`add-${mId}-sub`).value;
             const period = this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`).value);
-            const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
+            const topics = Array.from(document.querySelectorAll(`#add-${mId}-topics input:checked`)).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const selectionState = this.getExamLessonSelectionState();
             if (document.getElementById(`add-${mId}-lessons`) && !document.getElementById(`add-${mId}-lessons`).hidden && !selectionState.unrestricted && !selectionState.selectedLessons.length) {
@@ -11768,24 +11769,25 @@ const app = {
         async submitAddExam(editIdx, isW = false) {
             if (isW ? this.worksheetSavePending : this.examSavePending) return;
             if (isW) this.setWorksheetSavePending(true); else this.setExamSavePending(true);
+            const mId = isW ? 'w' : 'e';
             try {
             const eObj = {
-                name: document.getElementById('add-e-name').value,
-                subject: document.getElementById('add-e-sub').value,
-                classlevel: document.getElementById('add-e-class').value,
-                period: this.normalizeComposerPeriod(document.getElementById('add-e-period').value),
-                topics: Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value),
+                name: document.getElementById(`add-${mId}-name`).value,
+                subject: document.getElementById(`add-${mId}-sub`).value,
+                classlevel: document.getElementById(`add-${mId}-class`).value,
+                period: this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`).value),
+                topics: Array.from(document.querySelectorAll(`#add-${mId}-topics input:checked`)).map(input => input.value),
                 questions: []
             };
-            if (!eObj.name || !eObj.subject) return this.showExamComposerError('Vui lòng điền đủ Tên đề và Môn.', !eObj.name ? 'add-e-name' : 'add-e-sub');
+            if (!eObj.name || !eObj.subject) return this.showExamComposerError('Vui lòng điền đủ Tên đề và Môn.', !eObj.name ? `add-${mId}-name` : `add-${mId}-sub`);
 
             let i = 0;
             let newQuestionsCount = 0;
             let firstIncompleteQuestion = null;
-            while (document.getElementById(`add-e-q-q-${i}`)) {
-                const qTextEl = document.getElementById(`add-e-q-q-${i}`);
+            while (document.getElementById(`add-${mId}-q-q-${i}`)) {
+                const qTextEl = document.getElementById(`add-${mId}-q-q-${i}`);
                 const qText = qTextEl.value.trim();
-                const typeVal = document.getElementById(`add-e-q-type-${i}`).value;
+                const typeVal = document.getElementById(`add-${mId}-q-type-${i}`).value;
                 const originalQuestion = editIdx !== null && editIdx !== undefined
                     ? (isW ? app.data.worksheets : app.data.exams)[editIdx]?.questions?.[i]
                     : (isW ? this.worksheetComposerDraft : this.examComposerDraft)?.questions?.[i];
@@ -11794,21 +11796,21 @@ const app = {
                 const structurePatch = structureKind ? this.readExamQuestionStructure(editorQuestion, i) : {};
                 const ansText = structureKind
                     ? String(structurePatch.ans || '').trim()
-                    : document.getElementById(`add-e-q-ans-${i}`).value.trim();
+                    : document.getElementById(`add-${mId}-q-ans-${i}`).value.trim();
 
                 if (qText && (isW || ansText)) {
                     const newQ = {
                         ...(originalQuestion ? JSON.parse(JSON.stringify(editorQuestion)) : {}),
                         classlevel: eObj.classlevel,
                         subject: eObj.subject,
-                        topic: document.getElementById(`add-e-q-topic-${i}`).value,
+                        topic: document.getElementById(`add-${mId}-q-topic-${i}`).value,
                         type: typeVal,
                         q: qText,
                         ans: ansText,
-                        explanation: document.getElementById(`add-e-q-exp-${i}`).value.trim(),
+                        explanation: document.getElementById(`add-${mId}-q-exp-${i}`).value.trim(),
                         options: []
                     };
-                    const selectedLesson = this.normalizeAdminLesson(document.getElementById(`add-e-q-lesson-${i}`)?.value || '');
+                    const selectedLesson = this.normalizeAdminLesson(document.getElementById(`add-${mId}-q-lesson-${i}`)?.value || '');
                     if (selectedLesson) {
                         newQ.lesson = selectedLesson;
                         const lessonContext = app.curriculum?.getLessonContext(selectedLesson);
@@ -11818,27 +11820,27 @@ const app = {
                     }
                     if (typeVal === 'Đối chiếu trùng khớp') {
                         newQ.options = [
-                            document.getElementById(`add-e-q-match-left-${i}`)?.value.trim() || '',
-                            document.getElementById(`add-e-q-match-right-${i}`)?.value.trim() || ''
+                            document.getElementById(`add-${mId}-q-match-left-${i}`)?.value.trim() || '',
+                            document.getElementById(`add-${mId}-q-match-right-${i}`)?.value.trim() || ''
                         ];
                     }
                     if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems' || structureKind === 'answerParts')) {
                         newQ.options = [
-                            document.getElementById(`add-e-q-opt1-${i}`).value.trim(),
-                            document.getElementById(`add-e-q-opt2-${i}`).value.trim(),
-                            document.getElementById(`add-e-q-opt3-${i}`).value.trim(),
-                            document.getElementById(`add-e-q-opt4-${i}`).value.trim()
+                            document.getElementById(`add-${mId}-q-opt1-${i}`).value.trim(),
+                            document.getElementById(`add-${mId}-q-opt2-${i}`).value.trim(),
+                            document.getElementById(`add-${mId}-q-opt3-${i}`).value.trim(),
+                            document.getElementById(`add-${mId}-q-opt4-${i}`).value.trim()
                         ];
                     }
                     if (structureKind) Object.assign(newQ, structurePatch);
                     if (newQ.selectedParts === null) delete newQ.selectedParts;
-                    if (structureKind && !this.hasSupportedExamPartStructure(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần là 1 ý chung hoặc có 2/4 câu hỏi con, cùng đáp án riêng cho từng ý.`, `add-e-q-q-${i}`);
+                    if (structureKind && !this.hasSupportedExamPartStructure(newQ)) return this.showExamComposerError(`Câu ${i + 1}: cần là 1 ý chung hoặc có 2/4 câu hỏi con, cùng đáp án riêng cho từng ý.`, `add-${mId}-q-q-${i}`);
                     if (newQ.lesson) {
                         const metadataError = app.data.validateQuestionMetadata(newQ);
-                        if (metadataError) return this.showExamComposerError(`Câu ${i + 1}: ${metadataError}`, `add-e-q-q-${i}`);
+                        if (metadataError) return this.showExamComposerError(`Câu ${i + 1}: ${metadataError}`, `add-${mId}-q-q-${i}`);
                     }
                     const scoringError = app.data.validateQuestionScoring(newQ);
-                    if (scoringError) return this.showExamComposerError(`Câu ${i + 1}: ${scoringError}`, `add-e-q-q-${i}`);
+                    if (scoringError) return this.showExamComposerError(`Câu ${i + 1}: ${scoringError}`, `add-${mId}-q-q-${i}`);
                     eObj.questions.push(newQ);
                     const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
                     if (!exists) {
@@ -11850,7 +11852,7 @@ const app = {
             }
 
             if (eObj.questions.length !== app.game.questionsPerRound) {
-                return this.showExamComposerError('Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.', firstIncompleteQuestion === null ? '' : `add-e-q-q-${firstIncompleteQuestion}`);
+                return this.showExamComposerError(`Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.`, firstIncompleteQuestion === null ? '' : `add-${mId}-q-q-${firstIncompleteQuestion}`);
             }
 
             if (newQuestionsCount > 0) {
