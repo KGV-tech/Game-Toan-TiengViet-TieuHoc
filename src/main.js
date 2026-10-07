@@ -6397,6 +6397,7 @@ const app = {
         },
         getExamComposerQuestionHTML(q, editorQuestion, i) {
              const structureKind = this.getExamQuestionStructureKind(editorQuestion);
+            const hasSub = !!structureKind;
             const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
             const optionsDisplay = hasStructuredOptions || (editorQuestion && editorQuestion.type && editorQuestion.type !== 'Trắc nghiệm' && editorQuestion.type !== 'Kéo thả') ? 'none' : 'block';
             return `
@@ -6433,7 +6434,7 @@ const app = {
                   <div class="exam-form-field">
                      <span aria-hidden="true">&nbsp;</span>
                      <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 1rem; margin: 0; cursor: pointer; color: #bae6fd; user-select: none; height: 38px;">
-                         <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasStructuredOptions ? 'checked' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
+                         <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasSub ? 'checked' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
                          Có câu hỏi con
                      </label>
                   </div>
