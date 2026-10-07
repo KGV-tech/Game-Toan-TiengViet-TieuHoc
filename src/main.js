@@ -6524,6 +6524,7 @@ const app = {
             const newHTML = this.getExamComposerQuestionHTML(newQ, newQ, i);
             card.outerHTML = newHTML;
             this.updateExamQuestionCard(i);
+            this.updateExamTopics();
         },
         getSupportedPartCounts(partCount = 4) {
             return [2, 4].filter(count => count <= Number(partCount));
