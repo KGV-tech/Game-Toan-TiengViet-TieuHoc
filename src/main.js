@@ -6564,14 +6564,6 @@ const app = {
                 } else if (typeVal === 'Kéo thả') {
                     newQ.partAnswerCounts = [1, 1, 1, 1];
                 }
-            } else {
-                if (typeVal === 'Đúng/Sai') {
-                    newQ.statements = [{ text: '', answer: 'Đúng' }];
-                } else if (typeVal === 'So sánh') {
-                    newQ.comparisonRows = [{ left: '', right: '', sign: '=' }];
-                } else if (typeVal === 'Chuỗi Quy luật') {
-                    newQ.sequenceRounds = [{ sequence: '', answer: '' }];
-                }
             }
             
             const newHTML = this.getExamComposerQuestionHTML(newQ, newQ, i);
