@@ -6404,14 +6404,8 @@ const app = {
                      <select id="add-e-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
                   </label>
                   <label class="exam-form-field">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                         <span>Loại câu hỏi</span>
-                         <label style="display: flex; align-items: center; gap: 5px; font-weight: normal; font-size: 0.85em; margin: 0; cursor: pointer; color: #bae6fd;">
-                             <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasStructuredOptions ? 'checked' : ''} style="accent-color: #4ade80;">
-                             Có câu hỏi con
-                         </label>
-                      </div>
-                      <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
+                     <span>Loại câu hỏi</span>
+                     <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
                      <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                      <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                      <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
@@ -6421,6 +6415,13 @@ const app = {
                      <option value="Đối chiếu trùng khớp" ${q && q.type === 'Đối chiếu trùng khớp' ? 'selected' : ''}>Đối chiếu trùng khớp</option>
                      </select>
                   </label>
+                  <div class="exam-form-field">
+                     <span aria-hidden="true">&nbsp;</span>
+                     <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 1rem; margin: 0; cursor: pointer; color: #bae6fd; user-select: none; height: 38px;">
+                         <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasStructuredOptions ? 'checked' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
+                         Có câu hỏi con
+                     </label>
+                  </div>
                   <label class="exam-form-field exam-form-field--full">
                      <span>Nội dung câu</span>
                      <textarea id="add-e-q-q-${i}" placeholder="Nội dung câu hỏi" class="form-input">${q ? q.q : ''}</textarea>
