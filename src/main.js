@@ -6139,7 +6139,7 @@ const app = {
             if (!wrap || wrap.hidden) return { selectedLessons: [], unrestricted: true };
             const inputs = Array.from(wrap.querySelectorAll('.exam-composer__lesson-option input[type="checkbox"]'));
             const selectedLessons = inputs.filter(input => input.checked).map(input => input.value);
-            const unrestricted = selectedLessons.length === 0 || selectedLessons.length === inputs.length;
+            const unrestricted = inputs.length > 0 ? selectedLessons.length === inputs.length : true;
             return { selectedLessons: unrestricted ? [] : selectedLessons, unrestricted };
         },
         getSelectedExamLessons() {
@@ -6158,7 +6158,7 @@ const app = {
                 return;
             }
             const selected = new Set((selectedLessons || []).map(value => this.normalizeAdminLesson(value)).filter(Boolean));
-            const unrestrictedScope = unrestricted || !selected.size;
+            const unrestrictedScope = unrestricted;
             wrap.dataset.selectionMode = unrestrictedScope ? 'all' : 'selected';
             const entries = app.curriculum.getTopicEntries({ classlevel, subject })
                 .filter(entry => !(topics || []).length || topics.includes(entry.topic));
@@ -6253,10 +6253,11 @@ const app = {
                     unrestrictedLessons = selection.unrestricted;
                 }
                 const allowedLessonIds = new Set(this.getExamLessons(clsEl?.value || '', sub, questionTopics).map(lesson => lesson.id));
+                const oldLength = selectedLessons.length;
                 selectedLessons = unrestrictedLessons
                     ? []
                     : selectedLessons.map(value => this.normalizeAdminLesson(value)).filter(value => allowedLessonIds.has(value));
-                if (!selectedLessons.length) unrestrictedLessons = true;
+                if (oldLength > 0 && selectedLessons.length === 0) unrestrictedLessons = true;
                 delete lessonWrap.dataset.selected;
             }
             this.renderExamLessonFilters(clsEl?.value || '', sub, questionTopics, selectedLessons, unrestrictedLessons);
@@ -11563,7 +11564,11 @@ const app = {
             const period = this.normalizeComposerPeriod(document.getElementById('add-e-period').value);
             const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
-            const lessonFilters = this.getSelectedExamLessons();
+            const selectionState = this.getExamLessonSelectionState();
+            if (document.getElementById('add-e-lessons') && !document.getElementById('add-e-lessons').hidden && !selectionState.unrestricted && !selectionState.selectedLessons.length) {
+                return alert('Hãy chọn ít nhất một bài học, hoặc áp dụng toàn bộ bài học.');
+            }
+            const lessonFilters = selectionState.selectedLessons;
             const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
             const requiresSupportedPartStructure = same(classlevel, 'Lớp 4') && same(subject, 'Toán');
             const eligible = item => {
