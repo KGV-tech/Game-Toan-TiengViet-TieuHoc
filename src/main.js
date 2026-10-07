@@ -5948,9 +5948,6 @@ const app = {
             }).join('');
         },
         syncComposerContextUI() {
-            const state = this.composerState;
-            const moduleSummary = document.getElementById('admin-compose-module-summary');
-            if (moduleSummary) moduleSummary.innerHTML = `<span>${app.data.sanitizeHTML(state.classlevel)}</span><span>${app.data.sanitizeHTML(state.subject)}</span><span>${app.data.sanitizeHTML(state.period)}</span>`;
             this.syncQuickstartUI();
         },
         syncQuickstartUI() {
@@ -11454,7 +11451,7 @@ const app = {
                 const labelCap = isW ? 'Phiếu' : 'Đề';
                 const fullLabel = isW ? 'phiếu học tập' : 'đề kiểm tra';
                 const fullLabelCap = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
-                let e = this.examComposerDraft || (editIdx !== undefined ? app.data.exams[editIdx] : null);
+                let e = (isW ? this.worksheetComposerDraft : this.examComposerDraft) || (editIdx !== undefined ? (isW ? app.data.worksheets[editIdx] : app.data.exams[editIdx]) : null);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
                 const selectedClasslevel = e?.classlevel || this.composerState.classlevel || 'Lớp 4';
