@@ -45,7 +45,7 @@ test('Admin mở Soạn Đề với quick start, thẻ thống kê và ngữ c�
   await expect(page.locator('#admin-compose-context')).toHaveCount(0);
   await expect(page.locator('#admin-compose-class')).toHaveCount(0);
   await expect(page.locator('#admin-compose-continue')).toHaveCount(0);
-  await expect(page.locator('.admin-compose-quickstart-card')).toHaveCount(3);
+  await expect(page.locator('.admin-compose-quickstart-card')).toHaveCount(4);
   await expect(page.getByRole('button', { name: /Soạn Cấu hình Câu hỏi/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn câu hỏi/ }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Soạn Đề/ }).first()).toBeVisible();

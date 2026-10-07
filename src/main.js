@@ -1766,9 +1766,10 @@ const app = {
                 // Read-only collections have no dependency on each other. Start
                 // both groups after the profile is approved, then apply settings
                 // before hydrating question/quest metadata as before.
-                const [[exams, settingsData], roleData] = await Promise.all([
+                const [[exams, worksheets, settingsData], roleData] = await Promise.all([
                   Promise.all([
                     app.data.fetchAllFromSupabase('game_exams'),
+                    app.data.fetchAllFromSupabase('game_worksheets'),
                     app.data.fetchAllFromSupabase('game_settings'),
                     app.data.refreshPetInventory()
                   ]),
@@ -5749,6 +5750,8 @@ const app = {
         teamCompetitionDraft: null,
         teamCompetitionBoardTimer: null,
         examSavePending: false,
+        worksheetSavePending: false,
+        worksheetComposerDraft: null,
         studentRosterModePending: false,
         studentRosterFilters: { search: '', classlevel: '', className: '', gender: '' },
         composerState: {
@@ -5938,7 +5941,7 @@ const app = {
             });
         },
         renderComposerModule(module = 'exams') {
-            const allowed = ['templates', 'questions', 'exams'];
+            const allowed = ['templates', 'questions', 'exams', 'worksheets'];
             const selectedModule = allowed.includes(module) ? module : 'exams';
             this.closeTemplatePreview();
             this.composerState.module = selectedModule;
@@ -5956,7 +5959,7 @@ const app = {
                 box.innerHTML = '';
                 if (selectedModule === 'templates') this.renderTemplates(box);
                 else if (selectedModule === 'questions') this.renderQuestions(box);
-                else this.renderExams(box);
+                else this.renderExams(box, selectedModule === "worksheets");
             }
             this.renderComposerCards();
             this.syncComposerContextUI();
@@ -5973,7 +5976,7 @@ const app = {
         },
         openComposer(module = 'exams') {
             if (!this.isAdminUser()) return false;
-            const allowed = ['templates', 'questions', 'exams'];
+            const allowed = ['templates', 'questions', 'exams', 'worksheets'];
             this.composerState.module = allowed.includes(module) ? module : 'exams';
             const treasureModal = document.getElementById('treasure-modal');
             if (treasureModal) {
@@ -6135,7 +6138,9 @@ const app = {
                 .flatMap(entry => entry.lessons);
         },
         getExamLessonSelectionState() {
-            const wrap = document.getElementById('add-e-lessons');
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const wrap = document.getElementById(`add-${mId}-lessons`);
             if (!wrap || wrap.hidden) return { selectedLessons: [], unrestricted: true };
             const inputs = Array.from(wrap.querySelectorAll('.exam-composer__lesson-option input[type="checkbox"]'));
             const selectedLessons = inputs.filter(input => input.checked).map(input => input.value);
@@ -6174,11 +6179,13 @@ const app = {
                 : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>'}`;
         },
         updateExamQuestionLesson(index, selectedLesson = '') {
-            const lessonEl = document.getElementById(`add-e-q-lesson-${index}`);
-            const topicEl = document.getElementById(`add-e-q-topic-${index}`);
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const lessonEl = document.getElementById(`add-${mId}-q-lesson-${index}`);
+            const topicEl = document.getElementById(`add-${mId}-q-topic-${index}`);
             if (!lessonEl || !topicEl) return;
-            const classlevel = document.getElementById('add-e-class')?.value || '';
-            const subject = document.getElementById('add-e-sub')?.value || '';
+            const classlevel = document.getElementById(`add-${mId}-class`)?.value || '';
+            const subject = document.getElementById(`add-${mId}-sub`)?.value || '';
             const topic = topicEl.value || topicEl.getAttribute('data-selected') || '';
             const supported = this.supportsAdminLessons(classlevel, subject);
             const selected = selectedLesson || lessonEl.value || lessonEl.dataset.selected || '';
@@ -6216,18 +6223,20 @@ const app = {
             this.updateQuestionLessonDropdown();
         },
         updateExamTopics() {
-            const subEl = document.getElementById('add-e-sub');
-            const clsEl = document.getElementById('add-e-class');
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const subEl = document.getElementById(`add-${mId}-sub`);
+            const clsEl = document.getElementById(`add-${mId}-class`);
             if (!subEl) return;
             const sub = subEl.value;
             const clsNum = clsEl ? clsEl.value.replace('Lớp ', '').trim() : '5';
             const topicDict = app.constants.topics[clsNum] || { math: { hk1: [], hk2: [] }, vietnamese: { hk1: [], hk2: [] } };
             const topicsObj = sub === 'Toán' ? topicDict.math : (sub === 'Tiếng Việt' ? topicDict.vietnamese : { hk1: [], hk2: [] });
-            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period')?.value || 'Học Kỳ 1');
+            const period = this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`)?.value || 'Học Kỳ 1');
             const topics = period === 'Cả Năm'
                 ? [...(topicsObj.hk1 || []), ...(topicsObj.hk2 || [])]
                 : [...((period === 'Học Kỳ 2' ? topicsObj.hk2 : topicsObj.hk1) || [])];
-            const topicWrap = document.getElementById('add-e-topics');
+            const topicWrap = document.getElementById(`add-${mId}-topics`);
             let selectedTopics = [];
             if (topicWrap) {
                 try { selectedTopics = JSON.parse(topicWrap.dataset.selected || '[]'); } catch (_) { selectedTopics = []; }
@@ -6239,7 +6248,7 @@ const app = {
                     : '<span class="exam-composer__topics-empty">Chưa có chủ đề cho lựa chọn này.</span>';
             }
             const questionTopics = selectedTopics.length ? selectedTopics : topics;
-            const lessonWrap = document.getElementById('add-e-lessons');
+            const lessonWrap = document.getElementById(`add-${mId}-lessons`);
             let selectedLessons = [];
             let unrestrictedLessons = true;
             if (lessonWrap) {
@@ -6264,7 +6273,7 @@ const app = {
 
             let i = 0;
             while (true) {
-                const topicEl = document.getElementById(`add-e-q-topic-${i}`);
+                const topicEl = document.getElementById(`add-${mId}-q-topic-${i}`);
                 if (!topicEl) break;
                 const selected = topicEl.getAttribute('data-selected') || topicEl.value;
                 topicEl.innerHTML = questionTopics.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
@@ -6283,11 +6292,13 @@ const app = {
             });
         },
         updateExamQuestionCard(index) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
             const card = document.querySelector(`.exam-question-card[data-question-index="${index}"]`);
             if (!card) return;
-            const questionText = document.getElementById(`add-e-q-q-${index}`)?.value.trim() || '';
+            const questionText = document.getElementById(`add-${mId}-q-q-${index}`)?.value.trim() || '';
             const answerText = [
-                document.getElementById(`add-e-q-ans-${index}`)?.value,
+                document.getElementById(`add-${mId}-q-ans-${index}`)?.value,
                 ...Array.from(card.querySelectorAll('input[id*="-opt"], input[id*="-match-"]')).map(input => input.value),
                 ...Array.from(card.querySelectorAll('input, textarea'))
                     .filter(input => input.type !== 'checkbox' && !input.id.includes('-structured-label-'))
@@ -6320,7 +6331,9 @@ const app = {
             if (sectionCount) sectionCount.innerHTML = `<strong>${count}</strong> / ${total} câu đã có`;
         },
         clearExamComposerError() {
-            const error = document.getElementById('add-e-form-error');
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const error = document.getElementById(`add-${mId}-form-error`);
             if (error) {
                 error.hidden = true;
                 error.textContent = '';
@@ -6331,7 +6344,9 @@ const app = {
             });
         },
         showExamComposerError(message, fieldId = '') {
-            const error = document.getElementById('add-e-form-error');
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const error = document.getElementById(`add-${mId}-form-error`);
             if (!error) return alert(message);
             this.clearExamComposerError();
             error.textContent = message;
@@ -6396,6 +6411,8 @@ const app = {
             }
         },
         getExamComposerQuestionHTML(q, editorQuestion, i) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
              const structureKind = this.getExamQuestionStructureKind(editorQuestion);
             const hasSub = !!structureKind;
             const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
@@ -6412,16 +6429,16 @@ const app = {
                <div class="exam-question-card__fields">
                   <label class="exam-form-field">
                      <span>Chủ đề</span>
-                     <select id="add-e-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateExamQuestionLesson(${i})">
+                     <select id="add-${mId}-q-topic-${i}" class="form-input" data-selected="${q ? q.topic : ''}" onchange="app.admin.updateExamQuestionLesson(${i})">
                      </select>
                   </label>
                   <label class="exam-form-field" hidden>
                      <span>Bài học</span>
-                     <select id="add-e-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
+                     <select id="add-${mId}-q-lesson-${i}" class="form-input" data-selected="${app.data.sanitizeHTML(q?.lesson || '')}"></select>
                   </label>
                   <label class="exam-form-field">
                      <span>Loại câu hỏi</span>
-                     <select id="add-e-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
+                     <select id="add-${mId}-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
                      <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                      <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                      <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
@@ -6434,7 +6451,7 @@ const app = {
                   <div class="exam-form-field">
                      <span aria-hidden="true">&nbsp;</span>
                      <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 1rem; margin: 0; cursor: pointer; color: #bae6fd; user-select: none; height: 38px;">
-                         <input type="checkbox" id="add-e-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasSub ? 'checked' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
+                         <input type="checkbox" id="add-${mId}-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasSub ? 'checked' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
                          Có câu hỏi con
                      </label>
                   </div>
@@ -6462,27 +6479,27 @@ const app = {
                       return `
                       <label class="exam-form-field exam-form-field--full">
                          <span>Nội dung câu ${qHint ? `<em>— ${qHint}</em>` : ''}</span>
-                         <textarea id="add-e-q-q-${i}" placeholder="${qPlaceholder}" class="form-input">${q ? q.q : ''}</textarea>
+                         <textarea id="add-${mId}-q-q-${i}" placeholder="${qPlaceholder}" class="form-input">${q ? q.q : ''}</textarea>
                       </label>`;
                   })()}
 
                   ${this.renderExamQuestionStructure(editorQuestion, i)}
 
-                  <fieldset id="add-e-q-opts-wrapper-${i}" class="exam-question-card__conditional exam-question-card__options" style="display: ${optionsDisplay}"${hasStructuredOptions ? ' aria-hidden="true"' : ''}>
+                  <fieldset id="add-${mId}-q-opts-wrapper-${i}" class="exam-question-card__conditional exam-question-card__options" style="display: ${optionsDisplay}"${hasStructuredOptions ? ' aria-hidden="true"' : ''}>
                      <legend>Các lựa chọn</legend>
                      <div class="exam-question-card__option-grid">
-                        <label class="exam-question-card__option-field"><span>Lựa chọn 1</span><input type="text" id="add-e-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
-                        <label class="exam-question-card__option-field"><span>Lựa chọn 2</span><input type="text" id="add-e-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
-                        <label class="exam-question-card__option-field"><span>Lựa chọn 3</span><input type="text" id="add-e-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}"></label>
-                        <label class="exam-question-card__option-field"><span>Lựa chọn 4</span><input type="text" id="add-e-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 1</span><input type="text" id="add-${mId}-q-opt1-${i}" placeholder="Lựa chọn 1" class="form-input" value="${q && q.options && q.options[0] && q.type !== 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 2</span><input type="text" id="add-${mId}-q-opt2-${i}" placeholder="Lựa chọn 2" class="form-input" value="${q && q.options && q.options[1] && q.type !== 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 3</span><input type="text" id="add-${mId}-q-opt3-${i}" placeholder="Lựa chọn 3" class="form-input" value="${q && q.options && q.options[2] && q.type !== 'Đối chiếu trùng khớp' ? q.options[2] : ''}"></label>
+                        <label class="exam-question-card__option-field"><span>Lựa chọn 4</span><input type="text" id="add-${mId}-q-opt4-${i}" placeholder="Lựa chọn 4" class="form-input" value="${q && q.options && q.options[3] && q.type !== 'Đối chiếu trùng khớp' ? q.options[3] : ''}"></label>
                      </div>
                   </fieldset>
 
-                  <fieldset id="add-e-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
+                  <fieldset id="add-${mId}-q-match-wrapper-${i}" class="exam-question-card__conditional exam-question-card__match" style="display: ${q && q.type === 'Đối chiếu trùng khớp' ? 'block' : 'none'}">
                      <legend>Nội dung hai cột đối chiếu <span style="font-size: 0.85em; font-weight: normal; color: #94a3b8; font-style: italic;">— Ngăn cách bằng dấu phẩy (,), mỗi cụm từ sẽ hiện thành 1 ô</span></legend>
                      <div class="exam-question-card__option-grid">
-                        <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-e-q-match-left-${i}" placeholder="VD: Mèo, Chó (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
-                        <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-e-q-match-right-${i}" placeholder="VD: Meo, Gâu (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
+                        <label class="exam-question-card__option-field exam-question-card__option-field--left"><span>Cột trái</span><input type="text" id="add-${mId}-q-match-left-${i}" placeholder="VD: Mèo, Chó (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[0] && q.type === 'Đối chiếu trùng khớp' ? q.options[0] : ''}"></label>
+                        <label class="exam-question-card__option-field exam-question-card__option-field--right"><span>Cột phải</span><input type="text" id="add-${mId}-q-match-right-${i}" placeholder="VD: Meo, Gâu (sẽ tạo thành 2 ô)" class="form-input" value="${q && q.options && q.options[1] && q.type === 'Đối chiếu trùng khớp' ? q.options[1] : ''}"></label>
                      </div>
                   </fieldset>
 
@@ -6499,33 +6516,35 @@ const app = {
                              ansHint = 'Nhập theo cặp (Trái:Phải), cách nhau bằng dấu phẩy';
                              ansPlaceholder = 'VD: Mèo:Meo meo, Chó:Gâu gâu';
                          }
-                         return `<label class="exam-form-field"><span>Đáp án đúng ${ansHint ? `<em>— ${ansHint}</em>` : ''}</span><input type="text" id="add-e-q-ans-${i}" placeholder="${ansPlaceholder}" class="form-input" value="${q ? app.data.sanitizeHTML(q.ans) : ''}"></label>`;
+                         return `<label class="exam-form-field"><span>Đáp án đúng ${ansHint ? `<em>— ${ansHint}</em>` : ''}</span><input type="text" id="add-${mId}-q-ans-${i}" placeholder="${ansPlaceholder}" class="form-input" value="${q ? app.data.sanitizeHTML(q.ans) : ''}"></label>`;
                      })()}
-                     <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-e-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
+                     <label class="exam-form-field"><span>Lời giải chi tiết <em>(tùy chọn)</em></span><textarea id="add-${mId}-q-exp-${i}" placeholder="Giải thích ngắn gọn cho học sinh" class="form-input">${q ? q.explanation || '' : ''}</textarea></label>
                   </div>
                </div>
             </article>
                   `;
         },
         changeComposerQuestionType(i) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
             const card = document.querySelector(`.exam-question-card[data-question-index="${i}"]`);
             if (!card) return;
-            const typeVal = document.getElementById(`add-e-q-type-${i}`).value;
-            const hasSub = document.getElementById(`add-e-q-has-sub-${i}`)?.checked;
+            const typeVal = document.getElementById(`add-${mId}-q-type-${i}`).value;
+            const hasSub = document.getElementById(`add-${mId}-q-has-sub-${i}`)?.checked;
             
-            const qText = document.getElementById(`add-e-q-q-${i}`)?.value || '';
-            const expText = document.getElementById(`add-e-q-exp-${i}`)?.value || '';
-            const topicVal = document.getElementById(`add-e-q-topic-${i}`)?.value || '';
-            const lessonVal = document.getElementById(`add-e-q-lesson-${i}`)?.value || '';
-            const ansText = document.getElementById(`add-e-q-ans-${i}`)?.value || '';
+            const qText = document.getElementById(`add-${mId}-q-q-${i}`)?.value || '';
+            const expText = document.getElementById(`add-${mId}-q-exp-${i}`)?.value || '';
+            const topicVal = document.getElementById(`add-${mId}-q-topic-${i}`)?.value || '';
+            const lessonVal = document.getElementById(`add-${mId}-q-lesson-${i}`)?.value || '';
+            const ansText = document.getElementById(`add-${mId}-q-ans-${i}`)?.value || '';
             const opts = [];
             for (let j = 1; j <= 4; j++) {
-                const opt = document.getElementById(`add-e-q-opt${j}-${i}`);
+                const opt = document.getElementById(`add-${mId}-q-opt${j}-${i}`);
                 if (opt) opts.push(opt.value);
             }
             if (typeVal === 'Đối chiếu trùng khớp') {
-                const left = document.getElementById(`add-e-q-match-left-${i}`);
-                const right = document.getElementById(`add-e-q-match-right-${i}`);
+                const left = document.getElementById(`add-${mId}-q-match-left-${i}`);
+                const right = document.getElementById(`add-${mId}-q-match-right-${i}`);
                 if (left) opts[0] = left.value;
                 if (right) opts[1] = right.value;
             }
@@ -6594,13 +6613,15 @@ const app = {
                 : { selectedParts: selectedIndexes.map((_, index) => index) };
         },
         renderStructuredPartSelection(questionIndex, partCount, selectedIndexes) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
             const supportedCounts = this.getSupportedPartCounts(partCount);
             const selectedCount = selectedIndexes.length;
             const pointText = selectedCount ? (1 / selectedCount).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '—';
             return `<div class="exam-structured-selection" data-structured-selection="${questionIndex}" data-part-total="${partCount}">
                 <div class="exam-structured-selection__copy"><strong>Chọn câu con đưa vào đề</strong><span>Tick trước từng ý. Mỗi điểm được chia đều, nên chỉ chọn ${supportedCounts.join(', ')} ý.</span></div>
-                <label class="exam-structured-selection__count"><span>Số câu con</span><select id="add-e-q-structured-part-count-${questionIndex}" class="form-input" aria-label="Số câu con của câu hỏi ${questionIndex + 1}" onchange="app.admin.setStructuredPartCount(${questionIndex}, this.value)">${supportedCounts.map(count => `<option value="${count}" ${count === selectedCount ? 'selected' : ''}>${count} ý</option>`).join('')}</select></label>
-                <div id="add-e-q-structured-selection-status-${questionIndex}" class="exam-structured-selection__status" role="status" aria-live="polite">${selectedCount}/${partCount} ý đang chọn · ${pointText} điểm/ý</div>
+                <label class="exam-structured-selection__count"><span>Số câu con</span><select id="add-${mId}-q-structured-part-count-${questionIndex}" class="form-input" aria-label="Số câu con của câu hỏi ${questionIndex + 1}" onchange="app.admin.setStructuredPartCount(${questionIndex}, this.value)">${supportedCounts.map(count => `<option value="${count}" ${count === selectedCount ? 'selected' : ''}>${count} ý</option>`).join('')}</select></label>
+                <div id="add-${mId}-q-structured-selection-status-${questionIndex}" class="exam-structured-selection__status" role="status" aria-live="polite">${selectedCount}/${partCount} ý đang chọn · ${pointText} điểm/ý</div>
             </div>`;
         },
         getStructuredSelectionRoot(questionIndex) {
@@ -6810,6 +6831,8 @@ const app = {
             return !app.data.validateQuestionScoring(question);
         },
         renderExamQuestionStructure(question, index) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
             const kind = this.getExamQuestionStructureKind(question);
             if (!kind) return '';
             const esc = value => app.data.sanitizeHTML(value ?? '');
@@ -6872,15 +6895,15 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nhãn ý</span>
-                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                    <input type="text" id="add-${mId}-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
-                                    <textarea id="add-e-q-structured-text-${index}-${partIndex}" class="form-input" placeholder="Nhập nhận định">${esc(part?.text || '')}</textarea>
+                                    <textarea id="add-${mId}-q-structured-text-${index}-${partIndex}" class="form-input" placeholder="Nhập nhận định">${esc(part?.text || '')}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Đáp án ý ${esc(label)}</span>
-                                    <select id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input">
+                                    <select id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input">
                                         <option value="Đúng" ${currentAnswer === 'đúng' ? 'selected' : ''}>Đúng</option>
                                         <option value="Sai" ${currentAnswer === 'sai' ? 'selected' : ''}>Sai</option>
                                     </select>
@@ -6905,21 +6928,21 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
-                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                    <input type="text" id="add-${mId}-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung câu con</span>
-                                    <textarea id="add-e-q-structured-prompt-${index}-${partIndex}" class="form-input" placeholder="Nhập nội dung câu con">${esc(part?.prompt ?? part?.text ?? '')}</textarea>
+                                    <textarea id="add-${mId}-q-structured-prompt-${index}-${partIndex}" class="form-input" placeholder="Nhập nội dung câu con">${esc(part?.prompt ?? part?.text ?? '')}</textarea>
                                 </label>
                                 <div class="exam-structured-options">
                                     <span class="exam-structured-options__title">Các lựa chọn của ý này</span>
                                     <div class="exam-structured-options__grid">
-                                        ${Array.from({ length: optionCount }, (_, optionIndex) => `<label class="exam-structured-option-field"><span>Lựa chọn ${optionIndex + 1}</span><input type="text" id="add-e-q-structured-option-${index}-${partIndex}-${optionIndex}" class="form-input exam-structured-option" value="${esc(options[optionIndex] ?? '')}" placeholder="Lựa chọn ${optionIndex + 1}"></label>`).join('')}
+                                        ${Array.from({ length: optionCount }, (_, optionIndex) => `<label class="exam-structured-option-field"><span>Lựa chọn ${optionIndex + 1}</span><input type="text" id="add-${mId}-q-structured-option-${index}-${partIndex}-${optionIndex}" class="form-input exam-structured-option" value="${esc(options[optionIndex] ?? '')}" placeholder="Lựa chọn ${optionIndex + 1}"></label>`).join('')}
                                     </div>
                                 </div>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Đáp án đúng của ý</span>
-                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(part?.answer ?? part?.ans ?? '')}" placeholder="Nhập đáp án đúng">
+                                    <input type="text" id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(part?.answer ?? part?.ans ?? '')}" placeholder="Nhập đáp án đúng">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -6948,11 +6971,11 @@ const app = {
                                 <div class="exam-structured-visual" aria-label="Hình minh họa ý ${esc(label)}">${visual || '<span class="exam-structured-visual__empty">Chưa có hình minh họa</span>'}</div>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
-                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                    <input type="text" id="add-${mId}-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Đáp án ý ${esc(label)}</span>
-                                    <select id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input">
+                                    <select id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input">
                                         ${options.map(option => `<option value="${esc(option)}" ${option === currentAnswer ? 'selected' : ''}>${esc(option)}</option>`).join('')}
                                     </select>
                                 </label>
@@ -6977,15 +7000,15 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Nhãn ý</span>
-                                    <input type="text" id="add-e-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
+                                    <input type="text" id="add-${mId}-q-structured-label-${index}-${partIndex}" class="form-input" value="${esc(label)}">
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Loại góc</span>
-                                    <input type="text" id="add-e-q-structured-text-${index}-${partIndex}" class="form-input" value="${esc(part?.text || '')}" placeholder="Ví dụ: góc nhọn">
+                                    <input type="text" id="add-${mId}-q-structured-text-${index}-${partIndex}" class="form-input" value="${esc(part?.text || '')}" placeholder="Ví dụ: góc nhọn">
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Số lượng đúng của ý ${esc(label)}</span>
-                                    <input type="text" inputmode="numeric" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập số lượng">
+                                    <input type="text" inputmode="numeric" id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập số lượng">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -7015,11 +7038,11 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung dãy ${esc(label)} <em>— Dùng ___ (3 dấu gạch dưới) tại vị trí cần điền</em></span>
-                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Ví dụ: 12, ___, 22, ___, 32">${esc(display)}</textarea>
+                                    <textarea id="add-${mId}-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Ví dụ: 12, ___, 22, ___, 32">${esc(display)}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Đáp án của ý ${esc(label)}</span>
-                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(roundAnswers.join(', '))}" placeholder="Nhập đáp án; nhiều ô cách nhau bằng dấu phẩy">
+                                    <input type="text" id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(roundAnswers.join(', '))}" placeholder="Nhập đáp án; nhiều ô cách nhau bằng dấu phẩy">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -7040,11 +7063,11 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)} ${question?.type === 'Điền khuyết' ? '<em>— Dùng ___ (3 dấu gạch dưới) để làm chỗ trống</em>' : (question?.type === 'Kéo thả' ? '<em>— Dùng ___ (3 dấu gạch dưới) tại chỗ cần kéo thả</em>' : '')}</span>
-                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="${question?.type === 'Kéo thả' ? 'VD: 2 + 3 = ___' : 'VD: Kết quả của 5 + ___ = 10'}">${esc(part?.display || '')}</textarea>
+                                    <textarea id="add-${mId}-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="${question?.type === 'Kéo thả' ? 'VD: 2 + 3 = ___' : 'VD: Kết quả của 5 + ___ = 10'}">${esc(part?.display || '')}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Đáp án ý ${esc(label)} ${['Điền khuyết', 'Kéo thả'].includes(question?.type) ? '<em>— Nếu có nhiều khoảng trống, cách nhau bằng dấu phẩy (,)</em>' : ''}</span>
-                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập đáp án đúng">
+                                    <input type="text" id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answers[partIndex] || '')}" placeholder="Nhập đáp án đúng">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -7069,11 +7092,11 @@ const app = {
                                 ${partHeading(label, partIndex)}
                                 <label class="exam-form-field exam-structured-part__field exam-structured-part__field--full">
                                     <span>Nội dung ý ${esc(label)}</span>
-                                    <textarea id="add-e-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Nhập phép tính hoặc nội dung ý">${esc(display)}</textarea>
+                                    <textarea id="add-${mId}-q-structured-display-${index}-${partIndex}" class="form-input" placeholder="Nhập phép tính hoặc nội dung ý">${esc(display)}</textarea>
                                 </label>
                                 <label class="exam-form-field exam-structured-part__field">
                                     <span>Đáp án ý ${esc(label)}${answerCount > 1 ? ' (cách nhau bằng dấu phẩy)' : ''}</span>
-                                    <input type="text" id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answerValue)}" placeholder="${answerCount > 1 ? 'Nhập các đáp án theo thứ tự' : 'Nhập đáp án đúng'}">
+                                    <input type="text" id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input" value="${esc(answerValue)}" placeholder="${answerCount > 1 ? 'Nhập các đáp án theo thứ tự' : 'Nhập đáp án đúng'}">
                                 </label>
                             </article>`;
                         }).join('')}
@@ -7093,15 +7116,15 @@ const app = {
                             ${partHeading(label, partIndex)}
                             <label class="exam-form-field exam-structured-part__field">
                                 <span>Vế trái</span>
-                                <input type="text" id="add-e-q-structured-left-${index}-${partIndex}" class="form-input" value="${esc(part?.leftText ?? '')}">
+                                <input type="text" id="add-${mId}-q-structured-left-${index}-${partIndex}" class="form-input" value="${esc(part?.leftText ?? '')}">
                             </label>
                             <label class="exam-form-field exam-structured-part__field">
                                 <span>Vế phải</span>
-                                <input type="text" id="add-e-q-structured-right-${index}-${partIndex}" class="form-input" value="${esc(part?.rightText ?? '')}">
+                                <input type="text" id="add-${mId}-q-structured-right-${index}-${partIndex}" class="form-input" value="${esc(part?.rightText ?? '')}">
                             </label>
                             <label class="exam-form-field exam-structured-part__field">
                                 <span>Dấu đúng</span>
-                                <select id="add-e-q-structured-answer-${index}-${partIndex}" class="form-input">
+                                <select id="add-${mId}-q-structured-answer-${index}-${partIndex}" class="form-input">
                                     <option value=">" ${answer === '>' ? 'selected' : ''}>&gt;</option>
                                     <option value="&lt;" ${answer === '<' ? 'selected' : ''}>&lt;</option>
                                     <option value="=" ${answer === '=' ? 'selected' : ''}>=</option>
@@ -7113,6 +7136,8 @@ const app = {
             </fieldset>`;
         },
         readExamQuestionStructure(question, index) {
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
             const kind = this.getExamQuestionStructureKind(question);
             if (!kind) return {};
             const valueOf = id => document.getElementById(id)?.value.trim() ?? '';
@@ -7133,9 +7158,9 @@ const app = {
             if (kind === 'statements') {
                 const statements = question.statements.map((part, partIndex) => ({
                     ...part,
-                    label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex, true),
-                    text: valueOf(`add-e-q-structured-text-${index}-${partIndex}`),
-                    answer: valueOf(`add-e-q-structured-answer-${index}-${partIndex}`)
+                    label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex, true),
+                    text: valueOf(`add-${mId}-q-structured-text-${index}-${partIndex}`),
+                    answer: valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`)
                 }));
                 const activeStatements = selectParts(statements);
                 return { statements: activeStatements, partAnswerCounts: selectedPartCounts, ans: activeStatements.map(part => part.answer).filter(Boolean).join(', '), ...selectionPatch };
@@ -7143,13 +7168,13 @@ const app = {
 
             if (kind === 'subquestions') {
                 const subquestions = question.subquestions.map((part, partIndex) => {
-                    const options = Array.from({ length: Math.max(4, Array.isArray(part?.options) ? part.options.length : 0) }, (_, optionIndex) => valueOf(`add-e-q-structured-option-${index}-${partIndex}-${optionIndex}`)).filter(Boolean);
+                    const options = Array.from({ length: Math.max(4, Array.isArray(part?.options) ? part.options.length : 0) }, (_, optionIndex) => valueOf(`add-${mId}-q-structured-option-${index}-${partIndex}-${optionIndex}`)).filter(Boolean);
                     return {
                         ...part,
-                        label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
-                        prompt: valueOf(`add-e-q-structured-prompt-${index}-${partIndex}`),
+                        label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                        prompt: valueOf(`add-${mId}-q-structured-prompt-${index}-${partIndex}`),
                         options,
-                        answer: valueOf(`add-e-q-structured-answer-${index}-${partIndex}`)
+                        answer: valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`)
                     };
                 });
                 const activeSubquestions = selectParts(subquestions);
@@ -7161,20 +7186,20 @@ const app = {
                 let answerOffset = 0;
                 const sequenceRounds = question.sequenceRounds.slice(0, 4).map((part, partIndex) => {
                     const answerCount = Number(question.partAnswerCounts?.[partIndex]) || part?.blankIndexes?.length || 1;
-                    const answerText = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
+                    const answerText = valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`);
                     const answers = splitAnswers(answerText || originalAnswers.slice(answerOffset, answerOffset + answerCount).join(', '));
                     answerOffset += answerCount;
                     return {
                         ...part,
-                        label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
-                        display: valueOf(`add-e-q-structured-display-${index}-${partIndex}`) || part.display || '',
+                        label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                        display: valueOf(`add-${mId}-q-structured-display-${index}-${partIndex}`) || part.display || '',
                         answers
                     };
                 });
                 const fullPartAnswerCounts = sequenceRounds.map((part, partIndex) => part.answers.length || sourcePartAnswerCounts[partIndex] || 1);
                 const activeSequenceRounds = selectParts(sequenceRounds);
                 const partAnswerCounts = selectedPartIndexes.map(partIndex => fullPartAnswerCounts[partIndex]);
-                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const promptPrefix = valueOf(`add-${mId}-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
                 const q = [promptPrefix, activeSequenceRounds.map(part => `${part.label || defaultLabel(0)}) ${part.display}`).join('<br>')]
                     .filter(Boolean)
                     .join('<br>');
@@ -7183,11 +7208,11 @@ const app = {
 
             if (kind === 'answerParts') {
                 const parts = Array.from({ length: 4 }, (_, partIndex) => ({
-                    label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || defaultLabel(partIndex),
-                    display: valueOf(`add-e-q-structured-display-${index}-${partIndex}`),
-                    answer: valueOf(`add-e-q-structured-answer-${index}-${partIndex}`)
+                    label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || defaultLabel(partIndex),
+                    display: valueOf(`add-${mId}-q-structured-display-${index}-${partIndex}`),
+                    answer: valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`)
                 }));
-                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const promptPrefix = valueOf(`add-${mId}-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
                 const activeParts = selectParts(parts);
                 const q = [promptPrefix, activeParts.map(part => `${part.label}) ${part.display}`).join('<br>')]
                     .filter(Boolean)
@@ -7197,10 +7222,10 @@ const app = {
 
             if (kind === 'angleItems') {
                 const angleItems = question.angleItems.map((part, partIndex) => {
-                    const answer = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`) || part.type || part.answer || '';
+                    const answer = valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`) || part.type || part.answer || '';
                     const nextPart = {
                         ...part,
-                        label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                        label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
                         type: answer
                     };
                     if (Object.prototype.hasOwnProperty.call(part, 'answer')) nextPart.answer = answer;
@@ -7214,10 +7239,10 @@ const app = {
                 const originalAnswers = String(question.ans || '').split(/[|,]/).map(value => value.trim());
                 const angleCountRows = question.angleCountRows.map((part, partIndex) => ({
                     ...part,
-                    label: valueOf(`add-e-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
-                    text: valueOf(`add-e-q-structured-text-${index}-${partIndex}`) || part.text || ''
+                    label: valueOf(`add-${mId}-q-structured-label-${index}-${partIndex}`) || part.label || defaultLabel(partIndex),
+                    text: valueOf(`add-${mId}-q-structured-text-${index}-${partIndex}`) || part.text || ''
                 }));
-                const answers = question.angleCountRows.map((_, partIndex) => valueOf(`add-e-q-structured-answer-${index}-${partIndex}`) || originalAnswers[partIndex] || '');
+                const answers = question.angleCountRows.map((_, partIndex) => valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`) || originalAnswers[partIndex] || '');
                 const activeAngleCountRows = selectParts(angleCountRows);
                 return { angleCountRows: activeAngleCountRows, partAnswerCounts: selectedPartCounts, ans: selectedPartIndexes.map(partIndex => answers[partIndex]).filter(Boolean).join(', '), ...selectionPatch };
             }
@@ -7225,8 +7250,8 @@ const app = {
             if (kind === 'practiceRows') {
                 const sourceRows = question.practiceRows || question.subquestions || [];
                 const practiceRows = sourceRows.map((part, partIndex) => {
-                    const display = valueOf(`add-e-q-structured-display-${index}-${partIndex}`);
-                    const answerText = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
+                    const display = valueOf(`add-${mId}-q-structured-display-${index}-${partIndex}`);
+                    const answerText = valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`);
                     const nextPart = {
                         ...part,
                         label: part.label || defaultLabel(partIndex),
@@ -7244,7 +7269,7 @@ const app = {
                 const activePracticeRows = selectParts(practiceRows);
                 const activePartAnswerCounts = selectedPartIndexes.map(partIndex => answersByPart[partIndex].length || sourcePartAnswerCounts[partIndex] || 1);
                 const ans = selectedPartIndexes.flatMap(partIndex => answersByPart[partIndex]).filter(Boolean).join(', ');
-                const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+                const promptPrefix = valueOf(`add-${mId}-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
                 const q = [promptPrefix, activePracticeRows.map(part => `${part.label || defaultLabel(0)}) ${part.expression ?? part.display ?? part.text ?? part.prompt ?? ''}`).join('<br>')]
                     .filter(Boolean)
                     .join('<br>');
@@ -7252,13 +7277,13 @@ const app = {
             }
 
             const comparisonRows = question.comparisonRows.map((part, partIndex) => {
-                const leftText = valueOf(`add-e-q-structured-left-${index}-${partIndex}`);
-                const rightText = valueOf(`add-e-q-structured-right-${index}-${partIndex}`);
-                const answer = valueOf(`add-e-q-structured-answer-${index}-${partIndex}`);
+                const leftText = valueOf(`add-${mId}-q-structured-left-${index}-${partIndex}`);
+                const rightText = valueOf(`add-${mId}-q-structured-right-${index}-${partIndex}`);
+                const answer = valueOf(`add-${mId}-q-structured-answer-${index}-${partIndex}`);
                 return { ...part, label: part.label || defaultLabel(partIndex), leftText, rightText, display: `${leftText} ___ ${rightText}`, answer };
             });
             const activeComparisonRows = selectParts(comparisonRows);
-            const promptPrefix = valueOf(`add-e-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
+            const promptPrefix = valueOf(`add-${mId}-q-q-${index}`).split(/<br\s*\/?\s*>/i)[0].trim();
             const q = [promptPrefix, activeComparisonRows.map(part => `${part.label || defaultLabel(0)}) ${part.display}`).join('<br>')]
                 .filter(Boolean)
                 .join('<br>');
@@ -11273,48 +11298,59 @@ const app = {
                 }
             }
         },
-        renderExamLibrary(box) {
+        renderExamLibrary(box, isW = false) {
+            const store = isW ? app.data.worksheets : app.data.exams;
+            const mId = isW ? "w" : "e";
+            const mPrefix = isW ? "w-" : "exam-";
+            const label = isW ? "phiếu" : "đề";
+            const labelCap = isW ? "Phiếu" : "Đề";
             const escape = value => app.data.sanitizeHTML(String(value || ''));
-            const exams = app.data.exams;
+            const exams = store;
             const target = app.game.questionsPerRound;
             const counts = exams.map(exam => (exam.questions || []).length);
             const stats = [
-                ['all', exams.length, 'Tổng số đề', 'Trong toàn bộ thư viện'],
+                ['all', exams.length, 'Tổng số ${label}', 'Trong toàn bộ thư viện'],
                 ['exact', counts.filter(count => count === target).length, `Đủ ${target} câu`, 'Có thể mở để rà soát'],
                 ['under', counts.filter(count => count < target).length, `Chưa đủ ${target} câu`, 'Tiếp tục bổ sung nội dung'],
                 ['over', counts.filter(count => count > target).length, `Vượt ${target} câu`, 'Cần chọn lại số câu']
             ];
-            const statsBox = document.getElementById('exam-library-stats');
+            const statsBox = document.getElementById(`${mPrefix}library-stats`);
             if (statsBox) statsBox.innerHTML = stats.map(([key, count, label, hint]) => `<div class="exam-library-stat exam-library-stat--${key}"><span>${label}</span><strong>${count}</strong><small>${hint}</small></div>`).join('');
-            const indicator = document.getElementById('e-count-indicator');
-            if (indicator) indicator.textContent = `${exams.length} đề trong kho`;
+            const indicator = document.getElementById(`${mId}-count-indicator`);
+            if (indicator) indicator.textContent = `${exams.length} ${label} trong kho`;
             const options = field => [...new Set(exams.map(exam => exam[field] || (field === 'classlevel' ? 'Lớp 5' : '')).filter(Boolean))]
                 .sort().map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join('');
-            box.innerHTML = `<section class="exam-library" aria-label="Thư viện đề">
+            box.innerHTML = `<section class="exam-library" aria-label="Thư viện ${label}">
               <div class="exam-library-filters">
-                <label class="exam-library-search">Tìm trong thư viện đề<input id="exam-library-search" type="search" placeholder="Tên đề, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary()"></label>
-                <label>Cấp lớp<select id="exam-library-class" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
-                <label>Môn học<select id="exam-library-subject" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả môn</option>${options('subject')}</select></label>
-                <label>Số câu trong đề<select id="exam-library-status" onchange="app.admin.filterExamLibrary()"><option value="">Tất cả đề</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
+                <label class="exam-library-search">Tìm trong thư viện đề<input id="${mPrefix}library-search" type="search" placeholder="Tên ${label}, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary(${isW})"></label>
+                <label>Cấp lớp<select id="${mPrefix}library-class" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
+                <label>Môn học<select id="${mPrefix}library-subject" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả môn</option>${options('subject')}</select></label>
+                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả ${label}</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
               </div>
-              <div class="exam-library-result-heading"><p id="exam-library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.renderESubTab('lib')">Xóa bộ lọc</button></div>
-              <div id="exam-library-results"></div>
+              <div class="exam-library-result-heading"><p id="${mPrefix}library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">Xóa bộ lọc</button></div>
+              <div id="${mPrefix}library-results"></div>
             </section>`;
             this.filterExamLibrary();
             this.renderComposerCards();
         },
-        filterExamLibrary(limit = 12) {
-            const results = document.getElementById('exam-library-results');
+        filterExamLibrary(limit = 12, isW = false) {
+            if (typeof limit === "boolean") { isW = limit; limit = 12; }
+            const store = isW ? app.data.worksheets : app.data.exams;
+            const mId = isW ? "w" : "e";
+            const mPrefix = isW ? "w-" : "exam-";
+            const label = isW ? "phiếu" : "đề";
+            const labelCap = isW ? "Phiếu" : "Đề";
+            const results = document.getElementById(`${mPrefix}library-results`);
             if (!results) return;
             const escape = value => app.data.sanitizeHTML(String(value || ''));
             const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
-            const query = normalize(document.getElementById('exam-library-search').value.trim());
-            const classlevel = document.getElementById('exam-library-class').value;
-            const subject = document.getElementById('exam-library-subject').value;
-            const status = document.getElementById('exam-library-status').value;
+            const query = normalize(document.getElementById(`${mPrefix}library-search`).value.trim());
+            const classlevel = document.getElementById(`${mPrefix}library-class`).value;
+            const subject = document.getElementById(`${mPrefix}library-subject`).value;
+            const status = document.getElementById(`${mPrefix}library-status`).value;
             const target = app.game.questionsPerRound;
             // Keep the source index: filtering must never retarget edit, preview or delete.
-            const matches = app.data.exams.map((exam, index) => ({ exam, index })).filter(({ exam }) => {
+            const matches = store.map((exam, index) => ({ exam, index })).filter(({ exam }) => {
                 const count = (exam.questions || []).length;
                 const searchText = [exam.name, exam.classlevel || 'Lớp 5', exam.subject, exam.period, ...(exam.questions || []).map(question => question.topic)].join(' ');
                 return (!query || normalize(searchText).includes(query))
@@ -11322,57 +11358,65 @@ const app = {
                     && (!subject || exam.subject === subject)
                     && (!status || (status === 'exact' ? count === target : status === 'under' ? count < target : count > target));
             });
-            document.getElementById('exam-library-result-count').textContent = `Hiển thị ${Math.min(limit, matches.length)} / ${matches.length} đề${matches.length !== app.data.exams.length ? ` · Kho có ${app.data.exams.length} đề` : ''}`;
+            document.getElementById(`${mPrefix}library-result-count`).textContent = `Hiển thị ${Math.min(limit, matches.length)} / ${matches.length} ${label}${matches.length !== store.length ? ` · Kho có ${store.length} ${label}` : ''}`;
             if (!matches.length) {
-                const empty = app.data.exams.length === 0;
-                results.innerHTML = `<div class="exam-library-empty"><span aria-hidden="true">▤</span><h4>${empty ? 'Thư viện đang chờ đề đầu tiên' : 'Không tìm thấy đề'}</h4><p>${empty ? 'Bắt đầu một đề mới, hoặc nhập các đề đã có bằng công cụ Excel.' : 'Thử tên đề, chủ đề khác hoặc xóa bộ lọc để xem toàn bộ kho.'}</p>${empty ? '<button type="button" class="exam-library-button exam-library-button--primary" onclick="document.getElementById(\'btn-e-add\').click()">＋ Soạn đề đầu tiên</button>' : ''}</div>`;
+                const empty = store.length === 0;
+                results.innerHTML = `<div class="exam-library-empty"><span aria-hidden="true">▤</span><h4>${empty ? `Thư viện đang chờ ${label} đầu tiên` : `Không tìm thấy ${label}`}</h4><p>${empty ? `Bắt đầu một ${label} mới, hoặc nhập các ${label} đã có bằng công cụ Excel.` : `Thử tên ${label}, chủ đề khác hoặc xóa bộ lọc để xem toàn bộ kho.`}</p>${empty ? `<button type="button" class="exam-library-button exam-library-button--primary" onclick="document.getElementById('btn-${mId}-add').click()">＋ Soạn ${label} đầu tiên</button>` : ''}</div>`;
                 return;
             }
             results.innerHTML = `<div class="exam-library-grid">${matches.slice(0, limit).map(({ exam, index }) => {
                 const count = (exam.questions || []).length;
                 const state = count === target ? 'exact' : count < target ? 'under' : 'over';
-                const label = count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
+                const statusLabel = count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
                 const topics = [...new Set((exam.questions || []).map(question => question.topic).filter(Boolean))];
                 return `<article class="exam-library-card exam-library-card--${state}">
-                  <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${label}</span></div>
+                  <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${statusLabel}</span></div>
                   <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period ? this.normalizeComposerPeriod(exam.period) : 'Chưa chọn thời gian')}</span></div>
-                  <h4>${escape(exam.name || 'Đề chưa đặt tên')}</h4>
+                  <h4>${escape(exam.name || `${labelCap} chưa đặt tên`)}</h4>
                   <div class="exam-library-card__topics">${topics.slice(0, 3).map(topic => `<span>${escape(topic)}</span>`).join('') || '<span>Chưa gắn chủ đề</span>'}${topics.length > 3 ? `<span>+${topics.length - 3} chủ đề</span>` : ''}</div>
-                  <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? 'Mở đề để kiểm tra nội dung' : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
-                  <footer><button type="button" class="exam-library-button" onclick="app.admin.viewExam(${index})">Xem đề</button><button type="button" class="exam-library-button exam-library-button--primary" onclick="app.admin.examComposerDraft = null; app.admin.editExam(${index})">Chỉnh sửa</button><button type="button" class="exam-library-delete" onclick="app.admin.deleteExam(${index})">Xóa đề</button></footer>
+                  <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? `Mở ${label} để kiểm tra nội dung` : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
+                  <footer><button type="button" class="exam-library-button" onclick="app.admin.${isW ? "viewWorksheet" : "viewExam"}(${index})">${`Xem ${label}`}</button><button type="button" class="exam-library-button exam-library-button--primary" onclick="app.admin.${isW ? "worksheetComposerDraft" : "examComposerDraft"} = null; app.admin.${isW ? "editWorksheet" : "editExam"}(${index})">Chỉnh sửa</button><button type="button" class="exam-library-delete" onclick="app.admin.${isW ? "deleteWorksheet" : "deleteExam"}(${index})">${`Xóa ${label}`}</button></footer>
                 </article>`;
-            }).join('')}</div>${matches.length > limit ? `<button type="button" class="exam-library-button exam-library-more" onclick="app.admin.filterExamLibrary(${limit + 12})">Xem thêm đề (${matches.length - limit} còn lại)</button>` : ''}`;
+            }).join('')}</div>${matches.length > limit ? `<button type="button" class="exam-library-button exam-library-more" onclick="app.admin.filterExamLibrary(${limit + 12}, ${isW})">Xem thêm ${label} (${matches.length - limit} còn lại)</button>` : ''}`;
         },
-        renderExams(box) {
+        renderExams(box, isW = false) {
+            const mId = isW ? "w" : "e";
+            const mPrefix = isW ? "w-" : "exam-";
+            const label = isW ? "phiếu" : "đề";
+            const labelCap = isW ? "Phiếu" : "Đề";
             box.innerHTML = `
-        <section class="exam-workspace" aria-label="Kho đề kiểm tra">
+        <section class="exam-workspace" aria-label="Kho ${label} kiểm tra">
           <header class="exam-workspace__header">
             <div>
               <p class="exam-workspace__eyebrow">THƯ VIỆN CỦA BẠN</p>
-              <h3>Mỗi đề bài, một hành trình mới</h3>
-              <p class="exam-workspace__description">Toàn bộ kho đề · Tìm nội dung, tiếp tục biên soạn hoặc bắt đầu một đề mới.</p>
+              <h3>Mỗi ${label} bài, một hành trình mới</h3>
+              <p class="exam-workspace__description">Toàn bộ kho ${label} · Tìm nội dung, tiếp tục biên soạn hoặc bắt đầu một ${label} mới.</p>
             </div>
-            <div id="e-count-indicator" class="exam-workspace__count" aria-live="polite"></div>
+            <div id="${mId}-count-indicator" class="exam-workspace__count" aria-live="polite"></div>
           </header>
-          <div id="exam-library-stats" class="exam-library-stats" aria-label="Thống kê toàn bộ kho đề"></div>
-          <div class="exam-library-toolbar" aria-label="Tác vụ kho đề">
-            <button type="button" class="exam-library-button" id="btn-e-lib" aria-pressed="true" onclick="app.admin.renderESubTab('lib')">▦ Thư viện đề</button>
-            <button type="button" class="exam-library-button exam-library-button--primary" id="btn-e-add" onclick="app.admin.examComposerDraft = null; app.admin.renderESubTab('add')">＋ Soạn đề mới</button>
+          <div id="${mPrefix}library-stats" class="exam-library-stats" aria-label="Thống kê toàn bộ kho ${label}"></div>
+          <div class="exam-library-toolbar" aria-label="Tác vụ kho ${label}">
+            <button type="button" class="exam-library-button" id="btn-${mId}-lib" aria-pressed="true" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">▦ Thư viện ${label}</button>
+            <button type="button" class="exam-library-button exam-library-button--primary" id="btn-${mId}-add" onclick="app.admin.${isW ? 'worksheetComposerDraft' : 'examComposerDraft'} = null; app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('add')">＋ Soạn ${label} mới</button>
             <details class="exam-library-tools">
               <summary>Công cụ Excel</summary>
               <div class="exam-library-tools__items">
-                <button type="button" class="exam-library-button" id="btn-e-tpl" onclick="app.admin.renderESubTab('tpl')">↓ Tải file mẫu .xlsx</button>
-                <button type="button" class="exam-library-button" id="btn-e-exp" onclick="app.admin.renderESubTab('exp')">↗ Xuất kho đề .xlsx</button>
-                <button type="button" class="exam-library-button" id="btn-e-imp" onclick="app.admin.renderESubTab('imp')">↙ Nhập đề từ .xlsx</button>
+                <button type="button" class="exam-library-button" id="btn-${mId}-tpl" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('tpl')">↓ Tải file mẫu .xlsx</button>
+                <button type="button" class="exam-library-button" id="btn-${mId}-exp" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('exp')">↗ Xuất kho ${label} .xlsx</button>
+                <button type="button" class="exam-library-button" id="btn-${mId}-imp" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('imp')">↙ Nhập ${label} từ .xlsx</button>
               </div>
             </details>
           </div>
-          <div id="admin-e-subarea"></div>
+          <div id="admin-${mId}-subarea"></div>
         </section>
       `;
-            this.renderESubTab('lib');
+            if (isW) this.renderWSubTab("lib"); else this.renderESubTab("lib");
         },
-        renderESubTab(tab, editIdx) {
+        renderWSubTab(tab, editIdx) {
+            this.renderESubTab(tab, editIdx, true);
+        },
+        renderESubTab(tab, editIdx, isW = false) {
+            const mId = isW ? 'w' : 'e';
             ['lib', 'add', 'tpl', 'exp', 'imp'].forEach(t => {
                 const el = document.getElementById('btn-e-' + t);
                 if (el) {
@@ -11393,7 +11437,7 @@ const app = {
                 const selectedSubject = e?.subject || this.composerState.subject || 'Toán';
                 const selectedPeriod = this.normalizeComposerPeriod(e?.period || this.composerState.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
-            <section class="exam-composer" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
+            <section class="exam-composer ${isW ? 'worksheet-composer' : ''}" aria-label="${e ? 'Sửa đề kiểm tra' : 'Soạn đề kiểm tra'}">
                <header class="exam-composer__header">
                   <div class="exam-composer__header-copy">
                      <p class="exam-composer__eyebrow">${e ? 'CHỈNH SỬA ĐỀ' : 'TẠO ĐỀ MỚI'}</p>
@@ -11605,13 +11649,15 @@ const app = {
             }
         },
         autoGenerateExam() {
-            const classlevel = document.getElementById('add-e-class').value;
-            const subject = document.getElementById('add-e-sub').value;
-            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period').value);
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const classlevel = document.getElementById(`add-${mId}-class`).value;
+            const subject = document.getElementById(`add-${mId}-sub`).value;
+            const period = this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`).value);
             const topics = Array.from(document.querySelectorAll('#add-e-topics input:checked')).map(input => input.value);
             if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
             const selectionState = this.getExamLessonSelectionState();
-            if (document.getElementById('add-e-lessons') && !document.getElementById('add-e-lessons').hidden && !selectionState.unrestricted && !selectionState.selectedLessons.length) {
+            if (document.getElementById(`add-${mId}-lessons`) && !document.getElementById(`add-${mId}-lessons`).hidden && !selectionState.unrestricted && !selectionState.selectedLessons.length) {
                 return alert('Hãy chọn ít nhất một bài học, hoặc áp dụng toàn bộ bài học.');
             }
             const lessonFilters = selectionState.selectedLessons;
@@ -11693,14 +11739,14 @@ const app = {
             }
             this.examComposerDraft = {
                 classlevel, subject, period,
-                name: document.getElementById('add-e-name').value,
+                name: document.getElementById(`add-${mId}-name`).value,
                 topics, lessonFilters, questions
             };
             this.renderESubTab('add');
         },
-        async submitAddExam(editIdx) {
-            if (this.examSavePending) return;
-            this.setExamSavePending(true);
+        async submitAddExam(editIdx, isW = false) {
+            if (isW ? this.worksheetSavePending : this.examSavePending) return;
+            if (isW) this.setWorksheetSavePending(true); else this.setExamSavePending(true);
             try {
             const eObj = {
                 name: document.getElementById('add-e-name').value,
@@ -11720,8 +11766,8 @@ const app = {
                 const qText = qTextEl.value.trim();
                 const typeVal = document.getElementById(`add-e-q-type-${i}`).value;
                 const originalQuestion = editIdx !== null && editIdx !== undefined
-                    ? app.data.exams[editIdx]?.questions?.[i]
-                    : this.examComposerDraft?.questions?.[i];
+                    ? (isW ? app.data.worksheets : app.data.exams)[editIdx]?.questions?.[i]
+                    : (isW ? this.worksheetComposerDraft : this.examComposerDraft)?.questions?.[i];
                 const editorQuestion = this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft());
                 const structureKind = this.getExamQuestionStructureKind(editorQuestion);
                 const structurePatch = structureKind ? this.readExamQuestionStructure(editorQuestion, i) : {};
@@ -11729,7 +11775,7 @@ const app = {
                     ? String(structurePatch.ans || '').trim()
                     : document.getElementById(`add-e-q-ans-${i}`).value.trim();
 
-                if (qText && ansText) {
+                if (qText && (isW || ansText)) {
                     const newQ = {
                         ...(originalQuestion ? JSON.parse(JSON.stringify(editorQuestion)) : {}),
                         classlevel: eObj.classlevel,
@@ -11797,18 +11843,18 @@ const app = {
             let saveError = null;
             let duplicateExam = false;
             if (editIdx !== null && editIdx !== undefined) {
-                const oldId = app.data.exams[editIdx]?.id;
+                const oldId = (isW ? app.data.worksheets : app.data.exams)[editIdx]?.id;
                 if (oldId) eObj.id = oldId;
-                app.data.exams[editIdx] = eObj;
+                (isW ? app.data.worksheets : app.data.exams)[editIdx] = eObj;
             } else {
                 const contentKey = app.data.getExamContentKey(eObj);
-                const duplicateIndex = app.data.exams.findIndex(exam => app.data.getExamContentKey(exam) === contentKey);
+                const duplicateIndex = (isW ? app.data.worksheets : app.data.exams).findIndex(exam => app.data.getExamContentKey(exam) === contentKey);
                 if (duplicateIndex > -1) duplicateExam = true;
-                else app.data.exams.push(eObj);
+                else (isW ? app.data.worksheets : app.data.exams).push(eObj);
             }
-            saveError = await app.data.saveExams();
-            this.examComposerDraft = null;
-            this.renderESubTab('lib');
+            saveError = await isW ? app.data.saveWorksheets() : app.data.saveExams();
+            if (isW) this.worksheetComposerDraft = null; else this.examComposerDraft = null;
+            this[isW ? "renderWSubTab" : "renderESubTab"]("lib");
             if (saveError) {
                 alert(this.getExamSyncErrorMessage(saveError));
             } else if (duplicateExam) {
@@ -11819,7 +11865,7 @@ const app = {
                 alert('Đã tạo đề kiểm tra mới!');
             }
             } finally {
-                this.setExamSavePending(false);
+                if (isW) this.setWorksheetSavePending(false); else this.setExamSavePending(false);
             }
         },
         submitInjectQ(qIdx, eIdx) {
