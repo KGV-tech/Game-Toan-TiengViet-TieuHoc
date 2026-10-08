@@ -47,23 +47,32 @@
     const sources = Array.from(paper.children);
     const kind = paper.dataset.decoration || 'leaves';
     paper.replaceChildren(); paper.classList.add('ws-a4');
-    let page, content;
+    let page, content, group = null, groupId = null;
+    const target = () => group || content;
+    const startGroup = () => {
+      if (groupId === null) { group = null; return; }
+      group = doc.createElement('div'); group.className = 'ws-print-group'; group.dataset.wsGroup = groupId;
+      content.append(group);
+    };
     const newPage = (carryGroup = true) => {
-      const heading = carryGroup && content?.lastElementChild?.matches('.ws-group-title') ? content.lastElementChild : null;
+      const previous = group || content;
+      const heading = carryGroup && previous?.lastElementChild?.matches('.ws-group-title') ? previous.lastElementChild : null;
       heading?.remove();
+      if (group && !group.children.length) group.remove();
       page = doc.createElement('div'); page.className='ws-page';
       page.innerHTML=`<div class="ws-page-top">${decoration(kind)}</div><div class="ws-page-content"></div><footer class="ws-paper-footer">${decoration(kind)}<span class="ws-page-number"></span></footer>`;
       paper.append(page); content=page.querySelector('.ws-page-content');
-      if(heading)content.append(heading);
+      startGroup();
+      if(heading)target().append(heading);
     };
     const over = () => content.scrollHeight > content.clientHeight + 1;
-    const empty = () => !content.children.length;
+    const empty = () => !content.querySelector('.ws-paper-header,.ws-group-title,.ws-block,.ws-part,table,h3,p');
     function place(node) {
-      content.append(node);
+      target().append(node);
       if(!over()) return;
       const tooTall = node.offsetHeight > content.clientHeight;
       node.remove();
-      if (!empty() && !tooTall) { newPage(); content.append(node); if(!over())return; node.remove(); }
+      if (!empty() && !tooTall) { newPage(); target().append(node); if(!over())return; node.remove(); }
       // Split a table by complete rows, retaining its column widths and headings.
       const table = node.querySelector?.('table');
       if(table && table.tBodies[0]?.rows.length) {
@@ -71,12 +80,12 @@
         const tail=Array.from(node.children).filter(child => !child.matches('h3,.ws-table-wrap'));
         tail.forEach(child=>child.remove());
         let fragment=node;
-        content.append(fragment);
+        target().append(fragment);
         for(const row of rows) {
           let body=fragment.querySelector('tbody'); body.append(row);
           if(over()) {
             row.remove(); if(!body.rows.length)fragment.remove(); newPage(); fragment=node.cloneNode(true);
-            fragment.querySelector('tbody').replaceChildren(row); content.append(fragment);
+            fragment.querySelector('tbody').replaceChildren(row); target().append(fragment);
           }
           if(over()) throw new Error('Một dòng bảng cao hơn vùng in A4. Giảm chiều cao dòng hoặc rút ngắn nội dung ô.');
         }
@@ -86,13 +95,13 @@
       // Split long lessons at their children (subquestions/writing lines).
       if(node.matches?.('.ws-block,.ws-part') && node.children.length>1) {
         const children=Array.from(node.children); node.replaceChildren();
-        let fragment=node; content.append(fragment);
+        let fragment=node; target().append(fragment);
         for(const child of children) {
           fragment.append(child);
           if(over()) {
             child.remove(); if(!fragment.children.length)fragment.remove();
-            newPage(); fragment=node.cloneNode(false);content.append(fragment);fragment.append(child);
-            if(over()) { child.remove(); if(!fragment.children.length)fragment.remove();place(child);fragment=node.cloneNode(false);content.append(fragment); }
+            newPage(); fragment=node.cloneNode(false);target().append(fragment);fragment.append(child);
+            if(over()) { child.remove(); if(!fragment.children.length)fragment.remove();place(child);fragment=node.cloneNode(false);target().append(fragment); }
           }
         }
         if(!fragment.children.length)fragment.remove();
@@ -101,7 +110,7 @@
       if(node.matches?.('h3,p') && node.textContent.trim()) {
         const words=node.textContent.trim().split(/\s+/);let offset=0;
         while(offset<words.length) {
-          const fragment=node.cloneNode(false);content.append(fragment);
+          const fragment=node.cloneNode(false);target().append(fragment);
           let low=0,high=words.length-offset;
           while(low<high) {
             const mid=Math.ceil((low+high)/2);fragment.textContent=words.slice(offset,offset+mid).join(' ');
@@ -113,15 +122,23 @@
         }
         return;
       }
-      content.append(node);
+      target().append(node);
       if(over()) throw new Error('Nội dung vượt vùng in A4. Chia bài hoặc giảm kích thước hình/bảng.');
     }
     try {
       newPage();
       sources.forEach((source,i)=> {
         if(!source.children.length)return;
+        groupId=null; group=null;
         if(i && source.dataset.newPage==='true' && content.querySelector('.ws-block,.ws-part,table')) newPage(false);
-        Array.from(source.cloneNode(true).children).forEach(place);
+        groupId=null; group=null;
+        Array.from(source.cloneNode(true).children).forEach(node=>{
+          if (!node.matches('.ws-print-group')) { place(node); return; }
+          groupId=node.dataset.wsGroup; startGroup();
+          Array.from(node.children).forEach(place);
+          if (!group.children.length) group.remove();
+          groupId=null; group=null;
+        });
       });
       const pages=Array.from(paper.children);
       pages.forEach((page,i)=>page.querySelector('.ws-page-number').textContent=`Trang ${i+1}/${pages.length}`);

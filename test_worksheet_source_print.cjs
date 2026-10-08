@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict');
+const D=require('./src/modules/worksheet-document.js');
+const doc={title:'Phiếu',pages:[{title:'Nhóm 1',blocks:[{kind:'table',text:'Bài 1. Bảng',columns:['Số','Viết'],rows:[['30',''],['40','___']]},{kind:'multipleChoice',text:'2. Chọn số',options:['A. Một','B. Hai'],parts:[{label:'1)',kind:'trueFalse',text:'Số 2 là số chẵn.',lines:0}]}]}]};
+const normalized=D.normalize(doc);
+assert.equal(normalized.pages[0].blocks[1].kind,'multipleChoice');
+assert.equal(normalized.pages[0].blocks[1].parts[0].kind,'trueFalse');
+const html=D.render(normalized);
+assert(html.includes('<td></td>'),'Empty table cells must stay empty');
+assert.equal((html.match(/class="ws-print-group"/g)||[]).length,1);
+assert(html.includes('1. </strong>Bảng'));
+assert(html.includes('2. </strong>Chọn số'));
+assert(html.includes('a)</strong>'));
+assert(!html.includes('Bài 1.'));
+assert(html.includes('Đúng'));
+assert(html.includes('Sai'));
+assert(!html.includes('A. A.'));
+assert.deepEqual(D.fromRecord(D.toRecord(normalized)).pages,normalized.pages);
+console.log('Worksheet source editor print contracts passed');
+
+assert(D.render({pages:[{blocks:[{text:'1.5 + 2 = ___'}]}]}).includes('1.5 + 2'));
