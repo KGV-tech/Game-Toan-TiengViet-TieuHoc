@@ -220,7 +220,7 @@ for (const theme of ['light', 'dark']) {
     await expect(page.locator('.ws-editor-block .ws-review')).toHaveCSS('color', theme === 'light' ? 'rgb(98, 64, 13)' : 'rgb(255, 230, 184)');
     await expect(page.getByLabel('Hàng 1, cột 1', { exact: true })).toHaveCSS('color', theme === 'light' ? 'rgb(24, 42, 66)' : 'rgb(230, 239, 255)');
     await page.getByRole('button', { name: 'Xem bản in màu' }).click();
-    await expect(page.locator('#ws-color-preview th').first()).toHaveCSS('font-weight', '800');
+    await expect(page.locator('#ws-color-preview th').first()).toHaveCSS('font-weight', '700');
     await expect(page.locator('#ws-color-preview td').first()).toHaveCSS('text-align', 'center');
     await expect(page.locator('#ws-color-preview > .ws-page').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await testInfo.attach(`worksheet-${theme}`, {body: await page.locator('#admin-w-subarea .ws-studio').screenshot(),contentType:'image/png'});

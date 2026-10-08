@@ -9044,3 +9044,19 @@ html.ws-print-window, .ws-print-window body { position: static !important; heigh
 /* Keep semantic score colors above the admin theme's inherited text colors. */
 [data-theme] #admin-compose-screen .exam-composer .authoring-score.authoring-score--good { color:#14532d !important; }
 [data-theme] #admin-compose-screen .exam-composer .authoring-score.authoring-score--warning { color:#991b1b !important; }
+
+/* Source worksheets use the same local typeface and group frames in preview/PDF. */
+.ws-paper, .ws-paper * { font-family: Arial, Helvetica, sans-serif !important; font-synthesis: none; }
+.ws-paper { font-weight:400; }
+.ws-paper :is(h1,h2,th,strong) { font-weight:700; }
+.ws-paper .ws-block h3 { font-weight:400; }
+.ws-paper .ws-group-title { font-weight:700; margin:0 0 3mm; }
+.ws-paper .ws-print-group { border:1px solid #b1c7c0; border-left:4px solid var(--ws-accent); border-radius:2mm; padding:3mm; margin:3mm 0; }
+.ws-paper .ws-block { border:0; border-radius:0; padding:0; margin:0 0 3mm; background:transparent; }
+.ws-paper .ws-block:last-child { margin-bottom:0; }
+.ws-paper .ws-part { border:0; border-radius:0; background:transparent; }
+.ws-paper .ws-answer-space { display:inline-block; width:20mm; min-height:5mm; }
+.ws-paper .ws-word-bank { padding:2mm 0; }
+.ws-paper .ws-matching { display:grid; gap:2mm; }
+
+.ws-studio [hidden] { display: none !important; }

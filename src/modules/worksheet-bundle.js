@@ -216,23 +216,32 @@
     const sources = Array.from(paper.children);
     const kind = paper.dataset.decoration || 'leaves';
     paper.replaceChildren(); paper.classList.add('ws-a4');
-    let page, content;
+    let page, content, group = null, groupId = null;
+    const target = () => group || content;
+    const startGroup = () => {
+      if (groupId === null) { group = null; return; }
+      group = doc.createElement('div'); group.className = 'ws-print-group'; group.dataset.wsGroup = groupId;
+      content.append(group);
+    };
     const newPage = (carryGroup = true) => {
-      const heading = carryGroup && content?.lastElementChild?.matches('.ws-group-title') ? content.lastElementChild : null;
+      const previous = group || content;
+      const heading = carryGroup && previous?.lastElementChild?.matches('.ws-group-title') ? previous.lastElementChild : null;
       heading?.remove();
+      if (group && !group.children.length) group.remove();
       page = doc.createElement('div'); page.className='ws-page';
       page.innerHTML=`<div class="ws-page-top">${decoration(kind)}</div><div class="ws-page-content"></div><footer class="ws-paper-footer">${decoration(kind)}<span class="ws-page-number"></span></footer>`;
       paper.append(page); content=page.querySelector('.ws-page-content');
-      if(heading)content.append(heading);
+      startGroup();
+      if(heading)target().append(heading);
     };
     const over = () => content.scrollHeight > content.clientHeight + 1;
-    const empty = () => !content.children.length;
+    const empty = () => !content.querySelector('.ws-paper-header,.ws-group-title,.ws-block,.ws-part,table,h3,p');
     function place(node) {
-      content.append(node);
+      target().append(node);
       if(!over()) return;
       const tooTall = node.offsetHeight > content.clientHeight;
       node.remove();
-      if (!empty() && !tooTall) { newPage(); content.append(node); if(!over())return; node.remove(); }
+      if (!empty() && !tooTall) { newPage(); target().append(node); if(!over())return; node.remove(); }
       // Split a table by complete rows, retaining its column widths and headings.
       const table = node.querySelector?.('table');
       if(table && table.tBodies[0]?.rows.length) {
@@ -240,12 +249,12 @@
         const tail=Array.from(node.children).filter(child => !child.matches('h3,.ws-table-wrap'));
         tail.forEach(child=>child.remove());
         let fragment=node;
-        content.append(fragment);
+        target().append(fragment);
         for(const row of rows) {
           let body=fragment.querySelector('tbody'); body.append(row);
           if(over()) {
             row.remove(); if(!body.rows.length)fragment.remove(); newPage(); fragment=node.cloneNode(true);
-            fragment.querySelector('tbody').replaceChildren(row); content.append(fragment);
+            fragment.querySelector('tbody').replaceChildren(row); target().append(fragment);
           }
           if(over()) throw new Error('Một dòng bảng cao hơn vùng in A4. Giảm chiều cao dòng hoặc rút ngắn nội dung ô.');
         }
@@ -255,13 +264,13 @@
       // Split long lessons at their children (subquestions/writing lines).
       if(node.matches?.('.ws-block,.ws-part') && node.children.length>1) {
         const children=Array.from(node.children); node.replaceChildren();
-        let fragment=node; content.append(fragment);
+        let fragment=node; target().append(fragment);
         for(const child of children) {
           fragment.append(child);
           if(over()) {
             child.remove(); if(!fragment.children.length)fragment.remove();
-            newPage(); fragment=node.cloneNode(false);content.append(fragment);fragment.append(child);
-            if(over()) { child.remove(); if(!fragment.children.length)fragment.remove();place(child);fragment=node.cloneNode(false);content.append(fragment); }
+            newPage(); fragment=node.cloneNode(false);target().append(fragment);fragment.append(child);
+            if(over()) { child.remove(); if(!fragment.children.length)fragment.remove();place(child);fragment=node.cloneNode(false);target().append(fragment); }
           }
         }
         if(!fragment.children.length)fragment.remove();
@@ -270,7 +279,7 @@
       if(node.matches?.('h3,p') && node.textContent.trim()) {
         const words=node.textContent.trim().split(/\s+/);let offset=0;
         while(offset<words.length) {
-          const fragment=node.cloneNode(false);content.append(fragment);
+          const fragment=node.cloneNode(false);target().append(fragment);
           let low=0,high=words.length-offset;
           while(low<high) {
             const mid=Math.ceil((low+high)/2);fragment.textContent=words.slice(offset,offset+mid).join(' ');
@@ -282,15 +291,23 @@
         }
         return;
       }
-      content.append(node);
+      target().append(node);
       if(over()) throw new Error('Nội dung vượt vùng in A4. Chia bài hoặc giảm kích thước hình/bảng.');
     }
     try {
       newPage();
       sources.forEach((source,i)=> {
         if(!source.children.length)return;
+        groupId=null; group=null;
         if(i && source.dataset.newPage==='true' && content.querySelector('.ws-block,.ws-part,table')) newPage(false);
-        Array.from(source.cloneNode(true).children).forEach(place);
+        groupId=null; group=null;
+        Array.from(source.cloneNode(true).children).forEach(node=>{
+          if (!node.matches('.ws-print-group')) { place(node); return; }
+          groupId=node.dataset.wsGroup; startGroup();
+          Array.from(node.children).forEach(place);
+          if (!group.children.length) group.remove();
+          groupId=null; group=null;
+        });
       });
       const pages=Array.from(paper.children);
       pages.forEach((page,i)=>page.querySelector('.ws-page-number').textContent=`Trang ${i+1}/${pages.length}`);
@@ -308,17 +325,23 @@
   const text = (value, max = 20000) => String(value ?? '').slice(0, max);
   const escape = value => text(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const list = (value, max = 100) => Array.isArray(value) ? value.slice(0, max) : [];
+  const questionKinds = [['question','Tự luận / Câu hỏi'],['multipleChoice','Trắc nghiệm'],['trueFalse','Đúng/Sai'],['fill','Điền khuyết'],['compare','So sánh'],['sequence','Chuỗi quy luật'],['drag','Kéo thả / Chọn từ'],['matching','Đối chiếu / Nối cặp']];
+  const contentKinds = [...questionKinds, ['table','Bảng'],['diagram','Sơ đồ'],['text','Tiêu đề / Nội dung đọc']];
+  const kindOf = value => contentKinds.some(([kind]) => kind === value) ? value : 'question';
+  const partLabel = index => { let n=index+1,label='';while(n){n--;label=String.fromCharCode(97+n%26)+label;n=Math.floor(n/26);}return label+')'; };
+  const choiceText = value => String(value).replace(/^\s*[A-L][.)]\s+/i,'');
+  const blockText = value => String(value).replace(/^\s*(?:Bài\s+\d+\s*[:.)-]\s*|\d+[.)]\s+)/i,'');
   function normalize(raw) {
     if (!raw || !Array.isArray(raw.pages)) throw new Error('Dữ liệu nhận diện chưa có trang hợp lệ. Hãy đọc lại file.');
     if (raw.pages.length > 40 || raw.pages.some(page => Array.isArray(page.blocks) && page.blocks.length > 100)) throw new Error('Phiếu quá dài (tối đa 40 trang, 100 khối/trang). Hãy chia thành nhiều phiếu để giữ đầy đủ nội dung.');
     const pages = list(raw.pages, 40).map((page, p) => ({
       title: text(page.title, 500), hideTitle: page.hideTitle === true, startNewPage: page.startNewPage !== false, source: text(page.source, 255),
       blocks: list(page.blocks, 100).map((block, b) => ({
-        id: `p${p}-b${b}`, kind: ['text', 'question', 'table', 'diagram'].includes(block.kind) ? block.kind : 'question',
+        id: `p${p}-b${b}`, kind: kindOf(block.kind),
         text: text(block.text), answer: text(block.answer, 5000),
         lines: Math.min(20, Math.max(0, Number(block.lines) || 0)),
         options: list(block.options, 12).map(item => text(item, 2000)),
-        parts: list(block.parts, 50).map(part => ({ label: text(part.label, 30), text: text(part.text), answer: text(part.answer, 5000), lines: Math.min(20, Math.max(0, Number(part.lines) || 0)), options: list(part.options, 12).map(item => text(item, 2000)) })),
+        parts: list(block.parts, 50).map(part => ({ kind: questionKinds.some(([kind])=>kind===part.kind)?part.kind:'question', label: text(part.label, 30), text: text(part.text), answer: text(part.answer, 5000), lines: Math.min(20, Math.max(0, Number(part.lines) || 0)), options: list(part.options, 12).map(item => text(item, 2000)) })),
         tableLayout: { height: Math.min(200, Math.max(20, Number(block.tableLayout?.height) || 120)), equalColumns: block.tableLayout?.equalColumns !== false, equalRows: block.tableLayout?.equalRows !== false,
           columns: list(block.tableLayout?.columns, 16).map(size => ({ value: Math.min(178, Math.max(0, Number(size.value) || 0)), locked: size.locked === true })),
           rows: list(block.tableLayout?.rows, 101).map(size => ({ value: Math.min(200, Math.max(0, Number(size.value) || 0)), locked: size.locked === true })) },
@@ -379,20 +402,35 @@
   function render(doc, { rootId = 'print-area', interactive = false, answers = {}, showAnswers = false } = {}) {
     doc = normalize(doc);
     const response = (item, key) => {
-      const choices = item.options.length ? `<div class="ws-choices">${item.options.map((option, i) => interactive ? `<label><input type="radio" name="${key}-choice" data-ws-answer="${key}-choice" value="${i}" ${answers[`${key}-choice`] === String(i) ? 'checked' : ''}> ${escape(option)}</label>` : `<span>□ ${escape(option)}</span>`).join('')}</div>` : '';
+      const kind = item.kind || 'question';
+      const options = kind === 'trueFalse' ? ['Đúng','Sai'] : kind === 'compare' ? ['<','>','='] : item.options;
+      let choices = '';
+      if (kind === 'matching' && options.length) {
+        const left=String(options[0]||'').split(',').map(v=>v.trim()).filter(Boolean);
+        const right=String(options[1]||'').split(',').map(v=>v.trim()).filter(Boolean);
+        choices=`<div class="ws-matching">${left.map((item,i)=>`<p>${escape(item)} ${interactive ? `<select data-ws-answer="${key}-match-${i}" aria-label="Nối ${escape(item)}"><option value="">-- Chọn --</option>${right.map(value=>`<option value="${escape(value)}" ${answers[`${key}-match-${i}`]===value?'selected':''}>${escape(value)}</option>`).join('')}</select>` : '<span class="ws-answer-space"></span>'}</p>`).join('')}<p>${right.map(escape).join(' · ')}</p></div>`;
+      } else if (kind === 'drag') {
+        choices=options.length ? `<div class="ws-word-bank">Từ để chọn: ${options.map(escape).join(' · ')}</div>` : '';
+      } else if (['question','multipleChoice','trueFalse','compare','table','diagram'].includes(kind) && options.length) {
+        const isMc=['multipleChoice','question','table','diagram'].includes(kind);
+        choices=`<div class="ws-choices">${options.map((option,i)=>{
+          const label=isMc?`${String.fromCharCode(65+i)}. ${choiceText(option)}`:option;
+          return interactive ? `<label><input type="radio" name="${key}-choice" data-ws-answer="${key}-choice" value="${i}" ${answers[`${key}-choice`]===String(i)?'checked':''}> ${escape(label)}</label>` : `<span>□ ${escape(label)}</span>`;
+        }).join('')}</div>`;
+      }
       const lines = interactive ? `<label class="ws-answer-label">Bài làm<textarea data-ws-answer="${key}-written" rows="${Math.max(2, item.lines || 2)}">${escape(answers[`${key}-written`] || '')}</textarea></label><canvas class="ws-drawing" width="1000" height="260" data-ws-drawing="${key}-drawing" aria-label="Viết hoặc vẽ bài làm bằng bút cho ${escape(key)}"></canvas><button type="button" class="ws-clear-drawing" data-clear-drawing="${key}-drawing">Xóa nét bút của bài này</button>` : Array.from({ length: item.lines }, () => '<div class="ws-writing-line"></div>').join('');
       return choices + lines + (showAnswers && item.answer ? `<p class="ws-teacher-answer">Đáp án giáo viên: ${escape(item.answer)}</p>` : '');
     };
-    return `<section id="${escape(rootId)}" class="exam-print ws-paper ws-theme-${doc.theme}" data-decoration="${doc.decoration}" aria-label="Nội dung phiếu học tập">${doc.pages.map((page, p) => `<div class="ws-page ws-source-group" data-new-page="${page.startNewPage}">${p === 0 ? `<header class="ws-paper-header"><h1>${escape(doc.title)}</h1>${doc.topic || doc.lesson ? `<p class="ws-paper-context">${[doc.topic, doc.lesson].filter(Boolean).map(escape).join(' · ')}</p>` : ''}<div class="ws-student-info"><span>Họ và tên: ........................................</span><span>Lớp: ........</span><span>Ngày: ........................</span></div></header>` : ''}${!page.hideTitle && page.title ? `<h2 class="ws-group-title">${escape(page.title)}</h2>` : ''}${page.blocks.map((block, b) => {
+    return `<section id="${escape(rootId)}" class="exam-print ws-paper ws-theme-${doc.theme}" data-decoration="${doc.decoration}" aria-label="Nội dung phiếu học tập">${doc.pages.map((page, p) => `<div class="ws-page ws-source-group" data-new-page="${page.startNewPage}">${p === 0 ? `<header class="ws-paper-header"><h1>${escape(doc.title)}</h1>${doc.topic || doc.lesson ? `<p class="ws-paper-context">${[doc.topic, doc.lesson].filter(Boolean).map(escape).join(' · ')}</p>` : ''}<div class="ws-student-info"><span>Họ và tên: ........................................</span><span>Lớp: ........</span><span>Ngày: ........................</span></div></header>` : ''}<div class="ws-print-group" data-ws-group="${p}">${!page.hideTitle && page.title ? `<h2 class="ws-group-title">${escape(page.title)}</h2>` : ''}${page.blocks.map((block, b) => {
       const key = `p${p}-b${b}`;
       const layout = block.tableLayout;
       const cols = root.WorksheetLayout ? root.WorksheetLayout.allocate(layout.columns, block.columns.length, 178, layout.equalColumns) : block.columns.map(() => ({value:178/block.columns.length}));
       const heights = root.WorksheetLayout ? root.WorksheetLayout.allocate(layout.rows, block.rows.length+1, layout.height, layout.equalRows) : [];
-      const table = block.kind === 'table' ? `<div class="ws-table-wrap"><table><colgroup>${cols.map(size => `<col style="width:${size.value/178*100}%">`).join('')}</colgroup><thead><tr style="height:${heights[0]?.value || 0}mm">${block.columns.map(col => `<th>${escape(col)}</th>`).join('')}</tr></thead><tbody>${block.rows.map((row, r) => `<tr style="height:${heights[r+1]?.value || 0}mm">${block.columns.map((_, c) => `<td>${interactive && !String(row[c] || '').trim() ? inline('___', true, `${key}-r${r}c${c}`, answers) : inline(row[c] || '___', interactive, `${key}-r${r}c${c}`, answers)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '';
-      return `<article class="ws-block ws-block-${block.kind}" data-ws-block="${key}"><h3>${inline(block.text, interactive, key, answers)}</h3>${table}${block.visual ? `<img class="ws-visual" src="${block.visual}" alt="${escape(block.text || 'Hình minh họa của bài')}">` : block.kind === 'diagram' ? diagramHTML(block.diagram) : ''}${block.parts.map((part, i) => `<section class="ws-part"><p><strong>${escape(part.label)}</strong> ${inline(part.text, interactive, `${key}-part${i}`, answers)}</p>${response(part, `${key}-part${i}`)}</section>`).join('')}${block.kind !== 'text' ? response(block, key) : ''}</article>`;
-    }).join('')}</div>`).join('')}</section>`;
+      const table = block.kind === 'table' ? `<div class="ws-table-wrap"><table><colgroup>${cols.map(size => `<col style="width:${size.value/178*100}%">`).join('')}</colgroup><thead><tr style="height:${heights[0]?.value || 0}mm">${block.columns.map(col => `<th>${escape(col)}</th>`).join('')}</tr></thead><tbody>${block.rows.map((row, r) => `<tr style="height:${heights[r+1]?.value || 0}mm">${block.columns.map((_, c) => `<td>${interactive && !String(row[c] || '').trim() ? inline('___', true, `${key}-r${r}c${c}`, answers) : inline(row[c] ?? '', interactive, `${key}-r${r}c${c}`, answers)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '';
+      return `<article class="ws-block ws-block-${block.kind}" data-ws-block="${key}"><h3>${page.blocks.length>1?`<strong class="ws-block-number">${b+1}. </strong>`:''}${inline(blockText(block.text), interactive, key, answers)}</h3>${table}${block.visual ? `<img class="ws-visual" src="${block.visual}" alt="${escape(block.text || 'Hình minh họa của bài')}">` : block.kind === 'diagram' ? diagramHTML(block.diagram) : ''}${block.parts.map((part, i) => `<section class="ws-part"><p><strong>${partLabel(i)}</strong> ${inline(part.text.replace(/^\s*[a-z]+[.)]\s+/i,''), interactive, `${key}-part${i}`, answers)}</p>${response(part, `${key}-part${i}`)}</section>`).join('')}${block.kind !== 'text' ? response(block, key) : ''}</article>`;
+    }).join('')}</div></div>`).join('')}</section>`;
   }
-  const api = { normalize, escape, isFreeform, fromRecord, toRecord, publicDocument, render };
+  const api = { normalize, escape, questionKinds, contentKinds, partLabel, isFreeform, fromRecord, toRecord, publicDocument, render };
   root.WorksheetDocument = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
@@ -417,7 +455,7 @@
       if (!this.teacher()) return;
       const field = id => document.getElementById(`add-w-${id}`)?.value;
       this.metadata = { classlevel: field('class') || 'Lớp 4', subject: field('sub') || 'Toán', period: field('period') || 'Học Kỳ 1' };
-      this.structureBackup = null; this.doc = null; this.files = []; this.editIndex = undefined;
+      this.doc = null; this.files = []; this.editIndex = undefined;
       if (app.worksheetLocalImport) app.worksheetLocalImport.sourcePages = [];
       this.container().innerHTML = `<section class="ws-studio" aria-label="Tạo phiếu từ ảnh hoặc file"><header><span class="ws-kicker">PHIẾU HỌC TẬP · TỪ TÀI LIỆU</span><h3>Biến bài đã làm thành một phiếu mới</h3><p>Giữ nội dung in sẵn, bỏ nét bút và tạo chỗ trống để học sinh luyện lại. Bạn sẽ kiểm tra từng bài trước khi lưu.</p></header><div class="ws-upload"><label for="ws-source-files">Chọn ảnh hoặc file (có thể chọn nhiều)</label><input id="ws-source-files" type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.docx,.txt,.json"><p>JPG, PNG, WebP, PDF, DOCX, TXT hoặc JSON phiếu. Tối đa 12 file, 10 MB/file, tổng 30 MB. DOCX có sơ đồ: nên xuất PDF để giữ hình.</p><p>File được đọc ngay trên thiết bị, không gửi tới OpenAI hoặc dịch vụ OCR. Thư viện nhận diện tiếng Việt chỉ tải khi cần.</p><label><input id="ws-remove-color" type="checkbox" checked> Bỏ nét bút màu (tắt khi chữ/hình in sẵn có màu)</label><small>Với bút đen, chọn Làm sạch ảnh để khoanh vùng trước khi đọc. Ảnh nghiêng/chữ mờ cần đối chiếu lại.</small></div><ol id="ws-source-list" class="ws-source-list"></ol><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-extract">Đọc và dựng phiếu</button><button type="button" id="ws-blank">Soạn phiếu tự do</button><button type="button" id="ws-back">Quay lại soạn phiếu</button></div></section>`;
       app.admin.syncComposerQuestionNav();
@@ -484,7 +522,6 @@
       }
     },
     edit(record, index) {
-      this.structureBackup = null;
       if (!this.teacher()) return;
       this.doc = D.fromRecord(record); this.editIndex = index;
       this.metadata = { id: record.id, classlevel: record.classlevel, subject: record.subject, period: record.period };
@@ -534,11 +571,19 @@
     renderEditor() {
       const doc = this.doc;
       const field = (label, value, key, rows = 3) => `<label>${label}<textarea rows="${rows}" data-ws-field="${key}">${esc(value)}</textarea></label>`;
-      this.container().innerHTML = `<section class="ws-studio" aria-label="Hiệu chỉnh phiếu từ tài liệu"><header><span class="ws-kicker">RÀ SOÁT NỘI DUNG</span><h3>Phiếu của bạn, từng bài một</h3><p>Không bắt buộc đáp án hoặc số câu. Đối chiếu bản gốc và kiểm tra các ô từng có nét bút trước khi giao học sinh.</p></header><div class="ws-meta"><label>Tên phiếu<input id="ws-title" value="${esc(doc.title)}" required></label><label>Cấp lớp<select id="ws-class">${[1,2,3,4,5].map(n => `<option ${this.metadata.classlevel === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label><label>Môn<select id="ws-subject">${['Toán','Tiếng Việt'].map(s => `<option ${this.metadata.subject === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Thời gian<select id="ws-period">${['Học Kỳ 1','Học Kỳ 2','Cả Năm'].map(s => `<option ${this.metadata.period === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Chủ đề (tùy chọn)<input id="ws-topic" value="${esc(doc.topic)}" maxlength="500"></label><label>Bài học (tùy chọn)<input id="ws-lesson" value="${esc(doc.lesson)}" maxlength="500"></label><label>Mẫu header/footer<select id="ws-decoration">${[['none','Không trang trí'],['leaves','Vườn lá'],['stars','Ngôi sao'],['rainbow','Cầu vồng'],['pencils','Bút chì'],['geometry','Hình vui']].map(([id,name]) => `<option value="${id}" ${doc.decoration === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label><label>Màu bản in<select id="ws-theme">${[['mint','Vườn xanh'],['sky','Bầu trời'],['sun','Nắng ấm']].map(([id,name]) => `<option value="${id}" ${doc.theme === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label></div>${doc.warnings.length ? `<aside class="ws-review"><strong>Cần đối chiếu bản gốc</strong><ul>${doc.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></aside>` : ''}<div class="ws-editor-pages">${doc.pages.map((page,p) => `<section class="ws-editor-page"><div class="ws-page-heading"><label>Tiêu đề nhóm ${p+1} (tùy chọn)<input id="ws-page-title-${p}" value="${esc(page.title)}" ${page.hideTitle ? 'disabled' : ''}></label><button type="button" data-toggle-title="${p}">${page.hideTitle ? 'Thêm tiêu đề' : 'Xóa tiêu đề'}</button><button type="button" data-page-up="${p}" ${p ? '' : 'disabled'}>Nhóm lên</button><label class="ws-inline-check"><input type="checkbox" data-group-break="${p}" ${page.startNewPage ? 'checked' : ''}> Nhóm bắt đầu trang mới</label><button type="button" data-add-block="${p}">Thêm bài</button></div>${page.blocks.map((block,b) => `<article class="ws-editor-block"><div class="ws-block-heading"><strong>Bài ${b+1}</strong><select aria-label="Dạng nội dung bài ${b+1}" data-ws-field="${p}:${b}:kind">${[['question','Câu hỏi'],['table','Bảng'],['diagram','Sơ đồ'],['text','Tiêu đề / Nội dung đọc']].map(([id,label]) => `<option value="${id}" ${block.kind === id ? 'selected' : ''}>${label}</option>`).join('')}</select><button type="button" data-up="${p}:${b}" ${b ? '' : 'disabled'}>Lên</button><button type="button" data-remove="${p}:${b}">Xóa bài</button></div>${block.review ? `<p class="ws-review">${esc(block.review)}</p>` : ''}${field('Nội dung in sẵn (___ là chỗ trống)', block.text, `${p}:${b}:text`)}<div class="ws-two-columns">${field('Lựa chọn (mỗi dòng một lựa chọn)', block.options.join('\n'), `${p}:${b}:options`)}${field('Đáp án dành riêng cho giáo viên (không bắt buộc)', block.answer, `${p}:${b}:answer`)}</div><label>Số dòng chấm để học sinh viết<input type="number" min="0" max="20" value="${block.lines}" data-ws-field="${p}:${b}:lines"></label><details ${block.kind === 'table' ? 'open' : ''}><summary>Bảng (ô có nét bút: thay bằng ___)</summary>${field('Tên cột, ngăn cách bằng Tab', block.columns.join('\t'), `${p}:${b}:columns`, 2)}${field('Mỗi dòng là một hàng; ô ngăn cách bằng Tab', block.rows.map(row => row.join('\t')).join('\n'), `${p}:${b}:rows`, 6)}</details><details ${block.parts.length ? 'open' : ''}><summary>Câu con / sơ đồ nâng cao</summary><p>Đổi text, label, lines, options hoặc answer của từng câu con. Có thể có bất kỳ số câu con nào.</p>${field('Câu con (JSON)', JSON.stringify(block.parts, null, 2), `${p}:${b}:parts`, 8)}${field('Sơ đồ (JSON: nodes, edges, type)', JSON.stringify(block.diagram, null, 2), `${p}:${b}:diagram`, 5)}</details></article>`).join('')}</section>`).join('')}</div><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-save">Lưu phiếu học tập</button><button type="button" id="ws-preview">Xem bản in màu</button><button type="button" id="ws-export-json">Tải bản phiếu để lưu dự phòng</button><button type="button" id="ws-add-page">Thêm trang</button><button type="button" id="ws-library">Về Kho Phiếu</button></div><div id="ws-preview-area"></div></section>`;
-      const mutate = callback => { let before; try { this.capture(); before=JSON.parse(JSON.stringify(this.doc));callback();this.renderEditor(); } catch(error) { if(before){this.doc=before;this.renderEditor();}this.feedback(error.message,true); } };
+      this.container().innerHTML = `<section class="ws-studio" aria-label="Hiệu chỉnh phiếu từ tài liệu"><header><span class="ws-kicker">RÀ SOÁT NỘI DUNG</span><h3>Phiếu của bạn, từng bài một</h3><p>Không bắt buộc đáp án hoặc số câu. Đối chiếu bản gốc và kiểm tra các ô từng có nét bút trước khi giao học sinh.</p></header><div class="ws-meta"><label>Tên phiếu<input id="ws-title" value="${esc(doc.title)}" required></label><label>Cấp lớp<select id="ws-class">${[1,2,3,4,5].map(n => `<option ${this.metadata.classlevel === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label><label>Môn<select id="ws-subject">${['Toán','Tiếng Việt'].map(s => `<option ${this.metadata.subject === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Thời gian<select id="ws-period">${['Học Kỳ 1','Học Kỳ 2','Cả Năm'].map(s => `<option ${this.metadata.period === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Chủ đề (tùy chọn)<input id="ws-topic" value="${esc(doc.topic)}" maxlength="500"></label><label>Bài học (tùy chọn)<input id="ws-lesson" value="${esc(doc.lesson)}" maxlength="500"></label><label>Mẫu header/footer<select id="ws-decoration">${[['none','Không trang trí'],['leaves','Vườn lá'],['stars','Ngôi sao'],['rainbow','Cầu vồng'],['pencils','Bút chì'],['geometry','Hình vui']].map(([id,name]) => `<option value="${id}" ${doc.decoration === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label><label>Màu bản in<select id="ws-theme">${[['mint','Vườn xanh'],['sky','Bầu trời'],['sun','Nắng ấm']].map(([id,name]) => `<option value="${id}" ${doc.theme === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label></div>${doc.warnings.length ? `<aside class="ws-review"><strong>Cần đối chiếu bản gốc</strong><ul>${doc.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></aside>` : ''}<div class="ws-editor-pages">${doc.pages.map((page,p) => `<section class="ws-editor-page"><div class="ws-page-heading"><label>Tiêu đề nhóm ${p+1} (tùy chọn)<input id="ws-page-title-${p}" value="${esc(page.title)}" ${page.hideTitle ? 'disabled' : ''}></label><button type="button" data-toggle-title="${p}">${page.hideTitle ? 'Thêm tiêu đề' : 'Xóa tiêu đề'}</button><button type="button" data-page-up="${p}" ${p ? '' : 'disabled'}>Nhóm lên</button><label class="ws-inline-check"><input type="checkbox" data-group-break="${p}" ${page.startNewPage ? 'checked' : ''}> Nhóm bắt đầu trang mới</label><button type="button" data-add-block="${p}">Thêm bài</button></div>${page.blocks.map((block,b) => `<article class="ws-editor-block"><div class="ws-block-heading"><strong>Bài ${b+1}</strong><select aria-label="Dạng nội dung bài ${b+1}" data-ws-field="${p}:${b}:kind">${D.contentKinds.map(([id,label]) => `<option value="${id}" ${block.kind === id ? 'selected' : ''}>${label}</option>`).join('')}</select><button type="button" data-up="${p}:${b}" ${b ? '' : 'disabled'}>Lên</button><button type="button" data-remove="${p}:${b}">Xóa bài</button></div>${block.review ? `<p class="ws-review">${esc(block.review)}</p>` : ''}${field('Nội dung in sẵn (___ là chỗ trống)', block.text, `${p}:${b}:text`)}<div class="ws-two-columns">${field('Lựa chọn (mỗi dòng một lựa chọn)', block.options.join('\n'), `${p}:${b}:options`)}${field('Đáp án dành riêng cho giáo viên (không bắt buộc)', block.answer, `${p}:${b}:answer`)}</div><label>Số dòng chấm để học sinh viết<input type="number" min="0" max="20" value="${block.lines}" data-ws-field="${p}:${b}:lines"></label><details ${block.kind === 'table' ? 'open' : ''}><summary>Bảng (ô có nét bút: thay bằng ___)</summary>${field('Tên cột, ngăn cách bằng Tab', block.columns.join('\t'), `${p}:${b}:columns`, 2)}${field('Mỗi dòng là một hàng; ô ngăn cách bằng Tab', block.rows.map(row => row.join('\t')).join('\n'), `${p}:${b}:rows`, 6)}</details><details ${block.parts.length ? 'open' : ''}><summary>Câu con / sơ đồ nâng cao</summary><p>Đổi text, label, lines, options hoặc answer của từng câu con. Có thể có bất kỳ số câu con nào.</p>${field('Câu con (JSON)', JSON.stringify(block.parts, null, 2), `${p}:${b}:parts`, 8)}${field('Sơ đồ (JSON: nodes, edges, type)', JSON.stringify(block.diagram, null, 2), `${p}:${b}:diagram`, 5)}</details></article>`).join('')}</section>`).join('')}</div><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-save">Lưu phiếu học tập</button><button type="button" id="ws-preview">Xem bản in màu</button><button type="button" id="ws-add-group">Thêm Nhóm</button><button type="button" id="ws-library">Về Kho Phiếu</button></div><div id="ws-preview-area"></div></section>`;
+      const mutate = callback => {
+        const active=document.activeElement;
+        const focusKey=active?.dataset.wsField ? ['data-ws-field',active.dataset.wsField] : active?.dataset.wsPartField ? ['data-ws-part-field',active.dataset.wsPartField] : null;
+        let before;
+        try { this.capture();before=JSON.parse(JSON.stringify(this.doc));callback();this.renderEditor(); }
+        catch(error) { if(before){this.doc=before;this.renderEditor();}this.feedback(error.message,true); }
+        if(focusKey) this.container().querySelector(`[${focusKey[0]}="${focusKey[1]}"]`)?.focus();
+      };
       app.admin.syncComposerQuestionNav();
-      this.renderStructure(mutate);
       this.friendlyStructureControls(mutate);
+      this.questionTypeControls();
+      this.container().querySelectorAll('select[data-ws-field],select[data-ws-part-field]').forEach(field=>field.onchange=()=>mutate(()=>{}));
       this.container().querySelectorAll('[data-group-break]').forEach(field => field.onchange = () => mutate(() => { this.doc.pages[Number(field.dataset.groupBreak)].startNewPage = field.checked; }));
       this.container().querySelectorAll('[data-toggle-title]').forEach(btn => btn.onclick = () => mutate(() => { const page = this.doc.pages[Number(btn.dataset.toggleTitle)]; page.hideTitle = !page.hideTitle; if (page.hideTitle) page.title = ''; }));
       if (app.worksheetLocalImport?.sourcePages.length) {
@@ -550,11 +595,24 @@
       this.container().querySelectorAll('[data-remove]').forEach(btn => btn.onclick = () => mutate(() => { const [p,b] = btn.dataset.remove.split(':'); this.doc.pages[p].blocks.splice(Number(b),1); }));
       this.container().querySelectorAll('[data-up]').forEach(btn => btn.onclick = () => mutate(() => { const [p,b] = btn.dataset.up.split(':').map(Number); const blocks = this.doc.pages[p].blocks; [blocks[b-1],blocks[b]] = [blocks[b],blocks[b-1]]; }));
       this.container().querySelectorAll('[data-page-up]').forEach(btn => btn.onclick = () => mutate(() => { const p = Number(btn.dataset.pageUp); [this.doc.pages[p-1],this.doc.pages[p]] = [this.doc.pages[p],this.doc.pages[p-1]]; }));
-      document.getElementById('ws-add-page').onclick = () => mutate(() => this.doc.pages.push({ title: '', blocks: [emptyBlock()] }));
+      document.getElementById('ws-add-group').onclick = () => mutate(() => { if(this.doc.pages.length>=40)throw new Error('Phiếu tối đa 40 nhóm.');this.doc.pages.push({ title: '', hideTitle:false, startNewPage:false, blocks: [emptyBlock()] }); });
       document.getElementById('ws-preview').onclick = () => this.preview();
       document.getElementById('ws-save').onclick = () => this.save();
       document.getElementById('ws-library').onclick = () => { if (confirm('Về Kho Phiếu? Nội dung chưa lưu sẽ chỉ còn trong phiên này.')) app.admin.renderWSubTab('lib'); };
-      document.getElementById('ws-export-json').onclick = () => { try { this.capture(); const url = URL.createObjectURL(new Blob([JSON.stringify(this.doc,null,2)],{type:'application/json'})); const a = document.createElement('a'); a.href=url; a.download='Phieu_hoc_tap.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); } catch(error) { this.feedback(error.message,true); } };
+
+    },
+    questionTypeControls() {
+      const configure = (kind, options, answer) => {
+        const hints = {trueFalse:'Chọn Đúng hoặc Sai. Đáp án giáo viên: Đúng hoặc Sai.',compare:'Chọn <, > hoặc =. Đáp án giáo viên: <, > hoặc =.',fill:'Dùng ___ tại mỗi vị trí cần điền.',sequence:'Dùng ___ tại số còn thiếu trong chuỗi.',drag:'Dùng ___ tại chỗ cần điền; mỗi dòng lựa chọn là một từ để chọn.',matching:'Dòng 1: các mục cột trái, ngăn bằng dấu phẩy. Dòng 2: các mục cột phải, ngăn bằng dấu phẩy.'};
+        options.closest('label').hidden = ['trueFalse','compare','fill','sequence','text'].includes(kind);
+        options.placeholder = kind === 'matching' ? 'Mèo, Chó\nMeo meo, Gâu gâu' : 'Mỗi dòng một lựa chọn';
+        answer.placeholder = kind === 'trueFalse' ? 'Đúng hoặc Sai' : kind === 'compare' ? '<, > hoặc =' : 'Đáp án giáo viên (tùy chọn)';
+        if(hints[kind]) { const hint=document.createElement('p');hint.className='ws-type-hint';hint.textContent=hints[kind];options.closest('label').parentElement.before(hint); }
+      };
+      this.doc.pages.forEach((page,p)=>page.blocks.forEach((block,b)=>{
+        configure(block.kind,this.container().querySelector(`[data-ws-field="${p}:${b}:options"]`),this.container().querySelector(`[data-ws-field="${p}:${b}:answer"]`));
+        block.parts.forEach((part,i)=>configure(part.kind,this.container().querySelector(`[data-ws-part-field="${p}:${b}:${i}:options"]`),this.container().querySelector(`[data-ws-part-field="${p}:${b}:${i}:answer"]`)));
+      }));
     },
     friendlyStructureControls(mutate) {
       this.doc.pages.forEach((page,p)=>page.blocks.forEach((block,b)=> {
@@ -566,7 +624,7 @@
         tableArea.querySelector('[data-remove-col]').onclick=()=>mutate(()=>{const block=this.doc.pages[p].blocks[b];block.columns.pop();block.rows.forEach(row=>row.pop());});
         this.tableSizing(tableArea, p, b, mutate);
         const partsArea=this.container().querySelector(`[data-ws-field="${p}:${b}:parts"]`).closest('details');
-        partsArea.innerHTML=`<summary>Câu con và nhãn sơ đồ</summary>${block.parts.map((part,i)=>`<section class="ws-part-editor"><label>Nhãn câu con<input data-ws-part-field="${p}:${b}:${i}:label" value="${esc(part.label)}"></label><label>Nội dung câu con<textarea data-ws-part-field="${p}:${b}:${i}:text">${esc(part.text)}</textarea></label><label>Đáp án giáo viên (tùy chọn)<textarea data-ws-part-field="${p}:${b}:${i}:answer">${esc(part.answer)}</textarea></label><label>Lựa chọn, mỗi dòng một lựa chọn<textarea data-ws-part-field="${p}:${b}:${i}:options">${esc(part.options.join('\n'))}</textarea></label><label>Dòng chấm<input type="number" min="0" max="20" data-ws-part-field="${p}:${b}:${i}:lines" value="${part.lines}"></label><button type="button" data-remove-part="${i}">Bỏ câu con này</button></section>`).join('')}<button type="button" data-add-part>Thêm câu con</button><h4>Nhãn trong sơ đồ</h4>${block.diagram.nodes.map((node,i)=>`<div class="ws-node-editor"><label>Nhãn<input data-ws-node-field="${p}:${b}:${i}:label" value="${esc(node.label)}"></label><label>Vị trí ngang (%)<input type="number" min="5" max="95" data-ws-node-field="${p}:${b}:${i}:x" value="${node.x}"></label><label>Vị trí dọc (%)<input type="number" min="10" max="90" data-ws-node-field="${p}:${b}:${i}:y" value="${node.y}"></label></div>`).join('')}<button type="button" data-add-node>Thêm nhãn sơ đồ</button>`;
+        partsArea.innerHTML=`<summary>Câu con và nhãn sơ đồ</summary>${block.parts.map((part,i)=>`<section class="ws-part-editor"><label>Loại câu con<select data-ws-part-field="${p}:${b}:${i}:kind">${D.questionKinds.map(([id,label])=>`<option value="${id}" ${part.kind===id?'selected':''}>${label}</option>`).join('')}</select></label><label>Nhãn câu con<input data-ws-part-field="${p}:${b}:${i}:label" value="${esc(part.label)}"></label><label>Nội dung câu con<textarea data-ws-part-field="${p}:${b}:${i}:text">${esc(part.text)}</textarea></label><label>Đáp án giáo viên (tùy chọn)<textarea data-ws-part-field="${p}:${b}:${i}:answer">${esc(part.answer)}</textarea></label><label>Lựa chọn, mỗi dòng một lựa chọn<textarea data-ws-part-field="${p}:${b}:${i}:options">${esc(part.options.join('\n'))}</textarea></label><label>Dòng chấm<input type="number" min="0" max="20" data-ws-part-field="${p}:${b}:${i}:lines" value="${part.lines}"></label><button type="button" data-remove-part="${i}">Bỏ câu con này</button></section>`).join('')}<button type="button" data-add-part>Thêm câu con</button><h4>Nhãn trong sơ đồ</h4>${block.diagram.nodes.map((node,i)=>`<div class="ws-node-editor"><label>Nhãn<input data-ws-node-field="${p}:${b}:${i}:label" value="${esc(node.label)}"></label><label>Vị trí ngang (%)<input type="number" min="5" max="95" data-ws-node-field="${p}:${b}:${i}:x" value="${node.x}"></label><label>Vị trí dọc (%)<input type="number" min="10" max="90" data-ws-node-field="${p}:${b}:${i}:y" value="${node.y}"></label></div>`).join('')}<button type="button" data-add-node>Thêm nhãn sơ đồ</button>`;
         partsArea.querySelector('[data-add-part]').onclick=()=>mutate(()=>this.doc.pages[p].blocks[b].parts.push({label:`${String.fromCharCode(97+this.doc.pages[p].blocks[b].parts.length)})`,text:'',answer:'',lines:2,options:[]}));
         partsArea.querySelectorAll('[data-remove-part]').forEach(btn=>btn.onclick=()=>mutate(()=>this.doc.pages[p].blocks[b].parts.splice(Number(btn.dataset.removePart),1)));
         partsArea.querySelector('[data-add-node]').onclick=()=>mutate(()=>this.doc.pages[p].blocks[b].diagram.nodes.push({label:'Nhãn mới',x:50,y:50}));
@@ -585,31 +643,6 @@
         this.feedback(`Đã dựng ${paper.children.length} trang A4. Bản PDF dùng cùng bố cục này.`);
       } catch(error) { document.getElementById('ws-preview-area').replaceChildren();this.feedback(error.message,true); }
       finally { if(button.isConnected)button.disabled=false; }
-    },
-    renderStructure(mutate) {
-      const box=document.createElement('section');box.className='ws-structure';
-      this.container().querySelector('.ws-editor-pages').before(box);
-      let plan=this.doc.pages.map(page=>page.blocks.map(block=>block.parts.length));
-      const number=(value,max)=>{const n=Number(value);if(!Number.isInteger(n)||n<0||n>max)throw new Error(`Nhập số nguyên từ 0 đến ${max}.`);return n;};
-      const draw=()=> {
-        box.innerHTML=`<h4>Khung nội dung bản gốc</h4><p>Khai báo Nhóm → Bài → Câu con rồi áp dụng để chỉnh nội dung. Giảm số lượng sẽ bỏ phần cuối; có thể hoàn tác lần áp dụng gần nhất.</p><label>Số lượng Nhóm<input id="ws-group-count" type="number" min="1" max="40" value="${plan.length}"></label><div class="ws-structure-groups">${plan.map((blocks,p)=>`<fieldset><legend>Nhóm ${p+1}</legend><label>Số lượng Bài · Nhóm ${p+1}<input type="number" min="0" max="100" data-plan-blocks="${p}" value="${blocks.length}"></label>${blocks.map((count,b)=>`<label>Số lượng Câu con · Nhóm ${p+1}, Bài ${b+1}<input type="number" min="0" max="50" data-plan-parts="${p}:${b}" value="${count}"></label>`).join('')}</fieldset>`).join('')}</div><div class="ws-actions"><button type="button" id="ws-apply-structure">Áp dụng khung nội dung</button><button type="button" id="ws-undo-structure" ${this.structureBackup?'':'disabled'}>Hoàn tác khung nội dung</button></div>`;
-        const edit=callback=>{try{callback();draw();}catch(error){this.feedback(error.message,true);}};
-        box.querySelector('#ws-group-count').onchange=event=>edit(()=>{const count=number(event.target.value,40);if(!count)throw new Error('Phiếu cần ít nhất một nhóm.');plan=Array.from({length:count},(_,p)=>plan[p]||[0]);});
-        box.querySelectorAll('[data-plan-blocks]').forEach(field=>field.onchange=()=>edit(()=>{const p=Number(field.dataset.planBlocks);plan[p]=Array.from({length:number(field.value,100)},(_,b)=>plan[p][b]||0);}));
-        box.querySelectorAll('[data-plan-parts]').forEach(field=>field.onchange=()=>{try{const [p,b]=field.dataset.planParts.split(':').map(Number);plan[p][b]=number(field.value,50);}catch(error){this.feedback(error.message,true);}});
-        box.querySelector('#ws-apply-structure').onclick=()=>mutate(()=>{
-          if(!plan.some(blocks=>blocks.length))throw new Error('Phiếu cần ít nhất một bài.');
-          this.structureBackup=JSON.parse(JSON.stringify(this.doc));
-          this.doc.pages=plan.map((blocks,p)=>{
-            const old=this.doc.pages[p];
-            return {...(old||{title:'',hideTitle:false,startNewPage:false}),blocks:blocks.map((count,b)=>{
-              const block=old?.blocks[b]||emptyBlock();
-              return {...block,parts:Array.from({length:count},(_,i)=>block.parts[i]||{label:i<26?`${String.fromCharCode(97+i)})`:`${i+1})`,text:'',answer:'',lines:2,options:[]})};
-            })};
-          });
-        });
-        box.querySelector('#ws-undo-structure').onclick=()=>mutate(()=>{this.doc.pages=this.structureBackup.pages;this.structureBackup=null;});
-      };draw();
     },
     tableSizing(area,p,b,mutate) {
       const block=this.doc.pages[p].blocks[b];if(!block.columns.length)return;
@@ -636,7 +669,7 @@
         const error = await app.data.saveWorksheets();
         this.metadata.id = record.id;
         const locallySaved=app.data.loadLocalWorksheets().some(item=>app.data.getExamContentKey(item)===app.data.getExamContentKey(record));
-        if(!locallySaved&&(error||!window.supabase))throw new Error('Thiết bị chưa lưu được phiếu (có thể hết dung lượng). Nội dung vẫn ở đây; hãy tải bản phiếu dự phòng trước khi rời trang.');
+        if(!locallySaved&&(error||!window.supabase))throw new Error('Thiết bị chưa lưu được phiếu (có thể hết dung lượng). Nội dung vẫn ở đây; hãy giữ nguyên trang và thử lưu lại.');
         if (error) { this.feedback(app.admin.getExamSyncErrorMessage(error,true),true); return; }
         app.admin.renderWSubTab('lib');
       } catch(error) { this.feedback(error.message,true); }

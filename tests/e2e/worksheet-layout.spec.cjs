@@ -11,22 +11,16 @@ async function open(page,doc) {
   },doc);
 }
 const base=()=>({title:'Phiếu luyện số',pages:[{title:'Nhóm số tự nhiên',blocks:[{text:'Bài 1. Điền số',parts:[{label:'a)',text:'Giữ nội dung gốc',lines:2}],lines:2}]}]});
-test('khai báo nhóm/bài/câu con giữ nội dung và hoàn tác phần bị giảm',async({page})=>{
+test('thêm nhóm thủ công giữ nội dung, không còn khung khai báo hoặc nút dư',async({page})=>{
   await open(page,base());
-  await page.locator('#ws-group-count').fill('3');await page.locator('#ws-group-count').blur();
-  await expect(page.locator('[data-plan-blocks]')).toHaveCount(3);
-  await page.locator('[data-plan-blocks="1"]').fill('2');await page.locator('[data-plan-blocks="1"]').blur();
-  await page.locator('[data-plan-parts="1:1"]').fill('3');await page.locator('[data-plan-parts="1:1"]').blur();
-  await page.getByRole('button',{name:'Áp dụng khung nội dung',exact:true}).click();
+  await expect(page.locator('.ws-structure')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Thêm trang',exact:true})).toHaveCount(0);
+  await expect(page.locator('#ws-export-json')).toHaveCount(0);
+  await page.getByRole('button',{name:'Thêm Nhóm',exact:true}).click();
+  await page.getByRole('button',{name:'Thêm Nhóm',exact:true}).click();
   await expect(page.locator('.ws-editor-page')).toHaveCount(3);
-  await expect(page.locator('.ws-editor-page').nth(1).locator('.ws-editor-block')).toHaveCount(2);
-  await expect(page.locator('[data-ws-part-field="1:1:2:text"]')).toBeAttached();
   await expect(page.locator('[data-ws-part-field="0:0:0:text"]')).toHaveValue('Giữ nội dung gốc');
-  await page.locator('#ws-group-count').fill('1');await page.locator('#ws-group-count').blur();
-  await page.getByRole('button',{name:'Áp dụng khung nội dung',exact:true}).click();
-  await expect(page.locator('.ws-editor-page')).toHaveCount(1);
-  await page.getByRole('button',{name:'Hoàn tác khung nội dung',exact:true}).click();
-  await expect(page.locator('.ws-editor-page')).toHaveCount(3);
+  await expect(page.locator('[data-group-break="2"]')).not.toBeChecked();
 });
 test('cột/dòng cố định giữ kích thước và lưu lại cùng phiếu',async({page})=>{
   await open(page,{title:'Bảng',pages:[{blocks:[{kind:'table',text:'Điền bảng',columns:['Số','Đọc số','Hàng','Giá trị'],rows:[['1','___','___','___'],['2','___','___','___']]}]}]});
@@ -104,15 +98,11 @@ test('đổi mẫu trang trí và không cắt một dòng bảng quá cao',asyn
 });
 
 
-test('hoàn tác không mang nội dung từ phiếu khác; nhóm trống được giữ khi mở lại',async({page})=>{
+test('nhóm trống được giữ khi mở lại, không mang dữ liệu từ phiếu khác',async({page})=>{
   await open(page,base());
-  await page.getByRole('button',{name:'Áp dụng khung nội dung',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Hoàn tác khung nội dung',exact:true})).toBeEnabled();
   await page.evaluate(()=>{const record=WorksheetDocument.toRecord({title:'Phiếu B',pages:[{title:'Nhóm B1',blocks:[{kind:'question',text:'Nội dung B',lines:2}]},{title:'Nhóm B2 trống',blocks:[]},{title:'Nhóm B3 trống',blocks:[]}]});app.data.worksheets=[record];app.worksheetStudio.edit(record,0);});
-  await expect(page.getByRole('button',{name:'Hoàn tác khung nội dung',exact:true})).toBeDisabled();
   await expect(page.locator('.ws-editor-page')).toHaveCount(3);
   await expect(page.locator('#ws-page-title-2')).toHaveValue('Nhóm B3 trống');
-  await expect(page.locator('#ws-title')).toHaveValue('Phiếu B');
   await page.getByRole('button',{name:'Lưu phiếu học tập',exact:true}).click();
   await page.evaluate(()=>app.worksheetStudio.edit(app.data.worksheets[0],0));
   await expect(page.locator('#ws-title')).toHaveValue('Phiếu B');

@@ -17,15 +17,15 @@ Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase c
 - Nền giấy tối được cân bằng trước OCR. Bảng thẳng/ít nghiêng được dò đường
   kẻ và đọc từng ô. Bảng méo, nét đè lên chữ in, dấu toán và số cần đối chiếu.
 - Câu con, lựa chọn, bảng và dòng chấm đều sửa được, không cần template,
-  không ép 10 câu và không bắt buộc có đáp án. Có thể thêm/xóa bài, thêm trang,
+  không ép 10 câu và không bắt buộc có đáp án. Có thể thêm/xóa bài, thêm nhóm,
   hàng/cột, câu con và nhãn sơ đồ. Ảnh/sơ đồ cần giữ: chọn bản gốc rồi cắt vùng.
 - `[CẦN KIỂM TRA]` là vùng nhận diện chưa rõ. Có thể lưu nháp phiếu này;
   cần sửa hoặc thay bằng `___` trước khi giao học sinh. Không có bảo đảm OCR
   chính xác tuyệt đối hoặc tự nhận ra mọi nét viết tay.
 - Chọn Vườn xanh/Bầu trời/Nắng ấm, xem bản in màu; lưu rồi mở **Xem phiếu →
   Xuất PDF / A4**. Bật in nền/màu trong hộp thoại in khi trình duyệt yêu cầu.
-- **Tải bản phiếu để lưu dự phòng** giữ nội dung hiệu chỉnh và hình cắt.
-  File nguồn chỉ còn trên thiết bị trong phiên làm việc.
+- File nguồn chỉ còn trên thiết bị trong phiên làm việc. Nội dung hiệu chỉnh
+  và hình cắt được giữ khi lưu phiếu.
 
 ## Trang nguồn và thông tin tùy chọn
 
@@ -75,13 +75,17 @@ app không dùng CLI của Mammoth để đọc tài liệu.
   trên trang giấy đầu tiên. Tiêu đề nhóm tùy chọn nằm ngay trên nhóm, in hoa đậm.
 - Chọn header/footer: Vườn lá, Ngôi sao, Cầu vồng, Bút chì, Hình vui hoặc
   Không trang trí. SVG sắc nét khi xuất PDF; không có khẩu hiệu trên giấy.
-- Khung nội dung bản gốc nằm trước trình sửa chi tiết: nhập số nhóm, số bài
-  từng nhóm, số câu con từng bài, rồi **Áp dụng khung nội dung**. Nội dung ở
-  các vị trí giữ lại không bị thay thế; phần mới để trống. Giảm số lượng bỏ
-  phần cuối. **Hoàn tác khung nội dung** khôi phục lần áp dụng gần nhất trong
-  phiên sửa. Khung nhóm là cấu trúc nội dung, không phải số trang giấy.
+- **Thêm Nhóm** ở cuối trình soạn bổ sung nhóm khi OCR thiếu nội dung; dùng
+  **Thêm bài**, **Thêm câu con** để sửa cấu trúc trực tiếp. Không còn khung
+  khai báo số lượng, nút Thêm trang hoặc Lưu dự phòng.
+- Câu chính và câu con hỗ trợ Tự luận, Trắc nghiệm, Đúng/Sai, Điền khuyết,
+  So sánh, Chuỗi quy luật, Kéo thả/Chọn từ và Đối chiếu/Nối cặp. Đúng/Sai
+  và So sánh có lựa chọn cố định; Nối cặp nhập hai dòng cột trái/phải.
+- Ô bảng đã xóa in rỗng; chỉ dấu `___` được chuyển thành dấu chấm.
+- Bản in dùng Arial, độ đậm thường/đậm thống nhất; chỉ nhóm có khung.
+  Nhóm nhiều bài đánh số 1., 2. (không in chữ Bài), câu con là a), b), c).
 - **Nhóm bắt đầu trang mới** giữ ranh giới ảnh/PDF đã nhập; có thể tắt để
-  các nhóm tiếp nối trên cùng A4. Nhóm thêm bằng khai báo không ép sang trang.
+  các nhóm tiếp nối trên cùng A4. Nhóm thêm thủ công không ép sang trang.
 - Kích thước bảng dùng mm: cột chia vùng rộng 178 mm; dòng chia tổng chiều
   cao bảng (20–200 mm, mặc định 120 mm), gồm cả dòng tiêu đề. Tự chia đều
   mặc định bật; cột/dòng Cố định được loại khỏi phần chia lại. Sửa một thông
