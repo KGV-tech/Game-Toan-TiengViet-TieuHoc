@@ -292,6 +292,8 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 
 /* Map Screen */
 .top-nav { position: absolute; top: 20px; width: 100%; padding: 0 30px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 20; }
+#map-screen > .top-nav { pointer-events: none; }
+#map-screen > .top-nav :is(button, a, input, select, [role="button"]) { pointer-events: auto; }
 .player-info-card { position: relative; display: flex; align-items: center; gap: 10px; min-width: 232px; padding: 9px 14px 9px 9px; overflow: hidden; border: 2px solid rgba(71, 201, 255, .78); border-radius: 12px 12px 20px 12px; background: linear-gradient(135deg, rgba(3, 26, 51, .95), rgba(5, 75, 116, .91)); color: #e7f9ff; box-shadow: 0 0 0 2px rgba(7, 39, 70, .88), 0 7px 18px rgba(0,0,0,.35), inset 0 0 20px rgba(34, 211, 238, .2); }
 .player-info-card::before { position: absolute; top: 0; right: 0; width: 42px; height: 3px; content: ''; background: #7ee9ff; box-shadow: 0 0 12px #38bdf8; }
 .player-info-card::after { position: absolute; right: 9px; bottom: 7px; width: 28px; height: 4px; content: ''; border-top: 1px solid rgba(125, 211, 252, .72); border-bottom: 1px solid rgba(125, 211, 252, .42); }
