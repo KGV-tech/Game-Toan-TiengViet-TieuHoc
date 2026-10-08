@@ -12460,9 +12460,13 @@ const app = {
                 ${questions.length ? `<main class="exam-print__questions">${questions.map((question, index) => this.renderExamPrintQuestion(question, index)).join('')}</main>` : `<p class="exam-print__empty">${isW ? 'Phiếu học tập' : 'Đề kiểm tra'} này chưa có câu hỏi nào.</p>`}
             </section>`;
         },
-        printExamInPlace(idx) {
+        async printExamInPlace(idx) {
             const printArea = document.getElementById('print-area');
             if (!printArea) return;
+            if (printArea.classList.contains('ws-paper')) {
+                try { await window.WorksheetLayout.paginate(printArea); }
+                catch (error) { alert(error.message); return; }
+            }
             const cleanup = () => document.body.classList.remove('exam-printing');
             document.body.classList.add('exam-printing');
             window.addEventListener('afterprint', cleanup, { once: true });
@@ -12498,6 +12502,10 @@ const app = {
                     console.warn('Không thể chờ font bản in tải xong:', error);
                 }
                 if (printed || printWindow.closed) return;
+                if (isW && window.WorksheetDocument?.isFreeform(exam)) {
+                    try { await window.WorksheetLayout.paginate(printWindow.document.getElementById('print-document')); }
+                    catch (error) { printWindow.alert(error.message); return; }
+                }
                 printed = true;
                 printWindow.focus();
                 printWindow.print();
@@ -12506,7 +12514,7 @@ const app = {
             const styleMarkup = stylesheetText
                 ? `<style id="exam-print-styles">${stylesheetText}</style>`
                 : `<link rel="stylesheet" href="${stylesheetHref}">`;
-            printWindow.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title>${styleMarkup}</head><body>${this.renderExamPrintContent(exam, 'print-document', isW)}</body></html>`);
+            printWindow.document.write(`<!doctype html><html lang="vi" class="${isW && window.WorksheetDocument?.isFreeform(exam) ? 'ws-print-window' : ''}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${app.data.sanitizeHTML(name)}</title>${styleMarkup}</head><body>${this.renderExamPrintContent(exam, 'print-document', isW)}</body></html>`);
             printWindow.document.close();
             let styleWaitAttempts = 0;
             const printWhenReady = () => {

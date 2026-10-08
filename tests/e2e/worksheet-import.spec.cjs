@@ -193,7 +193,7 @@ test('hai trang nguồn giữ hai trang dù có nhiều tiêu đề; metadata v�
   await expect(page.getByRole('button', { name: 'Bỏ bài', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Xem bản in màu' }).click();
   await expect(page.locator('#ws-color-preview .ws-page')).toHaveCount(2);
-  await expect(page.locator('#ws-color-preview .ws-page').first().locator('h1')).toHaveCount(0);
+  await expect(page.locator('#ws-color-preview .ws-page').first().locator('.ws-group-title')).toHaveCount(0);
   await expect(page.locator('#ws-color-preview .ws-paper-context').first()).toHaveText('Số tự nhiên · Hàng và lớp');
   await page.getByRole('button', { name: 'Lưu phiếu học tập', exact: true }).click();
   await expect.poll(() => page.evaluate(() => app.data.worksheets.length)).toBe(1);
@@ -222,7 +222,7 @@ for (const theme of ['light', 'dark']) {
     await page.getByRole('button', { name: 'Xem bản in màu' }).click();
     await expect(page.locator('#ws-color-preview th').first()).toHaveCSS('font-weight', '800');
     await expect(page.locator('#ws-color-preview td').first()).toHaveCSS('text-align', 'center');
-    await expect(page.locator('#ws-color-preview')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(page.locator('#ws-color-preview > .ws-page').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await testInfo.attach(`worksheet-${theme}`, {body: await page.locator('#admin-w-subarea .ws-studio').screenshot(),contentType:'image/png'});
   });
 }

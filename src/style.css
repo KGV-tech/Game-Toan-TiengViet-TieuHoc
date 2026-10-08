@@ -8975,3 +8975,50 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 .worksheet-composer .exam-library-button--primary { background: linear-gradient(to bottom, #ec4899, #be185d); border-color: #9d174d; }
 .worksheet-composer .exam-library-button--primary:hover { background: linear-gradient(to bottom, #f472b6, #db2777); }
 .admin-tab[data-module="worksheets"].is-active { color: #f472b6; border-color: #f472b6; }
+
+/* Worksheet print layout: shared by the A4 preview and the PDF window. */
+.ws-paper-header { border: 0; border-radius: 0; background: white; padding: 0; margin: 0 0 7mm; }
+.ws-paper-header h1 { text-align: center; font-size: 23px; margin: 0 0 4mm; }
+.ws-paper-context { text-align: center; margin: 0 0 4mm; font-size: 13px; }
+.ws-student-info { display: grid; grid-template-columns: 1.5fr .55fr 1fr; align-items: end; gap: 3mm; font-size: 12px; }
+.ws-student-info span:nth-child(2) { text-align: center; }
+.ws-student-info span:last-child { text-align: right; white-space: nowrap; }
+.ws-group-title { text-align: center; text-transform: uppercase; font-size: 18px; font-weight: 800; margin: 5mm 0 3mm; color: #17283a; break-after: avoid; }
+.ws-paper .ws-block { padding: 3mm; margin: 3mm 0; border-radius: 2mm; }
+.ws-paper .ws-block h3 { margin: 0 0 2mm; }
+.ws-paper .ws-block-text h3 { text-align: center; text-transform: uppercase; font-weight: 800; }
+.ws-paper .ws-dotted { min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; vertical-align: bottom; }
+.ws-paper :is(th,td) { min-width: 0; }
+.ws-paper .ws-table-wrap { overflow: visible; }
+.ws-paper table { min-width: 0; }
+.ws-paper td { word-break: normal; }
+.ws-preview-shell { max-height: 75vh; overflow: auto; background: #76899b; padding: 18px; margin: 16px 0; }
+.ws-preview-toolbar { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.ws-preview-toolbar label { display: flex; align-items: center; gap: 10px; }
+.ws-preview-toolbar select { width: auto; }
+.ws-preview-shell .ws-a4 { zoom: var(--ws-preview-scale, .75); }
+.ws-a4 { font-size: 14px; line-height: 1.5; width: 210mm !important; max-width: none; background: transparent; box-sizing: border-box; }
+.ws-a4 > .ws-page { width: 210mm; height: 297mm; padding: 10mm 12mm; box-sizing: border-box; margin: 0 auto 20px; background: white; box-shadow: 0 3px 16px #15283c50; display: block; overflow: hidden; }
+.ws-a4 table { width: 178mm; max-width: 100%; }
+.ws-a4 .ws-page-content { height: 249mm; margin: 3mm 0; min-height: 0; color: #17283a; }
+.ws-a4 .ws-page-top { height: 10mm; }
+.ws-decoration { width: 100%; height: 9mm; display: block; }
+.ws-a4 .ws-paper-footer { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 1mm; padding: 0; border: 0; position: static; height: 12mm; }
+.ws-page-number { color: #475569; font-size: 10px; }
+.ws-structure { border: 1px solid var(--ws-ui-line,#7891a8); padding: 18px; margin: 20px 0; border-radius: 12px; }
+.ws-structure-groups { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; margin-top: 16px; }
+.ws-structure fieldset, .ws-table-sizing fieldset { min-width: 0; border: 1px solid var(--ws-ui-line,#7891a8); padding: 14px; display: grid; gap: 12px; }
+.ws-structure > label { max-width: 240px; }
+.ws-size-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; }
+.ws-inline-check { display: flex !important; align-items: center; gap: 8px; }
+.ws-page-heading .ws-inline-check { flex: 0 1 230px; }
+.ws-table-sizing { margin-top: 20px; }
+@page worksheet { size: A4 portrait; margin: 0; }
+@media print {
+  .ws-a4 { zoom: 1 !important; }
+  .ws-a4 > .ws-page { page: worksheet; margin: 0; padding: 10mm 12mm; box-shadow: none; break-after: page; break-inside: avoid; }
+  .ws-a4 > .ws-page:last-child { break-after: auto; }
+  .ws-preview-toolbar { display: none !important; }
+}
+
+html.ws-print-window, .ws-print-window body { position: static !important; height: auto !important; overflow: visible !important; background: #edf1f5; display: block !important; }

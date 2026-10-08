@@ -1878,7 +1878,7 @@ test('audit UI desktop: chụp toàn bộ màn hình lõi và modal chính', asy
     }
     await expect(page.locator(`#${visibleId}`)).not.toContainText('undefined');
     if (isAdminComposerState(state)) {
-      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
+      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(4);
       await expect(page.locator('#treasure-modal')).toBeHidden();
     }
     await captureUiReview(page, testInfo, `audit-desktop-${state.name}.png`);
@@ -1911,7 +1911,7 @@ test('audit UI mobile ngang: chụp toàn bộ màn hình lõi và modal chính'
     }
     await expect(page.locator(`#${visibleId}`)).not.toContainText('undefined');
     if (isAdminComposerState(state)) {
-      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(3);
+      await expect(page.locator('#admin-compose-cards .admin-compose-card')).toHaveCount(4);
       await expect(page.locator('#treasure-modal')).toBeHidden();
     }
     await captureUiReview(page, testInfo, `audit-mobile-${state.name}.png`);
