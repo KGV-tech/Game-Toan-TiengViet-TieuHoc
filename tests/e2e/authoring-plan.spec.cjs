@@ -69,8 +69,8 @@ test('Không đủ nguồn giữ bản đang soạn; đổi thứ tự và xóa 
  await page.evaluate(()=>app.admin.autoGenerateExam(true));
  await expect(page.locator('#add-w-form-error')).toContainText('mới có 0');await expect(page.locator('.exam-question-card')).toHaveCount(3);
  page.on('dialog',d=>d.accept());await page.evaluate(()=>app.admin.submitAddExam(null,true));
- const result=await page.evaluate(()=>{
-  app.admin.moveQuestion(0,0,'down',true);app.admin.removeQuestionFromExam(0,0,true);
+ const result=await page.evaluate(async()=>{
+  await app.admin.moveQuestion(0,0,'down',true);await app.admin.removeQuestionFromExam(0,0,true);
   const record=app.data.worksheets[0];return {error:AuthoringPlan.validateRecord(record),count:record.questions.length};
  });expect(result).toEqual({error:'',count:2});
 });

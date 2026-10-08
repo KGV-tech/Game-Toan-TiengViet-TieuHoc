@@ -1,3 +1,4 @@
+const {mockSettingsPersistence}=require('./helpers/settings-persistence.cjs');
 const { test, expect } = require('@playwright/test');
 async function open(page) {
   await page.route('https://cdn.jsdelivr.net/**', r => r.fulfill({ body: '', contentType: 'application/javascript' }));
@@ -81,6 +82,7 @@ for (const width of [1280, 1440, 1024]) test(`separate subject settings, saved g
   await page.setViewportSize({width, height: width === 1280 ? 720 : width === 1440 ? 900 : 768});
   await open(page);
   page.on('dialog', dialog => dialog.accept());
+  await mockSettingsPersistence(page);
   await page.evaluate(() => {
     app.data.currentUser = { id:'admin-fixture', username:'admin-fixture', role:'admin' };
     app.admin.openAdmin('settings');
@@ -97,6 +99,7 @@ for (const width of [1280, 1440, 1024]) test(`separate subject settings, saved g
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('game_settings')).practicePass)).toEqual({math:{enabled:true,score:9},vietnamese:{enabled:false,score:8}});
   await page.evaluate(() => {
     app.treasure.close();
+    delete window.supabase; // Student layout uses the explicit lesson fixture below.
     app.data.settings.lessonReleaseByClass = {'4':{vietnamese:'g4-vietnamese-hk1-b03'}};
     app.data.currentUser = {id:'student-settings', username:'student-settings',role:'student',classlevel:'4',history:[],stars:0};
     app.game.openConfig('vietnamese');

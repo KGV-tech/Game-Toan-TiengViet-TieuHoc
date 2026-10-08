@@ -1,3 +1,4 @@
+const {mockSettingsPersistence}=require('./helpers/settings-persistence.cjs');
 const { test, expect } = require('@playwright/test');
 const { mkdirSync } = require('node:fs');
 const { join } = require('node:path');
@@ -1185,6 +1186,7 @@ test('admin khóa chủ đề nhưng vẫn test được, lộ trình học sinh
   await page.setViewportSize({ width: 1440, height: 900 });
   await openOfflineHomepage(page);
 
+  await mockSettingsPersistence(page);
   await page.evaluate(() => {
     app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '5' };
     app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };

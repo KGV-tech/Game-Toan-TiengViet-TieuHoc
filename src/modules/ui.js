@@ -140,21 +140,21 @@
             XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
             XLSX.writeFile(wb, filename);
         },
-        async importFromExcel(file, callback) {
-            if (!window.XLSX) {
-                alert("Đang tải thư viện Excel, vui lòng chờ...");
-                const loaded = await app.utils.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'XLSX');
-                if (!loaded) return alert("Thư viện Excel chưa được tải! Kiểm tra lại kết nối mạng.");
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = new Uint8Array(e.target.result);
+        async importFromExcel(file, callback, onError = error => alert('Không đọc được file Excel: ' + (error.message || error))) {
+            try {
+                if (!window.XLSX) {
+                    const loaded = await app.utils.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'XLSX');
+                    if (!loaded) throw new Error('Thư viện Excel chưa được tải. Kiểm tra kết nối rồi thử lại.');
+                }
+                const data = new Uint8Array(await file.arrayBuffer());
                 const wb = XLSX.read(data, { type: 'array' });
                 const ws = wb.Sheets[wb.SheetNames[0]];
+                if (!ws) throw new Error('File không có trang dữ liệu.');
                 const json = XLSX.utils.sheet_to_json(ws, { raw: false });
-                callback(json);
-            };
-            reader.readAsArrayBuffer(file);
+                return await callback(json);
+            } catch (error) {
+                return onError(error);
+            }
         },
         toggleTheme() {
             const current = document.documentElement.getAttribute('data-theme') || 'dark';

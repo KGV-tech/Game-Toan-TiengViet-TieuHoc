@@ -301,7 +301,9 @@ const app = {
             if (!window.supabase) return { data: [], page: safePage, pageSize: safePageSize, hasMore: false, error: null };
             const from = safePage * safePageSize;
             let query = supabaseClient.from(table).select(this.getSupabaseProjection(table, columns));
-            if (filterCol && filterVal) query = query.ilike(filterCol, `%${filterVal}%`);
+            if (filterCol && filterVal) query = table === 'game_settings' && filterCol === 'id'
+                ? query.eq(filterCol, filterVal)
+                : query.ilike(filterCol, `%${filterVal}%`);
             const { data, error } = await query.range(from, from + safePageSize - 1);
             if (error) {
                 console.error(`Error fetching ${table}:`, error);
@@ -605,12 +607,7 @@ const app = {
                 app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
                 return null;
             }
-            const { error } = await supabaseClient.from('game_settings').update({ data: this.settings }).eq('id', 1);
-            if (error) {
-                console.error('Không thể đồng bộ metadata Bài học:', error);
-                app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
-            }
-            return error;
+            return this.saveSettings();
         },
         getQuestionKey(question) {
             const parts = [
@@ -1133,9 +1130,9 @@ const app = {
                             }
                         }
                     })
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'game_settings' }, async (payload) => {
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'game_settings', filter: 'id=eq.1' }, async (payload) => {
                         console.log('Realtime DB Change received (Settings)!', payload);
-                        if (payload.new && payload.new.data) {
+                        if (Number(payload.new?.id) === 1 && payload.new.data) {
                             this.settings = payload.new.data;
                             app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
                             if (document.getElementById('game-config-view')?.classList.contains('active')) {
@@ -1400,66 +1397,116 @@ const app = {
         },
         async saveSettings() {
             this.ensureLessonMetadata();
-            if (!window.supabase) {
-                app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
-                return;
+            const snapshot = JSON.parse(JSON.stringify(this.settings));
+            // JSONB can reorder keys; compare values rather than serialization order.
+            const canonical = value => JSON.stringify(value, (_, item) => {
+                if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+                return Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]]));
+            });
+            const matches = row => Number(row?.id) === 1 && canonical(row?.data) === canonical(snapshot);
+            try {
+                if (!window.supabase || supabaseClient === dummySupabase || !navigator.onLine) {
+                    throw new Error('Không kết nối được Supabase. Dữ liệu chưa được lưu lên máy chủ.');
+                }
+                const written = await supabaseClient.from('game_settings')
+                    .update({ data: snapshot }).eq('id', 1).select('id,data').single();
+                if (written.error) throw written.error;
+                if (!matches(written.data)) {
+                    throw new Error('Supabase chưa xác nhận cập nhật hàng cài đặt id=1. Kiểm tra quyền Admin và hàng cài đặt.');
+                }
+                const confirmed = await supabaseClient.from('game_settings').select('id,data').eq('id', 1).single();
+                if (confirmed.error) throw confirmed.error;
+                if (!matches(confirmed.data)) {
+                    throw new Error('Dữ liệu đọc lại từ Supabase không khớp thay đổi vừa lưu. Hãy tải lại cài đặt và thử lại.');
+                }
+                app.safeStorage.setItem('game_settings', JSON.stringify(confirmed.data.data));
+                return null;
+            } catch (cause) {
+                const messages = {
+                    PGRST116: 'Supabase không xác nhận hàng cài đặt. Kiểm tra quyền ghi của tài khoản Admin và hàng cài đặt trên máy chủ.',
+                    '42501': 'Supabase từ chối quyền ghi cài đặt. Hãy đăng nhập lại bằng tài khoản Admin và kiểm tra quyền truy cập.'
+                };
+                const error = { message: messages[cause?.code] || cause?.message || String(cause), code: cause?.code || 'SETTINGS_NOT_CONFIRMED' };
+                console.error('Chưa xác nhận lưu cài đặt:', error.code);
+                alert('Chưa lưu được lên Supabase: ' + error.message);
+                return error;
             }
-
-            const settingsWithId = { data: this.settings };
-            const { error } = await supabaseClient.from('game_settings').update(settingsWithId).eq('id', 1);
-            if (error) {
-                console.error("Error saving settings to supabase:", error);
-                alert("Lỗi khi lưu lên Supabase: " + error.message);
-                app.safeStorage.setItem('game_settings', JSON.stringify(this.settings)); // fallback
-            }
-            if (!error) app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
-            return error;
+        },
+        queueContentWrite(store, write) {
+            this.contentWriteQueues ||= new Map();
+            const previous = this.contentWriteQueues.get(store) || Promise.resolve();
+            const request = previous.catch(() => {}).then(write);
+            this.contentWriteQueues.set(store, request);
+            return request.finally(() => {
+                if (this.contentWriteQueues.get(store) === request) this.contentWriteQueues.delete(store);
+            });
         },
         async saveLibrary() {
             this.ensureLessonMetadata();
             this.syncQuestionLessonMetadata();
-            if (!window.supabase) {
-                localStorage.setItem('game_libraryQuestions', JSON.stringify(this.libraryQuestions));
-                return;
-            }
-
-            const toUpdate = [];
-            const toServerQuestion = question => {
-                const { lesson, ...serverQuestion } = question;
-                return serverQuestion;
-            };
-
-            for (const q of this.libraryQuestions) {
-                if (q.id) toUpdate.push(toServerQuestion(q));
-            }
-
-            if (toUpdate.length > 0) {
-                const batchSize = 500;
-                for (let i = 0; i < toUpdate.length; i += batchSize) {
-                    await supabaseClient.from('game_questions').upsert(toUpdate.slice(i, i + batchSize));
-                }
-            }
-
-            const uninserted = this.libraryQuestions.filter(q => !q.id);
-            if (uninserted.length > 0) {
-                const batchSize = 500;
-                for (let i = 0; i < uninserted.length; i += batchSize) {
-                    const originalBatch = uninserted.slice(i, i + batchSize);
-                    const batch = originalBatch.map(q => {
-                        const { id, lesson, ...rest } = q;
-                        return rest;
-                    });
-
-                    const { data, error } = await supabaseClient.from('game_questions').insert(batch).select();
-                    if (!error && data && data.length === originalBatch.length) {
-                        for (let j = 0; j < data.length; j++) originalBatch[j].id = data[j].id;
+            const cache = () => app.safeStorage.setItem('game_libraryQuestions', JSON.stringify(this.libraryQuestions));
+            cache();
+            if (!window.supabase) return null;
+            const toServerQuestion = ({ lesson, ...question }) => question;
+            try {
+                const existing = this.libraryQuestions.filter(q => q.id);
+                for (let i = 0; i < existing.length; i += 500) {
+                    const batch = existing.slice(i, i + 500).map(toServerQuestion);
+                    const { data, error } = await supabaseClient.from('game_questions').upsert(batch).select('id');
+                    if (error) return error;
+                    if (!Array.isArray(data) || batch.some(q => !data.some(row => String(row.id) === String(q.id)))) {
+                        return new Error('Máy chủ chưa xác nhận đầy đủ câu hỏi vừa cập nhật.');
                     }
                 }
+                const pending = this.libraryQuestions.filter(q => !q.id);
+                for (let i = 0; i < pending.length; i += 500) {
+                    const original = pending.slice(i, i + 500);
+                    const batch = original.map(({ id, lesson, ...question }) => question);
+                    const { data, error } = await supabaseClient.from('game_questions').insert(batch).select('id');
+                    if (error) return error;
+                    if (!Array.isArray(data) || data.length !== original.length || data.some(row => !row.id)) {
+                        return new Error('Máy chủ chưa xác nhận đầy đủ câu hỏi vừa thêm.');
+                    }
+                    data.forEach((row, j) => { original[j].id = row.id; });
+                    cache();
+                }
+                this.syncQuestionLessonMetadata();
+                return await this.saveLessonMetadata();
+            } catch (error) {
+                return error;
             }
-            this.syncQuestionLessonMetadata();
-            await this.saveLessonMetadata();
+        },
+        async deleteConfirmedRows(table, ids, reconcileDeleted = false) {
+            if (!ids.length || !window.supabase) return null;
+            try {
+                const { data, error } = await supabaseClient.from(table).delete().in('id', ids).select('id');
+                if (error) return error;
+                if (!Array.isArray(data) || ids.some(id => !data.some(row => String(row.id) === String(id)))) {
+                    // Tombstone retry: DELETE có thể đã thành công trước khi mất phản hồi.
+                    // Chỉ đọc vắng mặt sau khi server xác nhận phiên và profile Admin;
+                    // SELECT rỗng dưới quyền học sinh không chứng minh đã xóa.
+                    if (reconcileDeleted && Array.isArray(data)) {
+                        const auth = await supabaseClient.auth.getUser();
+                        if (!auth.error && auth.data?.user?.id) {
+                            const profile = await supabaseClient.from('game_users').select('role')
+                                .eq('auth_user_id', auth.data.user.id).single();
+                            if (!profile.error && profile.data?.role?.toLowerCase() === 'admin') {
+                                const remaining = await supabaseClient.from(table).select('id').in('id', ids);
+                                if (!remaining.error && Array.isArray(remaining.data) && remaining.data.length === 0) return null;
+                            }
+                        }
+                    }
+                    return new Error('Máy chủ chưa xác nhận xóa đầy đủ dữ liệu. Hãy tải lại danh sách và kiểm tra quyền Admin.');
+                }
+                return null;
+            } catch (error) {
+                return error;
+            }
         },
         async saveExams() {
+            return this.queueContentWrite('exams', () => this.persistExams());
+        },
+        async persistExams() {
             const seenLocalExamKeys = new Set();
             this.exams = (Array.isArray(this.exams) ? this.exams : []).filter(exam => {
                 // Chỉ dọn các bản chưa có id: đây là những bản chưa từng tồn tại trên
@@ -1497,8 +1544,11 @@ const app = {
                 }
 
                 if (toUpdate.length > 0) {
-                    const { error } = await supabaseClient.from('game_exams').upsert(toUpdate);
+                    const { data, error } = await supabaseClient.from('game_exams').upsert(toUpdate).select('id');
                     if (error) firstError = error;
+                    else if (!Array.isArray(data) || toUpdate.some(exam => !data.some(row => String(row.id) === String(exam.id)))) {
+                        firstError = new Error('Máy chủ chưa xác nhận đầy đủ đề vừa cập nhật.');
+                    }
                 }
 
                 if (toInsert.length > 0) {
@@ -1526,6 +1576,9 @@ const app = {
             return null;
         },
         async saveWorksheets() {
+            return this.queueContentWrite('worksheets', () => this.persistWorksheets());
+        },
+        async persistWorksheets() {
             const seenLocalWorksheetKeys = new Set();
             this.worksheets = (Array.isArray(this.worksheets) ? this.worksheets : []).filter(worksheet => {
                 if (worksheet?.id) return true;
@@ -1542,7 +1595,7 @@ const app = {
             try {
                 const deletedIds = this.loadWorksheetDeletedIds();
                 if (deletedIds.length) {
-                    const { error } = await supabaseClient.from('game_worksheets').delete().in('id', deletedIds);
+                    const error = await this.deleteConfirmedRows('game_worksheets', deletedIds, true);
                     if (error) return error;
                     app.safeStorage.setItem('game_worksheets_deleted_ids', '[]');
                 }
@@ -1913,7 +1966,7 @@ const app = {
                   Promise.all([
                     app.data.fetchAllFromSupabase('game_exams'),
                     app.data.fetchAllFromSupabase('game_worksheets'),
-                    app.data.fetchAllFromSupabase('game_settings'),
+                    app.data.fetchAllFromSupabase('game_settings', 'id', 1),
                     app.data.refreshPetInventory()
                   ]),
                   isAdmin
@@ -1945,7 +1998,11 @@ const app = {
                 const deletedWorksheetIds = new Set(app.data.loadWorksheetDeletedIds().map(String));
                 app.data.worksheets = app.data.worksheets.filter(worksheet => !deletedWorksheetIds.has(String(worksheet.id)));
                 if (isAdmin) app.data.saveLocalWorksheets();
-                if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
+                const settingsRow = settingsData?.find(row => Number(row.id) === 1);
+                if (settingsRow?.data && typeof settingsRow.data === 'object' && !Array.isArray(settingsRow.data)) {
+                    app.data.settings = settingsRow.data;
+                    app.safeStorage.setItem('game_settings', JSON.stringify(settingsRow.data));
+                }
                 app.data.ensureLessonMetadata();
 
                 // Lazy load based on role
@@ -8765,9 +8822,9 @@ const app = {
         async submitQuest() {
             const title = document.getElementById('quest-title').value.trim();
             const subject = document.getElementById('quest-subject').value;
-            const score = parseInt(document.getElementById('quest-score').value) || 80;
-            const count = parseInt(document.getElementById('quest-count').value) || 1;
-            const reward = parseInt(document.getElementById('quest-reward').value) || 10;
+            const score = Number(document.getElementById('quest-score').value.trim() || NaN);
+            const count = Number(document.getElementById('quest-count').value.trim() || NaN);
+            const reward = Number(document.getElementById('quest-reward').value.trim() || NaN);
             const assignType = document.getElementById('quest-assign-type').value;
             const assignTarget = document.getElementById('quest-assign-target').value.trim();
             const targetClasslevel = document.getElementById('quest-target-classlevel')?.value || '';
@@ -8779,6 +8836,9 @@ const app = {
             const curriculum = this.getQuestCurriculumSelection();
 
             if (!title) return alert("Vui lòng nhập tên nhiệm vụ!");
+            if (!Number.isFinite(score) || score < 0 || score > 100) return alert('Điểm tối thiểu phải từ 0 đến 100.');
+            if (!Number.isSafeInteger(count) || count < 1) return alert('Số lượt phải là số nguyên từ 1 trở lên.');
+            if (!Number.isSafeInteger(reward) || reward < 1) return alert('Phần thưởng phải là số nguyên từ 1 trở lên.');
             if (!['all', 'class', 'user'].includes(assignType)) return alert('Cách giao nhiệm vụ không hợp lệ.');
             if (!['', '1', '2', '3', '4', '5'].includes(targetClasslevel)) return alert('Cấp lớp mục tiêu không hợp lệ.');
             if (startAtInput && !startAt) return alert('Thời gian bắt đầu không hợp lệ.');
@@ -8815,68 +8875,86 @@ const app = {
                 newQuest.target_count = 1;
             }
 
-            if (window.supabase) {
-                // game_quests cũ chưa có cột phạm vi cấp lớp/thời gian; giữ các trường mới trong metadata đã đồng bộ của game_settings.
-                const serverQuest = { ...newQuest };
-                delete serverQuest.curriculum;
-                delete serverQuest.target_classlevel;
-                delete serverQuest.start_at;
-                delete serverQuest.end_at;
-                const { data, error } = await supabaseClient.from('game_quests').insert([serverQuest]).select();
-                if (error) {
-                    console.error("Lỗi tạo nhiệm vụ:", error);
-                    alert("Có lỗi khi tạo nhiệm vụ trên server!");
-                } else if (data && data.length > 0) {
-                    const savedQuest = { ...data[0], target_classlevel: targetClasslevel, start_at: startAt, end_at: endAt, ...(Object.keys(curriculum).length ? { curriculum } : {}) };
-                    app.data.quests.push(savedQuest);
+            if (this.questSavePending) return;
+            this.questSavePending = true;
+            try {
+                if (window.supabase) {
+                    // Schema cũ: phạm vi lớp/bài/thời gian ở game_settings.
+                    // Giữ nhiệm vụ đóng cho tới khi phần metadata được xác nhận.
+                    const serverQuest = { ...newQuest, title: '[Chưa hoàn tất] ' + title, is_active: false };
+                    delete serverQuest.curriculum;
+                    delete serverQuest.target_classlevel;
+                    delete serverQuest.start_at;
+                    delete serverQuest.end_at;
+                    const titleInput = document.getElementById('quest-title');
+                    const savedId = titleInput?.dataset.savedQuestId;
+                    const query = savedId ? supabaseClient.from('game_quests').update(serverQuest).eq('id', savedId)
+                        : supabaseClient.from('game_quests').insert([serverQuest]);
+                    const { data, error } = await query.select();
+                    if (error) throw error;
+                    if (!Array.isArray(data) || data.length !== 1 || !data[0].id) throw new Error('Máy chủ chưa xác nhận nhiệm vụ vừa lưu.');
+                    const savedQuest = { ...data[0], is_active: false, target_classlevel: targetClasslevel, start_at: startAt, end_at: endAt,
+                        ...(Object.keys(curriculum).length ? { curriculum } : {}) };
+                    if (titleInput) titleInput.dataset.savedQuestId = savedQuest.id;
+                    const index = app.data.quests.findIndex(q => String(q.id) === String(savedQuest.id));
+                    if (index >= 0) app.data.quests[index] = savedQuest;
+                    else app.data.quests.push(savedQuest);
+                    app.data.syncQuestCurriculumMetadata();
+                    const metadataError = await app.data.saveLessonMetadata();
+                    if (metadataError) return alert('Nhiệm vụ đang đóng vì chưa lưu được phạm vi. Giữ form này và bấm Lưu nhiệm vụ để thử lại.');
+                    const activated = await supabaseClient.from('game_quests').update({ is_active: true, title })
+                        .eq('id', savedQuest.id).select('id,is_active').single();
+                    if (activated.error) throw activated.error;
+                    if (String(activated.data?.id) !== String(savedQuest.id) || activated.data?.is_active !== true) throw new Error('Máy chủ chưa xác nhận mở nhiệm vụ.');
+                    savedQuest.is_active = true;
+                    savedQuest.title = title;
+                    this.switchTab('quests');
+                } else {
+                    newQuest.id = 'temp_' + new Date().getTime();
+                    app.data.quests.push(newQuest);
                     app.data.syncQuestCurriculumMetadata();
                     await app.data.saveLessonMetadata();
                     this.switchTab('quests');
                 }
-            } else {
-                newQuest.id = 'temp_' + new Date().getTime();
-                app.data.quests.push(newQuest);
-                app.data.syncQuestCurriculumMetadata();
-                await app.data.saveLessonMetadata();
-                this.switchTab('quests');
+            } catch (error) {
+                alert('Chưa lưu hoàn tất nhiệm vụ: ' + (error.message || error));
+            } finally {
+                this.questSavePending = false;
             }
         },
         async toggleQuest(idx) {
             const q = app.data.quests[idx];
-            if (!q) return;
+            if (!q || this.questSavePending) return;
             const newState = !q.is_active;
-            if (window.supabase && !q.id.startsWith('temp_')) {
-                const { error } = await supabaseClient.from('game_quests').update({ is_active: newState }).eq('id', q.id);
-                if (!error) {
-                    q.is_active = newState;
-                    this.renderQuests(document.getElementById('treasure-content-area'));
-                } else {
-                    console.error(error);
-                    alert("Lỗi server!");
+            if (newState && String(q.title || '').startsWith('[Chưa hoàn tất] ')) {
+                return alert('Nhiệm vụ này chưa lưu hoàn tất phạm vi. Tiếp tục form đang mở hoặc tạo lại nhiệm vụ trước khi mở cho học sinh.');
+            }
+            this.questSavePending = true;
+            try {
+                if (window.supabase && !String(q.id).startsWith('temp_')) {
+                    if (newState && (q.curriculum || q.target_classlevel || q.start_at || q.end_at)) {
+                        app.data.syncQuestCurriculumMetadata();
+                        const metadataError = await app.data.saveLessonMetadata();
+                        if (metadataError) throw metadataError;
+                    }
+                    const { data, error } = await supabaseClient.from('game_quests').update({ is_active: newState })
+                        .eq('id', q.id).select('id,is_active').single();
+                    if (error) throw error;
+                    if (String(data?.id) !== String(q.id) || data?.is_active !== newState) throw new Error('Máy chủ chưa xác nhận trạng thái nhiệm vụ.');
                 }
-            } else {
                 q.is_active = newState;
                 this.renderQuests(document.getElementById('treasure-content-area'));
-            }
+            } catch (error) {
+                alert('Chưa thay đổi được nhiệm vụ: ' + (error.message || error));
+            } finally { this.questSavePending = false; }
         },
         async deleteQuest(idx) {
-            if (!confirm("Bạn có chắc chắn muốn xoá nhiệm vụ này? Tiến trình của HS cho nhiệm vụ này cũng sẽ bị xoá.")) return;
             const q = app.data.quests[idx];
-            if (!q) return;
-
-            if (window.supabase && !q.id.startsWith('temp_')) {
-                const { error } = await supabaseClient.from('game_quests').delete().eq('id', q.id);
-                if (!error) {
-                    app.data.quests.splice(idx, 1);
-                    this.renderQuests(document.getElementById('treasure-content-area'));
-                } else {
-                    console.error(error);
-                    alert("Lỗi server!");
-                }
-            } else {
-                app.data.quests.splice(idx, 1);
-                this.renderQuests(document.getElementById('treasure-content-area'));
-            }
+            if (!q || !confirm('Bạn có chắc chắn muốn xoá nhiệm vụ này? Tiến trình của HS cho nhiệm vụ này cũng sẽ bị xoá.')) return;
+            const error = await app.data.deleteConfirmedRows('game_quests', String(q.id).startsWith('temp_') ? [] : [q.id]);
+            if (error) return alert('Chưa xóa được nhiệm vụ: ' + (error.message || error));
+            app.data.quests = app.data.quests.filter(item => item !== q);
+            this.renderQuests(document.getElementById('treasure-content-area'));
         },
         getLessonReleaseDraft() {
             const classlevel = document.getElementById('learning-release-class')?.value || '4';
@@ -10432,13 +10510,14 @@ const app = {
             this.openComposerModule('exams');
             setTimeout(() => this.renderESubTab('add'), 0);
         },
-        savePreviewToExistingExam() {
+        async savePreviewToExistingExam() {
             const record = this.getTemplatePreviewRecord();
             if (!record) return;
             const question = JSON.parse(JSON.stringify(record.question));
             const existingIndex = (app.data.libraryQuestions || []).findIndex(item => app.data.getQuestionContentKey(item) === app.data.getQuestionContentKey(question));
             const questionIndex = existingIndex >= 0 ? existingIndex : app.data.libraryQuestions.push(question) - 1;
-            if (existingIndex < 0) app.data.saveLibrary();
+            const error = await app.data.saveLibrary();
+            if (error) return alert('Chưa đồng bộ câu hỏi: ' + (error.message || error));
             this.syncComposerContextFromTemplate(record.template);
             this.closeTemplatePreview();
             this.openComposerModule('exams');
@@ -11466,7 +11545,7 @@ const app = {
             }));
             app.ui.exportToExcel(data, "Du_Lieu_Phieu_Hoc_Tap.xlsx");
         },
-        submitAddQuestion(editIdx) {
+        async submitAddQuestion(editIdx) {
             const qObj = {
                 type: document.getElementById('add-q-type').value,
                 subject: document.getElementById('add-q-sub').value,
@@ -11488,6 +11567,8 @@ const app = {
                     ].filter(o => o !== ''),
                 explanation: document.getElementById('add-q-exp').value
             };
+            const savedQuestionId = document.getElementById('add-q-q')?.dataset.savedQuestionId;
+            if (savedQuestionId) qObj.id = savedQuestionId;
             const selectedLesson = document.getElementById('add-q-lesson')?.value || '';
             if (selectedLesson) qObj.lesson = selectedLesson;
             if (!qObj.subject || !qObj.q || !qObj.ans) return alert('Vui lòng điền đủ Môn, Câu hỏi và Đáp án');
@@ -11503,17 +11584,34 @@ const app = {
                 return alert('Câu hỏi này đã tồn tại trong đúng Lớp – Môn – Học kỳ – Chủ đề – Bài học. Hệ thống không thêm câu trùng.');
             }
 
-            if (editIdx !== null && editIdx !== undefined) {
-                const oldId = app.data.libraryQuestions[editIdx]?.id;
-                if (oldId) qObj.id = oldId;
-                app.data.libraryQuestions[editIdx] = qObj;
-                alert('Đã cập nhật câu hỏi!');
-            } else {
-                app.data.libraryQuestions.push(qObj);
-                alert('Đã thêm câu hỏi!');
+            if (this.questionSavePending) return;
+            this.questionSavePending = true;
+            const previous = app.data.libraryQuestions.slice();
+            const isEdit = editIdx !== null && editIdx !== undefined;
+            try {
+                if (isEdit) {
+                    const oldId = app.data.libraryQuestions[editIdx]?.id;
+                    if (oldId) qObj.id = oldId;
+                    app.data.libraryQuestions[editIdx] = qObj;
+                } else app.data.libraryQuestions.push(qObj);
+                const error = await app.data.saveLibrary();
+                if (error) {
+                    // Giữ ID đã được server cấp để retry không tạo bản trùng.
+                    // Form vẫn mở, còn danh sách quay về trạng thái trước thao tác.
+                    const currentIndex = app.data.libraryQuestions.indexOf(qObj);
+                    if (currentIndex >= 0) {
+                        if (isEdit) app.data.libraryQuestions[currentIndex] = previous[editIdx];
+                        else app.data.libraryQuestions.splice(currentIndex, 1);
+                    }
+                    const questionInput = document.getElementById('add-q-q');
+                    if (questionInput && qObj.id) questionInput.dataset.savedQuestionId = qObj.id;
+                    return alert('Chưa lưu hoàn tất câu hỏi: ' + (error.message || error));
+                }
+                alert(!window.supabase ? 'Đã lưu câu hỏi trên thiết bị; chưa đồng bộ Supabase.' : isEdit ? 'Đã cập nhật câu hỏi!' : 'Đã thêm câu hỏi!');
+                this.renderQSubTab('lib');
+            } finally {
+                this.questionSavePending = false;
             }
-            app.data.saveLibrary();
-            this.renderQSubTab('lib');
         },
         addToExamPrompt(qIdx) {
             if (!app.data.exams || app.data.exams.length === 0) return alert('Chưa có đề kiểm tra nào. Vui lòng tạo đề kiểm tra trước trong Kho Đề Kiểm tra!');
@@ -11537,7 +11635,7 @@ const app = {
 
             try {
                 const files = Array.from(fileInput.files);
-                const readFile = file => new Promise(resolve => app.ui.importFromExcel(file, resolve));
+                const readFile = file => new Promise((resolve, reject) => app.ui.importFromExcel(file, resolve, reject));
                 const fileRows = await Promise.all(files.map(readFile));
                 const acceptedTypes = ['Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
                 const errors = [];
@@ -11603,13 +11701,14 @@ const app = {
 
                 if (mode === 'overwrite') {
                     if (window.supabase) {
-                        const { error } = await supabaseClient.from('game_questions').delete().not('id', 'is', null);
+                        const error = await app.data.deleteConfirmedRows('game_questions', app.data.libraryQuestions.map(q => q.id).filter(Boolean));
                         if (error) throw error;
                     }
                     app.data.libraryQuestions = [];
                 }
                 app.data.libraryQuestions.push(...uniqueQuestions);
-                await app.data.saveLibrary();
+                const saveError = await app.data.saveLibrary();
+                if (saveError) throw saveError;
                 alert(`Đã nhập ${uniqueQuestions.length} câu hỏi.${duplicateCount ? ` Đã tự bỏ ${duplicateCount} câu trùng.` : ''}`);
                 this.renderQSubTab('lib');
             } catch (error) {
@@ -12103,6 +12202,7 @@ const app = {
             if (isW ? this.worksheetSavePending : this.examSavePending) return;
             if (isW) this.setWorksheetSavePending(true); else this.setExamSavePending(true);
             const mId = isW ? 'w' : 'e';
+            const previousDraft = isW ? this.worksheetComposerDraft : this.examComposerDraft;
             try {
             const eObj = {
                 name: document.getElementById(`add-${mId}-name`).value,
@@ -12112,10 +12212,13 @@ const app = {
                 topics: Array.from(document.querySelectorAll(`#add-${mId}-topics input:checked`)).map(input => input.value),
                 questions: []
             };
+            const savedRecordId = document.getElementById(`add-${mId}-name`)?.dataset.savedRecordId;
+            if (savedRecordId) eObj.id = savedRecordId;
             if (!eObj.name || !eObj.subject) return this.showExamComposerError(`Vui lòng điền đủ Tên ${isW ? 'phiếu học tập' : 'đề'} và Môn.`, !eObj.name ? `add-${mId}-name` : `add-${mId}-sub`);
 
             let i = 0;
             let newQuestionsCount = 0;
+            const newLibraryQuestions = [];
             let firstIncompleteQuestion = null;
             while (document.getElementById(`add-${mId}-q-q-${i}`)) {
                 const qTextEl = document.getElementById(`add-${mId}-q-q-${i}`);
@@ -12183,9 +12286,9 @@ const app = {
                     // Phiếu học tập giữ câu hỏi trong chính phiếu. Chỉ Đề kiểm tra
                     // mới bổ sung câu hỏi soạn mới vào Kho Câu hỏi dùng chung.
                     if (!isW && !newQ.authoringPlan) {
-                        const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
+                        const exists = [...app.data.libraryQuestions, ...newLibraryQuestions].some(libQ => app.data.getQuestionKey(libQ) === app.data.getQuestionKey(newQ));
                         if (!exists) {
-                            app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ)));
+                            newLibraryQuestions.push(JSON.parse(JSON.stringify(newQ)));
                         }
                     }
                     newQuestionsCount++;
@@ -12200,16 +12303,17 @@ const app = {
             }
 
             if (!isW && newQuestionsCount > 0 && !window.AuthoringPlan.isPlanned(eObj)) {
-                try {
-                    await app.data.saveLibrary();
-                } catch (error) {
-                    console.error('Không thể đồng bộ Kho Câu hỏi khi lưu đề:', error);
-                }
+                app.data.libraryQuestions.push(...newLibraryQuestions);
+                const libraryError = await app.data.saveLibrary();
+                if (libraryError) alert('Kho Câu hỏi chưa đồng bộ hoàn tất: ' + (libraryError.message || libraryError));
             }
 
             let saveError = null;
             let duplicateExam = false;
-            if (editIdx !== null && editIdx !== undefined) {
+            const retryIndex = (isW ? app.data.worksheets : app.data.exams).findIndex(record => eObj.id ? String(record.id) === String(eObj.id) : record === previousDraft);
+            if (retryIndex >= 0) {
+                (isW ? app.data.worksheets : app.data.exams)[retryIndex] = eObj;
+            } else if (editIdx !== null && editIdx !== undefined) {
                 const oldId = (isW ? app.data.worksheets : app.data.exams)[editIdx]?.id;
                 if (oldId) eObj.id = oldId;
                 (isW ? app.data.worksheets : app.data.exams)[editIdx] = eObj;
@@ -12220,11 +12324,15 @@ const app = {
                 else (isW ? app.data.worksheets : app.data.exams).push(eObj);
             }
             saveError = await (isW ? app.data.saveWorksheets() : app.data.saveExams());
+            if (saveError) {
+                if (isW) this.worksheetComposerDraft = eObj; else this.examComposerDraft = eObj;
+                const nameInput = document.getElementById(`add-${mId}-name`);
+                if (nameInput && eObj.id) nameInput.dataset.savedRecordId = eObj.id;
+                return alert(this.getExamSyncErrorMessage(saveError, isW));
+            }
             if (isW) this.worksheetComposerDraft = null; else this.examComposerDraft = null;
             this[isW ? "renderWSubTab" : "renderESubTab"]("lib");
-            if (saveError) {
-                alert(this.getExamSyncErrorMessage(saveError, isW));
-            } else if (duplicateExam) {
+            if (duplicateExam) {
                 alert(`${isW ? 'Phiếu học tập này đã có trong Kho Phiếu học tập' : 'Đề này đã có trong Kho Đề'}; hệ thống không tạo thêm bản trùng.`);
             } else if (editIdx !== null && editIdx !== undefined) {
                 alert(isW ? 'Đã cập nhật phiếu học tập!' : 'Đã cập nhật đề kiểm tra!');
@@ -12235,47 +12343,45 @@ const app = {
                 if (isW) this.setWorksheetSavePending(false); else this.setExamSavePending(false);
             }
         },
-        submitInjectQ(qIdx, eIdx) {
-            let e = app.data.exams[eIdx];
+        async applyComposerMutation(record, isW, mutate) {
+            this.composerMutationPending ||= new WeakSet();
+            if (this.composerMutationPending.has(record)) return false;
+            this.composerMutationPending.add(record);
+            try {
+                if (mutate() === false) return false;
+                const error = await (isW ? app.data.saveWorksheets() : app.data.saveExams());
+                if (error) alert(this.getExamSyncErrorMessage(error, isW));
+                return true;
+            } finally {
+                this.composerMutationPending.delete(record);
+            }
+        },
+        async submitInjectQ(qIdx, eIdx) {
+            const e = app.data.exams[eIdx];
+            if (!e) return;
             if (window.AuthoringPlan.isPlanned(e)) return alert('Đề có cơ cấu điểm riêng. Hãy chỉnh từng câu trong trình soạn hoặc tạo lại theo cơ cấu đã chọn.');
-            if (!e.questions) e.questions = [];
-
-            let mode = document.getElementById('inject-mode').value;
-            let targetIdx = parseInt(document.getElementById('inject-target').value);
-            let qClone = JSON.parse(JSON.stringify(app.data.libraryQuestions[qIdx]));
+            const mode = document.getElementById('inject-mode').value;
+            const targetIdx = parseInt(document.getElementById('inject-target').value);
+            const qClone = JSON.parse(JSON.stringify(app.data.libraryQuestions[qIdx]));
             const scoringError = app.data.validateQuestionScoring(qClone);
             if (scoringError) return alert(scoringError);
-
-            if (mode === 'overwrite' && !isNaN(targetIdx) && targetIdx >= 0 && targetIdx < e.questions.length) {
-                e.questions[targetIdx] = qClone;
-                alert(`Đã ghi đè lên câu hỏi ${targetIdx + 1} thành công!`);
-            } else {
-                e.questions.push(qClone);
-                alert(`Đã thêm mới câu hỏi vào cuối đề kiểm tra!`);
-            }
-
-            app.data.saveExams();
-            this.renderESubTab('select_for_q', qIdx);
+            const applied = await this.applyComposerMutation(e, false, () => {
+                e.questions ||= [];
+                if (mode === 'overwrite' && targetIdx >= 0 && targetIdx < e.questions.length) e.questions[targetIdx] = qClone;
+                else e.questions.push(qClone);
+            });
+            if (applied) this.renderESubTab('select_for_q', qIdx);
         },
-        moveQuestion(editIdx, qIdx, direction, isW = false) {
-            const store = isW ? app.data.worksheets : app.data.exams;
-            let e = store[editIdx];
-            if (!e || !e.questions || e.questions.length < 2) return;
-
-            if (direction === 'up' && qIdx > 0) {
-                let temp = e.questions[qIdx];
-                e.questions[qIdx] = e.questions[qIdx - 1];
-                e.questions[qIdx - 1] = temp;
-            } else if (direction === 'down' && qIdx < e.questions.length - 1) {
-                let temp = e.questions[qIdx];
-                e.questions[qIdx] = e.questions[qIdx + 1];
-                e.questions[qIdx + 1] = temp;
-            } else {
-                return;
-            }
-            if (window.AuthoringPlan.isPlanned(e)) e.questions.forEach((q, i) => { q.authoringPlan.index = i; });
-            isW ? app.data.saveWorksheets() : app.data.saveExams();
-            this[isW ? 'renderWSubTab' : 'renderESubTab']('add', editIdx);
+        async moveQuestion(editIdx, qIdx, direction, isW = false) {
+            const e = (isW ? app.data.worksheets : app.data.exams)[editIdx];
+            if (!e?.questions || e.questions.length < 2) return;
+            const applied = await this.applyComposerMutation(e, isW, () => {
+                const target = direction === 'up' ? qIdx - 1 : direction === 'down' ? qIdx + 1 : -1;
+                if (target < 0 || target >= e.questions.length) return false;
+                [e.questions[qIdx], e.questions[target]] = [e.questions[target], e.questions[qIdx]];
+                if (window.AuthoringPlan.isPlanned(e)) e.questions.forEach((q, i) => { q.authoringPlan.index = i; });
+            });
+            if (applied) this[isW ? 'renderWSubTab' : 'renderESubTab']('add', editIdx);
         },
         submitImportWorksheets() {
             const fileInput = document.getElementById('w-file-upload');
@@ -12314,38 +12420,26 @@ const app = {
         submitImportExams() {
             const fileInput = document.getElementById('e-file-upload');
             if (!fileInput.files.length) return alert('Vui lòng chọn file!');
-
-            const modeInput = document.querySelector('input[name="e-import-mode"]:checked');
-            const mode = modeInput ? modeInput.value : 'append';
-            if (mode === 'overwrite') {
-                if (!confirm("CẢNH BÁO: Bạn đã chọn GHI ĐÈ. Toàn bộ đề kiểm tra hiện có sẽ bị xóa sạch và thay bằng dữ liệu mới! Bạn có chắc chắn muốn tiếp tục? (Bấm OK để Ghi đè, Cancel để Hủy)")) {
-                    return;
-                }
-            }
-
-            app.ui.importFromExcel(fileInput.files[0], async (data) => {
-                if (mode === 'overwrite') {
-                    app.data.exams = [];
-                    if (window.supabase) {
-                        const { error } = await supabaseClient.from('game_exams').delete().not('id', 'is', null);
-                        if (error) console.error('Delete exams error:', error);
-                    }
-                }
-                let count = 0;
-                data.forEach(row => {
-                    if (row["Tên đề"] && row["Môn"]) {
-                        app.data.exams.push({
-                            name: row["Tên đề"],
-                            subject: row["Môn"],
-                            classlevel: row["Cấp lớp"] || 'Lớp 5',
-                            period: this.normalizeComposerPeriod(row["Thời gian"] || row["Kỳ kiểm tra"] || 'Học Kỳ 1'),
-                            questions: []
-                        });
-                        count++;
-                    }
+            const mode = document.querySelector('input[name="e-import-mode"]:checked')?.value || 'append';
+            app.ui.importFromExcel(fileInput.files[0], async data => {
+                const imported = data.flatMap(row => {
+                    const name = String(row['Tên đề'] || '').trim();
+                    const subject = String(row['Môn'] || '').trim();
+                    const classlevel = String(row['Cấp lớp'] || 'Lớp 5').trim();
+                    if (!name || !['Toán', 'Tiếng Việt'].includes(subject) || !/^Lớp [1-5]$/.test(classlevel)) return [];
+                    return [{ name, subject, classlevel,
+                        period: this.normalizeComposerPeriod(row['Thời gian'] || row['Kỳ kiểm tra'] || 'Học Kỳ 1'), questions: [] }];
                 });
-                app.data.saveExams();
-                alert(`Đã nhập thành công ${count} đề kiểm tra (vỏ)!`);
+                if (!imported.length) return alert('File không có đề hợp lệ. Kho Đề hiện có được giữ nguyên.');
+                if (mode === 'overwrite') {
+                    if (!confirm('Ghi đè sẽ thay toàn bộ Kho Đề hiện có. Bạn có chắc chắn muốn tiếp tục?')) return;
+                    const error = await app.data.deleteConfirmedRows('game_exams', app.data.exams.map(exam => exam.id).filter(Boolean));
+                    if (error) return alert('Chưa ghi đè Kho Đề: ' + (error.message || error));
+                    app.data.exams = [];
+                }
+                app.data.exams.push(...imported);
+                const error = await app.data.saveExams();
+                alert(error ? this.getExamSyncErrorMessage(error) : `Đã nhập ${imported.length} đề kiểm tra (vỏ)${window.supabase ? '' : ' trên thiết bị'}!`);
                 this.renderESubTab('lib');
             });
         },
@@ -13082,46 +13176,24 @@ const app = {
         },
         async bulkDeleteQuestions() {
             const checkboxes = document.querySelectorAll('.q-select-cb:checked');
-            if (checkboxes.length === 0) return alert('Vui lòng chọn ít nhất 1 câu hỏi để xóa!');
+            if (!checkboxes.length) return alert('Vui lòng chọn ít nhất 1 câu hỏi để xóa!');
             if (!confirm(`Bạn có chắc chắn muốn xóa ${checkboxes.length} câu hỏi đã chọn?`)) return;
-
-            // Get indices sorted descending to safely splice
-            const indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
-            
-            // For Supabase
-            let deletedCount = 0;
-            if (window.supabase) {
-                const idsToDelete = [];
-                for (let idx of indices) {
-                    const q = app.data.libraryQuestions[idx];
-                    if (q.id) idsToDelete.push(q.id);
-                }
-                if (idsToDelete.length > 0) {
-                    const { error } = await supabaseClient.from('game_questions').delete().in('id', idsToDelete);
-                    if (error) console.error('Bulk delete error:', error);
-                }
-            }
-
-            for (let idx of indices) {
-                app.data.libraryQuestions.splice(idx, 1);
-                deletedCount++;
-            }
-
-            await app.data.saveLibrary();
-            alert(`Đã xóa thành công ${deletedCount} câu hỏi!`);
+            const selected = new Set(Array.from(checkboxes).map(cb => app.data.libraryQuestions[Number(cb.value)]).filter(Boolean));
+            const error = await app.data.deleteConfirmedRows('game_questions', [...selected].map(q => q.id).filter(Boolean));
+            if (error) return alert('Chưa xóa được câu hỏi: ' + (error.message || error));
+            app.data.libraryQuestions = app.data.libraryQuestions.filter(q => !selected.has(q));
+            app.safeStorage.setItem('game_libraryQuestions', JSON.stringify(app.data.libraryQuestions));
             this.renderQSubTab('lib');
+            alert(`Đã xóa ${selected.size} câu hỏi${window.supabase ? '' : ' trên thiết bị'}!`);
         },
-
         async deleteQuestion(idx) {
-            if (confirm('Xác nhận xóa câu hỏi này?')) {
-                const q = app.data.libraryQuestions[idx];
-                app.data.libraryQuestions.splice(idx, 1);
-                if (q && q.id && window.supabase) {
-                    await supabaseClient.from('game_questions').delete().eq('id', q.id);
-                }
-                app.data.saveLibrary();
-                this.renderQSubTab('lib');
-            }
+            const q = app.data.libraryQuestions[idx];
+            if (!q || !confirm('Xác nhận xóa câu hỏi này?')) return;
+            const error = await app.data.deleteConfirmedRows('game_questions', q.id ? [q.id] : []);
+            if (error) return alert('Chưa xóa được câu hỏi: ' + (error.message || error));
+            app.data.libraryQuestions = app.data.libraryQuestions.filter(item => item !== q);
+            app.safeStorage.setItem('game_libraryQuestions', JSON.stringify(app.data.libraryQuestions));
+            this.renderQSubTab('lib');
         },
         viewWorksheet(idx) {
             this.viewExam(idx, true);
@@ -13141,28 +13213,27 @@ const app = {
         editExam(idx) {
             this.renderESubTab('add', idx);
         },
-        removeQuestionFromExam(examIdx, qIdx, isW = false) {
+        async removeQuestionFromExam(examIdx, qIdx, isW = false) {
+            const record = (isW ? app.data.worksheets : app.data.exams)[examIdx];
+            if (!record?.questions?.[qIdx] || this.composerMutationPending?.has(record)) return;
             const label = isW ? 'phiếu học tập' : 'đề kiểm tra';
-            if (confirm(`Xóa câu hỏi này khỏi ${label}?`)) {
-                const store = isW ? app.data.worksheets : app.data.exams;
-                const record = store[examIdx];
-                if (window.AuthoringPlan.isPlanned(record) && record.questions.length === 1) return alert('Cần giữ ít nhất một câu chính.');
+            if (!confirm(`Xóa câu hỏi này khỏi ${label}?`)) return;
+            if (window.AuthoringPlan.isPlanned(record) && record.questions.length === 1) return alert('Cần giữ ít nhất một câu chính.');
+            const applied = await this.applyComposerMutation(record, isW, () => {
                 record.questions.splice(qIdx, 1);
                 if (window.AuthoringPlan.isPlanned(record)) record.questions.forEach((q, i) => { q.authoringPlan.mainCount = record.questions.length; q.authoringPlan.index = i; });
-                isW ? app.data.saveWorksheets() : app.data.saveExams();
-                this[isW ? 'renderWSubTab' : 'renderESubTab']('add', examIdx);
-            }
+            });
+            if (applied) this[isW ? 'renderWSubTab' : 'renderESubTab']('add', examIdx);
         },
         async deleteExam(idx) {
-            if (confirm('Xác nhận xóa đề kiểm tra này?')) {
-                const e = app.data.exams[idx];
-                app.data.exams.splice(idx, 1);
-                if (e && e.id && window.supabase) {
-                    await supabaseClient.from('game_exams').delete().eq('id', e.id);
-                }
-                app.data.saveExams();
-                this.renderESubTab('lib');
-            }
+            const exam = app.data.exams[idx];
+            if (!exam || !confirm('Xác nhận xóa đề kiểm tra này?')) return;
+            const error = await app.data.deleteConfirmedRows('game_exams', exam.id ? [exam.id] : []);
+            if (error) return alert('Chưa xóa được đề kiểm tra: ' + (error.message || error));
+            app.data.exams = app.data.exams.filter(item => item !== exam);
+            app.data.saveLocalExams();
+            if (!window.supabase) app.data.savePendingExamSnapshot();
+            this.renderESubTab('lib');
         },
         async deleteUser(username) {
             if (confirm('Xóa học sinh này?')) {
