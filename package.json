@@ -27,6 +27,9 @@
   "devDependencies": {
     "@dicebear/core": "10.7.0",
     "@playwright/test": "^1.62.1",
-    "@tabler/icons": "3.48.0"
+    "@tabler/icons": "3.48.0",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299",
+    "tesseract.js": "7.0.0"
   }
 }
