@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
-  <link rel="stylesheet" href="./src/style.css?v=vietnamese-answer-choices-v1">
+  <link rel="stylesheet" href="./src/style.css?v=worksheet-local-import-v1">
   <link rel="stylesheet" href="./src/login-layout.css">
   <link rel="stylesheet" href="./src/map-layout.css" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
   <link rel="stylesheet" href="./src/student-station.css?v=unified-station-shell-v1" media="print" onload="this.media='all';this.onload=null" onerror="this.dataset.loadError='true'">
@@ -271,6 +271,7 @@
 
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
           <div id="player-info" class="player-info-card"></div>
+          <button type="button" class="admin-map-action" onclick="app.worksheetClassroom.open()">Phiếu học tập · Bài được giao</button>
           <nav id="admin-map-actions" class="admin-map-actions" aria-label="Quản lý lớp học" hidden>
             <button type="button" class="admin-map-action admin-map-action--students" onclick="app.admin.openAdmin('players')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý học sinh</button>
             <button type="button" class="admin-map-action admin-map-action--quests" onclick="app.admin.openAdmin('quests')" aria-haspopup="dialog" aria-controls="treasure-modal">Quản lý Thi đua &amp; Nhiệm vụ</button>
@@ -1132,7 +1133,12 @@
   <script type="application/x-game-template" data-src="./src/question-templates/grade-4/vietnamese/practice.js?v=parameter-v1"></script>
   <script defer src="./src/modules/startup-assets.js"></script>
   <script defer src="./src/template-content-builder.js"></script>
-  <script defer src="./src/main.js?v=student-shop-pause-v1"></script>
+  <script defer src="./src/modules/worksheet-document.js"></script>
+  <script defer src="./src/main.js?v=worksheet-local-import-v1"></script>
+  <script defer src="./src/modules/worksheet-studio.js"></script>
+  <script defer src="./src/modules/worksheet-local-import.js"></script>
+  <script defer src="./src/modules/worksheet-source-tools.js"></script>
+  <script defer src="./src/modules/worksheet-classroom.js"></script>
   <script defer src="./src/modules/utils.js"></script>
   <script defer src="./src/modules/safe-storage.js"></script>
   <script defer src="./src/modules/constants.js"></script>
@@ -1168,6 +1174,13 @@
   <script defer src="./src/modules/team-competition.js"></script>
   <script defer src="./src/modules/team-competition-supabase.js"></script>
   <script defer src="./src/modules/weekly-offline-ui.js?v=authenticated-v2"></script>
+  <div id="worksheet-classroom-screen" class="screen">
+    <section class="ws-studio ws-classroom-shell" aria-label="Phiếu học tập được giao">
+      <div class="ws-actions"><button type="button" onclick="app.router.open('map-screen')">Về bản đồ</button><button type="button" onclick="app.worksheetClassroom.open()">Tải lại danh sách</button></div>
+      <div id="worksheet-classroom-status" role="status" aria-live="polite"></div>
+      <div id="worksheet-classroom-content"></div>
+    </section>
+  </div>
 </body>
 
 </html>

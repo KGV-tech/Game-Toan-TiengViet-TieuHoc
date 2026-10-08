@@ -632,6 +632,77 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 
 /* Phân cấp Bài học — chỉ xuất hiện trong các form quản trị. */
 .admin-curriculum-field { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 6px 10px; margin-bottom: 10px; padding: 9px 10px; border: 1px solid rgba(125, 211, 252, .28); border-radius: 8px; background: rgba(14, 116, 144, .12); }
+.ws-studio { max-width: 1200px; margin: auto; padding: 24px; color: #e6efff; background: #132238; border: 1px solid #395269; border-radius: 20px; }
+.ws-studio header h3 { font-size: 1.7rem; margin: 8px 0; }
+.ws-studio p { line-height: 1.6; }
+.ws-kicker { color: #8ce3cb; font-size: .8rem; font-weight: 800; letter-spacing: .08em; }
+.ws-studio label { display: grid; gap: 8px; font-weight: 700; min-width: 0; }
+.ws-studio input, .ws-studio select, .ws-studio textarea { width: 100%; min-width: 0; box-sizing: border-box; color: #142b3e; background: #f5f9ff; border: 1px solid #7891a8; border-radius: 8px; padding: 12px; font: inherit; }
+.ws-studio textarea { resize: vertical; line-height: 1.6; }
+#admin-compose-screen .admin-surface .ws-studio :is(input, select, textarea) { color: #142b3e; background: #f5f9ff; }
+#worksheet-classroom-screen { overflow-y: auto; overscroll-behavior: contain; justify-content: flex-start; }
+.ws-studio button, .ws-clear-drawing { min-height: 44px; padding: 10px 16px; color: #122f36; background: #b7ebdb; border: 1px solid #43836f; border-radius: 10px; font-weight: 800; cursor: pointer; }
+.ws-studio button:disabled { opacity: .5; cursor: wait; }
+.ws-studio :focus-visible { outline: 3px solid #ffc66e; outline-offset: 3px; }
+.ws-upload { padding: 22px; border: 2px dashed #69bba7; border-radius: 16px; margin: 22px 0; }
+.ws-source-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.ws-meta { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+.ws-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ws-editor-page { padding: 18px; border: 1px solid #54728e; border-radius: 16px; margin: 20px 0; }
+.ws-page-heading, .ws-block-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ws-page-heading label { flex: 1; }
+.ws-block-heading select { width: auto; }
+.ws-editor-block { display: grid; gap: 16px; background: #1c314b; padding: 20px; border-radius: 12px; margin: 18px 0; }
+.ws-editor-block details { border-top: 1px solid #54728e; padding-top: 12px; }
+.ws-editor-block summary { cursor: pointer; min-height: 44px; }
+.ws-review, .ws-error { color: #ffe6b8; background: #52371e; padding: 14px; border-radius: 8px; }
+.ws-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.ws-paper { --ws-accent: #147d68; --ws-tint: #e6f6ef; color: #17283a; background: white; max-width: 210mm; margin: 24px auto; padding: 0 !important; font-family: Arial, sans-serif; }
+.ws-theme-sky { --ws-accent: #176fad; --ws-tint: #e6f3ff; }
+.ws-theme-sun { --ws-accent: #935600; --ws-tint: #fff1d4; }
+.ws-page { padding: 14mm; position: relative; }
+.ws-paper-header { padding: 16px 20px; border-radius: 18px 18px 5px 5px; border-top: 7px solid var(--ws-accent); background: var(--ws-tint); margin-bottom: 20px; }
+.ws-paper-header h1 { font-size: 24px; line-height: 1.4; color: var(--ws-accent); margin: 12px 0; }
+.ws-paper-eyebrow { font-size: 11px; letter-spacing: 1px; font-weight: 800; }
+.ws-student-info { font-size: 13px; line-height: 1.7; }
+.ws-block { margin: 18px 0; padding: 14px; border: 1px solid #b1c7c0; border-left: 4px solid var(--ws-accent); border-radius: 10px; }
+.ws-block h3 { color: #17283a; font-size: 16px; line-height: 1.6; font-weight: 700; white-space: normal; }
+.ws-block-text { border: 0; background: var(--ws-tint); }
+.ws-part { padding: 8px 0; line-height: 1.65; }
+.ws-writing-line { border-bottom: 1px dotted #64748b; height: 27px; }
+.ws-dotted { display: inline-block; color: #475569; min-width: 65px; }
+.ws-choices { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 12px 0; line-height: 1.6; }
+.ws-table-wrap { overflow-x: auto; }
+.ws-paper table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 13px; }
+.ws-paper th, .ws-paper td { border: 1px solid #607d75; padding: 9px 5px; vertical-align: middle; overflow-wrap: anywhere; height: 36px; }
+.ws-paper th { background: var(--ws-tint); color: #183e35; }
+.ws-paper-footer { display: flex; gap: 12px; justify-content: space-between; border-top: 2px solid var(--ws-accent); padding-top: 10px; color: var(--ws-accent); font-size: 11px; }
+.ws-diagram { width: 100%; max-height: 230px; color: #166454; font-size: 15px; }
+.ws-answer-label { display: grid; gap: 8px; margin: 12px 0; font-weight: 700; }
+.ws-answer-label textarea { border: 1px solid #64748b; padding: 12px; font: inherit; border-radius: 8px; min-height: 80px; }
+.ws-inline-answer { width: 75px; max-width: 100%; border: 0; border-bottom: 2px solid var(--ws-accent); font: inherit; min-height: 44px; background: #f6faff; color: #17283a; }
+.ws-drawing { width: 100%; height: 180px; border: 1px dashed #7891a8; border-radius: 8px; touch-action: none; background: repeating-linear-gradient(white, white 29px, #d7e8e1 30px); }
+.ws-teacher-answer { color: #743f00; background: #fff0cf; padding: 10px; }
+.ws-visual { display: block; max-width: 100%; max-height: 400px; margin: 12px auto; object-fit: contain; }
+.ws-source-dialog { width: min(900px, 90vw); max-height: 90vh; overflow: auto; }
+.ws-source-dialog::backdrop { background: #09182bd9; }
+#ws-source-canvas { width: 100%; height: auto; max-height: none; touch-action: none; cursor: crosshair; display: block; margin: 16px 0; }
+.ws-region-fields, .ws-node-editor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ws-source-review { border: 1px solid #69bba7; padding: 16px; border-radius: 10px; margin: 16px 0; }
+.ws-source-review button { margin: 8px; }
+.ws-edit-table { min-width: 600px; width: 100%; border-collapse: collapse; }
+.ws-edit-table td, .ws-edit-table th { border: 1px solid #69839c; padding: 4px; }
+.ws-part-editor { display: grid; gap: 12px; padding: 16px; margin: 16px 0; border: 1px solid #69839c; border-radius: 10px; }
+.ws-classroom-shell { margin: 24px auto; width: min(1100px, calc(100% - 28px)); box-sizing: border-box; }
+.ws-classroom-shell .ws-paper label { color: #17283a; }
+.ws-classroom-shell .ws-paper input[type=radio] { width: 22px; height: 22px; }
+.ws-classroom-shell .ws-paper textarea { color: #17283a; background: white; }
+.ws-student-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; margin: 20px 0; }
+.ws-student-grid label, .ws-upload label:has(input[type=checkbox]) { display: flex; align-items: center; padding: 8px; }
+.ws-studio input[type=checkbox] { width: 24px; height: 24px; flex: 0 0 24px; }
+.ws-grade { display: grid; gap: 16px; }
+@media (max-width: 700px) { .ws-studio { padding: 14px; } .ws-meta, .ws-two-columns { grid-template-columns: 1fr; } .ws-editor-page, .ws-editor-block { padding: 12px; } .ws-page { padding: 12px; } .ws-paper table { min-width: 600px; } }
+@media print { .ws-paper, .ws-paper * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ws-page { break-after: page; padding: 5mm; } .ws-page:last-child { break-after: auto; } .ws-block { break-inside: auto; } .ws-block h3, .ws-paper-header, .ws-paper-footer { break-inside: avoid; break-after: avoid; } .ws-paper tr { break-inside: avoid; } .ws-paper table { min-width: 0; } .ws-paper { width: 100%; margin: 0; } .ws-paper-footer { break-after: auto; } }
 .admin-curriculum-field > label { color: #dbeafe; font-weight: 800; }
 .admin-curriculum-field > small { grid-column: 2; color: #94a3b8; font-size: .76rem; line-height: 1.35; }
 .admin-curriculum-field .form-input { width: 100%; min-width: 0; }

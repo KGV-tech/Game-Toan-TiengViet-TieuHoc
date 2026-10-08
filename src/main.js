@@ -5987,7 +5987,8 @@ const app = {
             const explanationCount = questions.filter(question => String(question.explanation || '').trim()).length;
             const exactExams = exams.filter(exam => (exam.questions || []).length === app.game.questionsPerRound).length;
             const worksheets = Array.isArray(app.data.worksheets) ? app.data.worksheets : [];
-            const exactWorksheets = worksheets.filter(ws => (ws.questions || []).length === app.game.questionsPerRound).length;
+            const templateWorksheets = worksheets.filter(ws => !window.WorksheetDocument?.isFreeform(ws));
+            const exactWorksheets = templateWorksheets.filter(ws => (ws.questions || []).length === app.game.questionsPerRound).length;
             return {
                 templates: {
                     count: templates.length,
@@ -6019,9 +6020,9 @@ const app = {
                 worksheets: {
                     count: worksheets.length,
                     metrics: [
-                        ['Phiếu đang soạn', worksheets.filter(ws => (ws.questions || []).length < app.game.questionsPerRound).length],
+                        ['Phiếu đang soạn', templateWorksheets.filter(ws => (ws.questions || []).length < app.game.questionsPerRound).length],
                         [`Đủ ${app.game.questionsPerRound} câu`, exactWorksheets],
-                        [`Vượt ${app.game.questionsPerRound} câu`, worksheets.filter(ws => (ws.questions || []).length > app.game.questionsPerRound).length]
+                        ['Phiếu tự do', worksheets.length - templateWorksheets.length]
                     ],
                     countLabel: 'phiếu đã soạn'
                 }
@@ -11475,13 +11476,14 @@ const app = {
             const escape = value => app.data.sanitizeHTML(String(value || ''));
             const exams = store;
             const target = app.game.questionsPerRound;
-            const counts = exams.map(exam => (exam.questions || []).length);
+            const counts = exams.filter(exam => !isW || !window.WorksheetDocument?.isFreeform(exam)).map(exam => (exam.questions || []).length);
             const stats = [
-                ['all', exams.length, 'Tổng số ${label}', 'Trong toàn bộ thư viện'],
+                ['all', exams.length, `Tổng số ${label}`, 'Trong toàn bộ thư viện'],
                 ['exact', counts.filter(count => count === target).length, `Đủ ${target} câu`, 'Có thể mở để rà soát'],
                 ['under', counts.filter(count => count < target).length, `Chưa đủ ${target} câu`, 'Tiếp tục bổ sung nội dung'],
                 ['over', counts.filter(count => count > target).length, `Vượt ${target} câu`, 'Cần chọn lại số câu']
             ];
+            if (isW) stats.push(['freeform', exams.filter(exam => window.WorksheetDocument?.isFreeform(exam)).length, 'Phiếu tự do', 'Không giới hạn số câu, chấm thủ công']);
             const statsBox = document.getElementById(`${mPrefix}library-stats`);
             if (statsBox) statsBox.innerHTML = stats.map(([key, count, label, hint]) => `<div class="exam-library-stat exam-library-stat--${key}"><span>${label}</span><strong>${count}</strong><small>${hint}</small></div>`).join('');
             const indicator = document.getElementById(`${mId}-count-indicator`);
@@ -11493,7 +11495,7 @@ const app = {
                 <label class="exam-library-search">Tìm trong thư viện ${label}<input id="${mPrefix}library-search" type="search" placeholder="Tên ${label}, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary(12, ${isW})"></label>
                 <label>Cấp lớp<select id="${mPrefix}library-class" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
                 <label>Môn học<select id="${mPrefix}library-subject" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả môn</option>${options('subject')}</select></label>
-                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả ${label}</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
+                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả ${label}</option>${isW ? '<option value="freeform">Phiếu tự do (ảnh/file)</option>' : ''}<option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
               </div>
               <div class="exam-library-result-heading"><p id="${mPrefix}library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">Xóa bộ lọc</button></div>
               <div id="${mPrefix}library-results"></div>
@@ -11524,7 +11526,7 @@ const app = {
                 return (!query || normalize(searchText).includes(query))
                     && (!classlevel || (exam.classlevel || 'Lớp 5') === classlevel)
                     && (!subject || exam.subject === subject)
-                    && (!status || (status === 'exact' ? count === target : status === 'under' ? count < target : count > target));
+                    && (!status || (status === 'freeform' ? isW && window.WorksheetDocument?.isFreeform(exam) : (!isW || !window.WorksheetDocument?.isFreeform(exam)) && (status === 'exact' ? count === target : status === 'under' ? count < target : count > target)));
             });
             document.getElementById(`${mPrefix}library-result-count`).textContent = `Hiển thị ${Math.min(limit, matches.length)} / ${matches.length} ${label}${matches.length !== store.length ? ` · Kho có ${store.length} ${label}` : ''}`;
             if (!matches.length) {
@@ -11534,15 +11536,16 @@ const app = {
             }
             results.innerHTML = `<div class="exam-library-grid">${matches.slice(0, limit).map(({ exam, index }) => {
                 const count = (exam.questions || []).length;
-                const state = count === target ? 'exact' : count < target ? 'under' : 'over';
-                const statusLabel = count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
+                const freeform = isW && window.WorksheetDocument?.isFreeform(exam);
+                const state = freeform ? 'exact' : count === target ? 'exact' : count < target ? 'under' : 'over';
+                const statusLabel = freeform ? 'Phiếu tự do · Chấm thủ công' : count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
                 const topics = [...new Set((exam.questions || []).map(question => question.topic).filter(Boolean))];
                 return `<article class="exam-library-card exam-library-card--${state}">
                   <div class="exam-library-card__top"><span class="exam-library-card__icon" aria-hidden="true">▤</span><span class="exam-library-card__status">${statusLabel}</span></div>
                   <div class="exam-library-card__meta"><span>${escape(exam.classlevel || 'Lớp 5')}</span><span>${escape(exam.subject || 'Chưa chọn môn')}</span><span>${escape(exam.period ? this.normalizeComposerPeriod(exam.period) : 'Chưa chọn thời gian')}</span></div>
                   <h4>${escape(exam.name || `${labelCap} chưa đặt tên`)}</h4>
                   <div class="exam-library-card__topics">${topics.slice(0, 3).map(topic => `<span>${escape(topic)}</span>`).join('') || '<span>Chưa gắn chủ đề</span>'}${topics.length > 3 ? `<span>+${topics.length - 3} chủ đề</span>` : ''}</div>
-                  <div class="exam-library-card__progress"><div><strong>${count}</strong><span> / ${target} câu hỏi</span><small>${count > target ? 'Rà soát số lượng' : count === target ? `Mở ${label} để kiểm tra nội dung` : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${Math.min(100, count / target * 100)}%"></i></div></div>
+                  <div class="exam-library-card__progress"><div><strong>${count}</strong><span>${freeform ? ' khối nội dung' : ` / ${target} câu hỏi`}</span><small>${freeform ? 'Đối chiếu bản gốc trước khi giao' : count > target ? 'Rà soát số lượng' : count === target ? `Mở ${label} để kiểm tra nội dung` : 'Đang hoàn thiện'}</small></div><div class="exam-library-card__track" aria-hidden="true"><i style="width:${freeform ? 100 : Math.min(100, count / target * 100)}%"></i></div></div>
                   <footer><button type="button" class="exam-library-button" onclick="app.admin.${isW ? "viewWorksheet" : "viewExam"}(${index})">${`Xem ${label}`}</button><button type="button" class="exam-library-button exam-library-button--primary" onclick="app.admin.${isW ? "worksheetComposerDraft" : "examComposerDraft"} = null; app.admin.${isW ? "editWorksheet" : "editExam"}(${index})">Chỉnh sửa</button><button type="button" class="exam-library-delete" onclick="app.admin.${isW ? "deleteWorksheet" : "deleteExam"}(${index})">${`Xóa ${label}`}</button></footer>
                 </article>`;
             }).join('')}</div>${matches.length > limit ? `<button type="button" class="exam-library-button exam-library-more" onclick="app.admin.filterExamLibrary(${limit + 12}, ${isW})">Xem thêm ${label} (${matches.length - limit} còn lại)</button>` : ''}`;
@@ -11603,6 +11606,10 @@ const app = {
                 const fullLabel = isW ? 'phiếu học tập' : 'đề kiểm tra';
                 const fullLabelCap = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
                 let e = (isW ? this.worksheetComposerDraft : this.examComposerDraft) || (editIdx !== undefined ? (isW ? app.data.worksheets[editIdx] : app.data.exams[editIdx]) : null);
+                if (isW && window.WorksheetDocument?.isFreeform(e)) {
+                    app.worksheetStudio.edit(e, editIdx);
+                    return;
+                }
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
                 const selectedClasslevel = e?.classlevel || this.composerState.classlevel || 'Lớp 4';
@@ -11669,6 +11676,7 @@ const app = {
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
                      <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam(${isW})">Tạo ${label} tự động</button>
+                     ${isW ? '<button type="button" class="btn-success exam-composer__generate-action" onclick="app.worksheetStudio.openImport()">Tạo phiếu từ ảnh/file</button>' : ''}
                   </div>
                </section>
 
@@ -12431,6 +12439,9 @@ const app = {
             </article>`;
         },
         renderExamPrintContent(exam, rootId = 'print-area', isW = false) {
+            if (isW && window.WorksheetDocument?.isFreeform(exam)) {
+                return window.WorksheetDocument.render(window.WorksheetDocument.fromRecord(exam), { rootId });
+            }
             const esc = value => app.data.sanitizeHTML(value ?? '');
             const defaultLabel = isW ? 'Phiếu học tập' : 'Đề kiểm tra';
             const name = String(exam?.name || defaultLabel).trim() || defaultLabel;
@@ -12525,6 +12536,7 @@ const app = {
                     <h3>${heading}</h3>
                     <div class="exam-detail-toolbar__actions">
                         ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)}, ${isW})`, 'compact-admin-action--view')}
+                        ${isW && window.WorksheetDocument?.isFreeform(exam) ? `<button type="button" class="exam-library-button" onclick="app.worksheetClassroom.assign(${Number(idx)})">Giao phiếu cho học sinh</button>` : ''}
                         <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')" aria-label="${isW ? 'Đóng chi tiết phiếu' : 'Đóng chi tiết đề'}"><span aria-hidden="true">←</span> Quay về</button>
                     </div>
                 </div>

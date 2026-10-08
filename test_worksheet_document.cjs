@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const D = require('./src/modules/worksheet-document.js');
+const doc = D.normalize({ title: 'Phiếu tự do', theme: 'sky', warnings: ['teacher note'], pages: [{ title: 'Trang 1', source: 'student.png', blocks: [{ kind: 'table', text: '<script>bad()</script> ___', columns: ['Số', 'Đọc'], rows: [['30 078', '___']], answer: 'PRIVATE', parts: Array.from({ length: 7 }, () => ({ text: 'Câu con ___', answer: 'PRIVATE', lines: 2 })) }] }] });
+const record = D.toRecord(doc, { classlevel: 'Lớp 4' });
+assert.equal(record.questions.length, 1);
+assert.equal(D.isFreeform(record), true);
+assert.deepEqual(D.fromRecord(record).pages[0].blocks, doc.pages[0].blocks);
+const publicDoc = D.publicDocument(doc);
+assert.equal(publicDoc.pages[0].source, '');
+assert.equal(publicDoc.pages[0].blocks[0].answer, '');
+assert(publicDoc.pages[0].blocks[0].parts.every(part => !part.answer));
+assert(!D.render(doc).includes('PRIVATE'));
+assert(!D.render(doc).includes('<script>'));
+assert(D.render(doc).includes('&lt;script&gt;'));
+assert(D.render(publicDoc, { interactive: true }).includes('data-ws-answer'));
+assert.throws(() => D.normalize({ pages: Array.from({ length: 41 }, () => ({ blocks: [] })) }), /40/);
+console.log('Worksheet document contracts passed');
