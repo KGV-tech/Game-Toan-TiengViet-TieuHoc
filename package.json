@@ -26,8 +26,10 @@
   "homepage": "https://github.com/KGV-tech/Game-Toan-TiengViet-TieuHoc#readme",
   "devDependencies": {
     "@dicebear/core": "10.7.0",
+    "@paddleocr/paddleocr-js": "0.4.2",
     "@playwright/test": "^1.62.1",
     "@tabler/icons": "3.48.0",
+    "esbuild": "0.25.12",
     "mammoth": "1.13.0",
     "pdfjs-dist": "6.4.299",
     "tesseract.js": "7.0.0"

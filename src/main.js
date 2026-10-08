@@ -1362,6 +1362,42 @@ const app = {
             if (!result.error) this.clearPendingStudentEvent('lucky-spin');
             return result;
         },
+        learningSettingsRequest: null,
+        async refreshLearningSettings() {
+            const user = this.currentUser;
+            if (!window.supabase || !user || user.role?.toLowerCase() === 'admin' || !navigator.onLine) return false;
+            if (this.learningSettingsRequest) return this.learningSettingsRequest;
+            const userKey = `${user.id || ''}:${user.username || ''}`;
+            const settingsAtStart = JSON.stringify(this.settings);
+            this.learningSettingsRequest = (async () => {
+                let timer;
+                try {
+                    const rows = await Promise.race([
+                        this.fetchAllFromSupabase('game_settings', 'id', 1),
+                        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('settings_timeout')), 8000); })
+                    ]);
+                    const current = this.currentUser;
+                    const row = rows.find(item => Number(item.id) === 1);
+                    if (!current || current.role?.toLowerCase() === 'admin'
+                        || `${current.id || ''}:${current.username || ''}` !== userKey
+                        || JSON.stringify(this.settings) !== settingsAtStart
+                        || !row?.data || typeof row.data !== 'object' || Array.isArray(row.data)) return false;
+                    const previousSettings = JSON.stringify(this.settings);
+                    this.settings = row.data;
+                    this.ensureLessonMetadata();
+                    const changed = previousSettings !== JSON.stringify(this.settings);
+                    app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
+                    if (changed && document.getElementById('game-screen')?.classList.contains('active')
+                        && document.getElementById('game-config-view')?.classList.contains('active')) app.game.renderTopics();
+                    return true;
+                } catch (_) {
+                    // A failed read must keep the last confirmed limits, not unlock everything.
+                    return false;
+                } finally { clearTimeout(timer); }
+            })();
+            try { return await this.learningSettingsRequest; }
+            finally { this.learningSettingsRequest = null; }
+        },
         async saveSettings() {
             this.ensureLessonMetadata();
             if (!window.supabase) {
@@ -1376,6 +1412,7 @@ const app = {
                 alert("Lỗi khi lưu lên Supabase: " + error.message);
                 app.safeStorage.setItem('game_settings', JSON.stringify(this.settings)); // fallback
             }
+            if (!error) app.safeStorage.setItem('game_settings', JSON.stringify(this.settings));
             return error;
         },
         async saveLibrary() {
@@ -2678,6 +2715,7 @@ const app = {
             }; // Will implement app.shop
         },
         openConfig(subject) {
+            app.data.refreshLearningSettings();
             this.state.subject = subject;
             this.state.selectedTopics = [];
             this.state.selectedLessons = [];
@@ -14551,6 +14589,14 @@ window.addEventListener('DOMContentLoaded', () => {
         target.addEventListener(type, handler);
         return () => target.removeEventListener(type, handler);
     };
+    const refreshVisibleLearningSettings = () => {
+        if (!document.hidden && document.getElementById('game-screen')?.classList.contains('active')
+            && document.getElementById('game-config-view')?.classList.contains('active')) app.data.refreshLearningSettings();
+    };
+    listenForAppLifecycle(window, 'focus', refreshVisibleLearningSettings);
+    listenForAppLifecycle(window, 'online', refreshVisibleLearningSettings);
+    listenForAppLifecycle(document, 'visibilitychange', refreshVisibleLearningSettings);
+    app.lifecycle?.interval('app-shell', refreshVisibleLearningSettings, 15000);
     listenForAppLifecycle(window, 'offline', handleNetworkChange);
     listenForAppLifecycle(window, 'online', handleNetworkChange);
     listenForAppLifecycle(window, 'beforeunload', () => {
