@@ -16,7 +16,7 @@ assert.equal(again[0].value, 58);
 assert.equal(again[1].value, 40);
 const fs=require('node:fs');
 const bundle=fs.readFileSync('./src/modules/worksheet-bundle.js','utf8').replace(/\r\n/g,'\n');
-for(const name of ['worksheet-layout','worksheet-document','worksheet-studio','worksheet-local-import','worksheet-source-tools','worksheet-classroom']) {
+for(const name of ['authoring-plan','worksheet-layout','worksheet-document','worksheet-studio','worksheet-local-import','worksheet-source-tools','worksheet-classroom']) {
   assert(bundle.includes(fs.readFileSync(`./src/modules/${name}.js`,'utf8').replace(/\r\n/g,'\n')),`Rebuild worksheet bundle after editing ${name}`);
 }
 console.log('Worksheet table layout contracts passed');
