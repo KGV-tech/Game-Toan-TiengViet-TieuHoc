@@ -28,7 +28,7 @@ test('Admin soạn câu hỏi thấy Bài học đúng điều kiện, học sin
   await page.locator('#add-q-q').fill('Câu hỏi thuộc Bài 2');
   await page.locator('#add-q-ans').fill('Đúng');
   page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Lưu câu hỏi' }).click();
+  await page.getByRole('button', { name: 'Lưu câu hỏi', exact: true }).click();
   await expect.poll(() => page.evaluate(() => app.data.libraryQuestions[0]?.lesson)).toBe('g4-math-hk1-b02');
 
   await page.evaluate(() => app.admin.renderQSubTab('add', 0));

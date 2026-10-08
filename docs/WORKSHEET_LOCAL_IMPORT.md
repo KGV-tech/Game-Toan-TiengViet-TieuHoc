@@ -102,3 +102,23 @@ không cần đổi bảng/RLS Supabase. Phiếu cũ được bổ sung mặc đ
 Phân phối JS: sáu module phiếu được ghép theo thứ tự bằng
 `node scripts/build-worksheet-bundle.cjs` trước khi commit/deploy. HTML tải một
 script phiếu để giữ ngân sách khởi động; không cần thư viện build mới.
+
+### Biên soạn câu hỏi Phiếu học tập (tháng 10/2026)
+
+- Bảy loại câu mở các trường phù hợp. So sánh dùng chọn dấu >, <, =;
+  Đúng/Sai có lựa chọn trống, không tự gán đáp án. Đối chiếu dùng hai cột
+  và các cặp đáp án; loại này không dùng bộ câu con của các loại còn lại.
+- Chuyển loại giữ nội dung chung, Chủ đề/Bài học và lời giải. Đáp án,
+  lựa chọn và câu con được giữ riêng cho từng loại trong phiên chỉnh sửa;
+  quay lại loại trước phục hồi bản nháp, kể cả các ý tạm bỏ chọn.
+- Lưu Phiếu đọc cấu trúc hiện đang hiển thị. Bản nháp của các loại khác
+  không được lưu vào phiếu. Kho Đề và Kho Câu hỏi không bị thay đổi.
+- Câu con cũ chỉ lưu trong văn bản được chuyển sang cấu trúc riêng khi
+  chuyển loại, để giữ nội dung đã sửa. Focus bàn phím được phục hồi sau
+  khi dựng lại thẻ. Không đổi schema hoặc dữ liệu production.
+
+Các bước ở sidebar thay đổi theo khu vực đang chọn (Cấu hình, Câu hỏi,
+Đề, Phiếu). Bước Biên soạn mở đúng form nếu chưa mở; Rà soát giữ nguyên
+form/bản nháp đang nhập và dẫn tới nhóm thao tác lưu hiện tại. Phiếu từ
+ảnh/file giữ file đã chọn và bản hiệu chỉnh. Dãy nút số câu áp dụng riêng
+cho cả form Đề và Phiếu thường; ẩn khi mở studio Phiếu từ tài liệu.
