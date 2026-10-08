@@ -5,7 +5,7 @@ bên cạnh nút tạo tự động. Chọn nhiều ảnh JPG/PNG/WebP hoặc PD
 JSON là định dạng xuất/nhập dự phòng của phiếu tự do.
 
 File nguồn được xử lý trong trình duyệt, không gửi OpenAI hoặc dịch vụ OCR.
-Tesseract.js tiếng Việt, PDF.js, Mammoth và dữ liệu ngôn ngữ được phục vụ từ
+OpenCV.js, PaddleOCR.js, Tesseract.js tiếng Việt, PDF.js và Mammoth được phục vụ từ
 website của ứng dụng. Lần đọc đầu tiên cần mạng để tải các thư viện.
 Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase của ứng dụng;
 ảnh gốc không được tải lên. Hình minh họa đã cắt được lưu cùng phiếu khi chọn giữ.
@@ -30,8 +30,9 @@ Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase c
 ## Trang nguồn và thông tin tùy chọn
 
 Mỗi ảnh và mỗi trang PDF giữ một trang nguồn. Tiêu đề nhóm như “Phiếu học tập
-số 2”, “Phiếu học tập số 3” trên cùng ảnh không tạo thêm trang nguồn; chúng là khối
-nội dung đọc, sửa/xóa được. TXT không tự chia trang theo tiêu đề.
+số 2”, “Phiếu học tập số 3” trên cùng ảnh tạo các nhóm độc lập; chỉ nhóm đầu
+của ảnh bắt đầu trang mới. Chúng không tạo thêm trang nguồn. TXT vẫn giữ
+cách nhập văn bản trước đó, không tự chia trang theo tiêu đề.
 Chủ đề và Bài học là ô tùy chọn, lưu cùng phiếu và hiện trên bản in.
 **Xóa tiêu đề** bỏ tiêu đề trang khỏi bản in, giữ các bài; **Thêm tiêu đề**
 cho phép đặt lại. **Xóa bài** xóa riêng khối nội dung đang chọn.
@@ -126,3 +127,9 @@ Các bước ở sidebar thay đổi theo khu vực đang chọn (Cấu hình, C
 form/bản nháp đang nhập và dẫn tới nhóm thao tác lưu hiện tại. Phiếu từ
 ảnh/file giữ file đã chọn và bản hiệu chỉnh. Dãy nút số câu áp dụng riêng
 cho cả form Đề và Phiếu thường; ẩn khi mở studio Phiếu từ tài liệu.
+
+## Bộ xử lý OCR mới
+
+Xem `docs/WORKSHEET_OCR_PIPELINE.md` cho model, giới hạn tiếng Việt,
+đóng gói cùng website và kiểm thử ảnh riêng. Tesseract dự phòng có thể chọn
+ngay ở màn hình tải file.

@@ -1,0 +1,13 @@
+{
+  "sdk": "0.4.2",
+  "models": {
+    "PP-OCRv6_small_det.tar": {
+      "bytes": 9891840,
+      "sha256": "d218f6fbf0f1c23d2161bd6ac7f5eaa6104fa89955c09290497e31008e2618e4"
+    },
+    "latin_PP-OCRv5_mobile_rec.tar": {
+      "bytes": 8069120,
+      "sha256": "0fd8634124d871d25492311da077517ba3b4277ea67a0dec9e46ce537978c7cb"
+    }
+  }
+}

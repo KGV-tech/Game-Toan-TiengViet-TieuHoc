@@ -228,13 +228,13 @@ for (const theme of ['light', 'dark']) {
 }
 
 
-test('hai ảnh chụp tham chiếu giữ đúng hai trang nguồn (QA tùy chọn)', async ({ page }, testInfo) => {
+test('hai ảnh chụp tham chiếu giữ hai trang nguồn và ba nhóm (QA tùy chọn)', async ({ page }, testInfo) => {
   test.skip(!process.env.WORKSHEET_QA_IMAGE || !process.env.WORKSHEET_QA_IMAGE_2, 'Cần hai ảnh cục bộ cho QA');
   test.setTimeout(180000);
   await openStudio(page);
   await page.locator('#ws-source-files').setInputFiles([process.env.WORKSHEET_QA_IMAGE, process.env.WORKSHEET_QA_IMAGE_2]);
   await page.getByRole('button', { name: 'Đọc và dựng phiếu', exact: true }).click();
-  await expect(page.locator('.ws-editor-page')).toHaveCount(2, {timeout:150000});
+  await expect(page.locator('.ws-editor-page')).toHaveCount(3, {timeout:150000});
   const doc = await page.evaluate(() => app.worksheetStudio.doc);
   expect(doc.pages[0].blocks.some(b => b.kind === 'table')).toBe(true);
   expect(doc.pages[1].blocks.some(b => /234\s*139/.test(b.text))).toBe(true);

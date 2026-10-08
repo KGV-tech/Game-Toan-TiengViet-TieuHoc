@@ -90,6 +90,17 @@
     }
     ctx.putImageData(image,0,0);return canvas;
   }
+  function writingLines(canvas,grid) {
+    const scale=Math.min(1,900/canvas.width),small=document.createElement('canvas');small.width=Math.round(canvas.width*scale);small.height=Math.round(canvas.height*scale);
+    const ctx=small.getContext('2d',{willReadFrequently:true});ctx.drawImage(canvas,0,0,small.width,small.height);const pixels=ctx.getImageData(0,0,small.width,small.height).data,hits=[];
+    for(let y=0;y<small.height;y++){
+      if(grid&&y/scale>=grid.ys[0]&&y/scale<=grid.ys.at(-1))continue;
+      const runs=[];let start=-1;
+      for(let x=0;x<=small.width;x++){const dark=x<small.width&&pixels[(y*small.width+x)*4]<150;if(dark&&start<0)start=x;if(!dark&&start>=0){runs.push({x:start,width:x-start});start=-1;}}
+      const dots=runs.filter(run=>run.width>=1&&run.width<=5);
+      if(dots.length>=35&&dots.at(-1).x-dots[0].x>small.width*.4){if(!hits.length||y/scale-hits.at(-1)>10)hits.push(y/scale);}
+    }return hits;
+  }
   function findSlantedGrid(canvas,diagnostics={}) {
     const scale=Math.min(1,750/canvas.width),w=Math.round(canvas.width*scale),h=Math.round(canvas.height*scale);
     const small=document.createElement('canvas');small.width=w;small.height=h;const ctx=small.getContext('2d');ctx.drawImage(canvas,0,0,w,h);
@@ -157,7 +168,7 @@
       if(!this.worker){await loadScript('tesseract.min.js');this.worker=await root.Tesseract.createWorker('vie',1,{workerPath:base+'worker.min.js',corePath:base,langPath:base+'lang',gzip:false,logger:message=>{if(message.status==='recognizing text')studio.feedback(`Đang nhận diện trên thiết bị: ${Math.round(message.progress*100)}%`);}});await this.worker.setParameters({tessedit_pageseg_mode:'3',preserve_interword_spaces:'1'});}
       return this.worker;
     },
-    async readCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false){
+    async readLegacyCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false){
       const cleaned=cleanCanvas(canvas,removeColor,masks);
       const prepared=prepareOCR(cleaned,canvas);
       const worker=await this.getWorker();const {data}=await worker.recognize(prepared,{}, {text:true,tsv:true});
@@ -171,6 +182,47 @@
       if(data.confidence<70)doc.warnings.push(`Trang ${pageNumber}: chữ nhận diện chưa rõ (${Math.round(data.confidence)}%). Cần đối chiếu toàn bộ.`);
       doc.warnings.push('Sơ đồ/minh họa có thông tin học tập cần dùng công cụ cắt vùng từ bản gốc, không chỉ dựa vào chữ OCR.');
       this.sourcePages.push({name:`${name} · Trang ${pageNumber}`,original:canvas,cleaned,prepared,masks,removeColor});
+      return doc;
+    },
+    paddleWorker:null,paddlePending:new Map(),paddleSequence:0,
+    async runPaddle(canvas,removeColor,prepareOnly=false) {
+      if(!this.paddleWorker){
+        const worker=new Worker(base+'paddle/ocr-worker.js');this.paddleWorker=worker;
+        const fail=message=>{worker.terminate();this.paddleWorker=null;for(const job of this.paddlePending.values()){clearTimeout(job.timer);job.reject(new Error(message));}this.paddlePending.clear();};
+        worker.onerror=()=>fail('Không tải được bộ PaddleOCR. Thử lại hoặc chọn Tesseract dự phòng.');
+        worker.onmessage=({data})=>{const job=this.paddlePending.get(data.id);if(!job)return;if(data.stage){studio.feedback(data.stage);return;}clearTimeout(job.timer);this.paddlePending.delete(data.id);if(data.error)job.reject(new Error('PaddleOCR: '+data.error));else job.resolve(data.result);};
+      }
+      const pixels=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
+      const id=++this.paddleSequence;
+      return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.paddleWorker?.terminate();this.paddleWorker=null;for(const job of this.paddlePending.values()){clearTimeout(job.timer);job.reject(new Error('Nhận diện quá lâu. Hãy giảm kích thước ảnh hoặc chọn Tesseract dự phòng.'));}this.paddlePending.clear();},300000);this.paddlePending.set(id,{resolve,reject,timer});this.paddleWorker.postMessage({id,image:{width:canvas.width,height:canvas.height,data:pixels.data},removeColor,prepareOnly},[pixels.data.buffer]);});
+    },
+    async readCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false) {
+      if(document.getElementById('ws-ocr-engine')?.value==='tesseract')return this.readLegacyCanvas(canvas,name,pageNumber,masks,removeColor);
+      const input=cleanCanvas(canvas,false,masks),result=await this.runPaddle(input,removeColor);
+      const toCanvas=image=>{const target=document.createElement('canvas');target.width=image.width;target.height=image.height;target.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(image.data),image.width,image.height),0,0);return target;};
+      const original=toCanvas(result.original),cleaned=toCanvas(result.cleaned),prepared=toCanvas(result.prepared);
+      const gridSource=prepareOCR(original,original);let grid=findGrid(gridSource)||findSlantedGrid(gridSource);
+      if(grid&&result.geometry?.tableBounds){const bounds=result.geometry.tableBounds;const keep=(values,min,max)=>values.filter(v=>v>=min-12&&v<=max+12);grid={...grid,xs:keep(grid.xs,bounds.left,bounds.right),ys:keep(grid.ys,bounds.top,bounds.bottom)};if(grid.xs.length<3||grid.ys.length<3)grid=null;}
+      // The published Paddle v6 AND Latin-v5 dictionaries omit Vietnamese tone vowels.
+      // Keep Paddle's detection geometry; restore Vietnamese with the bundled vie reader.
+      studio.feedback('Đang đối chiếu dấu tiếng Việt trên thiết bị…');
+      const reader=await this.getWorker(),{data:vi}=await reader.recognize(prepared,{}, {text:true,tsv:true});const viWords=wordsFromTsv(vi.tsv);
+      const originalPixels=original.getContext('2d',{willReadFrequently:true}).getImageData(0,0,original.width,original.height).data;
+      result.words=result.words.filter(word=>{
+        if(!removeColor||!grid||word.y<grid.ys[1])return true;
+        const samples=[];for(let y=Math.max(0,Math.floor(word.y));y<Math.min(original.height,word.y+word.height);y+=2)for(let x=Math.max(0,Math.floor(word.x));x<Math.min(original.width,word.x+word.width);x+=2){const i=(y*original.width+x)*4,r=originalPixels[i],g=originalPixels[i+1],b=originalPixels[i+2];samples.push({light:(r+g+b)/3,ink:(r-g>16&&b-g>16)||(r-g>30&&r-b>30)||(b-r>45&&b-g>25)});}
+        const lights=samples.map(p=>p.light).sort((a,b)=>a-b),paper=lights[Math.floor(lights.length*.75)]||255,ink=samples.filter(p=>p.ink).length,neutral=samples.filter(p=>!p.ink&&p.light<paper*.65).length;
+        return !(ink>samples.length*.002&&ink>neutral*2);
+      }).map(word=>{
+        const selected=viWords.filter(w=>w.x+w.width/2>=word.x-5&&w.x+w.width/2<=word.x+word.width+5&&w.y+w.height/2>=word.y-5&&w.y+w.height/2<=word.y+word.height+5).sort((a,b)=>a.x-b.x);
+        const text=selected.map(w=>w.text).join(' '),score=selected.length?selected.reduce((sum,w)=>sum+w.confidence,0)/selected.length:0;
+        if(text.length>=word.text.length*.7&&score>=60)return {...word,text,confidence:Math.min(word.confidence,score)};
+        return {...word,confidence:Math.min(word.confidence,75)};
+      });
+      const raw=root.WorksheetOCRRecovery.recover(result.words,grid,name,pageNumber,writingLines(prepared,grid));
+      raw.warnings.push(...result.notes,'Hình/sơ đồ: giữ vùng minh họa từ bản gốc nếu cần; OCR không tự phục hồi hình.');
+      const doc=D.normalize(raw);
+      this.sourcePages.push({name:`${name} · Trang nguồn ${pageNumber}`,original:canvas,cleaned:cleanCanvas(canvas,removeColor,masks),rectified:original,prepared,masks:[...masks],removeColor,engine:'PP-OCRv6 + Latin v5 + Tesseract vie',metrics:result.metrics,grid,words:result.words,notes:result.notes});
       return doc;
     },
     async extract(file){
@@ -194,7 +246,7 @@
       }
       const canvas=await imageCanvas(file);return this.readCanvas(canvas,file.name,1,file.wsMasks||[],typeof file.wsRemoveColor==='boolean'?file.wsRemoveColor:document.getElementById('ws-remove-color')?.checked!==false);
     },
-    parseText,cleanCanvas,prepareOCR,findGrid,findSlantedGrid,gridBlock,wordsFromTsv,imageCanvas
+    parseText,cleanCanvas,prepareOCR,writingLines,findGrid,findSlantedGrid,gridBlock,wordsFromTsv,imageCanvas
   };
   app.worksheetLocalImport=local;
   studio.extract=file=>local.extract(file);

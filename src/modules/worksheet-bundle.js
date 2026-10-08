@@ -457,7 +457,7 @@
       this.metadata = { classlevel: field('class') || 'Lớp 4', subject: field('sub') || 'Toán', period: field('period') || 'Học Kỳ 1' };
       this.doc = null; this.files = []; this.editIndex = undefined;
       if (app.worksheetLocalImport) app.worksheetLocalImport.sourcePages = [];
-      this.container().innerHTML = `<section class="ws-studio" aria-label="Tạo phiếu từ ảnh hoặc file"><header><span class="ws-kicker">PHIẾU HỌC TẬP · TỪ TÀI LIỆU</span><h3>Biến bài đã làm thành một phiếu mới</h3><p>Giữ nội dung in sẵn, bỏ nét bút và tạo chỗ trống để học sinh luyện lại. Bạn sẽ kiểm tra từng bài trước khi lưu.</p></header><div class="ws-upload"><label for="ws-source-files">Chọn ảnh hoặc file (có thể chọn nhiều)</label><input id="ws-source-files" type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.docx,.txt,.json"><p>JPG, PNG, WebP, PDF, DOCX, TXT hoặc JSON phiếu. Tối đa 12 file, 10 MB/file, tổng 30 MB. DOCX có sơ đồ: nên xuất PDF để giữ hình.</p><p>File được đọc ngay trên thiết bị, không gửi tới OpenAI hoặc dịch vụ OCR. Thư viện nhận diện tiếng Việt chỉ tải khi cần.</p><label><input id="ws-remove-color" type="checkbox" checked> Bỏ nét bút màu (tắt khi chữ/hình in sẵn có màu)</label><small>Với bút đen, chọn Làm sạch ảnh để khoanh vùng trước khi đọc. Ảnh nghiêng/chữ mờ cần đối chiếu lại.</small></div><ol id="ws-source-list" class="ws-source-list"></ol><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-extract">Đọc và dựng phiếu</button><button type="button" id="ws-blank">Soạn phiếu tự do</button><button type="button" id="ws-back">Quay lại soạn phiếu</button></div></section>`;
+      this.container().innerHTML = `<section class="ws-studio" aria-label="Tạo phiếu từ ảnh hoặc file"><header><span class="ws-kicker">PHIẾU HỌC TẬP · TỪ TÀI LIỆU</span><h3>Biến bài đã làm thành một phiếu mới</h3><p>Giữ nội dung in sẵn, bỏ nét bút và tạo chỗ trống để học sinh luyện lại. Bạn sẽ kiểm tra từng bài trước khi lưu.</p></header><div class="ws-upload"><label for="ws-source-files">Chọn ảnh hoặc file (có thể chọn nhiều)</label><input id="ws-source-files" type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.docx,.txt,.json"><p>JPG, PNG, WebP, PDF, DOCX, TXT hoặc JSON phiếu. Tối đa 12 file, 10 MB/file, tổng 30 MB. DOCX có sơ đồ: nên xuất PDF để giữ hình.</p><p>File được đọc ngay trên thiết bị, không gửi tới OpenAI hoặc dịch vụ OCR. Thư viện nhận diện tiếng Việt chỉ tải khi cần.</p><label>Bộ đọc chữ<select id="ws-ocr-engine"><option value="paddle">PaddleOCR v6 + bộ đọc tiếng Việt</option><option value="tesseract">Tesseract dự phòng</option></select></label><label><input id="ws-remove-color" type="checkbox" checked> Bỏ nét bút màu (tắt khi chữ/hình in sẵn có màu)</label><small>Với bút đen, chọn Làm sạch ảnh để khoanh vùng trước khi đọc. Ảnh nghiêng/chữ mờ cần đối chiếu lại.</small></div><ol id="ws-source-list" class="ws-source-list"></ol><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-extract">Đọc và dựng phiếu</button><button type="button" id="ws-blank">Soạn phiếu tự do</button><button type="button" id="ws-back">Quay lại soạn phiếu</button></div></section>`;
       app.admin.syncComposerQuestionNav();
       document.getElementById('ws-source-files').addEventListener('change', event => this.selectFiles(event.target.files));
       document.getElementById('ws-extract').onclick = () => this.readFiles();
@@ -680,6 +680,68 @@
 })(globalThis);
 
 
+// worksheet-ocr-recovery.js
+// Coordinate-based recovery: groups are sections, not source pages.
+;(function(root) {
+  const fold=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  function lines(words) {
+    const result=[];
+    for(const word of [...words].sort((a,b)=>a.y-b.y||a.x-b.x)) {
+      let row=result.find(row=>Math.abs(row.y-word.y)<Math.max(8,word.height*.5));
+      if(!row){row={y:word.y,words:[]};result.push(row);}row.words.push(word);
+    }
+    return result.sort((a,b)=>a.y-b.y).flatMap(row=>{
+      // Paddle may return several choices on one line. Preserve their boundaries.
+      const sorted=row.words.sort((a,b)=>a.x-b.x),pieces=[];let piece=[];
+      for(const word of sorted){if(/^[A-Z][.)]\s/.test(word.text)&&piece.length){pieces.push(piece);piece=[];}piece.push(word);}if(piece.length)pieces.push(piece);
+      return pieces.map(items=>({text:items.map(w=>w.text).join(' '),y:row.y,confidence:Math.min(...items.map(w=>w.confidence)),height:Math.max(...items.map(w=>w.height))}));
+    });
+  }
+  function tableFromGrid(grid,words) {
+    const rows=[];
+    for(let r=0;r<grid.ys.length-1;r++){
+      const row=[];
+      for(let c=0;c<grid.xs.length-1;c++){
+        const selected=words.filter(w=>{const x=w.x+w.width/2,y=w.y+w.height/2;return x>grid.xs[c]&&x<grid.xs[c+1]&&y>grid.ys[r]&&y<grid.ys[r+1];});
+        row.push(lines(selected).map(l=>l.text).join(' ')||'___');
+      }rows.push(row);
+    }
+    const uncertain=words.filter(w=>w.confidence<80).map(w=>w.text);
+    return {kind:'table',text:'',columns:rows.shift()||[],rows,lines:0,parts:[],options:[],answer:'',review:uncertain.length?'Cần kiểm tra ô bảng: '+uncertain.join(' · '):''};
+  }
+  function recover(words,grid,name,pageNumber=1,writingLines=[]) {
+    const pages=[],warnings=[];let page=null,current=null,part=null,title='';
+    const group=label=>{page={title:label,startNewPage:pages.length===0,blocks:[]};pages.push(page);current=null;part=null;};
+    const newBlock=text=>{if(!page)group('');current={kind:'question',text,answer:'',lines:0,parts:[],options:[],columns:[],rows:[],review:''};page.blocks.push(current);part=null;};
+    const outside=grid?words.filter(w=>w.y+w.height/2<grid.ys[0]||w.y+w.height/2>grid.ys.at(-1)):words;
+    const events=lines(outside).map(l=>({...l,type:'line'}));
+    for(const y of writingLines)if(!events.some(e=>Math.abs(e.y-y)<10&&/^[.…_\s]{4,}$/.test(e.text)))events.push({type:'line',text:'....................',y,confidence:100});
+    if(grid)events.push({type:'table',y:grid.ys[0],block:tableFromGrid(grid,words.filter(w=>w.y+w.height/2>grid.ys[0]&&w.y+w.height/2<grid.ys.at(-1)))});
+    for(const event of events.sort((a,b)=>a.y-b.y)) {
+      if(event.type==='table'){if(!page)group('');if(current&&/^HOAN THANH B[A]?NG/.test(fold(current.text))){event.block.text=current.text;page.blocks.pop();}page.blocks.push(event.block);current=null;part=null;continue;}
+      const text=event.text.trim(),heading=fold(text);if(!text)continue;
+      if(/^(BAIHOC(?:STEM)?|PHI[EU]*H[O]?CT[A]?P)$/.test(heading.replace(/ /g,''))&&!pages.some(p=>p.title))continue;
+      if(/^(?:Họ\s+(?:và\s+)?tên|Tên|Lớp)(?:\s*[:.…_]|\s*$)/i.test(text))continue;
+      if(/^(BO CHU|CHU DE)\b/.test(heading)&&!pages.length){title=text;continue;}
+      if(/^(?:PHI[EU]*H[O]?CT[A]?P(?:S[O]?)?\d+|LUYENTAP(?:S[O]?)?\d*)$/.test(heading.replace(/ /g,''))){if(pages.length===1&&!pages[0].title&&pages[0].blocks.length===1&&!/^(?:\d+[.)]|Nêu|Tính|Viết|Điền|Hoàn thành)/i.test(pages[0].blocks[0].text)){title=pages[0].blocks[0].text;pages.pop();}group(text);continue;}
+      if(/^[.…_\s]{4,}$/.test(text)){if(part)part.lines++;else if(current)current.lines++;continue;}
+      const option=text.match(/^([A-Z][.)])\s*(.+)/),child=text.match(/^([a-z][.)])\s*(.+)/);
+      if(option&&current){const target=part||current;target.options.push(text);target.kind='multipleChoice';}
+      else if(child&&current){part={kind:'question',label:child[1],text:child[2],answer:'',options:[],lines:0};current.parts.push(part);}
+      else if(/^(?:Bài\s*\d+|Câu\s*\d+|\d+[.)])\s*/i.test(text)||!current||(!part&&/^(NEU|TINH|DAT TINH|VIET|DIEN|SO SANH|HOAN THANH|SAP XEP|NOI)\b/.test(heading))){newBlock(text);}
+      else{const target=part||current;target.text+='\n'+text;}
+      if(event.confidence<80&&current){const note=`Cần kiểm tra: ${text} (${Math.round(event.confidence)}%).`;current.review=[current.review,note].filter(Boolean).join('\n');}
+    }
+    const nonempty=pages.filter(p=>p.blocks.length);
+    if(!nonempty.length)throw new Error('Không đọc được nội dung. Hãy chụp rõ hơn hoặc khoanh vùng chữ.');
+    nonempty.forEach((p,i)=>p.startNewPage=i===0);
+    warnings.push(`Trang nguồn ${pageNumber}: kiểm tra chữ/số, ô từng có nét bút và cấu trúc nhóm; không tự suy ra đáp án.`);
+    return {title:title||nonempty.find(p=>p.title)?.title||name.replace(/\.[^.]+$/,''),pages:nonempty,warnings};
+  }
+  root.WorksheetOCRRecovery={recover,lines,tableFromGrid};
+})(globalThis);
+
+
 // worksheet-local-import.js
 ;(function(root) {
   const app=root.app, D=root.WorksheetDocument, studio=app.worksheetStudio;
@@ -773,6 +835,17 @@
     }
     ctx.putImageData(image,0,0);return canvas;
   }
+  function writingLines(canvas,grid) {
+    const scale=Math.min(1,900/canvas.width),small=document.createElement('canvas');small.width=Math.round(canvas.width*scale);small.height=Math.round(canvas.height*scale);
+    const ctx=small.getContext('2d',{willReadFrequently:true});ctx.drawImage(canvas,0,0,small.width,small.height);const pixels=ctx.getImageData(0,0,small.width,small.height).data,hits=[];
+    for(let y=0;y<small.height;y++){
+      if(grid&&y/scale>=grid.ys[0]&&y/scale<=grid.ys.at(-1))continue;
+      const runs=[];let start=-1;
+      for(let x=0;x<=small.width;x++){const dark=x<small.width&&pixels[(y*small.width+x)*4]<150;if(dark&&start<0)start=x;if(!dark&&start>=0){runs.push({x:start,width:x-start});start=-1;}}
+      const dots=runs.filter(run=>run.width>=1&&run.width<=5);
+      if(dots.length>=35&&dots.at(-1).x-dots[0].x>small.width*.4){if(!hits.length||y/scale-hits.at(-1)>10)hits.push(y/scale);}
+    }return hits;
+  }
   function findSlantedGrid(canvas,diagnostics={}) {
     const scale=Math.min(1,750/canvas.width),w=Math.round(canvas.width*scale),h=Math.round(canvas.height*scale);
     const small=document.createElement('canvas');small.width=w;small.height=h;const ctx=small.getContext('2d');ctx.drawImage(canvas,0,0,w,h);
@@ -840,7 +913,7 @@
       if(!this.worker){await loadScript('tesseract.min.js');this.worker=await root.Tesseract.createWorker('vie',1,{workerPath:base+'worker.min.js',corePath:base,langPath:base+'lang',gzip:false,logger:message=>{if(message.status==='recognizing text')studio.feedback(`Đang nhận diện trên thiết bị: ${Math.round(message.progress*100)}%`);}});await this.worker.setParameters({tessedit_pageseg_mode:'3',preserve_interword_spaces:'1'});}
       return this.worker;
     },
-    async readCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false){
+    async readLegacyCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false){
       const cleaned=cleanCanvas(canvas,removeColor,masks);
       const prepared=prepareOCR(cleaned,canvas);
       const worker=await this.getWorker();const {data}=await worker.recognize(prepared,{}, {text:true,tsv:true});
@@ -854,6 +927,47 @@
       if(data.confidence<70)doc.warnings.push(`Trang ${pageNumber}: chữ nhận diện chưa rõ (${Math.round(data.confidence)}%). Cần đối chiếu toàn bộ.`);
       doc.warnings.push('Sơ đồ/minh họa có thông tin học tập cần dùng công cụ cắt vùng từ bản gốc, không chỉ dựa vào chữ OCR.');
       this.sourcePages.push({name:`${name} · Trang ${pageNumber}`,original:canvas,cleaned,prepared,masks,removeColor});
+      return doc;
+    },
+    paddleWorker:null,paddlePending:new Map(),paddleSequence:0,
+    async runPaddle(canvas,removeColor,prepareOnly=false) {
+      if(!this.paddleWorker){
+        const worker=new Worker(base+'paddle/ocr-worker.js');this.paddleWorker=worker;
+        const fail=message=>{worker.terminate();this.paddleWorker=null;for(const job of this.paddlePending.values()){clearTimeout(job.timer);job.reject(new Error(message));}this.paddlePending.clear();};
+        worker.onerror=()=>fail('Không tải được bộ PaddleOCR. Thử lại hoặc chọn Tesseract dự phòng.');
+        worker.onmessage=({data})=>{const job=this.paddlePending.get(data.id);if(!job)return;if(data.stage){studio.feedback(data.stage);return;}clearTimeout(job.timer);this.paddlePending.delete(data.id);if(data.error)job.reject(new Error('PaddleOCR: '+data.error));else job.resolve(data.result);};
+      }
+      const pixels=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
+      const id=++this.paddleSequence;
+      return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.paddleWorker?.terminate();this.paddleWorker=null;for(const job of this.paddlePending.values()){clearTimeout(job.timer);job.reject(new Error('Nhận diện quá lâu. Hãy giảm kích thước ảnh hoặc chọn Tesseract dự phòng.'));}this.paddlePending.clear();},300000);this.paddlePending.set(id,{resolve,reject,timer});this.paddleWorker.postMessage({id,image:{width:canvas.width,height:canvas.height,data:pixels.data},removeColor,prepareOnly},[pixels.data.buffer]);});
+    },
+    async readCanvas(canvas,name,pageNumber=1,masks=[],removeColor=document.getElementById('ws-remove-color')?.checked!==false) {
+      if(document.getElementById('ws-ocr-engine')?.value==='tesseract')return this.readLegacyCanvas(canvas,name,pageNumber,masks,removeColor);
+      const input=cleanCanvas(canvas,false,masks),result=await this.runPaddle(input,removeColor);
+      const toCanvas=image=>{const target=document.createElement('canvas');target.width=image.width;target.height=image.height;target.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(image.data),image.width,image.height),0,0);return target;};
+      const original=toCanvas(result.original),cleaned=toCanvas(result.cleaned),prepared=toCanvas(result.prepared);
+      const gridSource=prepareOCR(original,original);let grid=findGrid(gridSource)||findSlantedGrid(gridSource);
+      if(grid&&result.geometry?.tableBounds){const bounds=result.geometry.tableBounds;const keep=(values,min,max)=>values.filter(v=>v>=min-12&&v<=max+12);grid={...grid,xs:keep(grid.xs,bounds.left,bounds.right),ys:keep(grid.ys,bounds.top,bounds.bottom)};if(grid.xs.length<3||grid.ys.length<3)grid=null;}
+      // The published Paddle v6 AND Latin-v5 dictionaries omit Vietnamese tone vowels.
+      // Keep Paddle's detection geometry; restore Vietnamese with the bundled vie reader.
+      studio.feedback('Đang đối chiếu dấu tiếng Việt trên thiết bị…');
+      const reader=await this.getWorker(),{data:vi}=await reader.recognize(prepared,{}, {text:true,tsv:true});const viWords=wordsFromTsv(vi.tsv);
+      const originalPixels=original.getContext('2d',{willReadFrequently:true}).getImageData(0,0,original.width,original.height).data;
+      result.words=result.words.filter(word=>{
+        if(!removeColor||!grid||word.y<grid.ys[1])return true;
+        const samples=[];for(let y=Math.max(0,Math.floor(word.y));y<Math.min(original.height,word.y+word.height);y+=2)for(let x=Math.max(0,Math.floor(word.x));x<Math.min(original.width,word.x+word.width);x+=2){const i=(y*original.width+x)*4,r=originalPixels[i],g=originalPixels[i+1],b=originalPixels[i+2];samples.push({light:(r+g+b)/3,ink:(r-g>16&&b-g>16)||(r-g>30&&r-b>30)||(b-r>45&&b-g>25)});}
+        const lights=samples.map(p=>p.light).sort((a,b)=>a-b),paper=lights[Math.floor(lights.length*.75)]||255,ink=samples.filter(p=>p.ink).length,neutral=samples.filter(p=>!p.ink&&p.light<paper*.65).length;
+        return !(ink>samples.length*.002&&ink>neutral*2);
+      }).map(word=>{
+        const selected=viWords.filter(w=>w.x+w.width/2>=word.x-5&&w.x+w.width/2<=word.x+word.width+5&&w.y+w.height/2>=word.y-5&&w.y+w.height/2<=word.y+word.height+5).sort((a,b)=>a.x-b.x);
+        const text=selected.map(w=>w.text).join(' '),score=selected.length?selected.reduce((sum,w)=>sum+w.confidence,0)/selected.length:0;
+        if(text.length>=word.text.length*.7&&score>=60)return {...word,text,confidence:Math.min(word.confidence,score)};
+        return {...word,confidence:Math.min(word.confidence,75)};
+      });
+      const raw=root.WorksheetOCRRecovery.recover(result.words,grid,name,pageNumber,writingLines(prepared,grid));
+      raw.warnings.push(...result.notes,'Hình/sơ đồ: giữ vùng minh họa từ bản gốc nếu cần; OCR không tự phục hồi hình.');
+      const doc=D.normalize(raw);
+      this.sourcePages.push({name:`${name} · Trang nguồn ${pageNumber}`,original:canvas,cleaned:cleanCanvas(canvas,removeColor,masks),rectified:original,prepared,masks:[...masks],removeColor,engine:'PP-OCRv6 + Latin v5 + Tesseract vie',metrics:result.metrics,grid,words:result.words,notes:result.notes});
       return doc;
     },
     async extract(file){
@@ -877,7 +991,7 @@
       }
       const canvas=await imageCanvas(file);return this.readCanvas(canvas,file.name,1,file.wsMasks||[],typeof file.wsRemoveColor==='boolean'?file.wsRemoveColor:document.getElementById('ws-remove-color')?.checked!==false);
     },
-    parseText,cleanCanvas,prepareOCR,findGrid,findSlantedGrid,gridBlock,wordsFromTsv,imageCanvas
+    parseText,cleanCanvas,prepareOCR,writingLines,findGrid,findSlantedGrid,gridBlock,wordsFromTsv,imageCanvas
   };
   app.worksheetLocalImport=local;
   studio.extract=file=>local.extract(file);
