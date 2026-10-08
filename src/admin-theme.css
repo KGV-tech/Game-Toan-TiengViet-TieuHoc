@@ -218,3 +218,40 @@ html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-point-
 html[data-theme="light"] #treasure-modal[data-ui-context="admin"] .weekly-sidebar-controls .weekly-toolbar { background: none; border: 0; box-shadow: none; }
 
 [data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) .admin-loading-state__icon { color: #176d87 !important; border-color: #176d87; }
+
+/* The source worksheet editor follows the selected theme; printed paper remains white. */
+#admin-compose-screen #admin-w-subarea .ws-studio {
+    --ws-ui-surface: #132238; --ws-ui-card: #1c314b; --ws-ui-text: #e6efff;
+    --ws-ui-input: #0d1c2e; --ws-ui-line: #7891a8;
+    --ws-ui-warning: #52371e; --ws-ui-warning-text: #ffe6b8;
+    background: var(--ws-ui-surface); color: var(--ws-ui-text); color-scheme: dark;
+}
+[data-theme="light"] #admin-compose-screen #admin-w-subarea .ws-studio {
+    --ws-ui-surface: #f3faff; --ws-ui-card: #e5f2fa; --ws-ui-text: #182a42;
+    --ws-ui-input: #ffffff; --ws-ui-line: #94b3cc;
+    --ws-ui-warning: #fff1d4; --ws-ui-warning-text: #62400d;
+    color-scheme: light;
+}
+#admin-compose-screen #admin-w-subarea .ws-studio :is(h3,label,p,small,summary,li) {
+    color: var(--ws-ui-text) !important; text-shadow: none;
+}
+#admin-compose-screen #admin-w-subarea .ws-studio .ws-editor-block { background: var(--ws-ui-card); }
+#admin-compose-screen #admin-w-subarea .ws-studio :is(.ws-editor-page,details) { border-color: var(--ws-ui-line); }
+#admin-compose-screen #admin-w-subarea .ws-studio :is(input,select,textarea) {
+    background: var(--ws-ui-input) !important; color: var(--ws-ui-text) !important;
+    border-color: var(--ws-ui-line) !important;
+}
+#admin-compose-screen #admin-w-subarea .ws-studio :is(.ws-review,.ws-error),
+#admin-compose-screen #admin-w-subarea .ws-studio :is(.ws-review,.ws-error) :is(p,li,strong) {
+    background: var(--ws-ui-warning); color: var(--ws-ui-warning-text) !important;
+}
+#admin-compose-screen #admin-w-subarea .ws-studio button { text-shadow: none; box-shadow: none; }
+#admin-compose-screen #admin-w-subarea .ws-studio input:disabled { opacity: .6; }
+#admin-compose-screen #admin-w-subarea .ws-studio .ws-kicker { color: var(--ws-ui-text) !important; }
+#admin-compose-screen #admin-w-subarea .ws-studio .ws-paper :is(h3,p,label,small,th,td) {
+    color: #17283a !important;
+}
+#admin-compose-screen #admin-w-subarea .ws-studio .ws-paper h1 { color: var(--ws-accent) !important; }
+#admin-compose-screen #admin-w-subarea .ws-studio .ws-paper :is(input,textarea) {
+    background: #f6faff !important; color: #17283a !important;
+}

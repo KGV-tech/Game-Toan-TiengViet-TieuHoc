@@ -75,7 +75,7 @@ test('sửa bảng từng ô và giữ nhiều câu con khi lưu lại', async (
   await page.getByRole('button', { name: 'Đọc và dựng phiếu', exact: true }).click();
   await page.getByLabel('Hàng 1, cột 2', { exact: true }).fill('___ nghìn ___');
   await page.getByRole('button', { name: 'Thêm hàng', exact: true }).click();
-  expect(await page.getByLabel('Hàng 1, cột 2', { exact: true }).evaluate(element=>getComputedStyle(element).color)).toBe('rgb(20, 43, 62)');
+  expect(await page.getByLabel('Hàng 1, cột 2', { exact: true }).evaluate(element=>getComputedStyle(element).textAlign)).toBe('center');
   await expect(page.getByLabel('Hàng 2, cột 1', { exact: true })).toHaveValue('___');
   await page.getByRole('button', { name: 'Xem bản in màu' }).click();
   await expect(page.locator('#ws-color-preview .ws-part')).toHaveCount(6);
@@ -174,4 +174,69 @@ test('phiếu tự do in màu A4 và giữ đáp án ngoài bản in', async ({ 
   expect(await printPage.locator('.ws-paper-header').evaluate(element=>getComputedStyle(element).printColorAdjust)).toBe('exact');
   const pdf=await printPage.pdf({format:'A4',printBackground:true});
   expect(pdf.length).toBeGreaterThan(1000);
+});
+
+
+test('hai trang nguồn giữ hai trang dù có nhiều tiêu đề; metadata và xóa tiêu đề được lưu', async ({ page }) => {
+  await openStudio(page);
+  await page.locator('#ws-source-files').setInputFiles([
+    { name: 'trang1.txt', mimeType: 'text/plain', buffer: Buffer.from('BỘ CHỮ SỐ BÍ ẨN\nPHIẾU HỌC TẬP SỐ 1\n1. Viết số 30078') },
+    { name: 'trang2.txt', mimeType: 'text/plain', buffer: Buffer.from("PHIẾU: HỌC '©TẬP Số 2\n1. Nêu giá trị chữ số 234139\nPHIẾU HỌC TẬP SỐ 3\n1. Phát biểu nào đúng?\nA. Đúng\nB. Sai") }
+  ]);
+  await page.getByRole('button', { name: 'Đọc và dựng phiếu', exact: true }).click();
+  await expect(page.locator('.ws-editor-page')).toHaveCount(2);
+  expect(await page.evaluate(() => app.worksheetStudio.doc.pages[1].blocks.filter(b => b.kind === 'text').map(b => b.text))).toEqual(['PHIẾU HỌC TẬP SỐ 3']);
+  await page.getByLabel('Chủ đề (tùy chọn)', { exact: true }).fill('Số tự nhiên');
+  await page.getByLabel('Bài học (tùy chọn)', { exact: true }).fill('Hàng và lớp');
+  await page.getByRole('button', { name: 'Xóa tiêu đề', exact: true }).first().click();
+  await expect(page.locator('#ws-page-title-0')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Bỏ bài', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Xem bản in màu' }).click();
+  await expect(page.locator('#ws-color-preview .ws-page')).toHaveCount(2);
+  await expect(page.locator('#ws-color-preview .ws-page').first().locator('h1')).toHaveCount(0);
+  await expect(page.locator('#ws-color-preview .ws-paper-context').first()).toHaveText('Số tự nhiên · Hàng và lớp');
+  await page.getByRole('button', { name: 'Lưu phiếu học tập', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => app.data.worksheets.length)).toBe(1);
+  await page.evaluate(() => app.worksheetStudio.edit(app.data.worksheets[0], 0));
+  await expect(page.getByLabel('Chủ đề (tùy chọn)', { exact: true })).toHaveValue('Số tự nhiên');
+  await expect(page.getByLabel('Bài học (tùy chọn)', { exact: true })).toHaveValue('Hàng và lớp');
+  await expect(page.locator('#ws-page-title-0')).toBeDisabled();
+  await page.getByRole('button', { name: 'Thêm tiêu đề', exact: true }).click();
+  await expect(page.locator('#ws-page-title-0')).toBeEnabled();
+});
+
+for (const theme of ['light', 'dark']) {
+  test(`bảng và màu phiếu hiển thị rõ trong chế độ ${theme}`, async ({ page }, testInfo) => {
+    await openStudio(page);
+    await page.evaluate(theme => {
+      document.documentElement.dataset.theme = theme;
+      app.worksheetStudio.doc = WorksheetDocument.normalize({title:'Bảng giá trị', warnings:['Đối chiếu bản gốc'], pages:[{blocks:[{kind:'table',text:'Hoàn thành bảng',review:'Kiểm tra nét bút',columns:['Viết số','Hàng trăm nghìn'],rows:[['30 078','___']]}]}]});
+      app.worksheetStudio.renderEditor();
+    }, theme);
+    await expect(page.getByLabel('Tên cột 2', { exact: true })).toHaveValue('Hàng trăm nghìn');
+    await expect(page.getByLabel('Tên cột 2', { exact: true })).toHaveCSS('font-weight', '800');
+    await expect(page.getByLabel('Hàng 1, cột 1', { exact: true })).toHaveCSS('text-align', 'center');
+    await expect(page.locator('#admin-w-subarea .ws-studio')).toHaveCSS('background-color', theme === 'light' ? 'rgb(243, 250, 255)' : 'rgb(19, 34, 56)');
+    await expect(page.locator('.ws-editor-block .ws-review')).toHaveCSS('color', theme === 'light' ? 'rgb(98, 64, 13)' : 'rgb(255, 230, 184)');
+    await expect(page.getByLabel('Hàng 1, cột 1', { exact: true })).toHaveCSS('color', theme === 'light' ? 'rgb(24, 42, 66)' : 'rgb(230, 239, 255)');
+    await page.getByRole('button', { name: 'Xem bản in màu' }).click();
+    await expect(page.locator('#ws-color-preview th').first()).toHaveCSS('font-weight', '800');
+    await expect(page.locator('#ws-color-preview td').first()).toHaveCSS('text-align', 'center');
+    await expect(page.locator('#ws-color-preview')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await testInfo.attach(`worksheet-${theme}`, {body: await page.locator('#admin-w-subarea .ws-studio').screenshot(),contentType:'image/png'});
+  });
+}
+
+
+test('hai ảnh chụp tham chiếu giữ đúng hai trang nguồn (QA tùy chọn)', async ({ page }, testInfo) => {
+  test.skip(!process.env.WORKSHEET_QA_IMAGE || !process.env.WORKSHEET_QA_IMAGE_2, 'Cần hai ảnh cục bộ cho QA');
+  test.setTimeout(180000);
+  await openStudio(page);
+  await page.locator('#ws-source-files').setInputFiles([process.env.WORKSHEET_QA_IMAGE, process.env.WORKSHEET_QA_IMAGE_2]);
+  await page.getByRole('button', { name: 'Đọc và dựng phiếu', exact: true }).click();
+  await expect(page.locator('.ws-editor-page')).toHaveCount(2, {timeout:150000});
+  const doc = await page.evaluate(() => app.worksheetStudio.doc);
+  expect(doc.pages[0].blocks.some(b => b.kind === 'table')).toBe(true);
+  expect(doc.pages[1].blocks.some(b => /234\s*139/.test(b.text))).toBe(true);
+  await testInfo.attach('two-source-pages', {body:Buffer.from(JSON.stringify(doc,null,2)),contentType:'application/json'});
 });

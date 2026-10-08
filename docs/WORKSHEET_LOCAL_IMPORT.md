@@ -17,7 +17,7 @@ Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase c
 - Nền giấy tối được cân bằng trước OCR. Bảng thẳng/ít nghiêng được dò đường
   kẻ và đọc từng ô. Bảng méo, nét đè lên chữ in, dấu toán và số cần đối chiếu.
 - Câu con, lựa chọn, bảng và dòng chấm đều sửa được, không cần template,
-  không ép 10 câu và không bắt buộc có đáp án. Có thể thêm/bỏ bài, trang,
+  không ép 10 câu và không bắt buộc có đáp án. Có thể thêm/xóa bài, thêm trang,
   hàng/cột, câu con và nhãn sơ đồ. Ảnh/sơ đồ cần giữ: chọn bản gốc rồi cắt vùng.
 - `[CẦN KIỂM TRA]` là vùng nhận diện chưa rõ. Có thể lưu nháp phiếu này;
   cần sửa hoặc thay bằng `___` trước khi giao học sinh. Không có bảo đảm OCR
@@ -26,6 +26,19 @@ Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase c
   Xuất PDF / A4**. Bật in nền/màu trong hộp thoại in khi trình duyệt yêu cầu.
 - **Tải bản phiếu để lưu dự phòng** giữ nội dung hiệu chỉnh và hình cắt.
   File nguồn chỉ còn trên thiết bị trong phiên làm việc.
+
+## Trang nguồn và thông tin tùy chọn
+
+Mỗi ảnh và mỗi trang PDF giữ một trang nguồn. Tiêu đề nhóm như “Phiếu học tập
+số 2”, “Phiếu học tập số 3” trên cùng ảnh không tạo thêm trang; chúng là khối
+nội dung đọc, sửa/xóa được. TXT không tự chia trang theo tiêu đề.
+Chủ đề và Bài học là ô tùy chọn, lưu cùng phiếu và hiện trên bản in.
+**Xóa tiêu đề** bỏ tiêu đề trang khỏi bản in, giữ các bài; **Thêm tiêu đề**
+cho phép đặt lại. **Xóa bài** xóa riêng khối nội dung đang chọn.
+Hai chế độ sáng/tối áp dụng cho trình soạn; giấy xem trước và PDF vẫn nền trắng.
+Bảng căn giữa các ô, tên cột in đậm và xuống dòng để đọc đầy đủ.
+Số trang giấy thực tế khi in còn phụ thuộc lượng nội dung và cỡ giấy.
+Phiếu đã nhập theo cách cũ cần đọc lại file nguồn để sửa việc tách trang sai.
 
 ## Giao, nộp và chấm
 

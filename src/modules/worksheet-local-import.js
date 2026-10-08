@@ -12,7 +12,13 @@
     const pages=[],warnings=[];let page={title:'',blocks:[]},current=null;
     const add=()=>{if(page.blocks.length)pages.push(page);};
     String(raw).replace(/\r/g,'').split('\n').map(line=>line.trim()).filter(Boolean).forEach(line=> {
-      if(/^PHIẾU HỌC TẬP|^LUYỆN TẬP|^BỘ CHỮ/i.test(line)){if(page.blocks.length)add();page={title:line,blocks:[]};current=null;return;}
+      // A heading is a section within the source image, never a new physical page.
+      const heading = line.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+      if(/^(PHIEU HOC TAP|LUYEN TAP|BO CHU)\b/.test(heading)){
+        if(!page.title&&!page.blocks.length)page.title=line;
+        else page.blocks.push({kind:'text',text:line,lines:0});
+        current=null;return;
+      }
       if(/^(Họ và tên|Tên\s*[:.]|Lớp\s*[:.])/i.test(line))return;
       const answer=line.match(/^(?:Đáp án|Đáp số)\s*:\s*(.*)$/i);
       if(answer&&current){current.answer=answer[1];return;}
