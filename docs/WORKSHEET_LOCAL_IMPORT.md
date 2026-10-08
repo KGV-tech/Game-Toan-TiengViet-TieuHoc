@@ -30,7 +30,7 @@ Lưu/giao phiếu gửi nội dung phiếu đã hiệu chỉnh đến Supabase c
 ## Trang nguồn và thông tin tùy chọn
 
 Mỗi ảnh và mỗi trang PDF giữ một trang nguồn. Tiêu đề nhóm như “Phiếu học tập
-số 2”, “Phiếu học tập số 3” trên cùng ảnh không tạo thêm trang; chúng là khối
+số 2”, “Phiếu học tập số 3” trên cùng ảnh không tạo thêm trang nguồn; chúng là khối
 nội dung đọc, sửa/xóa được. TXT không tự chia trang theo tiêu đề.
 Chủ đề và Bài học là ô tùy chọn, lưu cùng phiếu và hiện trên bản in.
 **Xóa tiêu đề** bỏ tiêu đề trang khỏi bản in, giữ các bài; **Thêm tiêu đề**
@@ -68,3 +68,37 @@ spec nhập phiếu. Ảnh và kết quả chỉ nằm trong thư mục báo cá
 Mammoth kéo dependency CLI `argparse/sprintf-js` có cảnh báo npm audit ở thời
 điểm triển khai. Hai thư viện đó không có trong bundle Mammoth của trình duyệt;
 app không dùng CLI của Mammoth để đọc tài liệu.
+
+## Bố cục A4, trang trí và khung nội dung
+
+- Tên phiếu căn giữa, họ tên ở trái, lớp ở giữa và ngày ở phải; chỉ xuất hiện
+  trên trang giấy đầu tiên. Tiêu đề nhóm tùy chọn nằm ngay trên nhóm, in hoa đậm.
+- Chọn header/footer: Vườn lá, Ngôi sao, Cầu vồng, Bút chì, Hình vui hoặc
+  Không trang trí. SVG sắc nét khi xuất PDF; không có khẩu hiệu trên giấy.
+- Khung nội dung bản gốc nằm trước trình sửa chi tiết: nhập số nhóm, số bài
+  từng nhóm, số câu con từng bài, rồi **Áp dụng khung nội dung**. Nội dung ở
+  các vị trí giữ lại không bị thay thế; phần mới để trống. Giảm số lượng bỏ
+  phần cuối. **Hoàn tác khung nội dung** khôi phục lần áp dụng gần nhất trong
+  phiên sửa. Khung nhóm là cấu trúc nội dung, không phải số trang giấy.
+- **Nhóm bắt đầu trang mới** giữ ranh giới ảnh/PDF đã nhập; có thể tắt để
+  các nhóm tiếp nối trên cùng A4. Nhóm thêm bằng khai báo không ép sang trang.
+- Kích thước bảng dùng mm: cột chia vùng rộng 178 mm; dòng chia tổng chiều
+  cao bảng (20–200 mm, mặc định 120 mm), gồm cả dòng tiêu đề. Tự chia đều
+  mặc định bật; cột/dòng Cố định được loại khỏi phần chia lại. Sửa một thông
+  số chia phần còn lại cho các mục chưa khóa. Không cho nhập vượt phần còn
+  lại; bỏ một khóa nếu toàn bộ kích thước đã cố định. Chiều cao dòng là
+  chiều cao tối thiểu: chữ nhiều có thể làm dòng cao hơn để giữ nội dung.
+- **Xem bản in màu** dựng các tờ 210 × 297 mm, có thu phóng 50/75/100%.
+  Bảng dài chia ở ranh giới hàng và lặp tên cột; bài dài chia theo câu con/
+  đoạn/dòng viết. Nội dung dài hơn một trang nguồn có thể cần thêm tờ A4.
+  Một hàng bảng không thể vừa A4 sẽ báo để sửa, không tự cắt mất nội dung.
+- PDF dùng chính thuật toán và CSS của preview. Chọn A4, tỷ lệ 100%, không
+  thêm header/footer của trình duyệt. Mẫu có lề nội bộ 12 mm và CSS trang in
+  riêng, không thay bố cục Đề kiểm tra. Bật in màu/nền để giữ trang trí.
+
+Dữ liệu mới (`decoration`, `tableLayout`, `groupPageBreaks`) ở JSON phiếu;
+không cần đổi bảng/RLS Supabase. Phiếu cũ được bổ sung mặc định khi mở.
+
+Phân phối JS: sáu module phiếu được ghép theo thứ tự bằng
+`node scripts/build-worksheet-bundle.cjs` trước khi commit/deploy. HTML tải một
+script phiếu để giữ ngân sách khởi động; không cần thư viện build mới.
