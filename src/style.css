@@ -9022,3 +9022,25 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 }
 
 html.ws-print-window, .ws-print-window body { position: static !important; height: auto !important; overflow: visible !important; background: #edf1f5; display: block !important; }
+
+/* Automatic authoring: exact decimal scores stay readable in both themes. */
+.authoring-plan { width:100%; min-width:0; grid-column:1/-1; padding:16px; border:1px solid var(--border-color,#558092); border-radius:16px; }
+.authoring-plan h4 { margin:0 0 12px; }
+.authoring-plan label,.authoring-parts label { display:grid; gap:8px; min-width:0; }
+.authoring-plan > label { max-width:240px; }
+.authoring-plan__rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.authoring-plan__rows fieldset { min-width:0; display:grid; gap:10px; border:1px solid #668a98; border-radius:12px; padding:12px; }
+.authoring-plan__rows label:has(input[type=checkbox]) { display:flex; align-items:center; }
+.authoring-plan input[type=checkbox] { width:20px; height:20px; accent-color:#15803d; }
+.authoring-score { display:inline-block; padding:3px 8px; border-radius:6px; font-size:.9rem; font-weight:750; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.authoring-score--good { color:#14532d; background:#dcfce7; }
+.authoring-score--warning { color:#991b1b; background:#fee2e2; font-weight:900; border:1px solid #ef4444; }
+.authoring-parts { grid-column:1/-1; min-width:0; padding:16px; border:1px solid #668a98; border-radius:14px; }
+.authoring-part { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px 0; border-bottom:1px solid #668a98; }
+.authoring-part h6,.authoring-part label:has(textarea) { grid-column:1/-1; }
+.authoring-part h6 { margin:0; font-size:1rem; }
+.authoring-part textarea { min-height:90px; }
+@media(max-width:1100px) { .authoring-plan__rows,.authoring-part { grid-template-columns:minmax(0,1fr); } }
+/* Keep semantic score colors above the admin theme's inherited text colors. */
+[data-theme] #admin-compose-screen .exam-composer .authoring-score.authoring-score--good { color:#14532d !important; }
+[data-theme] #admin-compose-screen .exam-composer .authoring-score.authoring-score--warning { color:#991b1b !important; }

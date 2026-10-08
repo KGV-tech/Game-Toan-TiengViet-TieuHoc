@@ -647,6 +647,8 @@ const app = {
                 question?.sequenceRounds,
                 question?.lesson
             ];
+            // Preserve historical keys for ordinary questions. Only composite questions add this field.
+            if (question?.authoringParts) serializedParts.push(question.authoringParts);
             return JSON.stringify(canonicalize(serializedParts)) || normalize(question?.q);
         },
         getSubquestionContentKey(subquestion) {
@@ -937,6 +939,7 @@ const app = {
             return null;
         },
         validateQuestionScoring(question) {
+            if (question?.authoringPlan) return window.AuthoringPlan.validateQuestion(question);
             if (question?.quickPractice) return window.Grade4VietnameseTemplates.validateQuestion(question);
             const duplicateError = this.validateQuestionSubquestions(question);
             if (duplicateError) return duplicateError;
@@ -3575,6 +3578,12 @@ const app = {
             return [ansString.trim()];
         },
         calculateQuestionScore(q, selected) {
+            if (q?.authoringParts && q.authoringPlan) {
+                const results = q.authoringParts.map((part, i) => this.calculateQuestionScore(part, Array.isArray(selected) ? selected[i] : ''));
+                const correct = results.filter(result => result.isCorrect).length;
+                const points = results.reduce((sum, result) => sum + result.points, 0) / results.length;
+                return { points, isCorrect: correct === results.length, correctCount: correct, answerCount: results.length };
+            }
             if (q?.quickPractice) {
                 if (window.Grade4VietnameseTemplates.validateQuestion(q)) return { answerCount: 2, correctCount: 0, points: 0, isCorrect: false };
                 return window.VietnameseQuickPractice.score(q, selected);
@@ -3656,6 +3665,7 @@ const app = {
                 detail.passage = q.passage;
                 detail.partScores = window.VietnameseQuickPractice.score(q, selected).partScores;
             }
+            if (q.authoringParts) detail.authoringParts = q.authoringParts.map(part => ({q:part.q,type:part.type,options:part.options}));
             if (q.sharedPrompt) detail.sharedPrompt = q.sharedPrompt;
             if (q.type === 'Đúng/Sai' && Array.isArray(q.statements)) {
                 detail.statements = q.statements.map(({ label, text }) => ({ label, text }));
@@ -3667,6 +3677,7 @@ const app = {
         },
         formatHistoryQuestion(detail) {
             const lines = [detail.q];
+            if (detail.authoringParts) lines.push(...detail.authoringParts.map((part, n) => `${n+1}. ${part.q}<br>${(part.options || []).join(' · ')}`));
             if (detail.passage) lines.push(detail.passage);
             if (detail.type === 'Đúng/Sai' && Array.isArray(detail.statements)) {
                 lines.push(...detail.statements.map(statement => `${statement.label}. ${statement.text}`));
@@ -5526,6 +5537,7 @@ const app = {
             return choices.map(choice => `<label class="exam-opt-label"><input type="radio" name="exam_q_${index}" value="${app.data.sanitizeHTML(choice)}"> ${app.data.sanitizeHTML(choice)}</label>`).join('');
         },
         renderQuestionInput(question, index) {
+            if (question?.authoringParts) return question.authoringParts.map((part, n) => `<fieldset class="exam-true-false-row" data-authoring-part="${index}:${n}"><legend>${app.data.sanitizeHTML(`${n + 1}. ${part.q}`)}</legend>${this.renderQuestionInput(part, `ap_${index}_${n}`)}</fieldset>`).join('');
             if (question?.quickPractice) window.Grade4VietnameseTemplates.updateQuestionWording(question);
             const type = this.getQuestionType(question);
             const options = question.options || [];
@@ -5577,6 +5589,7 @@ const app = {
             return Array.from({ length: inputCount }, (_, part) => `<input type="text" class="fill-input" data-exam-part="${index}" data-part="${part}" style="max-width:400px; margin:5px;" placeholder="Nhập đáp án ${inputCount > 1 ? part + 1 : ''}">`).join('');
         },
         readQuestionAnswer(question, index) {
+            if (question?.authoringParts) return question.authoringParts.map((part, n) => this.readQuestionAnswer(part, `ap_${index}_${n}`));
             if (question.quickPractice) return question.subquestions.map((_, part) => document.querySelector(`input[name="exam_q_viet_${index}_${part}"]:checked`)?.value || '');
             const type = this.getQuestionType(question);
             if (type === 'Đúng/Sai' && Array.isArray(question.statements)) {
@@ -5617,6 +5630,7 @@ const app = {
         },
         applySavedAnswers(answers = []) {
             this.state.questions.forEach((question, index) => {
+                if (question.authoringParts) { window.AuthoringPlan.restore(question, index, answers[index]); return; }
                 if (question.quickPractice) {
                     question.subquestions.forEach((_, part) => {
                         const selected = Array.isArray(answers[index]) ? (answers[index][part] || '') : '';
@@ -5797,7 +5811,9 @@ const app = {
                 : filtered[Math.floor(Math.random() * filtered.length)];
             if (!exam) return alert('Đề kiểm tra được giao không còn phù hợp hoặc đã bị xóa.');
             if (!Array.isArray(exam.questions) || exam.questions.length === 0) return alert('Đề kiểm tra này chưa có câu hỏi.');
-            if (exam.questions.length !== app.game.questionsPerRound) return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
+            const planError = window.AuthoringPlan?.validateRecord(exam);
+            if (planError) return alert(planError);
+            if (!window.AuthoringPlan?.isPlanned(exam) && exam.questions.length !== app.game.questionsPerRound) return alert('Đề kiểm tra phải có đúng 10 câu để chấm theo thang điểm 10.');
             const invalidQuestionIndex = exam.questions.findIndex(question => app.data.validateQuestionScoring(question));
             if (invalidQuestionIndex !== -1) return alert(`Câu ${invalidQuestionIndex + 1} của đề chưa đúng cấu trúc chấm điểm. Mỗi câu chỉ được có 1, 2 hoặc 4 câu trả lời đúng.`);
 
@@ -5838,13 +5854,14 @@ const app = {
             this.state.questions.forEach((q, idx) => {
                 const selected = this.readQuestionAnswer(q, idx);
                 const scoreResult = app.game.calculateQuestionScore(q, selected);
+                if (q.authoringPlan) scoreResult.points *= 10 / this.state.questions.length;
                 const isCorrect = scoreResult.isCorrect;
 
                 totalPts += scoreResult.points;
                 this.state.historyDetails.push(app.game.createHistoryDetail(q, selected, isCorrect, scoreResult));
             });
 
-            this.state.score = totalPts;
+            this.state.score = Number(totalPts.toFixed(10));
             app.game.state.score = this.state.score;
             app.game.state.historyDetails = this.state.historyDetails;
             app.game.state.questions = this.state.questions;
@@ -5985,10 +6002,10 @@ const app = {
             const exams = Array.isArray(app.data.exams) ? app.data.exams : [];
             const countType = (items, type) => items.filter(item => item.question_type === type || item.type === type).length;
             const explanationCount = questions.filter(question => String(question.explanation || '').trim()).length;
-            const exactExams = exams.filter(exam => (exam.questions || []).length === app.game.questionsPerRound).length;
+            const exactExams = exams.filter(exam => (exam.questions || []).length === window.AuthoringPlan.target(exam, app.game.questionsPerRound)).length;
             const worksheets = Array.isArray(app.data.worksheets) ? app.data.worksheets : [];
             const templateWorksheets = worksheets.filter(ws => !window.WorksheetDocument?.isFreeform(ws));
-            const exactWorksheets = templateWorksheets.filter(ws => (ws.questions || []).length === app.game.questionsPerRound).length;
+            const exactWorksheets = templateWorksheets.filter(ws => (ws.questions || []).length === window.AuthoringPlan.target(ws, app.game.questionsPerRound)).length;
             return {
                 templates: {
                     count: templates.length,
@@ -6492,7 +6509,7 @@ const app = {
         updateExamComposerProgress() {
             const composer = document.querySelector('.exam-composer');
             if (!composer) return;
-            const total = app.game.questionsPerRound;
+            const total = Number(composer.dataset.targetCount) || app.game.questionsPerRound;
             const count = composer.querySelectorAll('.exam-question-card.is-filled').length;
             const progress = composer.querySelector('.exam-composer__progress');
             const progressStrong = progress?.querySelector('.exam-composer__progress-heading strong');
@@ -6589,14 +6606,15 @@ const app = {
             const mId = isW ? 'w' : 'e';
              const structureKind = this.getExamQuestionStructureKind(editorQuestion);
             const hasSub = !!structureKind;
+            const planned = !!editorQuestion?.authoringPlan;
             const hasStructuredOptions = structureKind === 'subquestions' || structureKind === 'comparisonRows';
             const optionsDisplay = hasStructuredOptions || (editorQuestion && editorQuestion.type && editorQuestion.type !== 'Trắc nghiệm' && editorQuestion.type !== 'Kéo thả') ? 'none' : 'block';
             return `
-            <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}"${isW ? ` data-worksheet-question="${app.data.sanitizeHTML(JSON.stringify(editorQuestion))}"` : ''}>
+            <article class="exam-question-card${q ? ' is-filled' : ' is-empty'}" data-question-index="${i}"${planned ? ` data-authoring-question="${app.data.sanitizeHTML(JSON.stringify(editorQuestion))}"` : ''}${isW ? ` data-worksheet-question="${app.data.sanitizeHTML(JSON.stringify(editorQuestion))}"` : ''}>
                <header class="exam-question-card__header">
                   <div class="exam-question-card__title-wrap">
                      <span class="exam-question-card__number">${i + 1}</span>
-                     <div><h5>Câu hỏi ${i + 1}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
+                     <div><h5>Câu hỏi ${i + 1} ${planned ? window.AuthoringPlan.badge(editorQuestion.authoringPlan.mainCount) : ''}</h5><p>${q ? 'Đã có dữ liệu, có thể chỉnh sửa.' : 'Bắt đầu từ nội dung câu hỏi.'}</p></div>
                   </div>
                   <span class="exam-question-card__status ${q ? 'exam-question-card__status--filled' : ''}">${q ? 'Đã điền' : 'Chưa điền'}</span>
                </header>
@@ -6612,7 +6630,8 @@ const app = {
                   </label>
                   <label class="exam-form-field">
                      <span>Loại câu hỏi</span>
-                     <select id="add-${mId}-q-type-${i}" class="form-input" onchange="app.admin.changeComposerQuestionType(${i})">
+                     <select id="add-${mId}-q-type-${i}" class="form-input" ${planned ? 'disabled' : ''} onchange="app.admin.changeComposerQuestionType(${i})">
+                     ${editorQuestion?.authoringParts ? '<option value="Câu tổng hợp" selected>Câu tổng hợp</option>' : ''}
                      <option value="Trắc nghiệm" ${q && q.type === 'Trắc nghiệm' ? 'selected' : (!q ? 'selected' : '')}>Trắc nghiệm</option>
                      <option value="Điền khuyết" ${q && q.type === 'Điền khuyết' ? 'selected' : ''}>Điền khuyết</option>
                      <option value="Đúng/Sai" ${q && q.type === 'Đúng/Sai' ? 'selected' : ''}>Đúng/Sai</option>
@@ -6625,7 +6644,7 @@ const app = {
                   <div class="exam-form-field">
                      <span aria-hidden="true">&nbsp;</span>
                      <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 1rem; margin: 0; cursor: pointer; color: #bae6fd; user-select: none; height: 38px;">
-                         <input type="checkbox" id="add-${mId}-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasSub ? 'checked' : ''} ${isW && editorQuestion?.type === 'Đối chiếu trùng khớp' ? 'disabled' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
+                         <input type="checkbox" id="add-${mId}-q-has-sub-${i}" onchange="app.admin.changeComposerQuestionType(${i})" ${hasSub ? 'checked' : ''} ${planned || (isW && editorQuestion?.type === 'Đối chiếu trùng khớp') ? 'disabled' : ''} style="accent-color: #4ade80; width: 1.15rem; height: 1.15rem; cursor: pointer; margin: 0;">
                          Có câu hỏi con
                      </label>
                   </div>
@@ -7011,6 +7030,7 @@ const app = {
             return copy;
         },
         getExamQuestionStructureKind(question) {
+            if (question?.authoringParts) return 'authoringParts';
             if (question?.answerMode === 'single') return '';
             if (Array.isArray(question?.statements) && question.statements.length) return 'statements';
             if (Array.isArray(question?.subquestions) && question.subquestions.length) {
@@ -7041,6 +7061,7 @@ const app = {
             return '';
         },
         hasSupportedExamPartStructure(question) {
+            if (question?.authoringPlan) return !window.AuthoringPlan.validateQuestion(question);
             const answerCount = app.data.getQuestionAnswerCount(question);
             const groupedParts = app.data.getValidPartAnswerCounts(question, answerCount);
             const structuredPartCount = ['statements', 'subquestions', 'angleItems', 'angleCountRows', 'sequenceRounds', 'practiceRows', 'comparisonRows']
@@ -7072,6 +7093,7 @@ const app = {
         },
         renderExamQuestionStructure(question, index) {
             const isW = this.composerState.module === 'worksheets';
+            if (question?.authoringParts) return window.AuthoringPlan.editor(question, index, isW);
             const mId = isW ? 'w' : 'e';
             const kind = this.getExamQuestionStructureKind(question);
             if (!kind) return '';
@@ -7378,6 +7400,7 @@ const app = {
             </fieldset>`;
         },
         readExamQuestionStructure(question, index, includeAllParts = false) {
+            if (question?.authoringParts) return window.AuthoringPlan.read(question, index, this.composerState.module === 'worksheets');
             const isW = this.composerState.module === 'worksheets';
             const mId = isW ? 'w' : 'e';
             const kind = this.getExamQuestionStructureKind(question);
@@ -11571,12 +11594,13 @@ const app = {
             const escape = value => app.data.sanitizeHTML(String(value || ''));
             const exams = store;
             const target = app.game.questionsPerRound;
-            const counts = exams.filter(exam => !isW || !window.WorksheetDocument?.isFreeform(exam)).map(exam => (exam.questions || []).length);
+            const counts = exams.filter(exam => !isW || !window.WorksheetDocument?.isFreeform(exam)).map(exam => (exam.questions || []).length - window.AuthoringPlan.target(exam, target));
+            const variable = exams.some(exam => window.AuthoringPlan.isPlanned(exam));
             const stats = [
                 ['all', exams.length, `Tổng số ${label}`, 'Trong toàn bộ thư viện'],
-                ['exact', counts.filter(count => count === target).length, `Đủ ${target} câu`, 'Có thể mở để rà soát'],
-                ['under', counts.filter(count => count < target).length, `Chưa đủ ${target} câu`, 'Tiếp tục bổ sung nội dung'],
-                ['over', counts.filter(count => count > target).length, `Vượt ${target} câu`, 'Cần chọn lại số câu']
+                ['exact', counts.filter(count => count === 0).length, variable ? 'Đủ cơ cấu câu' : `Đủ ${target} câu`, 'Có thể mở để rà soát'],
+                ['under', counts.filter(count => count < 0).length, variable ? 'Chưa đủ cơ cấu' : `Chưa đủ ${target} câu`, 'Tiếp tục bổ sung nội dung'],
+                ['over', counts.filter(count => count > 0).length, variable ? 'Vượt cơ cấu câu' : `Vượt ${target} câu`, 'Cần chọn lại số câu']
             ];
             if (isW) stats.push(['freeform', exams.filter(exam => window.WorksheetDocument?.isFreeform(exam)).length, 'Phiếu tự do', 'Không giới hạn số câu, chấm thủ công']);
             const statsBox = document.getElementById(`${mPrefix}library-stats`);
@@ -11590,7 +11614,7 @@ const app = {
                 <label class="exam-library-search">Tìm trong thư viện ${label}<input id="${mPrefix}library-search" type="search" placeholder="Tên ${label}, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary(12, ${isW})"></label>
                 <label>Cấp lớp<select id="${mPrefix}library-class" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
                 <label>Môn học<select id="${mPrefix}library-subject" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả môn</option>${options('subject')}</select></label>
-                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả ${label}</option>${isW ? '<option value="freeform">Phiếu tự do (ảnh/file)</option>' : ''}<option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
+                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả ${label}</option>${isW ? '<option value="freeform">Phiếu tự do (ảnh/file)</option>' : ''}<option value="exact">${variable ? 'Đủ cơ cấu câu' : `Đủ ${target} câu`}</option><option value="under">${variable ? 'Chưa đủ cơ cấu' : `Chưa đủ ${target} câu`}</option><option value="over">${variable ? 'Vượt cơ cấu câu' : `Vượt ${target} câu`}</option></select></label>
               </div>
               <div class="exam-library-result-heading"><p id="${mPrefix}library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">Xóa bộ lọc</button></div>
               <div id="${mPrefix}library-results"></div>
@@ -11617,6 +11641,7 @@ const app = {
             // Keep the source index: filtering must never retarget edit, preview or delete.
             const matches = store.map((exam, index) => ({ exam, index })).filter(({ exam }) => {
                 const count = (exam.questions || []).length;
+                const target = window.AuthoringPlan.target(exam, app.game.questionsPerRound);
                 const searchText = [exam.name, exam.classlevel || 'Lớp 5', exam.subject, exam.period, ...(exam.questions || []).map(question => question.topic)].join(' ');
                 return (!query || normalize(searchText).includes(query))
                     && (!classlevel || (exam.classlevel || 'Lớp 5') === classlevel)
@@ -11631,6 +11656,7 @@ const app = {
             }
             results.innerHTML = `<div class="exam-library-grid">${matches.slice(0, limit).map(({ exam, index }) => {
                 const count = (exam.questions || []).length;
+                const target = window.AuthoringPlan.target(exam, app.game.questionsPerRound);
                 const freeform = isW && window.WorksheetDocument?.isFreeform(exam);
                 const state = freeform ? 'exact' : count === target ? 'exact' : count < target ? 'under' : 'over';
                 const statusLabel = freeform ? 'Phiếu tự do · Chấm thủ công' : count === target ? `Đủ ${target} câu` : count < target ? `Còn thiếu ${target - count} câu` : `Vượt ${target} câu`;
@@ -11664,6 +11690,7 @@ const app = {
           <div class="exam-library-toolbar" aria-label="Tác vụ kho ${label}">
             <button type="button" class="exam-library-button" id="btn-${mId}-lib" aria-pressed="true" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">▦ Thư viện ${label}</button>
             <button type="button" class="exam-library-button exam-library-button--primary" id="btn-${mId}-add" onclick="app.admin.${isW ? 'worksheetComposerDraft' : 'examComposerDraft'} = null; app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('add')">＋ Soạn ${label} mới</button>
+            ${isW ? `<button type="button" class="exam-library-button" onclick="app.admin.renderWSubTab('add'); app.worksheetStudio.openImport()">Tạo phiếu từ ảnh/file</button>` : ''}
             <details class="exam-library-tools">
               <summary>Công cụ Excel</summary>
               <div class="exam-library-tools__items">
@@ -11705,13 +11732,15 @@ const app = {
                     app.worksheetStudio.edit(e, editIdx);
                     return;
                 }
+                const targetCount = window.AuthoringPlan.target(e, app.game.questionsPerRound);
+                const plannedRecord = window.AuthoringPlan.isPlanned(e);
                 const existingQuestionCount = e && Array.isArray(e.questions) ? e.questions.length : 0;
                 const initialLessonFilters = e?.lessonFilters || [...new Set((e?.questions || []).map(question => question.lesson).filter(Boolean))];
                 const selectedClasslevel = e?.classlevel || this.composerState.classlevel || 'Lớp 4';
                 const selectedSubject = e?.subject || this.composerState.subject || 'Toán';
                 const selectedPeriod = this.normalizeComposerPeriod(e?.period || this.composerState.period || 'Học Kỳ 1');
                 subBox.innerHTML = `
-            <section class="exam-composer ${isW ? 'worksheet-composer' : ''}" aria-label="${e ? `Sửa ${fullLabel}` : `Soạn ${fullLabel}`}">
+            <section class="exam-composer ${isW ? 'worksheet-composer' : ''}" data-target-count="${targetCount}" aria-label="${e ? `Sửa ${fullLabel}` : `Soạn ${fullLabel}`}">
                <header class="exam-composer__header">
                   <div class="exam-composer__header-copy">
                      <p class="exam-composer__eyebrow">${e ? `CHỈNH SỬA ${labelCap.toUpperCase()}` : `TẠO ${labelCap.toUpperCase()} MỚI`}</p>
@@ -11719,9 +11748,9 @@ const app = {
                      <p class="exam-composer__description">Điền thông tin chung, chọn chủ đề và hoàn thiện từng câu hỏi trong một không gian rõ ràng.</p>
                   </div>
                   <div class="exam-composer__progress" aria-label="Tiến độ số câu đã có" aria-live="polite">
-                     <div class="exam-composer__progress-heading"><span>TIẾN ĐỘ SOẠN</span><span><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu</span></div>
-                     <div class="exam-composer__progress-track" aria-hidden="true"><i style="width:${Math.min(100, existingQuestionCount / app.game.questionsPerRound * 100)}%"></i></div>
-                     <small>${existingQuestionCount === app.game.questionsPerRound ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, app.game.questionsPerRound - existingQuestionCount)} câu cần hoàn thiện`}</small>
+                     <div class="exam-composer__progress-heading"><span>TIẾN ĐỘ SOẠN</span><span><strong>${existingQuestionCount}</strong> / ${targetCount} câu</span></div>
+                     <div class="exam-composer__progress-track" aria-hidden="true"><i style="width:${Math.min(100, existingQuestionCount / targetCount * 100)}%"></i></div>
+                     <small>${existingQuestionCount === targetCount ? 'Đã đủ câu để rà soát' : `Còn ${Math.max(0, targetCount - existingQuestionCount)} câu cần hoàn thiện`}</small>
                   </div>
                </header>
 
@@ -11769,10 +11798,10 @@ const app = {
                       <small>Chỉ dành cho Lớp 4 – Toán. Sau khi chọn Chủ đề, bỏ chọn các Bài học chưa học để thu hẹp nguồn câu hỏi.</small>
                    </div>
                   <div class="exam-composer__meta-action">
-                     <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
+                     <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống tạo câu theo cơ cấu điểm bên dưới cho bạn chỉnh sửa.</p>
                      <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam(${isW})">Tạo ${label} tự động</button>
-                     ${isW ? '<button type="button" class="btn-success exam-composer__generate-action" onclick="app.worksheetStudio.openImport()">Tạo phiếu từ ảnh/file</button>' : ''}
-                  </div>
+</div>
+                  <section id="add-${mId}-plan" class="authoring-plan"></section>
                </section>
 
                ${e && e.questions && e.questions.length > 0 ? `
@@ -11782,7 +11811,7 @@ const app = {
                         <h4 id="exam-composer-saved-title">2. Câu hỏi đã có trong ${label}</h4>
                         <p>Kéo thứ tự bằng các nút Lên/Xuống hoặc xóa câu không cần dùng.</p>
                      </div>
-                     <span class="exam-composer__section-count">${e.questions.length}/${app.game.questionsPerRound}</span>
+                     <span class="exam-composer__section-count">${e.questions.length}/${targetCount}</span>
                   </div>
                   <ol class="exam-composer__saved-list">
                      ${e.questions.map((q, i) => `
@@ -11805,10 +11834,10 @@ const app = {
                         <span class="exam-composer__section-kicker">BƯỚC ${e && e.questions && e.questions.length > 0 ? '03' : '02'} · BIÊN TẬP</span><h4 id="exam-composer-questions-title">Soạn câu hỏi cho ${label}</h4>
                         <p>Mỗi thẻ là một câu hoàn chỉnh. Chọn loại câu để mở đúng nhóm trường cần biên tập.</p>
                      </div>
-                     <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu đã có</span>
+                     <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${targetCount} câu đã có</span>
                   </div>
                   <div class="exam-question-list">
-                   ${Array(Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
+                   ${Array(plannedRecord ? targetCount : Math.max(10, e && e.questions ? e.questions.length : 10)).fill(0).map((_, i) => {
                      const q = e && e.questions && e.questions[i] ? e.questions[i] : null;
                      const editorQuestion = this.normalizeExamQuestionStructure(q || this.getEmptyExamQuestionDraft());
                     return this.getExamComposerQuestionHTML(q, editorQuestion, i);
@@ -11817,11 +11846,12 @@ const app = {
                </section>
 
                <footer class="exam-composer__actions">
-                  <p>${fullLabelCap} cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
+                  <p>${fullLabelCap} cần đủ ${targetCount} câu có nội dung và đáp án để lưu.</p>
                    ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : (isW ? 'Tạo phiếu học tập' : 'Tạo đề kiểm tra'), `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'}, ${isW})`, 'compact-admin-action--save', 'exam-composer-save')}
                </footer>
              </section>
            `;
+                window.AuthoringPlan.mount(e, isW);
                 this.setComposerStep('content');
                 this.syncComposerQuestionNav();
                 setTimeout(() => {
@@ -11927,6 +11957,8 @@ const app = {
             }
         },
         autoGenerateExam(isW = false) {
+            if (window.AuthoringPlan.invalid[isW ? 'w' : 'e']) return this.showExamComposerError('Hãy sửa số câu/câu con không hợp lệ trước khi tạo.');
+            if (window.AuthoringPlan?.plans[isW ? 'w' : 'e']?.custom) return window.AuthoringPlan.generate(isW);
             const mId = isW ? 'w' : 'e';
             const classlevel = document.getElementById(`add-${mId}-class`).value;
             const subject = document.getElementById(`add-${mId}-sub`).value;
@@ -12054,7 +12086,9 @@ const app = {
                 const originalQuestion = editIdx !== null && editIdx !== undefined
                     ? (isW ? app.data.worksheets : app.data.exams)[editIdx]?.questions?.[i]
                     : (isW ? this.worksheetComposerDraft : this.examComposerDraft)?.questions?.[i];
-                const editorQuestion = isW ? (this.readWorksheetQuestionDraft(i, false) || this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft())) : this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft());
+                const planCard = document.querySelector(`.exam-question-card[data-question-index="${i}"]`);
+                const planQuestion = planCard?.dataset.authoringQuestion ? JSON.parse(planCard.dataset.authoringQuestion) : null;
+                const editorQuestion = planQuestion || (isW ? (this.readWorksheetQuestionDraft(i, false) || this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft())) : this.normalizeExamQuestionStructure(originalQuestion || this.getEmptyExamQuestionDraft()));
                 const structureKind = this.getExamQuestionStructureKind(editorQuestion);
                 const structurePatch = structureKind ? this.readExamQuestionStructure(editorQuestion, i) : {};
                 const ansText = structureKind
@@ -12110,7 +12144,7 @@ const app = {
                     eObj.questions.push(newQ);
                     // Phiếu học tập giữ câu hỏi trong chính phiếu. Chỉ Đề kiểm tra
                     // mới bổ sung câu hỏi soạn mới vào Kho Câu hỏi dùng chung.
-                    if (!isW) {
+                    if (!isW && !newQ.authoringPlan) {
                         const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
                         if (!exists) {
                             app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ)));
@@ -12121,11 +12155,13 @@ const app = {
                 i++;
             }
 
-            if (eObj.questions.length !== app.game.questionsPerRound) {
+            const planValidation = window.AuthoringPlan.validateRecord(eObj);
+            if (planValidation) return this.showExamComposerError(planValidation);
+            if (!window.AuthoringPlan.isPlanned(eObj) && eObj.questions.length !== app.game.questionsPerRound) {
                 return this.showExamComposerError(isW ? 'Phiếu học tập phải có đúng 10 câu có đầy đủ nội dung và đáp án.' : 'Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.', firstIncompleteQuestion === null ? '' : `add-${mId}-q-q-${firstIncompleteQuestion}`);
             }
 
-            if (!isW && newQuestionsCount > 0) {
+            if (!isW && newQuestionsCount > 0 && !window.AuthoringPlan.isPlanned(eObj)) {
                 try {
                     await app.data.saveLibrary();
                 } catch (error) {
@@ -12163,6 +12199,7 @@ const app = {
         },
         submitInjectQ(qIdx, eIdx) {
             let e = app.data.exams[eIdx];
+            if (window.AuthoringPlan.isPlanned(e)) return alert('Đề có cơ cấu điểm riêng. Hãy chỉnh từng câu trong trình soạn hoặc tạo lại theo cơ cấu đã chọn.');
             if (!e.questions) e.questions = [];
 
             let mode = document.getElementById('inject-mode').value;
@@ -12198,6 +12235,7 @@ const app = {
             } else {
                 return;
             }
+            if (window.AuthoringPlan.isPlanned(e)) e.questions.forEach((q, i) => { q.authoringPlan.index = i; });
             isW ? app.data.saveWorksheets() : app.data.saveExams();
             this[isW ? 'renderWSubTab' : 'renderESubTab']('add', editIdx);
         },
@@ -12497,6 +12535,7 @@ const app = {
             }).join('')}</div>`;
         },
         renderExamPrintQuestionParts(question) {
+            if (question?.authoringParts) return question.authoringParts.map((part, n) => `<div class="exam-print-part"><strong>${n + 1}. ${app.data.formatMathHTML(part.q)}</strong>${this.renderExamPrintQuestionParts(part)}</div>`).join('');
             if (question.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
             if (question.quickPractice) return `${question.passage ? `<p>${app.data.sanitizeHTML(question.passage)}</p>` : ''}${this.renderExamPrintSubquestions(question)}`;
             const printableQuestion = this.normalizeExamQuestionStructure(question);
@@ -13068,7 +13107,10 @@ const app = {
             const label = isW ? 'phiếu học tập' : 'đề kiểm tra';
             if (confirm(`Xóa câu hỏi này khỏi ${label}?`)) {
                 const store = isW ? app.data.worksheets : app.data.exams;
-                store[examIdx].questions.splice(qIdx, 1);
+                const record = store[examIdx];
+                if (window.AuthoringPlan.isPlanned(record) && record.questions.length === 1) return alert('Cần giữ ít nhất một câu chính.');
+                record.questions.splice(qIdx, 1);
+                if (window.AuthoringPlan.isPlanned(record)) record.questions.forEach((q, i) => { q.authoringPlan.mainCount = record.questions.length; q.authoringPlan.index = i; });
                 isW ? app.data.saveWorksheets() : app.data.saveExams();
                 this[isW ? 'renderWSubTab' : 'renderESubTab']('add', examIdx);
             }
