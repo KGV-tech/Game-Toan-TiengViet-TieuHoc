@@ -16,6 +16,13 @@ assert.match(
 );
 assert.match(
     main,
+    /game_worksheets:\s*'id,name,classlevel,subject,period,questions'/,
+    'Worksheet reads must use their own table and the same supported worksheet columns.'
+);
+assert.match(main, /async saveWorksheets\(\)/,
+    'Worksheets need their own persistence path rather than calling saveExams.');
+assert.match(
+    main,
     /normalizeSupabaseRow\(table, row\)/,
     'Supabase rows need a compatibility normalization boundary.'
 );

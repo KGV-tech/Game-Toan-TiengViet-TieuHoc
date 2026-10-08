@@ -7,7 +7,7 @@ const css = fs.readFileSync('src/style.css', 'utf8');
 assert.match(main, /renderExamPrintSubquestions\(question\)/, 'Exam detail must render nested multiple-choice parts.');
 assert.match(main, /renderExamPrintQuestionParts\(question\)/, 'Exam detail must select a renderer for each structured question kind.');
 assert.match(main, /window\.open\('', '_blank'\)/, 'A4 printing must use a standalone print window.');
-assert.match(main, /renderExamPrintContent\(exam, 'print-document'\)/, 'The standalone print document needs a stable root id.');
+assert.match(main, /renderExamPrintContent\(exam, 'print-document', isW\)/, 'Standalone printing must keep a stable root and its worksheet/exam context.');
 assert.match(main, /class="exam-print__title"/, 'The printed exam must expose its custom title.');
 assert.doesNotMatch(main, /compactAction\('In PDF \/ A4', 'window\.print\(\)'/, 'The detail view must not print the Admin page directly.');
 

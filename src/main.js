@@ -49,6 +49,7 @@ const SUPABASE_LIST_PROJECTIONS = Object.freeze({
     game_questions: 'id,classlevel,subject,semester,topic,type,q,options,ans,explanation,imageurl,created_at',
     question_templates: 'id,name,classlevel,subject,semester,topic,lesson,question_type,generator_key,prompt_template,config,is_active,created_at,updated_at',
     game_exams: 'id,name,classlevel,subject,period,questions',
+    game_worksheets: 'id,name,classlevel,subject,period,questions',
     game_settings: 'id,data',
     game_quests: 'id,title,target_subject,target_score,target_count,reward_stars,assign_type,assign_target,exam_id,is_active',
     user_quests: 'id,user_username,quest_id,progress,is_completed',
@@ -276,6 +277,7 @@ const app = {
         libraryQuestions: [],
         questionTemplates: [],
         exams: [],
+        worksheets: [],
         petInventory: {},
         seenQuestionKeys: new Set(),
         adminDataLoaded: false,
@@ -376,6 +378,24 @@ const app = {
                 console.warn('Không thể lưu Kho Đề trên thiết bị:', error);
             }
         },
+        loadLocalWorksheets() {
+            const stored = app.safeStorage?.getItem('game_worksheets');
+            if (!stored) return [];
+            try {
+                const worksheets = JSON.parse(stored);
+                return Array.isArray(worksheets) ? worksheets : [];
+            } catch (error) {
+                console.warn('Không thể đọc Kho Phiếu học tập đã lưu trên thiết bị:', error);
+                return [];
+            }
+        },
+        saveLocalWorksheets(worksheets = this.worksheets) {
+            try {
+                app.safeStorage?.setItem('game_worksheets', JSON.stringify(Array.isArray(worksheets) ? worksheets : []));
+            } catch (error) {
+                console.warn('Không thể lưu Kho Phiếu học tập trên thiết bị:', error);
+            }
+        },
         loadPendingExamSnapshot() {
             const stored = app.safeStorage?.getItem('game_exams_pending_sync');
             if (!stored) return null;
@@ -400,6 +420,42 @@ const app = {
         },
         clearPendingExamSnapshot() {
             app.safeStorage?.setItem('game_exams_pending_sync', '');
+        },
+        loadPendingWorksheetSnapshot() {
+            const stored = app.safeStorage?.getItem('game_worksheets_pending_sync');
+            if (!stored) return null;
+            try {
+                const snapshot = JSON.parse(stored);
+                if (Array.isArray(snapshot)) return snapshot;
+                return Array.isArray(snapshot?.worksheets) ? snapshot.worksheets : null;
+            } catch (error) {
+                console.warn('Không thể đọc Phiếu học tập chờ đồng bộ:', error);
+                return null;
+            }
+        },
+        savePendingWorksheetSnapshot(worksheets = this.worksheets) {
+            try {
+                app.safeStorage?.setItem('game_worksheets_pending_sync', JSON.stringify({
+                    version: 1,
+                    worksheets: Array.isArray(worksheets) ? worksheets : []
+                }));
+            } catch (error) {
+                console.warn('Không thể lưu Phiếu học tập chờ đồng bộ:', error);
+            }
+        },
+        clearPendingWorksheetSnapshot() {
+            app.safeStorage?.setItem('game_worksheets_pending_sync', '');
+        },
+        loadWorksheetDeletedIds() {
+            try {
+                const ids = JSON.parse(app.safeStorage.getItem('game_worksheets_deleted_ids') || '[]');
+                return Array.isArray(ids) ? ids : [];
+            } catch (_) { return []; }
+        },
+        queueWorksheetDeletion(worksheet) {
+            if (!worksheet?.id) return;
+            const ids = [...new Set([...this.loadWorksheetDeletedIds(), worksheet.id])];
+            app.safeStorage.setItem('game_worksheets_deleted_ids', JSON.stringify(ids));
         },
         applyExamRealtimeChange(payload) {
             if (!Array.isArray(this.exams)) this.exams = [];
@@ -1002,6 +1058,7 @@ const app = {
                 // Kho Đề được lưu cục bộ phải được khôi phục ngay khi mở lại ứng dụng.
                 // Khi đăng nhập thật, ảnh chụp từ Supabase sẽ được nạp bổ sung ở auth.login().
                 this.exams = this.loadLocalExams();
+                this.worksheets = this.loadLocalWorksheets();
                 const localSettings = app.safeStorage.getItem('game_settings');
                 if (localSettings) this.settings = JSON.parse(localSettings);
                 this.ensureLessonMetadata();
@@ -1428,6 +1485,50 @@ const app = {
             this.clearPendingExamSnapshot();
             return null;
         },
+        async saveWorksheets() {
+            const seenLocalWorksheetKeys = new Set();
+            this.worksheets = (Array.isArray(this.worksheets) ? this.worksheets : []).filter(worksheet => {
+                if (worksheet?.id) return true;
+                const contentKey = this.getExamContentKey(worksheet);
+                if (seenLocalWorksheetKeys.has(contentKey)) return false;
+                seenLocalWorksheetKeys.add(contentKey);
+                return true;
+            });
+            this.saveLocalWorksheets();
+            this.savePendingWorksheetSnapshot();
+            if (!window.supabase) {
+                return null;
+            }
+            try {
+                const deletedIds = this.loadWorksheetDeletedIds();
+                if (deletedIds.length) {
+                    const { error } = await supabaseClient.from('game_worksheets').delete().in('id', deletedIds);
+                    if (error) return error;
+                    app.safeStorage.setItem('game_worksheets_deleted_ids', '[]');
+                }
+                // Ghi đúng các cột của Phiếu; topics được suy ra từ questions.
+                for (const worksheet of this.worksheets) {
+                    const row = {
+                        name: worksheet.name, classlevel: worksheet.classlevel,
+                        subject: worksheet.subject, period: worksheet.period,
+                        questions: Array.isArray(worksheet.questions) ? worksheet.questions : []
+                    };
+                    const query = worksheet.id
+                        ? supabaseClient.from('game_worksheets').update(row).eq('id', worksheet.id)
+                        : supabaseClient.from('game_worksheets').insert(row);
+                    const { data, error } = await query.select('id').single();
+                    if (error) return error;
+                    if (!data?.id) return new Error('Máy chủ chưa xác nhận Phiếu học tập vừa lưu.');
+                    worksheet.id = data.id;
+                    this.saveLocalWorksheets();
+                    this.savePendingWorksheetSnapshot();
+                }
+                this.clearPendingWorksheetSnapshot();
+                return null;
+            } catch (error) {
+                return error;
+            }
+        },
 
         async updateUserScore() {
             if (!this.currentUser || this.currentUser.role?.toLowerCase() === 'admin') return;
@@ -1761,6 +1862,8 @@ const app = {
                 if (user.role?.toLowerCase() !== 'admin') app.router.prefetch('map-screen');
                 const localExams = app.data.loadLocalExams();
                 const pendingExamSnapshot = app.data.loadPendingExamSnapshot();
+                const localWorksheets = app.data.loadLocalWorksheets();
+                const pendingWorksheetSnapshot = app.data.loadPendingWorksheetSnapshot();
                 const isAdmin = user.role?.toLowerCase() === 'admin';
                 const clLvl = String(user.classlevel || '5').replace('Lớp ', '').trim();
                 // Read-only collections have no dependency on each other. Start
@@ -1792,6 +1895,16 @@ const app = {
                 } else {
                     app.data.exams = exams;
                 }
+                if (isAdmin && worksheets.length > 0 && pendingWorksheetSnapshot !== null) {
+                    app.data.worksheets = app.data.mergeExamSnapshots(worksheets, pendingWorksheetSnapshot);
+                } else if (isAdmin && worksheets.length === 0) {
+                    app.data.worksheets = pendingWorksheetSnapshot ?? localWorksheets;
+                } else {
+                    app.data.worksheets = worksheets;
+                }
+                const deletedWorksheetIds = new Set(app.data.loadWorksheetDeletedIds().map(String));
+                app.data.worksheets = app.data.worksheets.filter(worksheet => !deletedWorksheetIds.has(String(worksheet.id)));
+                if (isAdmin) app.data.saveLocalWorksheets();
                 if (settingsData?.[0]) app.data.settings = settingsData[0].data || settingsData[0];
                 app.data.ensureLessonMetadata();
 
@@ -5851,13 +5964,17 @@ const app = {
             this.examSavePending = Boolean(isPending);
             app.ui.setButtonLoading('exam-composer-save', this.examSavePending, 'Đang lưu…');
         },
-        getExamSyncErrorMessage(error) {
+        setWorksheetSavePending(isPending) {
+            this.worksheetSavePending = Boolean(isPending);
+            app.ui.setButtonLoading('exam-composer-save', this.worksheetSavePending, 'Đang lưu…');
+        },
+        getExamSyncErrorMessage(error, isWorksheet = false) {
             const rawMessage = String(error?.message || error || '').replace(/\s+/g, ' ').trim();
             const detail = rawMessage ? ` Chi tiết máy chủ: ${rawMessage.slice(0, 260)}.` : '';
             const permissionHint = /(permission|row-level|rls|42501|not authorized)/i.test(rawMessage)
-                ? ' Tài khoản Admin hoặc chính sách quyền trên Supabase chưa cho phép ghi bảng game_exams.'
+                ? ` Tài khoản Admin hoặc chính sách quyền trên Supabase chưa cho phép ghi bảng ${isWorksheet ? 'game_worksheets' : 'game_exams'}.`
                 : ' Hãy kiểm tra kết nối và phiên đăng nhập Admin.';
-            return `Đề đã được lưu trên thiết bị nhưng chưa đồng bộ lên máy chủ.${permissionHint}${detail}`;
+            return `${isWorksheet ? 'Phiếu học tập' : 'Đề'} đã được lưu trên thiết bị nhưng chưa đồng bộ lên máy chủ.${permissionHint}${detail}`;
         },
         getComposerTopicColor(index = 0) {
             return ['#c2a1ff', '#53def0', '#ffbf69', '#85e5bd', '#f7a8d8', '#f5da73'][index % 6];
@@ -6168,8 +6285,9 @@ const app = {
             return this.getExamLessonSelectionState().selectedLessons;
         },
         renderExamLessonFilters(classlevel, subject, topics, selectedLessons = [], unrestricted = !selectedLessons.length) {
-            const wrap = document.getElementById('add-e-lessons');
-            const field = document.getElementById('add-e-lessons-field');
+            const mId = this.composerState.module === 'worksheets' ? 'w' : 'e';
+            const wrap = document.getElementById(`add-${mId}-lessons`);
+            const field = document.getElementById(`add-${mId}-lessons-field`);
             if (!wrap || !field) return;
             const supported = this.supportsAdminLessons(classlevel, subject);
             field.hidden = !supported;
@@ -6191,7 +6309,7 @@ const app = {
             const summary = entries.length
                 ? (unrestrictedScope ? `Đang áp dụng toàn bộ ${totalLessons} Bài học trong Chủ đề đã chọn` : `Đang chọn ${selectedCount}/${totalLessons} Bài học`)
                 : 'Chọn Chủ đề để hiện các Bài học tương ứng';
-            wrap.innerHTML = `<div id="add-e-lessons-summary" class="exam-composer__lessons-summary" role="status">${app.data.sanitizeHTML(summary)}</div>${entries.length
+            wrap.innerHTML = `<div id="add-${mId}-lessons-summary" class="exam-composer__lessons-summary" role="status">${app.data.sanitizeHTML(summary)}</div>${entries.length
                 ? entries.map((entry, topicIndex) => `<fieldset class="exam-composer__lesson-group" style="--topic-color:${this.getComposerTopicColor(topicIndex)}"><legend><label class="exam-composer__lesson-group-toggle"><input type="checkbox" ${entry.lessons.every(lesson => unrestrictedScope || selected.has(lesson.id)) ? 'checked' : ''} onchange="const group = this.closest('fieldset'); group.querySelectorAll('.exam-composer__lesson-option input').forEach(el => el.checked = this.checked); app.admin.updateExamTopics();"><span>${app.data.sanitizeHTML(entry.topic)}</span></label></legend><div class="exam-composer__lessons">${entry.lessons.map(lesson => `<label class="exam-composer__lesson-option"><input type="checkbox" value="${app.data.sanitizeHTML(lesson.id)}" ${unrestrictedScope || selected.has(lesson.id) ? 'checked' : ''} onchange="app.admin.updateExamTopics()"><span>${app.data.sanitizeHTML(lesson.label)}</span></label>`).join('')}</div></fieldset>`).join('')
                 : '<span class="exam-composer__topics-empty">Chưa có Bài học cho lựa chọn này.</span>'}`;
         },
@@ -6358,7 +6476,7 @@ const app = {
             }
             document.querySelectorAll('.exam-composer [aria-invalid="true"]').forEach(field => {
                 field.removeAttribute('aria-invalid');
-                if (field.id !== 'add-e-name' && field.getAttribute('aria-describedby') === 'add-e-form-error') field.removeAttribute('aria-describedby');
+                if (field.id !== `add-${mId}-name` && field.getAttribute('aria-describedby') === `add-${mId}-form-error`) field.removeAttribute('aria-describedby');
             });
         },
         showExamComposerError(message, fieldId = '') {
@@ -6527,6 +6645,12 @@ const app = {
                          const qType = editorQuestion?.type || q?.type || 'Trắc nghiệm';
                          let ansHint = '';
                          let ansPlaceholder = 'Đáp án đúng';
+                         if (qType === 'Đúng/Sai') {
+                             return `<label class="exam-form-field"><span>Đáp án đúng</span><select id="add-${mId}-q-ans-${i}" class="form-input">
+                                 <option value="Đúng" ${q && q.ans === 'Đúng' ? 'selected' : ''}>Đúng</option>
+                                 <option value="Sai" ${q && q.ans === 'Sai' ? 'selected' : ''}>Sai</option>
+                             </select></label>`;
+                         }
                          if (['Điền khuyết', 'Kéo thả', 'Chuỗi Quy luật'].includes(qType)) {
                              ansHint = 'Nhiều đáp án cách nhau bằng dấu phẩy (,)';
                              ansPlaceholder = 'VD: 5, 10';
@@ -6582,6 +6706,11 @@ const app = {
             delete newQ.sequenceRounds;
             delete newQ.partAnswerCounts;
             
+            if (typeVal === 'Đúng/Sai' && !hasSub) {
+                newQ.options = ['Đúng', 'Sai', '', ''];
+                if (!['Đúng', 'Sai'].includes(newQ.ans)) newQ.ans = 'Đúng';
+            }
+
             if (hasSub) {
                 if (typeVal === 'Đúng/Sai') {
                     newQ.statements = Array.from({length: 4}, () => ({ text: '', answer: 'Đúng' }));
@@ -6701,11 +6830,13 @@ const app = {
             this.syncStructuredPartSelectionUI(questionIndex);
         },
         getEmptyExamQuestionDraft() {
-            const classlevel = document.getElementById('add-e-class')?.value || 'Lớp 4';
-            const subject = document.getElementById('add-e-sub')?.value || 'Toán';
-            const period = this.normalizeComposerPeriod(document.getElementById('add-e-period')?.value || 'Học Kỳ 1');
+            const isW = this.composerState.module === 'worksheets';
+            const mId = isW ? 'w' : 'e';
+            const classlevel = document.getElementById(`add-${mId}-class`)?.value || 'Lớp 4';
+            const subject = document.getElementById(`add-${mId}-sub`)?.value || 'Toán';
+            const period = this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`)?.value || 'Học Kỳ 1');
             const semester = period === 'Học Kỳ 2' ? 'Học kỳ 2' : 'Học kỳ 1';
-            const topic = document.querySelector('#add-e-topics input')?.value || '';
+            const topic = document.querySelector(`#add-${mId}-topics input`)?.value || '';
             return {
                 classlevel,
                 subject,
@@ -11149,6 +11280,15 @@ const app = {
             ];
             app.ui.exportToExcel(data, "Mau_Nhap_De_Kiem_Tra.xlsx");
         },
+        downloadWorksheetTemplate() {
+            const data = [
+                { "Cấp lớp": "--- HƯỚNG DẪN CÁCH ĐIỀN ---", "Môn": "", "Thời gian": "", "Tên phiếu": "" },
+                { "Cấp lớp": "Nhập: Lớp 1, Lớp 2, Lớp 3, Lớp 4 hoặc Lớp 5", "Môn": "Nhập: Toán hoặc Tiếng Việt", "Thời gian": "Nhập: Học Kỳ 1, Học Kỳ 2 hoặc Cả Năm", "Tên phiếu": "Tên phiếu (ví dụ: Phiếu luyện tập phân số Lớp 5)" },
+                { "Cấp lớp": "--- CÁC VÍ DỤ (VUI LÒNG XÓA ĐỂ NHẬP MỚI) ---", "Môn": "", "Thời gian": "", "Tên phiếu": "" },
+                { "Cấp lớp": "Lớp 5", "Môn": "Toán", "Thời gian": "Học Kỳ 1", "Tên phiếu": "Phiếu luyện tập phân số Lớp 5" }
+            ];
+            app.ui.exportToExcel(data, "Mau_Nhap_Phieu_Hoc_Tap.xlsx");
+        },
         exportExams() {
             const data = app.data.exams.map(e => ({
                 "Cấp lớp": e.classlevel,
@@ -11158,6 +11298,16 @@ const app = {
                 "Số câu hỏi": (e.questions || []).length
             }));
             app.ui.exportToExcel(data, "Du_Lieu_De_Kiem_Tra.xlsx");
+        },
+        exportWorksheets() {
+            const data = app.data.worksheets.map(worksheet => ({
+                "Cấp lớp": worksheet.classlevel,
+                "Môn": worksheet.subject,
+                "Thời gian": this.normalizeComposerPeriod(worksheet.period),
+                "Tên phiếu": worksheet.name,
+                "Số câu hỏi": (worksheet.questions || []).length
+            }));
+            app.ui.exportToExcel(data, "Du_Lieu_Phieu_Hoc_Tap.xlsx");
         },
         submitAddQuestion(editIdx) {
             const qObj = {
@@ -11340,15 +11490,15 @@ const app = {
                 .sort().map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join('');
             box.innerHTML = `<section class="exam-library" aria-label="Thư viện ${label}">
               <div class="exam-library-filters">
-                <label class="exam-library-search">Tìm trong thư viện đề<input id="${mPrefix}library-search" type="search" placeholder="Tên ${label}, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary(${isW})"></label>
-                <label>Cấp lớp<select id="${mPrefix}library-class" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
-                <label>Môn học<select id="${mPrefix}library-subject" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả môn</option>${options('subject')}</select></label>
-                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(${isW})"><option value="">Tất cả ${label}</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
+                <label class="exam-library-search">Tìm trong thư viện ${label}<input id="${mPrefix}library-search" type="search" placeholder="Tên ${label}, chủ đề, nội dung phân loại…" oninput="app.admin.filterExamLibrary(12, ${isW})"></label>
+                <label>Cấp lớp<select id="${mPrefix}library-class" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả lớp</option>${options('classlevel')}</select></label>
+                <label>Môn học<select id="${mPrefix}library-subject" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả môn</option>${options('subject')}</select></label>
+                <label>Số câu trong ${label}<select id="${mPrefix}library-status" onchange="app.admin.filterExamLibrary(12, ${isW})"><option value="">Tất cả ${label}</option><option value="exact">Đủ ${target} câu</option><option value="under">Chưa đủ ${target} câu</option><option value="over">Vượt ${target} câu</option></select></label>
               </div>
               <div class="exam-library-result-heading"><p id="${mPrefix}library-result-count" role="status"></p><button type="button" class="exam-library-reset" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')">Xóa bộ lọc</button></div>
               <div id="${mPrefix}library-results"></div>
             </section>`;
-            this.filterExamLibrary();
+            this.filterExamLibrary(12, isW);
             this.renderComposerCards();
         },
         filterExamLibrary(limit = 12, isW = false) {
@@ -11403,7 +11553,7 @@ const app = {
             const label = isW ? "phiếu" : "đề";
             const labelCap = isW ? "Phiếu" : "Đề";
             box.innerHTML = `
-        <section class="exam-workspace" aria-label="Kho ${label} kiểm tra">
+        <section class="exam-workspace" aria-label="Kho ${isW ? 'Phiếu học tập' : 'Đề kiểm tra'}">
           <header class="exam-workspace__header">
             <div>
               <p class="exam-workspace__eyebrow">THƯ VIỆN CỦA BẠN</p>
@@ -11503,7 +11653,7 @@ const app = {
                    </label>
                    <label class="exam-form-field exam-form-field--wide">
                       <span>Tên ${fullLabel} <em aria-hidden="true">*</em></span>
-                      <input type="text" id="add-${mId}-name" placeholder="Tên ${labelCap} (VD: ${labelCap} kiểm tra học kì 1 Toán)" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-${mId}-form-error">
+                      <input type="text" id="add-${mId}-name" placeholder="${isW ? 'Tên Phiếu (VD: Phiếu luyện tập phân số Lớp 4)' : 'Tên Đề (VD: Đề kiểm tra học kì 1 Toán)'}" class="form-input" value="${e ? app.data.sanitizeHTML(e.name) : ''}" required aria-describedby="add-${mId}-form-error">
                    </label>
                    <div id="add-${mId}-form-error" class="exam-composer__form-error" role="alert" aria-live="assertive" hidden></div>
                   <div class="exam-form-field exam-form-field--full exam-composer__topics-field">
@@ -11518,7 +11668,7 @@ const app = {
                    </div>
                   <div class="exam-composer__meta-action">
                      <p>Đã có ngân hàng câu hỏi hoặc template phù hợp? Hãy chọn chủ đề rồi để hệ thống điền đủ 10 câu cho bạn chỉnh sửa.</p>
-                     <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam()">Tạo ${label} tự động</button>
+                     <button type="button" class="btn-success exam-composer__generate-action" onclick="app.admin.autoGenerateExam(${isW})">Tạo ${label} tự động</button>
                   </div>
                </section>
 
@@ -11526,7 +11676,7 @@ const app = {
                <section class="exam-composer__section exam-composer__saved" aria-labelledby="exam-composer-saved-title">
                   <div class="exam-composer__section-heading">
                      <div>
-                        <h4 id="exam-composer-saved-title">2. Câu hỏi đã có trong đề</h4>
+                        <h4 id="exam-composer-saved-title">2. Câu hỏi đã có trong ${label}</h4>
                         <p>Kéo thứ tự bằng các nút Lên/Xuống hoặc xóa câu không cần dùng.</p>
                      </div>
                      <span class="exam-composer__section-count">${e.questions.length}/${app.game.questionsPerRound}</span>
@@ -11536,9 +11686,9 @@ const app = {
                      <li class="exam-composer__saved-item">
                         <div class="exam-composer__saved-copy"><strong>Câu ${i + 1}</strong><span>${app.data.formatMathHTML(q.q)}</span></div>
                         <div class="exam-composer__saved-actions">
-                           ${i > 0 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up')">Lên</button>` : ''}
-                           ${i < e.questions.length - 1 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down')">Xuống</button>` : ''}
-                           ${app.ui.compactAction('Xóa', `app.admin.removeQuestionFromExam(${editIdx}, ${i})`, 'compact-admin-action--delete')}
+                           ${i > 0 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'up', ${isW})">Lên</button>` : ''}
+                           ${i < e.questions.length - 1 ? `<button type="button" class="btn-opt action-btn exam-composer__reorder-action" onclick="app.admin.moveQuestion(${editIdx}, ${i}, 'down', ${isW})">Xuống</button>` : ''}
+                           ${app.ui.compactAction('Xóa', `app.admin.removeQuestionFromExam(${editIdx}, ${i}, ${isW})`, 'compact-admin-action--delete')}
                         </div>
                      </li>
                      `).join('')}
@@ -11549,7 +11699,7 @@ const app = {
                <section class="exam-composer__section exam-composer__question-bank" data-composer-section="questions" aria-labelledby="exam-composer-questions-title">
                   <div class="exam-composer__section-heading">
                      <div>
-                        <span class="exam-composer__section-kicker">BƯỚC ${e && e.questions && e.questions.length > 0 ? '03' : '02'} · BIÊN TẬP</span><h4 id="exam-composer-questions-title">Soạn câu hỏi cho đề</h4>
+                        <span class="exam-composer__section-kicker">BƯỚC ${e && e.questions && e.questions.length > 0 ? '03' : '02'} · BIÊN TẬP</span><h4 id="exam-composer-questions-title">Soạn câu hỏi cho ${label}</h4>
                         <p>Mỗi thẻ là một câu hoàn chỉnh. Chọn loại câu để mở đúng nhóm trường cần biên tập.</p>
                      </div>
                      <span class="exam-composer__section-count"><strong>${existingQuestionCount}</strong> / ${app.game.questionsPerRound} câu đã có</span>
@@ -11564,8 +11714,8 @@ const app = {
                </section>
 
                <footer class="exam-composer__actions">
-                  <p>Đề cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
-                   ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : 'Tạo đề kiểm tra', `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'})`, 'compact-admin-action--save', 'exam-composer-save')}
+                  <p>${fullLabelCap} cần đủ ${app.game.questionsPerRound} câu có nội dung và đáp án để lưu.</p>
+                   ${app.ui.compactAction(e ? 'Lưu chỉnh sửa' : (isW ? 'Tạo phiếu học tập' : 'Tạo đề kiểm tra'), `app.admin.submitAddExam(${editIdx !== undefined ? editIdx : 'null'}, ${isW})`, 'compact-admin-action--save', 'exam-composer-save')}
                </footer>
              </section>
            `;
@@ -11576,16 +11726,17 @@ const app = {
                     app.admin.bindExamComposerInteractions();
                     app.admin.updateExamComposerProgress();
                     app.admin.syncComposerQuestionNav();
+                    app.admin.focusComposerSection('admin-compose-module-panel');
                 }, 0);
             }
             else if (tab === 'tpl') {
                 subBox.innerHTML = `<p>Đang chuẩn bị file mẫu...</p>`;
-                app.admin.downloadETemplate();
+                isW ? app.admin.downloadWorksheetTemplate() : app.admin.downloadETemplate();
                 setTimeout(() => this.renderESubTab('lib', undefined, isW), 1000);
             }
             else if (tab === 'exp') {
                 subBox.innerHTML = `<p>Đang xuất dữ liệu...</p>`;
-                app.admin.exportExams();
+                isW ? app.admin.exportWorksheets() : app.admin.exportExams();
                 setTimeout(() => this.renderESubTab('lib', undefined, isW), 1000);
             }
             else if (tab === 'select_for_q') {
@@ -11656,28 +11807,29 @@ const app = {
           `;
             }
             else if (tab === 'imp') {
+                const importLabel = isW ? 'phiếu học tập' : 'đề kiểm tra';
+                const importUnit = isW ? 'phiếu' : 'đề';
                 subBox.innerHTML = `
             <div style="max-width: 400px; margin: 0 auto; text-align:center;">
-               <h3>Nhập đề kiểm tra từ Excel (.xlsx)</h3>
-               <p style="color:#aaa; font-size:0.9rem;">Chỉ nhập thông tin vỏ đề kiểm tra (chưa có câu hỏi).</p>
+               <h3>Nhập ${importLabel} từ Excel (.xlsx)</h3>
+               <p style="color:#aaa; font-size:0.9rem;">Chỉ nhập thông tin vỏ ${importLabel} (chưa có câu hỏi).</p>
                <div style="text-align: left; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="e-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>Thêm mới</strong> (Giữ nguyên đề cũ, thêm đề mới)</label>
-                  <label style="display:block; cursor:pointer;"><input type="radio" name="e-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ đề cũ, thay bằng mới)</label>
+                  <label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="radio" name="${mId}-import-mode" value="append" checked style="transform:scale(1.2); margin-right:8px;"> <strong>Thêm mới</strong> (Giữ nguyên ${importUnit} cũ, thêm ${importUnit} mới)</label>
+                  <label style="display:block; cursor:pointer;"><input type="radio" name="${mId}-import-mode" value="overwrite" style="transform:scale(1.2); margin-right:8px;"> <strong style="color:#f87171;">Ghi đè</strong> (Xóa toàn bộ ${importUnit} cũ, thay bằng mới)</label>
                </div>
-               <input type="file" id="e-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
-               ${app.ui.compactAction('Tải lên', 'app.admin.submitImportExams()', 'compact-admin-action--save')}
+               <input type="file" id="${mId}-file-upload" accept=".xlsx, .csv" style="margin: 10px 0 20px 0;">
+               ${app.ui.compactAction('Tải lên', `app.admin.${isW ? 'submitImportWorksheets' : 'submitImportExams'}()`, 'compact-admin-action--save')}
             </div>
           `;
             }
         },
-        autoGenerateExam() {
-            const isW = this.composerState.module === 'worksheets';
+        autoGenerateExam(isW = false) {
             const mId = isW ? 'w' : 'e';
             const classlevel = document.getElementById(`add-${mId}-class`).value;
             const subject = document.getElementById(`add-${mId}-sub`).value;
             const period = this.normalizeComposerPeriod(document.getElementById(`add-${mId}-period`).value);
             const topics = Array.from(document.querySelectorAll(`#add-${mId}-topics input:checked`)).map(input => input.value);
-            if (!topics.length) return alert('Hãy chọn ít nhất một chủ đề trước khi tạo đề tự động.');
+            if (!topics.length) return alert(`Hãy chọn ít nhất một chủ đề trước khi tạo ${isW ? 'phiếu' : 'đề'} tự động.`);
             const selectionState = this.getExamLessonSelectionState();
             if (document.getElementById(`add-${mId}-lessons`) && !document.getElementById(`add-${mId}-lessons`).hidden && !selectionState.unrestricted && !selectionState.selectedLessons.length) {
                 return alert('Hãy chọn ít nhất một bài học, hoặc áp dụng toàn bộ bài học.');
@@ -11751,7 +11903,7 @@ const app = {
                 ? topics.filter(topic => !questions.some(question => same(question.topic, topic)))
                 : [];
             if (missingTopics.length) {
-                return alert(`Chưa thể tạo đề: các chủ đề sau chưa có nguồn dạng 1 ý chung hoặc 2/4 câu hỏi con phù hợp: ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template đúng một trong các dạng đó, hoặc bỏ chọn chủ đề đó.`);
+                return alert(`Chưa thể tạo ${isW ? 'phiếu' : 'đề'}: các chủ đề sau chưa có nguồn dạng 1 ý chung hoặc 2/4 câu hỏi con phù hợp: ${missingTopics.join(', ')}. Hãy bổ sung câu hỏi/template đúng một trong các dạng đó, hoặc bỏ chọn chủ đề đó.`);
             }
             if (questions.length < app.game.questionsPerRound) {
                 const structureHint = skippedUnsupportedStructure
@@ -11759,12 +11911,20 @@ const app = {
                     : '';
                 return alert(`Chưa đủ 10 câu dạng 1 ý chung hoặc 2/4 câu hỏi con phù hợp với các chủ đề/Bài học đã chọn (hiện có ${questions.length} câu).${structureHint}`);
             }
-            this.examComposerDraft = {
-                classlevel, subject, period,
-                name: document.getElementById(`add-${mId}-name`).value,
-                topics, lessonFilters, questions
-            };
-            this.renderESubTab('add');
+            if (isW) {
+                this.worksheetComposerDraft = {
+                    classlevel, subject, period,
+                    name: document.getElementById(`add-${mId}-name`).value,
+                    topics, lessonFilters, questions
+                };
+            } else {
+                this.examComposerDraft = {
+                    classlevel, subject, period,
+                    name: document.getElementById(`add-${mId}-name`).value,
+                    topics, lessonFilters, questions
+                };
+            }
+            this[isW ? 'renderWSubTab' : 'renderESubTab']('add');
         },
         async submitAddExam(editIdx, isW = false) {
             if (isW ? this.worksheetSavePending : this.examSavePending) return;
@@ -11779,7 +11939,7 @@ const app = {
                 topics: Array.from(document.querySelectorAll(`#add-${mId}-topics input:checked`)).map(input => input.value),
                 questions: []
             };
-            if (!eObj.name || !eObj.subject) return this.showExamComposerError('Vui lòng điền đủ Tên đề và Môn.', !eObj.name ? `add-${mId}-name` : `add-${mId}-sub`);
+            if (!eObj.name || !eObj.subject) return this.showExamComposerError(`Vui lòng điền đủ Tên ${isW ? 'phiếu học tập' : 'đề'} và Môn.`, !eObj.name ? `add-${mId}-name` : `add-${mId}-sub`);
 
             let i = 0;
             let newQuestionsCount = 0;
@@ -11824,6 +11984,9 @@ const app = {
                             document.getElementById(`add-${mId}-q-match-right-${i}`)?.value.trim() || ''
                         ];
                     }
+                    if (typeVal === 'Đúng/Sai' && !structureKind) {
+                        newQ.options = ['Đúng', 'Sai', '', ''];
+                    }
                     if ((typeVal === 'Trắc nghiệm' || typeVal === 'Kéo thả') && (!structureKind || structureKind === 'angleItems' || structureKind === 'answerParts')) {
                         newQ.options = [
                             document.getElementById(`add-${mId}-q-opt1-${i}`).value.trim(),
@@ -11842,9 +12005,13 @@ const app = {
                     const scoringError = app.data.validateQuestionScoring(newQ);
                     if (scoringError) return this.showExamComposerError(`Câu ${i + 1}: ${scoringError}`, `add-${mId}-q-q-${i}`);
                     eObj.questions.push(newQ);
-                    const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
-                    if (!exists) {
-                        app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ))); // add a copy to global bank
+                    // Phiếu học tập giữ câu hỏi trong chính phiếu. Chỉ Đề kiểm tra
+                    // mới bổ sung câu hỏi soạn mới vào Kho Câu hỏi dùng chung.
+                    if (!isW) {
+                        const exists = app.data.libraryQuestions.some(libQ => libQ.q === newQ.q);
+                        if (!exists) {
+                            app.data.libraryQuestions.push(JSON.parse(JSON.stringify(newQ)));
+                        }
                     }
                     newQuestionsCount++;
                 } else if (firstIncompleteQuestion === null) firstIncompleteQuestion = i;
@@ -11852,10 +12019,10 @@ const app = {
             }
 
             if (eObj.questions.length !== app.game.questionsPerRound) {
-                return this.showExamComposerError(`Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.`, firstIncompleteQuestion === null ? '' : `add-${mId}-q-q-${firstIncompleteQuestion}`);
+                return this.showExamComposerError(isW ? 'Phiếu học tập phải có đúng 10 câu có đầy đủ nội dung và đáp án.' : 'Đề kiểm tra phải có đúng 10 câu có đủ nội dung và đáp án để chấm theo thang điểm 10.', firstIncompleteQuestion === null ? '' : `add-${mId}-q-q-${firstIncompleteQuestion}`);
             }
 
-            if (newQuestionsCount > 0) {
+            if (!isW && newQuestionsCount > 0) {
                 try {
                     await app.data.saveLibrary();
                 } catch (error) {
@@ -11875,17 +12042,17 @@ const app = {
                 if (duplicateIndex > -1) duplicateExam = true;
                 else (isW ? app.data.worksheets : app.data.exams).push(eObj);
             }
-            saveError = await isW ? app.data.saveWorksheets() : app.data.saveExams();
+            saveError = await (isW ? app.data.saveWorksheets() : app.data.saveExams());
             if (isW) this.worksheetComposerDraft = null; else this.examComposerDraft = null;
             this[isW ? "renderWSubTab" : "renderESubTab"]("lib");
             if (saveError) {
-                alert(this.getExamSyncErrorMessage(saveError));
+                alert(this.getExamSyncErrorMessage(saveError, isW));
             } else if (duplicateExam) {
-                alert('Đề này đã có trong Kho Đề; hệ thống không tạo thêm bản trùng.');
+                alert(`${isW ? 'Phiếu học tập này đã có trong Kho Phiếu học tập' : 'Đề này đã có trong Kho Đề'}; hệ thống không tạo thêm bản trùng.`);
             } else if (editIdx !== null && editIdx !== undefined) {
-                alert('Đã cập nhật đề kiểm tra!');
+                alert(isW ? 'Đã cập nhật phiếu học tập!' : 'Đã cập nhật đề kiểm tra!');
             } else {
-                alert('Đã tạo đề kiểm tra mới!');
+                alert(isW ? 'Đã tạo phiếu học tập mới!' : 'Đã tạo đề kiểm tra mới!');
             }
             } finally {
                 if (isW) this.setWorksheetSavePending(false); else this.setExamSavePending(false);
@@ -11912,8 +12079,9 @@ const app = {
             app.data.saveExams();
             this.renderESubTab('select_for_q', qIdx);
         },
-        moveQuestion(editIdx, qIdx, direction) {
-            let e = app.data.exams[editIdx];
+        moveQuestion(editIdx, qIdx, direction, isW = false) {
+            const store = isW ? app.data.worksheets : app.data.exams;
+            let e = store[editIdx];
             if (!e || !e.questions || e.questions.length < 2) return;
 
             if (direction === 'up' && qIdx > 0) {
@@ -11927,8 +12095,42 @@ const app = {
             } else {
                 return;
             }
-            app.data.saveExams();
-            this.renderESubTab('add', editIdx);
+            isW ? app.data.saveWorksheets() : app.data.saveExams();
+            this[isW ? 'renderWSubTab' : 'renderESubTab']('add', editIdx);
+        },
+        submitImportWorksheets() {
+            const fileInput = document.getElementById('w-file-upload');
+            if (!fileInput.files.length) return alert('Vui lòng chọn file!');
+
+            const mode = document.querySelector('input[name="w-import-mode"]:checked')?.value || 'append';
+            if (mode === 'overwrite' && !confirm('CẢNH BÁO: Toàn bộ phiếu học tập hiện có sẽ bị xóa sạch và thay bằng dữ liệu mới. Bạn có chắc chắn muốn tiếp tục?')) return;
+
+            app.ui.importFromExcel(fileInput.files[0], async data => {
+                const importedWorksheets = data.flatMap(row => {
+                    const name = String(row['Tên phiếu'] || row['Tên đề'] || '').trim();
+                    const subject = String(row['Môn'] || '').trim();
+                    const classlevel = String(row['Cấp lớp'] || 'Lớp 5').trim();
+                    if (!name || !['Toán', 'Tiếng Việt'].includes(subject) || !/^Lớp [1-5]$/.test(classlevel)) return [];
+                    return [{ name, subject, classlevel,
+                        period: this.normalizeComposerPeriod(row['Thời gian'] || row['Kỳ kiểm tra'] || 'Học Kỳ 1'),
+                        questions: [] }];
+                });
+                if (!importedWorksheets.length) {
+                    alert('File không có phiếu hợp lệ. Cần Tên phiếu, Môn (Toán hoặc Tiếng Việt) và Cấp lớp (Lớp 1–5). Kho Phiếu hiện có được giữ nguyên.');
+                    return;
+                }
+                if (mode === 'overwrite') {
+                    app.data.worksheets.forEach(worksheet => app.data.queueWorksheetDeletion(worksheet));
+                    app.data.worksheets = [];
+                }
+                app.data.worksheets.push(...importedWorksheets);
+                const count = importedWorksheets.length;
+                const saveError = await app.data.saveWorksheets();
+                alert(saveError
+                    ? `Đã nhập ${count} phiếu học tập trên thiết bị. ${this.getExamSyncErrorMessage(saveError, true)}`
+                    : `Đã nhập thành công ${count} phiếu học tập (vỏ)!`);
+                this.renderWSubTab('lib');
+            });
         },
         submitImportExams() {
             const fileInput = document.getElementById('e-file-upload');
@@ -12234,7 +12436,7 @@ const app = {
             const name = String(exam?.name || defaultLabel).trim() || defaultLabel;
             const questions = Array.isArray(exam?.questions) ? exam.questions : [];
             const classLabel = this.getExamPrintClassLabel(exam);
-            return `<section id="${rootId}" class="exam-print" aria-label="Nội dung đề kiểm tra">
+            return `<section id="${rootId}" class="exam-print" aria-label="Nội dung ${isW ? 'phiếu học tập' : 'đề kiểm tra'}">
                 <header class="exam-print__header">
                     <h1 class="exam-print__title">${esc(name)}</h1>
                     <p class="exam-print__meta"><span><strong>Môn:</strong> ${esc(exam?.subject || '-')}</span><span aria-hidden="true"> · </span><span class="exam-print__class-label">${esc(classLabel)}</span></p>
@@ -12244,7 +12446,7 @@ const app = {
                     </div>
                 </header>
                 <div class="exam-print__rule" aria-hidden="true"></div>
-                ${questions.length ? `<main class="exam-print__questions">${questions.map((question, index) => this.renderExamPrintQuestion(question, index)).join('')}</main>` : '<p class="exam-print__empty">Đề kiểm tra này chưa có câu hỏi nào.</p>'}
+                ${questions.length ? `<main class="exam-print__questions">${questions.map((question, index) => this.renderExamPrintQuestion(question, index)).join('')}</main>` : `<p class="exam-print__empty">${isW ? 'Phiếu học tập' : 'Đề kiểm tra'} này chưa có câu hỏi nào.</p>`}
             </section>`;
         },
         printExamInPlace(idx) {
@@ -12317,13 +12519,13 @@ const app = {
             const exam = store[idx];
             if (!exam) return;
             const name = String(exam.name || label).trim() || label;
-            const heading = app.data.sanitizeHTML(`Chi tiết: ${name}`);
+            const heading = app.data.sanitizeHTML(`${isW ? 'Chi tiết phiếu' : 'Chi tiết đề'}: ${name}`);
             const html = `
                 <div class="exam-detail-toolbar">
                     <h3>${heading}</h3>
                     <div class="exam-detail-toolbar__actions">
                         ${app.ui.compactAction('Xuất PDF / A4', `app.admin.printExam(${Number(idx)}, ${isW})`, 'compact-admin-action--view')}
-                        <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')" aria-label="Đóng chi tiết"><span aria-hidden="true">←</span> Quay về</button>
+                        <button type="button" class="utility-close-button utility-close-button--inline admin-compose-back" onclick="app.admin.${isW ? 'renderWSubTab' : 'renderESubTab'}('lib')" aria-label="${isW ? 'Đóng chi tiết phiếu' : 'Đóng chi tiết đề'}"><span aria-hidden="true">←</span> Quay về</button>
                     </div>
                 </div>
                 ${this.renderExamPrintContent(exam, 'print-area', isW)}
@@ -12737,23 +12939,23 @@ const app = {
         },
         async deleteWorksheet(idx) {
             if (confirm('Xác nhận xóa phiếu học tập này?')) {
-                const w = app.data.worksheets[idx];
+                app.data.queueWorksheetDeletion(app.data.worksheets[idx]);
                 app.data.worksheets.splice(idx, 1);
-                if (w && w.id && window.supabase) {
-                    await supabaseClient.from('game_worksheets').delete().eq('id', w.id);
-                }
-                app.data.saveWorksheets();
+                const saveError = await app.data.saveWorksheets();
                 this.renderWSubTab('lib');
+                if (saveError) alert(this.getExamSyncErrorMessage(saveError, true));
             }
         },
         editExam(idx) {
             this.renderESubTab('add', idx);
         },
-        removeQuestionFromExam(examIdx, qIdx) {
-            if (confirm('Xóa câu hỏi này khỏi đề kiểm tra?')) {
-                app.data.exams[examIdx].questions.splice(qIdx, 1);
-                app.data.saveExams();
-                this.renderESubTab('add', examIdx);
+        removeQuestionFromExam(examIdx, qIdx, isW = false) {
+            const label = isW ? 'phiếu học tập' : 'đề kiểm tra';
+            if (confirm(`Xóa câu hỏi này khỏi ${label}?`)) {
+                const store = isW ? app.data.worksheets : app.data.exams;
+                store[examIdx].questions.splice(qIdx, 1);
+                isW ? app.data.saveWorksheets() : app.data.saveExams();
+                this[isW ? 'renderWSubTab' : 'renderESubTab']('add', examIdx);
             }
         },
         async deleteExam(idx) {
@@ -14225,4 +14427,3 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     handleNetworkChange();
 });
-

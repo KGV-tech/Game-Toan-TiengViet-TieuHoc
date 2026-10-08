@@ -635,7 +635,7 @@ button:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; 
 .admin-curriculum-field > label { color: #dbeafe; font-weight: 800; }
 .admin-curriculum-field > small { grid-column: 2; color: #94a3b8; font-size: .76rem; line-height: 1.35; }
 .admin-curriculum-field .form-input { width: 100%; min-width: 0; }
-.admin-curriculum-field[hidden], .admin-curriculum-panel[hidden], #add-e-lessons-field[hidden], .exam-question-card__fields .exam-form-field[hidden] { display: none !important; }
+.admin-curriculum-field[hidden], .admin-curriculum-panel[hidden], #add-e-lessons-field[hidden], #add-w-lessons-field[hidden], .exam-question-card__fields .exam-form-field[hidden] { display: none !important; }
 .admin-curriculum-panel__grid label[hidden], .template-editor__field[hidden] { display: none !important; }
 .admin-curriculum-panel { margin: 2px 0 4px; padding: 12px; border: 1px solid rgba(125, 211, 252, .3); border-radius: 10px; background: rgba(14, 116, 144, .12); }
 .admin-curriculum-panel__title { margin: 0 0 9px; color: #bae6fd; font-size: .88rem; font-weight: 900; }
