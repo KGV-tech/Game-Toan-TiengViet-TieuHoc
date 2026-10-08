@@ -1,6 +1,15 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 
+// Live boards replace DOM nodes on their one-second refresh.
+async function currentBoundingBox(locator) {
+    let box;
+    await expect.poll(async () => {
+        box = await locator.boundingBox();
+        return box;
+    }).not.toBeNull();
+    return box;
+}
 const demoUsers = () => Array.from({ length: 8 }, (_, i) => ({
     username: `hs${i + 1}`,
     fullname: `Học sinh làm vườn ${i + 1}`,
@@ -297,9 +306,9 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         await expect(stadium.locator('.team-race-scoreboard__entry', { hasText: 'Phong Lan 8' })).toHaveClass(/team-race-scoreboard__entry--green/);
 
         // Verify no hover enlargement on garden lane
-        const lane1BoxBefore = await lanes.nth(0).boundingBox();
+        const lane1BoxBefore = await currentBoundingBox(lanes.nth(0));
         await lanes.nth(0).hover();
-        const lane1BoxAfter = await lanes.nth(0).boundingBox();
+        const lane1BoxAfter = await currentBoundingBox(lanes.nth(0));
         expect(lane1BoxAfter.width).toBeCloseTo(lane1BoxBefore.width, 1);
         expect(lane1BoxAfter.height).toBeCloseTo(lane1BoxBefore.height, 1);
 
@@ -310,7 +319,7 @@ test.describe('Khu Vườn Tri Thức - Thi Đua Nhóm', () => {
         ]) {
             await page.setViewportSize(viewport);
             await page.waitForTimeout(100);
-            const canvasBounds = await stadium.locator('.team-stadium-canvas').boundingBox();
+            const canvasBounds = await currentBoundingBox(stadium.locator('.team-stadium-canvas'));
 
             expect(canvasBounds.x).toBeGreaterThanOrEqual(0);
             expect(canvasBounds.y).toBeGreaterThanOrEqual(0);

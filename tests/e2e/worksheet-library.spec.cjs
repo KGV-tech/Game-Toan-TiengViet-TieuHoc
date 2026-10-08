@@ -120,7 +120,8 @@ test('đồng bộ Phiếu thêm sửa xóa chỉ dùng game_worksheets và gi�
           update(row) { this.operation = 'update'; this.row = row; return this; },
           delete() { this.operation = 'delete'; return this; },
           eq(column, id) { this.id = id; return this; },
-          async in(column, ids) { calls.push({ table, operation: this.operation, ids }); return { error: null }; },
+          in(column, ids) { this.ids = ids; calls.push({ table, operation: this.operation, ids }); return this; },
+          then(resolve, reject) { return Promise.resolve({ data: (this.ids || []).map(id => ({ id })), error: null }).then(resolve, reject); },
           select() { return this; },
           async single() {
             calls.push({ table, operation: this.operation, id: this.id, row: this.row });

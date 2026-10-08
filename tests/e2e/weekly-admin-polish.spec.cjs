@@ -68,7 +68,7 @@ for (const kind of ['groups','sections']) for (const [width,height] of [[1280,72
   await page.locator(`[data-weekly-random-mode=${kind==='groups'?'group-member':'section-member'}]`).click();
   await expect(page.locator('[data-candidate-id]')).toHaveCount(2);
   const start=new Date('2026-10-03T08:00:00Z');
-  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  await page.clock.install({time:new Date(start.getTime()-60000)}); await page.clock.pauseAt(start);
   await page.locator('#weekly-draw').click();
   await page.locator('#weekly-draw-dialog').evaluate(e=>{window.firstDrawDialog=e;window.drawDialogClosed=false;e.addEventListener('close',()=>window.drawDialogClosed=true);});
   await page.clock.runFor(6100);
@@ -251,7 +251,7 @@ test('Danh sách đủ sau mỗi lượt, ghi nhớ ngầm đến khi đặt l�
   await page.evaluate(() => { app.classroom.weeks[0].participants.splice(3); });
   await page.locator('[data-weekly-tab=random]').click();
   const start = new Date('2026-10-03T08:00:00Z');
-  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  await page.clock.install({time:new Date(start.getTime()-60000)}); await page.clock.pauseAt(start);
   const order = await page.locator('[data-candidate-id]').evaluateAll(cards => cards.map(card => card.dataset.candidateId));
   const winners = [];
   for (let i=0;i<3;i++) {
@@ -327,7 +327,7 @@ test('Nhãn điểm, SVG riêng và animation có tên thay đổi trong thời 
 test('Sao băng cố định sáu giây, không có bộ chọn thời lượng', async ({page}) => {
   await setup(page); await page.locator('[data-weekly-tab=random]').click();
   const start = new Date('2026-10-03T08:00:00Z');
-  await page.clock.install({time:start}); await page.clock.pauseAt(start);
+  await page.clock.install({time:new Date(start.getTime()-60000)}); await page.clock.pauseAt(start);
   await expect(page.locator('#weekly-delay')).toHaveCount(0);
   await page.locator('#weekly-draw').click(); await page.clock.runFor(5900);
   await expect(page.locator('#weekly-draw')).toBeDisabled();

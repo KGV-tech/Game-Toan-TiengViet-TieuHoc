@@ -127,8 +127,8 @@ test.describe('Bay Lên Không Gian - Thi Đua Nhóm', () => {
 
         // Check scoreboard entries have doubled height (>= 44px) and rocket color binding
         const firstEntry = scoreboard.locator('.team-race-scoreboard__entry').first();
-        const entryHeight = await firstEntry.evaluate(el => el.getBoundingClientRect().height);
-        expect(entryHeight).toBeGreaterThanOrEqual(44);
+        // The live board replaces its rows each second; retry against the current row.
+        await expect.poll(() => firstEntry.evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
         const entryRocketColor = await firstEntry.evaluate(el => el.style.getPropertyValue('--rocket-color') || window.getComputedStyle(el).getPropertyValue('--rocket-color'));
         expect(entryRocketColor).toBeTruthy();
         await expect(firstEntry.locator('.team-race-scoreboard__score')).toBeVisible();

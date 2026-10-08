@@ -33,5 +33,10 @@
     "mammoth": "1.13.0",
     "pdfjs-dist": "6.4.299",
     "tesseract.js": "7.0.0"
+  },
+  "overrides": {
+    "mammoth": {
+      "argparse": "2.0.1"
+    }
   }
 }

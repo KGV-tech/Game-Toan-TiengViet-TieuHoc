@@ -1,3 +1,4 @@
+const {mockSettingsPersistence}=require('./helpers/settings-persistence.cjs');
 const { test, expect } = require('@playwright/test');
 
 async function openOfflineHomepage(page) {
@@ -288,6 +289,7 @@ test('giáo viên đặt mốc Bài học trong tab Quản lý lộ trình học
   await page.setViewportSize({ width: 1440, height: 900 });
   const { consoleErrors, supabaseRequests } = await openOfflineHomepage(page);
 
+  await mockSettingsPersistence(page);
   await page.evaluate(() => {
     app.data.currentUser = { username: 'teacher', role: 'admin', classlevel: '4' };
     app.data.settings = { hardTimeLimit: 10, examTimeLimit: 30 };
