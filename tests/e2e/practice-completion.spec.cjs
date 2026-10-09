@@ -47,7 +47,7 @@ test('Vietnamese completed attempt is saved, counted once and unlocks at eight w
     const answers = app.game.state.questions;
     for (let i = 0; i < 10; i++) {
       app.game.state.currentIdx = i;
-      app.game.state.historyDetails.push(app.game.createHistoryDetail(answers[i], answers[i].subquestions.map(p => p.answer), true));
+      app.game.state.historyDetails.push(app.game.createHistoryDetail(answers[i], answers[i].selectionItems ? answers[i].correctIds : answers[i].subquestions.map(p => p.answer), true));
     }
     app.game.state.score = 7;
     await app.game.finishPlay();
@@ -128,7 +128,7 @@ test('canonical server history keeps lesson and duration in details; pending cop
     await app.game.startPlay();
     app.game.pausePracticeClock();
     app.game.state.practiceElapsedMs = 180000;
-    app.game.state.historyDetails = app.game.state.questions.map(q => app.game.createHistoryDetail(q, q.subquestions.map(p=>p.answer),true));
+    app.game.state.historyDetails = app.game.state.questions.map(q => app.game.createHistoryDetail(q, q.selectionItems ? q.correctIds : q.subquestions.map(p=>p.answer),true));
     const original = app.data.applyStudentProgressEvent;
     window.supabase = {};
     let sent;

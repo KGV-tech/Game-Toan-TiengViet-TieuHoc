@@ -26,7 +26,7 @@
         question.subquestions.forEach((part, index) => {
             const row = node('section', `multi-choice-subquestion vietnamese-part multi-choice-subquestion--tone-${index}`);
             row.dataset.index = index;
-            const heading = node('h3', '', `${part.label}) ${part.prompt}`);
+            const heading = node('h3', '', `${part.label}) ${root.app.game.getSubquestionPrompt(question, part)}`);
             heading.id = `vietnamese-part-${index}`;
             row.setAttribute('aria-labelledby', heading.id);
             const choices = node('div', 'multi-choice-subquestion__options');
