@@ -495,175 +495,42 @@
 
         <nav class="guide-toc" aria-label="Mục lục hướng dẫn">
           <span class="guide-toc__label">Mục lục</span>
-          <a href="#guide-map" onclick="return app.goToGuide('guide-map')">Bản đồ</a>
-          <a href="#guide-practice" onclick="return app.goToGuide('guide-practice')">Luyện tập</a>
-          <a href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở bài kế tiếp</a>
-          <a href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Thành tích &amp; sao</a>
-          <a href="#guide-titles" onclick="return app.goToGuide('guide-titles')">Danh hiệu</a>
-          <a class="guide-shop-only" hidden href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
-          <a class="guide-shop-only" hidden href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
-          <a href="#guide-exams" onclick="return app.goToGuide('guide-exams')">Luyện đề</a>
-          <a href="#guide-quests" onclick="return app.goToGuide('guide-quests')">Nhiệm vụ</a>
-          <a href="#guide-history" onclick="return app.goToGuide('guide-history')">Kho Báu</a>
-          <a href="#guide-teacher" class="guide-admin-only" onclick="return app.goToGuide('guide-teacher')">Dành cho Admin</a>
+          <a data-guide-role="student" hidden href="#guide-map" onclick="return app.goToGuide('guide-map')">Bản đồ</a>
+          <a data-guide-role="student" hidden href="#guide-practice" onclick="return app.goToGuide('guide-practice')">Luyện tập</a>
+          <a data-guide-role="student" hidden href="#guide-progression" onclick="return app.goToGuide('guide-progression')">Mở bài kế tiếp</a>
+          <a data-guide-role="student" hidden href="#guide-exams" onclick="return app.goToGuide('guide-exams')">Luyện đề</a>
+          <a data-guide-role="student" hidden href="#guide-quests" onclick="return app.goToGuide('guide-quests')">Nhiệm vụ</a>
+          <a data-guide-role="student" hidden href="#guide-history" onclick="return app.goToGuide('guide-history')">Kho Báu</a>
+          <a data-guide-role="student" hidden href="#guide-rewards" onclick="return app.goToGuide('guide-rewards')">Sao và thành tích</a>
+          <a data-guide-role="student" hidden href="#guide-titles" onclick="return app.goToGuide('guide-titles')">Danh hiệu</a>
+          <a data-guide-role="admin" hidden href="#guide-teacher" onclick="return app.goToGuide('guide-teacher')">Bắt đầu</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-students" onclick="return app.goToGuide('guide-admin-students')">Quản lý học sinh</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-content" onclick="return app.goToGuide('guide-admin-content')">Soạn Đề</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-progression" onclick="return app.goToGuide('guide-admin-progression')">Lộ trình và Cài đặt</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-quests" onclick="return app.goToGuide('guide-admin-quests')">Giao nhiệm vụ</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-competition" onclick="return app.goToGuide('guide-admin-competition')">Thi đua</a>
+          <a data-guide-role="admin" hidden href="#guide-admin-results" onclick="return app.goToGuide('guide-admin-results')">Kết quả và thành tích</a>
+          <a data-guide-role="admin" hidden href="#guide-pets" onclick="return app.goToGuide('guide-pets')">Thú cưng</a>
+          <a data-guide-role="admin" hidden href="#guide-lucky" onclick="return app.goToGuide('guide-lucky')">May mắn</a>
         </nav>
-
         <div id="guide-content" class="guide-content custom-scrollbar">
-          <section id="guide-map" class="guide-section" tabindex="-1">
-            <h3>1. Khám phá bản đồ</h3>
-            <p>Đăng nhập bằng tên đăng nhập và mật khẩu của mình. Nếu tài khoản đang chờ duyệt hoặc chưa đúng lớp, nhờ giáo viên kiểm tra trước khi vào học.</p>
-            <p>Trên bản đồ có các trạm chính:</p>
-            <ul>
-              <li><strong>Toán</strong> và <strong>Tiếng Việt</strong>: chọn bài theo lớp, học kỳ và lộ trình giáo viên đã mở.</li>
-              <li><strong>Luyện đề</strong>: làm đề kiểm tra theo môn và thời điểm trong năm.</li>
-              <li><strong>Nhiệm vụ</strong>: xem các bài cô giáo giao và nhận thưởng khi hoàn thành.</li>
-              <li><strong>Kho Báu</strong>: xem thành tích và lịch sử làm bài.</li>
-              <li class="guide-shop-only" hidden><strong>Cửa hàng</strong>: quản lý thú cưng và quay may mắn.</li>
-              <li class="guide-shop-paused"><strong>Cửa hàng, thú cưng và Trạm May Mắn đang tạm khóa với học sinh.</strong> Bạn chưa thể chọn thú cưng, dùng kỹ năng hay quay may mắn. Thú cưng đã có vẫn được giữ lại.</li>
-              <li><strong>Hướng dẫn</strong>: bấm ảnh Hướng dẫn trên bản đồ để mở lại bảng này bất cứ lúc nào.</li>
-              <li class="guide-shop-paused">Ảnh <strong>Hướng dẫn</strong> nằm ở vị trí Cửa hàng trước đây. Robot Mèo mặc định sẽ đồng hành cùng bạn khi luyện tập.</li>
-            </ul>
-          </section>
-
-          <section id="guide-practice" class="guide-section" tabindex="-1">
-            <h3>2. Luyện tập Toán và Tiếng Việt</h3>
-            <ul>
-              <li>Chọn môn học trên bản đồ.</li>
-              <li>Bấm <strong>Xem lộ trình đầy đủ</strong>, chọn một bài đang mở rồi vào luyện tập. Các bài được chia theo học kỳ và chủ đề; khi môn/lớp chưa có lộ trình từng bài, chọn chủ đề trong màn luyện tập.</li>
-              <li>Chọn độ khó: <strong>Dễ</strong> không giới hạn thời gian; <strong>Khó</strong> có đếm ngược.</li>
-              <li>Mỗi ngày có <strong>5 năng lượng</strong>; mỗi lượt luyện tập tiêu hao 1 năng lượng. Xem số tim trên bản đồ; khi hết năng lượng, quay lại vào ngày hôm sau.</li>
-              <li>Mỗi lượt luyện tập gồm <strong>10 câu chính, tối đa 10 điểm</strong>. Đọc câu văn, đoạn văn hoặc hình minh họa trước khi trả lời.</li>
-              <li>Trắc nghiệm: bấm đáp án; Đúng/Sai: chọn cho từng ý; điền khuyết: nhập vào ô; nối: chọn hai mục tương ứng; kéo thả: đưa các thẻ vào đúng ô. Điền từ có sẵn lựa chọn thì bấm đáp án như trắc nghiệm.</li>
-              <li>Ở bộ luyện tập Tiếng Việt lớp 4, mỗi câu chính có <strong>2 ý, mỗi ý đúng 0,5 điểm</strong>. Câu Toán có thể chia nhiều ý; xem mức điểm ghi trong câu hỏi.</li>
-              <li>Sau khi trả lời, bấm <strong>Kiểm tra</strong>. Đáp án sai được gạch đỏ, đáp án đúng hiện màu xanh. Xem lời giải rồi bấm <strong>Tiếp theo</strong>.</li>
-              <li>Câu hỏi từ template thay đổi dữ liệu trong phạm vi bài học; đáp án được sinh theo dữ liệu đó. Làm lại giúp luyện thêm, nhưng vẫn có thể gặp lại một dạng hoặc từ đã học.</li>
-            </ul>
-          </section>
-
-          <section id="guide-progression" class="guide-section" tabindex="-1">
-            <h3>3. Mở bài kế tiếp</h3>
-            <p>Cờ vàng <strong>“Giáo viên đã mở đến…”</strong> cho biết mốc xa nhất bạn được học. Bài vượt mốc vẫn khóa dù bạn đạt điểm cao.</p>
-            <p>Khi yêu cầu điểm đang bật, hoàn thành 10 câu của bài hiện tại và đạt mức điểm quy định <strong>trong một lượt</strong> để mở bài kế tiếp. Mặc định là <strong>8/10</strong>; Toán và Tiếng Việt có thể có mức khác nhau do Admin đặt.</p>
-            <p>Ví dụ: mức yêu cầu 8 điểm thì lượt 7 điểm và lượt 1 điểm không cộng thành 8. Hãy luyện lại đến khi có một lượt đạt ít nhất 8 điểm.</p>
-            <p>Khi Admin bỏ yêu cầu điểm của môn, bạn có thể chọn bất kỳ bài nào trong mốc giáo viên đã mở. Luyện đề kiểm tra không thay thế lượt luyện tập để mở bài.</p>
-          </section>
-
-          <section id="guide-rewards" class="guide-section" tabindex="-1">
-            <h3>4. Thành tích hôm nay, điểm và Sao</h3>
-            <ul>
-              <li><strong>Hoàn thành bài làm</strong>: làm đủ 10 câu được tính 1 lượt, kể cả 0 điểm. Làm đủ 10 câu thêm lần nữa được thêm 1 lượt; lượt bỏ dở và đề kiểm tra không tính vào đây.</li>
-              <li><strong>Đủ điều kiện làm bài kế tiếp — Đạt/Chưa đạt</strong>: Đạt khi có một lượt luyện tập hôm nay đạt mức điểm của môn, hoặc Admin đang bỏ yêu cầu điểm. Việc vào bài cụ thể vẫn theo lộ trình và mốc giáo viên.</li>
-              <li><strong>Thời gian Luyện tập</strong>: cộng thời gian làm của các lượt hoàn chỉnh trong ngày. Dừng tính khi kết thúc, rời màn làm bài hoặc chuyển tab ra nền; không tính đăng nhập hay dạo các trạm.</li>
-              <li>Bảng hôm nay hiển thị riêng môn và cấp lớp đang học. Điểm từng lượt nằm trong lịch sử; số lượt hoàn thành khác với số bài đã đủ điểm để qua.</li>
-            </ul>
-            <p><strong>Thưởng Sao hằng ngày:</strong></p>
-            <table class="guide-reward-table">
-              <thead><tr><th>Điều kiện</th><th>Phần thưởng</th></tr></thead>
-              <tbody>
-                <tr><td>Hoàn thành lượt luyện tập đầu tiên trong ngày</td><td>1 Sao, chỉ một lần trong ngày cho cả hai môn</td></tr>
-                <tr><td>Làm đủ 5 ngày liên tiếp</td><td>+5 Sao (thưởng chuỗi)</td></tr>
-              </tbody>
-            </table>
-            <p>Kết thúc lượt, bạn xem được điểm và chi tiết các câu đã làm. Lịch sử bài làm được lưu để cô giáo theo dõi.</p>
-            <p>Chưa làm đủ 10 câu thì chưa ghi nhận lượt hoàn thành. Nếu game khôi phục bản nháp, làm tiếp đến cuối lượt để ghi nhận kết quả và thời gian đã làm. Kết quả chờ kết nối được giữ trên thiết bị; khi đồng bộ không tính thêm lượt trùng.</p>
-          </section>
-
-          <section id="guide-pets" class="guide-section guide-shop-only" hidden tabindex="-1">
-            <h3>5. Thú cưng đồng hành</h3>
-            <ul>
-              <li>Vào <strong>Cửa hàng → Trạm Thú Cưng</strong> để xem các thú cưng. Chức năng đổi thú cưng sẽ sớm ra mắt.</li>
-              <li>Mỗi học sinh có thể sở hữu tối đa 3 thú cưng.</li>
-              <li>Chọn một thú cưng trong mục <strong>Thú Cưng Của Tôi</strong> để đồng hành khi luyện tập.</li>
-              <li>Thú cưng có kỹ năng hỗ trợ trong lúc luyện tập; không dùng kỹ năng khi làm đề kiểm tra.</li>
-              <li>Nếu dùng kỹ năng không phù hợp, kỹ năng vẫn tính là đã dùng và cần hồi lại sau 3 lượt.</li>
-            </ul>
-          </section>
-
-          <section id="guide-lucky" class="guide-section guide-shop-only" hidden tabindex="-1">
-            <h3>6. Trạm May Mắn</h3>
-            <p>Tại <strong>Cửa hàng → Trạm May Mắn</strong>:</p>
-            <ul>
-              <li>Mỗi lần quay cần 2 sao.</li>
-              <li>Tối đa 3 lượt quay mỗi ngày; lượt chưa dùng không cộng dồn sang ngày sau.</li>
-              <li>Phần thưởng có thể là sao, lượt quay lại hoặc thú cưng tùy tồn kho.</li>
-              <li>Rồng không xuất hiện trong phần thưởng vòng quay.</li>
-            </ul>
-          </section>
-
-          <section id="guide-exams" class="guide-section" tabindex="-1">
-            <h3>7. Luyện đề kiểm tra</h3>
-            <ul>
-              <li>Vào trạm <strong>Luyện Đề</strong>.</li>
-              <li>Chọn Toán hoặc Tiếng Việt.</li>
-              <li>Chọn thời điểm: Giữa kỳ 1, Cuối kỳ 1, Giữa kỳ 2 hoặc Cuối kỳ 2.</li>
-              <li>Bấm <strong>Bắt đầu làm bài</strong>.</li>
-              <li>Đề kiểm tra có thể có giới hạn thời gian theo quy định của cô giáo. Khi nộp bài, bạn nhận điểm và xem đáp án; phần lời giải có thể không xuất hiện nếu đề không có lời giải.</li>
-            </ul>
-          </section>
-
-          <section id="guide-quests" class="guide-section" tabindex="-1">
-            <h3>8. Nhiệm vụ và thi đua theo nhóm</h3>
-            <ul>
-              <li>Nhiệm vụ do cô giáo giao.</li>
-              <li>Mở trạm Nhiệm vụ để xem yêu cầu và tiến độ.</li>
-              <li>Hộp Quà Hằng Ngày 🎁 nằm ở đầu trạm Nhiệm vụ — vào đó để mở nhận phần quà mỗi ngày.</li>
-              <li>Khi đủ điều kiện, bấm nhận thưởng để lấy sao.</li>
-              <li>Một số nhiệm vụ có thể yêu cầu làm đúng môn, đúng mức điểm hoặc đúng đề kiểm tra mà cô giáo giao.</li>
-              <li>Khi giáo viên giao trận <strong>thi đua theo nhóm</strong>, xem nhóm và trạng thái trong trạm này. Mỗi nhóm dùng chung một tablet, các bạn cùng thảo luận; chỉ tài khoản trưởng nhóm vào làm và nộp đáp án.</li>
-              <li>Trưởng nhóm chọn <strong>Vào lượt trưởng nhóm</strong> hoặc <strong>Tiếp tục lượt nhóm</strong> khi trận cho phép. Các thành viên còn lại theo dõi kết quả nhóm; đây là hoạt động riêng với luyện tập cá nhân.</li>
-            </ul>
-          </section>
-
-          <section id="guide-history" class="guide-section" tabindex="-1">
-            <h3>9. Kho Báu</h3>
-            <p>Trong Kho Báu, học sinh có thể xem:</p>
-            <ul>
-              <li>Tổng điểm và số sao đang có.</li>
-              <li>Lịch sử các lượt luyện tập và đề kiểm tra.</li>
-              <li>Câu đã làm đúng, câu sai và đáp án đúng.</li>
-            </ul>
-          </section>
-
-          <section id="guide-titles" class="guide-section" tabindex="-1">
-            <h3>10. Hệ thống Danh hiệu</h3>
-            <p>Tổng Sao đã kiếm được quyết định Danh hiệu của bạn. Sao đang có được giữ trong tài khoản; tiêu Sao không làm tụt Danh hiệu.</p>
-            <p>Mỗi danh hiệu có 4 cấp. Thanh trạng thái trong thẻ người chơi cho biết bạn đang ở mức nào của cấp hiện tại — khi vàng đầy thanh là lên cấp cao hơn!</p>
-            <table class="guide-reward-table">
-              <thead><tr><th>Danh hiệu</th><th>Cấp 1</th><th>Cấp 2</th><th>Cấp 3</th><th>Cấp 4</th></tr></thead>
-              <tbody>
-                <tr><td><strong>Học Trò</strong></td><td>Tò Mò</td><td>Chăm Chỉ</td><td>Gương Mẫu</td><td>Xuất Sắc</td></tr>
-                <tr><td><strong>Đội Trưởng</strong></td><td>Sáng Tạo</td><td>Thiên Tài</td><td>Siêu Việt</td><td>Bậc Thầy</td></tr>
-                <tr><td><strong>Nhà Nghiên Cứu</strong></td><td>Nhí</td><td>Nghiên Cứu</td><td>Tài Ba</td><td>Đại Tài</td></tr>
-                <tr><td><strong>Nhà Phát Minh</strong></td><td>Nhí</td><td>Phát Minh</td><td>Tài Năng</td><td>Uyên Bác</td></tr>
-                <tr><td><strong>Nhà Khoa Học</strong></td><td>Nhí</td><td>Khoa Học</td><td>Thiên Tài</td><td>Vĩ Đại</td></tr>
-              </tbody>
-            </table>
-          </section>
-
-          <section id="guide-teacher" class="guide-section guide-admin-only" tabindex="-1" hidden>
-            <h3>11. Dành cho Admin / Giáo viên</h3>
-            <p>Đăng nhập bằng tài khoản Admin đã được cấp quyền. Trên bản đồ, dùng <strong>Quản lý học sinh</strong>, <strong>Quản lý Thi đua &amp; Nhiệm vụ</strong> và trạm <strong>Cài đặt</strong> để điều hành. Học sinh không có các chức năng quản trị này.</p>
-            <h4>Chuẩn bị lớp và nội dung</h4>
-            <ul>
-              <li>Quản lý học sinh: duyệt tài khoản chờ, kiểm tra cấp lớp và lớp cụ thể, cập nhật hồ sơ/mật khẩu; lập Tổ đúng lớp. Chọn bộ lọc lớp trước khi xem hoặc chỉnh danh sách.</li>
-              <li>Chọn học sinh để xem lịch sử từng lượt và xuất Excel. Phân biệt số lượt làm đủ 10 câu, điểm từng lượt và tiến độ qua bài.</li>
-              <li>Trong thư viện câu hỏi/template, chọn đúng môn, lớp, học kỳ và bài. Template là dạng có tham số để game sinh câu và đáp án; dùng xem trước/test để kiểm tra nội dung trước khi giao.</li>
-              <li>Soạn đề: chọn phạm vi và câu hỏi, xem trước rồi lưu đề đúng môn/lớp/thời điểm. Giao nhiệm vụ với yêu cầu môn, điểm, số lượt hoặc đề cụ thể; theo dõi tiến độ và thưởng.</li>
-            </ul>
-            <h4>Đặt mốc bài và điều kiện qua bài</h4>
-            <ul>
-              <li>Trong <strong>Quản lý lộ trình học</strong>, chọn cấp lớp, môn và mốc bài được mở, rồi lưu. Mốc giáo viên là giới hạn trên; đạt điểm không cho phép học vượt mốc.</li>
-              <li>Vào <strong>Cài đặt → Mức điểm tối thiểu để qua bài luyện tập</strong>: chọn/bỏ chọn riêng Toán và Tiếng Việt. Mặc định bật ở 8 điểm; điểm từ 0–10, mỗi mức cách 1 điểm. Bấm <strong>Lưu thay đổi</strong>.</li>
-              <li>Bật: từng bài trước phải có một lượt đủ 10 câu đạt mức điểm, không cộng điểm các lượt. Tắt: học sinh chọn mọi bài trong mốc đã mở. Cấu hình được dùng khi vào lượt tiếp theo; lộ trình xét lại từ lịch sử.</li>
-              <li>Cài thời gian mức <strong>Khó</strong> theo giây/câu và thời lượng <strong>Giải đề kiểm tra</strong> theo phút. Chọn cấp lớp và <strong>Giao diện Test</strong> để thử bài; Admin có thể test bài đang khóa với học sinh.</li>
-              <li><strong>Giao diện Mở/Khóa</strong> quản lý chủ đề ở màn chọn chủ đề; khi có lộ trình từng bài, dùng mốc trong Quản lý lộ trình học để giới hạn bài học.</li>
-            </ul>
-            <h4>Hai hoạt động thi đua khác nhau</h4>
-            <ul>
-              <li><strong>Thi đua tuần</strong>: chọn lớp và tuần, quản lý Tổ/Nhóm của tuần, cộng/trừ điểm, đánh dấu vắng, chọn ngẫu nhiên và trình chiếu xếp hạng. Điểm tuần là điểm riêng, không cộng vào điểm luyện tập, Sao hoặc nhiệm vụ cá nhân. Khi màn hình báo chỉ lưu trên máy, dữ liệu chưa được lưu lên máy chủ.</li>
-              <li><strong>Thi đua theo nhóm</strong>: chuẩn bị trận, đội, trưởng nhóm, nội dung và thời gian. Kiểm tra trước khi bấm bắt đầu; sau khi bắt đầu không đổi đội hình/đề/thời gian. Mỗi đội dùng một tablet với tài khoản trưởng nhóm; Admin theo dõi bảng thi đua và kết thúc trận.</li>
-            </ul>
-          </section>
+          <section id="guide-map" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>1. Khám phá bản đồ</h3><p>Chơi trên máy tính hoặc máy tính bảng đặt ngang. Đăng nhập bằng tên và mật khẩu của em; nhờ giáo viên giúp nếu tài khoản chưa được duyệt hoặc chưa đúng lớp.</p><ul><li><strong>Toán học, Tiếng Việt:</strong> bấm vào công trình hoặc bảng tên của trạm để chọn bài học.</li><li><strong>Luyện Đề:</strong> làm đề kiểm tra.</li><li><strong>Nhiệm vụ:</strong> xem bài giáo viên giao và tham gia thi đua nhóm.</li><li><strong>Kho Báu:</strong> xem kết quả và lịch sử bài làm.</li><li><strong>Hướng dẫn:</strong> mở lại hướng dẫn này khi cần.</li><li>Cửa hàng, thú cưng và quay may mắn đang tạm khóa với học sinh. Robot Mèo sẽ đồng hành cùng em.</li></ul></section>
+          <section id="guide-practice" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>2. Cách làm bài</h3><ol><li>Chọn trạm <strong>Toán học</strong> hoặc <strong>Tiếng Việt</strong>.</li><li>Bấm <strong>Xem lộ trình đầy đủ</strong> và chọn bài đang mở. Nếu chưa có danh sách từng bài, chọn chủ đề trong màn luyện tập.</li><li>Chọn mức <strong>Dễ</strong> để làm bài không đếm ngược; mức <strong>Khó</strong> có đồng hồ đếm ngược.</li><li>Đọc kỹ câu hỏi và xem hình hoặc đoạn văn trước khi trả lời.</li><li>Bấm <strong>Kiểm tra</strong>, xem chỗ đúng, chỗ cần sửa và lời giải; sau đó bấm <strong>Tiếp theo</strong>.</li><li>Làm đến cuối lượt để xem kết quả. Muốn rời bài, bấm <strong>Thoát</strong>.</li></ol><p>Cách trả lời tùy theo yêu cầu của câu hỏi:</p><ul><li><strong>Chọn đáp án:</strong> bấm phương án em chọn. Nếu câu yêu cầu chọn nhiều, chọn đủ các ô phù hợp.</li><li><strong>Đúng/Sai:</strong> đọc từng ý và bấm Đúng hoặc Sai.</li><li><strong>Điền khuyết hoặc hoàn thành bảng:</strong> nhập vào các ô trống.</li><li><strong>Kéo thả:</strong> kéo thẻ vào ô; em cũng có thể bấm thẻ để điền vào ô trống đầu tiên. Bấm ô đã điền để trả thẻ về và chọn lại.</li><li><strong>Nối:</strong> chọn hai mục tương ứng.</li></ul><p>Xem số tim trên bản đồ trước khi bắt đầu. Nếu hết năng lượng, em quay lại học vào ngày hôm sau.</p></section>
+          <section id="guide-progression" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>3. Chọn bài đang mở</h3><p>Cờ vàng <strong>“Giáo viên đã mở đến…”</strong> cho biết những bài em được học. Bấm bài đang mở để luyện tập.</p><p>Nếu bài tiếp theo còn khóa, xem yêu cầu trong lộ trình và luyện lại bài trước. Hoàn thành một lượt đạt yêu cầu rồi kiểm tra lại lộ trình; nhờ giáo viên giúp nếu em chưa rõ.</p></section>
+          <section id="guide-exams" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>4. Luyện đề kiểm tra</h3><ol><li>Vào trạm <strong>Luyện Đề</strong>, chọn môn và thời điểm kiểm tra.</li><li>Chọn đề rồi bấm <strong>Bắt đầu làm bài</strong>.</li><li>Đọc và trả lời các câu; chú ý đồng hồ nếu đề có giới hạn thời gian.</li><li>Nộp bài để xem điểm và đáp án. Xem lời giải nếu đề có cung cấp.</li></ol></section>
+          <section id="guide-quests" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>5. Nhiệm vụ và học cùng nhóm</h3><p>Mở trạm <strong>Nhiệm vụ</strong> để đọc yêu cầu giáo viên giao, xem tiến độ và nhận thưởng khi hoàn thành. Hộp Quà Hằng Ngày nằm ở đầu trạm này.</p><p>Khi giáo viên tổ chức thi đua nhóm, các bạn cùng thảo luận trên một máy tính bảng. Trưởng nhóm đăng nhập và chọn <strong>Vào lượt trưởng nhóm</strong> hoặc <strong>Tiếp tục lượt nhóm</strong> để trả lời; các thành viên theo dõi kết quả của nhóm.</p></section>
+          <section id="guide-history" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>6. Kho Báu</h3><p>Vào <strong>Kho Báu</strong> để xem thành tích, số Sao và lịch sử luyện tập hoặc làm đề. Mở một lượt đã làm để xem lại câu đúng, câu sai và đáp án.</p></section>
+          <section id="guide-rewards" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>7. Sao và thành tích</h3><p>Hoàn thành lượt luyện tập để lưu kết quả và xem thành tích hôm nay. Những lượt bỏ dở chưa được ghi nhận là lượt hoàn thành.</p><table class="guide-reward-table"><thead><tr><th>Việc em làm</th><th>Thưởng Sao</th></tr></thead><tbody><tr><td>Hoàn thành lượt luyện tập đầu tiên trong ngày</td><td>1 Sao</td></tr><tr><td>Làm đủ 5 ngày liên tiếp</td><td>Thêm 5 Sao</td></tr></tbody></table><p>Nếu mạng gián đoạn, giữ bài làm trên thiết bị và tiếp tục theo thông báo của game. Nhờ giáo viên giúp nếu kết quả chưa hiện.</p></section>
+          <section id="guide-titles" class="guide-section" data-guide-role="student" hidden tabindex="-1"><h3>8. Danh hiệu</h3><p>Danh hiệu và thanh tiến bộ nằm trên thẻ của em. Hãy luyện tập đều đặn để nhận Sao và tiến tới danh hiệu mới.</p></section>
+          <section id="guide-teacher" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>1. Khu vực Giáo viên</h3><p>Hướng dẫn này dành riêng cho tài khoản có quyền Admin. Trên bản đồ, dùng <strong>Quản lý học sinh</strong>, <strong>Quản lý Thi đua &amp; Nhiệm vụ</strong>, trạm <strong>Soạn Đề</strong> và <strong>Cài đặt</strong>.</p><p>Trạm <strong>Toán học</strong> và <strong>Tiếng Việt</strong> mở khu vực quản lý lộ trình theo môn. Học sinh có hướng dẫn riêng về cách học và thao tác trả lời.</p></section>
+          <section id="guide-admin-students" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>2. Chuẩn bị lớp và học sinh</h3><ol><li>Mở <strong>Quản lý học sinh</strong> và chọn bộ lọc lớp.</li><li>Duyệt tài khoản chờ, kiểm tra cấp lớp và lớp cụ thể; cập nhật hồ sơ hoặc mật khẩu khi cần.</li><li>Chọn học sinh để xem lịch sử từng lượt và xuất Excel. Phân biệt điểm bài làm, số lượt hoàn thành và tiến độ qua bài.</li></ol></section>
+          <section id="guide-admin-content" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>3. Soạn câu hỏi, đề và phiếu</h3><p>Vào <strong>Soạn Đề</strong> và chọn kho cần làm việc: Cấu hình Câu hỏi, Câu Hỏi, Đề Kiểm Tra hoặc Phiếu Học Tập.</p><ul><li><strong>Mẫu sinh câu hỏi (template):</strong> chọn đúng lớp, môn, học kỳ, chủ đề và bài; chỉnh các tham số phù hợp với dạng câu. Xem trước câu dẫn, hình, ô trả lời và đáp án trước khi lưu.</li><li><strong>Câu hỏi:</strong> kiểm tra nội dung, dạng trả lời, đáp án và lời giải. Kiểm tra số ý và mức điểm trong bản xem trước.</li><li><strong>Đề kiểm tra:</strong> chọn phạm vi và câu hỏi, xem trước rồi lưu đúng lớp, môn và thời điểm.</li><li><strong>Phiếu học tập:</strong> tạo hoặc nhập phiếu từ tệp, rà soát chữ và hình, chỉnh nội dung, chọn mẫu trang trí rồi xem trước bản in. Kiểm tra kỹ phần nhận diện chưa rõ trước khi lưu hoặc giao.</li></ul><p>Với mẫu nhiều ý, kiểm tra đáp án của từng ý; với chọn nhiều Đúng/Sai, chọn một chế độ Đúng hoặc Sai cho mỗi mẫu. Các tham số Toán và Tiếng Việt cần theo đúng nội dung bài học.</p></section>
+          <section id="guide-admin-progression" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>4. Mở bài và đặt điều kiện luyện tập</h3><ul><li>Trong <strong>Quản lý lộ trình học</strong>, chọn cấp lớp, môn và mốc bài được mở, rồi lưu. Học sinh không học vượt mốc dù đã đủ điểm.</li><li>Vào <strong>Cài đặt → Mức điểm tối thiểu để qua bài luyện tập</strong>: bật hoặc tắt riêng Toán và Tiếng Việt, chọn mức điểm rồi bấm <strong>Lưu thay đổi</strong>. Mặc định là 8/10.</li><li>Khi bật yêu cầu điểm, học sinh cần hoàn thành một lượt của bài trước đạt mức quy định; không cộng điểm nhiều lượt. Khi tắt, học sinh chọn các bài trong mốc đã mở.</li><li>Đặt thời gian mức <strong>Khó</strong> theo giây/câu và thời lượng đề kiểm tra theo phút.</li><li>Chọn cấp lớp và <strong>Giao diện Test</strong> để thử bài. <strong>Giao diện Mở/Khóa</strong> quản lý chủ đề; với lộ trình từng bài, dùng mốc bài để giới hạn nội dung.</li></ul></section>
+          <section id="guide-admin-quests" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>5. Giao nhiệm vụ và theo dõi</h3><p>Vào <strong>Quản lý Thi đua &amp; Nhiệm vụ</strong> để giao yêu cầu luyện tập hoặc đề cụ thể. Kiểm tra môn, điểm yêu cầu, số lượt và phần thưởng; theo dõi tiến độ sau khi giao.</p><p>Trong thư viện Phiếu Học Tập, dùng thao tác giao phiếu cho học sinh. Phiếu tự do được giáo viên chấm sau khi nộp; kiểm tra bài làm và ghi nhận xét trước khi trả kết quả.</p></section>
+          <section id="guide-admin-competition" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>6. Tổ chức thi đua</h3><ul><li><strong>Thi đua tuần:</strong> chọn lớp và tuần; quản lý Tổ/Nhóm, cộng hoặc trừ điểm, đánh dấu vắng, chọn ngẫu nhiên và trình chiếu xếp hạng. Điểm tuần độc lập với điểm luyện tập, Sao và nhiệm vụ cá nhân. Nếu màn hình báo chỉ lưu trên máy, dữ liệu chưa lưu lên máy chủ.</li><li><strong>Thi đua theo nhóm:</strong> chuẩn bị trận, đội, trưởng nhóm, nội dung và thời gian. Kiểm tra trước khi bắt đầu; sau khi bắt đầu không đổi đội hình, đề hoặc thời gian. Mỗi đội dùng một máy tính bảng với tài khoản trưởng nhóm; giáo viên theo dõi và kết thúc trận.</li></ul></section>
+          <section id="guide-admin-results" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>7. Theo dõi kết quả và Sao</h3><p>Trong hồ sơ học sinh, xem lịch sử từng lượt và thời gian luyện tập. Một lượt đủ 10 câu được ghi nhận hoàn thành, kể cả 0 điểm; đề kiểm tra và lượt bỏ dở không tính vào số lượt luyện tập hoàn thành.</p><p>Lượt đầu tiên hoàn thành trong ngày nhận 1 Sao cho cả hai môn; chuỗi 5 ngày liên tiếp thưởng thêm 5 Sao. Tổng Sao đã kiếm được quyết định danh hiệu; số Sao đang có là số dư để sử dụng, tiêu Sao không làm giảm danh hiệu.</p></section>
+          <section id="guide-pets" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>8. Thú cưng và Cửa hàng</h3><p>Cửa hàng hiện chỉ mở cho tài khoản có quyền truy cập; học sinh đang tạm khóa chức năng này. Thú cưng đã sở hữu vẫn được giữ lại.</p><p>Trong <strong>Cửa hàng → Trạm Thú Cưng</strong>, xem danh sách và tồn kho thú cưng. Không dùng nội dung hoặc kỹ năng thú cưng để thay thế việc kiểm tra kiến thức của học sinh.</p></section>
+          <section id="guide-lucky" class="guide-section" data-guide-role="admin" hidden tabindex="-1"><h3>9. Trạm May Mắn</h3><p>Trong <strong>Cửa hàng → Trạm May Mắn</strong>, mỗi lần quay cần 2 Sao, tối đa 3 lượt mỗi ngày; lượt chưa dùng không cộng dồn. Phần thưởng tùy tồn kho; Rồng không xuất hiện trong vòng quay. Học sinh hiện không truy cập trạm này.</p></section>
         </div>
       </div>
     </div>

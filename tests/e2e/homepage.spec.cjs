@@ -152,16 +152,16 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
   });
 
   await expect(page.locator('#guide-modal')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Hướng Dẫn Hành Trình' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hướng dẫn Học sinh' })).toBeVisible();
   await expect(page.locator('.guide-intro span')).toHaveText([
-    'Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!',
-    'Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.'
+    'Chào mừng em đến với hành trình cùng Robot Mèo!',
+    'Chọn một mục để xem cách học và làm bài.'
   ]);
   await expect(page.getByRole('navigation', { name: 'Mục lục hướng dẫn' })).toBeVisible();
-  await expect(page.locator('#guide-progression')).toContainText('8/10');
+  await expect(page.locator('#guide-progression')).toContainText('xem yêu cầu trong lộ trình');
   await expect(page.locator('#guide-map')).toContainText('Khám phá bản đồ');
   await expect(page.locator('#guide-exams')).toContainText('Bắt đầu làm bài');
-  await expect(page.locator('#guide-history h3')).toHaveText('9. Kho Báu');
+  await expect(page.locator('#guide-history h3')).toHaveText('6. Kho Báu');
   await expect(page.getByRole('link', { name: 'Kho Báu' })).toBeVisible();
   await expect(page.locator('#guide-rewards .guide-reward-table')).toContainText('Làm đủ 5 ngày liên tiếp');
   await expect(page.getByRole('link', { name: 'May mắn' })).toHaveCount(0);
@@ -177,9 +177,10 @@ test('bảng hướng dẫn đầy đủ có mục lục và chỉ hiện phần
     app.showGuide();
   });
 
-  await expect(page.getByRole('link', { name: 'Dành cho Admin' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Bắt đầu', exact: true })).toBeVisible();
   await expect(page.locator('#guide-teacher')).toBeVisible();
-  await expect(page.locator('#guide-teacher')).toContainText('Giao diện Mở/Khóa');
+  await expect(page.locator('#guide-admin-progression')).toContainText('Giao diện Mở/Khóa');
+  await expect(page.locator('#guide-practice')).toBeHidden();
 });
 
 test('khung Hướng dẫn nằm trọn trong màn hình và chỉ cuộn phần nội dung', async ({ page }) => {

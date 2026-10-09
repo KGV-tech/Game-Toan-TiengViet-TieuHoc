@@ -161,3 +161,6 @@ html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a
   outline-offset: 4px;
   border-radius: 8px;
 }
+
+/* Hidden role-specific guide entries must leave layout and keyboard navigation. */
+#guide-modal [data-guide-role][hidden] { display: none !important; }
