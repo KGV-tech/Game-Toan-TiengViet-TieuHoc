@@ -8980,7 +8980,7 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 .ws-paper-header { border: 0; border-radius: 0; background: white; padding: 0; margin: 0 0 7mm; }
 .ws-paper-header h1 { text-align: center; font-size: 23px; margin: 0 0 4mm; }
 .ws-paper-context { text-align: center; margin: 0 0 4mm; font-size: 13px; }
-.ws-student-info { display: grid; grid-template-columns: 1.5fr .55fr 1fr; align-items: end; gap: 3mm; font-size: 12px; }
+.ws-student-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 3mm; font-size: 12px; }
 .ws-student-info span:nth-child(2) { text-align: center; }
 .ws-student-info span:last-child { text-align: right; white-space: nowrap; }
 .ws-group-title { text-align: center; text-transform: uppercase; font-size: 18px; font-weight: 800; margin: 5mm 0 3mm; color: #17283a; break-after: avoid; }
@@ -9004,7 +9004,7 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 .ws-a4 .ws-page-top { height: var(--ws-header-height, 32mm); }
 .ws-a4[data-decoration="none"] .ws-page-top { display: none; }
 .ws-a4[data-decoration="none"] .ws-page-content { height: 281mm; }
-.ws-decoration { width: 50%; height: 100%; margin: 0 auto; display: block; object-fit: contain; }
+.ws-decoration { width: 35%; height: 100%; margin: 0 auto; display: block; object-fit: contain; }
 .ws-structure { border: 1px solid var(--ws-ui-line,#7891a8); padding: 18px; margin: 20px 0; border-radius: 12px; }
 .ws-structure-groups { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; margin-top: 16px; }
 .ws-structure fieldset, .ws-table-sizing fieldset { min-width: 0; border: 1px solid var(--ws-ui-line,#7891a8); padding: 14px; display: grid; gap: 12px; }
@@ -9049,7 +9049,7 @@ html.ws-print-window, .ws-print-window body { position: static !important; heigh
 .ws-paper, .ws-paper * { font-family: Arial, Helvetica, sans-serif !important; font-synthesis: none; }
 .ws-paper { font-weight:400; }
 .ws-paper :is(h1,h2,th,strong) { font-weight:700; }
-.ws-paper .ws-block h3 { font-weight:400; }
+.ws-paper .ws-block h3 { font-weight:700; }
 .ws-paper .ws-group-title { font-weight:700; margin:0 0 3mm; }
 .ws-paper .ws-print-group { border:1px solid #b1c7c0; border-left:4px solid var(--ws-accent); border-radius:2mm; padding:3mm; margin:3mm 0; }
 .ws-paper .ws-block { border:0; border-radius:0; padding:0; margin:0 0 3mm; background:transparent; }

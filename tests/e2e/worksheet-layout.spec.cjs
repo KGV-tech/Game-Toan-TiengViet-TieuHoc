@@ -50,7 +50,7 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   await expect(page.locator('#ws-color-preview .ws-header-image')).toHaveCount(1);
   await expect(pages.nth(1).locator('.ws-page-top')).toHaveCount(0);
   const layout=await pages.evaluateAll(items=>{const first=items[0], img=first.querySelector('.ws-header-image');return {ratio:img.getBoundingClientRect().width/first.querySelector('.ws-page-content').getBoundingClientRect().width,center:Math.abs((img.getBoundingClientRect().left+img.getBoundingClientRect().right)/2-(first.getBoundingClientRect().left+first.getBoundingClientRect().right)/2),laterHeight:parseFloat(getComputedStyle(items[1].querySelector('.ws-page-content')).height)};});
-  expect(layout.ratio).toBeCloseTo(.5,2);expect(layout.center).toBeLessThan(1);expect(layout.laterHeight).toBeCloseTo(281*96/25.4,1);
+  expect(layout.ratio).toBeCloseTo(.35,2);expect(layout.center).toBeLessThan(1);expect(layout.laterHeight).toBeCloseTo(281*96/25.4,1);
   await expect(page.locator('#ws-color-preview h1')).toHaveCount(1);
   await expect(page.locator('#ws-color-preview .ws-student-info')).toHaveCount(1);
   await expect(page.locator('#ws-color-preview')).not.toContainText('CÙNG LUYỆN TẬP');
@@ -60,6 +60,10 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   expect(await page.locator('#ws-color-preview tbody tr').count()).toBe(45);
   expect(await pages.evaluateAll(items=>items.every(page=>{const body=page.querySelector('.ws-page-content');return body.scrollHeight<=body.clientHeight+1&&body.scrollWidth<=body.clientWidth+1;}))).toBe(true);
   expect(await pages.first().evaluate(el=>{const s=getComputedStyle(el);return ['paddingTop','paddingRight','paddingBottom','paddingLeft'].every(key=>Math.abs(parseFloat(s[key])-5*96/25.4)<.1);})).toBe(true);
+  await expect(page.locator('#ws-color-preview .ws-block h3').first()).toHaveCSS('font-weight','700');
+  await expect(page.locator('#ws-color-preview .ws-part p').first()).toHaveCSS('font-weight','400');
+  const classCenter=await pages.first().evaluate(el=>{const page=el.getBoundingClientRect(), field=el.querySelector('.ws-student-info span:nth-child(2)').getBoundingClientRect();return Math.abs((field.left+field.right-page.left-page.right)/2);});
+  expect(classCenter).toBeLessThan(1);
   const count=await pages.count();
   await page.evaluate(()=>{app.worksheetStudio.capture();app.data.worksheets=[WorksheetDocument.toRecord(app.worksheetStudio.doc)];app.admin.viewWorksheet(0);});
   const promise=page.waitForEvent('popup');await page.getByRole('button',{name:'Xuất PDF / A4',exact:true}).click();const popup=await promise;
@@ -69,6 +73,9 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   await expect(popup.locator('#print-document .ws-header-image')).toHaveCount(1);
   await expect(popup.locator('#print-document > .ws-page').nth(1).locator('.ws-page-top')).toHaveCount(0);
   expect(await popup.locator('.ws-header-image').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0))).toBe(true);
+  await expect(popup.locator('#print-document .ws-block h3').first()).toHaveCSS('font-weight','700');
+  const printClassCenter=await popup.locator('#print-document > .ws-page').first().evaluate(el=>{const page=el.getBoundingClientRect(), field=el.querySelector('.ws-student-info span:nth-child(2)').getBoundingClientRect();return Math.abs((field.left+field.right-page.left-page.right)/2);});
+  expect(printClassCenter).toBeLessThan(1);
   const pdf=await popup.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
   const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');const parsed=await getDocument({data:new Uint8Array(pdf),useSystemFonts:true}).promise;
   expect(parsed.numPages).toBe(count);
