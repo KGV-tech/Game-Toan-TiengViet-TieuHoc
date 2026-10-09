@@ -82,15 +82,19 @@
         return parts ? makeQuestion(context, parts, random) : null;
     }
     function validateQuestion(question) {
+        if (question?.type === root.MultiSelectTemplates?.TYPE && question?.subject === 'Tiếng Việt') return root.MultiSelectTemplates.validate(question);
         const definition = definitions.find(d => d.id === question?.templateId);
         const lesson = lessons().find(l => l.id === question?.lesson);
         // Previously saved questions retain their type but now use choice buttons.
         const legacyType = { word_groups: 'Kéo thả', context_fill: 'Điền khuyết' }[definition?.key];
         if (!definition || !lesson || !question.quickPractice || (question.type !== definition.type && (!legacyType || question.type !== legacyType)) || !Array.isArray(question.subquestions) || question.subquestions.length !== 2 || question.subquestions.some(part => !part || typeof part !== 'object')) return 'Câu hỏi không thuộc bộ luyện tập đã kiểm chứng.';
-        const allowedFields = ['classlevel', 'subject', 'semester', 'topic', 'lesson', 'templateId', 'quickPractice', 'type', 'q', 'passage', 'subquestions', 'partAnswerCounts', 'options', 'ans', 'explanation', 'source', 'templateVariables', 'id', 'created_at', 'difficulty'];
+        const allowedFields = ['classlevel', 'subject', 'semester', 'topic', 'lesson', 'templateId', 'quickPractice', 'type', 'q', 'passage', 'subquestions', 'partAnswerCounts', 'options', 'ans', 'explanation', 'source', 'templateVariables', 'id', 'created_at', 'difficulty', 'sharedPrompt'];
         if (Object.keys(question).some(key => !allowedFields.includes(key))) return 'Câu chính chứa trường hiển thị chưa được kiểm chứng.';
         if (question.subject !== 'Tiếng Việt' || question.classlevel !== 'Lớp 4' || question.semester !== 'Học kỳ 1' || question.topic !== lesson.topic) return 'Thông tin chương trình không khớp.';
-        if (question.q !== `${definition.name.replace(/^TV\d+ · /, '')}. Mỗi ý đúng được 0,5 điểm.`) return 'Câu dẫn đã thay đổi sau kiểm chứng.';
+        const commonPrompts = question.subquestions.map(part => String(part.prompt || '').split(/<br\s*\/?\s*>/i)[0].trim());
+        const derivedCommon = question.sharedPrompt === true && commonPrompts[0] && commonPrompts.every(prompt => prompt === commonPrompts[0]) && question.q === commonPrompts[0];
+        if (Object.prototype.hasOwnProperty.call(question, 'sharedPrompt') && !derivedCommon) return 'Câu dẫn chung chưa được kiểm chứng.';
+        if (!derivedCommon && question.q !== `${definition.name.replace(/^TV\d+ · /, '')}. Mỗi ý đúng được 0,5 điểm.`) return 'Câu dẫn đã thay đổi sau kiểm chứng.';
         if (question.ans !== question.subquestions.map(p => p.answer).join(' | ') || question.explanation !== question.subquestions.map(p => `${p.label}) ${p.explanation}`).join('\n')) return 'Đáp án hoặc lời giải tổng hợp không khớp.';
         if (JSON.stringify(question.partAnswerCounts) !== '[1,1]') return 'Cần đúng hai ý độc lập.';
         if (question.subquestions.some(part => part.generation)) {

@@ -67,10 +67,13 @@ test('real practice consumes parameters and keeps unseen questions unrecorded', 
     app.data.settings.topicUnlockOverrides = { '4': { vietnamese: { [template.topic]: true } } };
     app.game.state.selectedTopics = [template.topic]; app.game.state.selectedLessons = [template.lesson];
     await app.game.startPlay();
-    return { generated: app.game.state.questions.every(q => q.subquestions.every(p => p.generation)), count: app.game.state.questions.length,
+    return { generated: app.game.state.questions.every(q => q.selectionItems ? !MultiSelectTemplates.validate(q) : q.subquestions.every(p => p.generation)), count: app.game.state.questions.length,
       remembered: VietnameseParameterHistory.load(app.data.currentUser).parts.length,
+      visiblePartCount: app.game.state.questions[0].quickPractice ? app.game.state.questions[0].subquestions.length : 0,
+      parameterQuestionCount: app.game.state.questions.filter(q=>q.quickPractice).length,
       other: VietnameseParameterHistory.load({ id: 'different-student' }).parts.length };
   });
   expect(dialogs).toEqual([]);
-  expect(result).toEqual({ generated: true, count: 10, remembered: 2, other: 0 });
+  expect(result).toMatchObject({ generated: true, count: 10, parameterQuestionCount: 9, other: 0 });
+  expect(result.remembered).toBe(result.visiblePartCount);
 });

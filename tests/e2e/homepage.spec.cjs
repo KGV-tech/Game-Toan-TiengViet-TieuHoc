@@ -517,7 +517,9 @@ test('lượt luyện Toán lớp 4 đưa template phù hợp lên đầu lượ
 
   expect(questionSources).toHaveLength(10);
   expect(questionSources[0]).toBe('number.smallest_of_four');
-  expect(questionSources.filter(source => source === 'number.smallest_of_four')).toHaveLength(5);
+  expect(questionSources.filter(source => source !== 'static')).toHaveLength(5);
+  expect(questionSources.filter(source => source === 'number.smallest_of_four').length).toBeGreaterThan(0);
+  expect(questionSources.every(source => ['number.smallest_of_four', 'selection.math', 'static'].includes(source))).toBe(true);
 });
 
 test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh câu hỏi', async ({ page }, testInfo) => {
@@ -1499,6 +1501,8 @@ test('lượt luyện Chủ đề 2 tạo và chuyển đủ mười câu mà kh
       app.game.loadQuestion();
       rendered.push({
         templateId: app.game.state.questions[index].templateId,
+        selectionValid: app.game.state.questions[index].templateId === 'selection.math' && !MultiSelectTemplates.validate(app.game.state.questions[index]) && /g4-math-hk1-b0[789]$/.test(app.game.state.questions[index].lesson),
+        tileCount: document.querySelectorAll('#game-options-container .selection-tile').length,
         svgCount: document.querySelectorAll('#game-question-container svg').length,
         responseCount: document.querySelectorAll('#game-question-container .magic-input, #game-question-container .drag-slot').length
       });
@@ -1507,7 +1511,7 @@ test('lượt luyện Chủ đề 2 tạo và chuyển đủ mười câu mà kh
   });
 
   expect(outcome.rendered).toHaveLength(10);
-  expect(outcome.rendered.every(item => item.svgCount > 0 && item.responseCount === 4)).toBe(true);
+  expect(outcome.rendered.every(item => item.selectionValid ? item.tileCount === 10 : item.svgCount > 0 && item.responseCount === 4)).toBe(true);
   expect(outcome.elapsed).toBeLessThan(1_000);
   expect(consoleErrors).toEqual([]);
 });
@@ -1541,11 +1545,11 @@ test('lượt luyện Chủ đề 2 chỉ dùng template về góc khi kho có t
     app.game.state.adminclasslevel = '4';
     app.game.state.selectedTopics = [topic];
     app.game.startPlay();
-    return app.game.state.questions.map(question => question.templateId);
+    return app.game.state.questions.map(question => ({ id: question.templateId, selectionValid: question.templateId === 'selection.math' && !MultiSelectTemplates.validate(question) && /g4-math-hk1-b0[789]$/.test(question.lesson) }));
   });
 
   expect(templateIds).toHaveLength(10);
-  expect(templateIds.every(templateId => templateId.startsWith('g4-m-angle-'))).toBe(true);
+  expect(templateIds.every(item => item.id.startsWith('g4-m-angle-') || item.selectionValid)).toBe(true);
 });
 
 test('lượt luyện không lặp nguyên câu khi template không sinh được biến thể mới', async ({ page }) => {
@@ -1604,12 +1608,12 @@ test('lượt luyện Chủ đề 4 nạp generator đơn vị đo và tạo đ�
     app.game.state.adminclasslevel = '4';
     app.game.state.selectedTopics = [topic];
     app.game.startPlay();
-    return { alerts, ids: app.game.state.questions.map(question => question.templateId) };
+    return { alerts, ids: app.game.state.questions.map(question => ({ id: question.templateId, selectionValid: question.templateId === 'selection.math' && !MultiSelectTemplates.validate(question) && /g4-math-hk1-b(17|18|19|20|21)$/.test(question.lesson) })) };
   });
 
   expect(outcome.alerts).toEqual([]);
   expect(outcome.ids).toHaveLength(10);
-  expect(outcome.ids.every(id => id.startsWith('measurement.'))).toBe(true);
+  expect(outcome.ids.every(item => item.id.startsWith('measurement.') || item.selectionValid)).toBe(true);
 });
 
 test('template Chủ đề 4 luôn giữ bốn phần khi Supabase còn prompt cũ', async ({ page }) => {

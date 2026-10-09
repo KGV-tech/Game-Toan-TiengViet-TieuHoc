@@ -5528,3 +5528,23 @@ html[data-theme="light"] #game-play-view #submit-ans-btn:disabled #submit-ans-te
     margin-right: 3px;
     font-size: .8rem;
 }
+/* Ten reversible choices, with visible states for touch and keyboard users. */
+#game-options-container.selection-board { display:flex !important; flex-direction:column; justify-content:center; gap:18px; width:100%; min-height:0; overflow:auto; padding:12px; }
+.selection-help { margin:0; text-align:center; color:#eef6ff; font-size:clamp(14px,1.3vw,18px); }
+.selection-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; width:100%; align-items:stretch; }
+.selection-tile { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:64px; padding:12px 8px; border:3px solid transparent; border-radius:18px; background:#fff0bf; color:#26364a; font-size:clamp(17px,1.6vw,23px); font-weight:600; line-height:1.3; text-align:center; text-transform:none; overflow-wrap:anywhere; cursor:pointer; }
+.selection-tile[aria-pressed="true"], .selection-tile--exam:has(input:checked) { border-color:#1765cc; background:#cce4ff; box-shadow:inset 0 0 0 1px #fff; }
+.selection-tile[aria-pressed="true"]::before { content:'✓'; position:absolute; top:2px; right:7px; color:#1459b4; font-size:18px; }
+.selection-tile:focus-visible { outline:3px solid #ffb629; outline-offset:3px; }
+.selection-tile span:has(svg) { width:100%; }
+.selection-tile svg { width:100%; height:75px; }
+.selection-tile small { font-size:12px; }
+.selection-tile--correct { border-color:#248044; background:#d9f5d9; }
+.selection-tile--wrong { background:#f1e8d4; }
+.selection-tile:disabled { opacity:1; cursor:default; }
+.selection-tile--exam { font-size:17px; min-height:60px; }
+.selection-tile--exam input { width:20px; height:20px; accent-color:#1765cc; }
+@media (max-width:1100px) { .selection-grid { gap:9px; } .selection-tile { padding:9px 6px; min-height:58px; font-size:16px; } }
+@media print { .selection-grid { grid-template-columns:repeat(5,1fr); } .selection-tile { border:1px solid #333; color:#000; background:#fff; box-shadow:none; } }
+.template-selection-library { margin-top:20px; padding:18px; border:1px solid #5c85a9; border-radius:16px; }
+.template-selection-library select { margin:12px 0; }
