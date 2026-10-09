@@ -154,7 +154,8 @@ test('Kho template dùng thẻ trực quan, có tạo mới và Preview khung c�
 
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
-  await expect(page.locator('.template-preview-dialog__close')).toBeFocused();
+  await expect(page.locator('#template-preview-dialog .template-preview-dialog__header button')).toHaveCount(0);
+  await expect(page.locator('#template-preview-back')).toBeFocused();
   await expect(page.locator('#template-preview-dialog .template-preview__canvas')).toBeVisible();
   await expect(page.locator('#template-preview-dialog .template-preview__choices').first()).toBeVisible();
   await expect(page.getByRole('button', { name: '1. Đề mới' })).toBeVisible();
@@ -210,7 +211,7 @@ test('Template lập số dùng câu hỏi chung và công thức câu con trự
   expect(singleMode.selectedParts).toEqual([0]);
   await page.getByRole('button', { name: /Preview/ }).click();
   await expect(page.locator('#template-preview-dialog [aria-label="Ô điền đáp án"]')).toHaveCount(1);
-  await page.locator('.template-preview-dialog__close').click();
+  await page.locator('#template-preview-back').click();
   await page.locator('#template-answer-mode').selectOption('subquestions');
   await page.locator('#template-part-count').selectOption('2');
   await expect(page.locator('.template-editor__part-selection')).toBeVisible();

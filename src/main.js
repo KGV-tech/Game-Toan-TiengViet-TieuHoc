@@ -9426,7 +9426,7 @@ const app = {
             const subject = document.getElementById('template-subject')?.value || '';
             const semester = document.getElementById('template-semester')?.value || '';
             const topic = document.getElementById('template-topic')?.value || '';
-            const supported = this.supportsAdminLessons(classlevel, subject) || subject === 'Tiếng Việt' && String(classlevel).replace('Lớp ', '') === '4' && (this.selectionTemplateContext || document.getElementById('template-generator')?.value === 'selection.vietnamese');
+            const supported = this.supportsAdminLessons(classlevel, subject) || subject === 'Tiếng Việt' && String(classlevel).replace('Lớp ', '') === '4';
             const selected = selectedLesson || lesson.value || lesson.dataset.selected || '';
             field.hidden = !supported;
             lesson.disabled = !supported;
@@ -9441,6 +9441,7 @@ const app = {
                 lesson.value = '';
             }
             this.syncTemplateTrueFalseControls();
+            this.syncTemplateLessonRules();
         },
         syncTemplateTrueFalseControls() {
             const rule = document.querySelector('.template-editor__rule--true-false-controls');
@@ -9469,6 +9470,8 @@ const app = {
                 : 'Có thể chọn các dạng để đa dạng giữa các lượt; game không trộn các dạng trong cùng một lượt.';
         },
         getTemplatePreset(generatorKey) {
+            const language = window.Grade4VietnameseTemplates?.definitions.find(definition => definition.id === generatorKey);
+            if (language) return {type:language.type, defaultPrompt:'{question}', guide:`${language.name}: chọn ngữ liệu đã kiểm chứng trong phạm vi bài học. Hai câu con cùng ngữ cảnh, mỗi ý đúng 0,5 điểm.`, hint:'Từ, câu và đoạn đọc được chọn theo kỹ năng và bài học; không có tham số sinh số.', preview:'live', variables:[['{question}','Câu hỏi và ngữ liệu Tiếng Việt']]};
             if (window.CompleteTableTemplates.templateIds.includes(generatorKey)) return {type:'Hoàn thành Bảng',defaultPrompt:'{question}',guide:'4 dòng; mỗi dòng cho sẵn ngẫu nhiên Viết số, Đọc số hoặc các chữ số theo hàng. Hai nhóm còn lại để trống. Mỗi dòng đúng được 0,25 điểm.',hint:'Số cột hàng từ 4 đến 9; mặc định 6.',preview:'live',variables:[['{question}','Hoàn thành bảng sau.']]};
             if (window.MultiSelectTemplates?.templateIds.includes(generatorKey)) return {type:'Chọn nhiều Đúng/Sai',defaultPrompt:'{question}',guide:'10 ô; chọn các ô Đúng hoặc Sai theo Bài học. Từ 1–9 ô cần chọn, ưu tiên 4–6.',hint:'Bấm Preview để thử chọn và xem bố cục.',preview:'live',variables:[['{question}','Câu hỏi chung của 10 ô']]};
             const match = /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.exec(String(generatorKey || ''));
@@ -9523,7 +9526,9 @@ const app = {
             }
             document.getElementById('treasure-title').textContent = 'Soạn Đề';
             this.selectionTemplateContext = window.MultiSelectTemplates?.templateIds.includes(existing.generator_key);
+            this.templateOriginal = existing;
             const config = existing?.config || {};
+            this.templateLastGenerator = config.minimumDigits !== undefined || config.minimum !== undefined ? existing.generator_key : null;
             const selectedTemplateAnswerMode = this.getTemplateAnswerMode(existing);
             const selectedTemplatePartIndexes = selectedTemplateAnswerMode === 'single'
                 ? [0]
@@ -9582,7 +9587,7 @@ const app = {
             const phase6Properties = Array.isArray(config.properties) && config.properties.length ? config.properties : ['commutative', 'associative'];
             const phase6ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b22', 'b23', 'b24', 'b25'];
             const phase7Shapes = Array.isArray(config.allowedShapes) && config.allowedShapes.length ? config.allowedShapes : ['parallelogram', 'rhombus', 'rectangle', 'trapezoid'];
-            const phase7ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b07', 'b08', 'b09', 'b27', 'b28', 'b29', 'b30', 'b31'];
+            const phase7ReviewSkills = Array.isArray(config.skills) && config.skills.length ? config.skills : ['b27', 'b28', 'b29', 'b30', 'b31'];
             const phase8ReviewGroups = Array.isArray(config.groups) && config.groups.length ? config.groups : ['numbers', 'addSub', 'multiplicationDivision', 'geometry', 'measurement', 'statistics', 'probability', 'wordProblem'];
             const measurementMassKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.some(kind => ['yenToKg', 'taToKg', 'tonToKg', 'yenAndKgToKg', 'tonAndYenToKg'].includes(kind)) ? config.allowedKinds : ['yenToKg', 'taToKg', 'tonToKg', 'yenAndKgToKg', 'tonAndYenToKg'];
             const measurementAreaKinds = Array.isArray(config.allowedKinds) && config.allowedKinds.some(kind => ['m2ToDm2', 'dm2ToCm2', 'dm2ToMm2', 'cm2ToDm2'].includes(kind)) ? config.allowedKinds : ['m2ToDm2', 'dm2ToCm2', 'dm2ToMm2', 'cm2ToDm2'];
@@ -9633,15 +9638,15 @@ const app = {
               <div class="template-editor__section"><h4>1. Thông tin áp dụng</h4><div class="template-editor__fields">
                 <label class="template-editor__field template-editor__field--wide"><span>Tên cấu hình câu hỏi</span><input id="template-name" class="form-input" maxlength="120" value="${app.data.sanitizeHTML(existing?.name || 'Nhận biết chữ số theo hàng')}"></label>
                 <label class="template-editor__field"><span>Cấp lớp</span><select id="template-class" class="form-input" onchange="app.admin.refreshTemplateTopics()">${[1,2,3,4,5].map(n => `<option value="Lớp ${n}" ${(existing?.classlevel || 'Lớp 4') === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label>
-                <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
+                <label class="template-editor__field"><span>Môn học</span><select id="template-subject" class="form-input" onchange="app.admin.refreshTemplateTopics(); app.admin.syncTemplateSubject()"><option value="Toán" ${(existing?.subject || 'Toán') === 'Toán' ? 'selected' : ''}>Toán</option><option value="Tiếng Việt" ${existing?.subject === 'Tiếng Việt' ? 'selected' : ''}>Tiếng Việt</option></select></label>
                 <label class="template-editor__field"><span>Học kỳ</span><select id="template-semester" class="form-input" onchange="app.admin.refreshTemplateTopics()"><option value="Học kỳ 1" ${(existing?.semester || 'Học kỳ 1') === 'Học kỳ 1' ? 'selected' : ''}>Học kỳ 1</option><option value="Học kỳ 2" ${existing?.semester === 'Học kỳ 2' ? 'selected' : ''}>Học kỳ 2</option></select></label>
                 <label class="template-editor__field template-editor__field--wide"><span>Chủ đề</span><select id="template-topic" class="form-input" onchange="app.admin.refreshTemplateLessons()"></select></label>
-                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(selectedTemplateLesson)}" onchange="app.admin.refreshTemplateLessons()"></select><small>Chỉ dùng cho Lớp 4 – Toán; để trống nếu cấu hình câu hỏi áp dụng cho cả Chủ đề.</small></label>
+                <label id="template-lesson-field" class="template-editor__field template-editor__field--wide" hidden><span>Bài học</span><select id="template-lesson" class="form-input" data-selected="${app.data.sanitizeHTML(selectedTemplateLesson)}" onchange="app.admin.refreshTemplateLessons(); app.admin.syncTemplateLessonRules()"></select><small>Chọn bài học để áp dụng đúng kiến thức đã học; Tiếng Việt cần chọn bài cụ thể.</small></label>
                 <label class="template-editor__field"><span>Loại câu hỏi</span><select id="template-question-type" class="form-input">${templateQuestionTypes.map(type => `<option value="${type}" ${selectedQuestionType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
                 <label class="template-editor__field"><span>Cấu hình Câu hỏi</span><select id="template-generator" class="form-input" onchange="app.admin.showTemplateExample()"><option value="number.digit_at_place" ${!isMatching && (existing?.generator_key || 'number.digit_at_place') === 'number.digit_at_place' ? 'selected' : ''}>Nhận biết chữ số theo hàng</option><option value="number.smallest_of_four" ${existing?.generator_key === 'number.smallest_of_four' ? 'selected' : ''}>Tìm số bé nhất trong 4 số</option><option value="number.largest_of_four" ${existing?.generator_key === 'number.largest_of_four' ? 'selected' : ''}>Tìm số lớn nhất trong 4 số</option><option value="number.compose_from_places" ${existing?.generator_key === 'number.compose_from_places' ? 'selected' : ''}>Lập số từ các hàng</option><option value="number.missing_expanded_addend" ${existing?.generator_key === 'number.missing_expanded_addend' ? 'selected' : ''}>Điền thành phần còn thiếu</option><option value="number.four_operations_practice" ${existing?.generator_key === 'number.four_operations_practice' ? 'selected' : ''}>Bốn phép tính: điền khuyết và tính biểu thức</option><option value="number.four_arithmetic_blanks" ${existing?.generator_key === 'number.four_arithmetic_blanks' ? 'selected' : ''}>Bốn phép tính điền khuyết</option><option value="number.four_arithmetic_comparisons" ${existing?.generator_key === 'number.four_arithmetic_comparisons' ? 'selected' : ''}>Bốn phép tính so sánh kéo thả</option><option value="number.neighbor_numbers" ${existing?.generator_key === 'number.neighbor_numbers' ? 'selected' : ''}>Số liền trước, liền sau</option><option value="number.compare_number_forms" ${existing?.generator_key === 'number.compare_number_forms' ? 'selected' : ''}>So sánh số và dạng tổng</option><option value="number.place_value_true_false" ${existing?.generator_key === 'number.place_value_true_false' ? 'selected' : ''}>Đúng/Sai về vị trí chữ số</option><option value="number.safe_password_by_place_value" ${existing?.generator_key === 'number.safe_password_by_place_value' ? 'selected' : ''}>Mật khẩu két sắt theo hàng</option><option value="number.match_number_words" ${isMatching ? 'selected' : ''}>Đối chiếu số với cách đọc</option></select></label>
               </div></div>
               <section class="template-editor__section template-editor__section--display" aria-labelledby="template-display-title"><div class="template-editor__section-heading"><div><p class="template-editor__section-kicker">BƯỚC 02 · NỘI DUNG HIỂN THỊ</p><h4 id="template-display-title">2. Cấu trúc câu hỏi</h4></div><span class="template-editor__section-note">Chọn đúng dạng học sinh sẽ trả lời</span></div><p class="template-editor__section-intro">Chọn <b>Câu 1 ý</b> khi chỉ có một câu hỏi chung và một phần trả lời chung. Chọn <b>Câu có câu hỏi con</b> khi bài gồm 2 hoặc 4 ý nhỏ; cách chia điểm không thay đổi.</p><div class="template-editor__answer-mode"><label class="template-editor__field"><span>Dạng câu hỏi</span><select id="template-answer-mode" class="form-input" onchange="app.admin.setTemplateAnswerMode(this.value)"><option value="single" ${selectedTemplateAnswerMode === 'single' ? 'selected' : ''}>Lựa chọn 1 · Câu 1 ý</option><option value="subquestions" ${selectedTemplateAnswerMode === 'subquestions' ? 'selected' : ''}>Lựa chọn 2 · Câu có câu hỏi con</option></select><small id="template-answer-mode-help">Câu 1 ý dùng câu hỏi chung và câu trả lời chung, không tạo câu con.</small></label><label id="template-subquestion-count-field" class="template-editor__field"><span>Số câu hỏi con</span><select id="template-part-count" class="form-input" onchange="app.admin.setTemplatePartCount(this.value)" aria-label="Số câu hỏi con mặc định">${[2, 4].map(count => `<option value="${count}" ${selectedTemplatePartIndexes.length === count ? 'selected' : ''}>${count} câu</option>`).join('')}</select><small>Chỉ nhận 2 hoặc 4 câu hỏi con.</small></label></div><label class="template-editor__field template-editor__prompt-field"><span>1. Câu hỏi chung</span><textarea id="template-common-question" class="form-input" placeholder="Ví dụ: Hãy viết số vào ô trống, biết số đó gồm:" oninput="app.admin.updateTemplateCommonQuestion(this.value)">${app.data.sanitizeHTML(this.templateContentPresentation?.common || '')}</textarea><small>Câu 1 ý dùng nội dung này làm câu hỏi chính; câu nhiều ý chỉ hiển thị nội dung này một lần.</small></label><div class="template-content-builder" aria-labelledby="template-content-builder-title"><div class="template-content-builder__heading"><div><strong id="template-content-builder-title">2. Công thức phần trả lời</strong><span>Câu 1 ý dùng một lần; câu có câu hỏi con áp dụng cho từng ý a–d.</span></div><div class="template-content-builder__actions"><button type="button" onclick="app.admin.addTemplateContentBlock('text')">＋ Chữ</button><button type="button" onclick="app.admin.addTemplateContentBlock('variable')">＋ Biến</button><button type="button" onclick="app.admin.addTemplateContentBlock('cell')">＋ Ô trống</button></div></div><div id="template-content-blocks" class="template-content-builder__blocks"></div></div><div class="template-editor__part-selection" aria-labelledby="template-part-selection-title"><div class="template-editor__part-selection-heading"><div><strong id="template-part-selection-title">Chọn câu hỏi con</strong><span>Chỉ áp dụng cho Lựa chọn 2. Chọn đúng 2 hoặc 4 câu; điểm được chia đều như hiện tại.</span></div></div><div id="template-subquestion-options" class="template-editor__part-options">${['a', 'b', 'c', 'd'].map((label, partIndex) => `<label class="template-part-option"><input type="checkbox" class="template-part-checkbox" data-part-index="${partIndex}" aria-label="Chọn câu hỏi con ${label}" ${selectedTemplatePartIndexes.includes(partIndex) ? 'checked' : ''} onchange="app.admin.updateTemplatePartSelection()"><span class="template-part-option__mark" aria-hidden="true"></span><span><strong>Câu hỏi con ${label}</strong><small>Ý ${partIndex + 1} của cấu hình câu hỏi</small></span></label>`).join('')}</div><div id="template-part-selection-status" class="template-editor__part-selection-status" role="status" aria-live="polite"></div></div><div id="template-example" class="template-editor__preview-output" role="status" aria-live="polite"></div></section>
-              <div class="template-editor__section"><h4>3. Quy tắc sinh số</h4><div class="template-editor__rules">
+              <div class="template-editor__section"><h4 id="template-rules-title">3. Quy tắc tạo câu hỏi</h4><div class="template-editor__rules">
                 <div class="template-editor__rule template-editor__rule--range-controls" aria-label="Số lượng chữ số"><div class="template-editor__fields template-editor__fields--digit-count"><label class="template-editor__field"><span>Số lượng chữ số ít nhất</span><input id="template-minimum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMinimumDigits}"></label><label class="template-editor__field"><span>Số lượng chữ số nhiều nhất</span><input id="template-maximum-digits" class="form-input" type="number" min="1" max="12" value="${rangeMaximumDigits}"></label></div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số hàng X</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('places')">Tất cả</button></div><p>Game chọn ngẫu nhiên một hàng đã tick.</p><div class="template-editor__checks template-editor__checks--places">${placeChoices.map(([value,label]) => checkbox(value, label, selectedPlaces, 'places')).join('')}</div></div>
                 <div class="template-editor__rule template-editor__rule--digit-controls"><div class="template-editor__rule-heading"><h5>Chữ số Y</h5><button type="button" class="template-select-all" onclick="app.admin.selectAllTemplateOptions('digits')">Tất cả</button></div><p>Game chọn ngẫu nhiên một chữ số đã tick.</p><div class="template-editor__checks template-editor__checks--digits">${[0,1,2,3,4,5,6,7,8,9].map(value => checkbox(String(value), String(value), selectedDigits.map(String), 'digits')).join('')}</div></div>
@@ -9655,12 +9660,12 @@ const app = {
                 <div class="template-editor__rule template-editor__rule--phase4-controls" hidden><h5>Phạm vi kỹ năng Bài 10–15</h5><p>Chọn một hoặc nhiều kỹ năng làm phạm vi. Review mặc định trộn các kỹ năng đã chọn trong bốn câu con; reviewMode = single mới giữ một kỹ năng cho cả lượt.</p><div id="template-phase4-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 4">${[['b10', 'Bài 10 · Lập và đọc số sáu chữ số'], ['b11', 'Bài 11 · Hàng và lớp'], ['b12', 'Bài 12 · Lớp triệu'], ['b13', 'Bài 13 · Làm tròn'], ['b14', 'Bài 14 · So sánh'], ['b15', 'Bài 15 · Dãy số tự nhiên']].map(([value, label]) => checkbox(value, label, phase4ReviewSkills, 'phase4-skills')).join('')}</div></div>
                  <div class="template-editor__rule template-editor__rule--phase5-controls" hidden><h5>Phạm vi Phase 5</h5><p>Chọn phạm vi cho từng generator. Bài 20 giữ một nhóm đơn vị cho bốn câu; review Bài 21 mặc định trộn các kỹ năng đã chọn. Không dùng câu hỏi mơ hồ về “đơn vị thích hợp nhất”.</p><fieldset><legend>Nhóm đơn vị thực hành Bài 20</legend><div id="template-phase5-practice-kinds" class="template-editor__checks" aria-label="Nhóm đơn vị thực hành Bài 20">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian'], ['century', 'Thế kỉ']].map(([value, label]) => checkbox(value, label, phase5PracticeKinds, 'phase5-practice-kinds')).join('')}</div></fieldset><fieldset><legend>Kỹ năng review Bài 21</legend><div id="template-phase5-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 5">${[['b17', 'Bài 17 · Khối lượng'], ['b18', 'Bài 18 · Diện tích'], ['b19', 'Bài 19 · Giây và thế kỉ'], ['b20', 'Bài 20 · Thực hành']].map(([value, label]) => checkbox(value, label, phase5ReviewSkills, 'phase5-review-skills')).join('')}</div></fieldset></div>
                  <div class="template-editor__rule template-editor__rule--phase6-controls" hidden><h5>Phạm vi Phase 6</h5><p>Bài 24 dùng tính chất phép cộng. Review Bài 26 mặc định trộn các kỹ năng đã chọn; reviewMode = single mới giữ một kỹ năng cho cả bốn câu con.</p><fieldset class="template-phase6-properties-fieldset"><legend>Tính chất phép cộng Bài 24</legend><div id="template-phase6-properties" class="template-editor__checks" aria-label="Tính chất phép cộng Bài 24">${[['commutative', 'Giao hoán'], ['associative', 'Kết hợp']].map(([value, label]) => checkbox(value, label, phase6Properties, 'phase6-properties')).join('')}</div></fieldset><fieldset class="template-phase6-review-skills-fieldset"><legend>Phạm vi kỹ năng review Bài 26</legend><div id="template-phase6-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 6">${[['b22', 'Bài 22 · Phép cộng'], ['b23', 'Bài 23 · Phép trừ'], ['b24', 'Bài 24 · Tính chất phép cộng'], ['b25', 'Bài 25 · Tổng và hiệu']].map(([value, label]) => checkbox(value, label, phase6ReviewSkills, 'phase6-review-skills')).join('')}</div></fieldset></div>
-                  <div class="template-editor__rule template-editor__rule--phase7-controls" hidden><h5>Phạm vi Phase 7</h5><p>Bài 27–30 đọc quan hệ hình học trên hình hoặc lưới ô vuông; Bài 31 nhận biết hình bình hành và hình thoi. Review Bài 32 mặc định trộn các kỹ năng đã chọn, gồm cả góc và hình học.</p><fieldset class="template-phase7-quad-kinds-fieldset" hidden><legend>Loại hình Bài 31</legend><div id="template-phase7-quad-kinds" class="template-editor__checks" aria-label="Loại hình Bài 31">${[['parallelogram', 'Hình bình hành'], ['rhombus', 'Hình thoi'], ['rectangle', 'Hình chữ nhật'], ['trapezoid', 'Hình thang']].map(([value, label]) => checkbox(value, label, phase7Shapes, 'phase7-quad-kinds')).join('')}</div></fieldset><fieldset class="template-phase7-review-skills-fieldset" hidden><legend>Phạm vi kỹ năng review Bài 32</legend><div id="template-phase7-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 7">${[['b27', 'Bài 27 · Hai đường thẳng vuông góc'], ['b28', 'Bài 28 · Thực hành vuông góc'], ['b29', 'Bài 29 · Hai đường thẳng song song'], ['b30', 'Bài 30 · Thực hành song song'], ['b31', 'Bài 31 · Hình bình hành, hình thoi']].map(([value, label]) => checkbox(value, label, phase7ReviewSkills, 'phase7-review-skills')).join('')}</div></fieldset></div>
+                  <div class="template-editor__rule template-editor__rule--phase7-controls" hidden><h5>Phạm vi Phase 7</h5><p>Bài 27–30 đọc quan hệ hình học trên hình hoặc lưới ô vuông; Bài 31 nhận biết hình bình hành và hình thoi. Bài 32 ôn tập các kỹ năng đường thẳng và tứ giác của Bài 27–31 đã chọn.</p><fieldset class="template-phase7-quad-kinds-fieldset" hidden><legend>Loại hình Bài 31</legend><div id="template-phase7-quad-kinds" class="template-editor__checks" aria-label="Loại hình Bài 31">${[['parallelogram', 'Hình bình hành'], ['rhombus', 'Hình thoi'], ['rectangle', 'Hình chữ nhật'], ['trapezoid', 'Hình thang']].map(([value, label]) => checkbox(value, label, phase7Shapes, 'phase7-quad-kinds')).join('')}</div></fieldset><fieldset class="template-phase7-review-skills-fieldset" hidden><legend>Phạm vi kỹ năng review Bài 32</legend><div id="template-phase7-review-skills" class="template-editor__checks" aria-label="Kỹ năng review Phase 7">${[['b27', 'Bài 27 · Hai đường thẳng vuông góc'], ['b28', 'Bài 28 · Thực hành vuông góc'], ['b29', 'Bài 29 · Hai đường thẳng song song'], ['b30', 'Bài 30 · Thực hành song song'], ['b31', 'Bài 31 · Hình bình hành, hình thoi']].map(([value, label]) => checkbox(value, label, phase7ReviewSkills, 'phase7-review-skills')).join('')}</div></fieldset></div>
                   <div class="template-editor__rule template-editor__rule--phase8-controls" hidden><h5>Phạm vi Phase 8</h5><p>Chọn phạm vi nhóm kiến thức. Review Bài 37 mặc định trộn các nhóm đã chọn trong bốn câu con.</p><fieldset><legend>Phạm vi nhóm review Bài 37</legend><div id="template-phase8-review-groups" class="template-editor__checks" aria-label="Nhóm review Phase 8">${[['numbers', 'Số và lớp triệu'], ['addSub', 'Cộng và trừ'], ['geometry', 'Hình học'], ['measurement', 'Đo lường']].map(([value, label]) => checkbox(value, label, phase8ReviewGroups, 'phase8-review-groups')).join('')}</div></fieldset></div>
                   <div class="template-editor__rule template-editor__rule--measurement-controls" hidden><h5>Cấu hình đơn vị đo</h5><p>Chỉ trường phù hợp với generator đang chọn được áp dụng khi lưu; danh sách rỗng hoặc giá trị ngoài allowlist sẽ bị chặn.</p><fieldset class="template-measurement-config--mass" hidden><legend>Dạng đổi khối lượng</legend><div id="template-measurement-mass-kinds" class="template-editor__checks">${[['yenToKg', 'Yến → kg'], ['taToKg', 'Tạ → kg'], ['tonToKg', 'Tấn → kg'], ['yenAndKgToKg', 'Yến và kg → kg'], ['tonAndYenToKg', 'Tấn và yến → kg']].map(([value, label]) => checkbox(value, label, measurementMassKinds, 'measurement-mass-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--area" hidden><legend>Dạng đổi diện tích</legend><div id="template-measurement-area-kinds" class="template-editor__checks">${[['m2ToDm2', 'm² → dm²'], ['dm2ToCm2', 'dm² → cm²'], ['dm2ToMm2', 'dm² → mm²'], ['cm2ToDm2', 'cm² → dm²']].map(([value, label]) => checkbox(value, label, measurementAreaKinds, 'measurement-area-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--time" hidden><legend>Dạng đổi thời gian</legend><div id="template-measurement-time-kinds" class="template-editor__checks">${[['minuteToSeconds', 'Phút → giây'], ['hourToMinutes', 'Giờ → phút'], ['minutesAndSecondsToSeconds', 'Phút và giây → giây'], ['weekAndDaysToDays', 'Tuần và ngày → ngày']].map(([value, label]) => checkbox(value, label, measurementTimeKinds, 'measurement-time-kinds')).join('')}</div></fieldset><fieldset class="template-measurement-config--century" hidden><legend>Khoảng thế kỉ</legend><div class="template-editor__fields"><label class="template-editor__field"><span>Thế kỉ bắt đầu</span><input id="template-measurement-century-start" class="form-input" type="number" min="1" max="99" value="${measurementCenturyStart}"></label><label class="template-editor__field"><span>Thế kỉ kết thúc</span><input id="template-measurement-century-end" class="form-input" type="number" min="1" max="99" value="${measurementCenturyEnd}"></label></div></fieldset><fieldset class="template-measurement-config--word-problem" hidden><legend>Nhóm tình huống lời văn</legend><div id="template-measurement-scenario-kinds" class="template-editor__checks">${[['mass', 'Khối lượng'], ['area', 'Diện tích'], ['time', 'Thời gian']].map(([value, label]) => checkbox(value, label, measurementScenarioKinds, 'measurement-scenario-kinds')).join('')}</div></fieldset></div>
               </div></div>
               <footer class="template-editor__actions"><button type="button" class="template-editor__action template-editor__action--back" onclick="app.admin.cancelTemplateForm()">Quay lại kho</button>${isNew ? '<button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(null)">Tạo template</button>' : `<button type="button" class="template-editor__action template-editor__action--secondary" onclick="app.admin.saveTemplate(${editIndex}, true)">Lưu thành bản mới</button><button type="button" class="template-editor__action template-editor__action--primary" onclick="app.admin.saveTemplate(${editIndex})">Cập nhật</button>`}</footer>
-              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div><button type="button" class="template-preview-dialog__close admin-compose-back" aria-label="Quay trở lại" onclick="app.admin.closeTemplatePreview()"><span aria-hidden="true">←</span> Quay về</button></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
+              <div id="template-preview-dialog" class="template-preview-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="template-preview-dialog-title" aria-describedby="template-preview-dialog-description" aria-hidden="true"><div class="template-preview-dialog__backdrop" onclick="app.admin.closeTemplatePreview()"></div><div class="template-preview-dialog__panel" role="document"><header class="template-preview-dialog__header"><div><p class="template-editor__eyebrow">PREVIEW · KHUNG CÂU HỎI</p><h3 id="template-preview-dialog-title">Câu hỏi sẽ hiển thị</h3><p id="template-preview-dialog-description">Đây là bản xem trước phần học sinh nhìn thấy: câu dẫn, ô trả lời và các đáp án.</p></div></header><div id="template-preview-content" class="template-preview-dialog__content"></div><footer class="template-preview-dialog__footer"><div><strong>Lưu câu này vào đề</strong><span>Chọn nơi cô muốn tiếp tục biên tập.</span></div><div class="template-preview-dialog__actions"><button type="button" id="template-preview-new-exam" class="template-preview-dialog__action template-preview-dialog__action--primary" onclick="app.admin.savePreviewToNewExam()">1. Đề mới</button><button type="button" id="template-preview-existing-exam" class="template-preview-dialog__action template-preview-dialog__action--secondary" onclick="app.admin.savePreviewToExistingExam()">2. Đề có sẵn</button><button type="button" id="template-preview-back" class="template-preview-dialog__action template-preview-dialog__action--back" onclick="app.admin.closeTemplatePreview()">Quay trở lại</button></div></footer></div></div>
             </section>`;
             if (existing?.generator_key === 'number.safe_password_by_place_value') {
                 document.getElementById('template-minimum').value = app.data.formatMathNumber(config.minimum ?? 0);
@@ -9850,15 +9855,15 @@ const app = {
             const tableRule=document.createElement('div'); tableRule.className='template-editor__rule template-editor__rule--complete-table';
             tableRule.innerHTML=`<label>Số cột hàng <input class="form-input" id="template-table-columns" type="number" min="4" max="9" value="${Number(config.placeColumns??6)}"></label><p>4: đến hàng nghìn · 6: đến hàng trăm nghìn · 7: đến hàng triệu. Bảng có 4 dòng, mỗi dòng đúng 0,25 điểm.</p>`;
             box.querySelector('.template-editor__rules')?.append(tableRule);
+            window.Grade4VietnameseTemplates?.definitions.forEach(definition => {
+                generatorControl.insertAdjacentHTML('beforeend', `<option value="${definition.id}">${app.data.sanitizeHTML(definition.name)}</option>`);
+            });
+            if (existing?.generator_key?.startsWith('vietnamese.')) generatorControl.value = existing.generator_key;
+            this.syncTemplateSubject();
             this.renderTemplateContentBlocks();
             this.showTemplateExample();
             this.syncTemplateAnswerModeUI();
             this.syncTemplatePartSelectionUI();
-            const phase7ReviewSkillContainer = document.getElementById('template-phase7-review-skills');
-            if (phase7ReviewSkillContainer) {
-                const extraPhase7Skills = [['b07', 'Bài 7 · Góc'], ['b08', 'Bài 8 · Phân loại góc'], ['b09', 'Bài 9 · Ôn tập góc']];
-                phase7ReviewSkillContainer.insertAdjacentHTML('afterbegin', extraPhase7Skills.map(([value, label]) => checkbox(value, label, phase7ReviewSkills, 'phase7-review-skills')).join(''));
-            }
             const phase8GroupContainer = document.getElementById('template-phase8-review-groups');
             if (phase8GroupContainer) {
                 const extraPhase8Groups = [['multiplicationDivision', 'Nhân và chia'], ['statistics', 'Thống kê'], ['probability', 'Xác suất'], ['wordProblem', 'Bài toán có lời văn']];
@@ -9873,6 +9878,7 @@ const app = {
                 const rulesSection = box.querySelector('.template-editor__section:last-of-type');
                 if (adminContent && rulesSection) requestAnimationFrame(() => { adminContent.scrollTop = Math.max(0, rulesSection.offsetTop - 12); });
             }
+            this.syncTemplateLessonRules();
         },
         templatePresets: {
                 'number.digit_at_place': {
@@ -10571,7 +10577,7 @@ const app = {
             dialog.hidden = false;
             dialog.classList.add('is-open');
             app.modal?.open(dialog, {
-                initialFocus: '.template-preview-dialog__close',
+                initialFocus: '#template-preview-back',
                 onEscape: () => this.closeTemplatePreview()
             });
         },
@@ -10729,6 +10735,7 @@ const app = {
             if (questionType && preset.type) questionType.value = preset.type;
             this.renderTemplateContentBlocks();
             document.querySelectorAll('.template-editor__rule--digit-controls').forEach(rule => { rule.hidden = generator !== 'number.digit_at_place'; });
+            document.querySelectorAll('.template-editor__answer-mode, .template-editor__prompt-field').forEach(element=>{element.hidden=false;});
             const isFourArithmetic = ['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generator);
             const isAngleTemplate = ['g4-m-angle-count-in-polygon', 'g4-m-angle-drag-classify', 'g4-m-angle-clock-classify', 'g4-m-angle-count-eight-angles', 'g4-m-angle-measure-read', 'g4-m-angle-review'].includes(generator);
             const topic5DigitRange = ['g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term', 'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
@@ -10767,7 +10774,7 @@ const app = {
                 'number.million_class': [7, 9],
                 'number.round_hundred_thousands': [6, 9]
             }[generator];
-            if (phase4DigitDefaults) {
+            if (phase4DigitDefaults && this.templateLastGenerator !== generator) {
                 const minimumDigitsControl = document.getElementById('template-minimum-digits');
                 const maximumDigitsControl = document.getElementById('template-maximum-digits');
                 if (minimumDigitsControl) minimumDigitsControl.value = phase4DigitDefaults[0];
@@ -10821,12 +10828,102 @@ const app = {
             }
             this.syncTemplateAnswerModeUI();
             this.syncTemplateTrueFalseControls();
+            this.syncTemplateLessonRules();
+            this.templateLastGenerator = generator;
+        },
+        templateUsesDigitRange(generator) {
+            return ['number.digit_at_place', 'number.smallest_of_four', 'number.largest_of_four', 'number.min_max_of_four',
+                'number.compose_from_places', 'number.missing_expanded_addend', 'number.neighbor_numbers', 'number.compare_number_forms',
+                'number.place_value_true_false', 'number.round_number', 'number.six_digit_numbers', 'number.million_class',
+                'number.round_hundred_thousands', 'g4-m-add-sub-multi-digit', 'g4-m-add-sub-missing-term',
+                'g4-m-add-sub-missing-digit', 'g4-m-add-sub-expression'].includes(generator);
+        },
+        syncTemplateSubject() {
+            const select = document.getElementById('template-generator');
+            if (!select) return;
+            const vietnamese = document.getElementById('template-subject').value === 'Tiếng Việt';
+            for (const option of select.options) {
+                const language = option.value.startsWith('vietnamese.') || option.value === 'selection.vietnamese';
+                option.disabled = option.hidden = language !== vietnamese;
+            }
+            if (select.selectedOptions[0]?.disabled) select.value = vietnamese ? 'selection.vietnamese' : 'number.digit_at_place';
+            this.showTemplateExample();
+        },
+        syncTemplateLessonRules() {
+            const generator = document.getElementById('template-generator')?.value;
+            if (!generator) return;
+            const language = generator.startsWith('vietnamese.');
+            const range = document.querySelector('.template-editor__rule--range-controls');
+            if (range) range.hidden = !this.templateUsesDigitRange(generator);
+            const title = document.getElementById('template-rules-title');
+            if (title) title.textContent = language ? '3. Ngữ liệu theo bài học' : generator === 'selection.vietnamese' ? '3. Quy tắc chọn từ' : '3. Quy tắc tạo câu hỏi';
+            // Every Bài 3/4 control must match the selected generator, not just the same lesson family.
+            const evenOdd = generator.startsWith('number.even_odd_');
+            const variable = generator.startsWith('number.variable_expression_');
+            const scope = {
+                'template-phase2-minimum':evenOdd && generator!=='number.even_odd_form', 'template-phase2-maximum':evenOdd && generator!=='number.even_odd_form',
+                'template-phase2-digit-count':generator==='number.even_odd_form',
+                'template-phase2-list-length-min':generator==='number.even_odd_count', 'template-phase2-list-length-max':generator==='number.even_odd_count',
+                'template-phase2-sequence-steps':generator==='number.even_odd_sequence',
+                'template-phase2-sequence-blank-min':generator==='number.even_odd_sequence', 'template-phase2-sequence-blank-max':generator==='number.even_odd_sequence',
+                'template-phase2-variable-minimum':variable, 'template-phase2-variable-maximum':variable,
+                'template-phase2-constant-minimum':variable, 'template-phase2-constant-maximum':variable
+            };
+            for (const [id, applicable] of Object.entries(scope)) {
+                const input=document.getElementById(id);
+                if(input){input.closest('label').hidden=!applicable;input.disabled=!applicable;}
+            }
+            const operations=document.getElementById('template-phase2-operations');
+            if(operations) operations.closest('fieldset').hidden=!variable;
+            const parities=document.getElementById('template-phase2-parities');
+            if(parities) parities.closest('fieldset').hidden=!evenOdd;
+            const practice=document.getElementById('template-phase5-practice-kinds');
+            if(practice)practice.closest('fieldset').hidden=generator!=='measurement.practice_cards';
+            const review=document.getElementById('template-phase5-review-skills');
+            if(review)review.closest('fieldset').hidden=generator!=='measurement.hk1_review_b17_b20';
+            const wordGroup=document.getElementById('template-selection-word-group');
+            if(wordGroup && generator==='selection.vietnamese') {
+                const lesson=document.getElementById('template-lesson').value;
+                const n=lesson.includes('-hk2-')?32:Number(lesson.match(/b(\d+)$/)?.[1]||0);
+                for(const option of wordGroup.options) {
+                    const available=option.value==='adjective'?n>=21:['noun','verb'].includes(option.value)?n>=9:true;
+                    option.disabled=option.hidden=!available;
+                }
+                if(wordGroup.selectedOptions[0]?.disabled)wordGroup.value='mixed';
+            }
+            let note=document.getElementById('template-language-rules');
+            if(!note) {
+                note=document.createElement('p');note.id='template-language-rules';
+                document.querySelector('.template-editor__rules')?.append(note);
+            }
+            note.hidden=!language;
+            if(language) {
+                note.textContent=this.getTemplatePreset(generator).guide;
+                document.querySelectorAll('.template-editor__rule').forEach(rule=>{rule.hidden=true;});
+            }
+            if(language || generator.startsWith('selection.') || generator==='number.complete_place_table') {
+                document.querySelectorAll('.template-editor__part-selection, .template-content-builder, .template-editor__answer-mode, .template-editor__prompt-field').forEach(element=>{element.hidden=true;});
+                const intro=document.querySelector('.template-editor__section--display .template-editor__section-intro');
+                if(intro)intro.textContent=this.getTemplatePreset(generator).guide;
+            }
         },
         collectTemplateForm() {
             const value = id => document.getElementById(id).value.trim();
             const allowedPlaces = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'places' && ['ones','tens','hundreds','thousands','tenThousands','hundredThousands','millions','tenMillions','hundredMillions','billions','tenBillions','hundredBillions'].includes(input.value)).map(input => input.value);
             const allowedDigits = [...document.querySelectorAll('.template-checkbox')].filter(input => input.checked && input.dataset.templateGroup === 'digits' && /^\d$/.test(input.value)).map(input => Number(input.value));
             const generatorKey = value('template-generator');
+            const languageRegistry=window.Grade4VietnameseTemplates;
+            if(languageRegistry?.templateIds.includes(generatorKey)) {
+                if(value('template-subject')!=='Tiếng Việt'||value('template-class')!=='Lớp 4')throw new Error('Kỹ năng Tiếng Việt áp dụng cho Tiếng Việt lớp 4.');
+                const lesson=this.normalizeAdminLesson(value('template-lesson'));
+                const config={lesson,subquestionCount:2};
+                if(this.templateOriginal?.generator_key===generatorKey && this.templateOriginal.config?.parameters)config.parameters=this.templateOriginal.config.parameters;
+                const template={name:value('template-name'),classlevel:value('template-class'),subject:'Tiếng Việt',semester:value('template-semester'),topic:value('template-topic'),lesson,question_type:this.getTemplatePreset(generatorKey).type,generator_key:generatorKey,prompt_template:'{question}',config,is_active:true};
+                if(!template.name)throw new Error('Hãy nhập tên cấu hình câu hỏi.');
+                const error=app.data.validateQuestionMetadata(template);if(error)throw new Error(error);
+                languageRegistry.generateQuestion(generatorKey,config);
+                return template;
+            }
             const answerMode = (this.templateAnswerMode || document.getElementById('template-answer-mode')?.value || 'subquestions') === 'single' ? 'single' : 'subquestions';
             const roundingPlaceKeys = ['tens', 'hundreds', 'thousands', 'tenThousands'];
             const selectedLesson = this.normalizeAdminLesson(document.getElementById('template-lesson')?.value || '');
@@ -10920,15 +11017,21 @@ const app = {
             const effectiveStatementKinds = isB01PlaceValueTrueFalse
                 ? ['place', 'comparison']
                 : statementKinds;
-            const usesDigitCount = !isSafePassword && !isAngleTemplate && !isPhase2Template && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isB05Template && generatorKey !== 'number.match_number_words' && !['number.four_operations_fill_blanks', 'number.four_operations_expressions', 'number.four_arithmetic_blanks', 'number.four_arithmetic_comparisons'].includes(generatorKey) && (!isTopic5Template || topic5DigitRange);
-            const genericConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces, allowedDigits, statementKinds: effectiveStatementKinds, ...(isB01PlaceValueTrueFalse ? { statementLayout: 'b01-four-types' } : {}), minimumCodeLength: safePasswordMinLength, maximumCodeLength: safePasswordMaxLength, condition1Scope, condition1Places, condition1Classes, condition1Digits, condition2Scope, condition2Places, condition2Classes, condition2Digits };
+            const usesDigitCount = this.templateUsesDigitRange(generatorKey);
+            const genericConfig = {
+                ...(usesDigitCount || isSafePassword ? {minimum:effectiveMinimum,maximum:effectiveMaximum} : {}),
+                ...(usesDigitCount ? {minimumDigits,maximumDigits} : {}),
+                ...(generatorKey==='number.digit_at_place'?{allowedPlaces,allowedDigits}:{}),
+                ...(generatorKey==='number.place_value_true_false'?{statementKinds:effectiveStatementKinds,...(isB01PlaceValueTrueFalse?{statementLayout:'b01-four-types'}:{})}:{}),
+                ...(isSafePassword?{minimumCodeLength:safePasswordMinLength,maximumCodeLength:safePasswordMaxLength,condition1Scope,condition1Places,condition1Classes,condition1Digits,condition2Scope,condition2Places,condition2Classes,condition2Digits}:{})
+            };
             const roundingConfig = { minimum: effectiveMinimum, maximum: effectiveMaximum, ...(usesDigitCount ? { minimumDigits, maximumDigits } : {}), allowedPlaces: roundingPlaces };
             const topic5Config = generatorKey === 'g4-m-addition-property-fill'
                 ? { properties: phase6Properties }
                 : ((topic5DigitRange || topic5OperationKeys.includes(generatorKey)) ? { ...(topic5DigitRange ? { minimumDigits, maximumDigits } : {}), ...(topic5OperationKeys.includes(generatorKey) && topic5Operation ? { operation: topic5Operation } : {}) } : {});
             const angleConfig = isAngleMeasureTemplate && angleDegreesInput ? { allowedDegrees: angleDegrees } : {};
             const phase2Config = isPhase2B03
-                ? { minimum: phase2Minimum, maximum: phase2Maximum, parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps, blankCountMin: phase2SequenceBlankMin, blankCountMax: phase2SequenceBlankMax } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
+                ? { ...(generatorKey==='number.even_odd_form'?{}:{minimum:phase2Minimum,maximum:phase2Maximum}), parities: phase2Parities, ...(generatorKey === 'number.even_odd_count' ? { listLengthMin: phase2ListLengthMin, listLengthMax: phase2ListLengthMax } : {}), ...(generatorKey === 'number.even_odd_sequence' ? { sequenceSteps: phase2SequenceSteps, blankCountMin: phase2SequenceBlankMin, blankCountMax: phase2SequenceBlankMax } : {}), ...(generatorKey === 'number.even_odd_form' ? { digitCount: phase2DigitCount } : {}) }
                 : (isPhase2B04
                     ? { variableMinimum: phase2VariableMinimum, variableMaximum: phase2VariableMaximum, constantMinimum: phase2ConstantMinimum, constantMaximum: phase2ConstantMaximum, operations: phase2Operations }
                      : { skills: ['b01', 'b02', 'b03', 'b04', 'b05'], reviewMode: 'mixed' });
@@ -10964,8 +11067,12 @@ const app = {
             }
             if (window.MultiSelectTemplates?.templateIds.includes(generatorKey)) {
                 const selectionSubject = generatorKey.endsWith('math') ? 'Toán' : 'Tiếng Việt';
+                if(value('template-class')!=='Lớp 4')throw new Error('Template chọn nhiều áp dụng cho lớp 4.');
                 if (!selectedLesson || value('template-subject') !== selectionSubject) throw new Error('Hãy chọn môn và Bài học phù hợp với template chọn nhiều.');
-                return {name:value('template-name') || 'Chọn nhiều Đúng/Sai',classlevel:value('template-class'),subject:selectionSubject,semester:value('template-semester'),topic:value('template-topic'),lesson:selectedLesson,question_type:'Chọn nhiều Đúng/Sai',generator_key:generatorKey,prompt_template:'{question}',config:{lesson:selectedLesson,selectionTarget:value('template-selection-target') || 'correct',wordGroup:value('template-selection-word-group') || 'mixed'},is_active:true};
+                const selectionTemplate = {name:value('template-name') || 'Chọn nhiều Đúng/Sai',classlevel:value('template-class'),subject:selectionSubject,semester:value('template-semester'),topic:value('template-topic'),lesson:selectedLesson,question_type:'Chọn nhiều Đúng/Sai',generator_key:generatorKey,prompt_template:'{question}',config:{lesson:selectedLesson,selectionTarget:value('template-selection-target') || 'correct',...(selectionSubject==='Tiếng Việt'?{wordGroup:value('template-selection-word-group') || 'mixed'}:{})},is_active:true};
+                const error=app.data.validateQuestionMetadata(selectionTemplate);if(error)throw new Error(error);
+                window.MultiSelectTemplates.generateQuestion(generatorKey,selectionTemplate.config);
+                return selectionTemplate;
             }
             const template = { name: value('template-name'), classlevel: value('template-class'), subject: value('template-subject'), semester: value('template-semester'), topic: value('template-topic'), lesson: selectedLesson || null, question_type: value('template-question-type'), generator_key: generatorKey, prompt_template: '{question}', config: templateConfig, is_active: true };
             template.config.answerMode = isB05Template ? 'single' : answerMode;
@@ -10982,7 +11089,7 @@ const app = {
             if (topic5OperationKeys.includes(template.generator_key) && topic5Operation && !['+', '-'].includes(topic5Operation)) throw new Error('Phép tính theo Bài học chỉ được là cộng (+) hoặc trừ (−).');
             if (isAngleMeasureTemplate && angleDegreesInput && (angleDegrees.length === 0 || angleDegrees.some(item => !Number.isInteger(item) || item < 10 || item > 170 || item % 5 !== 0))) throw new Error('Số đo góc phải là số nguyên theo bội 5, từ 10 đến 170 độ.');
             if (isPhase2B03) {
-                if (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+                if (generatorKey!=='number.even_odd_form' && (!Number.isSafeInteger(phase2Minimum) || !Number.isSafeInteger(phase2Maximum) || phase2Minimum < 0 || phase2Minimum >= phase2Maximum || phase2Maximum - phase2Minimum + 1 < 8)) throw new Error('Phạm vi Bài 3 phải là số nguyên, có ít nhất 8 giá trị và số nhỏ nhất phải nhỏ hơn số lớn nhất.');
                 if (!phase2Parities.length || phase2Parities.some(parity => !['even', 'odd'].includes(parity))) throw new Error('Hãy chọn ít nhất một dạng số chẵn hoặc số lẻ.');
                 if (generatorKey === 'number.even_odd_count' && (!Number.isInteger(phase2ListLengthMin) || !Number.isInteger(phase2ListLengthMax) || phase2ListLengthMin < 5 || phase2ListLengthMax < phase2ListLengthMin || phase2ListLengthMax > 12 || phase2Maximum - phase2Minimum + 1 < phase2ListLengthMax)) throw new Error('Số phần tử dãy Bài 3 phải từ 5 đến 12 và không vượt số giá trị trong phạm vi.');
                 if (generatorKey === 'number.even_odd_sequence' && (!phase2SequenceSteps.length || phase2SequenceSteps.some(step => !Number.isSafeInteger(step) || step <= 0 || step % 2 !== 0))) throw new Error('Bước nhảy dãy Bài 3 phải là các số nguyên dương, chẵn.');
@@ -11017,7 +11124,7 @@ const app = {
             if (isPhase7Quad && (phase7Shapes.length === 0 || new Set(phase7Shapes).size !== phase7Shapes.length || phase7Shapes.some(shape => !['parallelogram', 'rhombus', 'rectangle', 'trapezoid'].includes(shape)))) {
                 throw new Error('Bài 31 cần chọn ít nhất một loại hình hợp lệ.');
             }
-            if (isPhase7Review && (!phase7ReviewSkills.length || phase7ReviewSkills.some(skill => !['b07', 'b08', 'b09', 'b27', 'b28', 'b29', 'b30', 'b31'].includes(skill)))) {
+            if (isPhase7Review && (!phase7ReviewSkills.length || phase7ReviewSkills.some(skill => !['b27', 'b28', 'b29', 'b30', 'b31'].includes(skill)))) {
                 throw new Error('Bộ ôn tập Bài 27 đến Bài 31 cần chọn ít nhất một kỹ năng hợp lệ.');
             }
             if (isPhase8FullReview && (!phase8ReviewGroups.length || phase8ReviewGroups.some(group => !['numbers', 'addSub', 'multiplicationDivision', 'geometry', 'measurement', 'statistics', 'probability', 'wordProblem'].includes(group)))) {
@@ -11103,7 +11210,7 @@ const app = {
             const registry = template.subject === 'Tiếng Việt' ? window.Grade4VietnameseTemplates : window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template.generator_key)) throw new Error('Cấu hình câu hỏi này chưa được cài trong mã nguồn game.');
             if (isB05Template) registry.generateQuestion(template.generator_key, template.config);
-            if (!isAngleTemplate && !isPhase2Template && !isB05Template && !isTopic5Template && !isPhase4Review && !isPhase5Template && !isPhase7Template && !isPhase8Template && !isMeasurementTemplate && template.generator_key !== 'number.match_number_words' && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
+            if ((usesDigitCount || isSafePassword) && !isTopic5Template && (!Number.isInteger(template.config.minimum) || !Number.isInteger(template.config.maximum) || template.config.minimum < 0 || template.config.minimum >= template.config.maximum)) throw new Error('Số nhỏ nhất phải nhỏ hơn số lớn nhất.');
             const metadataError = app.data.validateQuestionMetadata(template);
             if (metadataError) throw new Error(metadataError);
             return template;

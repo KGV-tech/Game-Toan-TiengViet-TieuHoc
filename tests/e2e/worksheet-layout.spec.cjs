@@ -111,7 +111,7 @@ test('đổi mẫu trang trí và không cắt một dòng bảng quá cao',asyn
     await expect(page.locator('#ws-color-preview')).toHaveAttribute('data-decoration',decoration);
     await expect(page.locator('#ws-color-preview .ws-decoration')).toHaveCount(decoration==='none'?0:1);
     await expect(page.locator('#ws-color-preview footer')).toHaveCount(0);
-    expect(await page.locator('#ws-color-preview img.ws-decoration').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0&&img.currentSrc.endsWith('.webp')))).toBe(true);
+    await expect.poll(()=>page.locator('#ws-color-preview img.ws-decoration').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0&&img.currentSrc.endsWith('.webp')))).toBe(true);
   }
   await page.evaluate(()=>{app.worksheetStudio.doc=WorksheetDocument.normalize({title:'Dòng lớn',pages:[{blocks:[{kind:'table',text:'Bảng',columns:Array.from({length:16},(_,i)=>`Cột ${i+1}`),rows:[Array.from({length:16},()=> 'Chữ dài '.repeat(250))]}]}]});app.worksheetStudio.renderEditor();});
   await page.getByRole('button',{name:'Xem bản in màu',exact:true}).click();

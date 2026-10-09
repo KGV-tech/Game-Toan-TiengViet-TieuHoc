@@ -82,7 +82,7 @@ test('Bài 5 có đủ 14 generator và trình soạn hiển thị dạng một 
     await expect(page.locator('#template-preview-content .template-preview__blank')).toBeVisible();
     await page.screenshot({ path: `test-results/ui-review/b05-fill-${viewport.width}.png` });
   }
-  await page.locator('.template-preview-dialog__close').click();
+  await page.locator('#template-preview-back').click();
 
   await page.locator('#template-generator').selectOption('word.three_steps_relation_total_mcq');
   await expect(page.locator('#template-question-type')).toHaveValue('Trắc nghiệm');

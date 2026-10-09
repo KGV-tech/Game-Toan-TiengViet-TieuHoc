@@ -175,7 +175,7 @@ html[data-theme="light"] #admin-compose-screen :is(.template-library-card--indig
 html[data-theme="light"] #admin-compose-screen .template-library-card--fuchsia { background: linear-gradient(145deg, #f5d3ed, #fff0fa); color: #872666; border-color: #b974a7; }
 html[data-theme="light"] #admin-compose-screen :is(.exam-composer__progress-heading, .exam-library-card__progress) { color: #254f42; }
 html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(.template-preview-dialog__panel, .template-preview-dialog__footer, .template-preview__canvas) { background: linear-gradient(145deg, #c9e4f6, #abd9e8); color: var(--admin-ink); border-color: #ab99cf; }
-html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(.template-preview-dialog__close, .template-preview-dialog__action--back) { background: #e4edf8; color: #263c54; border-color: #93abc3; }
+html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) .template-preview-dialog__action--back { background: #e4edf8; color: #263c54; border-color: #93abc3; }
 html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(.template-preview__question, .template-preview__topbar, .template-editor__variables) { color: var(--admin-ink); }
 html[data-theme="light"] :is(#admin-compose-screen, #treasure-modal[data-ui-context="admin"]) :is(
     .template-preview__line, .template-preview__mc > div,
