@@ -21,8 +21,12 @@ for(const viewport of [{width:1280,height:720},{width:1024,height:768}]) {
     await expect(page.locator('#treasure-modal')).toHaveClass(/active/);
     await page.keyboard.press('Escape');
     await expect(page.locator('#treasure-modal')).not.toHaveClass(/active/);
-    await page.getByRole('button',{name:'Phiếu học tập · Bài được giao',exact:true}).click();
-    await expect(page.locator('#worksheet-classroom-screen')).toHaveClass(/active/);
+    await expect(page.locator('#map-screen').getByRole('button',{name:/Phiếu học tập/})).toHaveCount(0);
+    await page.evaluate(() => {
+      app.data.currentUser = {username:'student',role:'student',classlevel:'4'};
+      app.auth.updateHeader();
+    });
+    await expect(page.locator('#map-screen').getByRole('button',{name:/Phiếu học tập/})).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 }
