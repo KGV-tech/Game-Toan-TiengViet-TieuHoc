@@ -134,3 +134,24 @@ test('nội dung cao vừa trang sau được chuyển khỏi trang đầu có t
   await expect(page.locator('#ws-color-preview > .ws-page')).toHaveCount(2);
   await expect(page.locator('#ws-color-preview > .ws-page').nth(1).locator('.ws-choices')).toHaveCount(1);
 });
+
+for(const width of [1280,1024])test(`xem nhanh mẫu trang trí cạnh bộ chọn, không mất nội dung ${width}`,async({page},testInfo)=>{
+  await page.setViewportSize({width,height:900});
+  await open(page,{...base(),decoration:'books-blue'});
+  const preview=page.locator('#ws-decoration-preview');
+  await expect(preview.locator('img')).toHaveAttribute('src','/public/worksheet-headers/books-blue.webp');
+  await page.locator('#ws-title').fill('Tên đang sửa');
+  await page.locator('#ws-decoration').selectOption('space-purple');
+  await expect(preview.locator('img')).toHaveAttribute('src','/public/worksheet-headers/space-purple.webp');
+  await expect(preview.locator('img')).toHaveAttribute('alt',/Vũ trụ tím/);
+  await expect.poll(()=>preview.locator('img').evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+  const selectBox=await page.locator('#ws-decoration').boundingBox(), previewBox=await preview.boundingBox();
+  expect(previewBox.x).toBeGreaterThan(selectBox.x+selectBox.width);
+  expect(previewBox.x+previewBox.width).toBeLessThanOrEqual(width);
+  await page.locator('#ws-decoration').focus();await page.keyboard.press('ArrowDown');
+  await expect(preview.locator('img')).toHaveAttribute('src','/public/worksheet-headers/cheerful.webp');
+  await expect(page.locator('#ws-title')).toHaveValue('Tên đang sửa');
+  await preview.screenshot({path:testInfo.outputPath('decoration-quick-preview.png')});
+  await page.locator('#ws-decoration').selectOption('none');
+  await expect(preview.locator('img')).toHaveCount(0);await expect(preview).toHaveText('Không trang trí');
+});
