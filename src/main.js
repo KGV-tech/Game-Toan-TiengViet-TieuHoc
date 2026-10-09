@@ -621,7 +621,7 @@ const app = {
             return parts.map(value => this.normalizeQuestionPart(value)).join('|');
         },
         getQuestionContentKey(question) {
-            if (question?.selectionItems) return this.getQuestionSemanticKey(question);
+            if (question?.selectionItems || question?.tableRows) return this.getQuestionSemanticKey(question);
             const normalize = value => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('vi-VN');
             const canonicalize = value => {
                 if (Array.isArray(value)) return value.map(canonicalize);
@@ -707,6 +707,7 @@ const app = {
                 normalize(question?.q),
                 structured,
                 question?.selectionItems?.map(item => normalize(item.text)).sort() || null,
+                question?.tableRows?.map(row => [row.value,row.given]) || null,
                 question?.angleShape ?? null,
                 normalize(question?.lesson)
             ]);
@@ -758,7 +759,7 @@ const app = {
             ]);
         },
         generateTemplateQuestion(template) {
-            const registry = window.MultiSelectTemplates?.templateIds.includes(template?.generator_key) ? window.MultiSelectTemplates : app.data.normalizeQuestionPart(template?.subject) === app.data.normalizeQuestionPart('Tiếng Việt')
+            const registry = window.CompleteTableTemplates?.templateIds.includes(template?.generator_key) ? window.CompleteTableTemplates : window.MultiSelectTemplates?.templateIds.includes(template?.generator_key) ? window.MultiSelectTemplates : app.data.normalizeQuestionPart(template?.subject) === app.data.normalizeQuestionPart('Tiếng Việt')
                 ? window.Grade4VietnameseTemplates
                 : window.Grade4MathTemplates;
             if (!registry?.templateIds?.includes(template?.generator_key)) return null;
@@ -797,7 +798,7 @@ const app = {
                     semester: template.semester,
                     topic: template.topic,
                     lesson: app.curriculum?.getTemplateLesson(template) || template.lesson || template.config?.lesson || '',
-                    type: generated.quickPractice || generated.selectionItems ? generated.type : (template.question_type || generated.type),
+                    type: generated.quickPractice || generated.selectionItems || generated.tableRows ? generated.type : (template.question_type || generated.type),
                     templateId: template.generator_key
                 };
                 if (result.quickPractice && registry.validateQuestion(result)) return null;
@@ -831,6 +832,7 @@ const app = {
             return '';
         },
         getQuestionAnswerCount(question) {
+            if (question?.type === 'Hoàn thành Bảng') return 4;
             if (question?.type === 'Chọn nhiều Đúng/Sai') return 1;
             if (question?.quickPractice) return question.subquestions?.length || 0;
             if (Array.isArray(question?.statements)) return question.statements.length;
@@ -941,6 +943,7 @@ const app = {
             return null;
         },
         validateQuestionScoring(question) {
+            if (question?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.validate(question);
             if (question?.type === 'Chọn nhiều Đúng/Sai') return window.MultiSelectTemplates.validate(question);
             if (question?.authoringPlan) return window.AuthoringPlan.validateQuestion(question);
             if (question?.quickPractice) return window.Grade4VietnameseTemplates.validateQuestion(question);
@@ -2455,8 +2458,10 @@ const app = {
             if (kind === 'exam' && app.exam?.restoreAttemptDraft) return app.exam.restoreAttemptDraft(user);
             app.router.open('game-screen');
             app.router.openGameView('game-play-view');
+            const tableAnswer = this.state.questions[this.state.currentIdx]?.tableRows ? this.state.selectedAns : null;
             const selectionAnswer = this.state.questions[this.state.currentIdx]?.selectionItems ? this.state.selectedAns : '';
             this.loadQuestion();
+            if (tableAnswer) { const container=document.getElementById('game-options-container'); window.CompleteTableTemplates.restore(container,'practice',tableAnswer); container.dispatchEvent(new Event('input')); }
             window.MultiSelectTemplates?.decode(selectionAnswer).forEach(id => document.querySelector(`[data-selection-id="${id}"]`)?.click());
             return true;
         },
@@ -2567,7 +2572,7 @@ const app = {
         },
         isTemplateAllowedForTopic(generatorKey, topic) {
             const allowedGenerators = this.templateGeneratorsByTopic[topic];
-            return window.MultiSelectTemplates?.templateIds.includes(generatorKey) || !generatorKey || !allowedGenerators || allowedGenerators.has(generatorKey);
+            return window.CompleteTableTemplates?.templateIds.includes(generatorKey) || window.MultiSelectTemplates?.templateIds.includes(generatorKey) || !generatorKey || !allowedGenerators || allowedGenerators.has(generatorKey);
         },
         
         skills: {
@@ -3449,7 +3454,7 @@ const app = {
                     && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
 
-            const builtInSelectionTemplates = clLevel === '4' ? window.MultiSelectTemplates.getDefaultTemplates().filter(template => {
+            const builtInSelectionTemplates = clLevel === '4' ? [...window.MultiSelectTemplates.getDefaultTemplates(), ...window.CompleteTableTemplates.getDefaultTemplates()].filter(template => {
                 return template.subject === mappedSubject && this.state.selectedTopics.includes(template.topic)
                     && (!selectedLessonId || template.lesson === selectedLessonId)
                     && !(app.data.questionTemplates || []).some(saved => saved.generator_key === template.generator_key && this.getTemplateLessonId(saved) === template.lesson);
@@ -3485,7 +3490,7 @@ const app = {
             // Các generator Lớp 4 đã được bundle cùng game. Khi kho Supabase chưa
             // có record tương ứng, Admin vẫn phải test được đúng Chủ đề đã chọn.
             // Fallback này chỉ đọc generator cục bộ, không ghi hay sửa dữ liệu server.
-            if (pool.length === 0 && dynamicTemplates.every(template => window.MultiSelectTemplates?.templateIds.includes(template.generator_key)) && isAdmin && clLevel === '4' && this.state.subject === 'math') {
+            if (pool.length === 0 && dynamicTemplates.every(template => window.MultiSelectTemplates?.templateIds.includes(template.generator_key) || window.CompleteTableTemplates?.templateIds.includes(template.generator_key)) && isAdmin && clLevel === '4' && this.state.subject === 'math') {
                 const registry = window.Grade4MathTemplates;
                 const seenTemplateIds = new Set();
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
@@ -3601,7 +3606,7 @@ const app = {
             const staticQuestions = selected;
             const templateQuestions = [];
             const shuffledTemplates = [...dynamicTemplates].sort(() => Math.random() - 0.5)
-                .sort((left, right) => Number(window.MultiSelectTemplates?.templateIds.includes(left.generator_key)) - Number(window.MultiSelectTemplates?.templateIds.includes(right.generator_key)));
+                .sort((left, right) => Number(window.MultiSelectTemplates?.templateIds.includes(left.generator_key) || window.CompleteTableTemplates?.templateIds.includes(left.generator_key)) - Number(window.MultiSelectTemplates?.templateIds.includes(right.generator_key) || window.CompleteTableTemplates?.templateIds.includes(right.generator_key)));
             let attempts = 0;
             while (templateQuestions.length < targetCount - staticQuestions.length && shuffledTemplates.length && attempts < targetCount * 4) {
                 const template = shuffledTemplates[attempts % shuffledTemplates.length];
@@ -3692,6 +3697,7 @@ const app = {
             return [ansString.trim()];
         },
         calculateQuestionScore(q, selected) {
+            if (q?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.score(q, selected);
             if (q?.type === 'Chọn nhiều Đúng/Sai') return window.MultiSelectTemplates.score(q, selected);
             if (q?.authoringParts && q.authoringPlan) {
                 const results = q.authoringParts.map((part, i) => this.calculateQuestionScore(part, Array.isArray(selected) ? selected[i] : ''));
@@ -3783,6 +3789,12 @@ const app = {
                 detail.partScores = window.VietnameseQuickPractice.score(q, selected).partScores;
             }
             if (q.authoringParts) detail.authoringParts = q.authoringParts.map(part => ({q:part.q,type:part.type,options:part.options}));
+            if (q.tableRows) {
+                detail.tableRows=q.tableRows; detail.placeColumns=q.placeColumns;
+                detail.selected=window.CompleteTableTemplates.history(q,selected);
+                detail.correct=window.CompleteTableTemplates.history(q,q.ans);
+                detail.partScores=window.CompleteTableTemplates.score(q,selected).partScores;
+            }
             if (q.selectionItems) {
                 detail.selectionItems = q.selectionItems;
                 detail.selected = window.MultiSelectTemplates.labelAnswers(q, selected);
@@ -3800,6 +3812,7 @@ const app = {
         formatHistoryQuestion(detail) {
             window.MultiSelectTemplates?.normalizePrompts(detail);
             const lines = [detail.q];
+            if (detail.tableRows) lines.push(window.CompleteTableTemplates.markup(detail,'history',true));
             if (detail.selectionItems) lines.push(detail.selectionItems.map(item => item.text).join(' · '));
             if (detail.authoringParts) lines.push(...detail.authoringParts.map((part, n) => `${n+1}. ${part.q}<br>${(part.options || []).join(' · ')}`));
             if (detail.passage) lines.push(detail.passage);
@@ -3982,6 +3995,7 @@ const app = {
         getQuestionPartCount(question = this.state.questions?.[this.state.currentIdx]) {
             if (!question) return 1;
             const structuredParts = [
+                question.tableRows,
                 question.subquestions,
                 question.statements,
                 question.comparisonRows,
@@ -4005,6 +4019,7 @@ const app = {
         },
         getCompletedQuestionPartCount(question = this.state.questions?.[this.state.currentIdx]) {
             const total = this.getQuestionPartCount(question);
+            if (question?.tableRows) return window.CompleteTableTemplates.completed(question,window.CompleteTableTemplates.read(document.getElementById('game-options-container'),'practice'));
             if (!question) return 0;
             const countFilled = values => Array.isArray(values)
                 ? values.filter(value => String(value ?? '').trim()).length
@@ -4185,6 +4200,7 @@ const app = {
 
             const optContainer = document.getElementById('game-options-container');
             optContainer.innerHTML = '';
+            optContainer.oninput = null;
             this.state.selectedAns = null;
             this.state.multipleChoiceSelections = null;
             this.state.answerSubmitted = false;
@@ -4222,7 +4238,9 @@ const app = {
                 else if (qType !== 'Chuỗi quy luật') qType = 'Điền khuyết';
             }
 
-            if (q.type === 'Chọn nhiều Đúng/Sai') {
+            if (q.type === 'Hoàn thành Bảng') {
+                window.CompleteTableTemplates.render(q,optContainer,this.state,btnCheck);
+            } else if (q.type === 'Chọn nhiều Đúng/Sai') {
                 window.MultiSelectTemplates.render(q, optContainer, this.state, btnCheck);
             } else if (q.quickPractice) {
                 window.VietnameseParameterHistory?.remember(q, app.data.currentUser);
@@ -4998,7 +5016,9 @@ const app = {
                 }
             }
 
-            if (q.type === 'Chọn nhiều Đúng/Sai') {
+            if (q.type === 'Hoàn thành Bảng') {
+                window.CompleteTableTemplates.reveal(q,document.getElementById('game-options-container'),this.state.selectedAns);
+            } else if (q.type === 'Chọn nhiều Đúng/Sai') {
                 window.MultiSelectTemplates.reveal(q, document.getElementById('game-options-container'));
             } else if (q.quickPractice) {
                 window.VietnameseQuickPractice.reveal(q, document.getElementById('game-options-container'), this.state.multipleChoiceSelections);
@@ -5652,6 +5672,7 @@ const app = {
         },
 
         getQuestionType(question) {
+            if (question?.type === 'Hoàn thành Bảng') return 'Hoàn thành Bảng';
             if (question?.type === 'Chọn nhiều Đúng/Sai') return 'Chọn nhiều Đúng/Sai';
             if (Array.isArray(question?.comparisonRows)) return 'Kéo thả';
             if (Array.isArray(question?.sequenceRounds) || question?.templateId === 'number.natural_sequence') return 'Chuỗi Quy luật';
@@ -5672,6 +5693,7 @@ const app = {
             return choices.map(choice => `<label class="exam-opt-label"><input type="radio" name="exam_q_${index}" value="${app.data.sanitizeHTML(choice)}"> ${app.data.sanitizeHTML(choice)}</label>`).join('');
         },
         renderQuestionInput(question, index) {
+            if (question?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.markup(question,index);
             window.MultiSelectTemplates?.normalizePrompts(question);
             if (question?.type === 'Chọn nhiều Đúng/Sai') return window.MultiSelectTemplates.examMarkup(question, index);
             if (question?.authoringParts) return question.authoringParts.map((part, n) => `<fieldset class="exam-true-false-row" data-authoring-part="${index}:${n}"><legend>${app.data.sanitizeHTML(`${n + 1}. ${part.q}`)}</legend>${this.renderQuestionInput(part, `ap_${index}_${n}`)}</fieldset>`).join('');
@@ -5726,6 +5748,7 @@ const app = {
             return Array.from({ length: inputCount }, (_, part) => `<input type="text" class="fill-input" data-exam-part="${index}" data-part="${part}" style="max-width:400px; margin:5px;" placeholder="Nhập đáp án ${inputCount > 1 ? part + 1 : ''}">`).join('');
         },
         readQuestionAnswer(question, index) {
+            if (question?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.read(document,index);
             if (question?.type === 'Chọn nhiều Đúng/Sai') return window.MultiSelectTemplates.serialize([...document.querySelectorAll(`input[name="exam_selection_${index}"]:checked`)].map(input => input.value));
             if (question?.authoringParts) return question.authoringParts.map((part, n) => this.readQuestionAnswer(part, `ap_${index}_${n}`));
             if (question.quickPractice) return question.subquestions.map((_, part) => document.querySelector(`input[name="exam_q_viet_${index}_${part}"]:checked`)?.value || '');
@@ -5751,6 +5774,7 @@ const app = {
                 .join(', ');
         },
         isAnswerCorrect(question, selected) {
+            if (question?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.score(question,selected).isCorrect;
             if (question?.type === 'Chọn nhiều Đúng/Sai') return window.MultiSelectTemplates.score(question, selected).isCorrect;
             if (question.quickPractice) return app.game.calculateQuestionScore(question, selected).isCorrect;
             const type = this.getQuestionType(question);
@@ -5769,6 +5793,7 @@ const app = {
         },
         applySavedAnswers(answers = []) {
             this.state.questions.forEach((question, index) => {
+                if (question.type === 'Hoàn thành Bảng') { window.CompleteTableTemplates.restore(document,index,answers[index]); return; }
                 if (question.type === 'Chọn nhiều Đúng/Sai') {
                     const selected = window.MultiSelectTemplates.decode(answers[index]);
                     document.querySelectorAll(`input[name="exam_selection_${index}"]`).forEach(input => {input.checked = selected.includes(input.value);});
@@ -9289,6 +9314,10 @@ const app = {
             if (type.includes('chuỗi')) return 'indigo';
             return 'amber';
         },
+        openCompleteTableTemplate() {
+            this.selectionTemplateDraft={...window.CompleteTableTemplates.getDefaultTemplates()[0],id:undefined};
+            this.renderTemplateForm(null);
+        },
         openSelectionTemplate(id) {
             const template = window.MultiSelectTemplates.getDefaultTemplates().find(item => item.id === id);
             if (!template) return;
@@ -9369,6 +9398,8 @@ const app = {
             const builtins = window.MultiSelectTemplates.getDefaultTemplates().filter(item => (!filters.classlevel || item.classlevel === filters.classlevel) && (!filters.subject || item.subject === filters.subject) && (!filters.topic || item.topic === filters.topic) && (!filters.lesson || item.lesson === filters.lesson));
             box.insertAdjacentHTML('beforeend', `<section class="template-selection-library"><h3>Chọn nhiều Đúng/Sai · Mẫu theo Bài học</h3><p>Mẫu có sẵn để luyện tập. Chọn một bài để xem, tùy chỉnh hoặc đưa vào đề.</p><select class="form-input" id="selection-builtin-lesson">${builtins.map(item => `<option value="${esc(item.id)}">${esc(item.subject)} · ${esc(item.semester)} · ${esc(item.name)}</option>`).join('')}</select><button type="button" class="btn btn-primary" onclick="app.admin.openSelectionTemplate(document.getElementById('selection-builtin-lesson').value)">Xem và tùy chỉnh mẫu</button></section>`);
 
+            const tableTemplate=window.CompleteTableTemplates.getDefaultTemplates()[0];
+            if ((!filters.subject||filters.subject==='Toán')&&(!filters.lesson||filters.lesson===tableTemplate.lesson)&&(!filters.topic||filters.topic===tableTemplate.topic)) box.insertAdjacentHTML('beforeend','<section class="template-selection-library"><h3>Bài 10 · Hoàn thành Bảng</h3><p>4 dòng · Viết số, Đọc số và chữ số theo hàng · 0,25 điểm/dòng</p><button class="btn btn-primary" type="button" onclick="app.admin.openCompleteTableTemplate()">Xem và tùy chỉnh bảng</button></section>');
             window.VietnameseQuickPractice?.appendCatalog(box);
         },
         getTemplateTopics(classlevel, subject, semester) {
@@ -9438,6 +9469,7 @@ const app = {
                 : 'Có thể chọn các dạng để đa dạng giữa các lượt; game không trộn các dạng trong cùng một lượt.';
         },
         getTemplatePreset(generatorKey) {
+            if (window.CompleteTableTemplates.templateIds.includes(generatorKey)) return {type:'Hoàn thành Bảng',defaultPrompt:'{question}',guide:'4 dòng; mỗi dòng cho sẵn ngẫu nhiên Viết số, Đọc số hoặc các chữ số theo hàng. Hai nhóm còn lại để trống. Mỗi dòng đúng được 0,25 điểm.',hint:'Số cột hàng từ 4 đến 9; mặc định 6.',preview:'live',variables:[['{question}','Hoàn thành bảng sau.']]};
             if (window.MultiSelectTemplates?.templateIds.includes(generatorKey)) return {type:'Chọn nhiều Đúng/Sai',defaultPrompt:'{question}',guide:'10 ô; chọn các ô Đúng hoặc Sai theo Bài học. Từ 1–9 ô cần chọn, ưu tiên 4–6.',hint:'Bấm Preview để thử chọn và xem bố cục.',preview:'live',variables:[['{question}','Câu hỏi chung của 10 ô']]};
             const match = /^word\.three_steps_(relation_total|purchase_total|divide_compare|remaining|ratio_total|legs_constraint|animal_total)_(mcq|fill)$/.exec(String(generatorKey || ''));
             if (match) {
@@ -9501,7 +9533,7 @@ const app = {
             const selectedTemplateLesson = this.getTemplateLesson(existing);
             const isMatching = existing?.generator_key === 'number.match_number_words' || /đối chiếu số/i.test(existing?.name || '');
             const selectedQuestionType = isMatching ? 'Đối chiếu trùng khớp' : (existing?.question_type || 'Trắc nghiệm');
-            const templateQuestionTypes = ['Chọn nhiều Đúng/Sai', 'Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
+            const templateQuestionTypes = ['Hoàn thành Bảng', 'Chọn nhiều Đúng/Sai', 'Trắc nghiệm', 'Điền khuyết', 'Đúng/Sai', 'So sánh', 'Chuỗi Quy luật', 'Kéo thả', 'Đối chiếu trùng khớp'];
             const matchingShapes = (config.shapes || ['5:4', '4:5']).join(', ');
             const matchingDigits = (config.digits || (selectedTemplateLesson === 'g4-math-hk1-b01' ? [4, 5] : [7, 8, 9])).join(', ');
             const matchingWeights = config.digitWeights ? Object.entries(config.digitWeights).map(([digit, weight]) => `${digit}:${weight}`).join(', ') : '';
@@ -9813,6 +9845,11 @@ const app = {
             box.querySelector('.template-editor__rules')?.append(selectionRule);
             document.getElementById('template-selection-target').value = config.selectionTarget || 'correct';
             document.getElementById('template-selection-word-group').value = config.wordGroup || 'mixed';
+            generatorControl?.insertAdjacentHTML('beforeend','<option value="number.complete_place_table">Hoàn thành Bảng · Viết, đọc số và hàng</option>');
+            if (existing?.generator_key==='number.complete_place_table') generatorControl.value=existing.generator_key;
+            const tableRule=document.createElement('div'); tableRule.className='template-editor__rule template-editor__rule--complete-table';
+            tableRule.innerHTML=`<label>Số cột hàng <input class="form-input" id="template-table-columns" type="number" min="4" max="9" value="${Number(config.placeColumns??6)}"></label><p>4: đến hàng nghìn · 6: đến hàng trăm nghìn · 7: đến hàng triệu. Bảng có 4 dòng, mỗi dòng đúng 0,25 điểm.</p>`;
+            box.querySelector('.template-editor__rules')?.append(tableRule);
             this.renderTemplateContentBlocks();
             this.showTemplateExample();
             this.syncTemplateAnswerModeUI();
@@ -10390,6 +10427,7 @@ const app = {
             const partCount = parts.length || (Array.isArray(question.partAnswerCounts) ? question.partAnswerCounts.length : 1);
             const score = `${partCount} câu con · ${(1 / Math.max(1, partCount)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm/câu`;
             const frame = (body, variant = 'template-preview--fill') => `<section class="template-preview__canvas ${variant}" aria-label="Khung câu hỏi được sinh"><div class="template-preview__topbar"><span>Khung câu hỏi${question.lesson ? ` · Bài ${Number(question.lesson.match(/b(\d+)$/)?.[1])}` : ''}</span><span>${score}</span></div><div class="template-preview__question">${title}</div>${question.passage ? `<p>${text(question.passage)}</p>` : ''}${body}</section>`;
+            if (question.type === 'Hoàn thành Bảng') return frame(window.CompleteTableTemplates.markup(question,'preview'),'template-preview--fill');
             if (question.type === 'Chọn nhiều Đúng/Sai') return frame(window.MultiSelectTemplates.examMarkup(question, 'preview'), 'template-preview--multiple-choice');
             const choices = values => `<div class="template-preview__choices">${(values || []).map((value, index) => `<span><b>${String.fromCharCode(65 + index)}</b>${text(value)}</span>`).join('')}</div>`;
             const label = (part, index, uppercase = false) => text(part?.label || String.fromCharCode((uppercase ? 65 : 97) + index));
@@ -10681,6 +10719,8 @@ const app = {
                 ? 'Tạo đúng bốn nhận định Đúng/Sai: nhận định hàng; so sánh số–số (chỉ dùng < hoặc >); so sánh số–biểu thức; so sánh biểu thức–biểu thức. Dùng số có 4 hoặc 5 chữ số, không dùng khái niệm lớp.'
                 : preset.guide;
             if (hint) hint.innerHTML = preset.hint;
+            const tableRule=document.querySelector('.template-editor__rule--complete-table');
+            if(tableRule) tableRule.hidden=generator!=='number.complete_place_table';
             const selectionRule = document.querySelector('.template-editor__rule--selection');
             if (selectionRule) selectionRule.hidden = !window.MultiSelectTemplates?.templateIds.includes(generator);
             const selectionWordField = document.getElementById('template-selection-word-group')?.closest('label');
@@ -10916,6 +10956,12 @@ const app = {
                                 ? { scenarioKinds: measurementScenarioKinds }
                                 : genericConfig;
             const templateConfig = isB05Template ? b05Config : (isAngleTemplate ? angleConfig : (isPhase4Review ? phase4Config : (isPhase5Template ? phase5Config : (isPhase6Review ? phase6Config : (isPhase7Template ? phase7Config : (isPhase8Template ? phase8Config : (isMeasurementTemplate ? measurementConfig : (isPhase2Template ? phase2Config : (isTopic5Template ? topic5Config : (generatorKey === 'number.round_number' ? roundingConfig : genericConfig))))))))));
+            if (generatorKey==='number.complete_place_table') {
+                const placeColumns=Number(value('template-table-columns'));
+                if(value('template-class')!=='Lớp 4'||value('template-subject')!=='Toán'||selectedLesson!=='g4-math-hk1-b10') throw new Error('Hoàn thành Bảng áp dụng Bài 10 Toán lớp 4.');
+                window.CompleteTableTemplates.generateQuestion(generatorKey,{placeColumns});
+                return {...window.CompleteTableTemplates.getDefaultTemplates()[0],id:undefined,name:value('template-name')||'Bài 10 · Hoàn thành Bảng',config:{placeColumns}};
+            }
             if (window.MultiSelectTemplates?.templateIds.includes(generatorKey)) {
                 const selectionSubject = generatorKey.endsWith('math') ? 'Toán' : 'Tiếng Việt';
                 if (!selectedLesson || value('template-subject') !== selectionSubject) throw new Error('Hãy chọn môn và Bài học phù hợp với template chọn nhiều.');
@@ -12750,6 +12796,7 @@ const app = {
             }).join('')}</div>`;
         },
         renderExamPrintQuestionParts(question) {
+            if (question?.type === 'Hoàn thành Bảng') return window.CompleteTableTemplates.markup(question,'print',true);
             if (question?.type === 'Chọn nhiều Đúng/Sai') return `<div class="exam-print__subquestion-options exam-print__subquestion-options--2">${question.selectionItems.map(item => `<span class="exam-print__subquestion-option"><span class="exam-print__choice-box"></span>${item.visual ? app.data.formatMathHTML(item.visual) : ''}${app.data.sanitizeHTML(item.text)}</span>`).join('')}</div>`;
             if (question?.authoringParts) return question.authoringParts.map((part, n) => `<div class="exam-print-part"><strong>${n + 1}. ${app.data.formatMathHTML(part.q)}</strong>${this.renderExamPrintQuestionParts(part)}</div>`).join('');
             if (question.quickPractice && window.Grade4VietnameseTemplates.validateQuestion(question)) return '<p>Câu hỏi chưa đủ căn cứ kiểm chứng.</p>';
@@ -12843,6 +12890,8 @@ const app = {
             } catch (error) {
                 console.warn('Không thể nội tuyến CSS bản in, sẽ dùng stylesheet dự phòng:', error);
             }
+            const tableStylesheet=Array.from(document.styleSheets).find(sheet=>sheet.href?.includes('/src/student-learning.css'));
+            try { stylesheetText += tableStylesheet ? '\n' + Array.from(tableStylesheet.cssRules).filter(rule=>rule.cssText.includes('.complete-table')).map(rule=>rule.cssText).join('\n') : ''; } catch { /* Same-origin table CSS is normally available. */ }
             const stylesheetHref = app.data.sanitizeHTML(new URL('./src/style.css?v=exam-composer-v1', document.baseURI).href);
             let printed = false;
             const print = async () => {
