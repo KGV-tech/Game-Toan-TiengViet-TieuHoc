@@ -8998,13 +8998,13 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 .ws-preview-toolbar select { width: auto; }
 .ws-preview-shell .ws-a4 { zoom: var(--ws-preview-scale, .75); }
 .ws-a4 { font-size: 14px; line-height: 1.5; width: 210mm !important; max-width: none; background: transparent; box-sizing: border-box; }
-.ws-a4 > .ws-page { width: 210mm; height: 297mm; padding: 10mm 12mm; box-sizing: border-box; margin: 0 auto 20px; background: white; box-shadow: 0 3px 16px #15283c50; display: block; overflow: hidden; }
+.ws-a4 > .ws-page { width: 210mm; height: 297mm; padding: 5mm; box-sizing: border-box; margin: 0 auto 20px; background: white; box-shadow: 0 3px 16px #15283c50; display: block; overflow: hidden; }
 .ws-a4 table { width: 178mm; max-width: 100%; }
-.ws-a4 .ws-page-content { height: 249mm; margin: 3mm 0; min-height: 0; color: #17283a; }
-.ws-a4 .ws-page-top { height: 10mm; }
-.ws-decoration { width: 100%; height: 9mm; display: block; }
-.ws-a4 .ws-paper-footer { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 1mm; padding: 0; border: 0; position: static; height: 12mm; }
-.ws-page-number { color: #475569; font-size: 10px; }
+.ws-a4 .ws-page-content { height: calc(281mm - var(--ws-header-height, 32mm)); margin: 3mm 0; min-height: 0; color: #17283a; }
+.ws-a4 .ws-page-top { height: var(--ws-header-height, 32mm); }
+.ws-a4[data-decoration="none"] .ws-page-top { display: none; }
+.ws-a4[data-decoration="none"] .ws-page-content { height: 281mm; }
+.ws-decoration { width: 100%; height: 100%; display: block; object-fit: contain; }
 .ws-structure { border: 1px solid var(--ws-ui-line,#7891a8); padding: 18px; margin: 20px 0; border-radius: 12px; }
 .ws-structure-groups { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; margin-top: 16px; }
 .ws-structure fieldset, .ws-table-sizing fieldset { min-width: 0; border: 1px solid var(--ws-ui-line,#7891a8); padding: 14px; display: grid; gap: 12px; }
@@ -9016,7 +9016,7 @@ html[data-theme="light"] #game-options-container.vietnamese-practice .vietnamese
 @page worksheet { size: A4 portrait; margin: 0; }
 @media print {
   .ws-a4 { zoom: 1 !important; }
-  .ws-a4 > .ws-page { page: worksheet; margin: 0; padding: 10mm 12mm; box-shadow: none; break-after: page; break-inside: avoid; }
+  .ws-a4 > .ws-page { page: worksheet; margin: 0; padding: 5mm; box-shadow: none; break-after: page; break-inside: avoid; }
   .ws-a4 > .ws-page:last-child { break-after: auto; }
   .ws-preview-toolbar { display: none !important; }
 }

@@ -27,17 +27,10 @@
     free.forEach(item => { item.value = (total-fixed-value)/free.length; });
     return items;
   }
-  function decoration(kind) {
-    let marks = '';
-    for(let i=0;i<10;i++) {
-      const x = 30+i*100;
-      if(kind==='leaves') marks += `<path d="M${x} 45q-24-40 5-34q28 8-5 34m0 0l18-29" fill="#a9dec2" stroke="#398661" stroke-width="2"/>`;
-      if(kind==='stars') marks += `<path d="M${x} 6l7 13 15 2-11 10 3 15-14-7-14 7 3-15-11-10 15-2z" fill="${i%2?'#a8d7f0':'#ffd775'}" stroke="#659cb9"/>`;
-      if(kind==='rainbow') marks += `<path d="M${x-25} 43a25 25 0 0 1 50 0" fill="none" stroke="#f7b4bb" stroke-width="8"/><path d="M${x-17} 43a17 17 0 0 1 34 0" fill="none" stroke="#fbd783" stroke-width="7"/><path d="M${x-10} 43a10 10 0 0 1 20 0" fill="none" stroke="#99d8cb" stroke-width="6"/>`;
-      if(kind==='pencils') marks += `<g transform="translate(${x},6) rotate(12)"><rect width="12" height="32" rx="2" fill="${i%2?'#8dcfda':'#ffd272'}"/><path d="M0 32l6 10 6-10" fill="#dec8a7"/><path d="M4 39l2 3 2-3" fill="#314154"/></g>`;
-      if(kind==='geometry') marks += i%2 ? `<circle cx="${x}" cy="25" r="15" fill="#c4b8f5"/>` : `<path d="M${x} 7l19 33h-38z" fill="#b6e4d2"/>`;
-    }
-    return kind==='none' ? '' : `<svg class="ws-decoration" viewBox="0 0 1000 55" aria-hidden="true">${marks}</svg>`;
+  function decoration(kind, imageURL) {
+    const header = root.WorksheetDocument?.resolveHeader(kind);
+    const src = imageURL || (header && root.location ? new URL(header.src, root.location.href).href : header?.src);
+    return header ? `<img class="ws-decoration ws-header-image" src="${src}" width="${header.width}" height="${header.height}" alt="Phiếu học tập">` : '';
   }
   async function paginate(paper) {
     if (!paper || paper.dataset.paginated) return;
@@ -46,6 +39,16 @@
     await Promise.all(Array.from(paper.querySelectorAll('img')).map(img => img.decode?.().catch(()=>{})));
     const sources = Array.from(paper.children);
     const kind = paper.dataset.decoration || 'leaves';
+    let imageURL;
+    const header = root.WorksheetDocument?.resolveHeader(kind);
+    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) : 0}mm`);
+    if (header && doc !== root.document) {
+      // Load through the opener: newly written print windows can defer image requests.
+      const response = await root.fetch(new URL(header.src, root.location.href));
+      if (!response.ok) throw new Error('Không tải được header. Hãy thử in lại.');
+      imageURL = root.URL.createObjectURL(await response.blob());
+      doc.defaultView.addEventListener('unload', () => root.URL.revokeObjectURL(imageURL), { once: true });
+    }
     paper.replaceChildren(); paper.classList.add('ws-a4');
     let page, content, group = null, groupId = null;
     const target = () => group || content;
@@ -60,7 +63,7 @@
       heading?.remove();
       if (group && !group.children.length) group.remove();
       page = doc.createElement('div'); page.className='ws-page';
-      page.innerHTML=`<div class="ws-page-top">${decoration(kind)}</div><div class="ws-page-content"></div><footer class="ws-paper-footer">${decoration(kind)}<span class="ws-page-number"></span></footer>`;
+      page.innerHTML=`<div class="ws-page-top">${decoration(kind, imageURL)}</div><div class="ws-page-content"></div>`;
       paper.append(page); content=page.querySelector('.ws-page-content');
       startGroup();
       if(heading)target().append(heading);
@@ -140,10 +143,10 @@
           groupId=null; group=null;
         });
       });
-      const pages=Array.from(paper.children);
-      pages.forEach((page,i)=>page.querySelector('.ws-page-number').textContent=`Trang ${i+1}/${pages.length}`);
+      // Headers are inserted during pagination; wait for them before printing.
+      await Promise.all(Array.from(paper.querySelectorAll('.ws-header-image')).map(img => img.decode()));
       paper.dataset.paginated='true';
-    } catch(error) { paper.replaceChildren(...sources); paper.classList.remove('ws-a4');throw error; }
+    } catch(error) { if (imageURL) root.URL.revokeObjectURL(imageURL); paper.replaceChildren(...sources); paper.classList.remove('ws-a4');throw error; }
   }
   const api={WIDTH,allocate,resize,decoration,paginate};root.WorksheetLayout=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;

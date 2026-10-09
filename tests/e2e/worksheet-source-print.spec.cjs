@@ -31,7 +31,8 @@ for(const width of [1024,1280,1440])test(`ô đã xóa giữ rỗng; bản in ch
   await expect(page.locator('#ws-color-preview tbody tr').first().locator('td').nth(1)).toHaveText('');
   await expect(page.locator('#ws-color-preview tbody tr').nth(1).locator('td').nth(1)).not.toHaveText('');
  }
- await expect(page.locator('#ws-color-preview .ws-print-group')).toHaveCount(1);
+ // A group may continue on another A4 page beneath the selected header.
+ expect(await page.locator('#ws-color-preview .ws-print-group').evaluateAll(groups=>[...new Set(groups.map(group=>group.dataset.wsGroup))])).toEqual(['0']);
  await expect(page.locator('#ws-color-preview .ws-block-number')).toHaveText(['1. ','2. ']);
  await expect(page.locator('#ws-color-preview .ws-part strong')).toHaveText(['a)','b)']);
  await expect(page.locator('#ws-color-preview')).not.toContainText('ĐÁP ÁN RIÊNG');
@@ -39,7 +40,7 @@ for(const width of [1024,1280,1440])test(`ô đã xóa giữ rỗng; bản in ch
  const styles=await page.locator('#ws-color-preview').evaluate(root=>Array.from(root.querySelectorAll('h1,h2,h3,th,td,p,strong')).map(el=>({family:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight})));
  expect(styles.every(s=>s.family.startsWith('Arial')&&['400','700'].includes(s.weight))).toBe(true);
  await expect(page.locator('#ws-color-preview .ws-block').first()).toHaveCSS('border-left-width','0px');
- await expect(page.locator('#ws-color-preview .ws-print-group')).toHaveCSS('border-left-width','4px');
+ expect(await page.locator('#ws-color-preview .ws-print-group').evaluateAll(groups=>groups.every(group=>getComputedStyle(group).borderLeftWidth==='4px'))).toBe(true);
  await page.getByRole('button',{name:'Lưu phiếu học tập',exact:true}).click();await page.evaluate(()=>app.worksheetStudio.edit(app.data.worksheets[0],0));
  await expect(page.getByLabel('Hàng 1, cột 2',{exact:true})).toHaveValue('');
 });

@@ -3,6 +3,95 @@
   const text = (value, max = 20000) => String(value ?? '').slice(0, max);
   const escape = value => text(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const list = (value, max = 100) => Array.isArray(value) ? value.slice(0, max) : [];
+  const headerTemplates = [
+  {
+    "id": "books-blue",
+    "label": "Sách xanh",
+    "src": "/public/worksheet-headers/books-blue.webp",
+    "width": 1600,
+    "height": 309
+  },
+  {
+    "id": "hand-drawn",
+    "label": "Nét vẽ bút màu",
+    "src": "/public/worksheet-headers/hand-drawn.webp",
+    "width": 1600,
+    "height": 294
+  },
+  {
+    "id": "space-purple",
+    "label": "Vũ trụ tím",
+    "src": "/public/worksheet-headers/space-purple.webp",
+    "width": 1600,
+    "height": 295
+  },
+  {
+    "id": "cheerful",
+    "label": "Sách vui màu cam",
+    "src": "/public/worksheet-headers/cheerful.webp",
+    "width": 1600,
+    "height": 292
+  },
+  {
+    "id": "watercolor-books",
+    "label": "Sách và hoa màu nước",
+    "src": "/public/worksheet-headers/watercolor-books.webp",
+    "width": 1600,
+    "height": 326
+  },
+  {
+    "id": "scrapbook",
+    "label": "Góc học tập sắc màu",
+    "src": "/public/worksheet-headers/scrapbook.webp",
+    "width": 1600,
+    "height": 408
+  },
+  {
+    "id": "cosmic",
+    "label": "Khám phá vũ trụ",
+    "src": "/public/worksheet-headers/cosmic.webp",
+    "width": 1600,
+    "height": 389
+  },
+  {
+    "id": "pastel",
+    "label": "Sách màu pastel",
+    "src": "/public/worksheet-headers/pastel.webp",
+    "width": 1600,
+    "height": 391
+  },
+  {
+    "id": "playful",
+    "label": "Vui học cùng sách",
+    "src": "/public/worksheet-headers/playful.webp",
+    "width": 1600,
+    "height": 314
+  },
+  {
+    "id": "watercolor-soft",
+    "label": "Vườn hoa màu nước",
+    "src": "/public/worksheet-headers/watercolor-soft.webp",
+    "width": 1600,
+    "height": 343
+  },
+  {
+    "id": "explorer",
+    "label": "Khám phá vui vẻ",
+    "src": "/public/worksheet-headers/explorer.webp",
+    "width": 1600,
+    "height": 508
+  },
+  {
+    "id": "school",
+    "label": "Ngôi trường sách",
+    "src": "/public/worksheet-headers/school.webp",
+    "width": 1600,
+    "height": 405
+  }
+];
+  const legacyHeaders = { leaves: 'watercolor-books', stars: 'space-purple', rainbow: 'pastel', pencils: 'playful', geometry: 'school' };
+  const headerId = value => value === 'none' ? 'none' : headerTemplates.find(item => item.id === value)?.id || (Object.hasOwn(legacyHeaders, value) ? legacyHeaders[value] : null) || 'school';
+  const resolveHeader = value => headerTemplates.find(item => item.id === headerId(value));
   const questionKinds = [['question','Tự luận / Câu hỏi'],['multipleChoice','Trắc nghiệm'],['trueFalse','Đúng/Sai'],['fill','Điền khuyết'],['compare','So sánh'],['sequence','Chuỗi quy luật'],['drag','Kéo thả / Chọn từ'],['matching','Đối chiếu / Nối cặp']];
   const contentKinds = [...questionKinds, ['table','Bảng'],['diagram','Sơ đồ'],['text','Tiêu đề / Nội dung đọc']];
   const kindOf = value => contentKinds.some(([kind]) => kind === value) ? value : 'question';
@@ -33,7 +122,7 @@
       }))
     }));
     if (!pages.length || !pages.some(page => page.blocks.length)) throw new Error('Không tìm thấy nội dung bài học trong file.');
-    return { version: 1, title: text(raw.title || 'Phiếu học tập từ tài liệu', 500), topic: text(raw.topic, 500), lesson: text(raw.lesson, 500), decoration: ['none','leaves','stars','rainbow','pencils','geometry'].includes(raw.decoration) ? raw.decoration : 'leaves', theme: ['mint', 'sky', 'sun'].includes(raw.theme) ? raw.theme : 'mint', pages, warnings: list(raw.warnings, 100).map(item => text(item, 1000)) };
+    return { version: 1, title: text(raw.title || 'Phiếu học tập từ tài liệu', 500), topic: text(raw.topic, 500), lesson: text(raw.lesson, 500), decoration: headerId(raw.decoration), theme: ['mint', 'sky', 'sun'].includes(raw.theme) ? raw.theme : 'mint', pages, warnings: list(raw.warnings, 100).map(item => text(item, 1000)) };
   }
   function isFreeform(record) { return Boolean(record?.questions?.some(question => question?.worksheetBlock)); }
   function fromRecord(record) {
@@ -108,7 +197,7 @@
       return `<article class="ws-block ws-block-${block.kind}" data-ws-block="${key}"><h3>${page.blocks.length>1?`<strong class="ws-block-number">${b+1}. </strong>`:''}${inline(blockText(block.text), interactive, key, answers)}</h3>${table}${block.visual ? `<img class="ws-visual" src="${block.visual}" alt="${escape(block.text || 'Hình minh họa của bài')}">` : block.kind === 'diagram' ? diagramHTML(block.diagram) : ''}${block.parts.map((part, i) => `<section class="ws-part"><p><strong>${partLabel(i)}</strong> ${inline(part.text.replace(/^\s*[a-z]+[.)]\s+/i,''), interactive, `${key}-part${i}`, answers)}</p>${response(part, `${key}-part${i}`)}</section>`).join('')}${block.kind !== 'text' ? response(block, key) : ''}</article>`;
     }).join('')}</div></div>`).join('')}</section>`;
   }
-  const api = { normalize, escape, questionKinds, contentKinds, partLabel, isFreeform, fromRecord, toRecord, publicDocument, render };
+  const api = { headerTemplates, resolveHeader, normalize, escape, questionKinds, contentKinds, partLabel, isFreeform, fromRecord, toRecord, publicDocument, render };
   root.WorksheetDocument = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

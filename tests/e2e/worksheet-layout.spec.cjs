@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
 async function open(page,doc) {
-  await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'application/javascript',body:''}));
-  await page.route('**/*.supabase.co/**',route=>route.abort());
+  await page.context().route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'application/javascript',body:''}));
+  await page.context().route('**/*.supabase.co/**',route=>route.abort());
   await page.goto('/');
   await page.evaluate(doc=>{
     app.data.currentUser={username:'teacher',role:'admin'};app.data.worksheets=[];
@@ -54,11 +54,15 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   await expect(page.locator('#ws-color-preview .ws-group-title').first()).toHaveCSS('text-transform','uppercase');
   expect(await page.locator('#ws-color-preview tbody tr').count()).toBe(45);
   expect(await pages.evaluateAll(items=>items.every(page=>{const body=page.querySelector('.ws-page-content');return body.scrollHeight<=body.clientHeight+1&&body.scrollWidth<=body.clientWidth+1;}))).toBe(true);
+  expect(await pages.first().evaluate(el=>{const s=getComputedStyle(el);return ['paddingTop','paddingRight','paddingBottom','paddingLeft'].every(key=>Math.abs(parseFloat(s[key])-5*96/25.4)<.1);})).toBe(true);
   const count=await pages.count();
   await page.evaluate(()=>{app.worksheetStudio.capture();app.data.worksheets=[WorksheetDocument.toRecord(app.worksheetStudio.doc)];app.admin.viewWorksheet(0);});
   const promise=page.waitForEvent('popup');await page.getByRole('button',{name:'Xuất PDF / A4',exact:true}).click();const popup=await promise;
   await expect(popup.locator('#print-document')).toHaveAttribute('data-paginated','true');
   await expect(popup.locator('#print-document > .ws-page')).toHaveCount(count);
+  await expect(popup.locator('#print-document footer')).toHaveCount(0);
+  await expect(popup.locator('#print-document .ws-header-image')).toHaveCount(count);
+  expect(await popup.locator('.ws-header-image').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0))).toBe(true);
   const pdf=await popup.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
   const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');const parsed=await getDocument({data:new Uint8Array(pdf),useSystemFonts:true}).promise;
   expect(parsed.numPages).toBe(count);
@@ -85,11 +89,16 @@ test('bảng dài không lặp câu con; đoạn dài giữ đầy đủ chữ k
 
 test('đổi mẫu trang trí và không cắt một dòng bảng quá cao',async({page})=>{
   await open(page,base());
-  for(const decoration of ['leaves','stars','rainbow','pencils','geometry','none']){
+  await expect(page.locator('#ws-theme')).toHaveCount(0);
+  await expect(page.locator('#ws-decoration option')).toHaveCount(13);
+  const headers=await page.evaluate(()=>WorksheetDocument.headerTemplates.map(item=>item.id));
+  for(const decoration of [...headers,'none']){
     await page.locator('#ws-decoration').selectOption(decoration);
     await page.getByRole('button',{name:'Xem bản in màu',exact:true}).click();
     await expect(page.locator('#ws-color-preview')).toHaveAttribute('data-decoration',decoration);
-    await expect(page.locator('#ws-color-preview .ws-decoration')).toHaveCount(decoration==='none'?0:2);
+    await expect(page.locator('#ws-color-preview .ws-decoration')).toHaveCount(decoration==='none'?0:1);
+    await expect(page.locator('#ws-color-preview footer')).toHaveCount(0);
+    expect(await page.locator('#ws-color-preview img.ws-decoration').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0&&img.currentSrc.endsWith('.webp')))).toBe(true);
   }
   await page.evaluate(()=>{app.worksheetStudio.doc=WorksheetDocument.normalize({title:'Dòng lớn',pages:[{blocks:[{kind:'table',text:'Bảng',columns:Array.from({length:16},(_,i)=>`Cột ${i+1}`),rows:[Array.from({length:16},()=> 'Chữ dài '.repeat(250))]}]}]});app.worksheetStudio.renderEditor();});
   await page.getByRole('button',{name:'Xem bản in màu',exact:true}).click();
