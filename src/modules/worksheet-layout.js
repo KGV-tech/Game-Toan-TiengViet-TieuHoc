@@ -41,11 +41,11 @@
     const kind = paper.dataset.decoration || 'leaves';
     let imageURL;
     const header = root.WorksheetDocument?.resolveHeader(kind);
-    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) : 0}mm`);
+    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) / 2 : 0}mm`);
     if (header && doc !== root.document) {
       // Load through the opener: newly written print windows can defer image requests.
       const response = await root.fetch(new URL(header.src, root.location.href));
-      if (!response.ok) throw new Error('Không tải được header. Hãy thử in lại.');
+      if (!response.ok) throw new Error('Không tải được mẫu trang trí. Hãy thử in lại.');
       imageURL = root.URL.createObjectURL(await response.blob());
       doc.defaultView.addEventListener('unload', () => root.URL.revokeObjectURL(imageURL), { once: true });
     }
@@ -62,8 +62,10 @@
       const heading = carryGroup && previous?.lastElementChild?.matches('.ws-group-title') ? previous.lastElementChild : null;
       heading?.remove();
       if (group && !group.children.length) group.remove();
+      const firstPage = !paper.children.length;
       page = doc.createElement('div'); page.className='ws-page';
-      page.innerHTML=`<div class="ws-page-top">${decoration(kind, imageURL)}</div><div class="ws-page-content"></div>`;
+      if (!firstPage) page.style.setProperty('--ws-header-height', '0mm');
+      page.innerHTML=`${firstPage && header ? `<div class="ws-page-top">${decoration(kind, imageURL)}</div>` : ''}<div class="ws-page-content"></div>`;
       paper.append(page); content=page.querySelector('.ws-page-content');
       startGroup();
       if(heading)target().append(heading);
@@ -74,8 +76,9 @@
       target().append(node);
       if(!over()) return;
       const tooTall = node.offsetHeight > content.clientHeight;
+      const fitsNextPage = node.offsetHeight <= content.clientHeight + (page.querySelector('.ws-page-top')?.offsetHeight || 0);
       node.remove();
-      if (!empty() && !tooTall) { newPage(); target().append(node); if(!over())return; node.remove(); }
+      if (!empty() && (!tooTall || fitsNextPage)) { newPage(); target().append(node); if(!over())return; node.remove(); }
       // Split a table by complete rows, retaining its column widths and headings.
       const table = node.querySelector?.('table');
       if(table && table.tBodies[0]?.rows.length) {
