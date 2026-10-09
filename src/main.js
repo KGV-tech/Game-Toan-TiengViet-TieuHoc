@@ -4509,6 +4509,9 @@ const app = {
                 const inventory = document.createElement('div');
                 inventory.className = Array.isArray(q.angleItems) ? 'drag-inventory drag-inventory--angle' : 'drag-inventory';
                 const filledAnswers = new Array(numSlots).fill(null);
+                const syncInventory = () => {
+                    inventory.hidden = [...inventory.children].every(item => item.style.visibility === 'hidden');
+                };
 
                 opts.forEach((opt, idx) => {
                     const item = document.createElement('div');
@@ -4531,6 +4534,7 @@ const app = {
                             firstEmptySlot.dataset.sourceId = item.id;
                             firstEmptySlot.classList.add('filled');
                             item.style.visibility = 'hidden';
+                            syncInventory();
                             filledAnswers[firstEmptySlot.dataset.index] = opt;
                             this.state.selectedAns = filledAnswers.join(', ');
                             if (filledAnswers.every(ans => ans !== null)) btnCheck.disabled = false;
@@ -4539,6 +4543,7 @@ const app = {
                     inventory.appendChild(item);
                 });
                 optContainer.appendChild(inventory);
+                syncInventory();
 
                 document.querySelectorAll('.drag-slot').forEach((slot) => {
                     slot.onclick = () => {
@@ -4548,6 +4553,7 @@ const app = {
                                 const srcItem = document.getElementById(srcId);
                                 if (srcItem) srcItem.style.visibility = 'visible';
                             }
+                            syncInventory();
                             slot.textContent = '';
                             slot.classList.remove('filled');
                             delete slot.dataset.sourceId;
@@ -4576,6 +4582,7 @@ const app = {
                         filledAnswers[slot.dataset.index] = text;
                         const srcItem = document.getElementById(srcId);
                         if (srcItem) srcItem.style.visibility = 'hidden';
+                        syncInventory();
                         this.state.selectedAns = filledAnswers.join(', ');
                         if (filledAnswers.every(ans => ans !== null)) btnCheck.disabled = false;
                     };
@@ -5047,37 +5054,19 @@ const app = {
                 const ansArr = this.getAnsArr(q.ans);
                 const selectedArr = this.getAnsArr(this.state.selectedAns);
                 isCorrect = selectedArr.length === ansArr.length && selectedArr.every((val, i) => this.normalizeFillAnswer(val) === this.normalizeFillAnswer(ansArr[i]));
-                const parts = (q.q || '').split(/\.\.\.|___/);
-                if (parts.length > 1) {
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        const inp = document.getElementById(`fill-input-${i}`);
-                        if (inp) {
-                            const inputIsCorrect = this.normalizeFillAnswer(inp.value) === this.normalizeFillAnswer(ansArr[i]);
-                            inp.classList.remove('correct', 'wrong');
-                            if (inputIsCorrect) {
-                                inp.classList.add('correct');
-                                this.showInlineAnswerCorrectTick(inp);
-                            } else {
-                                inp.classList.add('wrong');
-                                if (inp._answerTick?.isConnected) inp._answerTick.remove();
-                                this.showInlineAnswerCorrection(inp, ansArr[i]);
-                            }
-                        }
+                // Structured layouts can render several fields without ___ in the prompt.
+                const inputs = document.querySelectorAll('#game-question-container .fill-input, #game-question-container .magic-input, #game-options-container .fill-input, #game-options-container .magic-input');
+                inputs.forEach((input, index) => {
+                    const inputIsCorrect = this.normalizeFillAnswer(input.value) === this.normalizeFillAnswer(ansArr[index]);
+                    input.classList.remove('correct', 'wrong');
+                    input.classList.add(inputIsCorrect ? 'correct' : 'wrong');
+                    if (inputIsCorrect) {
+                        this.showInlineAnswerCorrectTick(input);
+                    } else {
+                        if (input._answerTick?.isConnected) input._answerTick.remove();
+                        this.showInlineAnswerCorrection(input, ansArr[index]);
                     }
-                } else {
-                    const inp = document.querySelector('.fill-input, .magic-input');
-                    if (inp) {
-                        inp.classList.remove('correct', 'wrong');
-                        if (isCorrect) {
-                            inp.classList.add('correct');
-                            this.showInlineAnswerCorrectTick(inp);
-                        } else {
-                            inp.classList.add('wrong');
-                            if (inp._answerTick?.isConnected) inp._answerTick.remove();
-                            this.showInlineAnswerCorrection(inp, ansArr[0]);
-                        }
-                    }
-                }
+                });
             } else if (qType === 'Trắc nghiệm' && Array.isArray(q.subquestions)) {
                 const expectedAnswers = q.subquestions.map(subquestion => String(subquestion.answer || '').trim());
                 const selectedAnswers = this.state.multipleChoiceSelections || this.getAnsArr(this.state.selectedAns);
