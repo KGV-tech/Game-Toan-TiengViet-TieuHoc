@@ -41,7 +41,7 @@
     const kind = paper.dataset.decoration || 'leaves';
     let imageURL;
     const header = root.WorksheetDocument?.resolveHeader(kind);
-    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) / 2 : 0}mm`);
+    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) * .35 : 0}mm`);
     if (header && doc !== root.document) {
       // Load through the opener: newly written print windows can defer image requests.
       const response = await root.fetch(new URL(header.src, root.location.href));
