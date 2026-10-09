@@ -148,7 +148,8 @@ function generateAngleCountInPolygon(config = {}, random = Math.random) {
         () => renderKiteShapeSVG()
     ];
 
-    const selectedShape = renderers[randomInt(0, renderers.length - 1, random)]();
+    const shapeIndex = randomInt(0, renderers.length - 1, random);
+    const selectedShape = renderers[shapeIndex]();
     const { svg, counts, explanation } = selectedShape;
 
     const prompt = `<div style="text-align:center;margin:8px 0 14px 0;">${svg}</div>Quan sát hình vẽ trên và cho biết hình có bao nhiêu:<br>a) ___ góc nhọn<br>b) ___ góc vuông<br>c) ___ góc tù<br>d) ___ góc bẹt`;
@@ -165,6 +166,7 @@ function generateAngleCountInPolygon(config = {}, random = Math.random) {
         q: prompt,
         instruction: 'Quan sát hình vẽ và điền số lượng từng loại góc.',
         angleVisual: svg,
+        angleShape: shapeIndex,
         angleCountRows: [
             { label: 'a', text: 'góc nhọn' },
             { label: 'b', text: 'góc vuông' },

@@ -109,6 +109,7 @@ function generateAngleCountEightAngles(config = {}, random = Math.random) {
         q: prompt,
         instruction: 'Quan sát 8 góc dưới đây và điền số lượng mỗi loại góc.',
         angleVisual: svg,
+        angleSpecs: specs,
         angleCountRows: [
             { label: 'a', text: 'góc nhọn' },
             { label: 'b', text: 'góc vuông' },

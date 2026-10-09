@@ -181,9 +181,9 @@ function makeMeasurementPart(skill, random, index = 0) {
     if (skill === 'b20') {
         const variant = index % 4;
         if (variant === 0) {
-            const grams = randomInt(2, 9, random) * 100;
+            const grams = randomInt(2, 9, random) * 1000;
             const answerNumber = grams / 1000;
-            return row('measurement-practice', `Phiếu cân ghi ${formatNumber(grams)} g. Khối lượng đó bằng bao nhiêu ki-lô-gam?`, String(answerNumber).replace('.', ','), ['0,1', '0,2', '0,5', '1'], 'Đổi từ gam sang ki-lô-gam bằng cách chia cho 1 000.', { activity: 'measurement-card', interaction: 'measurement-card', grams, answerNumber });
+            return row('measurement-practice', `Phiếu cân ghi ${formatNumber(grams)} g. Khối lượng đó bằng bao nhiêu ki-lô-gam?`, String(answerNumber), numericOptions(answerNumber, 1, 20, random, [1, 2, 5]), 'Đổi từ gam sang ki-lô-gam bằng cách chia cho 1 000.', { activity: 'measurement-card', interaction: 'measurement-card', grams, answerNumber });
         }
         if (variant === 1) {
             const meters = randomInt(2, 8, random);

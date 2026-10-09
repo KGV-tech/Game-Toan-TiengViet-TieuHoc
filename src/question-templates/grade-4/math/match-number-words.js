@@ -77,6 +77,7 @@
             classlevel: 'Lớp 4', subject: 'Toán', semester: 'Học kỳ 1', topic: '3. Số có nhiều chữ số',
             type: 'Đối chiếu trùng khớp', templateId: 'number.match_number_words',
             q: config.prompt || 'Hãy nối mỗi số với cách đọc đúng.',
+            matchingRows: matched.map(value => ({ value })),
             options: [left.map(formatNumber).join(', '), right.map(readNumber).join(', ')],
             ans: shuffle(matched, random).map(value => `${formatNumber(value)}:${readNumber(value)}`).join(', '),
             explanation: 'Ghép mỗi số với cách đọc tương ứng của số đó.'

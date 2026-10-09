@@ -83,18 +83,20 @@ function renderProtractorSVG(degrees) {
         const point = polarPoint(cx, cy, outerRadius - 25, labelDegrees);
         return `<text x="${point.x.toFixed(1)}" y="${(point.y + 4).toFixed(1)}" class="angle-protractor__label">${labelDegrees}</text>`;
     }).join('');
-    const rayEnd = polarPoint(cx, cy, 88, degrees);
+    const rayEnd = polarPoint(cx, cy, outerRadius, degrees);
+    const targetLabel = polarPoint(cx, cy, outerRadius + 17, degrees);
     const arcPoints = Array.from({ length: degrees / 5 + 1 }, (_, index) => pointString(polarPoint(cx, cy, 67, index * 5))).join(' ');
 
-    return `<svg class="angle-visual angle-visual--protractor" viewBox="0 0 280 178" role="img" aria-label="Hình góc trên thước đo góc" xmlns="http://www.w3.org/2000/svg">
+    return `<svg class="angle-visual angle-visual--protractor" viewBox="0 0 280 172" role="img" aria-label="Hình góc trên thước đo góc" xmlns="http://www.w3.org/2000/svg">
         <title>Thước đo góc và một góc cần đọc số đo</title>
-        <path d="M 36 148 A 104 104 0 0 0 244 148" class="angle-protractor__body"/>
+        <path d="M 36 148 A 104 104 0 0 1 244 148" class="angle-protractor__body"/>
         <line x1="28" y1="148" x2="252" y2="148" class="angle-protractor__baseline"/>
         ${tickMarkup}
         ${labelMarkup}
         <polyline points="${arcPoints}" class="angle-protractor__arc"/>
         <line x1="${cx}" y1="${cy}" x2="${rayEnd.x.toFixed(1)}" y2="${rayEnd.y.toFixed(1)}" class="angle-protractor__ray"/>
         <circle cx="${cx}" cy="${cy}" r="5" class="angle-protractor__vertex"/>
+        <text x="${targetLabel.x.toFixed(1)}" y="${(targetLabel.y + 5).toFixed(1)}" class="angle-protractor__target-label">${degrees}°</text>
     </svg>`;
 }
 

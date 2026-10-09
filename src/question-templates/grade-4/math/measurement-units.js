@@ -106,10 +106,24 @@ const matchingBanks = {
 function matching(config, random) {
     const kinds = configuredKinds(config, 'matchingKinds', comparisonKinds, comparisonKinds, 'Nhóm nối tương đương đơn vị đo không hợp lệ.');
     const selectedKind = choose(kinds, random);
-    const pairs = shuffle(matchingBanks[selectedKind], random);
+    const usedLeft = new Set();
+    const usedRight = new Set();
+    const scale = (text, multiplier) => text.replace(/\d[\d ]*/g, number => formatNumber(Number(number.replace(/ /g, '')) * multiplier) + (number.endsWith(' ') ? ' ' : ''));
+    const pairs = shuffle(matchingBanks[selectedKind], random).map(pair => {
+        const firstMultiplier = randomInt(1, 9, random);
+        for (let offset = 0; offset < 9; offset++) {
+            const multiplier = (firstMultiplier + offset - 1) % 9 + 1;
+            const scaled = pair.map(text => scale(text, multiplier));
+            if (!usedLeft.has(scaled[0]) && !usedRight.has(scaled[1])) {
+                usedLeft.add(scaled[0]); usedRight.add(scaled[1]);
+                return scaled;
+            }
+        }
+        throw new Error('Không thể tạo bốn cặp số đo khác nhau.');
+    });
     const distractors = {
         mass: '7 yến',
-        area: '6 m²',
+        area: '7 m²',
         time: '4 phút 10 giây'
     };
     const leftOptions = shuffle([...pairs.map(pair => pair[0]), distractors[selectedKind]], random);
