@@ -46,6 +46,11 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   await page.getByRole('button',{name:'Xem bản in màu',exact:true}).click();
   await expect(page.locator('#ws-color-preview')).toHaveAttribute('data-paginated','true');
   const pages=page.locator('#ws-color-preview > .ws-page');expect(await pages.count()).toBeGreaterThan(2);
+  await expect(page.locator('label').filter({has:page.locator('#ws-decoration')})).toHaveText(/^Mẫu trang trí/);
+  await expect(page.locator('#ws-color-preview .ws-header-image')).toHaveCount(1);
+  await expect(pages.nth(1).locator('.ws-page-top')).toHaveCount(0);
+  const layout=await pages.evaluateAll(items=>{const first=items[0], img=first.querySelector('.ws-header-image');return {ratio:img.getBoundingClientRect().width/first.querySelector('.ws-page-content').getBoundingClientRect().width,center:Math.abs((img.getBoundingClientRect().left+img.getBoundingClientRect().right)/2-(first.getBoundingClientRect().left+first.getBoundingClientRect().right)/2),laterHeight:parseFloat(getComputedStyle(items[1].querySelector('.ws-page-content')).height)};});
+  expect(layout.ratio).toBeCloseTo(.5,2);expect(layout.center).toBeLessThan(1);expect(layout.laterHeight).toBeCloseTo(281*96/25.4,1);
   await expect(page.locator('#ws-color-preview h1')).toHaveCount(1);
   await expect(page.locator('#ws-color-preview .ws-student-info')).toHaveCount(1);
   await expect(page.locator('#ws-color-preview')).not.toContainText('CÙNG LUYỆN TẬP');
@@ -61,7 +66,8 @@ for(const width of [1280,1024])test(`preview A4 và PDF giữ tiêu đề trang 
   await expect(popup.locator('#print-document')).toHaveAttribute('data-paginated','true');
   await expect(popup.locator('#print-document > .ws-page')).toHaveCount(count);
   await expect(popup.locator('#print-document footer')).toHaveCount(0);
-  await expect(popup.locator('#print-document .ws-header-image')).toHaveCount(count);
+  await expect(popup.locator('#print-document .ws-header-image')).toHaveCount(1);
+  await expect(popup.locator('#print-document > .ws-page').nth(1).locator('.ws-page-top')).toHaveCount(0);
   expect(await popup.locator('.ws-header-image').evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0))).toBe(true);
   const pdf=await popup.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
   const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');const parsed=await getDocument({data:new Uint8Array(pdf),useSystemFonts:true}).promise;
@@ -116,4 +122,15 @@ test('nhóm trống được giữ khi mở lại, không mang dữ liệu từ 
   await page.evaluate(()=>app.worksheetStudio.edit(app.data.worksheets[0],0));
   await expect(page.locator('#ws-title')).toHaveValue('Phiếu B');
   await expect(page.locator('.ws-editor-page')).toHaveCount(3);
+});
+
+
+test('nội dung cao vừa trang sau được chuyển khỏi trang đầu có trang trí',async({page})=>{
+  await open(page,{title:'Phiếu dài',pages:[{blocks:[{kind:'multipleChoice',text:'Chọn đáp án',options:['Một','Hai']}]}]});
+  // Model a tall indivisible answer panel at the boundary between page capacities.
+  await page.addStyleTag({content:'.ws-choices { height: 260mm !important; }'});
+  await page.getByRole('button',{name:'Xem bản in màu',exact:true}).click();
+  await expect(page.locator('#ws-color-preview')).toHaveAttribute('data-paginated','true');
+  await expect(page.locator('#ws-color-preview > .ws-page')).toHaveCount(2);
+  await expect(page.locator('#ws-color-preview > .ws-page').nth(1).locator('.ws-choices')).toHaveCount(1);
 });
