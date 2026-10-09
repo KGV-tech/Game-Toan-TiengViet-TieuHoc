@@ -13,6 +13,7 @@ const types = {
   '.wasm': 'application/wasm',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  '.webp': 'image/webp',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
 };

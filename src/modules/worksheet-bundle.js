@@ -196,17 +196,10 @@
     free.forEach(item => { item.value = (total-fixed-value)/free.length; });
     return items;
   }
-  function decoration(kind) {
-    let marks = '';
-    for(let i=0;i<10;i++) {
-      const x = 30+i*100;
-      if(kind==='leaves') marks += `<path d="M${x} 45q-24-40 5-34q28 8-5 34m0 0l18-29" fill="#a9dec2" stroke="#398661" stroke-width="2"/>`;
-      if(kind==='stars') marks += `<path d="M${x} 6l7 13 15 2-11 10 3 15-14-7-14 7 3-15-11-10 15-2z" fill="${i%2?'#a8d7f0':'#ffd775'}" stroke="#659cb9"/>`;
-      if(kind==='rainbow') marks += `<path d="M${x-25} 43a25 25 0 0 1 50 0" fill="none" stroke="#f7b4bb" stroke-width="8"/><path d="M${x-17} 43a17 17 0 0 1 34 0" fill="none" stroke="#fbd783" stroke-width="7"/><path d="M${x-10} 43a10 10 0 0 1 20 0" fill="none" stroke="#99d8cb" stroke-width="6"/>`;
-      if(kind==='pencils') marks += `<g transform="translate(${x},6) rotate(12)"><rect width="12" height="32" rx="2" fill="${i%2?'#8dcfda':'#ffd272'}"/><path d="M0 32l6 10 6-10" fill="#dec8a7"/><path d="M4 39l2 3 2-3" fill="#314154"/></g>`;
-      if(kind==='geometry') marks += i%2 ? `<circle cx="${x}" cy="25" r="15" fill="#c4b8f5"/>` : `<path d="M${x} 7l19 33h-38z" fill="#b6e4d2"/>`;
-    }
-    return kind==='none' ? '' : `<svg class="ws-decoration" viewBox="0 0 1000 55" aria-hidden="true">${marks}</svg>`;
+  function decoration(kind, imageURL) {
+    const header = root.WorksheetDocument?.resolveHeader(kind);
+    const src = imageURL || (header && root.location ? new URL(header.src, root.location.href).href : header?.src);
+    return header ? `<img class="ws-decoration ws-header-image" src="${src}" width="${header.width}" height="${header.height}" alt="Phiếu học tập">` : '';
   }
   async function paginate(paper) {
     if (!paper || paper.dataset.paginated) return;
@@ -215,6 +208,16 @@
     await Promise.all(Array.from(paper.querySelectorAll('img')).map(img => img.decode?.().catch(()=>{})));
     const sources = Array.from(paper.children);
     const kind = paper.dataset.decoration || 'leaves';
+    let imageURL;
+    const header = root.WorksheetDocument?.resolveHeader(kind);
+    paper.style.setProperty('--ws-header-height', `${header ? Math.min(60, 200 * header.height / header.width) : 0}mm`);
+    if (header && doc !== root.document) {
+      // Load through the opener: newly written print windows can defer image requests.
+      const response = await root.fetch(new URL(header.src, root.location.href));
+      if (!response.ok) throw new Error('Không tải được header. Hãy thử in lại.');
+      imageURL = root.URL.createObjectURL(await response.blob());
+      doc.defaultView.addEventListener('unload', () => root.URL.revokeObjectURL(imageURL), { once: true });
+    }
     paper.replaceChildren(); paper.classList.add('ws-a4');
     let page, content, group = null, groupId = null;
     const target = () => group || content;
@@ -229,7 +232,7 @@
       heading?.remove();
       if (group && !group.children.length) group.remove();
       page = doc.createElement('div'); page.className='ws-page';
-      page.innerHTML=`<div class="ws-page-top">${decoration(kind)}</div><div class="ws-page-content"></div><footer class="ws-paper-footer">${decoration(kind)}<span class="ws-page-number"></span></footer>`;
+      page.innerHTML=`<div class="ws-page-top">${decoration(kind, imageURL)}</div><div class="ws-page-content"></div>`;
       paper.append(page); content=page.querySelector('.ws-page-content');
       startGroup();
       if(heading)target().append(heading);
@@ -309,10 +312,10 @@
           groupId=null; group=null;
         });
       });
-      const pages=Array.from(paper.children);
-      pages.forEach((page,i)=>page.querySelector('.ws-page-number').textContent=`Trang ${i+1}/${pages.length}`);
+      // Headers are inserted during pagination; wait for them before printing.
+      await Promise.all(Array.from(paper.querySelectorAll('.ws-header-image')).map(img => img.decode()));
       paper.dataset.paginated='true';
-    } catch(error) { paper.replaceChildren(...sources); paper.classList.remove('ws-a4');throw error; }
+    } catch(error) { if (imageURL) root.URL.revokeObjectURL(imageURL); paper.replaceChildren(...sources); paper.classList.remove('ws-a4');throw error; }
   }
   const api={WIDTH,allocate,resize,decoration,paginate};root.WorksheetLayout=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
@@ -325,6 +328,95 @@
   const text = (value, max = 20000) => String(value ?? '').slice(0, max);
   const escape = value => text(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const list = (value, max = 100) => Array.isArray(value) ? value.slice(0, max) : [];
+  const headerTemplates = [
+  {
+    "id": "books-blue",
+    "label": "Sách xanh",
+    "src": "/public/worksheet-headers/books-blue.webp",
+    "width": 1600,
+    "height": 309
+  },
+  {
+    "id": "hand-drawn",
+    "label": "Nét vẽ bút màu",
+    "src": "/public/worksheet-headers/hand-drawn.webp",
+    "width": 1600,
+    "height": 294
+  },
+  {
+    "id": "space-purple",
+    "label": "Vũ trụ tím",
+    "src": "/public/worksheet-headers/space-purple.webp",
+    "width": 1600,
+    "height": 295
+  },
+  {
+    "id": "cheerful",
+    "label": "Sách vui màu cam",
+    "src": "/public/worksheet-headers/cheerful.webp",
+    "width": 1600,
+    "height": 292
+  },
+  {
+    "id": "watercolor-books",
+    "label": "Sách và hoa màu nước",
+    "src": "/public/worksheet-headers/watercolor-books.webp",
+    "width": 1600,
+    "height": 326
+  },
+  {
+    "id": "scrapbook",
+    "label": "Góc học tập sắc màu",
+    "src": "/public/worksheet-headers/scrapbook.webp",
+    "width": 1600,
+    "height": 408
+  },
+  {
+    "id": "cosmic",
+    "label": "Khám phá vũ trụ",
+    "src": "/public/worksheet-headers/cosmic.webp",
+    "width": 1600,
+    "height": 389
+  },
+  {
+    "id": "pastel",
+    "label": "Sách màu pastel",
+    "src": "/public/worksheet-headers/pastel.webp",
+    "width": 1600,
+    "height": 391
+  },
+  {
+    "id": "playful",
+    "label": "Vui học cùng sách",
+    "src": "/public/worksheet-headers/playful.webp",
+    "width": 1600,
+    "height": 314
+  },
+  {
+    "id": "watercolor-soft",
+    "label": "Vườn hoa màu nước",
+    "src": "/public/worksheet-headers/watercolor-soft.webp",
+    "width": 1600,
+    "height": 343
+  },
+  {
+    "id": "explorer",
+    "label": "Khám phá vui vẻ",
+    "src": "/public/worksheet-headers/explorer.webp",
+    "width": 1600,
+    "height": 508
+  },
+  {
+    "id": "school",
+    "label": "Ngôi trường sách",
+    "src": "/public/worksheet-headers/school.webp",
+    "width": 1600,
+    "height": 405
+  }
+];
+  const legacyHeaders = { leaves: 'watercolor-books', stars: 'space-purple', rainbow: 'pastel', pencils: 'playful', geometry: 'school' };
+  const headerId = value => value === 'none' ? 'none' : headerTemplates.find(item => item.id === value)?.id || (Object.hasOwn(legacyHeaders, value) ? legacyHeaders[value] : null) || 'school';
+  const resolveHeader = value => headerTemplates.find(item => item.id === headerId(value));
   const questionKinds = [['question','Tự luận / Câu hỏi'],['multipleChoice','Trắc nghiệm'],['trueFalse','Đúng/Sai'],['fill','Điền khuyết'],['compare','So sánh'],['sequence','Chuỗi quy luật'],['drag','Kéo thả / Chọn từ'],['matching','Đối chiếu / Nối cặp']];
   const contentKinds = [...questionKinds, ['table','Bảng'],['diagram','Sơ đồ'],['text','Tiêu đề / Nội dung đọc']];
   const kindOf = value => contentKinds.some(([kind]) => kind === value) ? value : 'question';
@@ -355,7 +447,7 @@
       }))
     }));
     if (!pages.length || !pages.some(page => page.blocks.length)) throw new Error('Không tìm thấy nội dung bài học trong file.');
-    return { version: 1, title: text(raw.title || 'Phiếu học tập từ tài liệu', 500), topic: text(raw.topic, 500), lesson: text(raw.lesson, 500), decoration: ['none','leaves','stars','rainbow','pencils','geometry'].includes(raw.decoration) ? raw.decoration : 'leaves', theme: ['mint', 'sky', 'sun'].includes(raw.theme) ? raw.theme : 'mint', pages, warnings: list(raw.warnings, 100).map(item => text(item, 1000)) };
+    return { version: 1, title: text(raw.title || 'Phiếu học tập từ tài liệu', 500), topic: text(raw.topic, 500), lesson: text(raw.lesson, 500), decoration: headerId(raw.decoration), theme: ['mint', 'sky', 'sun'].includes(raw.theme) ? raw.theme : 'mint', pages, warnings: list(raw.warnings, 100).map(item => text(item, 1000)) };
   }
   function isFreeform(record) { return Boolean(record?.questions?.some(question => question?.worksheetBlock)); }
   function fromRecord(record) {
@@ -430,7 +522,7 @@
       return `<article class="ws-block ws-block-${block.kind}" data-ws-block="${key}"><h3>${page.blocks.length>1?`<strong class="ws-block-number">${b+1}. </strong>`:''}${inline(blockText(block.text), interactive, key, answers)}</h3>${table}${block.visual ? `<img class="ws-visual" src="${block.visual}" alt="${escape(block.text || 'Hình minh họa của bài')}">` : block.kind === 'diagram' ? diagramHTML(block.diagram) : ''}${block.parts.map((part, i) => `<section class="ws-part"><p><strong>${partLabel(i)}</strong> ${inline(part.text.replace(/^\s*[a-z]+[.)]\s+/i,''), interactive, `${key}-part${i}`, answers)}</p>${response(part, `${key}-part${i}`)}</section>`).join('')}${block.kind !== 'text' ? response(block, key) : ''}</article>`;
     }).join('')}</div></div>`).join('')}</section>`;
   }
-  const api = { normalize, escape, questionKinds, contentKinds, partLabel, isFreeform, fromRecord, toRecord, publicDocument, render };
+  const api = { headerTemplates, resolveHeader, normalize, escape, questionKinds, contentKinds, partLabel, isFreeform, fromRecord, toRecord, publicDocument, render };
   root.WorksheetDocument = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
@@ -534,7 +626,7 @@
       this.doc.topic = document.getElementById('ws-topic').value.trim();
       this.doc.lesson = document.getElementById('ws-lesson').value.trim();
       this.doc.decoration = document.getElementById('ws-decoration').value;
-      this.doc.title = title.value; this.doc.theme = document.getElementById('ws-theme').value;
+      this.doc.title = title.value;
       this.metadata.classlevel = document.getElementById('ws-class').value;
       this.metadata.subject = document.getElementById('ws-subject').value;
       this.metadata.period = document.getElementById('ws-period').value;
@@ -571,7 +663,7 @@
     renderEditor() {
       const doc = this.doc;
       const field = (label, value, key, rows = 3) => `<label>${label}<textarea rows="${rows}" data-ws-field="${key}">${esc(value)}</textarea></label>`;
-      this.container().innerHTML = `<section class="ws-studio" aria-label="Hiệu chỉnh phiếu từ tài liệu"><header><span class="ws-kicker">RÀ SOÁT NỘI DUNG</span><h3>Phiếu của bạn, từng bài một</h3><p>Không bắt buộc đáp án hoặc số câu. Đối chiếu bản gốc và kiểm tra các ô từng có nét bút trước khi giao học sinh.</p></header><div class="ws-meta"><label>Tên phiếu<input id="ws-title" value="${esc(doc.title)}" required></label><label>Cấp lớp<select id="ws-class">${[1,2,3,4,5].map(n => `<option ${this.metadata.classlevel === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label><label>Môn<select id="ws-subject">${['Toán','Tiếng Việt'].map(s => `<option ${this.metadata.subject === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Thời gian<select id="ws-period">${['Học Kỳ 1','Học Kỳ 2','Cả Năm'].map(s => `<option ${this.metadata.period === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Chủ đề (tùy chọn)<input id="ws-topic" value="${esc(doc.topic)}" maxlength="500"></label><label>Bài học (tùy chọn)<input id="ws-lesson" value="${esc(doc.lesson)}" maxlength="500"></label><label>Mẫu header/footer<select id="ws-decoration">${[['none','Không trang trí'],['leaves','Vườn lá'],['stars','Ngôi sao'],['rainbow','Cầu vồng'],['pencils','Bút chì'],['geometry','Hình vui']].map(([id,name]) => `<option value="${id}" ${doc.decoration === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label><label>Màu bản in<select id="ws-theme">${[['mint','Vườn xanh'],['sky','Bầu trời'],['sun','Nắng ấm']].map(([id,name]) => `<option value="${id}" ${doc.theme === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label></div>${doc.warnings.length ? `<aside class="ws-review"><strong>Cần đối chiếu bản gốc</strong><ul>${doc.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></aside>` : ''}<div class="ws-editor-pages">${doc.pages.map((page,p) => `<section class="ws-editor-page"><div class="ws-page-heading"><label>Tiêu đề nhóm ${p+1} (tùy chọn)<input id="ws-page-title-${p}" value="${esc(page.title)}" ${page.hideTitle ? 'disabled' : ''}></label><button type="button" data-toggle-title="${p}">${page.hideTitle ? 'Thêm tiêu đề' : 'Xóa tiêu đề'}</button><button type="button" data-page-up="${p}" ${p ? '' : 'disabled'}>Nhóm lên</button><label class="ws-inline-check"><input type="checkbox" data-group-break="${p}" ${page.startNewPage ? 'checked' : ''}> Nhóm bắt đầu trang mới</label><button type="button" data-add-block="${p}">Thêm bài</button></div>${page.blocks.map((block,b) => `<article class="ws-editor-block"><div class="ws-block-heading"><strong>Bài ${b+1}</strong><select aria-label="Dạng nội dung bài ${b+1}" data-ws-field="${p}:${b}:kind">${D.contentKinds.map(([id,label]) => `<option value="${id}" ${block.kind === id ? 'selected' : ''}>${label}</option>`).join('')}</select><button type="button" data-up="${p}:${b}" ${b ? '' : 'disabled'}>Lên</button><button type="button" data-remove="${p}:${b}">Xóa bài</button></div>${block.review ? `<p class="ws-review">${esc(block.review)}</p>` : ''}${field('Nội dung in sẵn (___ là chỗ trống)', block.text, `${p}:${b}:text`)}<div class="ws-two-columns">${field('Lựa chọn (mỗi dòng một lựa chọn)', block.options.join('\n'), `${p}:${b}:options`)}${field('Đáp án dành riêng cho giáo viên (không bắt buộc)', block.answer, `${p}:${b}:answer`)}</div><label>Số dòng chấm để học sinh viết<input type="number" min="0" max="20" value="${block.lines}" data-ws-field="${p}:${b}:lines"></label><details ${block.kind === 'table' ? 'open' : ''}><summary>Bảng (ô có nét bút: thay bằng ___)</summary>${field('Tên cột, ngăn cách bằng Tab', block.columns.join('\t'), `${p}:${b}:columns`, 2)}${field('Mỗi dòng là một hàng; ô ngăn cách bằng Tab', block.rows.map(row => row.join('\t')).join('\n'), `${p}:${b}:rows`, 6)}</details><details ${block.parts.length ? 'open' : ''}><summary>Câu con / sơ đồ nâng cao</summary><p>Đổi text, label, lines, options hoặc answer của từng câu con. Có thể có bất kỳ số câu con nào.</p>${field('Câu con (JSON)', JSON.stringify(block.parts, null, 2), `${p}:${b}:parts`, 8)}${field('Sơ đồ (JSON: nodes, edges, type)', JSON.stringify(block.diagram, null, 2), `${p}:${b}:diagram`, 5)}</details></article>`).join('')}</section>`).join('')}</div><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-save">Lưu phiếu học tập</button><button type="button" id="ws-preview">Xem bản in màu</button><button type="button" id="ws-add-group">Thêm Nhóm</button><button type="button" id="ws-library">Về Kho Phiếu</button></div><div id="ws-preview-area"></div></section>`;
+      this.container().innerHTML = `<section class="ws-studio" aria-label="Hiệu chỉnh phiếu từ tài liệu"><header><span class="ws-kicker">RÀ SOÁT NỘI DUNG</span><h3>Phiếu của bạn, từng bài một</h3><p>Không bắt buộc đáp án hoặc số câu. Đối chiếu bản gốc và kiểm tra các ô từng có nét bút trước khi giao học sinh.</p></header><div class="ws-meta"><label>Tên phiếu<input id="ws-title" value="${esc(doc.title)}" required></label><label>Cấp lớp<select id="ws-class">${[1,2,3,4,5].map(n => `<option ${this.metadata.classlevel === `Lớp ${n}` ? 'selected' : ''}>Lớp ${n}</option>`).join('')}</select></label><label>Môn<select id="ws-subject">${['Toán','Tiếng Việt'].map(s => `<option ${this.metadata.subject === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Thời gian<select id="ws-period">${['Học Kỳ 1','Học Kỳ 2','Cả Năm'].map(s => `<option ${this.metadata.period === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><label>Chủ đề (tùy chọn)<input id="ws-topic" value="${esc(doc.topic)}" maxlength="500"></label><label>Bài học (tùy chọn)<input id="ws-lesson" value="${esc(doc.lesson)}" maxlength="500"></label><label>Mẫu header<select id="ws-decoration">${[['none','Không trang trí'],...D.headerTemplates.map(item => [item.id,item.label])].map(([id,name]) => `<option value="${id}" ${doc.decoration === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label></div>${doc.warnings.length ? `<aside class="ws-review"><strong>Cần đối chiếu bản gốc</strong><ul>${doc.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></aside>` : ''}<div class="ws-editor-pages">${doc.pages.map((page,p) => `<section class="ws-editor-page"><div class="ws-page-heading"><label>Tiêu đề nhóm ${p+1} (tùy chọn)<input id="ws-page-title-${p}" value="${esc(page.title)}" ${page.hideTitle ? 'disabled' : ''}></label><button type="button" data-toggle-title="${p}">${page.hideTitle ? 'Thêm tiêu đề' : 'Xóa tiêu đề'}</button><button type="button" data-page-up="${p}" ${p ? '' : 'disabled'}>Nhóm lên</button><label class="ws-inline-check"><input type="checkbox" data-group-break="${p}" ${page.startNewPage ? 'checked' : ''}> Nhóm bắt đầu trang mới</label><button type="button" data-add-block="${p}">Thêm bài</button></div>${page.blocks.map((block,b) => `<article class="ws-editor-block"><div class="ws-block-heading"><strong>Bài ${b+1}</strong><select aria-label="Dạng nội dung bài ${b+1}" data-ws-field="${p}:${b}:kind">${D.contentKinds.map(([id,label]) => `<option value="${id}" ${block.kind === id ? 'selected' : ''}>${label}</option>`).join('')}</select><button type="button" data-up="${p}:${b}" ${b ? '' : 'disabled'}>Lên</button><button type="button" data-remove="${p}:${b}">Xóa bài</button></div>${block.review ? `<p class="ws-review">${esc(block.review)}</p>` : ''}${field('Nội dung in sẵn (___ là chỗ trống)', block.text, `${p}:${b}:text`)}<div class="ws-two-columns">${field('Lựa chọn (mỗi dòng một lựa chọn)', block.options.join('\n'), `${p}:${b}:options`)}${field('Đáp án dành riêng cho giáo viên (không bắt buộc)', block.answer, `${p}:${b}:answer`)}</div><label>Số dòng chấm để học sinh viết<input type="number" min="0" max="20" value="${block.lines}" data-ws-field="${p}:${b}:lines"></label><details ${block.kind === 'table' ? 'open' : ''}><summary>Bảng (ô có nét bút: thay bằng ___)</summary>${field('Tên cột, ngăn cách bằng Tab', block.columns.join('\t'), `${p}:${b}:columns`, 2)}${field('Mỗi dòng là một hàng; ô ngăn cách bằng Tab', block.rows.map(row => row.join('\t')).join('\n'), `${p}:${b}:rows`, 6)}</details><details ${block.parts.length ? 'open' : ''}><summary>Câu con / sơ đồ nâng cao</summary><p>Đổi text, label, lines, options hoặc answer của từng câu con. Có thể có bất kỳ số câu con nào.</p>${field('Câu con (JSON)', JSON.stringify(block.parts, null, 2), `${p}:${b}:parts`, 8)}${field('Sơ đồ (JSON: nodes, edges, type)', JSON.stringify(block.diagram, null, 2), `${p}:${b}:diagram`, 5)}</details></article>`).join('')}</section>`).join('')}</div><div id="ws-feedback" role="status" aria-live="polite"></div><div class="ws-actions"><button type="button" id="ws-save">Lưu phiếu học tập</button><button type="button" id="ws-preview">Xem bản in màu</button><button type="button" id="ws-add-group">Thêm Nhóm</button><button type="button" id="ws-library">Về Kho Phiếu</button></div><div id="ws-preview-area"></div></section>`;
       const mutate = callback => {
         const active=document.activeElement;
         const focusKey=active?.dataset.wsField ? ['data-ws-field',active.dataset.wsField] : active?.dataset.wsPartField ? ['data-ws-part-field',active.dataset.wsPartField] : null;
