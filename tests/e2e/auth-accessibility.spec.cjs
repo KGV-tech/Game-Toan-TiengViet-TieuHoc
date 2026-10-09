@@ -152,7 +152,7 @@ test('hướng dẫn dùng dialog semantics và đóng bằng Escape', async ({ 
     window.app.showGuide();
   });
 
-  const guide = page.getByRole('dialog', { name: 'Hướng Dẫn Hành Trình' });
+  const guide = page.getByRole('dialog', { name: 'Hướng dẫn Học sinh' });
   await expect(guide).toBeVisible();
   await expect(page.locator('#map-screen')).toHaveJSProperty('inert', true);
   await expect(page.locator('#guide-modal button[aria-label="Quay về"]')).toBeFocused();

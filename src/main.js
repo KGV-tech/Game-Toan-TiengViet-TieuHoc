@@ -133,18 +133,12 @@ const app = {
                 onEscape: () => this.hideGuide()
             });
             const isAdmin = app.data.currentUser?.role?.toLowerCase() === 'admin';
-            document.getElementById('guide-title').textContent = isAdmin ? 'Hướng dẫn Admin' : 'Hướng Dẫn Hành Trình';
+            document.getElementById('guide-title').textContent = isAdmin ? 'Hướng dẫn Giáo viên' : 'Hướng dẫn Học sinh';
             const intro = modal.querySelectorAll('.guide-intro span');
-            intro[0].textContent = isAdmin ? 'Chuẩn bị lớp, đặt mốc học và theo dõi kết quả của học sinh.' : 'Chào mừng bạn đến với hành trình cùng Robot Mèo thám hiểm!';
-            intro[1].textContent = isAdmin ? 'Chọn “Dành cho Admin” để xem các bước quản lý; các mục còn lại giải thích cách học sinh chơi.' : 'Hãy xoay thiết bị ngang để bắt đầu cuộc phiêu lưu.';
-            modal.querySelectorAll('.guide-shop-only').forEach(element => {
-                element.hidden = !app.shop.canAccess();
-            });
-            modal.querySelectorAll('.guide-shop-paused').forEach(element => {
-                element.hidden = app.shop.canAccess();
-            });
-            modal.querySelectorAll('.guide-admin-only').forEach(element => {
-                element.hidden = !isAdmin;
+            intro[0].textContent = isAdmin ? 'Chuẩn bị lớp, soạn nội dung và theo dõi kết quả của học sinh.' : 'Chào mừng em đến với hành trình cùng Robot Mèo!';
+            intro[1].textContent = isAdmin ? 'Chọn một mục để xem các bước quản lý dành cho giáo viên.' : 'Chọn một mục để xem cách học và làm bài.';
+            modal.querySelectorAll('[data-guide-role]').forEach(element => {
+                element.hidden = element.dataset.guideRole !== (isAdmin ? 'admin' : 'student');
             });
             const content = document.getElementById('guide-content');
             if (content) content.scrollTop = 0;

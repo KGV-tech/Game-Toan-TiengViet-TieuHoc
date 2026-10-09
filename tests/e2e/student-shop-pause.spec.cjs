@@ -40,7 +40,7 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1440, height: 900
     await expect(page.locator('#guide-map')).toContainText('tạm khóa');
     await expect(page.locator('#guide-pets')).toBeHidden();
     await expect(page.locator('#guide-lucky')).toBeHidden();
-    await expect(page.locator('#guide-titles')).toContainText('Sao đang có được giữ trong tài khoản');
+    await expect(page.locator('#guide-titles')).toContainText('Danh hiệu và thanh tiến bộ nằm trên thẻ của em');
     await expect(page.locator('.guide-toc a[href="#guide-pets"]')).toBeHidden();
     await page.screenshot({ path: testInfo.outputPath(`student-guide-${viewport.width}.png`) });
     await page.keyboard.press('Escape');
