@@ -47,7 +47,7 @@ test('Phase 3 B07 hiển thị thước đo trong Preview và khi học sinh là
 
   await page.locator('#template-preview-open').click();
   await expect(page.locator('#template-preview-dialog')).toBeVisible();
-  await expect(page.locator('.template-preview-dialog__close')).toBeFocused();
+  await expect(page.locator('#template-preview-back')).toBeFocused();
   await expect(page.locator('#template-preview-dialog .template-preview__subquestion-visual')).toHaveCount(4);
   await expect(page.locator('#template-preview-dialog svg[aria-label="Hình góc trên thước đo góc"]')).toHaveCount(4);
   await page.keyboard.press('Escape');
