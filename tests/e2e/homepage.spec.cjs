@@ -519,7 +519,7 @@ test('lượt luyện Toán lớp 4 đưa template phù hợp lên đầu lượ
   expect(questionSources[0]).toBe('number.smallest_of_four');
   expect(questionSources.filter(source => source !== 'static')).toHaveLength(5);
   expect(questionSources.filter(source => source === 'number.smallest_of_four').length).toBeGreaterThan(0);
-  expect(questionSources.every(source => ['number.smallest_of_four', 'selection.math', 'static'].includes(source))).toBe(true);
+  expect(questionSources.every(source => ['number.smallest_of_four', 'selection.math', 'number.complete_place_table', 'static'].includes(source))).toBe(true);
 });
 
 test('điền khuyết bốn phép tính hiện bốn dòng và cấu hình sinh câu hỏi', async ({ page }, testInfo) => {
