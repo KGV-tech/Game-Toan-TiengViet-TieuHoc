@@ -2783,6 +2783,27 @@ const app = {
                 app.router.prefetch('shop-modal');
                 app.router.animateCatTo(shopSt, () => app.shop.open());
             }; // Will implement app.shop
+
+            // Reuse each station's existing route, role checks and cat destination.
+            document.querySelector('.map-station-regions')?.addEventListener('click', event => {
+                const region = event.target.closest('[data-map-station]');
+                const station = region && document.querySelector(region.dataset.mapStation);
+                if (!station || station.hidden) return;
+                const style = getComputedStyle(station);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.pointerEvents === 'none') return;
+                station.click();
+            });
+            document.querySelectorAll('.map-v2 .station:not(.station-guide)').forEach(station => {
+                station.setAttribute('role', 'button');
+                station.tabIndex = 0;
+                if (!station.hasAttribute('aria-label')) station.setAttribute('aria-label', station.querySelector('img').alt);
+                station.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        if (getComputedStyle(station).pointerEvents !== 'none') station.click();
+                    }
+                });
+            });
         },
         openConfig(subject) {
             app.data.refreshLearningSettings();
@@ -6079,6 +6100,10 @@ const app = {
                 guideStation.style.top = app.shop.canAccess() ? '82%' : '46%';
                 guideStation.style.left = app.shop.canAccess() ? '6%' : '67%';
             }
+            document.querySelectorAll('[data-map-station]').forEach(region => {
+                const target = document.querySelector(region.dataset.mapStation);
+                region.toggleAttribute('hidden', !target || target.hidden || getComputedStyle(target).display === 'none');
+            });
             if (!app.shop.canAccess()) app.shop.close();
             const managementActions = document.getElementById('admin-map-actions');
             if (managementActions) managementActions.hidden = !admin;

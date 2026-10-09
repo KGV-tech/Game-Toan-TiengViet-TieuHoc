@@ -137,3 +137,27 @@ html[data-theme="light"] .admin-map-action:focus-visible { outline-color: #0369a
 
 /* Trạm bị khóa phải ẩn cả khi layout trạm đặt display riêng. */
 .map-v2 .station[hidden] { display: none !important; }
+
+/* Transparent station areas: no border, fill, glow or hover decoration. */
+.map-station-regions {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9;
+  pointer-events: none;
+}
+.map-station-regions polygon {
+  fill: transparent;
+  stroke: none;
+  pointer-events: fill;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-station-regions polygon[hidden] { display: none; }
+.map-v2 .station[role="button"]:focus-visible {
+  outline: 3px solid #fff2a8;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
