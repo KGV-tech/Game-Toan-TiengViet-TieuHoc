@@ -49,21 +49,22 @@ function renderSingleAngleSVG(type, random) {
         extraMark = `<path d="M ${mx1.toFixed(1)},${my1.toFixed(1)} L ${cornerX.toFixed(1)},${cornerY.toFixed(1)} L ${mx2.toFixed(1)},${my2.toFixed(1)}" fill="none" stroke="#e11d48" stroke-width="1.8"/>`;
     }
 
-    return `
+    const svg = `
     <svg viewBox="0 0 100 80" width="100" height="80" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;display:inline-block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:2px;">
         <line x1="${cx}" y1="${cy}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
         <line x1="${cx}" y1="${cy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
         ${extraMark}
         <circle cx="${cx}" cy="${cy}" r="3.5" fill="#0369a1"/>
     </svg>`;
+    return { svg, degrees: spanDeg, rotation: baseRotationDeg };
 }
 
 function generateAngleDragClassify(config = {}, random = Math.random) {
     // 4 góc gồm đủ 4 loại nhọn, vuông, tù, bẹt
     const items = shuffle(ANGLE_TYPES, random).map((type, index) => {
         const label = String.fromCharCode(97 + index); // a, b, c, d
-        const svg = renderSingleAngleSVG(type, random);
-        return { label, type, svg };
+        const figure = renderSingleAngleSVG(type, random);
+        return { label, type, ...figure };
     });
 
     const rows = items.map(item => `<div style="display:inline-flex;align-items:center;margin:6px 12px;gap:8px;"><b style="font-size:1.1rem;">${item.label})</b> ${item.svg} ___</div>`).join('<br>');

@@ -161,7 +161,7 @@ const SHAPE_GEOMETRY = {
     trapezoid: { points: '62,112 94,36 198,36 226,112', parallelPairs: 1, equalSides: false, answer: 'Không phải cả hai' }
 };
 
-function renderQuadrilateralSVG(shapeKind) {
+function renderQuadrilateralSVG(shapeKind, rotation = 0) {
     const shape = SHAPE_GEOMETRY[shapeKind];
     const rhombusMarks = shapeKind === 'rhombus'
         ? '<path d="M 91 46 l 10 14 M 181 46 l -10 14 M 181 104 l -10 -14 M 91 104 l 10 -14" class="geometry-visual__equal-mark"/>'
@@ -169,11 +169,12 @@ function renderQuadrilateralSVG(shapeKind) {
     const parallelMarks = shape.parallelPairs === 2
         ? '<path d="M 100 32 l 10 12 M 178 32 l 10 12 M 100 118 l 10 -12 M 178 118 l 10 -12" class="geometry-visual__parallel-mark"/>'
         : '';
-    return svgShell('geometry-visual--quadrilateral', 'Một tứ giác cần nhận biết', `<polygon points="${shape.points}" class="geometry-visual__polygon geometry-visual__polygon--${shapeKind}"/>${rhombusMarks}${parallelMarks}<text x="34" y="141" class="geometry-visual__label">${SHAPE_LABELS[shapeKind]}</text>`);
+    return svgShell('geometry-visual--quadrilateral', 'Một tứ giác cần nhận biết', `<g transform="rotate(${rotation} 140 75)"><polygon points="${shape.points}" class="geometry-visual__polygon geometry-visual__polygon--${shapeKind}"/>${rhombusMarks}${parallelMarks}</g><text x="34" y="141" class="geometry-visual__label">${SHAPE_LABELS[shapeKind]}</text>`);
 }
 
 function shapePart(shapeKind, random, variant = 0) {
     const shape = SHAPE_GEOMETRY[shapeKind];
+    const rotation = randomInt(-3, 3, random) * 4;
     return {
         kind: 'quadrilateral',
         prompt: 'Hình dưới đây thuộc nhóm hình nào?',
@@ -184,10 +185,11 @@ function shapePart(shapeKind, random, variant = 0) {
             : shapeKind === 'trapezoid'
                 ? 'Hình này chỉ có một cặp cạnh song song nên không thuộc hai nhóm đang ôn.'
                 : 'Hình có hai cặp cạnh đối diện song song nên là hình bình hành.',
-        visual: renderQuadrilateralSVG(shapeKind),
+        visual: renderQuadrilateralSVG(shapeKind, rotation),
         geometry: {
             mode: 'quadrilateral',
             shapeKind,
+            rotation,
             points: shape.points.split(' ').map(point => point.split(',').map(Number)),
             parallelPairs: shape.parallelPairs,
             equalSides: shape.equalSides,

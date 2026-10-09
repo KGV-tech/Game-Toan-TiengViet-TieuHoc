@@ -32,6 +32,7 @@ function generateMinMaxOfFour(config = {}, random = Math.random) {
             label: String.fromCharCode(97 + index),
             prompt: TASK_PROMPTS[task],
             task,
+            values: [...options].sort((a, b) => a - b),
             taskLabel: TASK_LABELS[task],
             options: shuffle(options, random).map(formatNumber),
             answer: formatNumber(answer)

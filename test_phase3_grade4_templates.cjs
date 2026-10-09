@@ -24,7 +24,9 @@ for (let seed = 0; seed < 24; seed += 1) {
   assert.equal(question.ans.split(', ').length, 4);
   assert(question.subquestions.every(item => item.mode === 'measure'));
   assert(question.subquestions.every(item => Number.isInteger(item.degrees) && item.degrees >= 10 && item.degrees <= 170));
-  assert(question.subquestions.every(item => item.prompt.includes('độ')));
+  assert(question.subquestions.every(item => /độ|°/.test(item.prompt)));
+  assert.deepEqual(question.subquestions.map(item => item.exerciseKind).sort(), ['compare', 'notation', 'read', 'unit']);
+  assert(question.subquestions.every(item => item.visual.includes(`>${item.degrees}°</text>`)), 'Every target ray must carry its exact degree label.');
   assert(question.subquestions.every(item => /^<svg\b/i.test(item.visual)));
   assert(question.subquestions.every(item => /aria-label="Hình góc trên thước đo góc"/.test(item.visual)));
   assert(question.subquestions.every(item => item.options.length === 4));

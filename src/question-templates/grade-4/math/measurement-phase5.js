@@ -88,7 +88,17 @@ const practiceBuilders = { mass: makeMass, area: makeArea, time: makeTime, centu
 function makePracticeQuestion(config = {}, random) {
     const kinds = configuredValues(config, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, 'Phạm vi thực hành cần có ít nhất một nhóm đơn vị hợp lệ.');
     const selectedKind = chooseConfiguredValue(config, 'allowedKinds', PRACTICE_KINDS, PRACTICE_KINDS, random, 'Phạm vi thực hành cần có ít nhất một nhóm đơn vị hợp lệ.');
-    const subquestions = labels.map(label => ({ label, ...practiceBuilders[selectedKind](random) }));
+    const usedPrompts = new Set();
+    const subquestions = labels.map(label => {
+        for (let attempt = 0; attempt < 100; attempt++) {
+            const part = practiceBuilders[selectedKind](random);
+            if (!usedPrompts.has(part.prompt)) {
+                usedPrompts.add(part.prompt);
+                return { label, ...part };
+            }
+        }
+        throw new Error('Không thể tạo bốn dữ kiện thực hành khác nhau.');
+    });
     const prompt = `Thực hành ${PRACTICE_KIND_LABELS[selectedKind]}:`;
     const question = createFourPartMultipleChoiceQuestion(
         'measurement.practice_cards',

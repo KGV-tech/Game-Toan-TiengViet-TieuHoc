@@ -36,7 +36,7 @@ function generateAngleReview(config = {}, random = Math.random) {
             family: 'angle-measure',
             degrees,
             visual: renderProtractorSVG(degrees),
-            prompt: 'Đọc số đo góc trên thước đo góc và chọn đáp án đúng (độ).',
+            prompt: 'Đọc số đo góc trên thước (độ).',
             options: measureOptions(degrees, random),
             answer: `${degrees}°`
             };
@@ -53,7 +53,7 @@ function generateAngleReview(config = {}, random = Math.random) {
                 family: 'angle-classify',
                 degrees,
                 visual: renderAngleSVG(degrees),
-                prompt: 'Quan sát hình và chọn tên loại góc đúng.',
+                prompt: 'Chọn tên loại góc.',
                 options: classificationOptions(random),
                 answer: angleTypeOf(degrees)
             };

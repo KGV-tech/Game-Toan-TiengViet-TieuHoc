@@ -686,7 +686,7 @@ const app = {
                 .replace(/\s+/g, ' ')
                 .trim()
                 .toLocaleLowerCase('vi-VN');
-            const structuredKeys = ['subquestions', 'practiceRows', 'comparisonRows', 'statements', 'sequenceRounds'];
+            const structuredKeys = ['subquestions', 'practiceRows', 'comparisonRows', 'statements', 'sequenceRounds', 'angleItems', 'angleSpecs', 'matchingRows'];
             const structured = structuredKeys.reduce((result, key) => {
                 if (Array.isArray(question?.[key])) {
                     result[key] = question[key].map(item => {
@@ -700,10 +700,12 @@ const app = {
                 }
                 return result;
             }, {});
+            if (structured.matchingRows) structured.matchingRows.sort();
             return JSON.stringify([
                 normalize(question?.templateId || question?.generator_key),
                 normalize(question?.q),
                 structured,
+                question?.angleShape ?? null,
                 normalize(question?.lesson)
             ]);
         },
@@ -4209,10 +4211,14 @@ const app = {
                         ? `<img class="safe-password-illustration" src="${app.data.sanitizeHTML(subquestion.imageUrl)}" data-open-src="${app.data.sanitizeHTML(subquestion.openedImageUrl || './src/assets/safe-password-open-v1.png')}" alt="Két sắt cho câu ${index + 1}">`
                         : '';
                     const partLabel = app.data.sanitizeHTML(String(subquestion.label || String.fromCharCode(97 + index)));
-                    const partPrompt = this.getSubquestionPrompt(q, subquestion);
+                    const originalPartPrompt = this.getSubquestionPrompt(q, subquestion);
+                    const skillPrefix = `${subquestion.skillLabel || ''} · `;
+                    const partPrompt = subquestion.visual && subquestion.skillLabel && originalPartPrompt.startsWith(skillPrefix)
+                        ? originalPartPrompt.slice(skillPrefix.length)
+                        : originalPartPrompt;
                     const rawVisual = String(subquestion.visual || '').trim();
                     const visualMarkup = /^<svg\b/i.test(rawVisual) ? app.data.formatMathHTML(rawVisual) : '';
-                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
+                    row.className = `multi-choice-subquestion multi-choice-subquestion--tone-${index % 4}${isSafePassword ? ' multi-choice-subquestion--safe-password' : ''}${visualMarkup ? ' multi-choice-subquestion--visual' : ''}${partPrompt ? '' : ' multi-choice-subquestion--label-only'}`;
                     const heading = partPrompt
                         ? `<h3><span>${partLabel})</span> ${app.data.formatMathHTML(partPrompt)}</h3>`
                         : `<span class="multi-choice-subquestion__label-only">${partLabel})</span>`;
@@ -10013,7 +10019,7 @@ const app = {
                 },
                 'g4-m-angle-measure-read': {
                     defaultPrompt: '{question}',
-                    guide: 'Bài 7 · Đọc số đo góc trên thước đo góc và chọn đúng bốn số đo. Mỗi câu con đúng được 0,25 điểm.',
+                    guide: 'Bài 7 · Luyện đọc, so sánh số đo góc, nhận biết đơn vị độ và cách viết số đo. Mỗi câu con đúng được 0,25 điểm.',
                     hint: 'Dùng <code>{question}</code> để giữ nguyên bốn hình thước đo góc, câu hỏi và phương án do game sinh.',
                     preview: 'live',
                     type: 'Trắc nghiệm',

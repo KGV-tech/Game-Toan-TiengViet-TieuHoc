@@ -9060,3 +9060,14 @@ html.ws-print-window, .ws-print-window body { position: static !important; heigh
 .ws-paper .ws-matching { display:grid; gap:2mm; }
 
 .ws-studio [hidden] { display: none !important; }
+
+.angle-protractor__target-label {
+    fill: #be185d;
+    font-size: 17px;
+    font-weight: 900;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #fff;
+    stroke-width: 4px;
+    stroke-linejoin: round;
+}
