@@ -38,6 +38,7 @@
             results.every(Boolean)
             && typeof window.Grade4MathTemplates?.generateQuestion === 'function'
             && typeof window.Grade4VietnameseTemplates?.generateQuestion === 'function'
+            && typeof window.Grade5PracticeTemplates?.generateQuestion === 'function'
         ));
     };
     // Deferred scripts run while readyState is "interactive", before the DOM

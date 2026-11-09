@@ -43,9 +43,16 @@ const states = learningPath.getProgressStates({
 assert.deepEqual(states.map(item => item.state), ['completed', 'current', 'locked', 'locked', 'locked']);
 assert.equal(learningPath.getRecommendedEntry(states)?.id, 'g4-math-hk1-b02');
 
+const grade3Vietnamese = learningPath.getEntries({ classlevel: '3', subject: 'vietnamese' });
+assert.equal(grade3Vietnamese[0].kind, 'topic', 'Unsupported curricula must fall back to topics, not invented lessons.');
+assert.equal(grade3Vietnamese[0].synthetic, true);
 const grade5Vietnamese = learningPath.getEntries({ classlevel: '5', subject: 'vietnamese' });
-assert.equal(grade5Vietnamese[0].kind, 'topic', 'Unsupported curricula must fall back to topics, not invented lessons.');
-assert.equal(grade5Vietnamese[0].synthetic, true);
+assert.equal(grade5Vietnamese[0].kind, 'lesson');
+assert.equal(grade5Vietnamese[0].synthetic, false);
+assert.equal(learningPath.getReleaseBoundary({
+  settings: { lessonReleaseByClass: { '5': { vietnamese: 'topic-5-vietnamese-hk1-1' } } },
+  classlevel: '5', subject: 'vietnamese'
+}).id, 'g5-vietnamese-hk1-b08');
 const subjectSafeStates = learningPath.getProgressStates({
   entries: grade5Vietnamese.slice(0, 1),
   subject: 'vietnamese',

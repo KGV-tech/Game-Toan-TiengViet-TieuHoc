@@ -56,7 +56,20 @@
         const subjectKey = normalizeSubject(subject);
         const id = settings?.lessonReleaseByClass?.[classNumber]?.[subjectKey];
         if (!id) return null;
-        return getEntries({ classlevel: classNumber, subject: subjectKey }).find(entry => entry.id === id) || null;
+        const entries = getEntries({ classlevel: classNumber, subject: subjectKey });
+        const release = entries.find(entry => entry.id === id);
+        if (release || classNumber !== '5') return release || null;
+        // A class may still have a topic-level release saved from before the Grade 5 lesson catalog.
+        const legacyTopics = getTopics(classNumber, subjectKey);
+        let order = 0;
+        for (const semester of ['hk1', 'hk2']) {
+            for (const topic of legacyTopics[semester] || []) {
+                if (id === `topic-${classNumber}-${subjectKey}-${semester}-${++order}`) {
+                    return entries.findLast(entry => entry.topic === topic && entry.semester === semester) || null;
+                }
+            }
+        }
+        return null;
     };
 
     const roundMatchesEntry = (round, entry, context = {}) => {
