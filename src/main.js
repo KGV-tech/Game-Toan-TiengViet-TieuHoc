@@ -676,6 +676,7 @@ const app = {
             return JSON.stringify(semantic);
         },
         getQuestionSemanticKey(question) {
+            if (question?.templateId?.startsWith('g1.')) return JSON.stringify([question.templateId, question.lesson, question.q]);
             if (question?.quickPractice && Array.isArray(question.subquestions)) return JSON.stringify([question.templateId, question.lesson, question.subquestions.map(part => part?.id).sort()]);
             const normalize = value => String(value ?? '')
                 .replace(/<[^>]*>/g, ' ')
@@ -754,6 +755,9 @@ const app = {
             ]);
         },
         generateTemplateQuestion(template) {
+            if (window.Grade1PracticeTemplates?.isTemplate(template)) {
+                return window.Grade1PracticeTemplates.generateTemplateQuestion(template);
+            }
             const grade5Registry = window.Grade5PracticeTemplates;
             if (grade5Registry?.templateIds.includes(template?.generator_key)) {
                 try {
@@ -3467,9 +3471,18 @@ const app = {
                     && !app.data.validateQuestionScoring(q);
             });
 
+            if (clLevel === '1' && window.Grade1PracticeTemplates) {
+                const builtInQuestions = window.Grade1PracticeTemplates.getPracticeQuestions({
+                    subject: this.state.subject, topics: this.state.selectedTopics, lesson: selectedLessonId,
+                    savedTemplates: app.data.questionTemplates || []
+                });
+                pool.push(...builtInQuestions);
+            }
+
             const grade5Registry = window.Grade5PracticeTemplates;
             let dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
-                if (template.is_active === false || grade5Registry?.templateIds.includes(template.generator_key)) return false;
+                if (template.is_active === false || window.Grade1PracticeTemplates?.isTemplate(template)
+                    || grade5Registry?.templateIds.includes(template.generator_key)) return false;
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
                 const matchSubject = same(template.subject, mappedSubject);
                 const matchClass = same(String(template.classlevel || '').replace(/^Lớp\s*/i, ''), clLevel);
@@ -9371,6 +9384,26 @@ const app = {
             this.selectionTemplateDraft = {...template, id:undefined};
             this.renderTemplateForm(null);
         },
+        previewGrade1Template(index) {
+            if (!this.isAdminUser() || !Number.isInteger(index)) return;
+            const item = app.data.questionTemplates[index];
+            if (!window.Grade1PracticeTemplates?.isTemplate(item)) return;
+            const preview = this.getComposerContentBox()?.querySelector(
+                `[data-template-card-index="${index}"] .template-library-card__preview`
+            );
+            if (!preview) return;
+            const question = window.Grade1PracticeTemplates.generateTemplateQuestion({ ...item, is_active: true });
+            if (!question) {
+                preview.textContent = 'Cấu hình này không khớp bài học trong game.';
+                return;
+            }
+            const prompt = app.data.formatMathHTML(question.q)
+                .replaceAll('___', '<i class="template-preview__blank" aria-label="Ô điền đáp án"></i>');
+            const options = question.options.map(option => '<span>' + app.data.sanitizeHTML(option) + '</span>').join('');
+            preview.innerHTML = '<section class="template-preview__canvas" aria-label="Câu hỏi mẫu">' +
+                '<div class="template-preview__question">' + prompt + '</div>' +
+                (options ? '<div class="template-preview__choices">' + options + '</div>' : '') + '</section>';
+        },
         renderTemplates(box) {
             if (!box) return;
             // The library indexes are also used by edit/delete actions, so it must
@@ -9402,6 +9435,7 @@ const app = {
             );
             const esc = value => app.data.sanitizeHTML(value ?? '');
             const cardMarkup = ({ item, index }) => {
+                const isGrade1 = window.Grade1PracticeTemplates?.isTemplate(item);
                 const tone = this.getTemplateCardTone(item);
                 const name = item.name || item.generator_key || 'Cấu hình câu hỏi chưa đặt tên';
                 const classlevel = item.classlevel || 'Chưa gắn cấp lớp';
@@ -9421,7 +9455,11 @@ const app = {
                   <div class="template-library-card__context"><span>${esc(classlevel)}</span><span>${esc(subject)}</span></div>
                   <div class="template-library-card__curriculum"><span>Chủ đề</span><strong>${esc(topic)}</strong><span>Bài học</span><strong>${esc(lesson)}</strong></div>
                   <div class="template-library-card__prompt"><span>Mẫu câu hiển thị</span><p>${esc(prompt)}</p></div>
-                  <footer class="template-library-card__actions">${bundled ? '<span>Mẫu lớp 5 · Xem câu mẫu ở danh mục bên dưới</span>' : `<button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa cấu hình câu hỏi</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button>`}</footer>
+                  <footer class="template-library-card__actions">${isGrade1
+                    ? `<button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.previewGrade1Template(${index})">Xem câu mẫu</button>`
+                    : bundled ? '<span>Mẫu lớp 5 · Xem câu mẫu ở danh mục bên dưới</span>'
+                    : `<button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa cấu hình câu hỏi</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button>`}</footer>
+                  ${isGrade1 ? '<div class="template-library-card__preview" aria-live="polite"></div>' : ''}
                 </article>`;
             };
             const emptyMarkup = `<div class="template-library__empty admin-empty-state" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có cấu hình câu hỏi phù hợp' : 'Kho cấu hình câu hỏi đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một cấu hình câu hỏi mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo cấu hình câu hỏi mới</button></div>`;
