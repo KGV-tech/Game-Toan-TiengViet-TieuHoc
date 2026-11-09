@@ -16,7 +16,7 @@
                 },
                 vietnamese: {
                     hk1: ['Lớp 1 tập trung hoàn toàn vào việc học Âm, Vần, Chữ Cái'],
-                    hk2: ['1. Tôi và các bạn', '2. Mái ấm gia đình', '3. Mái trường mến yêu', '4. Điều em cần biết', '5. Bài học từ cuộc sống', '6. Thiên nhiên kỳ thú', '7. Thế giới trong mắt em', '8. Đất nước và con người']
+                    hk2: root.Grade1PracticeCatalog?.vietnameseTopics || ['1. Tôi và các bạn', '2. Mái ấm gia đình', '3. Mái trường mến yêu', '4. Điều em cần biết', '5. Bài học từ cuộc sống', '6. Thiên nhiên kỳ thú', '7. Thế giới trong mắt em', '8. Đất nước và con người']
                 }
             },
             "2": {
@@ -508,4 +508,7 @@
         }
     }
     root.app.constants.lessonCatalog['5'] = grade5;
+    if (root.Grade1PracticeCatalog) {
+        root.app.constants.lessonCatalog['1'] = root.Grade1PracticeCatalog.buildCatalog(root.app.constants.topics['1']);
+    }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
