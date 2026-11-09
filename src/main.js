@@ -244,8 +244,9 @@ const app = {
             return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
         },
         formatMathText(value) {
-            return String(value ?? '').replace(/(\bnăm\s+)(\d{1,4})\b|\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/giu, (match, yearPrefix, year) => {
-                return yearPrefix ? `${yearPrefix}${year}` : this.formatMathNumber(match);
+            return String(value ?? '').replace(/(\bnăm\s+)(\d{1,4})\b|\b(\d+(?:[ \u00a0]\d{3})*)(,\d+)\b|\b\d{1,3}(?:[ \u00a0]\d{3})+\b|\b\d{4,}\b/giu, (match, yearPrefix, year, whole, decimal) => {
+                if (yearPrefix) return `${yearPrefix}${year}`;
+                return decimal ? this.formatMathNumber(whole) + decimal : this.formatMathNumber(match);
             });
         },
         formatMathHTML(value) {
@@ -753,6 +754,16 @@ const app = {
             ]);
         },
         generateTemplateQuestion(template) {
+            const grade5Registry = window.Grade5PracticeTemplates;
+            if (grade5Registry?.templateIds.includes(template?.generator_key)) {
+                try {
+                    const question = grade5Registry.generateQuestion(template.generator_key, template.config);
+                    return ['classlevel', 'subject', 'semester', 'topic', 'lesson'].every(key => !template[key] || template[key] === question[key])
+                        ? question : null;
+                } catch {
+                    return null;
+                }
+            }
             const registry = window.CompleteTableTemplates?.templateIds.includes(template?.generator_key) ? window.CompleteTableTemplates : window.MultiSelectTemplates?.templateIds.includes(template?.generator_key) ? window.MultiSelectTemplates : app.data.normalizeQuestionPart(template?.subject) === app.data.normalizeQuestionPart('Tiếng Việt')
                 ? window.Grade4VietnameseTemplates
                 : window.Grade4MathTemplates;
@@ -832,7 +843,11 @@ const app = {
             if (Array.isArray(question?.statements)) return question.statements.length;
             const answer = String(question?.ans || '').trim();
             if (!answer) return 0;
+            if (this.isSingleChoiceAnswer(question)) return 1;
             return answer.split(/[|,]/).map(part => part.trim()).filter(Boolean).length;
+        },
+        isSingleChoiceAnswer(question) {
+            return question?.type === 'Trắc nghiệm' && question.answerMode === 'single' && question.options?.includes(question.ans);
         },
         isSupportedPartCount(count) {
             return [1, 2, 4].includes(Number(count));
@@ -3452,8 +3467,9 @@ const app = {
                     && !app.data.validateQuestionScoring(q);
             });
 
+            const grade5Registry = window.Grade5PracticeTemplates;
             let dynamicTemplates = (app.data.questionTemplates || []).filter(template => {
-                if (template.is_active === false) return false;
+                if (template.is_active === false || grade5Registry?.templateIds.includes(template.generator_key)) return false;
                 const same = (left, right) => app.data.normalizeQuestionPart(left) === app.data.normalizeQuestionPart(right);
                 const matchSubject = same(template.subject, mappedSubject);
                 const matchClass = same(String(template.classlevel || '').replace(/^Lớp\s*/i, ''), clLevel);
@@ -3468,6 +3484,23 @@ const app = {
                     && matchLesson
                     && this.isTemplateAllowedForTopic(template.generator_key, selectedTopic);
             });
+
+            if (clLevel === '5' && grade5Registry) {
+                const grade5TemplateKey = template => `${template.generator_key}:${template.lesson || template.config?.lesson}`;
+                const stored = new Map((app.data.questionTemplates || [])
+                    .filter(template => template.classlevel === 'Lớp 5' && template.subject === mappedSubject
+                        && grade5Registry.templateIds.includes(template.generator_key))
+                    .map(template => [grade5TemplateKey(template), template]));
+                const templates = grade5Registry.getDefaultTemplates().filter(template =>
+                    template.subject === mappedSubject && this.state.selectedTopics.includes(template.topic)
+                    && (!selectedLessonId || template.lesson === selectedLessonId)
+                    && stored.get(grade5TemplateKey(template))?.is_active !== false);
+                if (mappedSubject === 'Tiếng Việt') {
+                    pool.push(...templates.flatMap(template => grade5Registry.getQuestionVariants(template.generator_key, template.config)));
+                } else {
+                    dynamicTemplates.push(...templates);
+                }
+            }
 
             const builtInSelectionTemplates = clLevel === '4' ? [...window.MultiSelectTemplates.getDefaultTemplates(), ...window.CompleteTableTemplates.getDefaultTemplates()].filter(template => {
                 return template.subject === mappedSubject && this.state.selectedTopics.includes(template.topic)
@@ -3724,6 +3757,10 @@ const app = {
                 if (window.Grade4VietnameseTemplates.validateQuestion(q)) return { answerCount: 2, correctCount: 0, points: 0, isCorrect: false };
                 return window.VietnameseQuickPractice.score(q, selected);
             }
+            if (app.data.isSingleChoiceAnswer(q)) {
+                const isCorrect = String(selected ?? '').trim().normalize('NFC') === String(q.ans).trim().normalize('NFC');
+                return { answerCount: 1, correctCount: Number(isCorrect), points: Number(isCorrect), isCorrect };
+            }
             const expected = Array.isArray(q?.statements)
                 ? q.statements.map(statement => String(statement.answer || '').trim())
                 : this.getAnsArr(String(q?.ans || ''));
@@ -3849,6 +3886,7 @@ const app = {
             return /^\d+$/.test(compactNumber) ? compactNumber : normalized.toLocaleLowerCase('vi-VN');
         },
         getAnswerGroups(question) {
+            if (app.data.isSingleChoiceAnswer(question)) return [{ label: '', answers: [question.ans] }];
             const answerValues = Array.isArray(question?.statements)
                 ? question.statements.map(statement => String(statement?.answer ?? '').trim())
                 : this.getAnsArr(String(question?.ans || ''));
@@ -5793,6 +5831,7 @@ const app = {
                 const expected = String(question.ans || '').split(',').map(value => this.normalizeAnswer(value));
                 return chosen.length === expected.length && chosen.every((value, index) => value === expected[index]);
             }
+            if (app.data.isSingleChoiceAnswer(question)) return app.game.calculateQuestionScore(question, selected).isCorrect;
             return this.normalizeAnswer(selected) === this.normalizeAnswer(question.ans);
         },
         applySavedAnswers(answers = []) {
@@ -9338,10 +9377,11 @@ const app = {
             // contain only persisted templates. Built-in Vietnamese templates are
             // read-only practice fallbacks and are not admin-library records.
             const templates = Array.isArray(app.data.questionTemplates) ? app.data.questionTemplates : [];
-            const unique = key => [...new Set(templates.map(item => item[key]).filter(Boolean))].sort();
+            const filterTemplates = [...templates, ...(window.Grade5PracticeTemplates?.getDefaultTemplates() || [])];
+            const unique = key => [...new Set(filterTemplates.map(item => item[key]).filter(Boolean))].sort();
             const optionList = (values, selected, label) => `<option value="">${label}</option>${values.map(value => `<option value="${app.data.sanitizeHTML(value)}" ${value === selected ? 'selected' : ''}>${app.data.sanitizeHTML(value)}</option>`).join('')}`;
             const filters = this.templateFilters;
-            const scopedTemplates = templates.filter(item =>
+            const scopedTemplates = filterTemplates.filter(item =>
                 (!filters.classlevel || item.classlevel === filters.classlevel) &&
                 (!filters.subject || item.subject === filters.subject)
             );
@@ -9371,6 +9411,7 @@ const app = {
                 const lesson = this.getTemplateLessonDisplay(item);
                 const prompt = item.prompt_template || 'Chưa có mẫu câu hiển thị.';
                 const status = item.is_active === false ? 'Tạm ẩn' : 'Đang dùng';
+                const bundled = window.Grade5PracticeTemplates?.templateIds.includes(item.generator_key);
                 return `<article class="template-library-card template-library-card--${tone}" data-template-card-index="${index}">
                   <header class="template-library-card__header">
                     <span class="template-library-card__icon" aria-hidden="true">${type.includes('Điền') ? '✎' : type.includes('Đúng') ? '✓' : type.includes('Kéo') ? '↔' : 'T'}</span>
@@ -9380,7 +9421,7 @@ const app = {
                   <div class="template-library-card__context"><span>${esc(classlevel)}</span><span>${esc(subject)}</span></div>
                   <div class="template-library-card__curriculum"><span>Chủ đề</span><strong>${esc(topic)}</strong><span>Bài học</span><strong>${esc(lesson)}</strong></div>
                   <div class="template-library-card__prompt"><span>Mẫu câu hiển thị</span><p>${esc(prompt)}</p></div>
-                  <footer class="template-library-card__actions"><button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa cấu hình câu hỏi</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button></footer>
+                  <footer class="template-library-card__actions">${bundled ? '<span>Mẫu lớp 5 · Xem câu mẫu ở danh mục bên dưới</span>' : `<button type="button" class="template-library-card__action template-library-card__action--edit" onclick="app.admin.renderTemplateForm(${index})">Sửa cấu hình câu hỏi</button><button type="button" class="template-library-card__action template-library-card__action--delete" onclick="app.admin.deleteTemplate(${index})">Xóa</button>`}</footer>
                 </article>`;
             };
             const emptyMarkup = `<div class="template-library__empty admin-empty-state" role="status"><span class="template-library__empty-icon" aria-hidden="true">✦</span><h4>${templates.length ? 'Không có cấu hình câu hỏi phù hợp' : 'Kho cấu hình câu hỏi đang chờ mẫu đầu tiên'}</h4><p>${templates.length ? 'Thử đổi bộ lọc để xem thêm cấu hình.' : 'Tạo một cấu hình câu hỏi mới để bắt đầu xây ngân hàng câu hỏi theo từng Bài học.'}</p><button type="button" class="template-library__create template-library__create--empty" onclick="app.admin.renderTemplateForm(null)">＋ Tạo cấu hình câu hỏi mới</button></div>`;
@@ -9409,6 +9450,44 @@ const app = {
             const tableTemplate=window.CompleteTableTemplates.getDefaultTemplates()[0];
             if ((!filters.subject||filters.subject==='Toán')&&(!filters.lesson||filters.lesson===tableTemplate.lesson)&&(!filters.topic||filters.topic===tableTemplate.topic)) box.insertAdjacentHTML('beforeend','<section class="template-selection-library"><h3>Bài 10 · Hoàn thành Bảng</h3><p>4 dòng · Viết số, Đọc số và chữ số theo hàng · 0,25 điểm/dòng</p><button class="btn btn-primary" type="button" onclick="app.admin.openCompleteTableTemplate()">Xem và tùy chỉnh bảng</button></section>');
             window.VietnameseQuickPractice?.appendCatalog(box);
+            this.renderGrade5TemplateCatalog(box);
+        },
+        renderGrade5TemplateCatalog(box) {
+            const filters = this.templateFilters;
+            const templates = window.Grade5PracticeTemplates?.getDefaultTemplates().filter(template =>
+                (!filters.classlevel || filters.classlevel === template.classlevel)
+                && (!filters.subject || filters.subject === template.subject)
+                && (!filters.topic || filters.topic === template.topic)
+                && (!filters.lesson || filters.lesson === template.lesson)
+                && (!filters.questionType || filters.questionType === template.question_type)
+                && (!filters.generatorKey || filters.generatorKey === template.generator_key)) || [];
+            if (!templates.length) return;
+            const esc = value => app.data.sanitizeHTML(value);
+            const groups = ['Toán', 'Tiếng Việt'].map(subject => {
+                const options = templates.filter(template => template.subject === subject).map(template =>
+                    `<option value="${esc(template.id)}">${esc(template.semester)} · ${esc(template.name)}</option>`).join('');
+                return options ? `<optgroup label="${subject}">${options}</optgroup>` : '';
+            }).join('');
+            box.insertAdjacentHTML('beforeend', `<section class="template-selection-library">
+                <h3>Lớp 5 · Mẫu luyện tập theo bài học</h3>
+                <label for="grade5-builtin-lesson">Môn và bài học</label>
+                <select class="form-input" id="grade5-builtin-lesson">${groups}</select>
+                <button type="button" class="btn btn-primary" onclick="app.admin.previewGrade5Template()">Xem câu mẫu</button>
+                <div id="grade5-builtin-preview" aria-live="polite"></div>
+            </section>`);
+        },
+        previewGrade5Template() {
+            const id = document.getElementById('grade5-builtin-lesson')?.value;
+            const preview = document.getElementById('grade5-builtin-preview');
+            const template = window.Grade5PracticeTemplates?.getDefaultTemplates().find(item => item.id === id);
+            if (!preview || !template) return;
+            const question = app.data.generateTemplateQuestion(template);
+            if (!question) return;
+            const esc = value => app.data.sanitizeHTML(value);
+            const options = question.options.map(option => `<li>${esc(option)}</li>`).join('');
+            preview.innerHTML = `<p>${app.data.formatMathHTML(question.q)}</p><ul>${options}</ul>
+                <p><strong>Đáp án</strong> ${esc(question.ans)}. ${esc(question.explanation)}</p>
+                <p>SGK ${esc(question.source.book)}, tập ${question.source.volume}, trang ${question.source.page}</p>`;
         },
         getTemplateTopics(classlevel, subject, semester) {
             const classNumber = String(classlevel || '').replace('Lớp ', '');

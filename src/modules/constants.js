@@ -293,4 +293,219 @@
             }
         }
     };
+    const grade5Lessons = {
+        math: {
+            hk1: [
+                [
+                    [1, "Ôn tập số tự nhiên", 6, "natural,roundNatural"],
+                    [2, "Ôn tập các phép tính với số tự nhiên", 9, "naturalOps"],
+                    [3, "Ôn tập phân số", 11, "fraction,equivalent"],
+                    [4, "Phân số thập phân", 14, "decimalFraction"],
+                    [5, "Ôn tập các phép tính với phân số", 16, "fractionReview"],
+                    [6, "Cộng, trừ hai phân số khác mẫu số", 20, "fractionAdd,fractionSubtract"],
+                    [7, "Hỗn số", 23, "mixed"],
+                    [8, "Ôn tập hình học và đo lường", 26, "angle,massReview,timeConvert"],
+                    [9, "Luyện tập chung", 29, "naturalOps,equivalent,fractionAdd,mixed,rectangle"]
+                ],
+                [
+                    [10, "Khái niệm số thập phân", 32, "decimalPlace,decimalRepresentation"],
+                    [11, "So sánh các số thập phân", 38, "compareDecimal"],
+                    [12, "Viết số đo đại lượng dưới dạng số thập phân", 42, "measure"],
+                    [13, "Làm tròn số thập phân", 47, "roundDecimal"],
+                    [14, "Luyện tập chung", 51, "decimalPlace,compareDecimal,measure,roundDecimal"]
+                ],
+                [
+                    [15, "Ki-lô-mét vuông. Héc-ta", 53, "hectare"],
+                    [16, "Các đơn vị đo diện tích", 56, "areaConvert"],
+                    [17, "Thực hành và trải nghiệm với một số đơn vị đo đại lượng", 60, "measure,rectangle,areaConvert"],
+                    [18, "Luyện tập chung", 62, "hectare,areaConvert"]
+                ],
+                [
+                    [19, "Phép cộng số thập phân", 65, "decimalAdd"],
+                    [20, "Phép trừ số thập phân", 68, "decimalSubtract"],
+                    [21, "Phép nhân số thập phân", 71, "decimalMultiply"],
+                    [22, "Phép chia số thập phân", 76, "decimalDivide"],
+                    [23, "Nhân, chia số thập phân với 10; 100; 1 000;... hoặc với 0,1; 0,01; 0,001;...", 83, "decimalShift"],
+                    [24, "Luyện tập chung", 88, "decimalAdd,decimalSubtract,decimalMultiply,decimalDivide,decimalShift"]
+                ],
+                [
+                    [25, "Hình tam giác. Diện tích hình tam giác", 91, "triangleKind,triangleArea"],
+                    [26, "Hình thang. Diện tích hình thang", 98, "trapezoid"],
+                    [27, "Đường tròn. Chu vi và diện tích hình tròn", 105, "circleMeasure,circleArea"],
+                    [28, "Thực hành và trải nghiệm đo, vẽ, lắp ghép, tạo hình", 113, "circleMeasure,composeShape"],
+                    [29, "Luyện tập chung", 116, "triangleArea,trapezoid,circleArea"]
+                ],
+                [
+                    [30, "Ôn tập số thập phân", 120, "decimalPlace,compareDecimal,roundDecimal"],
+                    [31, "Ôn tập các phép tính với số thập phân", 123, "decimalAdd,decimalSubtract,decimalMultiply,decimalDivide"],
+                    [32, "Ôn tập một số hình phẳng", 127, "triangleKind,circleRadius"],
+                    [33, "Ôn tập diện tích, chu vi một số hình phẳng", 130, "triangleArea,trapezoid,circleArea,circleMeasure"],
+                    [34, "Ôn tập đo lường", 133, "measure,hectare,areaConvert"],
+                    [35, "Ôn tập chung", 135, "roundDecimal,decimalDivide,triangleArea,circleArea,areaConvert"]
+                ]
+            ],
+            hk2: [
+                [
+                    [36, "Tỉ số. Tỉ số phần trăm", 4, "ratio,percentFraction"],
+                    [37, "Tỉ lệ bản đồ và ứng dụng", 8, "scale"],
+                    [38, "Tìm hai số khi biết tổng và tỉ số của hai số đó", 12, "sumRatio"],
+                    [39, "Tìm hai số khi biết hiệu và tỉ số của hai số đó", 15, "differenceRatio"],
+                    [40, "Tìm tỉ số phần trăm của hai số", 18, "percentRatio"],
+                    [41, "Tìm giá trị phần trăm của một số", 21, "percentValue"],
+                    [42, "Máy tính cầm tay", 23, "calculator"],
+                    [43, "Thực hành và trải nghiệm sử dụng máy tính cầm tay", 27, "calculatorContext"],
+                    [44, "Luyện tập chung", 28, "scale,sumRatio,differenceRatio,percentRatio,percentValue"]
+                ],
+                [
+                    [45, "Thể tích của một hình", 30, "cubeCount"],
+                    [46, "Xăng-ti-mét khối. Đề-xi-mét khối", 33, "volumeSmall"],
+                    [47, "Mét khối", 35, "volumeLarge"],
+                    [48, "Luyện tập chung", 38, "cubeCount,volumeSmall,volumeLarge"]
+                ],
+                [
+                    [49, "Hình khai triển của hình lập phương, hình hộp chữ nhật và hình trụ", 40, "net"],
+                    [50, "Diện tích xung quanh và diện tích toàn phần của hình hộp chữ nhật", 44, "boxArea"],
+                    [51, "Diện tích xung quanh và diện tích toàn phần của hình lập phương", 48, "cubeArea"],
+                    [52, "Thể tích của hình hộp chữ nhật", 51, "boxVolume"],
+                    [53, "Thể tích của hình lập phương", 54, "cubeVolume"],
+                    [54, "Thực hành tính toán và ước lượng thể tích một số hình khối", 58, "estimateVolume"],
+                    [55, "Luyện tập chung", 60, "boxArea,cubeArea,boxVolume,cubeVolume"]
+                ],
+                [
+                    [56, "Các đơn vị đo thời gian", 64, "timeConvert"],
+                    [57, "Cộng, trừ số đo thời gian", 67, "timeAddSubtract"],
+                    [58, "Nhân, chia số đo thời gian với một số", 71, "timeMultiplyDivide"],
+                    [59, "Vận tốc của một chuyển động đều", 76, "speed"],
+                    [60, "Quãng đường, thời gian của một chuyển động đều", 78, "distance,duration"],
+                    [61, "Thực hành tính toán và ước lượng về vận tốc, quãng đường, thời gian trong chuyển động đều", 82, "motionPractice"],
+                    [62, "Luyện tập chung", 84, "timeConvert,timeAddSubtract,speed,distance,duration"]
+                ],
+                [
+                    [63, "Thu thập, phân loại, sắp xếp các số liệu", 87, "survey"],
+                    [64, "Biểu đồ hình quạt tròn", 90, "pie"],
+                    [65, "Tỉ số của số lần lặp lại một sự kiện so với tổng số lần thực hiện", 94, "frequency"],
+                    [66, "Thực hành và trải nghiệm thu thập, phân tích, biểu diễn các số liệu thống kê", 96, "survey,pie"],
+                    [67, "Luyện tập chung", 100, "survey,pie,frequency"]
+                ],
+                [
+                    [68, "Ôn tập số tự nhiên, phân số, số thập phân", 103, "natural,equivalent,decimalPlace,compareDecimal"],
+                    [69, "Ôn tập các phép tính với số tự nhiên, phân số, số thập phân", 107, "naturalOps,fractionOps,decimalDivide"],
+                    [70, "Ôn tập tỉ số, tỉ số phần trăm", 111, "ratio,percentRatio,percentValue"],
+                    [71, "Ôn tập hình học", 113, "triangleArea,trapezoid,circleArea,boxArea,cubeVolume"],
+                    [72, "Ôn tập đo lường", 119, "measure,areaConvert,volumeLarge,timeConvert"],
+                    [73, "Ôn tập toán chuyển động đều", 121, "speed,distance,duration"],
+                    [74, "Ôn tập một số yếu tố thống kê và xác suất", 123, "survey,pie,frequency"],
+                    [75, "Ôn tập chung", 128, "fractionOps,decimalMultiply,percentValue,boxVolume,motionPractice,pie"]
+                ]
+            ]
+        },
+        vietnamese: {
+            hk1: [
+                [
+                    [1, "Thanh âm của gió", 8, "10:wordClass,8:windReading"],
+                    [2, "Cánh đồng hoa", 13, "15:story"],
+                    [3, "Tuổi Ngựa", 18, "20:pronoun"],
+                    [4, "Bến sông tuổi thơ", 23, "25:story"],
+                    [5, "Tiếng hạt nảy mầm", 28, "29:pronoun"],
+                    [6, "Ngôi sao sân cỏ", 31, "33:report"],
+                    [7, "Bộ sưu tập độc đáo", 36, "38:pronoun"],
+                    [8, "Hành tinh kì lạ", 41, "43:report"]
+                ],
+                [
+                    [9, "Trước cổng trời", 46, "47:synonym,46:skyReading"],
+                    [10, "Kì diệu rừng xanh", 51, "53:landscape"],
+                    [11, "Hang Sơn Đoòng – những điều kì thú", 56, "58:synonym"],
+                    [12, "Những hòn đảo trên vịnh Hạ Long", 60, "61:landscape"],
+                    [13, "Mầm non", 64, "65:polysemy"],
+                    [14, "Những ngọn núi nóng rẫy", 68, "70:landscape"],
+                    [15, "Bài ca về mặt trời", 72, "74:polysemy"],
+                    [16, "Xin chào, Xa-ha-ra", 76, "78:landscape"],
+                    ["mid", "Ôn tập giữa học kì I", 80, "80:wordClass,80:pronoun,80:synonym,80:polysemy"]
+                ],
+                [
+                    [17, "Thư gửi các học sinh", 89, "90:dictionary"],
+                    [18, "Tấm gương tự học", 94, "96:bookCharacter,94:studyReading"],
+                    [19, "Trải nghiệm để sáng tạo", 98, "100:dictionary"],
+                    [20, "Khổ luyện thành tài", 102, "104:bookCharacter"],
+                    [21, "Thế giới trong trang sách", 105, "106:dash"],
+                    [22, "Từ những câu chuyện ấu thơ", 110, "112:storyResponse"],
+                    [23, "Giới thiệu sách Dế Mèn phiêu lưu kí", 114, "115:dash"],
+                    [24, "Tinh thần học tập của nhà Phi-lít", 117, "119:storyResponse"]
+                ],
+                [
+                    [25, "Tiếng đàn ba-la-lai-ca trên sông Đà", 122, "123:repetition"],
+                    [26, "Trí tưởng tượng phong phú", 127, "129:poemResponse"],
+                    [27, "Tranh làng Hồ", 132, "134:repetition,132:paintingReading"],
+                    [28, "Tập hát quan họ", 136, "138:poemResponse"],
+                    [29, "Phim hoạt hình Chú ốc sên bay", 140, "141:connector"],
+                    [30, "Nghệ thuật múa ba lê", 145, "147:filmCharacter"],
+                    [31, "Một ngôi chùa độc đáo", 149, "151:connector"],
+                    [32, "Sự tích chú Tễu", 153, "156:filmCharacter"],
+                    ["end", "Ôn tập cuối học kì I", 158, "158:dictionary,158:dash,158:repetition,158:connector"]
+                ]
+            ],
+            hk2: [
+                [
+                    [1, "Tiếng hát của người đá", 8, "10:sentence,8:stoneReading"],
+                    [2, "Khúc hát ru những em bé lớn trên lưng mẹ", 13, "15:person"],
+                    [3, "Hạt gạo làng ta", 17, "19:clauseLink"],
+                    [4, "Hộp quà màu thiên thanh", 22, "24:person"],
+                    [5, "Giỏ hoa tháng Năm", 26, "27:pairedLink"],
+                    [6, "Thư của bố", 30, "32:person"],
+                    [7, "Đoàn thuyền đánh cá", 34, "36:sentence,36:pairedLink"],
+                    [8, "Khu rừng của Mát", 38, "40:person"]
+                ],
+                [
+                    [9, "Hội thổi cơm thi ở Đồng Vân", 43, "45:cohesionRepeat,43:festivalReading"],
+                    [10, "Những búp chè trên cây cổ thụ", 48, "51:eventResponse"],
+                    [11, "Hương cốm mùa thu", 53, "54:cohesionConnect"],
+                    [12, "Vũ điệu trên nền thổ cẩm", 57, "59:eventResponse"],
+                    [13, "Đàn t'rưng – tiếng ca đại ngàn", 61, "62:cohesionReplace"],
+                    [14, "Đường quê Đồng Tháp Mười", 66, "68:program"],
+                    [15, "Xuồng ba lá quê tôi", 70, "71:cohesionRepeat,71:cohesionConnect,71:cohesionReplace"],
+                    [16, "Về thăm Đất Mũi", 73, "75:program"],
+                    ["mid", "Ôn tập giữa học kì II", 77, "77:sentence,77:pairedLink,77:cohesionConnect,77:cohesionReplace"]
+                ],
+                [
+                    [17, "Nghìn năm văn hiến", 88, "90:pronoun,90:connector"],
+                    [18, "Người thầy của muôn đời", 93, "95:agree"],
+                    [19, "Danh y Tuệ Tĩnh", 97, "99:synonym,99:polysemy,97:tueTinhReading"],
+                    [20, "Cụ Đồ Chiểu", 101, "103:agree"],
+                    [21, "Anh hùng Lao động Trần Đại Nghĩa", 106, "107:sentence,107:pairedLink"],
+                    [22, "Bộ đội về làng", 109, "111:eventResponse"],
+                    [23, "Về ngôi nhà đang xây", 113, "114:respect"],
+                    [24, "Việt Nam quê hương ta", 117, "118:landscape"]
+                ],
+                [
+                    [25, "Bài ca trái đất", 122, "123:foreign"],
+                    [26, "Những con hạc giấy", 126, "128:person"],
+                    [27, "Một người hùng thầm lặng", 130, "132:dash"],
+                    [28, "Giờ Trái Đất", 135, "137:disagree,135:earthReading"],
+                    [29, "Điện thoại di động", 140, "142:cohesionRepeat,142:cohesionConnect,142:cohesionReplace"],
+                    [30, "Thành phố thông minh Mát-xda", 144, "146:disagree"],
+                    ["end", "Ôn tập cuối năm học", 148, "148:sentence,148:dash,148:polysemy,148:cohesionReplace"]
+                ]
+            ]
+        }
+    };
+
+    const grade5 = {};
+    for (const [subject, semesters] of Object.entries(grade5Lessons)) {
+        grade5[subject] = {};
+        for (const [semester, groups] of Object.entries(semesters)) {
+            grade5[subject][semester] = groups.map((lessons, index) => ({
+                topic: root.app.constants.topics['5'][subject][semester][index],
+                lessons: lessons.map(([number, title, page, skills]) => ({
+                    id: `g5-${subject}-${semester}-${typeof number === 'number' ? `b${String(number).padStart(2, '0')}` : number}`,
+                    label: typeof number === 'number' ? `Bài ${number}. ${title}` : title,
+                    page,
+                    skills: skills.split(',').map(value => {
+                        const [skillPage, key] = value.includes(':') ? value.split(':') : [page, value];
+                        return { key, page: Number(skillPage) };
+                    })
+                }))
+            }));
+        }
+    }
+    root.app.constants.lessonCatalog['5'] = grade5;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

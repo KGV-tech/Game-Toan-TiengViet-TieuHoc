@@ -124,31 +124,41 @@
         hk2: Object.freeze({})
     });
 
-    const findLessonByValue = value => {
-        const target = String(value ?? '').trim();
-        if (!target) return null;
-        const direct = findLessonById(target);
-        if (direct) return direct;
-        const normalizedTarget = normalizeText(target);
-        for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
-            const entries = getCatalog()['4']?.[subject]?.[semester] || [];
-            for (const entry of entries) {
-                const lesson = entry.lessons.find(item => normalizeText(item.label) === normalizedTarget);
-                if (lesson) return lesson;
+    const lessonContexts = function* () {
+        for (const [classNumber, subjects] of Object.entries(getCatalog())) {
+            for (const [subject, semesters] of Object.entries(subjects)) {
+                for (const [semester, entries] of Object.entries(semesters)) {
+                    for (const { topic, lessons } of entries) {
+                        for (const lesson of lessons) yield { classNumber, subject, semester, topic, lesson };
+                    }
+                }
             }
+        }
+    };
+
+    const findLessonContext = id => {
+        const target = String(id ?? '').trim();
+        if (!target) return null;
+        for (const context of lessonContexts()) {
+            if (context.lesson.id === target) return context;
         }
         return null;
     };
 
-    const findLessonById = id => {
-        const target = String(id ?? '').trim();
+    const findLessonByValue = (value, template) => {
+        const target = String(value ?? '').trim();
         if (!target) return null;
-        for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
-            const entries = getCatalog()['4']?.[subject]?.[semester] || [];
-            for (const entry of entries) {
-                const lesson = entry.lessons.find(item => item.id === target);
-                if (lesson) return lesson;
-            }
+        const direct = findLessonContext(target);
+        if (direct) return direct.lesson;
+        const classNumber = classNumberOf(template.classlevel);
+        const subject = subjectKeyOf(template.subject);
+        const semester = semesterKeyOf(template.semester);
+        const normalizedTarget = normalizeText(target);
+        for (const context of lessonContexts()) {
+            if (classNumber && context.classNumber !== classNumber) continue;
+            if (subject && context.subject !== subject) continue;
+            if (semester && context.semester !== semester) continue;
+            if (normalizeText(context.lesson.label) === normalizedTarget) return context.lesson;
         }
         return null;
     };
@@ -159,14 +169,15 @@
         normalizeSemesterKey: semesterKeyOf,
         supportsLessons(classlevel, subject) {
             const subjectKey = subjectKeyOf(subject);
-            return classNumberOf(classlevel) === '4' && Boolean(getCatalog()['4']?.[subjectKey]);
+            return Boolean(getCatalog()[classNumberOf(classlevel)]?.[subjectKey]);
         },
         getTopicEntries({ classlevel, subject, semester } = {}) {
             if (!this.supportsLessons(classlevel, subject)) return [];
             const subjectKey = subjectKeyOf(subject);
             const semesterKey = semesterKeyOf(semester);
-            if (semesterKey) return getCatalog()['4']?.[subjectKey]?.[semesterKey] || [];
-            return ['hk1', 'hk2'].flatMap(key => getCatalog()['4']?.[subjectKey]?.[key] || []);
+            const catalog = getCatalog()[classNumberOf(classlevel)]?.[subjectKey];
+            if (semesterKey) return catalog?.[semesterKey] || [];
+            return ['hk1', 'hk2'].flatMap(key => catalog?.[key] || []);
         },
         getTopicEntry({ classlevel, subject, semester, topic } = {}) {
             const normalizedTopic = String(topic ?? '').trim().normalize('NFC');
@@ -183,27 +194,21 @@
                 .flatMap(entry => entry.lessons);
         },
         findLesson(id) {
-            return findLessonById(id);
+            return findLessonContext(id)?.lesson || null;
         },
         getLessonContext(id) {
-            const target = String(id ?? '').trim();
-            if (!target) return null;
-            for (const subject of ['math', 'vietnamese']) for (const semester of ['hk1', 'hk2']) {
-                const entries = getCatalog()['4']?.[subject]?.[semester] || [];
-                for (const entry of entries) {
-                    const lesson = entry.lessons.find(item => item.id === target);
-                    if (lesson) return { subject, semester, topic: entry.topic, lesson };
-                }
-            }
-            return null;
+            const context = findLessonContext(id);
+            if (!context) return null;
+            const { subject, semester, topic, lesson } = context;
+            return { subject, semester, topic, lesson };
         },
         getLessonLabel(id) {
             return this.findLesson(id)?.label || '';
         },
         getTemplateLesson(template = {}) {
             const explicit = template?.lesson || template?.config?.lesson || '';
-            if (explicit) return findLessonByValue(explicit)?.id || String(explicit).trim();
-            if (!this.supportsLessons(template.classlevel, template.subject)) return '';
+            if (explicit) return findLessonByValue(explicit, template)?.id || String(explicit).trim();
+            if (classNumberOf(template.classlevel) !== '4' || !this.supportsLessons(template.classlevel, template.subject)) return '';
 
             const semester = semesterKeyOf(template.semester);
             const topic = canonicalTemplateTopicOf(template.topic);

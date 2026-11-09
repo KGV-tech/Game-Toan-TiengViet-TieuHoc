@@ -86,6 +86,12 @@ test('bộ lọc Chủ đề chỉ hiện chủ đề thuộc môn học đã ch
   await page.getByLabel('Lọc môn học').selectOption('');
   expect(await page.getByLabel('Lọc chủ đề').locator('option').evaluateAll(options => options.map(option => option.value))).toEqual(expect.arrayContaining(['', topics.math, topics.vietnamese]));
   await page.getByLabel('Lọc cấp lớp').selectOption('Lớp 5');
+  await expect(page.getByLabel('Lọc chủ đề').locator('option')).toHaveCount(21);
+  await page.getByLabel('Lọc môn học').selectOption('Tiếng Việt');
+  await expect(page.getByLabel('Lọc chủ đề').locator('option')).toHaveCount(9);
+  await page.getByRole('button', { name: 'Xem câu mẫu' }).click();
+  await expect(page.locator('#grade5-builtin-preview')).toContainText('SGK Tiếng Việt 5');
+  await page.getByLabel('Lọc cấp lớp').selectOption('Lớp 3');
   await expect(page.getByLabel('Lọc chủ đề').locator('option')).toHaveCount(1);
   await expect(page.locator('.template-library__empty')).toBeVisible();
 });

@@ -30,7 +30,7 @@ assert.ok(lessons.every(lesson => /^g4-math-hk[12]-b\d{2}$/.test(lesson.id)),
 assert.equal(globalThis.app.curriculum.supportsLessons('Lớp 4', 'Toán'), true);
 assert.equal(globalThis.app.curriculum.supportsLessons('4', 'math'), true);
 assert.equal(globalThis.app.curriculum.supportsLessons('Lớp 4', 'Tiếng Việt'), true);
-assert.equal(globalThis.app.curriculum.supportsLessons('Lớp 5', 'Toán'), false);
+assert.equal(globalThis.app.curriculum.supportsLessons('Lớp 3', 'Toán'), false);
 
 const topic = globalThis.app.constants.topics['4'].math.hk1[0];
 assert.deepEqual(
